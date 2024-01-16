@@ -55,7 +55,6 @@ class OverheadTimer:
     stop_global_timer functions. The sub-tasks record their time with the
     record_subtask_time function."""
 
-    # All the timer are in seconds
     _start_global_timestamp: Optional[float] = None
     _end_global_timestamp: Optional[float] = None
     _subtasks_time: float = 0.0
@@ -72,7 +71,7 @@ class OverheadTimer:
     def record_subtask_time(self, time: float):
         """Record the execution time of a subtask.
 
-        :param time: Duration of the subtask in seconds.
+        :param time: Duration of the subtask.
         :type time: float
         """
         self._subtasks_time += time
@@ -80,7 +79,7 @@ class OverheadTimer:
     def get_global_time(self) -> float:
         """Returns the execution time of the main task.
 
-        :returns: The global execution time in seconds.
+        :returns: The global execution time.
         :rtype: float
         """
         if not self._end_global_timestamp or not self._start_global_timestamp:
@@ -90,7 +89,7 @@ class OverheadTimer:
     def get_subtasks_time(self) -> float:
         """Returns the cumulative time of the sub-tasks.
 
-        :returns: The sub-tasks execution time in seconds.
+        :returns: The sub-tasks execution time.
         :rtype: float
         """
         return self._subtasks_time
@@ -98,7 +97,7 @@ class OverheadTimer:
     def get_overhead_time(self) -> float:
         """Returns the overhead time of the main task relative to the sub-tasks.
 
-        :returns: The overhead time in seconds.
+        :returns: The overhead time.
         :rtype: float
         """
         return self.get_global_time() - self._subtasks_time
@@ -107,9 +106,9 @@ class OverheadTimer:
 def _instrument_search(
     tracer: Tracer,
     searched_product_types_counter: Counter,
-    request_duration_milliseconds: Histogram,
-    outbound_request_duration_milliseconds_histogram: Histogram,
-    request_overhead_duration_milliseconds: Histogram,
+    request_duration_seconds: Histogram,
+    outbound_request_duration_seconds_histogram: Histogram,
+    request_overhead_duration_seconds: Histogram,
 ) -> None:
     """Add the instrumentation for search operations in server mode.
 
@@ -117,12 +116,12 @@ def _instrument_search(
     :type tracer: Tracer
     :param searched_product_types_counter: Searched product types counter.
     :type searched_product_types_counter: Counter
-    :param request_duration_milliseconds: Request duration histogram.
-    :type request_duration_milliseconds: Histogram
-    :param outbound_request_duration_milliseconds_histogram: Outbound request duration histogram.
-    :type outbound_request_duration_milliseconds_histogram: Histogram
-    :param request_overhead_duration_milliseconds: EODAG overhead histogram.
-    :type request_overhead_duration_milliseconds: Histogram
+    :param request_duration_seconds: Request duration histogram.
+    :type request_duration_seconds: Histogram
+    :param outbound_request_duration_seconds_histogram: Outbound request duration histogram.
+    :type outbound_request_duration_seconds_histogram: Histogram
+    :param request_overhead_duration_seconds: EODAG overhead histogram.
+    :type request_overhead_duration_seconds: Histogram
     """
     overhead_timers: Dict[int, OverheadTimer] = {}
     trace_attributes: Dict[int, Any] = {}
@@ -176,11 +175,11 @@ def _instrument_search(
             searched_product_types_counter.add(1, attributes)
 
             # Duration histograms
-            request_duration_milliseconds.record(
-                timer.get_global_time() * 1000, attributes=attributes
+            request_duration_seconds.record(
+                timer.get_global_time(), attributes=attributes
             )
-            request_overhead_duration_milliseconds.record(
-                timer.get_overhead_time() * 1000, attributes=attributes
+            request_overhead_duration_seconds.record(
+                timer.get_overhead_time(), attributes=attributes
             )
             del overhead_timers[trace_id]
             del trace_attributes[trace_id]
@@ -242,8 +241,8 @@ def _instrument_search(
             # Duration histograms
             if timer:
                 timer.record_subtask_time(elapsed_time)
-                outbound_request_duration_milliseconds_histogram.record(
-                    elapsed_time * 1000, attributes=attributes
+                outbound_request_duration_seconds_histogram.record(
+                    elapsed_time, attributes=attributes
                 )
 
             if exception is not None:
@@ -365,27 +364,27 @@ class EODAGInstrumentor(BaseInstrumentor):
             name="eodag.core.searched_product_types_total",
             description="The number of searches by provider and product type",
         )
-        request_duration_milliseconds = meter.create_histogram(
-            name="eodag.server.request_duration_milliseconds",
+        request_duration_seconds = meter.create_histogram(
+            name="eodag.server.request_duration_seconds",
             unit="s",
             description="Measures the duration of the inbound HTTP request",
         )
-        outbound_request_duration_milliseconds = meter.create_histogram(
-            name="eodag.core.outbound_request_duration_milliseconds",
+        outbound_request_duration_seconds = meter.create_histogram(
+            name="eodag.core.outbound_request_duration_seconds",
             unit="s",
             description="Measure the duration of the outbound HTTP request",
         )
-        request_overhead_duration_milliseconds = meter.create_histogram(
-            name="eodag.server.request_overhead_duration_milliseconds",
+        request_overhead_duration_seconds = meter.create_histogram(
+            name="eodag.server.request_overhead_duration_seconds",
             unit="s",
             description="Measure the duration of the EODAG overhead on the inbound HTTP request",
         )
         _instrument_search(
             tracer,
             searched_product_types_counter,
-            request_duration_milliseconds,
-            outbound_request_duration_milliseconds,
-            request_overhead_duration_milliseconds,
+            request_duration_seconds,
+            outbound_request_duration_seconds,
+            request_overhead_duration_seconds,
         )
 
     def _uninstrument(self, **kwargs) -> None:
