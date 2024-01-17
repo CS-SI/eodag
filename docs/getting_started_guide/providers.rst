@@ -27,6 +27,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 * `wekeo <https://www.wekeo.eu>`_: WEkEO Copernicus and Sentinel data
+* `creodias_s3 <https://creodias.eu/>`_: s3 of CloudFerro DIAS VM
 
 Providers available through an external plugin:
 

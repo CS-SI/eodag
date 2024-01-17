@@ -129,3 +129,7 @@ to each provider supported by ``eodag``:
     .. code-block:: bash
 
       curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/termsaccepted/Copernicus_General_License
+
+
+* ``creodias_s3``: Create an account on `creodias <https://creodias.eu/>`__, then go to `keymanager <https://eodata-keymanager.creodias.eu/>`__ and
+  click `Add credential` to generate the s3 access key and secret key. Add those credentials to the user configuration file (variables `aws_access_key_id` and `aws_secret_access_key`).
