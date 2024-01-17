@@ -1411,4 +1411,4 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         self.assertEqual(mock_get_chunk_dest_path.call_count, 2)
         self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
         self.assertEqual(mock_check_manifest_file_list.call_count, 0)
-        self.assertEqual(mock_flatten_top_directories.call_count, 0)
+        self.assertEqual(mock_flatten_top_directories.call_count, 1)
