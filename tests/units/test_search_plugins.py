@@ -36,6 +36,7 @@ from tests.context import (
     USER_AGENT,
     AuthenticationError,
     EOProduct,
+    MisconfiguredError,
     PluginManager,
     RequestError,
     cached_parse,
@@ -1548,6 +1549,20 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             stubber.add_response("list_objects", list_objects_response)
             stubber.activate()
             setattr(auth_plugin, "s3_client", client)
+            # fails if credentials are missing
+            auth_plugin.config.credentials = {
+                "aws_access_key_id": "",
+                "aws_secret_access_key": "",
+            }
+            with self.assertRaisesRegex(
+                MisconfiguredError,
+                r"^Incomplete credentials .* \['aws_access_key_id', 'aws_secret_access_key'\]$",
+            ):
+                product.register_downloader(download_plugin, auth_plugin)
+            auth_plugin.config.credentials = {
+                "aws_access_key_id": "foo",
+                "aws_secret_access_key": "bar",
+            }
             product.register_downloader(download_plugin, auth_plugin)
         assets = res[0][0].assets
         # check if s3 links have been created correctly
@@ -1573,6 +1588,10 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             for product in res[0]:
                 download_plugin = self.plugins_manager.get_download_plugin(product)
                 auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+                auth_plugin.config.credentials = {
+                    "aws_access_key_id": "foo",
+                    "aws_secret_access_key": "bar",
+                }
                 stubber.add_client_error("list_objects")
                 stubber.activate()
                 setattr(auth_plugin, "s3_client", client)
