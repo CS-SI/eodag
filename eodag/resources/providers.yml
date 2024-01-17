@@ -6733,7 +6733,7 @@
 !provider
   name: creodias_s3
   priority: 0
-  description: s3 from CloudFerro DIAS VM
+  description: CloudFerro DIAS data through S3 protocol
   roles:
     - host
   url: https://creodias.eu/
