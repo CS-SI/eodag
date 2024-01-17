@@ -803,7 +803,7 @@ def telemetry_init(fastapi_app: Optional[FastAPI] = None) -> None:
         instrument_type=Histogram,
         aggregation=ExplicitBucketHistogramAggregation(
             boundaries=(
-                0.0,
+                0.02,
                 0.05,
                 0.1,
                 0.25,
