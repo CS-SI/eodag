@@ -452,6 +452,8 @@ class EODAGInstrumentor(BaseInstrumentor):
     def __init__(self, eodag_api: EODataAccessGateway = None) -> None:
         super().__init__()
         self._eodag_api = eodag_api
+        self._last_available_providers: List[str] = []
+        self._last_available_product_types: List[str] = []
 
     def instrumentation_dependencies(self) -> Collection[str]:
         """Return a list of python packages with versions that the will be instrumented.
@@ -470,12 +472,21 @@ class EODAGInstrumentor(BaseInstrumentor):
         :returns: The list observation.
         :rtype: Iterable[Observation]
         """
-        return [
+        new_available_providers: List[str] = self._eodag_api.available_providers()
+        observations_dict: Dict[str, int] = {
+            p: 0 for p in self._last_available_providers
+        }
+        for p in new_available_providers:
+            observations_dict[p] = 1
+        self._last_available_providers = new_available_providers
+        observations = [
             Observation(
-                len(self._eodag_api.available_providers()),
-                {"label": "Available Providers"},
+                v,
+                {"label": "Available Providers", "provider_id": k},
             )
+            for k, v in observations_dict.items()
         ]
+        return observations
 
     def _available_product_types_callback(
         self,
@@ -488,12 +499,23 @@ class EODAGInstrumentor(BaseInstrumentor):
         :returns: The list observation.
         :rtype: Iterable[Observation]
         """
-        return [
-            Observation(
-                len(self._eodag_api.list_product_types()),
-                {"label": "Available Product Types"},
-            )
+        new_available_product_types: List[str] = [
+            p["ID"] for p in self._eodag_api.list_product_types()
         ]
+        observations_dict: Dict[str, int] = {
+            p: 0 for p in self._last_available_product_types
+        }
+        for p in new_available_product_types:
+            observations_dict[p] = 1
+        self._last_available_product_types = new_available_product_types
+        observations = [
+            Observation(
+                v,
+                {"label": "Available Product Types", "product_type_id": k},
+            )
+            for k, v in observations_dict.items()
+        ]
+        return observations
 
     def _instrument(self, **kwargs) -> None:
         """Instruments EODAG"""
