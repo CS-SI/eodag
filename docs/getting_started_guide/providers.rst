@@ -13,6 +13,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Sentinel products
 * `aws_eos <https://eos.com/>`_: EOS search for Amazon public datasets
 * `creodias <https://creodias.eu/>`_: CloudFerro DIAS
+* `creodias_s3 <https://creodias.eu/>`_: s3 of CloudFerro DIAS VM
 * `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS
 * `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 * `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_: USGS Landsatlook SAT API
@@ -27,7 +28,6 @@ Products from the following providers are made avaiable through ``eodag``:
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 * `wekeo <https://www.wekeo.eu>`_: WEkEO Copernicus and Sentinel data
-* `creodias_s3 <https://creodias.eu/>`_: s3 of CloudFerro DIAS VM
 
 Providers available through an external plugin:
 
