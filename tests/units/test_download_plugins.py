@@ -1402,7 +1402,6 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         mock_get_authenticated_objects.return_value.filter.side_effect = (
             lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
         )
-        mock_get_chunk_dest_path.return_value = "s3://eodata/a"
 
         plugin.download(product, outputs_prefix=self.output_dir, auth={})
 
