@@ -159,8 +159,11 @@ def _instrument_search(
         attributes: types.Attributes = {
             "operation": "search",
             "product_type": eodag_args.productType,
-            "provider": eodag_args.provider,
         }
+        # The provider is optional
+        if eodag_args.provider:
+            attributes["provider"] = eodag_args.provider
+
         with tracer.start_as_current_span(
             span_name, kind=SpanKind.CLIENT, attributes=attributes
         ) as span:
@@ -218,10 +221,9 @@ def _instrument_search(
         exception_message: Optional[str] = None,
     ) -> Response:
         span_name = "core-search"
-        # This is the provider's product type.
+        # Here only the provider's product type: use the one from the parent (see later)
         attributes = {
             "provider": self.provider,
-            "product_type": self.product_type_def_params["productType"],
         }
 
         with tracer.start_as_current_span(
