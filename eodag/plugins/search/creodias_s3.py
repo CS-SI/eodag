@@ -27,7 +27,7 @@ from eodag import EOProduct
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import QueryStringSearch
-from eodag.utils.exceptions import AuthenticationError, RequestError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
 
 DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
 logger = logging.getLogger("eodag.search.creodiass3")
@@ -62,6 +62,12 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
     if prefix:
         try:
             auth_dict = auth.authenticate()
+            required_creds = ["aws_access_key_id", "aws_secret_access_key"]
+            if not all(getattr(auth, x) for x in required_creds):
+                raise MisconfiguredError(
+                    f"Incomplete credentials for {product.provider}, missing "
+                    f"{[x for x in required_creds if not getattr(auth, x)]}"
+                )
             if not getattr(auth, "s3_client", None):
                 auth.s3_client = boto3.client(
                     "s3",

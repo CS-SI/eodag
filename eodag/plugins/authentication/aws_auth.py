@@ -17,13 +17,12 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Dict
 
 from eodag.plugins.authentication.base import Authentication
 
 if TYPE_CHECKING:
     from botocore.client import S3
-    from requests.auth import AuthBase
 
     from eodag.config import PluginConfig
 
@@ -48,7 +47,7 @@ class AwsAuth(Authentication):
         self.aws_secret_access_key = None
         self.profile_name = None
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> Dict[str, str]:
         """Authenticate
 
         :returns: dict containing AWS/boto3 non-empty credentials

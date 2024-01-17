@@ -20,6 +20,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from eodag.plugins.download.aws import AwsDownload
+from eodag.utils.exceptions import MisconfiguredError
 
 
 class CreodiasS3Download(AwsDownload):
@@ -39,10 +40,15 @@ class CreodiasS3Download(AwsDownload):
         """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
         from provided credentials"""
 
-        s3_session = boto3.session.Session(
-            aws_access_key_id=auth_dict["aws_access_key_id"],
-            aws_secret_access_key=auth_dict["aws_secret_access_key"],
-        )
+        # check if credentials are missing
+        required_creds = ["aws_access_key_id", "aws_secret_access_key"]
+        if not all(auth_dict.get(x, None) for x in required_creds):
+            raise MisconfiguredError(
+                f"Incomplete credentials for {self.provider}, missing "
+                f"{[x for x in required_creds if not auth_dict.get(x, None)]}"
+            )
+
+        s3_session = boto3.session.Session(**auth_dict)
         s3_resource = s3_session.resource(
             "s3", endpoint_url=getattr(self.config, "base_uri", None)
         )
