@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import ast
 import datetime
+import glob
 import json
 import logging
 import os
@@ -763,7 +764,13 @@ def download_stac_item_by_id_stream(
         product_path = eodag_api.download(product, extract=False, asset=asset)
         if os.path.isdir(product_path):
             # do not zip if dir contains only one file
-            all_filenames = next(os.walk(product_path), (None, None, []))[2]
+            all_filenames = [
+                f
+                for f in glob.glob(
+                    os.path.join(product_path, "**", "*"), recursive=True
+                )
+                if os.path.isfile(f)
+            ]
             if len(all_filenames) == 1:
                 filepath_to_stream = all_filenames[0]
             else:
