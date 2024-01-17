@@ -221,7 +221,7 @@ def _instrument_search(
         exception_message: Optional[str] = None,
     ) -> Response:
         span_name = "core-search"
-        # Here only the provider's product type: use the one from the parent (see later)
+        # Don't use there the provider's product type.
         attributes = {
             "provider": self.provider,
         }
@@ -239,6 +239,7 @@ def _instrument_search(
             parent_attributes = trace_attributes.get(trace_id)
             if parent_attributes:
                 parent_attributes["provider"] = self.provider
+                # Get the EODAG's product type from the parent
                 attributes = parent_attributes
 
             start_time = default_timer()
@@ -370,10 +371,9 @@ def _instrument_download(
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Dict[str, Any]:
         span_name = "core-download"
-        # This is the provider's product type.
+        # Don't use there the provider's product type.
         attributes = {
             "provider": product.provider,
-            "product_type": product.product_type,
         }
 
         with tracer.start_as_current_span(
@@ -389,6 +389,7 @@ def _instrument_download(
             parent_attributes = trace_attributes.get(trace_id)
             if parent_attributes:
                 parent_attributes["provider"] = self.provider
+                # Get the EODAG's product type from the parent
                 attributes = parent_attributes
 
             start_time = default_timer()
