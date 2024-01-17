@@ -1525,6 +1525,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_plugins_search_creodias_s3_links(self, mock_request):
+        # s3 links should be added to products with register_downloader
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
         stubber = Stubber(client)
@@ -1539,12 +1540,40 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         with open(creodias_search_result_file) as f:
             creodias_search_result = json.load(f)
         mock_request.return_value = MockResponse(creodias_search_result, 200)
-        stubber.add_response("list_objects", list_objects_response)
-        stubber.activate()
+
         res = search_plugin.query("S1_SAR_GRD")
+        for product in res[0]:
+            download_plugin = self.plugins_manager.get_download_plugin(product)
+            auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+            stubber.add_response("list_objects", list_objects_response)
+            stubber.activate()
+            setattr(auth_plugin, "s3_client", client)
+            product.register_downloader(download_plugin, auth_plugin)
         assets = res[0][0].assets
         # check if s3 links have been created correctly
-        for asset in assets:
-            self.assertIn(
-                "s3://eodata/Sentinel-1/Sentinel-1/SAR/GRD/2014/10/10", asset["href"]
-            )
+        for asset in assets.values():
+            self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_creodias_s3_client_error(self, mock_request):
+        # request error should be raised when there is an error when fetching data from the s3
+        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
+        client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        stubber = Stubber(client)
+
+        creodias_search_result_file = (
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+        )
+        with open(creodias_search_result_file) as f:
+            creodias_search_result = json.load(f)
+        mock_request.return_value = MockResponse(creodias_search_result, 200)
+
+        with self.assertRaises(RequestError):
+            res = search_plugin.query("S1_SAR_GRD")
+            for product in res[0]:
+                download_plugin = self.plugins_manager.get_download_plugin(product)
+                auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+                stubber.add_client_error("list_objects")
+                stubber.activate()
+                setattr(auth_plugin, "s3_client", client)
+                product.register_downloader(download_plugin, auth_plugin)

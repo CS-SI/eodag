@@ -231,7 +231,7 @@ class AwsDownload(Download):
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :type auth: Union[AuthBase, Dict[str, str]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
