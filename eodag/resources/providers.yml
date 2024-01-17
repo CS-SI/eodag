@@ -6849,7 +6849,7 @@
         # - '$.geometry'
         - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
       # The url of the quicklook
-      quicklook: '$.properties.quicklook'
+      quicklook: '$.properties.thumbnail'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/download/{uid}'
