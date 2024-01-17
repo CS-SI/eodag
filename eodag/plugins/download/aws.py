@@ -430,7 +430,7 @@ class AwsDownload(Download):
             filter_regex = re.compile(asset_filter)
             unique_product_chunks = set(
                 filter(
-                    lambda c: filter_regex.fullmatch(os.path.basename(c.key)),
+                    lambda c: filter_regex.search(os.path.basename(c.key)),
                     unique_product_chunks,
                 )
             )
