@@ -266,7 +266,6 @@ class EODataAccessGateway:
                 missionEndDate=fields.ID,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
             )
-            non_indexable_fields: List[str] = []
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
             for product_type in self.list_product_types(fetch_providers=False):
@@ -278,7 +277,7 @@ class EODataAccessGateway:
                     **{
                         k: v
                         for k, v in versioned_product_type.items()
-                        if k not in non_indexable_fields
+                        if k in product_types_schema.names()
                     }
                 )
             ix_writer.commit()
