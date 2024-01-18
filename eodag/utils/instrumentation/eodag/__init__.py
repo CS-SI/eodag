@@ -591,6 +591,7 @@ class EODAGInstrumentor(BaseInstrumentor):
         This only works if no other module also patches eodag"""
         patches = [
             (server, "search_stac_items"),
+            (server, "download_stac_item_by_id_stream"),
             (QueryStringSearch, "_request"),
             (Download, "progress_callback_decorator"),
         ]
