@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -60,7 +60,7 @@ class HttpQueryStringAuth(Authentication):
     :meth:`~eodag.plugins.authentication.query_string.HttpQueryStringAuth.authenticate`
     """
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """Authenticate"""
         self.validate_config_credentials()
 

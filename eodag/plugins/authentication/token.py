@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
@@ -65,12 +65,12 @@ class TokenAuth(Authentication):
                 f"Missing credentials inputs for provider {self.provider}: {e}"
             )
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """Authenticate"""
         self.validate_config_credentials()
 
         # append headers to req if some are specified in config
-        req_kwargs = (
+        req_kwargs: Dict[str, Any] = (
             {"headers": dict(self.config.headers, **USER_AGENT)}
             if hasattr(self.config, "headers")
             else {"headers": USER_AGENT}

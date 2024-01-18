@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional
 
 import requests
 from requests.auth import AuthBase
@@ -39,7 +39,10 @@ class RequestsSASAuth(AuthBase):
     """A custom authentication class to be used with requests module"""
 
     def __init__(
-        self, auth_uri: str, signed_url_key: str, headers: Optional[str] = None
+        self,
+        auth_uri: str,
+        signed_url_key: str,
+        headers: Optional[Dict[str, str]] = None,
     ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
@@ -82,7 +85,7 @@ class SASAuth(Authentication):
         # credentials are optionnal
         pass
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """Authenticate"""
         self.validate_config_credentials()
 

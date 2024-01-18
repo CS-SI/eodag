@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING
 
 from requests.auth import HTTPBasicAuth, HTTPDigestAuth
 
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 class GenericAuth(Authentication):
     """GenericAuth authentication plugin"""
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """Authenticate"""
         self.validate_config_credentials()
         method = getattr(self.config, "method", "basic")

@@ -18,8 +18,6 @@
 """EODAG authentication package"""
 from __future__ import annotations
 
-from typing import Dict, Union
-
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication.base import Authentication
@@ -28,6 +26,6 @@ from eodag.plugins.authentication.base import Authentication
 class DummyAuth(Authentication):
     """Dummy authentication"""
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """authenticate"""
         return AuthBase()
