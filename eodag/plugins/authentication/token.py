@@ -29,7 +29,7 @@ from urllib3 import Retry
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest
@@ -98,6 +98,8 @@ class TokenAuth(Authentication):
                     **req_kwargs,
                 )
             response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(str(exc))
         except RequestException as e:
             response_text = getattr(e.response, "text", "").strip()
             raise AuthenticationError(

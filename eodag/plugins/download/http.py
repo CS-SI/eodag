@@ -61,6 +61,7 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NotAvailableError,
+    TimeOutError,
 )
 
 if TYPE_CHECKING:
@@ -167,6 +168,8 @@ class HTTPDownload(Download):
                 ordered_message = response.text
                 logger.debug(ordered_message)
                 logger.info("%s was ordered", product.properties["title"])
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(str(exc))
             except RequestException as e:
                 if e.response and hasattr(e.response, "content"):
                     error_message = f"{e.response.content.decode('utf-8')} - {e}"
@@ -359,6 +362,8 @@ class HTTPDownload(Download):
                             f"after order success. Please search and download {product} again"
                         )
 
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(str(exc))
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
@@ -426,9 +431,7 @@ class HTTPDownload(Download):
             timeout: int,
             **kwargs: Dict[str, Any],
         ) -> None:
-            chunks = self._stream_download(
-                product, auth, progress_callback, wait, timeout, **kwargs
-            )
+            chunks = self._stream_download(product, auth, progress_callback, **kwargs)
 
             with open(fs_path, "wb") as fhandle:
                 for chunk in chunks:
@@ -557,9 +560,7 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(
-            product, auth, progress_callback, wait, timeout, **kwargs
-        )
+        chunks = self._stream_download(product, auth, progress_callback, **kwargs)
         # start reading chunks to set product.headers
         first_chunk = next(chunks)
 
@@ -613,8 +614,6 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Dict[str, Any],
     ) -> Iterator[Any]:
         """
@@ -630,9 +629,6 @@ class HTTPDownload(Download):
                                   creation and update to give the user a
                                   feedback on the download progress
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
-        :param ordered_message: message to be used in case of error because
-                                the product is unavailable
-        :type ordered_message: str
         :param kwargs: additional arguments
         :type kwargs: dict
         """
@@ -688,6 +684,8 @@ class HTTPDownload(Download):
             try:
                 self.stream.raise_for_status()
 
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(str(exc))
             except RequestException as e:
                 self._process_exception(e, product, ordered_message)
             else:
@@ -799,6 +797,8 @@ class HTTPDownload(Download):
             ) as stream:
                 try:
                     stream.raise_for_status()
+                except requests.exceptions.Timeout as exc:
+                    raise TimeOutError(str(exc))
                 except RequestException as e:
                     raise_errors = True if len(assets_values) == 1 else False
                     self._handle_asset_exception(e, asset, raise_errors=raise_errors)

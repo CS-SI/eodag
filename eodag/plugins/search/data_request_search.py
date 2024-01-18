@@ -41,7 +41,7 @@ from eodag.utils import (
     deepcopy,
     string_to_jsonpath,
 )
-from eodag.utils.exceptions import NotAvailableError, RequestError
+from eodag.utils.exceptions import NotAvailableError, RequestError, TimeOutError
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -258,6 +258,8 @@ class DataRequestSearch(Search):
                 url, json=request_body, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
             request_job.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(str(exc))
         except requests.RequestException as e:
             raise RequestError(
                 f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
@@ -274,6 +276,8 @@ class DataRequestSearch(Search):
                 delete_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
             )
             delete_resp.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(str(exc))
         except requests.RequestException as e:
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
@@ -285,6 +289,8 @@ class DataRequestSearch(Search):
                 status_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
             )
             status_resp.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(str(exc))
         except requests.RequestException as e:
             raise RequestError(f"_check_request_status failed: {str(e)}")
         else:
@@ -313,6 +319,8 @@ class DataRequestSearch(Search):
             return requests.get(
                 url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
             ).json()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(str(exc))
         except requests.RequestException:
             logger.error(f"Result could not be retrieved for {url}")
         return {}
