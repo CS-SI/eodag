@@ -195,8 +195,11 @@ def _instrument_search(
             request_duration_seconds.record(
                 timer.get_global_time(), attributes=attributes
             )
+            overhead_attributes = {
+                k: v for k, v in attributes.items() if k != "product_type"
+            }
             request_overhead_duration_seconds.record(
-                timer.get_overhead_time(), attributes=attributes
+                timer.get_overhead_time(), attributes=overhead_attributes
             )
             del overhead_timers[trace_id]
             del trace_attributes[trace_id]
@@ -336,8 +339,11 @@ def _instrument_download(
             request_duration_seconds.record(
                 timer.get_global_time(), attributes=attributes
             )
+            overhead_attributes = {
+                k: v for k, v in attributes.items() if k != "product_type"
+            }
             request_overhead_duration_seconds.record(
-                timer.get_overhead_time(), attributes=attributes
+                timer.get_overhead_time(), attributes=overhead_attributes
             )
             del overhead_timers[trace_id]
             del trace_attributes[trace_id]
@@ -485,7 +491,7 @@ class EODAGInstrumentor(BaseInstrumentor):
         observations = [
             Observation(
                 v,
-                {"label": "Available Providers", "provider_id": k},
+                {"provider_id": k},
             )
             for k, v in observations_dict.items()
         ]
@@ -514,7 +520,7 @@ class EODAGInstrumentor(BaseInstrumentor):
         observations = [
             Observation(
                 v,
-                {"label": "Available Product Types", "product_type_id": k},
+                {"product_type_id": k},
             )
             for k, v in observations_dict.items()
         ]

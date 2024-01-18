@@ -799,26 +799,56 @@ def telemetry_init(fastapi_app: Optional[FastAPI] = None) -> None:
     trace.set_tracer_provider(tracer_provider)
     # metrics
     reader = PeriodicExportingMetricReader(OTLPMetricExporter())
-    view = View(
+    view_histograms: View = View(
         instrument_type=Histogram,
         aggregation=ExplicitBucketHistogramAggregation(
             boundaries=(
-                0.02,
-                0.05,
-                0.1,
                 0.25,
-                0.5,
+                0.50,
                 0.75,
                 1.0,
-                2.5,
+                1.5,
+                2.0,
+                3.0,
+                4.0,
                 5.0,
-                7.5,
+                6.0,
+                7.0,
+                8.0,
+                9.0,
                 10.0,
-            ),
+            )
+        ),
+    )
+    view_overhead_histograms: View = View(
+        instrument_type=Histogram,
+        instrument_name="*overhead*",
+        aggregation=ExplicitBucketHistogramAggregation(
+            boundaries=(
+                0.030,
+                0.040,
+                0.050,
+                0.060,
+                0.070,
+                0.080,
+                0.090,
+                0.100,
+                0.125,
+                0.150,
+                0.175,
+                0.200,
+                0.250,
+                0.500,
+            )
         ),
     )
     meter_provider = MeterProvider(
-        resource=resource, metric_readers=[reader], views=(view,)
+        resource=resource,
+        metric_readers=[reader],
+        views=(
+            view_histograms,
+            view_overhead_histograms,
+        ),
     )
     metrics.set_meter_provider(meter_provider)
 
