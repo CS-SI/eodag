@@ -1351,3 +1351,64 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         run()
         mock_order.assert_called_once_with(mock.ANY, self.product, auth=None)
         self.assertEqual(mock_order_status.call_count, 2)
+
+
+class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.creodias_s3.CreodiasS3Download._get_authenticated_objects_from_auth_keys",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_creodias_s3(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        product = EOProduct(
+            "creodias_s3",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+        )
+        product.location = product.remote_location = "a"
+        assets = {
+            "a1": {"title": "a1", "href": "s3://eodata/a/a1"},
+            "a2": {"title": "a2", "href": "s3://eodata/a/a2"},
+        }
+        product.assets = assets
+        plugin = self.get_download_plugin(product)
+        product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+        # authenticated objects mock
+        mock_get_authenticated_objects.return_value.keys.return_value = [
+            "a1",
+            "a2",
+        ]
+        mock_get_authenticated_objects.return_value.filter.side_effect = (
+            lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
+        )
+
+        plugin.download(product, outputs_prefix=self.output_dir, auth={})
+
+        mock_get_authenticated_objects.assert_called_once_with(
+            plugin, "eodata", "a", {}
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 2)
+        self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
+        self.assertEqual(mock_check_manifest_file_list.call_count, 0)
+        self.assertEqual(mock_flatten_top_directories.call_count, 1)

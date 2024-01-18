@@ -1,0 +1,37 @@
+{
+  "Contents": [
+      {
+        "Key": "Sentinel-1/SAR/GRD/2014/10/10/S1A_EW_GRDH_1SDH_20141010T120113_20141010T120222_002767_0031C8_D5D7.SAFE/support/s1-map-overlay.xsd",
+        "LastModified": "2018-06-01T15:22:13Z",
+        "ETag": "504eb851210859c67acb42ea4fed5fc5",
+        "Size": 450,
+        "StorageClass": "STANDARD",
+        "Owner": {
+          "DisplayName": "user1",
+          "ID": "user1"
+        }
+      },
+      {
+        "Key": "Sentinel-1/SAR/GRD/2014/10/10/S1A_EW_GRDH_1SDH_20141010T120113_20141010T120222_002767_0031C8_D5D7.SAFE/support/s1-object-types.xsd",
+        "LastModified": "2018-06-01T15:22:13Z",
+        "ETag": "8aabb6347fb0a5f555aeb3e9aa3b55bb",
+        "Size": 62654,
+        "StorageClass": "STANDARD",
+        "Owner": {
+          "DisplayName": "user1",
+          "ID": "user1"
+        }
+      },
+      {
+        "Key": "Sentinel-1/SAR/GRD/2014/10/10/S1A_EW_GRDH_1SDH_20141010T120113_20141010T120222_002767_0031C8_D5D7.SAFE/support/s1-product-preview.xsd",
+        "LastModified": "2018-06-01T15:22:13Z",
+        "ETag": "351b284603c155dcb83cdb5daedaf098",
+        "Size": 440,
+        "StorageClass": "STANDARD",
+        "Owner": {
+          "DisplayName": "user1",
+          "ID": "user1"
+        }
+      }
+    ]
+}

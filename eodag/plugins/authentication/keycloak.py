@@ -99,7 +99,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                     f"{self.provider}: {param}",
                 )
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """
         Makes authentication request
         """

@@ -199,3 +199,13 @@ wekeo:
         credentials:
             username:
             password:
+
+creodias_s3:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        outputs_prefix:
+    auth:
+        credentials:
+          aws_access_key_id:
+          aws_secret_access_key:

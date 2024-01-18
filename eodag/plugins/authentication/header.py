@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Dict
 
 from requests.auth import AuthBase
 
@@ -60,7 +60,7 @@ class HTTPHeaderAuth(Authentication):
     Expect an undefined behaviour if you use empty braces in header value strings.
     """
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """Authenticate"""
         self.validate_config_credentials()
         headers = {

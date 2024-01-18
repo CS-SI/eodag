@@ -267,6 +267,7 @@ class PluginConfig(yaml.YAMLObject):
     collection: bool  # PostJsonSearch for aws_eos
     max_connections: int  # StaticStacSearch
     timeout: float  # StaticStacSearch
+    s3_bucket: str  # CreodiasS3Search
 
     # download -------------------------------------------------------------------------
     base_uri: str
@@ -294,7 +295,7 @@ class PluginConfig(yaml.YAMLObject):
     authorization_uri: str  # OIDCAuthorizationCodeFlowAuth
     login_form_xpath: str  # OIDCAuthorizationCodeFlowAuth
     user_consent_form_xpath: str  # OIDCAuthorizationCodeFlowAuth
-    user_consent_form_data: str  # OIDCAuthorizationCodeFlowAuth
+    user_consent_form_data: Dict[str, str]  # OIDCAuthorizationCodeFlowAuth
     token_exchange_post_data_method: str  # OIDCAuthorizationCodeFlowAuth
     token_uri: str  # OIDCAuthorizationCodeFlowAuth
     token_key: str  # OIDCAuthorizationCodeFlowAuth

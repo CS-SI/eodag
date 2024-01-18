@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 import string
 from random import SystemRandom
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import requests
 from lxml import etree
@@ -144,7 +144,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         self.session = requests.Session()
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> AuthBase:
         """Authenticate"""
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
@@ -234,7 +234,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 "The state received in the authorized url does not match initially computed state"
             )
         code = qs["code"][0]
-        token_exchange_data = {
+        token_exchange_data: Dict[str, Any] = {
             "redirect_uri": self.config.redirect_uri,
             "client_id": self.config.client_id,
             "code": code,

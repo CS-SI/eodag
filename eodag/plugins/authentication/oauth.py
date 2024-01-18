@@ -17,13 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Dict
 
 from eodag.plugins.authentication.base import Authentication
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
-
     from eodag.config import PluginConfig
 
 
@@ -35,7 +33,7 @@ class OAuth(Authentication):
         self.access_key = None
         self.secret_key = None
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> Dict[str, str]:
         """Authenticate"""
         self.validate_config_credentials()
         self.access_key = self.config.credentials["aws_access_key_id"]
