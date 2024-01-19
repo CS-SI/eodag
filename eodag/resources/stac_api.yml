@@ -318,7 +318,6 @@ paths:
       - $ref: '#/components/parameters/intersects'
       - $ref: '#/components/parameters/ids'
       - $ref: '#/components/parameters/collectionsArray'
-      - $ref: '#/components/parameters/sortby'
       responses:
         '200':
           description: A feature collection.
@@ -622,21 +621,6 @@ components:
       required: false
       schema:
         type: string
-    sortby:
-      name: sortby
-      x-stac-api-fragment: sort
-      in: query
-      description: |-
-        **Optional Extension:** Sort
-
-        An array of property names, prefixed by either "+" for ascending or
-        "-" for descending. If no prefix is provided, "+" is assumed.
-      required: false
-      schema:
-        type: string
-        example: '-start_datetime,+id'
-      style: form
-      explode: false
   schemas:
     queryProp:
       description: Apply query operations to a specific property
@@ -1477,7 +1461,6 @@ components:
         - $ref: '#/components/schemas/idsFilter'
         - $ref: '#/components/schemas/limitFilter'
         - $ref: '#/components/schemas/queryFilter'
-        - $ref: '#/components/schemas/sortby'
       example:
         datetime: 2023-11-03T00:00:00Z/2023-11-04T12:31:12Z
         bbox:
@@ -1493,31 +1476,6 @@ components:
           eo:cloud_cover:
             lte: 80
         limit: 10
-        sortby:
-          - field: start_datetime
-            direction: desc
-    sortby:
-      type: array
-      description: |
-        An array of objects containing a property name and sort direction.
-      minItems: 1
-      items:
-        type: object
-        required:
-          - field
-          - direction
-        properties:
-          field:
-            type: string
-          direction:
-            type: string
-            default: asc
-            enum:
-              - asc
-              - desc
-      example:
-        - field: 'start_datetime'
-          direction: asc
     limit:
       type: integer
       minimum: 1

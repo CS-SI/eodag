@@ -32,7 +32,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Literal,
     NamedTuple,
     Optional,
     Tuple,
@@ -43,9 +42,7 @@ from urllib.parse import urlencode
 import dateutil.parser
 from dateutil import tz
 from fastapi.responses import StreamingResponse
-from pydantic import ConfigDict, StringConstraints
 from shapely.geometry import Polygon, shape
-from typing_extensions import Annotated, TypedDict
 
 import eodag
 from eodag import EOProduct
@@ -349,42 +346,6 @@ def get_geometry(arguments: Dict[str, Any]) -> Optional[BaseGeometry]:
     return geom
 
 
-def get_sort_by(arguments: Dict[str, Any]) -> Optional[List[Tuple[str, str]]]:
-    """Get sortby criteria from search arguments
-
-    :param arguments: Request args
-    :type arguments: dict
-    :returns: Sorting parameters and their sorting order from sortby arguments
-    :rtype: Optional[List[Tuple[str, str]]]
-    """
-    sort_by_params_tmp = arguments.pop("sortby", None)
-    if sort_by_params_tmp is None:
-        return None
-
-    if not sort_by_params_tmp:
-        raise ValidationError("sortby argument is empty, please fill in it")
-    sort_by_params = []
-    for sort_by_param in sort_by_params_tmp.split(","):
-        # Remove leading and trailing whitespace(s) if exist
-        sort_by_param = str(sort_by_param.strip())
-        if not sort_by_param or sort_by_param in ["+", "-"]:
-            raise ValidationError(
-                "Syntax error in the search request, at least one sorting parameter is empty"
-            )
-        if sort_by_param[0] in ["+", "-"]:
-            stac_sort_param = sort_by_param[1:]
-        else:
-            stac_sort_param = sort_by_param
-        # remove "properties." prefix
-        prefix = "properties."
-        if stac_sort_param.startswith(prefix):
-            stac_sort_param = stac_sort_param[len(prefix) :]
-        eodag_sort_param = EODAGSearch.to_eodag(stac_sort_param)
-        sort_order = "DESC" if sort_by_param[0] == "-" else "ASC"
-        sort_by_params.append((eodag_sort_param, sort_order))
-    return sort_by_params
-
-
 def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
     """Get the datetime criterias from the search arguments
 
@@ -516,7 +477,6 @@ def search_products(
         page, items_per_page = get_pagination_info(arguments)
         dtstart, dtend = get_datetime(arguments)
         geom = get_geometry(arguments)
-        sort_by = get_sort_by(arguments)
 
         criterias = {
             "productType": product_type if product_type else arg_product_type,
@@ -526,7 +486,6 @@ def search_products(
             "end": dtend,
             "geom": geom,
             "provider": provider,
-            "sortBy": sort_by,
         }
 
         if stac_formatted:
@@ -1175,31 +1134,3 @@ def eodag_api_init() -> None:
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
-
-
-class PostSearchSortbyParam(TypedDict):
-    """A class representing a parameter with which we want to sort results and its sorting order in a POST search
-
-    :param field: The name of the parameter with which we want to sort results
-    :type field: str
-    :param direction: The sorting order of the parameter
-    :type direction: str
-    """
-
-    __pydantic_config__ = ConfigDict(extra="forbid")
-
-    field: Annotated[str, StringConstraints(strip_whitespace=True)]
-    direction: Literal["asc", "desc"]
-
-
-def convert_sortby_to_get_format(
-    sortby_post_params: List[PostSearchSortbyParam],
-) -> str:
-    """
-    Convert sortby filter parameter POST syntax to GET syntax
-    """
-    get_format = ""
-    for sortby_post_param in sortby_post_params:
-        prefix = "+" if sortby_post_param["direction"] == "asc" else "-"
-        get_format += prefix + sortby_post_param["field"] + ","
-    return get_format.rstrip(",")

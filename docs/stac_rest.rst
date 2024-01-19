@@ -65,7 +65,6 @@ The supported request parameters are (from STAC API):
 * ``bbox``: the search bounding box defined by: `min_lon,min_lat,max_lon,max_lat`.
 * ``datetime``: RFC 3339 format datetime. Single, or as interval `start/stop`.
 * ``limit``: items returned per page
-* ``sortby``: sorting parameters and their sorting order
 
 EODAG additional query parameters:
 
@@ -74,7 +73,7 @@ EODAG additional query parameters:
 
 Example URL:
 
-* http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20&sortby=+start_datetime
+* http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20
 
 Browsing
 --------
