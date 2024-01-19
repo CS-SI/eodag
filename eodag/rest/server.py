@@ -817,7 +817,7 @@ async def post_search(request: Request) -> ORJSONResponse:
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
-    logger.debug("Body: %s", search_request)
+    logger.debug("Body: %s", search_request.model_dump(exclude_none=True))
 
     response = search_stac_items(
         request=request,
