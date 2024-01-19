@@ -885,7 +885,7 @@ class QueryStringSearch(Search):
                 )
                 response.raise_for_status()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=timeout) from exc
         except (requests.RequestException, URLError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:

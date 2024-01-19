@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Set, Tuple
+    from typing import Optional, Set, Tuple
 
 
 class ValidationError(Exception):
@@ -99,3 +99,13 @@ class STACOpenerError(Exception):
 
 class TimeOutError(RequestError):
     """An error indicating that a timeout has occurred"""
+
+    def __init__(
+        self, exception: Optional[Exception] = None, timeout: Optional[float] = None
+    ) -> None:
+        url = getattr(getattr(exception, "request", None), "url", None)
+        timeout_msg = f"({timeout}s)" if timeout else ""
+        message = (
+            f"Request timeout {timeout_msg} for URL {url}" if url else str(exception)
+        )
+        super().__init__(message)
