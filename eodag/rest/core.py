@@ -16,13 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime
-import glob
 import logging
 import os
 import re
-from io import BufferedReader
-from shutil import make_archive, rmtree
-from typing import Any, Callable, Dict, Iterator, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import dateutil
 from fastapi import Request
@@ -48,7 +45,12 @@ from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryableProperty
 from eodag.rest.types.stac_search import SearchPostRequest
-from eodag.rest.utils import Cruncher, format_pydantic_error, get_next_link
+from eodag.rest.utils import (
+    Cruncher,
+    file_to_stream,
+    format_pydantic_error,
+    get_next_link,
+)
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
 
 
@@ -273,7 +275,7 @@ def download_stac_item_by_id_stream(
         else product.downloader_auth
     )
     try:
-        download_stream_dict = product.downloader._stream_download_dict(
+        download_stream = product.downloader._stream_download_dict(
             product, auth=auth, asset=asset
         )
     except NotImplementedError:
@@ -281,38 +283,15 @@ def download_stac_item_by_id_stream(
             "Download streaming not supported for %s: downloading locally then delete",
             product.downloader,
         )
-        product_path = eodag_api.download(product, extract=False, asset=asset)
-        if os.path.isdir(product_path):
-            # do not zip if dir contains only one file
-            all_filenames = [
-                f
-                for f in glob.glob(
-                    os.path.join(product_path, "**", "*"), recursive=True
-                )
-                if os.path.isfile(f)
-            ]
-            if len(all_filenames) == 1:
-                filepath_to_stream = all_filenames[0]
-            else:
-                filepath_to_stream = f"{product_path}.zip"
-                logger.debug(
-                    "Building archive for downloaded product path %s",
-                    filepath_to_stream,
-                )
-                make_archive(product_path, "zip", product_path)
-                rmtree(product_path)
-        else:
-            filepath_to_stream = product_path
-
-        filename = os.path.basename(filepath_to_stream)
-        download_stream_dict = dict(
-            content=read_file_chunks_and_delete(open(filepath_to_stream, "rb")),
-            headers={
-                "content-disposition": f"attachment; filename={filename}",
-            },
+        download_stream = file_to_stream(
+            eodag_api.download(product, extract=False, asset=asset)
         )
 
-    return StreamingResponse(**download_stream_dict)
+    return StreamingResponse(
+        content=download_stream.content,
+        headers=download_stream.headers,
+        media_type=download_stream.media_type,
+    )
 
 
 def get_detailled_collections_list(
@@ -508,21 +487,6 @@ def get_stac_api_version() -> str:
     :rtype: str
     """
     return stac_config["stac_api_version"]
-
-
-def read_file_chunks_and_delete(
-    opened_file: BufferedReader, chunk_size: int = 64 * 1024
-) -> Iterator[bytes]:
-    """Yield file chunks and delete file when finished."""
-    while True:
-        data = opened_file.read(chunk_size)
-        if not data:
-            opened_file.close()
-            os.remove(opened_file.name)
-            logger.debug("%s deleted after streaming complete", opened_file.name)
-            break
-        yield data
-    yield data
 
 
 def get_stac_extension_oseo(url: str) -> Dict[str, str]:

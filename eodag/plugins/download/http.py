@@ -50,6 +50,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
+    StreamResponse,
     flatten_top_directories,
     parse_header,
     path_to_uri,
@@ -535,7 +536,7 @@ class HTTPDownload(Download):
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> StreamResponse:
         r"""
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
@@ -584,7 +585,7 @@ class HTTPDownload(Download):
                             "type"
                         ]
 
-                    return dict(
+                    return StreamResponse(
                         content=chain(iter([first_chunks_tuple]), chunks_tuples),
                         headers=assets_values[0].headers,
                     )
@@ -595,7 +596,7 @@ class HTTPDownload(Download):
                         if "title" in product.properties
                         else sanitize(product.properties.get("id", "download"))
                     )
-                    return dict(
+                    return StreamResponse(
                         content=stream_zip(chunks_tuples),
                         media_type="application/zip",
                         headers={
@@ -612,7 +613,7 @@ class HTTPDownload(Download):
         # start reading chunks to set product.headers
         first_chunk = next(chunks)
 
-        return dict(
+        return StreamResponse(
             content=chain(iter([first_chunk]), chunks),
             headers=product.headers,
         )
