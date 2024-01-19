@@ -674,27 +674,37 @@ class AwsDownload(Download):
 
         modified_at = datetime.now()
         perms = 0o600
-        for product_chunk in unique_product_chunks:
-            try:
-                chunk_rel_path = self.get_chunk_dest_path(
-                    product,
-                    product_chunk,
-                    build_safe=build_safe,
-                )
-            except NotAvailableError as e:
-                # out of SAFE format chunk
-                logger.warning(e)
-                continue
+        chunk_size = 4096 * 1024
 
-            body = product_chunk.get()["Body"]
-            if body:
-                yield (
-                    chunk_rel_path,
-                    modified_at,
-                    perms,
-                    NO_COMPRESSION_64,
-                    yield_parts(body, progress_callback),
-                )
+        for product_chunk in unique_product_chunks:
+            chunk_start = 0
+            chunk_end = chunk_start + chunk_size - 1
+            object_size = product_chunk.size
+            while chunk_start <= object_size:
+                try:
+                    chunk_rel_path = self.get_chunk_dest_path(
+                        product,
+                        product_chunk,
+                        build_safe=build_safe,
+                    )
+                except NotAvailableError as e:
+                    # out of SAFE format chunk
+                    logger.warning(e)
+                    continue
+
+                body = product_chunk.get(Range=f"bytes={chunk_start}-{chunk_end}")[
+                    "Body"
+                ]
+                if body:
+                    yield (
+                        chunk_rel_path,
+                        modified_at,
+                        perms,
+                        NO_COMPRESSION_64,
+                        yield_parts(body, progress_callback),
+                    )
+                chunk_start += chunk_size
+                chunk_end += chunk_size
 
     def get_rio_env(
         self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
