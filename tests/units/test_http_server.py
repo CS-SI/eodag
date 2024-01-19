@@ -28,7 +28,7 @@ import geojson
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
-from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import TimeOutError
 from tests import mock
 from tests.context import (
@@ -312,6 +312,7 @@ class RequestTestCase(unittest.TestCase):
                 url,
                 data=json.dumps(post_data),
                 follow_redirects=True,
+                headers={"Content-Type": "application/json"},
             )
 
         if search_call_count is not None:
@@ -978,8 +979,8 @@ class RequestTestCase(unittest.TestCase):
 
         expected_file = "somewhere.zip"
 
-        mock_download.return_value = dict(
-            content=(i for i in range(0)),
+        mock_download.return_value = StreamResponse(
+            content=iter(bytes(i) for i in range(0)),
             headers={
                 "content-disposition": f"attachment; filename={expected_file}",
             },

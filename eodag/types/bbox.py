@@ -36,7 +36,7 @@ class BBox(BaseModel):
     lonmax: NumType
     latmax: NumType
 
-    def __init__(__pydantic_self__, bboxArgs: BBoxArgs) -> None:  # type: ignore
+    def __init__(__pydantic_self__, bboxArgs: BBoxArgs) -> None:  # type: ignore  # pylint: disable=no-self-argument
         """
         Constructs all the necessary attributes for the BBox object.
 
@@ -55,7 +55,8 @@ class BBox(BaseModel):
             values = bboxArgs
         else:
             raise ValueError(
-                "Expected a dictionary, list or tuple with 4 values for lonmin, latmin, lonmax, latmax"
+                "Expected a dictionary,",
+                " list or tuple with 4 values for lonmin, latmin, lonmax, latmax",
             )
         super().__init__(**values)
 
