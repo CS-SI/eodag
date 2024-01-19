@@ -247,8 +247,11 @@ class TestStacCore(unittest.TestCase):
         product_id = self.earth_search_resp_search_json["features"][0]["properties"][
             "sentinel:product_id"
         ]
-        for k, v in self.earth_search_resp_search_json["features"][0]["assets"].items():
+        for k in self.earth_search_resp_search_json["features"][0]["assets"]:
             self.assertIn(k, response["features"][0]["assets"].keys())
+            if k == "thumbnail":
+                self.assertTrue(response["features"][0]["assets"][k]["href"])
+                continue
             self.assertEqual(
                 response["features"][0]["assets"][k]["href"],
                 f"http://foo/collections/S2_MSI_L2A/items/{product_id}/download/{k}?provider=earth_search",

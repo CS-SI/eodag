@@ -18,14 +18,14 @@
 """Model describing a STAC search POST request"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, cast
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PositiveInt,
     StringConstraints,
-    conint,
     conlist,
     field_validator,
     model_validator,
@@ -46,7 +46,11 @@ from typing_extensions import Annotated
 
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime, str_to_interval
 
-PositiveInt = conint(gt=0)
+if TYPE_CHECKING:
+    try:
+        from typing import Self
+    except ImportError:
+        from _typeshed import Self
 
 NumType = Union[float, int]
 
@@ -113,7 +117,7 @@ class SearchPostRequest(BaseModel):
     query: Optional[Dict[str, Any]] = None
     filter: Optional[Dict[str, Any]] = None
     filter_lang: Optional[str] = Field(
-        "cql2-json",
+        None,
         alias="filter-lang",
         description="The language used for filtering.",
         validate_default=True,
@@ -122,16 +126,18 @@ class SearchPostRequest(BaseModel):
     crunch: Optional[str] = None
 
     @model_validator(mode="after")
-    def check_filter_lang(self) -> SearchPostRequest:
+    def check_filter_lang(self) -> Self:
         """Verify filter-lang has correct value"""
         if not self.filter_lang and self.filter:
-            raise ValueError('"filter-lang" is required if "filter" is provided')
+            self.filter_lang = "cql2-json"
+        if self.filter_lang and not self.filter:
+            raise ValueError("filter-lang is set but filter is missing")
         if self.filter_lang != "cql2-json" and self.filter:
             raise ValueError('Only filter language "cql2-json" is accepted')
         return self
 
     @model_validator(mode="after")
-    def only_one_spatial(self) -> SearchPostRequest:
+    def only_one_spatial(self) -> Self:
         """Check bbox and intersects are not both supplied."""
         if self.bbox and self.intersects:
             raise ValueError("intersects and bbox parameters are mutually exclusive")

@@ -63,8 +63,12 @@ class TestSearchPostRequest(unittest.TestCase):
     def test_check_filter_lang(self):
         # Test with filter and without filter-lang
         values = {"filter": {"test": "value"}}
-        with self.assertRaises(ValidationError):
-            stac_search.SearchPostRequest.model_validate(values)
+        search_args = stac_search.SearchPostRequest.model_validate(values).model_dump(
+            exclude_none=True
+        )
+        self.assertEqual(
+            search_args, {"filter_lang": "cql2-json", "filter": {"test": "value"}}
+        )
 
         # Test with filter-lang and without filter
         values = {"filter-lang": "cql2-json"}
@@ -530,7 +534,7 @@ class TestEODAGSearch(unittest.TestCase):
         )
         self.assertEqual(
             eodag_search.EODAGSearch.to_eodag("start_datetime"),
-            "start",
+            "startTimeFromAscendingNode",
         )
         self.assertEqual(
             eodag_search.EODAGSearch.to_eodag("platform"),

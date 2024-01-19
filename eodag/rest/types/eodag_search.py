@@ -15,7 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import (
     AliasChoices,
@@ -48,6 +50,12 @@ from eodag.rest.utils import (
 )
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE
+
+if TYPE_CHECKING:
+    try:
+        from typing import Self
+    except ImportError:
+        from _typeshed import Self
 
 Geometry = Union[
     Dict[str, Any],
@@ -109,6 +117,13 @@ class EODAGSearch(BaseModel):
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
 
     _to_eodag_map: Dict[str, str] = PrivateAttr()
+
+    @model_validator(mode="after")
+    def remove_timeFromAscendingNode(self) -> Self:  # pylint: disable=invalid-name
+        """TimeFromAscendingNode are just used for translation and not for search"""
+        self.startTimeFromAscendingNode = None  # pylint: disable=invalid-name
+        self.completionTimeFromAscendingNode = None  # pylint: disable=invalid-name
+        return self
 
     @model_validator(mode="before")
     @classmethod
