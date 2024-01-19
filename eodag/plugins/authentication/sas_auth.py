@@ -26,7 +26,7 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_items
-from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.exceptions import AuthenticationError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest
@@ -67,6 +67,8 @@ class RequestsSASAuth(AuthBase):
                 )
                 response.raise_for_status()
                 signed_url = response.json().get(self.signed_url_key)
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except (requests.RequestException, JSONDecodeError, KeyError) as e:
                 raise AuthenticationError(f"Could no get signed url: {str(e)}")
             else:

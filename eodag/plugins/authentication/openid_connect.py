@@ -28,7 +28,7 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
@@ -154,6 +154,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             exchange_url = user_consent_response.url
         try:
             token = self.exchange_code_for_token(exchange_url, state)
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except Exception:
             import traceback as tb
 

@@ -69,6 +69,7 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
     RequestError,
+    TimeOutError,
     UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
@@ -281,6 +282,19 @@ async def handle_server_error(request: Request, error: Exception) -> ORJSONRespo
         request,
         HTTPException(
             status_code=500,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
+    )
+
+
+@app.exception_handler(TimeOutError)
+async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
+    """Timeout [504] errors handle"""
+    logger.error(f"{type(error).__name__}: {str(error)}")
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=504,
             detail=f"{type(error).__name__}: {str(error)}",
         ),
     )

@@ -24,11 +24,13 @@ from unittest import mock
 
 import boto3
 import dateutil
+import requests
 import responses
 import yaml
 from botocore.stub import Stubber
 from requests import RequestException
 
+from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -528,6 +530,19 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.get",
+        autospec=True,
+        side_effect=requests.exceptions.Timeout(),
+    )
+    def test_plugins_search_querystringseach_timeout(self, mock__request):
+        search_plugin = self.get_search_plugin(self.product_type, "peps")
+        with self.assertRaises(TimeOutError):
+            search_plugin.query(
+                productType="S1_SAR_SLC",
+                auth=None,
+            )
 
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):

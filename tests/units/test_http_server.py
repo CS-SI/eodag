@@ -29,6 +29,7 @@ from fastapi.testclient import TestClient
 from shapely.geometry import box
 
 from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils.exceptions import TimeOutError
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -453,7 +454,7 @@ class RequestTestCase(unittest.TestCase):
     @mock.patch(
         "eodag.rest.utils.eodag_api.search",
         autospec=True,
-        side_effect=AuthenticationError("you are no authorized"),
+        side_effect=AuthenticationError("you are not authorized"),
     )
     def test_auth_error(self, mock_search):
         """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
@@ -466,9 +467,28 @@ class RequestTestCase(unittest.TestCase):
 
             self.assertIn("description", response_content)
             self.assertIn("AuthenticationError", str(cm_logs.output))
-            self.assertIn("you are no authorized", str(cm_logs.output))
+            self.assertIn("you are not authorized", str(cm_logs.output))
 
         self.assertEqual(500, response.status_code)
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.search",
+        autospec=True,
+        side_effect=TimeOutError("too long"),
+    )
+    def test_timeout_error(self, mock_search):
+        """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
+        with self.assertLogs(level="ERROR") as cm_logs:
+            response = self.app.get(
+                f"search?collections={self.tested_product_type}", follow_redirects=True
+            )
+            response_content = json.loads(response.content.decode("utf-8"))
+
+            self.assertIn("description", response_content)
+            self.assertIn("TimeOutError", str(cm_logs.output))
+            self.assertIn("too long", str(cm_logs.output))
+
+        self.assertEqual(504, response.status_code)
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""

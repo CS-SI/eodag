@@ -499,6 +499,9 @@ def search_products(
         else:
             criterias.update(arguments)
 
+        if provider:
+            criterias["raise_errors"] = True
+
         # We remove potential None values to use the default values of the search method
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
 
@@ -565,6 +568,8 @@ def search_product_by_id(
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     :raises: RuntimeError
     """
+    if provider:
+        kwargs["raise_errors"] = True
     try:
         products, _ = eodag_api.search(
             id=uid, productType=product_type, provider=provider, **kwargs
@@ -676,7 +681,7 @@ def get_stac_item_by_id(
     _dc_qs = kwargs.get("_dc_qs", None)
 
     found_products = search_product_by_id(
-        item_id, product_type=product_type, _dc_qs=_dc_qs
+        item_id, product_type=product_type, provider=provider, _dc_qs=_dc_qs
     )
 
     if len(found_products) > 0:

@@ -26,7 +26,7 @@ from requests.exceptions import RequestException
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
-from eodag.utils.exceptions import AuthenticationError
+from eodag.utils.exceptions import AuthenticationError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest
@@ -76,6 +76,8 @@ class HttpQueryStringAuth(Authentication):
                     auth=auth,
                 )
                 response.raise_for_status()
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except RequestException as e:
                 raise AuthenticationError(f"Could no authenticate: {str(e)}")
 

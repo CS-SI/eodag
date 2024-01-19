@@ -58,7 +58,12 @@ from eodag.utils import (
     path_to_uri,
     rename_subfolder,
 )
-from eodag.utils.exceptions import AuthenticationError, DownloadError, NotAvailableError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    DownloadError,
+    NotAvailableError,
+    TimeOutError,
+)
 
 if TYPE_CHECKING:
     from boto3.resources.collection import ResourceCollection
@@ -294,7 +299,12 @@ class AwsDownload(Download):
                 **product.properties
             )
             logger.info("Fetching extra metadata from %s" % fetch_url)
-            resp = requests.get(fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT)
+            try:
+                resp = requests.get(
+                    fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                )
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             update_metadata = mtd_cfg_as_conversion_and_querypath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()
