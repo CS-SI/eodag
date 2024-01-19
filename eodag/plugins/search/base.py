@@ -200,6 +200,15 @@ class Search(PluginTopic):
                 )
             sort_order = sort_by_param_arg[1]
             sort_by_param: Union[Tuple[str, str], Dict[str, str]]
+            # TODO: remove this code block when search args model validation is embeded
+            sort_order = sort_order.strip().upper()
+            if sort_order[:3] != "ASC" and sort_order[:3] != "DES":
+                raise ValidationError(
+                    "Sorting order is invalid: it must be set to 'ASC' (ASCENDING) or "
+                    f"'DESC' (DESCENDING), got '{sort_order}' with '{eodag_sort_param}' instead"
+                )
+            sort_order = sort_order[:3]
+
             if sort_order == "ASC" and self.config.sort.get("sort_url_tpl"):
                 sort_by_param = (provider_sort_param, "asc")
             elif sort_order == "ASC":
