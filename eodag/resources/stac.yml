@@ -208,15 +208,7 @@ item:
     - rel: collection
       title: "{item[collection]}"
       href: "{catalog[url]}"
-  assets:
-    downloadLink:
-        title: 'Download link'
-        href: "{catalog[url]}/items/{item[id]}/download"
-        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-        type: 'application/zip'
-        _dc_qs: '$.product.properties._dc_qs'
-        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-    origin_assets: '$.product.assets'
+
 # product properties not needed in items
 metadata_ignore:
   - title

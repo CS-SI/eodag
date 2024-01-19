@@ -243,10 +243,6 @@ class StacItem(StacCommon):
             )
 
             product_dict = deepcopy(product.__dict__)
-            if isinstance(product.assets, dict):
-                product_dict["assets"] = product.assets
-            else:
-                product_dict["assets"] = product.assets.as_dict()
 
             product_item = jsonpath_parse_dict_items(
                 item_model,
@@ -255,63 +251,33 @@ class StacItem(StacCommon):
                     "providers": [provider_dict],
                 },
             )
-
             # parse download link
-            url_parts = urlparse(str(product_item["assets"]["downloadLink"]["href"]))
+            downloadlink_href = (
+                f"{catalog['url']}/items/{product.properties['title']}/download"
+            )
+            _dc_qs = product.properties.get("_dc_qs", None)
+            url_parts = urlparse(downloadlink_href)
             query_dict = parse_qs(url_parts.query)
             without_arg_url = (
                 f"{url_parts.scheme}://{url_parts.netloc}{url_parts.path}"
                 if url_parts.scheme
                 else f"{url_parts.netloc}{url_parts.path}"
             )
-
             # add provider to query-args
             if self.provider:
                 query_dict.update(provider=[self.provider])
             # add datacube query-string to query-args
-            _dc_qs = product_item["assets"]["downloadLink"].pop("_dc_qs", None)
             if _dc_qs:
                 query_dict.update(_dc_qs=_dc_qs)
-
-            # update download link with up-to-date query-args
             if query_dict:
-                product_item["assets"]["downloadLink"][
-                    "href"
-                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                downloadlink_href = (
+                    f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                )
 
-            # move origin asset urls to alternate links and replace with eodag-server ones
-            origin_assets = product_item["assets"].pop("origin_assets", {})
-            if getattr(product, "assets", False):
-                # replace origin asset urls with eodag-server ones
-                for asset_key, asset_value in origin_assets.items():
-                    # use origin asset as default
-                    product_item["assets"][asset_key] = asset_value
-                    # origin assets as alternate link
-                    product_item["assets"][asset_key]["alternate"] = {
-                        "origin": {
-                            "title": "Origin asset link",
-                            "href": asset_value["href"],
-                        }
-                    }
-                    # use server-mode assets download links
-                    asset_value["href"] = without_arg_url
-                    if query_dict:
-                        product_item["assets"][asset_key][
-                            "href"
-                        ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
-                    else:
-                        product_item["assets"][asset_key]["href"] += f"/{asset_key}"
-
-            if thumbnail_url := product.properties.get(
-                "quicklook", product.properties.get("thumbnail", None)
-            ):
-                product_item["assets"]["thumbnail"] = {
-                    "title": "Thumbnail",
-                    "href": thumbnail_url,
-                    "role": "thumbnail",
-                }
-                if mime_type := guess_file_type(thumbnail_url):
-                    product_item["assets"]["thumbnail"]["type"] = mime_type
+            # generate STAC assets
+            product_item["assets"] = self._get_assets(
+                product, downloadlink_href, without_arg_url, query_dict
+            )
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():
@@ -356,6 +322,63 @@ class StacItem(StacCommon):
             item_list.append(product_item)
 
         return item_list
+
+    def _get_assets(
+        self,
+        product: EOProduct,
+        downloadlink_href: str,
+        without_arg_url: str,
+        query_dict: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        assets: Dict[str, Any] = {}
+
+        # update download link with up-to-date query-args
+        assets["downloadLink"] = {
+            "title": "Download link",
+            "href": downloadlink_href,
+            "type": "application/zip",
+        }
+
+        # move origin asset urls to alternate links and replace with eodag-server ones
+        if getattr(product, "assets", False):
+            if isinstance(product.assets, dict):
+                origin_assets = product.assets
+            else:
+                origin_assets = product.assets.as_dict()
+            # replace origin asset urls with eodag-server ones
+            for asset_key, asset_value in origin_assets.items():
+                # use origin asset as default
+                assets[asset_key] = asset_value
+                # origin assets as alternate link
+                assets[asset_key]["alternate"] = {
+                    "origin": {
+                        "title": "Origin asset link",
+                        "href": asset_value["href"],
+                    }
+                }
+                # use server-mode assets download links
+                asset_value["href"] = without_arg_url
+                if query_dict:
+                    assets[asset_key][
+                        "href"
+                    ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
+                else:
+                    assets[asset_key]["href"] += f"/{asset_key}"
+                if asset_type := asset_value.get("type", None):
+                    assets[asset_key]["type"] = asset_type
+                    assets[asset_key]["alternate"]["type"] = asset_type
+
+        if thumbnail_url := product.properties.get(
+            "quicklook", product.properties.get("thumbnail", None)
+        ):
+            assets["thumbnail"] = {
+                "title": "Thumbnail",
+                "href": thumbnail_url,
+                "role": "thumbnail",
+            }
+            if mime_type := guess_file_type(thumbnail_url):
+                assets["thumbnail"]["type"] = mime_type
+        return assets
 
     def get_stac_items(
         self,
@@ -437,12 +460,10 @@ class StacItem(StacCommon):
                 if pt["ID"] == product_type
                 or ("alias" in pt and pt["alias"] == product_type)
             ][0]
-        except IndexError:
+        except IndexError as e:
             raise NoMatchingProductType(
-                "Product type {} not available for {}".format(
-                    product_type, self.provider
-                )
-            )
+                f"Product type {product_type} not available for {self.provider}"
+            ) from e
 
         result_item_model = deepcopy(item_model)
         result_item_model["stac_extensions"] = list(
@@ -926,12 +947,12 @@ class StacCatalog(StacCommon):
         extent_date_min, extent_date_max = self.get_datetime_extent()
 
         datetime_min = max(
-            [extent_date_min, dateutil.parser.parse("{}-01-01T00:00:00Z".format(year))]
+            [extent_date_min, dateutil.parser.parse(f"{year}-01-01T00:00:00Z")]
         )
         datetime_max = min(
             [
                 extent_date_max,
-                dateutil.parser.parse("{}-01-01T00:00:00Z".format((year)))
+                dateutil.parser.parse(f"{year}-01-01T00:00:00Z")
                 + relativedelta(years=1),
             ]
         )
@@ -956,13 +977,13 @@ class StacCatalog(StacCommon):
         datetime_min = max(
             [
                 extent_date_min,
-                dateutil.parser.parse("{}-{}-01T00:00:00Z".format(year, month)),
+                dateutil.parser.parse(f"{year}-{month}-01T00:00:00Z"),
             ]
         )
         datetime_max = min(
             [
                 extent_date_max,
-                dateutil.parser.parse("{}-{}-01T00:00:00Z".format(year, month))
+                dateutil.parser.parse(f"{year}-{month}-01T00:00:00Z")
                 + relativedelta(months=1),
             ]
         )
@@ -988,13 +1009,13 @@ class StacCatalog(StacCommon):
         datetime_min = max(
             [
                 extent_date_min,
-                dateutil.parser.parse("{}-{}-{}T00:00:00Z".format(year, month, day)),
+                dateutil.parser.parse(f"{year}-{month}-{day}T00:00:00Z"),
             ]
         )
         datetime_max = min(
             [
                 extent_date_max,
-                dateutil.parser.parse("{}-{}-{}T00:00:00Z".format(year, month, day))
+                dateutil.parser.parse(f"{year}-{month}-{day}T00:00:00Z")
                 + relativedelta(days=1),
             ]
         )
@@ -1122,16 +1143,14 @@ class StacCatalog(StacCommon):
         """
 
         if catalog_name not in self.stac_config["catalogs"]:
-            logger.warning(
-                "no entry found for {} in location_config".format(catalog_name)
-            )
+            logger.warning("no entry found for %s in location_config", catalog_name)
             return []
         location_config = self.stac_config["catalogs"][catalog_name]
 
         for k in ["path", "attr"]:
             if k not in location_config.keys():
                 logger.warning(
-                    "no {} key found for {} in location_config".format(k, catalog_name)
+                    "no %s key found for %s in location_config", k, catalog_name
                 )
                 return []
         path = location_config["path"]
@@ -1163,7 +1182,7 @@ class StacCatalog(StacCommon):
 
         if location_list_cat_key not in self.stac_config["catalogs"]:
             logger.warning(
-                "no entry found for {}'s list in location_config".format(catalog_name)
+                "no entry found for %s's list in location_config", catalog_name
             )
             return {}
         location_config = self.stac_config["catalogs"][location_list_cat_key]
@@ -1171,9 +1190,7 @@ class StacCatalog(StacCommon):
         for k in ["path", "attr"]:
             if k not in location_config.keys():
                 logger.warning(
-                    "no {} key found for {}'s list in location_config".format(
-                        k, catalog_name
-                    )
+                    "no %s key found for %s's list in location_config", k, catalog_name
                 )
                 return {}
         path = location_config["path"]
@@ -1188,7 +1205,7 @@ class StacCatalog(StacCommon):
 
         if len(geom_hits) == 0:
             logger.warning(
-                "no feature found in %s matching %s=%s" % (path, attr, location)
+                "no feature found in %s matching %s=%s", path, attr, location
             )
             return {}
 
@@ -1226,9 +1243,9 @@ class StacCatalog(StacCommon):
             )
 
             # set default child/parent for this location
-            parsed["location"]["parent_key"] = "{}_list".format(loc["name"])
+            parsed["location"]["parent_key"] = f"{loc['name']}_list"
 
-            locations_config["{}_list".format(loc["name"])] = parsed["locations_list"]
+            locations_config[f"{loc['name']}_list"] = parsed["locations_list"]
             locations_config[loc["name"]] = parsed["location"]
 
         return locations_config
@@ -1296,12 +1313,11 @@ class StacCatalog(StacCommon):
                 cat_data_value = cat
 
                 # update data
+                cat_data_name_dict = self.stac_config["catalogs"][cat_data_name]
                 set_data_method_name = (
-                    "set_stac_%s_by_id" % cat_data_name
-                    if "catalog_type"
-                    not in self.stac_config["catalogs"][cat_data_name].keys()
-                    else "set_stac_%s_by_id"
-                    % self.stac_config["catalogs"][cat_data_name]["catalog_type"]
+                    f"set_stac_{cat_data_name}_by_id"
+                    if "catalog_type" not in cat_data_name_dict.keys()
+                    else f"set_stac_{cat_data_name_dict['catalog_type']}_by_id"
                 )
                 set_data_method = getattr(self, set_data_method_name)
                 set_data_method(cat_data_value, catalog_name=cat_data_name)
@@ -1365,21 +1381,20 @@ class StacCatalog(StacCommon):
                         for c in self.stac_config["catalogs"].keys()
                         if self.stac_config["catalogs"][c]["model"]["id"] == cat
                     ][0]
-                except IndexError:
+                except IndexError as e:
                     raise ValidationError(
-                        "Bad settings for %s in stac_config catalogs" % cat
-                    )
+                        f"Bad settings for {cat} in stac_config catalogs"
+                    ) from e
                 cat_config = deepcopy(self.stac_config["catalogs"][cat_key])
                 # update data
                 self.__update_data_from_catalog_config(cat_config)
 
                 # get filtering values list
                 get_data_method_name = (
-                    "get_stac_%s" % cat_key
+                    f"get_stac_{cat_key}"
                     if "catalog_type"
                     not in self.stac_config["catalogs"][cat_key].keys()
-                    else "get_stac_%s"
-                    % self.stac_config["catalogs"][cat_key]["catalog_type"]
+                    else f"get_stac_{self.stac_config['catalogs'][cat_key]['catalog_type']}"
                 )
                 get_data_method = getattr(self, get_data_method_name)
                 cat_data_list = get_data_method(catalog_name=cat_key)
