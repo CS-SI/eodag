@@ -26,7 +26,7 @@ import pytest
 
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
-from tests.context import SearchResult
+from tests.context import RequestError, SearchResult
 
 
 class TestStacUtils(unittest.TestCase):
@@ -417,6 +417,24 @@ class TestStacUtils(unittest.TestCase):
             call_kwargs.items(),
         )
         self.assertEqual(call_kwargs["geometry"].bounds, (0.25, 43.2, 2.8, 43.9))
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.do_search",
+        autospec=True,
+        side_effect=RequestError,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.count_hits",
+        autospec=True,
+        side_effect=RequestError,
+    )
+    def test_search_products_fail(self, mock_count_hits, mock_do_search):
+        """search_products fail must return an error"""
+        with self.assertRaisesRegex(
+            RequestError,
+            r"No result could be obtained from any available provider",
+        ):
+            self.rest_utils.search_products("S2_MSI_L1C", {})
 
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch._request",

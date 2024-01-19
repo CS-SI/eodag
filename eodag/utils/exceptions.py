@@ -15,6 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Set, Tuple
 
 
 class ValidationError(Exception):
@@ -70,8 +76,16 @@ class NotAvailableError(Exception):
 
 
 class RequestError(Exception):
-    """An error indicating that a HTTP request has failed. Usually eodag functions
+    """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""
+
+    history: Set[Tuple[Exception, str]] = set()
+
+    def __str__(self):
+        repr = super().__str__()
+        for err_tuple in self.history:
+            repr += f"\n- {str(err_tuple)}"
+        return repr
 
 
 class NoMatchingProductType(Exception):
