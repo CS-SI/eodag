@@ -35,7 +35,10 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.product.metadata_mapping import (
+    mtd_cfg_as_conversion_and_querypath,
+    properties_from_json,
+)
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PluginConfig,
@@ -217,6 +220,45 @@ class EODataAccessGateway:
         self.set_locations_conf(locations_conf_path)
         self.search_errors: Set = set()
 
+    def load_external_product_types_metadata(
+        self, product_type_conf: Dict[str, Any]
+    ) -> None:
+        """Load external enhanced metadata for a specific product type.
+        Existing keys are not updated. Lists are merged also for existing keys.
+
+        :param product_type_conf: Product type configuration to update with the external
+            metadata.
+        :type product_type_conf: Dict[str, Any]
+        """
+        external_metadata_path = product_type_conf.get("stacCollection")
+        if not external_metadata_path:
+            return None
+        logger.info(
+            f"Fetching external enhanced metadata for product type {product_type_conf['ID']}"
+        )
+        stac_provider_config = load_stac_provider_config()
+        parsable_metadata = stac_provider_config["search"]["discover_product_types"][
+            "generic_product_type_parsable_metadata"
+        ]
+        parsable_metadata = mtd_cfg_as_conversion_and_querypath(parsable_metadata)
+        external_metadata = get_ext_product_types_conf(external_metadata_path)
+        ext_product_type_conf = properties_from_json(
+            external_metadata,
+            parsable_metadata,
+        )
+        # Merge `ext_product_type_conf` into `self.product_type_conf`
+        for ext_cfg_k, ext_cfg_v in ext_product_type_conf.items():
+            old_value = product_type_conf.get(ext_cfg_k)
+            if old_value is None:
+                product_type_conf[ext_cfg_k] = ext_cfg_v
+            elif ext_cfg_k in ("instrument", "platformSerialIdentifier", "keywords"):
+                merged_values = old_value.split(",")
+                new_values = ext_cfg_v.split(",")
+                for v in new_values:
+                    if v not in merged_values:
+                        merged_values.append(v)
+                product_type_conf[ext_cfg_k] = ",".join(merged_values)
+
     def get_version(self) -> str:
         """Get eodag package version"""
         return pkg_resources.get_distribution("eodag").version
@@ -288,6 +330,7 @@ class EODataAccessGateway:
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
+                stacCollection=fields.STORED,
             )
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()

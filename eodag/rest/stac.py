@@ -710,6 +710,7 @@ class StacCollection(StacCommon):
                 providers_models.append(provider_m)
 
             # parse jsonpath
+            self.eodag_api.load_external_product_types_metadata(product_type)
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
