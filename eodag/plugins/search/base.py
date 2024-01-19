@@ -20,8 +20,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
-from typing_extensions import Annotated
-
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
@@ -172,12 +170,11 @@ class Search(PluginTopic):
         self.sort_by_params = list(set(self.sort_by_params))
         sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]]
         if self.config.sort.get("sort_url_tpl"):
+            sort_by_provider_keyword = None
             sort_by_params = ""
         else:
-            sort_by_keyword_in_search_body = list(
-                self.config.sort["sort_body_tpl"].keys()
-            )[0]
-            sort_by_params = {sort_by_keyword_in_search_body: []}
+            sort_by_provider_keyword = list(self.config.sort["sort_body_tpl"].keys())[0]
+            sort_by_params = {sort_by_provider_keyword: []}
         sort_by_params_tmp = []
         for sort_by_param_arg in self.sort_by_params:
             # Remove leading and trailing whitespace(s) if exist
@@ -215,9 +212,9 @@ class Search(PluginTopic):
                 # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
                 # then their sorting order is different and there is a contradiction that would raise an error
                 if (
-                    self.config.sort.get("sort_url_tpl")
+                    isinstance(sort_by_param, tuple)
                     and sort_by_param[0] == sort_by_param_tmp[0]
-                    or self.config.sort.get("sort_body_tpl")
+                    or isinstance(sort_by_param, dict)
                     and sort_by_param["field"] == sort_by_param_tmp["field"]
                 ):
                     raise ValidationError(
@@ -239,11 +236,16 @@ class Search(PluginTopic):
                         self.config.sort["max_sort_params"], self.provider
                     )
                 )
-            if self.config.sort.get("sort_url_tpl"):
+            if isinstance(sort_by_params, str) and isinstance(sort_by_param, tuple):
                 sort_by_params += self.config.sort["sort_url_tpl"].format(
                     sort_param=sort_by_param[0], sort_order=sort_by_param[1]
                 )
             else:
-                sort_by_params[sort_by_keyword_in_search_body].append(sort_by_param)
+                assert (
+                    isinstance(sort_by_params, dict)
+                    and sort_by_provider_keyword
+                    and isinstance(sort_by_param, dict)
+                )
+                sort_by_params[sort_by_provider_keyword].append(sort_by_param)
         self.sort_by_params = sort_by_params
         return None
