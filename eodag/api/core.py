@@ -22,7 +22,7 @@ import os
 import re
 import shutil
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 import geojson
 import pkg_resources
@@ -193,6 +193,7 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
+        self.search_errors: Set = set()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -1015,6 +1016,8 @@ class EODataAccessGateway:
             page=page,
             items_per_page=items_per_page,
         )
+
+        self.search_errors = set()
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1765,7 +1768,7 @@ class EODataAccessGateway:
                         "available in the searched collection (e.g. SENTINEL2) instead of "
                         "the total number of products matching the search criteria"
                     )
-        except Exception:
+        except Exception as e:
             log_msg = f"No result from provider '{search_plugin.provider}' due to an error during search."
             if not raise_errors:
                 log_msg += " Raise verbosity of log messages for details"
@@ -1779,6 +1782,7 @@ class EODataAccessGateway:
                     "Error while searching on provider %s (ignored):",
                     search_plugin.provider,
                 )
+                self.search_errors.add((search_plugin.provider, e))
         return SearchResult(results), total_results
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:

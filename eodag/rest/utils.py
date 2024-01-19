@@ -67,6 +67,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
+    RequestError,
     UnsupportedProductType,
     ValidationError,
 )
@@ -502,6 +503,14 @@ def search_products(
         criterias = dict((k, v) for k, v in criterias.items() if v is not None)
 
         products, total = eodag_api.search(**criterias)
+
+        if not products and eodag_api.search_errors:
+            search_error = RequestError(
+                "No result could be obtained from any available provider and following "
+                "error(s) appeared while searching:"
+            )
+            search_error.history = eodag_api.search_errors
+            raise search_error
 
         products = filter_products(products, arguments, **criterias)
 
