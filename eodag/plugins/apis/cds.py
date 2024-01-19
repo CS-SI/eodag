@@ -48,6 +48,7 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     Annotated,
+    StreamResponse,
     datetime_range,
     deepcopy,
     get_geometry_from_various,
@@ -403,7 +404,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> StreamResponse:
         """Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers."""
 

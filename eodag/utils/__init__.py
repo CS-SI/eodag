@@ -38,6 +38,7 @@ import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
+from dataclasses import dataclass
 from datetime import datetime as dt
 from email.message import Message
 from glob import glob
@@ -52,6 +53,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -1413,3 +1415,12 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
         return eval(value.capitalize())
 
     return new_type(value)
+
+
+@dataclass
+class StreamResponse:
+    """Represents a streaming response"""
+
+    content: Iterator[bytes]
+    headers: Optional[Mapping[str, str]] = None
+    media_type: Optional[str] = None

@@ -18,23 +18,36 @@
 """EODAG REST utils"""
 from __future__ import annotations
 
+import glob
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional
+import os
+from io import BufferedReader
+from shutil import make_archive, rmtree
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+)
 from urllib.parse import unquote_plus, urlencode
 
 import orjson
 from fastapi import Request
+from pydantic import ValidationError as pydanticValidationError
 
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.utils import StreamResponse
+from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
     from eodag.rest.types.stac_search import SearchPostRequest
 
-from pydantic import ValidationError as pydanticValidationError
-
-from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.rest.utils")
 
@@ -150,3 +163,51 @@ def get_next_link(
     if request.method == "POST":
         next["body"] = body
     return next
+
+
+def read_file_chunks_and_delete(
+    opened_file: BufferedReader, chunk_size: int = 64 * 1024
+) -> Iterator[bytes]:
+    """Yield file chunks and delete file when finished."""
+    while True:
+        data = opened_file.read(chunk_size)
+        if not data:
+            opened_file.close()
+            os.remove(opened_file.name)
+            logger.debug("%s deleted after streaming complete", opened_file.name)
+            break
+        yield data
+    yield data
+
+
+def file_to_stream(
+    file_path: str,
+) -> StreamResponse:
+    """Break a file into chunck and return it as a byte stream"""
+    if os.path.isdir(file_path):
+        # do not zip if dir contains only one file
+        all_filenames = [
+            f
+            for f in glob.glob(os.path.join(file_path, "**", "*"), recursive=True)
+            if os.path.isfile(f)
+        ]
+        if len(all_filenames) == 1:
+            filepath_to_stream = all_filenames[0]
+        else:
+            filepath_to_stream = f"{file_path}.zip"
+            logger.debug(
+                "Building archive for downloaded product path %s",
+                filepath_to_stream,
+            )
+            make_archive(file_path, "zip", file_path)
+            rmtree(file_path)
+    else:
+        filepath_to_stream = file_path
+
+    filename = os.path.basename(filepath_to_stream)
+    return StreamResponse(
+        content=read_file_chunks_and_delete(open(filepath_to_stream, "rb")),
+        headers={
+            "content-disposition": f"attachment; filename={filename}",
+        },
+    )
