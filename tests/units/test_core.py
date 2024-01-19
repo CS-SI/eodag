@@ -1265,7 +1265,28 @@ class TestCore(TestCoreBase):
         )
         self.assertDictEqual(sortables, expected_result)
 
-        # TODO: provider supports the sorting feature and does not have a maximum number of sortables
+        # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
+        # to None when the provider supports the sorting feature and does not have a maximum number of sortables
+        expected_result = {
+            "planetary_computer": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "platformSerialIdentifier",
+                ],
+                "max_sort_params": None,
+            }
+        }
+        sortables = self.dag.list_sortables(provider="planetary_computer")
+        self.assertTrue(
+            hasattr(self.dag.providers_config["planetary_computer"].search, "sort")
+        )
+        self.assertFalse(
+            self.dag.providers_config["planetary_computer"].search.sort.get(
+                "max_sort_params"
+            )
+        )
+        self.assertDictEqual(sortables, expected_result)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
