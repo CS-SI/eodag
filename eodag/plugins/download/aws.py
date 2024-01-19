@@ -304,7 +304,7 @@ class AwsDownload(Download):
                     fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
                 )
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(str(exc))
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             update_metadata = mtd_cfg_as_conversion_and_querypath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()

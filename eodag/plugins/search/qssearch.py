@@ -962,7 +962,7 @@ class ODataV4Search(QueryStringSearch):
                     )
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
-                    raise TimeOutError(str(exc))
+                    raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
                 except requests.RequestException:
                     logger.exception(
                         "Skipping error while searching for %s %s instance:",
@@ -1197,6 +1197,7 @@ class PostJsonSearch(QueryStringSearch):
         info_message: Optional[str] = None,
         exception_message: Optional[str] = None,
     ) -> Response:
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         try:
             # auth if needed
             kwargs = {}
@@ -1217,12 +1218,12 @@ class PostJsonSearch(QueryStringSearch):
                 url,
                 json=self.query_params,
                 headers=USER_AGENT,
-                timeout=getattr(self.config, "timeout", HTTP_REQ_TIMEOUT),
+                timeout=timeout,
                 **kwargs,
             )
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=timeout) from exc
         except (requests.RequestException, URLError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])

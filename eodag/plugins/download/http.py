@@ -169,7 +169,7 @@ class HTTPDownload(Download):
                 logger.debug(ordered_message)
                 logger.info("%s was ordered", product.properties["title"])
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(str(exc))
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except RequestException as e:
                 if e.response and hasattr(e.response, "content"):
                     error_message = f"{e.response.content.decode('utf-8')} - {e}"
@@ -363,7 +363,7 @@ class HTTPDownload(Download):
                         )
 
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(str(exc))
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
@@ -685,7 +685,9 @@ class HTTPDownload(Download):
                 self.stream.raise_for_status()
 
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(str(exc))
+                raise TimeOutError(
+                    exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
+                ) from exc
             except RequestException as e:
                 self._process_exception(e, product, ordered_message)
             else:
@@ -798,7 +800,9 @@ class HTTPDownload(Download):
                 try:
                     stream.raise_for_status()
                 except requests.exceptions.Timeout as exc:
-                    raise TimeOutError(str(exc))
+                    raise TimeOutError(
+                        exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
+                    ) from exc
                 except RequestException as e:
                     raise_errors = True if len(assets_values) == 1 else False
                     self._handle_asset_exception(e, asset, raise_errors=raise_errors)

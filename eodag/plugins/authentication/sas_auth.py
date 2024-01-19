@@ -68,7 +68,7 @@ class RequestsSASAuth(AuthBase):
                 response.raise_for_status()
                 signed_url = response.json().get(self.signed_url_key)
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(str(exc))
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except (requests.RequestException, JSONDecodeError, KeyError) as e:
                 raise AuthenticationError(f"Could no get signed url: {str(e)}")
             else:

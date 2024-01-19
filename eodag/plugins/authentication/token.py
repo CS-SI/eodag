@@ -99,7 +99,7 @@ class TokenAuth(Authentication):
                 )
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except RequestException as e:
             response_text = getattr(e.response, "text", "").strip()
             raise AuthenticationError(

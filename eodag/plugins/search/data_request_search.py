@@ -259,7 +259,7 @@ class DataRequestSearch(Search):
             )
             request_job.raise_for_status()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
             raise RequestError(
                 f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
@@ -277,7 +277,7 @@ class DataRequestSearch(Search):
             )
             delete_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
@@ -290,7 +290,7 @@ class DataRequestSearch(Search):
             )
             status_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
             raise RequestError(f"_check_request_status failed: {str(e)}")
         else:
@@ -320,7 +320,7 @@ class DataRequestSearch(Search):
                 url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
             ).json()
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException:
             logger.error(f"Result could not be retrieved for {url}")
         return {}

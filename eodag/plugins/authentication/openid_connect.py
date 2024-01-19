@@ -155,7 +155,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         try:
             token = self.exchange_code_for_token(exchange_url, state)
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(str(exc))
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except Exception:
             import traceback as tb
 
