@@ -42,6 +42,7 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
+    guess_file_type,
     jsonpath_parse_dict_items,
     string_to_jsonpath,
     update_nested_dict,
@@ -300,6 +301,17 @@ class StacItem(StacCommon):
                         ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
                     else:
                         product_item["assets"][asset_key]["href"] += f"/{asset_key}"
+
+            if thumbnail_url := product.properties.get(
+                "quicklook", product.properties.get("thumbnail", None)
+            ):
+                product_item["assets"]["thumbnail"] = {
+                    "title": "Thumbnail",
+                    "href": thumbnail_url,
+                    "role": "thumbnail",
+                }
+                if mime_type := guess_file_type(thumbnail_url):
+                    product_item["assets"]["thumbnail"]["type"] = mime_type
 
             # apply conversion if needed
             for prop_key, prop_val in need_conversion.items():

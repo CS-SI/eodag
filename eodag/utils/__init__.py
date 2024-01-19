@@ -29,6 +29,7 @@ import functools
 import hashlib
 import inspect
 import logging as py_logging
+import mimetypes
 import os
 import re
 import shutil
@@ -1424,3 +1425,10 @@ class StreamResponse:
     content: Iterator[bytes]
     headers: Optional[Mapping[str, str]] = None
     media_type: Optional[str] = None
+
+
+def guess_file_type(file: str) -> Optional[str]:
+    """guess the mime type of a file or URL based on its extension"""
+    mimetypes.add_type("text/xml", ".xsd")
+    mime_type, _ = mimetypes.guess_type(file, False)
+    return mime_type
