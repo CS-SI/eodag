@@ -436,6 +436,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -445,6 +446,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -473,7 +475,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(500, response.status_code)
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         side_effect=TimeOutError("too long"),
     )
@@ -500,6 +502,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(result1.features), 2)
@@ -510,6 +513,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
+                raise_errors=False,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -526,6 +530,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -536,6 +541,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -546,6 +552,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -557,6 +564,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -569,6 +577,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -580,6 +589,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -594,6 +604,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-01T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -608,6 +619,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -622,6 +634,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -654,6 +667,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
+                raise_errors=False,
             ),
         )
         # args & catalog intersection
@@ -665,6 +679,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -675,6 +690,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -685,6 +701,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00Z",
                 end="2018-01-05T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -695,6 +712,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-05T00:00:00Z",
                 end="2018-01-05T00:00:00Z",
+                raise_errors=False,
             ),
         )
         result = self._request_valid(
@@ -747,6 +765,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 cloudCover=10,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -767,6 +786,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -785,6 +805,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00Z",
                 end="2018-01-25T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -799,6 +820,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -813,6 +835,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -828,6 +851,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00Z",
                 end="2018-01-20T00:00:00Z",
+                raise_errors=False,
             ),
         )
 

@@ -223,7 +223,7 @@ class TestStacCore(unittest.TestCase):
     )
     def test_search_stac_items_with_stac_providers(self, mock__request):
         """search_stac_items runs without any error with stac providers"""
-        # mock the PostJsonSearch request with the S2_MSI_L2A earth_search response search dictionary
+        # mock the PostJsonSearch request with the S2_MSI_L1C earth_search response search dictionary
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = (
             self.earth_search_resp_search_json
@@ -233,7 +233,7 @@ class TestStacCore(unittest.TestCase):
         response = self.rest_core.search_stac_items(
             request=mock_request("http://foo/search"),
             search_request=SearchPostRequest.model_validate(
-                {"collections": "S2_MSI_L2A", "provider": "earth_search"}
+                {"collections": "S2_MSI_L1C", "provider": "earth_search"}
             ),
         )
 
@@ -245,16 +245,22 @@ class TestStacCore(unittest.TestCase):
         )
         # check that assets from the provider response search are reformatted in the response
         product_id = self.earth_search_resp_search_json["features"][0]["properties"][
-            "sentinel:product_id"
-        ]
+            "s2:product_uri"
+        ].replace(".SAFE", "")
         for k in self.earth_search_resp_search_json["features"][0]["assets"]:
             self.assertIn(k, response["features"][0]["assets"].keys())
             if k == "thumbnail":
                 self.assertTrue(response["features"][0]["assets"][k]["href"])
                 continue
+            # check asset server-mode download link
             self.assertEqual(
                 response["features"][0]["assets"][k]["href"],
-                f"http://foo/collections/S2_MSI_L2A/items/{product_id}/download/{k}?provider=earth_search",
+                f"http://foo/collections/S2_MSI_L1C/items/{product_id}/download/{k}?provider=earth_search",
+            )
+            # check asset origin download link
+            self.assertEqual(
+                response["features"][0]["assets"][k]["alternate"]["origin"]["href"],
+                self.earth_search_resp_search_json["features"][0]["assets"][k]["href"],
             )
         # preferred provider should not be changed
         self.assertEqual("peps", self.rest_core.eodag_api.get_preferred_provider()[0])

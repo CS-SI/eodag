@@ -222,6 +222,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "value",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -231,6 +232,7 @@ class TestEODAGSearch(unittest.TestCase):
             "collection": "value",
             "bbox": "value",
             "intersects": {"type": "Point", "coordinates": [1, 1]},
+            "raise_errors": False,
         }
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
@@ -240,6 +242,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "value",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -257,6 +260,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "value",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -272,6 +276,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collections",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -286,6 +291,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -299,6 +305,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_producttype",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -333,6 +340,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -422,6 +430,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -435,6 +444,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -452,6 +462,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -469,6 +480,7 @@ class TestEODAGSearch(unittest.TestCase):
             {
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -488,6 +500,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
@@ -506,6 +519,7 @@ class TestEODAGSearch(unittest.TestCase):
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,
+                "raise_errors": False,
             },
         )
 
