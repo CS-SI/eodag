@@ -82,13 +82,13 @@ class EODAGSearch(BaseModel):
     ids: Optional[List[str]] = Field(None)
     id: Optional[List[str]] = Field(None, alias="ids")
     geom: Optional[Geometry] = Field(None, alias="geometry")
-    start: Optional[str] = Field(
+    start: Optional[str] = Field(None, alias="start_datetime")
+    end: Optional[str] = Field(None, alias="end_datetime")
+    startTimeFromAscendingNode: Optional[str] = Field(
         None,
         alias="start_datetime",
         validation_alias=AliasChoices("start_datetime", "datetime"),
     )
-    end: Optional[str] = Field(None, alias="end_datetime")
-    startTimeFromAscendingNode: Optional[str] = Field(None, alias="start_datetime")
     completionTimeFromAscendingNode: Optional[str] = Field(None, alias="end_datetime")
     publicationDate: Optional[str] = Field(None, alias="published")
     creationDate: Optional[str] = Field(None, alias="created")
@@ -115,8 +115,17 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
+    sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
+    raise_errors: bool = False
 
     _to_eodag_map: Dict[str, str] = PrivateAttr()
+
+    @model_validator(mode="after")
+    def set_raise_errors(self) -> Self:
+        """Set raise_errors to True if provider is set"""
+        if self.provider:
+            self.raise_errors = True
+        return self
 
     @model_validator(mode="after")
     def remove_timeFromAscendingNode(self) -> Self:  # pylint: disable=invalid-name

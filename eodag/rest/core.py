@@ -28,13 +28,6 @@ from pydantic import ValidationError as pydanticValidationError
 
 import eodag
 from eodag import EOProduct
-from eodag.utils import GENERIC_PRODUCT_TYPE, _deprecated, dict_items_recursive_apply
-from eodag.utils.exceptions import (
-    NoMatchingProductType,
-    NotAvailableError,
-    RequestError,
-    ValidationError,
-)
 from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config
@@ -52,7 +45,13 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-
+from eodag.utils import GENERIC_PRODUCT_TYPE, _deprecated, dict_items_recursive_apply
+from eodag.utils.exceptions import (
+    MisconfiguredError,
+    NoMatchingProductType,
+    NotAvailableError,
+    ValidationError,
+)
 
 eodag_api = eodag.EODataAccessGateway()
 
@@ -147,7 +146,6 @@ def search_stac_items(
 
     catalog_url = re.sub("/items.*", "", request.state.url)
 
-    # TODO: catalog search_args should be in EODAG format
     catalog = StacCatalog(
         url=catalog_url
         if catalogs
@@ -590,7 +588,10 @@ def crunch_products(
         config_param_value = kwargs.get(config_param)
         if not config_param_value:
             raise ValidationError(
-                f'cruncher {cruncher} require additional parameters: {", ".join(cruncher.config_params)}'
+                (
+                    f"cruncher {cruncher} require additional parameters:"
+                    f' {", ".join(cruncher.config_params)}'
+                )
             )
         cruncher_config[config_param] = config_param_value
 
