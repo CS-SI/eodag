@@ -1005,6 +1005,7 @@ class EODataAccessGateway:
             search_kwargs.update(
                 page=1,
                 items_per_page=2,
+                raise_errors=raise_errors,
             )
             return self._search_by_id(
                 search_kwargs.pop("id"), provider=provider, **search_kwargs
