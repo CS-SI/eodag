@@ -21,12 +21,14 @@ import logging
 import os
 import re
 from datetime import datetime
+from itertools import chain
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Match,
     Optional,
@@ -643,15 +645,28 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-
+        assets_values = self.get_assets_values(product, **kwargs)
         chunks_tuples = self._stream_download(
-            unique_product_chunks, product, build_safe, progress_callback
+            unique_product_chunks, product, build_safe, progress_callback, assets_values
         )
         outputs_filename = (
             sanitize(product.properties["title"])
             if "title" in product.properties
             else sanitize(product.properties.get("id", "download"))
         )
+
+        if len(assets_values) == 1:
+            first_chunks_tuple = next(chunks_tuples)
+            # update headers
+            filename = os.path.basename(list(unique_product_chunks)[0].key)
+            headers = {"content-disposition": f"attachment; filename={filename}"}
+            if assets_values[0].get("type", None):
+                headers["content-type"] = assets_values[0]["type"]
+
+            return dict(
+                content=chain(iter([first_chunks_tuple]), chunks_tuples),
+                headers=headers,
+            )
         return dict(
             content=stream_zip(chunks_tuples),
             media_type="application/zip",
@@ -666,7 +681,8 @@ class AwsDownload(Download):
         product: EOProduct,
         build_safe: bool,
         progress_callback: ProgressCallback,
-    ):
+        assets_values: List[Dict[str, Any]],
+    ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
         def yield_parts(body, progress_callback):
             for b in body:
                 progress_callback(len(b))
@@ -695,14 +711,18 @@ class AwsDownload(Download):
                 body = product_chunk.get(Range=f"bytes={chunk_start}-{chunk_end}")[
                     "Body"
                 ]
+
                 if body:
-                    yield (
-                        chunk_rel_path,
-                        modified_at,
-                        perms,
-                        NO_COMPRESSION_64,
-                        yield_parts(body, progress_callback),
-                    )
+                    if len(assets_values) == 1:
+                        yield from yield_parts(body, progress_callback)
+                    else:
+                        yield (
+                            chunk_rel_path,
+                            modified_at,
+                            perms,
+                            NO_COMPRESSION_64,
+                            yield_parts(body, progress_callback),
+                        )
                 chunk_start += chunk_size
                 chunk_end += chunk_size
 
