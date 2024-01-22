@@ -1,19 +1,38 @@
+# -*- coding: utf-8 -*-
+# Copyright 2024, CS Systemes d'Information, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import logging
 from copy import deepcopy
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
+from overrides.typing_utils import unknown
 
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
-from eodag.utils import USER_AGENT
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
+from eodag.utils.exceptions import TimeOutError, ValidationError
 
 logger = logging.getLogger("eodag.constraints")
 
 
 def get_constraint_queryables_with_additional_params(
-    constraints: list,
+    constraints: List[unknown],
     params: Dict[str, Any],
     plugin: Union[Search, Api],
     product_type: str,
@@ -22,7 +41,7 @@ def get_constraint_queryables_with_additional_params(
     gets the queryables from the constraints using the given parameters
     For all queryables only values matching the given parameters based on the constraints will be returned
     :param constraints: list of constraints fetched from the provider
-    :type constraints: list
+    :type constraints: List[unknown]
     :param params: conditions the constraints should fulfil
     :type params: dict
     :param plugin: search or api plugin that is used
@@ -30,7 +49,7 @@ def get_constraint_queryables_with_additional_params(
     :param product_type: product type for which the data should be fetched
     :type product_type: str
     :returns: dict containing queryable data
-    :rtype: Dict[str, Dict]
+    :rtype: Dict[unknown, Dict]
     """
     constraint_matches = {}
     params_available = {k: False for k in params.keys()}
@@ -54,7 +73,7 @@ def get_constraint_queryables_with_additional_params(
     # check if all parameters are available in the constraints
     for param, available in params_available.items():
         if not available:
-            raise NotAvailableError(f"parameter {param} is not queryable")
+            raise ValidationError(f"parameter {param} is not queryable")
 
     # add values of constraints matching params
     queryables = {}
@@ -70,11 +89,11 @@ def get_constraint_queryables_with_additional_params(
     # check if constraints matching params have been found
     if len(queryables) == 0:
         if len(params) > 1:
-            raise NotAvailableError(
+            raise ValidationError(
                 f"combination of values {str(params)} is not possible"
             )
         else:
-            raise NotAvailableError(
+            raise ValidationError(
                 f"value {list(params.values())[0]} not available for param {list(params.keys())[0]}, "
                 f"possible values: {str(values_available[list(params.keys())[0]])}"
             )
@@ -82,7 +101,9 @@ def get_constraint_queryables_with_additional_params(
     return queryables
 
 
-def fetch_constraints(constraints_url: str, plugin: Union[Search, Api]) -> list:
+def fetch_constraints(
+    constraints_url: str, plugin: Union[Search, Api]
+) -> List[Dict[unknown, unknown]]:
     """
     fetches the constraints from a provider
     :param constraints_url: url from which the constraints can be fetched
@@ -90,16 +111,25 @@ def fetch_constraints(constraints_url: str, plugin: Union[Search, Api]) -> list:
     :param plugin: api or search plugin of the provider
     :type plugin: Union[Search, Api]
     :returns: list of constraints fetched from the provider
-    :rtype: list
+    :rtype: List[Dict[unknown, unknown]]
     """
     try:
         headers = USER_AGENT
         logger.debug("fetching constraints from %s", constraints_url)
         if hasattr(plugin, "auth"):
-            res = requests.get(constraints_url, headers=headers, auth=plugin.auth)
+            res = requests.get(
+                constraints_url,
+                headers=headers,
+                auth=plugin.auth,
+                timeout=HTTP_REQ_TIMEOUT,
+            )
         else:
-            res = requests.get(constraints_url, headers=headers)
+            res = requests.get(
+                constraints_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
+            )
         res.raise_for_status()
+    except requests.exceptions.Timeout as exc:
+        raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
     except requests.exceptions.HTTPError as err:
         logger.error(
             "constraints could not be fetched from %s, error: %s",
@@ -125,7 +155,7 @@ def _get_provider_queryable_key(
     eodag_key: str,
     provider_queryables: Dict[str, Any],
     plugin: Union[Search, Api],
-    product_type: str = None,
+    product_type: Optional[str] = None,
 ) -> str:
     """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
     :param eodag_key: key in eodag
@@ -135,7 +165,7 @@ def _get_provider_queryable_key(
     :param plugin: plugin from which the config is taken
     :type plugin: Union[Api, Search]
     :param product_type: product type for which the metadata should be used
-    :type product_type: str
+    :type product_type: Optional[str]
     :returns: provider queryable key
     :rtype: str
     """
@@ -152,7 +182,18 @@ def _get_provider_queryable_key(
         return eodag_key
 
 
-def _get_metadata_mapping(plugin: Union[Search, Api], product_type: str = None):
+def _get_metadata_mapping(
+    plugin: Union[Search, Api], product_type: Optional[str] = None
+) -> Dict[str, Union[str, List[str]]]:
+    """returns the metadata mapping of the given plugin
+    if a product type is given, the mapping is updated with the product type specific mapping
+    :param plugin: plugin from which the config is taken
+    :type plugin: Union[Api, Search]
+    :param product_type: product type for which the metadata should be used
+    :type product_type: Optional[str]
+    :returns: metadata mapping
+    :rtype: Dict[str, Union[str, List[str]]]
+    """
     metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
 
     # product_type-specific metadata-mapping

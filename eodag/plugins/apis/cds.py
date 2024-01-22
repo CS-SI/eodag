@@ -28,10 +28,6 @@ import requests
 from dateutil.parser import isoparse
 from pydantic import create_model
 
-from eodag.api.constraints import (
-    fetch_constraints,
-    get_constraint_queryables_with_additional_params,
-)
 from eodag.api.product._assets import Asset
 from eodag.api.product.metadata_mapping import (
     get_queryable_from_provider,
@@ -55,6 +51,10 @@ from eodag.utils import (
     path_to_uri,
     urlencode,
     urlsplit,
+)
+from eodag.utils.constraints import (
+    fetch_constraints,
+    get_constraint_queryables_with_additional_params,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
 from eodag.utils.logging import get_logging_verbose

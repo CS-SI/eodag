@@ -2,10 +2,10 @@ import json
 import os
 import unittest
 
-from eodag.api.constraints import get_constraint_queryables_with_additional_params
 from eodag.config import load_default_config
 from eodag.plugins.manager import PluginManager
-from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.constraints import get_constraint_queryables_with_additional_params
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 
 
@@ -30,12 +30,12 @@ class TestConstraints(unittest.TestCase):
         self.assertSetEqual({"2000", "2001"}, queryable["enum"])
         self.assertNotIn("variable", queryables)
         # not existing parameter
-        with self.assertRaises(NotAvailableError):
+        with self.assertRaises(ValidationError):
             get_constraint_queryables_with_additional_params(
                 constraints, {"param": "f"}, plugin, "ERA5_SL"
             )
         # not existing value of parameter
-        with self.assertRaises(NotAvailableError):
+        with self.assertRaises(ValidationError):
             get_constraint_queryables_with_additional_params(
                 constraints, {"variable": "g"}, plugin, "ERA5_SL"
             )
