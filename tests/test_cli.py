@@ -18,7 +18,6 @@
 
 import logging
 import os
-import random
 import re
 import unittest
 from contextlib import contextmanager
@@ -593,17 +592,21 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_list_product_type_with_provider_ok(self):
         """Calling eodag list with provider should return all supported product types of specified provider"""  # noqa
-        provider = random.choice(test_core.TestCore.SUPPORTED_PROVIDERS)
-        provider_supported_product_types = [
-            pt
-            for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
-            if provider in provs
-            if pt != GENERIC_PRODUCT_TYPE
-        ]
-        result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
-        self.assertEqual(result.exit_code, 0)
-        for pt in provider_supported_product_types:
-            self.assertIn(pt, result.output)
+        for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
+            provider_supported_product_types = [
+                pt
+                for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
+                if provider in provs
+                if pt != GENERIC_PRODUCT_TYPE
+            ]
+            result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
+            self.assertEqual(result.exit_code, 0)
+            for pt in provider_supported_product_types:
+                self.assertIn(
+                    pt,
+                    result.output,
+                    f"{pt} was not found in {provider} supported product types",
+                )
 
     def test_eodag_list_product_type_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa
