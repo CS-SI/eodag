@@ -23,7 +23,6 @@ import socket
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest import mock
 
 import geojson
 from fastapi.testclient import TestClient
@@ -31,9 +30,7 @@ from shapely.geometry import box
 
 from eodag.utils import USER_AGENT, MockResponse
 from eodag.utils.exceptions import TimeOutError
-
 from tests import mock
-
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,

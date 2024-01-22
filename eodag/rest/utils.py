@@ -67,6 +67,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
+    RequestError,
     UnsupportedProductType,
     ValidationError,
 )
