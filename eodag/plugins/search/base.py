@@ -20,6 +20,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from pydantic.fields import FieldInfo
+
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
@@ -91,7 +93,14 @@ class Search(PluginTopic):
     def discover_queryables(
         self, product_type: Optional[str] = None, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf"""
+        """Fetch queryables list from provider using `discover_queryables` conf
+        :param product_type: (optional) product type
+        :type product_type: str
+        :param kwargs: additional filters for queryables
+        :type kwargs: Any
+        :returns: fetched queryable parameters dict
+        :rtype: Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]
+        """
         return None
 
     def map_product_type(

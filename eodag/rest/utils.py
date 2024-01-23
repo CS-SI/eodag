@@ -1077,7 +1077,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 
 def fetch_collection_queryable_properties(
-    collection_id: Optional[str] = None, provider: Optional[str] = None, **kwargs
+    collection_id: Optional[str] = None, provider: Optional[str] = None, **kwargs: Any
 ) -> Dict[str, StacQueryableProperty]:
     """Fetch the queryable properties for a collection.
 
@@ -1085,6 +1085,8 @@ def fetch_collection_queryable_properties(
     :type collection_id: str
     :param provider: (optional) The provider.
     :type provider: str
+    :param kwargs: additional filters for queryables
+    :type kwargs: Any
     :returns: A set containing the STAC standardized queryable properties for a collection.
     :rtype Dict[str, StacQueryableProperty]: set
     """

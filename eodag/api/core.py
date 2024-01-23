@@ -2130,6 +2130,8 @@ class EODataAccessGateway:
         :type provider: str
         :param product_type: (optional) The EODAG product type.
         :type product_type: str
+        :param kwargs: additional filters for queryables
+        :type kwargs: Any
         :returns: A dict containing the EODAG queryable properties, associating
                   parameters to their annotaded type
         :rtype: Dict[str, Annotated[Any, FieldInfo]]

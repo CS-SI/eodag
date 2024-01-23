@@ -27,6 +27,7 @@ import geojson
 import requests
 from dateutil.parser import isoparse
 from pydantic import create_model
+from pydantic.fields import FieldInfo
 
 from eodag.api.product._assets import Asset
 from eodag.api.product.metadata_mapping import (
@@ -434,11 +435,13 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
 
     def discover_queryables(
         self, product_type: Optional[str] = None, **kwargs: Optional[Dict[str, Any]]
-    ) -> Optional[Dict[str, Tuple[Annotated, Any]]]:
+    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
         :param product_type: (optional) product type
         :type product_type: str
+        :param kwargs: additional filters for queryables
+        :type kwargs: Any
         :returns: fetched queryable parameters dict
         :rtype: dict
         """

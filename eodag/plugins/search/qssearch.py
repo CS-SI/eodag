@@ -1288,8 +1288,10 @@ class StacSearch(PostJsonSearch):
 
         :param product_type: (optional) product type
         :type product_type: str
+        :param kwargs: additional filters for queryables
+        :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: dict
+        :rtype: Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]
         """
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)

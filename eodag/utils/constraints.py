@@ -21,7 +21,6 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-from overrides.typing_utils import unknown
 
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
@@ -32,7 +31,7 @@ logger = logging.getLogger("eodag.constraints")
 
 
 def get_constraint_queryables_with_additional_params(
-    constraints: List[unknown],
+    constraints: List[Any],
     params: Dict[str, Any],
     plugin: Union[Search, Api],
     product_type: str,
@@ -41,7 +40,7 @@ def get_constraint_queryables_with_additional_params(
     gets the queryables from the constraints using the given parameters
     For all queryables only values matching the given parameters based on the constraints will be returned
     :param constraints: list of constraints fetched from the provider
-    :type constraints: List[unknown]
+    :type constraints: List[Any]
     :param params: conditions the constraints should fulfil
     :type params: dict
     :param plugin: search or api plugin that is used
@@ -49,7 +48,7 @@ def get_constraint_queryables_with_additional_params(
     :param product_type: product type for which the data should be fetched
     :type product_type: str
     :returns: dict containing queryable data
-    :rtype: Dict[unknown, Dict]
+    :rtype: Dict[str, Dict]
     """
     constraint_matches = {}
     params_available = {k: False for k in params.keys()}
@@ -103,7 +102,7 @@ def get_constraint_queryables_with_additional_params(
 
 def fetch_constraints(
     constraints_url: str, plugin: Union[Search, Api]
-) -> List[Dict[unknown, unknown]]:
+) -> List[Dict[Any, Any]]:
     """
     fetches the constraints from a provider
     :param constraints_url: url from which the constraints can be fetched
@@ -111,7 +110,7 @@ def fetch_constraints(
     :param plugin: api or search plugin of the provider
     :type plugin: Union[Search, Api]
     :returns: list of constraints fetched from the provider
-    :rtype: List[Dict[unknown, unknown]]
+    :rtype: List[Dict[Any, Any]]
     """
     try:
         headers = USER_AGENT
