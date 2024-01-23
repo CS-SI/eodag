@@ -745,25 +745,25 @@ class AwsDownload(Download):
         chunk_size = 4096 * 1024
 
         for product_chunk in unique_product_chunks:
+            try:
+                chunk_rel_path = self.get_chunk_dest_path(
+                    product,
+                    product_chunk,
+                    build_safe=build_safe,
+                )
+            except NotAvailableError as e:
+                # out of SAFE format chunk
+                logger.warning(e)
+                continue
+
             chunk_start = 0
             chunk_end = chunk_start + chunk_size - 1
             object_size = product_chunk.size
-            while chunk_start <= object_size:
-                try:
-                    chunk_rel_path = self.get_chunk_dest_path(
-                        product,
-                        product_chunk,
-                        build_safe=build_safe,
-                    )
-                except NotAvailableError as e:
-                    # out of SAFE format chunk
-                    logger.warning(e)
-                    continue
 
+            while chunk_start <= object_size:
                 get_kwargs = (
                     dict(RequestPayer="requester") if self.requester_pays else {}
                 )
-
                 try:
                     body = product_chunk.get(
                         Range=f"bytes={chunk_start}-{chunk_end}", **get_kwargs
