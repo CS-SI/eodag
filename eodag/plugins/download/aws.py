@@ -193,6 +193,12 @@ S1_IMG_NB_PER_POLAR = {
     "VH": {"VH": 1},
 }
 
+AWS_AUTH_ERROR_MESSAGES = [
+    "AccessDenied",
+    "InvalidAccessKeyId",
+    "SignatureDoesNotMatch",
+]
+
 
 class AwsDownload(Download):
     """Download on AWS using S3 protocol.
@@ -349,21 +355,7 @@ class AwsDownload(Download):
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
         except ClientError as e:
-            err = e.response["Error"]
-            auth_messages = [
-                "AccessDenied",
-                "InvalidAccessKeyId",
-                "SignatureDoesNotMatch",
-            ]
-            if err["Code"] in auth_messages and "key" in err["Message"].lower():
-                raise AuthenticationError(
-                    "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                        e.response["ResponseMetadata"]["HTTPStatusCode"],
-                        err["Code"],
-                        err["Message"],
-                        self.provider,
-                    )
-                )
+            self._raise_if_auth_error(e)
             logger.warning("Unexpected error: %s" % e)
 
         # finalize safe product
@@ -550,21 +542,7 @@ class AwsDownload(Download):
                 logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 auth_error_messages.add(str(e))
             except ClientError as e:
-                err = e.response["Error"]
-                auth_messages = [
-                    "AccessDenied",
-                    "InvalidAccessKeyId",
-                    "SignatureDoesNotMatch",
-                ]
-                if err["Code"] in auth_messages and "key" in err["Message"].lower():
-                    raise AuthenticationError(
-                        "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                            e.response["ResponseMetadata"]["HTTPStatusCode"],
-                            err["Code"],
-                            err["Message"],
-                            self.provider,
-                        )
-                    )
+                self._raise_if_auth_error(e)
                 logger.warning("Unexpected error: %s" % e)
                 logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 auth_error_messages.add(str(e))
@@ -621,6 +599,19 @@ class AwsDownload(Download):
                     rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
                 )
         return unique_product_chunks
+
+    def _raise_if_auth_error(self, exception: ClientError) -> None:
+        """Raises an error if given exception is an authentication error"""
+        err = exception.response["Error"]
+        if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
+            raise AuthenticationError(
+                "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
+                    exception.response["ResponseMetadata"]["HTTPStatusCode"],
+                    err["Code"],
+                    err["Message"],
+                    self.provider,
+                )
+            )
 
     def _stream_download_dict(
         self,
@@ -852,11 +843,10 @@ class AwsDownload(Download):
                     logger.debug("Auth using %s succeeded", try_auth_method.__name__)
                     return s3_objects
             except ClientError as e:
-                if e.response.get("Error", {}).get("Code", {}) in [
-                    "AccessDenied",
-                    "InvalidAccessKeyId",
-                    "SignatureDoesNotMatch",
-                ]:
+                if (
+                    e.response.get("Error", {}).get("Code", {})
+                    in AWS_AUTH_ERROR_MESSAGES
+                ):
                     pass
                 else:
                     raise e
