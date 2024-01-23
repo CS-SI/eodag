@@ -760,9 +760,17 @@ class AwsDownload(Download):
                     logger.warning(e)
                     continue
 
-                body = product_chunk.get(Range=f"bytes={chunk_start}-{chunk_end}")[
-                    "Body"
-                ]
+                get_kwargs = (
+                    dict(RequestPayer="requester") if self.requester_pays else {}
+                )
+
+                try:
+                    body = product_chunk.get(
+                        Range=f"bytes={chunk_start}-{chunk_end}", **get_kwargs
+                    )["Body"]
+                except ClientError as e:
+                    self._raise_if_auth_error(e)
+                    raise DownloadError("Unexpected error: %s" % e) from e
 
                 if body:
                     if len(assets_values) == 1:
