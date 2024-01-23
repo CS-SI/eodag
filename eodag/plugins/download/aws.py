@@ -261,6 +261,8 @@ class AwsDownload(Download):
         product_local_path, record_filename = self._download_preparation(
             product, progress_callback=progress_callback, **kwargs
         )
+        if not record_filename:
+            return product_local_path
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
@@ -385,15 +387,29 @@ class AwsDownload(Download):
         return product_local_path
 
     def _download_preparation(
-        self, product: EOProduct, progress_callback: ProgressCallback, **kwargs
-    ) -> Tuple[str, str]:
+        self, product: EOProduct, progress_callback: ProgressCallback, **kwargs: Any
+    ) -> Tuple[str, Optional[str]]:
+        """
+        preparation for the download:
+        - check if file was already downloaded
+        - get file path
+        - create directories
+        :param product: product to be downloaded
+        :type product: EOProduct
+        :param progress_callback: progress callback to be used
+        :type progress_callback: ProgressCallback
+        :param kwargs: additional arguments
+        :type kwargs: Any
+        :return: local path and file name
+        :rtype: Tuple[str, Optional[str]]
+        """
         product_local_path, record_filename = self._prepare_download(
             product, progress_callback=progress_callback, **kwargs
         )
         if not product_local_path or not record_filename:
             if product_local_path:
                 product.location = path_to_uri(product_local_path)
-            return product_local_path
+            return product_local_path, None
         product_local_path = product_local_path.replace(".zip", "")
         # remove existing incomplete file
         if os.path.isfile(product_local_path):
@@ -404,6 +420,13 @@ class AwsDownload(Download):
         return product_local_path, record_filename
 
     def _configure_safe_build(self, build_safe: bool, product: EOProduct):
+        """
+        updates the product properties with fetch metadata if safe build is enabled
+        :param build_safe: if safe build is enabled
+        :type build_safe: bool
+        :param product: product to be updated
+        :type product: EOProduct
+        """
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
@@ -430,7 +453,18 @@ class AwsDownload(Download):
 
     def _get_bucket_names_and_prefixes(
         self, product: EOProduct, asset_filter: str, ignore_assets: bool
-    ) -> list:
+    ) -> List[Tuple[str, Optional[str]]]:
+        """
+        retrieves the bucket names and path prefixes for the assets
+        :param product: product for which the assets shall be downloaded
+        :type product: EOProduct
+        :param asset_filter: text for which the assets should be filtered
+        :type asset_filter: str
+        :param ignore_assets: if product instead of individual assets should be used
+        :type ignore_assets: bool
+        :return: tuples of bucket names and prefixes
+        :rtype: List[Tuple[str, Optional[str]]]
+        """
         # if assets are defined, use them instead of scanning product.location
         if len(product.assets) > 0 and not ignore_assets:
             if asset_filter:
@@ -463,8 +497,20 @@ class AwsDownload(Download):
         return bucket_names_and_prefixes
 
     def _do_authentication(
-        self, bucket_names_and_prefixes: list, auth: Dict[str, str]
+        self,
+        bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
+        auth: Dict[str, str],
     ) -> Tuple[Dict[str, Any], ResourceCollection[Any]]:
+        """
+        authenticates with s3 and retrieves the available objects
+        raises an error when authentication is not possible
+        :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
+        :type bucket_names_and_prefixes: List[Tuple[str, Optional[str]]]
+        :param auth: authentication information
+        :type auth: Dict[str, str]
+        :return: authenticated objects per bucket, list of available objects
+        :rtype: Tuple[Dict[str, Any], ResourceCollection[Any]]
+        """
         authenticated_objects: Dict[str, Any] = {}
         auth_error_messages: Set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
@@ -530,12 +576,27 @@ class AwsDownload(Download):
 
     def _get_unique_products(
         self,
-        bucket_names_and_prefixes: list,
-        authenticated_objects: dict,
+        bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
+        authenticated_objects: Dict[str, Any],
         asset_filter: str,
         ignore_assets: bool,
         product: EOProduct,
     ) -> Set[Any]:
+        """
+        retrieve unique product chunks based on authenticated objects and asset filters
+        :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
+        :type bucket_names_and_prefixes: List[Tuple[str, Optional[str]]]
+        :param authenticated_objects: available objects per bucket
+        :type authenticated_objects: Dict[str, Any]
+        :param asset_filter: text for which assets should be filtered
+        :type asset_filter: str
+        :param ignore_assets: if product instead of individual assets should be used
+        :type ignore_assets: bool
+        :param product: product that shall be downloaded
+        :type product: EOProduct
+        :return: set of product chunks that can be downloaded
+        :rtype: Set[Any]
+        """
         product_chunks: List[Any] = []
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
