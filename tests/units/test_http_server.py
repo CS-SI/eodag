@@ -1186,7 +1186,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
-    @mock.patch("eodag.api.constraints.requests.get", autospec=True)
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
     def test_product_type_queryables_from_constraints(self, mock_requests_constraints):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
@@ -1200,9 +1200,10 @@ class RequestTestCase(unittest.TestCase):
         )
 
         mock_requests_constraints.assert_called_once_with(
-            url="http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
+            "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
             "reanalysis-era5-single-levels/constraints.json",
             headers=USER_AGENT,
+            timeout=5,
         )
         self.assertEqual(13, len(res["properties"]))
         self.assertIn("year", res["properties"])

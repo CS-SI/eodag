@@ -914,7 +914,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert mock_cds_download.call_count == len(eoproducts)
         assert len(paths) == len(eoproducts)
 
-    @mock.patch("eodag.api.constraints.requests.get", autospec=True)
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
     def test_plugins_apis_cds_discover_queryables(self, mock_requests_constraints):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
