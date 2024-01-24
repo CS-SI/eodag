@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import TYPE_CHECKING, cast
 from urllib.parse import unquote_plus
 
 import cdsapi
@@ -69,6 +69,10 @@ from eodag.utils.exceptions import (
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Set, Tuple, Union
+
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
@@ -156,7 +160,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
 
         return non_none_cfg.get(key, default)
 
-    def _preprocess_search_params(self, params: Dict[Any]) -> None:
+    def _preprocess_search_params(self, params: Dict[str, Any]) -> None:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
@@ -305,7 +309,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         if not all([uid, api_key, url]):
             raise AuthenticationError("Missing authentication information")
 
-        auth_dict: Dict[str, str] = {"key": f"{uid}:{api_key}", "url": url}
+        auth_dict: Dict[str, str] = {"key": f"{uid}:{api_key}", "url": str(url)}
 
         client = self._get_cds_client(**auth_dict)
         try:
@@ -361,7 +365,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -399,7 +403,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -421,7 +425,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,

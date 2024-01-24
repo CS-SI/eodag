@@ -21,7 +21,7 @@ import logging
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -56,6 +56,8 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from requests.auth import AuthBase
+
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.utils import DownloadedCallback
@@ -72,7 +74,7 @@ class UsgsApi(Download, Api):
         # Same method as in base.py, Search.__init__()
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas = DEFAULT_METADATA_MAPPING.copy()
+        metas: Dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata.
         metas.update(self.config.metadata_mapping)
@@ -233,7 +235,7 @@ class UsgsApi(Download, Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -399,7 +401,7 @@ class UsgsApi(Download, Api):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,

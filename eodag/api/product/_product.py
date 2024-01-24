@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import requests
 from requests import RequestException
+from requests.auth import AuthBase
 from shapely import geometry, wkb, wkt
 from shapely.errors import ShapelyError
 
@@ -497,6 +498,8 @@ class EOProduct:
                 if self.downloader_auth is not None
                 else None
             )
+            if not isinstance(auth, AuthBase):
+                auth = None
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,

@@ -67,6 +67,7 @@ from eodag.utils.exceptions import (
 
 if TYPE_CHECKING:
     from requests import Response
+    from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -114,7 +115,7 @@ class HTTPDownload(Download):
     def orderDownload(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> None:
         """Send product order request.
@@ -138,8 +139,8 @@ class HTTPDownload(Download):
 
         :param product: The EO product to order
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
@@ -204,7 +205,7 @@ class HTTPDownload(Download):
     def orderDownloadStatus(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> None:
         """Send product order status request.
@@ -224,8 +225,8 @@ class HTTPDownload(Download):
 
         :param product: The ordered EO product
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
@@ -375,7 +376,7 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -387,6 +388,9 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
+        if not isinstance(auth, AuthBase):
+            raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
+
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -436,7 +440,7 @@ class HTTPDownload(Download):
         @self._download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
-            auth: PluginConfig,
+            auth: AuthBase,
             progress_callback: ProgressCallback,
             wait: int,
             timeout: int,
@@ -531,7 +535,7 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -543,8 +547,8 @@ class HTTPDownload(Download):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -560,6 +564,9 @@ class HTTPDownload(Download):
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         :rtype: dict
         """
+        if not isinstance(auth, AuthBase):
+            raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
+
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
             try:
@@ -661,7 +668,7 @@ class HTTPDownload(Download):
     def _stream_download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Dict[str, Any],
     ) -> Iterator[Any]:
@@ -671,7 +678,7 @@ class HTTPDownload(Download):
         :param product: product for which the assets should be downloaded
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -751,7 +758,7 @@ class HTTPDownload(Download):
     def _stream_download_assets(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
@@ -875,7 +882,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         fs_dir_path: str,
         record_filename: str,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> str:
@@ -1003,7 +1010,7 @@ class HTTPDownload(Download):
     def _get_asset_sizes(
         self,
         assets_values: List[Dict[str, Any]],
-        auth: Optional[PluginConfig],
+        auth: Optional[AuthBase],
         params: Optional[Dict[str, str]],
         zipped: bool = False,
     ) -> int:
@@ -1065,7 +1072,7 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
