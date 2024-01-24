@@ -43,6 +43,7 @@ class StacQueryableProperty(BaseModel):
     ref: Optional[str] = Field(default=None, serialization_alias="$ref")
     type: Optional[Union[str, List[str]]] = None
     enum: Optional[List[Any]] = None
+    value: Optional[Any] = None
 
     @classmethod
     def from_python_field_definition(
@@ -88,11 +89,11 @@ class StacQueryables(BaseModel):
     )
     properties: Dict[str, StacQueryableProperty] = Field(
         default={
-            "id": StacQueryableProperty(
+            "ids": StacQueryableProperty(
                 description="ID",
                 ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/id",
             ),
-            "collection": StacQueryableProperty(
+            "collections": StacQueryableProperty(
                 description="Collection",
                 ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/collection",
             ),
@@ -100,12 +101,8 @@ class StacQueryables(BaseModel):
                 description="Geometry",
                 ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
             ),
-            "bbox": StacQueryableProperty(
-                description="Bbox",
-                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/bbox",
-            ),
             "datetime": StacQueryableProperty(
-                description="Datetime",
+                description="Datetime - use parameters year, month, day, time instead if available",
                 ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
             ),
         }

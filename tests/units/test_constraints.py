@@ -43,7 +43,7 @@ class TestConstraints(unittest.TestCase):
         queryables = get_constraint_queryables_with_additional_params(
             constraints, {"variable": "c", "year": "2000"}, plugin, "ERA5_SL"
         )
-        self.assertEqual(3, len(queryables))
+        self.assertEqual(4, len(queryables))
         self.assertNotIn("year", queryables)
         self.assertNotIn("variable", queryables)
         self.assertIn("month", queryables)
@@ -51,3 +51,37 @@ class TestConstraints(unittest.TestCase):
         self.assertIn("time", queryables)
         queryable = queryables.get("time")
         self.assertSetEqual({"01:00", "12:00", "18:00", "22:00"}, queryable["enum"])
+        # with param and defaults
+        queryables = get_constraint_queryables_with_additional_params(
+            constraints,
+            {
+                "variable": "c",
+                "defaults": {"type": "B", "year": "2000", "field": "test"},
+            },
+            plugin,
+            "ERA5_SL",
+        )
+        self.assertEqual(5, len(queryables))
+        self.assertIn("year", queryables)
+        self.assertNotIn("variable", queryables)
+        self.assertIn("month", queryables)
+        self.assertIn("day", queryables)
+        self.assertIn("time", queryables)
+        self.assertIn("type", queryables)
+        queryable = queryables.get("time")
+        self.assertSetEqual({"01:00", "12:00", "18:00", "22:00"}, queryable["enum"])
+        # only with defaults
+        queryables = get_constraint_queryables_with_additional_params(
+            constraints,
+            {"defaults": {"type": "A", "year": "2000", "field": "test"}},
+            plugin,
+            "ERA5_SL",
+        )
+        self.assertEqual(7, len(queryables))
+        self.assertIn("year", queryables)
+        self.assertIn("variable", queryables)
+        self.assertIn("type", queryables)
+        queryable = queryables.get("time")
+        self.assertSetEqual({"01:00", "12:00", "18:00", "22:00"}, queryable["enum"])
+        queryable = queryables.get("variable")
+        self.assertSetEqual({"a", "b", "e", "f"}, queryable["enum"])

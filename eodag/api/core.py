@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import copy
 import logging
 import os
 import re
@@ -2203,6 +2204,7 @@ class EODataAccessGateway:
             .get(product_type, {})
             .get("metadata_mapping", {})
         )
+
         # remove not mapped parameters or non-queryables
         for param in list(metadata_mapping.keys()):
             if NOT_MAPPED in metadata_mapping[param] or not isinstance(
@@ -2221,6 +2223,14 @@ class EODataAccessGateway:
                 (field_info.alias or key) in metadata_mapping
             ):
                 providers_available_queryables[plugin.provider][key] = value
+
+        # default values
+        default_values = copy.deepcopy(
+            getattr(plugin.config, "products", {}).get(product_type, {})
+        )
+        default_values.pop("metadata_mapping", None)
+        kwargs["defaults"] = default_values
+        print(kwargs)
 
         provider_queryables = (
             plugin.discover_queryables(product_type, **kwargs) or dict()

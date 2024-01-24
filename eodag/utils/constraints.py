@@ -51,6 +51,9 @@ def get_constraint_queryables_with_additional_params(
     :rtype: Dict[str, Dict]
     """
     constraint_matches = {}
+    defaults = params.pop("defaults", {})
+    for p in params.keys():
+        defaults.pop(p, None)
     params_available = {k: False for k in params.keys()}
     # check which constraints match the given parameters
     eodag_provider_key_mapping = {}
@@ -61,12 +64,21 @@ def get_constraint_queryables_with_additional_params(
             provider_key = _get_provider_queryable_key(
                 param, constraint, plugin, product_type
             )
-            eodag_provider_key_mapping[provider_key] = param
             if provider_key:
+                eodag_provider_key_mapping[provider_key] = param
                 params_available[param] = True
                 if value in constraint[provider_key]:
                     params_matched[param] = True
                 values_available[provider_key].update(constraint[provider_key])
+        for default_param, default_value in defaults.items():
+            provider_key = _get_provider_queryable_key(
+                default_param, constraint, plugin, product_type
+            )
+            if provider_key:
+                eodag_provider_key_mapping[provider_key] = default_param
+                params_matched[default_param] = False
+                if default_value in constraint[provider_key]:
+                    params_matched[default_param] = True
         constraint_matches[i] = params_matched
 
     # check if all parameters are available in the constraints
@@ -81,7 +93,7 @@ def get_constraint_queryables_with_additional_params(
             for key in constraints[num]:
                 if key in queryables:
                     queryables[key]["enum"].update(constraints[num][key])
-                elif key not in eodag_provider_key_mapping:
+                elif key not in eodag_provider_key_mapping or key in defaults:
                     queryables[key] = {}
                     queryables[key]["enum"] = set(constraints[num][key])
 
