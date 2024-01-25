@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-from annotated_types import Gt
 import logging
 import os
 import tempfile
@@ -41,6 +40,7 @@ import requests
 import yaml
 import yaml.constructor
 import yaml.parser
+from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from pkg_resources import resource_filename
 from requests.auth import AuthBase
