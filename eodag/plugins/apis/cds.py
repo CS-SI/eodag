@@ -157,7 +157,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                     params["startTimeFromAscendingNode"],
                     params["completionTimeFromAscendingNode"],
                 ) = _dc_qp["date"].split("/")
-            else:
+            elif _dc_qp.get("date", None):
                 params["startTimeFromAscendingNode"] = params[
                     "completionTimeFromAscendingNode"
                 ] = _dc_qp["date"]
