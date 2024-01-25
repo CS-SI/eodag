@@ -735,10 +735,11 @@ class AwsDownload(Download):
         progress_callback: ProgressCallback,
         assets_values: List[Dict[str, Any]],
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
-        def yield_parts(body, progress_callback):
-            for b in body:
-                progress_callback(len(b))
-                yield b
+        def yield_parts(bodies: List[Any], progress_callback: ProgressCallback):
+            for body in bodies:
+                for b in body:
+                    progress_callback(len(b))
+                    yield b
 
         modified_at = datetime.now()
         perms = 0o600
@@ -759,6 +760,7 @@ class AwsDownload(Download):
             chunk_start = 0
             chunk_end = chunk_start + chunk_size - 1
             object_size = product_chunk.size
+            bodies = []
 
             while chunk_start <= object_size:
                 get_kwargs = (
@@ -768,23 +770,24 @@ class AwsDownload(Download):
                     body = product_chunk.get(
                         Range=f"bytes={chunk_start}-{chunk_end}", **get_kwargs
                     )["Body"]
+                    bodies.append(body)
                 except ClientError as e:
                     self._raise_if_auth_error(e)
                     raise DownloadError("Unexpected error: %s" % e) from e
 
-                if body:
-                    if len(assets_values) == 1:
-                        yield from yield_parts(body, progress_callback)
-                    else:
-                        yield (
-                            chunk_rel_path,
-                            modified_at,
-                            perms,
-                            NO_COMPRESSION_64,
-                            yield_parts(body, progress_callback),
-                        )
                 chunk_start += chunk_size
                 chunk_end += chunk_size
+
+            if len(assets_values) == 1:
+                yield from yield_parts(bodies, progress_callback)
+            else:
+                yield (
+                    chunk_rel_path,
+                    modified_at,
+                    perms,
+                    NO_COMPRESSION_64,
+                    yield_parts(bodies, progress_callback),
+                )
 
     def get_rio_env(
         self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
