@@ -2229,8 +2229,9 @@ class EODataAccessGateway:
             getattr(plugin.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
+        for param in kwargs:
+            default_values[param] = kwargs[param]
         kwargs["defaults"] = default_values
-        print(kwargs)
 
         provider_queryables = (
             plugin.discover_queryables(product_type, **kwargs) or dict()

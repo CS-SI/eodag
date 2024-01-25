@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import copy
 import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
@@ -32,7 +32,7 @@ logger = logging.getLogger("eodag.constraints")
 
 def get_constraint_queryables_with_additional_params(
     constraints: List[Any],
-    params: Dict[str, Any],
+    input_params: Dict[str, Any],
     plugin: Union[Search, Api],
     product_type: str,
 ) -> Dict[str, Dict]:
@@ -41,8 +41,8 @@ def get_constraint_queryables_with_additional_params(
     For all queryables only values matching the given parameters based on the constraints will be returned
     :param constraints: list of constraints fetched from the provider
     :type constraints: List[Any]
-    :param params: conditions the constraints should fulfil
-    :type params: dict
+    :param input_params: conditions the constraints should fulfil
+    :type input_params: dict
     :param plugin: search or api plugin that is used
     :type plugin: Union[Search, Api]
     :param product_type: product type for which the data should be fetched
@@ -50,6 +50,7 @@ def get_constraint_queryables_with_additional_params(
     :returns: dict containing queryable data
     :rtype: Dict[str, Dict]
     """
+    params = copy.deepcopy(input_params)
     constraint_matches = {}
     defaults = params.pop("defaults", {})
     for p in params.keys():
@@ -70,6 +71,7 @@ def get_constraint_queryables_with_additional_params(
                 if value in constraint[provider_key]:
                     params_matched[param] = True
                 values_available[provider_key].update(constraint[provider_key])
+        # match with default values of params
         for default_param, default_value in defaults.items():
             provider_key = _get_provider_queryable_key(
                 default_param, constraint, plugin, product_type
@@ -93,7 +95,7 @@ def get_constraint_queryables_with_additional_params(
             for key in constraints[num]:
                 if key in queryables:
                     queryables[key]["enum"].update(constraints[num][key])
-                elif key not in eodag_provider_key_mapping or key in defaults:
+                else:
                     queryables[key] = {}
                     queryables[key]["enum"] = set(constraints[num][key])
 
@@ -103,10 +105,14 @@ def get_constraint_queryables_with_additional_params(
             raise ValidationError(
                 f"combination of values {str(params)} is not possible"
             )
-        else:
+        elif len(params) == 1:
             raise ValidationError(
                 f"value {list(params.values())[0]} not available for param {list(params.keys())[0]}, "
-                f"possible values: {str(values_available[list(params.keys())[0]])}"
+                f"possible values: {str(sorted(values_available[list(params.keys())[0]]))}"
+            )
+        else:
+            raise ValidationError(
+                f"no constraints matching default params {str(defaults)} found"
             )
 
     return queryables

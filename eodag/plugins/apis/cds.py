@@ -443,7 +443,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         :param kwargs: additional filters for queryables
         :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: dict
+        :rtype: Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]
         """
         constraints_file_url = getattr(self.config, "constraints_file_url", "")
         if not constraints_file_url:
@@ -480,7 +480,10 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 get_queryable_from_provider(json_param, self.config.metadata_mapping)
                 or json_param
             )
-            field_definitions[param] = json_field_definition_to_python(json_mtd)
+            default = kwargs.get("defaults", {}).get(param, None)
+            field_definitions[param] = json_field_definition_to_python(
+                json_mtd, default_value=default
+            )
 
         python_queryables = create_model("m", **field_definitions).model_fields
         return model_fields_to_annotated_tuple(python_queryables)

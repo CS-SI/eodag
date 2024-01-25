@@ -1148,9 +1148,9 @@ class RequestTestCase(unittest.TestCase):
         )
         self.assertListEqual(
             list(res_no_provider["properties"].keys()),
-            ["id", "collection", "geometry", "bbox", "datetime", "collections"],
+            ["ids", "collections", "geometry", "datetime"],
         )
-        self.assertIn("collection", res_no_provider["properties"])
+        self.assertIn("collections", res_no_provider["properties"])
         self.assertNotIn("s1:processing_level", res_no_provider["properties"])
 
         mock_requests_get.reset_mock()
@@ -1205,6 +1205,7 @@ class RequestTestCase(unittest.TestCase):
             headers=USER_AGENT,
             timeout=5,
         )
-        self.assertEqual(13, len(res["properties"]))
+        self.assertEqual(9, len(res["properties"]))
         self.assertIn("year", res["properties"])
-        self.assertIn("id", res["properties"])
+        self.assertIn("ids", res["properties"])
+        self.assertIn("collections", res["properties"])

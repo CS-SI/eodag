@@ -1352,7 +1352,9 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-                annotated_def = json_field_definition_to_python(json_mtd)
+
+                default = kwargs.get("defaults", {}).get(param, None)
+                annotated_def = json_field_definition_to_python(json_mtd, default_value=default)
                 field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields

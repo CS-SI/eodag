@@ -929,7 +929,10 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         self.assertIn("variable", queryables)
         # with additional param
         queryables = self.api_plugin.discover_queryables(
-            product_type="CAMS_EU_AIR_QUALITY_RE", variable="a"
+            product_type="CAMS_EU_AIR_QUALITY_RE",
+            variable="a",
+            defaults={"variable": "a"},
         )
-        self.assertEqual(6, len(queryables))
-        self.assertNotIn("variable", queryables)
+        self.assertEqual(7, len(queryables))
+        queryable = queryables.get("variable")
+        self.assertEqual("a", queryable[0].__metadata__[0].get_default())

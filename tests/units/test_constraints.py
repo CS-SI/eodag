@@ -24,11 +24,11 @@ class TestConstraints(unittest.TestCase):
         queryables = get_constraint_queryables_with_additional_params(
             constraints, {"variable": "f"}, plugin, "ERA5_SL"
         )
-        self.assertEqual(4, len(queryables))
+        self.assertEqual(5, len(queryables))
         self.assertIn("year", queryables)
         queryable = queryables.get("year")
         self.assertSetEqual({"2000", "2001"}, queryable["enum"])
-        self.assertNotIn("variable", queryables)
+        self.assertIn("variable", queryables)
         # not existing parameter
         with self.assertRaises(ValidationError):
             get_constraint_queryables_with_additional_params(
@@ -43,9 +43,9 @@ class TestConstraints(unittest.TestCase):
         queryables = get_constraint_queryables_with_additional_params(
             constraints, {"variable": "c", "year": "2000"}, plugin, "ERA5_SL"
         )
-        self.assertEqual(4, len(queryables))
-        self.assertNotIn("year", queryables)
-        self.assertNotIn("variable", queryables)
+        self.assertEqual(6, len(queryables))
+        self.assertIn("year", queryables)
+        self.assertIn("variable", queryables)
         self.assertIn("month", queryables)
         self.assertIn("day", queryables)
         self.assertIn("time", queryables)
@@ -61,9 +61,9 @@ class TestConstraints(unittest.TestCase):
             plugin,
             "ERA5_SL",
         )
-        self.assertEqual(5, len(queryables))
+        self.assertEqual(6, len(queryables))
         self.assertIn("year", queryables)
-        self.assertNotIn("variable", queryables)
+        self.assertIn("variable", queryables)
         self.assertIn("month", queryables)
         self.assertIn("day", queryables)
         self.assertIn("time", queryables)

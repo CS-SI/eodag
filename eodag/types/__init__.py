@@ -87,7 +87,7 @@ def python_type_to_json(python_type: type) -> Optional[Union[str, List[str]]]:
 
 
 def json_field_definition_to_python(
-    json_field_definition: Dict[str, Any]
+    json_field_definition: Dict[str, Any], default_value: Optional[Any] = None
 ) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object
 
@@ -101,6 +101,7 @@ def json_field_definition_to_python(
     "typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')]"
 
     :param json_field_definition: the json field definition
+    :param default_value: default value of the field
     :returns: the python field definition
     """
     python_type = json_type_to_python(json_field_definition.get("type", None))
@@ -119,7 +120,7 @@ def json_field_definition_to_python(
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
 
-    return Annotated[python_type, Field(None, **field_type_kwargs)]
+    return Annotated[python_type, Field(default=default_value, **field_type_kwargs)]
 
 
 def python_field_definition_to_json(
@@ -181,6 +182,10 @@ def python_field_definition_to_json(
         and "$ref" in python_field_args[1].json_schema_extra
     ):
         json_field_definition["$ref"] = python_field_args[1].json_schema_extra["$ref"]
+
+    default = python_field_args[1].get_default()
+    if default:
+        json_field_definition["value"] = default
 
     return json_field_definition
 
