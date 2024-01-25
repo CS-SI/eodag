@@ -1234,7 +1234,14 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
             },
             "wekeo": None,
-            "creodias_s3": None,
+            "creodias_s3": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                ],
+                "max_sort_params": 1,
+            },
         }
         sortables = self.dag.list_sortables()
         self.assertDictEqual(sortables, expected_result)
