@@ -60,7 +60,9 @@ class Search(PluginTopic):
 
     auth: Union[AuthBase, Dict[str, str]]
     next_page_url: Optional[str]
-    next_page_query_obj: Dict[str, Any]
+    next_page_query_obj: Optional[Dict[str, Any]]
+    total_items_nb: int
+    need_count: bool
     _request: Any  # needed by deprecated load_stac_items
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

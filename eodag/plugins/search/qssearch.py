@@ -79,6 +79,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
     TimeOutError,
+    ValidationError,
 )
 
 if TYPE_CHECKING:
@@ -353,7 +354,7 @@ class QueryStringSearch(Search):
             return None
         else:
             try:
-                conf_update_dict = {
+                conf_update_dict: Dict[str, Any] = {
                     "providers_config": {},
                     "product_types_config": {},
                 }
@@ -523,6 +524,9 @@ class QueryStringSearch(Search):
                 }
             )
 
+        if product_type is None:
+            raise ValidationError("Required productType is missing")
+
         qp, qs = self.build_query_string(product_type, **keywords)
 
         self.query_params = qp
@@ -564,7 +568,7 @@ class QueryStringSearch(Search):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        quote_via: Callable[[Any], str] = lambda x, *_args, **_kwargs: x
+        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
         return (
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),
