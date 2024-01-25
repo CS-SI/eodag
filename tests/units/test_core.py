@@ -1180,7 +1180,7 @@ class TestCore(TestCoreBase):
             "aws_eos": None,
             "theia": None,
             "onda": {
-                "sortables": ["startTimeFromAscendingNode", "uid"],
+                "sortables": ["startTimeFromAscendingNode", "uid", "storageStatus"],
                 "max_sort_params": 1,
             },
             "astraea_eod": {
