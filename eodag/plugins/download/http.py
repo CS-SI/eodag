@@ -509,7 +509,7 @@ class HTTPDownload(Download):
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
             try:
-                assets_values = self.get_assets_values(product, **kwargs)
+                assets_values = product.assets.get_values(kwargs.get("asset", None))
                 chunks_tuples = self._stream_download_assets(
                     product,
                     auth,
@@ -835,7 +835,7 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = self.get_assets_values(product, **kwargs)
+        assets_values = product.assets.get_values(kwargs.get("asset", None))
 
         chunks_tuples = self._stream_download_assets(
             product, auth, progress_callback, assets_values=assets_values, **kwargs

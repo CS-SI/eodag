@@ -697,7 +697,7 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        assets_values = self.get_assets_values(product, **kwargs)
+        assets_values = product.assets.get_values(asset_filter)
         chunks_tuples = self._stream_download(
             unique_product_chunks, product, build_safe, progress_callback, assets_values
         )

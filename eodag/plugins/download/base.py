@@ -20,7 +20,6 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
-import re
 import shutil
 import tarfile
 import tempfile
@@ -698,36 +697,3 @@ class Download(PluginTopic):
             return download_and_retry
 
         return decorator
-
-    def get_assets_values(
-        self,
-        product: EOProduct,
-        **kwargs: Any,
-    ):
-        """retrieves the assets of a product matching the filter given in the kwargs
-        :param product: product of which the assets are taken
-        :type product: EOProduct
-        :param kwargs: can contain a key "asset" to filter the assets
-        :type kwargs: Any
-        :returns: list of assets
-        :rtype: List[Dict[str, Any]]
-        """
-        asset_filter = kwargs.get("asset", None)
-        if asset_filter:
-            filter_regex = re.compile(asset_filter)
-            assets_keys = getattr(product, "assets", {}).keys()
-            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-            filtered_assets = {}
-            if getattr(product, "assets", None):
-                for a_key, a_data in product.assets.items():
-                    if a_key in assets_keys:
-                        filtered_assets[a_key] = a_data
-            assets_values = [a for a in filtered_assets.values() if "href" in a]
-            if not assets_values:
-                raise NotAvailableError(
-                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
-                )
-            else:
-                return assets_values
-        else:
-            return [a for a in getattr(product, "assets", {}).values() if "href" in a]
