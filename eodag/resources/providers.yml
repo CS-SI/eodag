@@ -1253,6 +1253,7 @@
       sort_by_mapping:
         startTimeFromAscendingNode: beginPosition
         uid: id
+        storageStatus: offline
       max_sort_params: 1
     results_entry: 'value'
     literal_search_params:
