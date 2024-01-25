@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import unittest
-from unittest import mock
 
 from pydantic_core import ValidationError
 
@@ -32,7 +31,10 @@ class TestStacSearch(unittest.TestCase):
             {"productType": "dummy_product_type", "sortBy": [("eodagSortParam", "ASC")]}
         )
         search_args.SearchArgs.model_validate(
-            {"productType": "dummy_product_type", "sortBy": [("eodagSortParam", "DESC")]}
+            {
+                "productType": "dummy_product_type",
+                "sortBy": [("eodagSortParam", "DESC")],
+            }
         )
 
     def test_search_sort_by_arg_with_errors(self):
@@ -66,9 +68,13 @@ class TestStacSearch(unittest.TestCase):
         # raise an error with a wrong sorting order
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
-                {"productType": "dummy_product_type", "sortBy": [("eodagSortParam", " wrong_order ")]}
+                {
+                    "productType": "dummy_product_type",
+                    "sortBy": [("eodagSortParam", " wrong_order ")],
+                }
             )
         self.assertIn(
-            "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), got 'WRONG_ORDER' with 'eodagSortParam' instead",
+            "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), "
+            "got 'WRONG_ORDER' with 'eodagSortParam' instead",
             str(context.exception),
         )

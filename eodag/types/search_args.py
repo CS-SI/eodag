@@ -15,8 +15,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from datetime import datetime
 import re
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union, cast
 
 from pydantic import BaseModel, ConfigDict, Field, conint, conlist, field_validator
@@ -34,6 +34,7 @@ GeomArgs = Union[List[NumType], Tuple[NumType], Dict[str, NumType], str, BaseGeo
 PositiveInt = conint(gt=0)
 SortByList = conlist(Tuple[str, str], min_length=1)
 
+
 class SearchArgs(BaseModel):
     """Represents an EODAG search"""
 
@@ -46,9 +47,9 @@ class SearchArgs(BaseModel):
     end: Optional[str] = Field(None)
     geom: Optional[BaseGeometry] = Field(None)
     locations: Optional[Dict[str, str]] = Field(None)
-    page: Optional[int] = Field(DEFAULT_PAGE, gt=0) # type: ignore
-    items_per_page: Optional[PositiveInt] = Field(DEFAULT_ITEMS_PER_PAGE) # type: ignore
-    sortBy: Optional[SortByList] = Field(None) # type: ignore
+    page: Optional[int] = Field(DEFAULT_PAGE, gt=0)  # type: ignore
+    items_per_page: Optional[PositiveInt] = Field(DEFAULT_ITEMS_PER_PAGE)  # type: ignore
+    sortBy: Optional[SortByList] = Field(None)  # type: ignore
 
     @field_validator("start", "end", mode="before")
     @classmethod
@@ -87,8 +88,8 @@ class SearchArgs(BaseModel):
     @field_validator("sortBy", mode="before")
     @classmethod
     def check_sort_by_params(
-        cls, sort_by_params: Optional[SortByList] # type: ignore
-    ) -> Optional[SortByList]: # type: ignore
+        cls, sort_by_params: Optional[SortByList]  # type: ignore
+    ) -> Optional[SortByList]:  # type: ignore
         """Check if the sortBy argument is correct
 
         :param sort_by_params: The sortBy argument
@@ -98,20 +99,21 @@ class SearchArgs(BaseModel):
         :rtype: str
         """
         if sort_by_params is not None:
-            assert(
-                isinstance(sort_by_params, list)
+            assert isinstance(
+                sort_by_params, list
             ), f"Sort argument must be a list of tuple(s), got a '{type(sort_by_params)}' instead"
             sort_order_pattern = r"^(ASC|DES)[a-zA-Z]*$"
             for i, sort_by_param in enumerate(sort_by_params):
-                assert(
-                    isinstance(sort_by_param, tuple)
+                assert isinstance(
+                    sort_by_param, tuple
                 ), f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_param)}' instead"
                 sort_param = sort_by_param[0]
                 sort_order = sort_by_param[1]
                 sort_order = sort_order.strip().upper()
-                assert(
-                    re.match(sort_order_pattern, sort_order) is not None
-                ), f"Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), got '{sort_order}' with '{sort_param}' instead"
+                assert re.match(sort_order_pattern, sort_order) is not None, (
+                    "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), "
+                    f"got '{sort_order}' with '{sort_param}' instead"
+                )
                 sort_by_params[i] = (sort_param, sort_order[:3])
             return sort_by_params
         return None

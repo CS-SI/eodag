@@ -555,7 +555,10 @@ def search_products(
             )
             search_error.history = eodag_api.search_errors
             for one_search_error in eodag_api.search_errors:
-                if getattr(one_search_error[1], "parameters", None) and one_search_error[1].parameters:
+                if (
+                    getattr(one_search_error[1], "parameters", None)
+                    and one_search_error[1].parameters
+                ):
                     search_error.parameters.update(one_search_error[1].parameters)
             raise search_error
 

@@ -239,7 +239,9 @@ async def default_exception_handler(
 
 
 @app.exception_handler(ValidationError)
-async def handle_invalid_usage_with_validation_error(request: Request, error: ValidationError) -> ORJSONResponse:
+async def handle_invalid_usage_with_validation_error(
+    request: Request, error: ValidationError
+) -> ORJSONResponse:
     """Invalid usage [400] ValidationError handle"""
     if error.parameters:
         for error_param in error.parameters:
@@ -324,7 +326,9 @@ async def handle_request_error(request: Request, error: RequestError) -> ORJSONR
             if getattr(error, "parameters", None) and error.parameters:
                 for error_param in error.parameters:
                     stac_param = EODAGSearch.to_stac(error_param)
-                    search_error[1].args = (search_error[1].args[0].replace(error_param, stac_param),)
+                    search_error[1].args = (
+                        search_error[1].args[0].replace(error_param, stac_param),
+                    )
                     error_history_tmp[i] = search_error
         error.history = set(error_history_tmp)
     logger.error(f"{type(error).__name__}: {str(error)}")

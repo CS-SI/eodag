@@ -20,7 +20,18 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -60,7 +71,12 @@ from eodag.utils import (
     update_nested_dict,
     urlencode,
 )
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError, TimeOutError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    RequestError,
+    TimeOutError,
+)
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -471,9 +487,9 @@ class QueryStringSearch(Search):
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string once metadata mapping will be done
         sort_by_params = kwargs.pop("sortBy", None)
-        self.sort_by_params = sort_by_params or getattr(
-            self.config, "sort", {}
-        ).get("sort_by_default", None)
+        self.sort_by_params = sort_by_params or getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        )
         if not sort_by_params and getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         ):
@@ -1051,9 +1067,9 @@ class PostJsonSearch(QueryStringSearch):
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query body once metadata mapping will be done
         sort_by_params = kwargs.pop("sortBy", None)
-        self.sort_by_params = sort_by_params or getattr(
-            self.config, "sort", {}
-        ).get("sort_by_default", None)
+        self.sort_by_params = sort_by_params or getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        )
         if not sort_by_params and getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         ):

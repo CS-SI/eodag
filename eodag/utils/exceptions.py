@@ -23,9 +23,6 @@ if TYPE_CHECKING:
     from typing import Optional, Set, Tuple
 
 
-from typing import Set
-
-
 class ValidationError(Exception):
     """Error validating data"""
 
