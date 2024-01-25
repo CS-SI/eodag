@@ -6874,9 +6874,18 @@
     need_auth: true
     timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
+      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_mapping:
+        startTimeFromAscendingNode: startDate
+        completionTimeFromAscendingNode: completionDate
+        publicationDate: published
+      max_sort_params: 1
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
