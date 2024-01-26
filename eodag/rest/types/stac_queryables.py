@@ -51,7 +51,6 @@ class StacQueryableProperty(BaseModel):
     ) -> StacQueryableProperty:
         """Build Model from python_field_definition"""
         def_dict = python_field_definition_to_json(python_field_definition)
-        print(def_dict)
 
         if not def_dict.get("description", None):
             def_dict["description"] = def_dict.get("title", None) or id

@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-import copy
 import logging
 import os
 import re
@@ -2225,7 +2224,7 @@ class EODataAccessGateway:
                 providers_available_queryables[plugin.provider][key] = value
 
         # default values
-        default_values = copy.deepcopy(
+        default_values = deepcopy(
             getattr(plugin.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)

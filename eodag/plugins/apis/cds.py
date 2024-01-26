@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
 from urllib.parse import unquote_plus
 
 import cdsapi
@@ -434,7 +434,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         )
 
     def discover_queryables(
-        self, product_type: Optional[str] = None, **kwargs: Optional[Dict[str, Any]]
+        self, product_type: Optional[str] = None, **kwargs: Any
     ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
@@ -448,6 +448,8 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         constraints_file_url = getattr(self.config, "constraints_file_url", "")
         if not constraints_file_url:
             return {}
+        if not product_type:
+            return {}
         provider_product_type = self.config.products.get(product_type, {}).get(
             "dataset", None
         )
@@ -458,7 +460,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         constraints = fetch_constraints(constraints_file_url, self)
         if not constraints:
             return {}
-        constraint_params = {}
+        constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
         if len(kwargs) == 0:
             # get values from constraints without additional filters
             for constraint in constraints:

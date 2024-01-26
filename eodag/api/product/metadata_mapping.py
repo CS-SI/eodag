@@ -1367,11 +1367,9 @@ def get_queryable_from_provider(
     :returns: EODAG configured queryable parameter or None
     :rtype: Optional[str]
     """
-    pattern = "[^_A-Za-z]" + provider_queryable
+    pattern = rf"\b{provider_queryable}\b"
     for param, param_conf in metadata_mapping.items():
-        if isinstance(param_conf, list) and (
-            provider_queryable == param_conf[0] or re.search(pattern, param_conf[0])
-        ):
+        if isinstance(param_conf, list) and re.search(pattern, param_conf[0]):
             return Queryables.get_queryable_from_alias(param)
     return None
 
@@ -1393,6 +1391,33 @@ def get_provider_queryable_path(
         return parameter_conf[0]
     else:
         return None
+
+
+def get_provider_queryable_key(
+    eodag_key: str,
+    provider_queryables: Dict[str, Any],
+    metadata_mapping: Dict[str, Union[List[Any], str]],
+) -> str:
+    """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
+    :param eodag_key: key in eodag
+    :type eodag_key: str
+    :param provider_queryables: queryables returned from the provider
+    :type provider_queryables: dict
+    :param metadata_mapping: metadata mapping from which the keys are retrieved
+    :type metadata_mapping: Dict[str, Union[List[Any], str]]
+    :returns: provider queryable key
+    :rtype: str
+    """
+    if eodag_key not in metadata_mapping:
+        return ""
+    mapping_key = metadata_mapping[eodag_key]
+    if isinstance(mapping_key, list):
+        for queryable in provider_queryables:
+            if queryable in mapping_key[0]:
+                return queryable
+        return ""
+    else:
+        return eodag_key
 
 
 # Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html

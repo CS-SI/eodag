@@ -17,11 +17,11 @@
 # limitations under the License.
 import copy
 import logging
-from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Set, Union
 
 import requests
 
+from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
@@ -35,7 +35,7 @@ def get_constraint_queryables_with_additional_params(
     input_params: Dict[str, Any],
     plugin: Union[Search, Api],
     product_type: str,
-) -> Dict[str, Dict]:
+) -> Dict[str, Dict[str, Set[Any]]]:
     """
     gets the queryables from the constraints using the given parameters
     For all queryables only values matching the given parameters based on the constraints will be returned
@@ -48,7 +48,7 @@ def get_constraint_queryables_with_additional_params(
     :param product_type: product type for which the data should be fetched
     :type product_type: str
     :returns: dict containing queryable data
-    :rtype: Dict[str, Dict]
+    :rtype: Dict[str, Dict[str, Set[Any]]]
     """
     params = copy.deepcopy(input_params)
     constraint_matches = {}
@@ -58,12 +58,17 @@ def get_constraint_queryables_with_additional_params(
     params_available = {k: False for k in params.keys()}
     # check which constraints match the given parameters
     eodag_provider_key_mapping = {}
-    values_available = {k: set() for k in params.keys()}
+    values_available: Dict[str, Set[Any]] = {k: set() for k in params.keys()}
+    metadata_mapping = plugin.config.products.get(product_type, {}).get(
+        "metadata_mapping", {}
+    )
+    if not metadata_mapping:
+        metadata_mapping = plugin.config.metadata_mapping
     for i, constraint in enumerate(constraints):
         params_matched = {k: False for k in params.keys()}
         for param, value in params.items():
-            provider_key = _get_provider_queryable_key(
-                param, constraint, plugin, product_type
+            provider_key = get_provider_queryable_key(
+                param, constraint, metadata_mapping
             )
             if provider_key:
                 eodag_provider_key_mapping[provider_key] = param
@@ -73,8 +78,10 @@ def get_constraint_queryables_with_additional_params(
                 values_available[provider_key].update(constraint[provider_key])
         # match with default values of params
         for default_param, default_value in defaults.items():
-            provider_key = _get_provider_queryable_key(
-                default_param, constraint, plugin, product_type
+            provider_key = get_provider_queryable_key(
+                default_param,
+                constraint,
+                metadata_mapping,
             )
             if provider_key:
                 eodag_provider_key_mapping[provider_key] = default_param
@@ -89,7 +96,7 @@ def get_constraint_queryables_with_additional_params(
             raise ValidationError(f"parameter {param} is not queryable")
 
     # add values of constraints matching params
-    queryables = {}
+    queryables: Dict[str, Dict[str, Set[Any]]] = {}
     for num, matches in constraint_matches.items():
         if False not in matches.values():
             for key in constraints[num]:
@@ -166,58 +173,3 @@ def fetch_constraints(
         else:
             constraints = constraints_data
         return constraints
-
-
-def _get_provider_queryable_key(
-    eodag_key: str,
-    provider_queryables: Dict[str, Any],
-    plugin: Union[Search, Api],
-    product_type: Optional[str] = None,
-) -> str:
-    """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
-    :param eodag_key: key in eodag
-    :type eodag_key: str
-    :param provider_queryables: queryables returned from the provider
-    :type provider_queryables: dict
-    :param plugin: plugin from which the config is taken
-    :type plugin: Union[Api, Search]
-    :param product_type: product type for which the metadata should be used
-    :type product_type: Optional[str]
-    :returns: provider queryable key
-    :rtype: str
-    """
-    metadata_mapping = _get_metadata_mapping(plugin, product_type)
-    if eodag_key not in metadata_mapping:
-        return ""
-    mapping_key = metadata_mapping[eodag_key]
-    if isinstance(mapping_key, list):
-        for queryable in provider_queryables:
-            if queryable in mapping_key[0]:
-                return queryable
-        return ""
-    else:
-        return eodag_key
-
-
-def _get_metadata_mapping(
-    plugin: Union[Search, Api], product_type: Optional[str] = None
-) -> Dict[str, Union[str, List[str]]]:
-    """returns the metadata mapping of the given plugin
-    if a product type is given, the mapping is updated with the product type specific mapping
-    :param plugin: plugin from which the config is taken
-    :type plugin: Union[Api, Search]
-    :param product_type: product type for which the metadata should be used
-    :type product_type: Optional[str]
-    :returns: metadata mapping
-    :rtype: Dict[str, Union[str, List[str]]]
-    """
-    metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
-
-    # product_type-specific metadata-mapping
-    if product_type:
-        metadata_mapping.update(
-            getattr(plugin.config, "products", {})
-            .get(product_type, {})
-            .get("metadata_mapping", {})
-        )
-    return metadata_mapping
