@@ -18,7 +18,7 @@
 """EODAG types"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import Field
 from pydantic.fields import FieldInfo
@@ -34,6 +34,7 @@ JSON_TYPES_MAPPING: Dict[str, type] = {
     "number": float,
     "string": str,
     "array": list,
+    "object": dict,
     "null": type(None),
 }
 
@@ -48,11 +49,11 @@ def json_type_to_python(json_type: Union[str, List[str]]) -> type:
     :returns: the python type
     """
     if isinstance(json_type, list) and len(json_type) > 1:
-        return Union[tuple(JSON_TYPES_MAPPING.get(jt, Any) for jt in json_type)]  # type: ignore
+        return Union[tuple(JSON_TYPES_MAPPING.get(jt, type(None)) for jt in json_type)]  # type: ignore
     elif isinstance(json_type, str):
-        return JSON_TYPES_MAPPING.get(json_type, Any)
+        return JSON_TYPES_MAPPING.get(json_type, type(None))
     else:
-        return Any
+        return type(None)
 
 
 def python_type_to_json(python_type: type) -> Optional[Union[str, List[str]]]:
@@ -86,8 +87,8 @@ def python_type_to_json(python_type: type) -> Optional[Union[str, List[str]]]:
 
 
 def json_field_definition_to_python(
-    json_field_definition: Dict[str, Any], default_value: Optional[Any] = None
-) -> Annotated:
+    json_field_definition: Dict[str, Any]
+) -> Annotated[Any, FieldInfo]:
     """Get python field definition from json object
 
     >>> result = json_field_definition_to_python(
@@ -97,7 +98,7 @@ def json_field_definition_to_python(
     ...     }
     ... )
     >>> str(result).replace('_extensions', '') # python3.8 compatibility
-    "(typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')], None)"
+    "typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')]"
 
     :param json_field_definition: the json field definition
     :returns: the python field definition
@@ -118,46 +119,35 @@ def json_field_definition_to_python(
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
 
-    return (Annotated[python_type, Field(None, **field_type_kwargs)], default_value)
+    return Annotated[python_type, Field(None, **field_type_kwargs)]
 
 
 def python_field_definition_to_json(
-    python_field_definition: Tuple[Annotated[Any, FieldInfo], Any]
+    python_field_definition: Annotated[Any, FieldInfo]
 ) -> Dict[str, Any]:
     """Get json field definition from python `typing.Annotated`
 
     >>> from pydantic import Field
     >>> from eodag.utils import Annotated
     >>> python_field_definition_to_json(
-    ...     (Annotated[
+    ...     Annotated[
     ...         Optional[str],
     ...         Field(None, description='Foo bar', json_schema_extra={'$ref': '/path/to/schema'})
-    ...     ], None)
+    ...     ]
     ... )
     {'type': ['string', 'null'], 'description': 'Foo bar', '$ref': '/path/to/schema'}
 
-    :param python_field_definition: the python field definition (tuple of annotated type, default value)
-    :returns: the python field definition
+    :param python_field_annotated: the python field annotated type
+    :returns: the json field definition
     """
-    if (
-        not isinstance(python_field_definition, tuple)
-        or len(python_field_definition) != 2
-    ):
+    if get_origin(python_field_definition) is not Annotated:
         raise ValidationError(
-            "%s must be an instance of Tuple[Annotated[Any, FieldInfo], Any]"
-            % python_field_definition
-        )
-
-    python_field_annotated = python_field_definition[0]
-
-    if get_origin(python_field_annotated) is not Annotated:
-        raise ValidationError(
-            "%s must be an instance of Annotated" % python_field_annotated
+            "%s must be an instance of Annotated" % python_field_definition
         )
 
     json_field_definition = dict()
 
-    python_field_args = get_args(python_field_annotated)
+    python_field_args = get_args(python_field_definition)
 
     # enum & type
     if get_origin(python_field_args[0]) is Literal:
@@ -195,19 +185,16 @@ def python_field_definition_to_json(
     return json_field_definition
 
 
-def model_fields_to_annotated_tuple(
+def model_fields_to_annotated(
     model_fields: Dict[str, FieldInfo]
-) -> Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]:
-    """Convert BaseModel.model_fields from FieldInfo to Annotated tuple usable as create_model argument
+) -> Dict[str, Annotated[Any, FieldInfo]]:
+    """Convert BaseModel.model_fields from FieldInfo to Annotated
 
     >>> from pydantic import create_model
     >>> some_model = create_model("some_model", foo=(str, None))
-    >>> fields_definitions = model_fields_to_annotated_tuple(some_model.model_fields)
+    >>> fields_definitions = model_fields_to_annotated(some_model.model_fields)
     >>> str(fields_definitions).replace('_extensions', '') # python3.8 compatibility
-    "{'foo': (typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)], None)}"
-    >>> another_model = create_model("another_model", **fields_definitions)
-    >>> another_model(foo="abc")
-    another_model(foo='abc')
+    "{'foo': typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)]}"
 
     :param model_fields: BaseModel.model_fields to convert
     :returns: Annotated tuple usable as create_model argument
@@ -217,5 +204,5 @@ def model_fields_to_annotated_tuple(
         field_type = field_info.annotation or type(None)
         new_field_info = copy_deepcopy(field_info)
         new_field_info.annotation = None
-        annotated_model_fields[param] = (Annotated[field_type, new_field_info], None)
+        annotated_model_fields[param] = Annotated[field_type, new_field_info]
     return annotated_model_fields

@@ -65,7 +65,7 @@ from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.types import model_fields_to_annotated_tuple
+from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,

@@ -50,7 +50,7 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     makedirs,
-    model_fields_to_annotated_tuple,
+    model_fields_to_annotated,
 )
 from tests.utils import mock, write_eodag_conf_with_fake_credentials
 
@@ -1090,16 +1090,14 @@ class TestCore(TestCoreBase):
             self.dag.list_queryables(product_type="not_existing_product_type")
 
         queryables_none_none = self.dag.list_queryables()
-        expected_result = model_fields_to_annotated_tuple(CommonQueryables.model_fields)
+        expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
         self.assertEqual(len(queryables_none_none), len(expected_result))
         for key, queryable in queryables_none_none.items():
             # compare obj.__repr__
             self.assertEqual(str(expected_result[key]), str(queryable))
 
         queryables_peps_none = self.dag.list_queryables(provider="peps")
-        expected_longer_result = model_fields_to_annotated_tuple(
-            Queryables.model_fields
-        )
+        expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
         self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
         self.assertLess(len(queryables_peps_none), len(expected_longer_result))
         for key, queryable in queryables_peps_none.items():

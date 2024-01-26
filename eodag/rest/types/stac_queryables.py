@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -52,7 +52,7 @@ class StacQueryableProperty(BaseModel):
 
     @classmethod
     def from_python_field_definition(
-        cls, id: str, python_field_definition: Tuple[Annotated[Any, FieldInfo], Any]
+        cls, id: str, python_field_definition: Annotated[Any, FieldInfo]
     ) -> StacQueryableProperty:
         """Build Model from python_field_definition"""
         def_dict = python_field_definition_to_json(python_field_definition)
