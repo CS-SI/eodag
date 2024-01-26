@@ -7061,20 +7061,23 @@
   url: https://land.copernicus.eu/
   api: !plugin
     type: GlobalLandApi
-    api_endpoint: https://api.ecmwf.int/v1
+    api_endpoint: https://globalland.vito.be
     extract: false
     metadata_mapping:
       productType: '$.productType'
       title: '$.properties.title'
       startTimeFromAscendingNode:
-        - 'start={startTimeFromAscendingNode#to_iso_date}'
-        - '$.acquisitionInformation.acquisitionParameters.beginningDateTime'
+        - '{{"start": "{startTimeFromAscendingNode#to_iso_date}"}}'
+        - '$.beginningDateTime'
       completionTimeFromAscendingNode:
-        - 'end={completionTimeFromAscendingNode#to_iso_date}'
-        - '$.acquisitionInformation.acquisitionParameters.endingDateTime'
+        - '{{"end": "{completionTimeFromAscendingNode#to_iso_date}"}}'
+        - '$.endingDateTime'
       id: '$.id'
       # The geographic extent of the product
-      geometry: '$.geojson.geometry'
+      geometry:
+        - '{geometry#to_rounded_wkt}'
+        - '$.geometry'
+      downloadLink: '$.properties.links.data[0].href'
   products:
     CLMS_GLO_FCOVER_333M:
       productType: clms_global_fcover_300m_v1_10daily_netcdf

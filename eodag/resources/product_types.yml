@@ -3524,11 +3524,11 @@ CLMS_GLO_FCOVER_333M:
     direction and it is sensitive to the vegetation amount, FCover is a very good candidate for the replacement of
     classical vegetation indices for the monitoring of ecosystems. The product at 333m resolution is provided in
     Near Real Time and consolidated in the next six periods.
-  instrument: OLCI,PROBA-V
-  platform: Sentinel-3
+  instrument: VEGETATION
+  platform: PROBA-V
   platformSerialIdentifier:
   processingLevel:
-  keywords: Land,Fraction-of-vegetation-cover,OLCI,PROBA-V,Sentinel-3
+  keywords: Land,Fraction-of-vegetation-cover,Vegetation,PROBA-V
   sensorType:
   license: proprietary
   title: Global 10-daily Fraction of Vegetation Cover 333m
