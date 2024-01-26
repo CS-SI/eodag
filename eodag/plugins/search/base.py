@@ -92,7 +92,7 @@ class Search(PluginTopic):
 
     def discover_queryables(
         self, product_type: Optional[str] = None
-    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
+    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf"""
         return None
 

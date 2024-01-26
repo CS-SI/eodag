@@ -43,7 +43,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.search.base import Search
-from eodag.types import json_field_definition_to_python, model_fields_to_annotated_tuple
+from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -55,6 +55,7 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
+    get_args,
     quote,
     string_to_jsonpath,
     update_nested_dict,
@@ -1282,7 +1283,7 @@ class StacSearch(PostJsonSearch):
 
     def discover_queryables(
         self, product_type: Optional[str] = None
-    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
+    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
         :param product_type: (optional) product type
@@ -1290,11 +1291,11 @@ class StacSearch(PostJsonSearch):
         :returns: fetched queryable parameters dict
         :rtype: dict
         """
-        provider_product_type = self.config.products.get(product_type, {}).get(
-            "productType", product_type
+        provider_product_type = (
+            self.config.products.get(product_type, {}).get("productType", product_type)
+            if product_type
+            else None
         )
-
-        python_queryables: Dict[str, FieldInfo] = dict()
 
         try:
             unparsed_fetch_url = (
@@ -1341,7 +1342,7 @@ class StacSearch(PostJsonSearch):
                 return None
 
             # convert json results to pydantic model fields
-            field_definitions = dict()
+            field_definitions: Dict[str, Any] = dict()
             for json_param, json_mtd in json_queryables.items():
                 param = (
                     get_queryable_from_provider(
@@ -1349,8 +1350,9 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-                field_definitions[param] = json_field_definition_to_python(json_mtd)
+                annotated_def = json_field_definition_to_python(json_mtd)
+                field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields
 
-        return model_fields_to_annotated_tuple(python_queryables)
+        return model_fields_to_annotated(python_queryables)

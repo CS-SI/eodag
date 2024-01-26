@@ -22,12 +22,24 @@ import os
 import re
 import shutil
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
+from pydantic.fields import FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -51,7 +63,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.types import model_fields_to_annotated_tuple
+from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -83,7 +95,6 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
     from shapely.geometry.base import BaseGeometry
     from whoosh.index import Index
 
@@ -2092,7 +2103,7 @@ class EODataAccessGateway:
         self,
         provider: Optional[str] = None,
         product_type: Optional[str] = None,
-    ) -> Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]:
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
@@ -2100,9 +2111,8 @@ class EODataAccessGateway:
         :param product_type: (optional) The EODAG product type.
         :type product_type: str
         :returns: A dict containing the EODAG queryable properties, associating
-                  parameters to a tuple containing their annotaded type and default
-                  value
-        :rtype: Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]
+                  parameters to their annotaded type
+        :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         # unknown product type
         if product_type is not None and product_type not in self.list_product_types(
@@ -2112,11 +2122,11 @@ class EODataAccessGateway:
 
         # dictionary of the queryable properties of the providers supporting the given product type
         providers_available_queryables: Dict[
-            str, Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]
+            str, Dict[str, Annotated[Any, FieldInfo]]
         ] = dict()
 
         if provider is None and product_type is None:
-            return model_fields_to_annotated_tuple(CommonQueryables.model_fields)
+            return model_fields_to_annotated(CommonQueryables.model_fields)
         elif provider is None:
             for plugin in self._plugins_manager.get_search_plugins(
                 product_type, provider
@@ -2126,7 +2136,7 @@ class EODataAccessGateway:
                 )
 
             # return providers queryables intersection
-            queryables_keys = {}
+            queryables_keys: AbstractSet[str] = set()
             for queryables in providers_available_queryables.values():
                 queryables_keys = (
                     queryables_keys & queryables.keys()
@@ -2139,7 +2149,7 @@ class EODataAccessGateway:
                 if k in queryables_keys
             }
 
-        all_queryables = model_fields_to_annotated_tuple(Queryables.model_fields)
+        all_queryables = model_fields_to_annotated(Queryables.model_fields)
 
         try:
             plugin = next(
@@ -2147,7 +2157,7 @@ class EODataAccessGateway:
             )
         except StopIteration:
             # return default queryables if no plugin is found
-            return model_fields_to_annotated_tuple(CommonQueryables.model_fields)
+            return model_fields_to_annotated(CommonQueryables.model_fields)
 
         providers_available_queryables[plugin.provider] = dict()
 
@@ -2179,10 +2189,12 @@ class EODataAccessGateway:
                 del metadata_mapping[param]
 
         for key, value in all_queryables.items():
-            annotated_args = get_args(value[0])
+            annotated_args = get_args(value)
             if len(annotated_args) < 1:
                 continue
             field_info = annotated_args[1]
+            if not isinstance(field_info, FieldInfo):
+                continue
             if field_info.is_required() or (
                 (field_info.alias or key) in metadata_mapping
             ):
@@ -2193,7 +2205,7 @@ class EODataAccessGateway:
         provider_queryables.update(providers_available_queryables[provider])
         # always keep at least CommonQueryables
         provider_queryables.update(
-            model_fields_to_annotated_tuple(CommonQueryables.model_fields)
+            model_fields_to_annotated(CommonQueryables.model_fields)
         )
 
         return provider_queryables
