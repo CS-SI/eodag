@@ -28,6 +28,7 @@ import requests
 from dateutil.parser import isoparse
 from pydantic import create_model
 from pydantic.fields import FieldInfo
+from typing_extensions import get_args
 
 from eodag.api.product._assets import Asset
 from eodag.api.product.metadata_mapping import (
@@ -39,7 +40,7 @@ from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.types import json_field_definition_to_python, model_fields_to_annotated_tuple
+from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -435,7 +436,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
 
     def discover_queryables(
         self, product_type: Optional[str] = None, **kwargs: Any
-    ) -> Optional[Dict[str, Tuple[Annotated[Any, FieldInfo], Any]]]:
+    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
         :param product_type: (optional) product type
@@ -483,9 +484,10 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 or json_param
             )
             default = kwargs.get("defaults", {}).get(param, None)
-            field_definitions[param] = json_field_definition_to_python(
+            annotated_def = json_field_definition_to_python(
                 json_mtd, default_value=default
             )
+            field_definitions[param] = get_args(annotated_def)
 
         python_queryables = create_model("m", **field_definitions).model_fields
-        return model_fields_to_annotated_tuple(python_queryables)
+        return model_fields_to_annotated(python_queryables)

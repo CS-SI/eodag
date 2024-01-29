@@ -935,4 +935,4 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         self.assertEqual(7, len(queryables))
         queryable = queryables.get("variable")
-        self.assertEqual("a", queryable[0].__metadata__[0].get_default())
+        self.assertEqual("a", queryable.__metadata__[0].get_default())

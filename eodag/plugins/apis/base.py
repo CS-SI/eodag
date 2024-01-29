@@ -20,6 +20,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from pydantic.fields import FieldInfo
+
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
