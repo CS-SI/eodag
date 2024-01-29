@@ -2122,7 +2122,7 @@ class EODataAccessGateway:
         self,
         provider: Optional[str] = None,
         product_type: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
