@@ -7071,3 +7071,54 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
+
+---
+!provider
+  name: cop_land
+  priority: 0
+  description: Copernicus Land Monitoring Service (CLMS)
+  roles:
+    - host
+  url: https://land.copernicus.eu/
+  search: !plugin
+    type: QueryStringSearch
+    api_endpoint: https://services.terrascope.be/catalogue/products
+    need_auth: false
+    stac_assets: True
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+    pagination:
+      next_page_url_tpl: '{url}?{search}&startIndex={skip_base_1}'
+      total_items_nb_key_path: '$.totalResults'
+      max_items_per_page: 100
+    metadata_mapping:
+      startTimeFromAscendingNode:
+        - start
+        - '$.properties.date'
+      completionTimeFromAscendingNode:
+        - end
+        - '$.properties.date'
+      id: '$.id'
+      title: '$.properties.title'
+      productType:
+        - collection
+        - '$.properties.parentIdentifier'
+      geometry: '$.geometry'
+      assets: '$.properties.links'
+      downloadUrl: 'https://services.terrascope.be/catalogue/'
+  products:
+    CLMS_GLO_FCOVER_333M:
+      productType: urn:eop:VITO:TERRASCOPE_S2_FCOVER_V2
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://services.terrascope.be/catalogue/'
+  auth: !plugin
+    type: KeycloakOIDCPasswordAuth
+    auth_base_uri: 'https://sso.vgt.vito.be/auth'
+    realm: 'terrascope'
+    client_id: 'public'
+    client_secret: null
+    token_provision: qs
+    token_qs_key: 'access_token'
+    auth_error_code: 401

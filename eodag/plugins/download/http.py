@@ -35,6 +35,7 @@ from lxml import etree
 from requests import RequestException
 from stream_zip import NO_COMPRESSION_64, stream_zip
 
+from eodag.api.product._assets import AssetsDict
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -858,6 +859,19 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
+        assets_dict = getattr(product, "assets", {})
+        if not isinstance(assets_dict, AssetsDict):
+            assets_dict = AssetsDict(product)
+            for key, values in getattr(product, "assets", {}).items():
+                if isinstance(values, list):
+                    for i, value in enumerate(values):
+                        if "title" in value:
+                            assets_dict[value["title"]] = value
+                        else:
+                            assets_dict[f"{key}_{i}"] = value
+                else:
+                    assets_dict[key] = values
+            product.assets = assets_dict
         assets_urls = [
             a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
         ]

@@ -34,6 +34,7 @@ from requests import Response
 from requests.adapters import HTTPAdapter
 
 from eodag.api.product import EOProduct
+from eodag.api.product._assets import AssetsDict
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     format_query_params,
@@ -778,6 +779,8 @@ class QueryStringSearch(Search):
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
             products.append(product)
+            if getattr(self.config, "stac_assets", False):
+                product.assets = product.properties.pop("assets", AssetsDict(product))
         return products
 
     def count_hits(self, count_url: str, result_type: Optional[str] = "json") -> int:
