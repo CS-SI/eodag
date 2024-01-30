@@ -43,7 +43,7 @@ import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
-from stream_zip import NO_COMPRESSION_64, stream_zip
+from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -775,7 +775,7 @@ class AwsDownload(Download):
                     chunk_rel_path,
                     modified_at,
                     perms,
-                    NO_COMPRESSION_64,
+                    ZIP_AUTO(product_chunk.size),
                     get_chunk_parts(product_chunk, progress_callback),
                 )
 

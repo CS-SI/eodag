@@ -32,7 +32,7 @@ import requests
 import requests_ftp
 from lxml import etree
 from requests import RequestException
-from stream_zip import NO_COMPRESSION_64, stream_zip
+from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
@@ -811,7 +811,7 @@ class HTTPDownload(Download):
                             asset.rel_path,
                             modified_at,
                             perms,
-                            NO_COMPRESSION_64,
+                            ZIP_AUTO(asset.size),
                             get_chunks(stream),
                         )
 
