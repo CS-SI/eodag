@@ -24,6 +24,7 @@ import botocore
 from botocore.exceptions import BotoCoreError
 
 from eodag import EOProduct
+from eodag.api.product._assets import AssetsDict
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import QueryStringSearch
@@ -75,8 +76,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                     **auth_dict,
                 )
             logger.debug(f"Listing assets in {prefix}")
-
-            product.assets = dict()
+            product.assets = AssetsDict(product)
             for asset in auth.s3_client.list_objects(
                 Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
             )["Contents"]:

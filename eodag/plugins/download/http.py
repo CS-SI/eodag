@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import shutil
 import zipfile
 from datetime import datetime
@@ -33,7 +32,7 @@ import requests
 import requests_ftp
 from lxml import etree
 from requests import RequestException
-from stream_zip import NO_COMPRESSION_64, stream_zip
+from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
@@ -513,8 +512,7 @@ class HTTPDownload(Download):
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
             try:
-                assets_values = self._get_assets_values(product, **kwargs)
-
+                assets_values = product.assets.get_values(kwargs.get("asset", None))
                 chunks_tuples = self._stream_download_assets(
                     product,
                     auth,
@@ -699,29 +697,6 @@ class HTTPDownload(Download):
                         progress_callback(len(chunk))
                         yield chunk
 
-    def _get_assets_values(
-        self,
-        product,
-        **kwargs,
-    ):
-        asset_filter = kwargs.get("asset", None)
-        if asset_filter:
-            filter_regex = re.compile(asset_filter)
-            assets_keys = getattr(product, "assets", {}).keys()
-            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-            filtered_assets = {
-                a_key: getattr(product, "assets", {})[a_key] for a_key in assets_keys
-            }
-            assets_values = [a for a in filtered_assets.values() if "href" in a]
-            if not assets_values:
-                raise NotAvailableError(
-                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
-                )
-            else:
-                return assets_values
-        else:
-            return [a for a in getattr(product, "assets", {}).values() if "href" in a]
-
     def _stream_download_assets(
         self,
         product: EOProduct,
@@ -840,7 +815,7 @@ class HTTPDownload(Download):
                             asset.rel_path,
                             modified_at,
                             perms,
-                            NO_COMPRESSION_64,
+                            ZIP_AUTO(asset.size),
                             get_chunks(stream),
                         )
 
@@ -864,7 +839,7 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = self._get_assets_values(product, **kwargs)
+        assets_values = product.assets.get_values(kwargs.get("asset", None))
 
         chunks_tuples = self._stream_download_assets(
             product, auth, progress_callback, assets_values=assets_values, **kwargs

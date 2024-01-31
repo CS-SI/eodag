@@ -17,8 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
+import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, List
+
+from eodag.utils.exceptions import NotAvailableError
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -53,6 +56,31 @@ class AssetsDict(UserDict):
         :rtype: dict
         """
         return {k: v.as_dict() for k, v in self.data.items()}
+
+    def get_values(self, asset_filter: str = "") -> List[Asset]:
+        """
+        retrieves the assets matching the given filter
+        :param asset_filter: filter with which the assets should be matched
+        :type asset_filter: str
+        :return: list of assets
+        :rtype: List[Asset]
+        """
+        if asset_filter:
+            filter_regex = re.compile(asset_filter)
+            assets_keys = list(self.keys())
+            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+            filtered_assets = {}
+            if len(assets_keys) > 0:
+                filtered_assets = {a_key: self.get(a_key) for a_key in assets_keys}
+            assets_values = [a for a in filtered_assets.values() if a and "href" in a]
+            if not assets_values:
+                raise NotAvailableError(
+                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {self.product}"
+                )
+            else:
+                return assets_values
+        else:
+            return [a for a in self.values() if "href" in a]
 
 
 class Asset(UserDict):
