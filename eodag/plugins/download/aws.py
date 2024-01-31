@@ -785,7 +785,10 @@ class AwsDownload(Download):
                     build_safe=build_safe,
                 )
                 if flatten_top_dirs:
-                    chunk_rel_path = chunk_rel_path.replace(common_path, "")
+                    chunk_rel_path = os.path.join(
+                        product.properties["title"],
+                        re.sub(rf"^{common_path}/?", "", chunk_rel_path),
+                    )
 
             except NotAvailableError as e:
                 # out of SAFE format chunk
