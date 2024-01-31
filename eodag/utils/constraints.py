@@ -75,7 +75,7 @@ def get_constraint_queryables_with_additional_params(
                 params_available[param] = True
                 if value in constraint[provider_key]:
                     params_matched[param] = True
-                values_available[provider_key].update(constraint[provider_key])
+                values_available[param].update(constraint[provider_key])
         # match with default values of params
         for default_param, default_value in defaults.items():
             provider_key = get_provider_queryable_key(
