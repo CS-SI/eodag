@@ -462,7 +462,8 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         if not constraints:
             return {}
         constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
-        if len(kwargs) == 0:
+        removed_defaults = kwargs.pop("removed_defaults", {})
+        if len(kwargs) == 0 or (len(kwargs) == 1 and len(kwargs["defaults"]) == 0):
             # get values from constraints without additional filters
             for constraint in constraints:
                 for key in constraint.keys():
@@ -484,6 +485,8 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 or json_param
             )
             default = kwargs.get("defaults", {}).get(param, None)
+            if not default:
+                default = removed_defaults.get(param, None)
             annotated_def = json_field_definition_to_python(
                 json_mtd, default_value=default
             )

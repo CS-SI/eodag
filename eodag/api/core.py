@@ -2137,9 +2137,10 @@ class EODataAccessGateway:
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         # unknown product type
-        if product_type is not None and product_type not in self.list_product_types(
-            fetch_providers=False
-        ):
+        available_product_types = [
+            pt["ID"] for pt in self.list_product_types(fetch_providers=False)
+        ]
+        if product_type is not None and product_type not in available_product_types:
             self.fetch_product_types_list()
 
         # dictionary of the queryable properties of the providers supporting the given product type
@@ -2228,9 +2229,18 @@ class EODataAccessGateway:
             getattr(plugin.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
+        removed_defaults = {}
         for param in kwargs:
-            default_values[param] = kwargs[param]
+            if not kwargs[param]:
+                default = default_values.pop(param, None)
+                removed_defaults[param] = default
+            elif param in default_values:
+                default_values[param] = kwargs[param]
+        kwargs = {
+            key: kwargs[key] for key in kwargs if key not in removed_defaults.keys()
+        }
         kwargs["defaults"] = default_values
+        kwargs["removed_defaults"] = removed_defaults
 
         provider_queryables = (
             plugin.discover_queryables(product_type, **kwargs) or dict()

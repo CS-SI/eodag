@@ -1115,6 +1115,52 @@ class TestCore(TestCoreBase):
             # compare obj.__repr__
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
+    @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
+    def test_list_queryables_with_constraints(self, mock_discover_queryables):
+        plugin = next(
+            self.dag._plugins_manager.get_search_plugins(
+                provider="cop_cds", product_type="ERA5_SL"
+            )
+        )
+        # default values should be added to params
+        self.dag.list_queryables(provider="cop_cds", product_type="ERA5_SL")
+        defaults = {
+            "defaults": {
+                "api_product_type": "reanalysis",
+                "dataset": "reanalysis-era5-single-levels",
+                "format": "grib",
+                "time": "00:00",
+            },
+            "removed_defaults": {},
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
+        mock_discover_queryables.reset_mock()
+        # default values + additional param
+        self.dag.list_queryables(provider="cop_cds", product_type="ERA5_SL", month="02")
+        params = {
+            "month": "02",
+            "defaults": {
+                "api_product_type": "reanalysis",
+                "dataset": "reanalysis-era5-single-levels",
+                "format": "grib",
+                "time": "00:00",
+            },
+            "removed_defaults": {},
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **params)
+        mock_discover_queryables.reset_mock()
+        # default values should not be used if unset in params
+        self.dag.list_queryables(provider="cop_cds", product_type="ERA5_SL", format="")
+        defaults = {
+            "defaults": {
+                "api_product_type": "reanalysis",
+                "dataset": "reanalysis-era5-single-levels",
+                "time": "00:00",
+            },
+            "removed_defaults": {"format": "grib"},
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
+
 
 class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
