@@ -736,25 +736,35 @@ class AwsDownload(Download):
         assets_values: List[Dict[str, Any]],
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
         """Yield product data chunks"""
+
         chunk_size = 4096 * 1024
+        modified_at = datetime.now()
+        perms = 0o600
 
         def get_chunk_parts(
             product_chunk: Any, progress_callback: ProgressCallback
         ) -> Any:
             try:
-                for chunk_part in product_chunk.get()["Body"].iter_chunks(
-                    chunk_size=chunk_size
-                ):
-                    if chunk_part:
-                        progress_callback(len(chunk_part))
-                        yield chunk_part
+
+                chunk_start = 0
+                chunk_end = chunk_start + chunk_size - 1
+
+                while chunk_start <= product_chunk.size:
+                    get_kwargs = (
+                        dict(RequestPayer="requester") if self.requester_pays else {}
+                    )
+                    chunk_part = product_chunk.get(
+                        Range=f"bytes={chunk_start}-{chunk_end}", **get_kwargs
+                    )["Body"].read()
+                    progress_callback(len(chunk_part))
+                    chunk_start += chunk_size
+                    chunk_end += chunk_size
+                    yield chunk_part
+
             except ClientError as e:
                 self._raise_if_auth_error(e)
                 raise DownloadError("Unexpected error: %s" % e) from e
 
-        modified_at = datetime.now()
-        perms = 0o600
-        chunk_size = 4096 * 1024
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
