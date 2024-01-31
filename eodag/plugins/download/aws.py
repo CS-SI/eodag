@@ -755,6 +755,17 @@ class AwsDownload(Download):
         modified_at = datetime.now()
         perms = 0o600
         chunk_size = 4096 * 1024
+        product_conf = getattr(self.config, "products", {}).get(
+            product.product_type, {}
+        )
+        flatten_top_dirs = product_conf.get(
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+        )
+        common_path = ""
+        if flatten_top_dirs:
+            common_path = self._get_commonpath(
+                product, unique_product_chunks, build_safe
+            )
 
         for product_chunk in unique_product_chunks:
             try:
@@ -763,6 +774,9 @@ class AwsDownload(Download):
                     product_chunk,
                     build_safe=build_safe,
                 )
+                if flatten_top_dirs:
+                    chunk_rel_path = chunk_rel_path.replace(common_path, "")
+
             except NotAvailableError as e:
                 # out of SAFE format chunk
                 logger.warning(e)
@@ -778,6 +792,16 @@ class AwsDownload(Download):
                     ZIP_AUTO(product_chunk.size),
                     get_chunk_parts(product_chunk, progress_callback),
                 )
+
+    def _get_commonpath(
+        self, product: EOProduct, product_chunks: Set[Any], build_safe: bool
+    ) -> str:
+        chunk_paths = []
+        for product_chunk in product_chunks:
+            chunk_paths.append(
+                self.get_chunk_dest_path(product, product_chunk, build_safe=build_safe)
+            )
+        return os.path.commonpath(chunk_paths)
 
     def get_rio_env(
         self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
