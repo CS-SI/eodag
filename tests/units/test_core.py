@@ -1179,6 +1179,20 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreInvolvingConfDir, cls).setUpClass()
+        cls.dag = EODataAccessGateway()
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCoreInvolvingConfDir, cls).tearDownClass()
+        # stop os.environ
+        cls.mock_os_environ.stop()
+
     def setUp(self):
         super(TestCoreInvolvingConfDir, self).setUp()
         self.dag = EODataAccessGateway()
@@ -1248,21 +1262,35 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
         del os.environ["EODAG_CFG_DIR"]
 
         # fallback temporary folder
+        def makedirs_side_effect(dir):
+            if dir == os.path.join(os.path.expanduser("~"), ".config", "eodag"):
+                raise OSError("Mock makedirs error")
+            else:
+                return makedirs(dir)
+
         with mock.patch(
-            "eodag.api.core.makedirs",
-            side_effect=[OSError("Mock makedirs error"), None, None],
+            "eodag.api.core.makedirs", side_effect=makedirs_side_effect
         ) as mock_makedirs:
-            # The temporary directory is not actually created, raising in a second
-            # moment an exception during the initialization of EODataAccessGateway.
-            # It's enough to verify that eodag.api.core.makedirs() was called again
-            # with temporary path as argument.
-            try:
-                EODataAccessGateway()
-            except FileNotFoundError:
-                pass
-            temp_dir = os.path.join(tempfile.gettempdir(), ".config", "eodag")
+            # backup temp_dir if exists
+            temp_dir = temp_dir_old = os.path.join(
+                tempfile.gettempdir(), ".config", "eodag"
+            )
+            if os.path.exists(temp_dir):
+                temp_dir_old = f"{temp_dir}.old"
+                shutil.move(temp_dir, temp_dir_old)
+
+            EODataAccessGateway()
             expected = [unittest.mock.call(home_dir), unittest.mock.call(temp_dir)]
             mock_makedirs.assert_has_calls(expected)
+            self.assertTrue(os.path.exists(temp_dir))
+
+            # restore temp_dir
+            if temp_dir_old != temp_dir:
+                try:
+                    shutil.rmtree(temp_dir)
+                except OSError:
+                    os.unlink(temp_dir)
+                shutil.move(temp_dir_old, temp_dir)
 
 
 class TestCoreGeometry(TestCoreBase):
