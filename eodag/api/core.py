@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import shutil
+import tempfile
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -129,8 +130,27 @@ class EODataAccessGateway:
         self.product_types_config_md5 = obj_md5sum(self.product_types_config.source)
         self.providers_config = load_default_config()
 
-        self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
-        makedirs(self.conf_dir)
+        env_var_cfg_dir = "EODAG_CFG_DIR"
+        self.conf_dir = os.getenv(
+            env_var_cfg_dir,
+            default=os.path.join(os.path.expanduser("~"), ".config", "eodag"),
+        )
+        try:
+            makedirs(self.conf_dir)
+        except OSError as e:
+            logger.debug(e)
+            tmp_conf_dir = os.path.join(tempfile.gettempdir(), ".config", "eodag")
+            logger.warning(
+                f"Cannot create configuration directory {self.conf_dir}. "
+                + f"Falling back to temporary directory {tmp_conf_dir}."
+            )
+            if os.getenv(env_var_cfg_dir) is None:
+                logger.warning(
+                    "You can set the path of the configuration directory "
+                    + f"with the environment variable {env_var_cfg_dir}"
+                )
+            self.conf_dir = tmp_conf_dir
+            makedirs(self.conf_dir)
 
         self._plugins_manager = PluginManager(self.providers_config)
         # use updated providers_config

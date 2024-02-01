@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import shutil
+import tempfile
 import unittest
 import uuid
 from pathlib import Path
@@ -1178,6 +1179,20 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreInvolvingConfDir, cls).setUpClass()
+        cls.dag = EODataAccessGateway()
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCoreInvolvingConfDir, cls).tearDownClass()
+        # stop os.environ
+        cls.mock_os_environ.stop()
+
     def setUp(self):
         super(TestCoreInvolvingConfDir, self).setUp()
         self.dag = EODataAccessGateway()
@@ -1194,14 +1209,15 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                 except OSError:
                     shutil.rmtree(old_path)
 
-    def execution_involving_conf_dir(self, inspect=None):
+    def execution_involving_conf_dir(self, inspect=None, conf_dir=None):
         """Check that the path(s) inspected (str, list) are created after the instantation
         of EODataAccessGateway. If they were already there, rename them (.old), instantiate,
         check, delete the new files, and restore the existing files to there previous name."""
         if inspect is not None:
+            if conf_dir is None:
+                conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
             if isinstance(inspect, str):
                 inspect = [inspect]
-            conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
             olds = []
             currents = []
             for inspected in inspect:
@@ -1232,6 +1248,49 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
     def test_core_object_creates_locations_standard_location(self):
         """The core object must create a locations config file and a shp dir in standard user config location on instantiation"""  # noqa
         self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
+
+    def test_read_only_home_dir(self):
+        # standard directory
+        home_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        self.execution_involving_conf_dir(inspect="eodag.yml", conf_dir=home_dir)
+
+        # user defined directory
+        user_dir = os.path.join(os.path.expanduser("~"), ".config", "another_eodag")
+        os.environ["EODAG_CFG_DIR"] = user_dir
+        self.execution_involving_conf_dir(inspect="eodag.yml", conf_dir=user_dir)
+        shutil.rmtree(user_dir)
+        del os.environ["EODAG_CFG_DIR"]
+
+        # fallback temporary folder
+        def makedirs_side_effect(dir):
+            if dir == os.path.join(os.path.expanduser("~"), ".config", "eodag"):
+                raise OSError("Mock makedirs error")
+            else:
+                return makedirs(dir)
+
+        with mock.patch(
+            "eodag.api.core.makedirs", side_effect=makedirs_side_effect
+        ) as mock_makedirs:
+            # backup temp_dir if exists
+            temp_dir = temp_dir_old = os.path.join(
+                tempfile.gettempdir(), ".config", "eodag"
+            )
+            if os.path.exists(temp_dir):
+                temp_dir_old = f"{temp_dir}.old"
+                shutil.move(temp_dir, temp_dir_old)
+
+            EODataAccessGateway()
+            expected = [unittest.mock.call(home_dir), unittest.mock.call(temp_dir)]
+            mock_makedirs.assert_has_calls(expected)
+            self.assertTrue(os.path.exists(temp_dir))
+
+            # restore temp_dir
+            if temp_dir_old != temp_dir:
+                try:
+                    shutil.rmtree(temp_dir)
+                except OSError:
+                    os.unlink(temp_dir)
+                shutil.move(temp_dir_old, temp_dir)
 
 
 class TestCoreGeometry(TestCoreBase):
