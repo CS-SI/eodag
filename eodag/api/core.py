@@ -222,60 +222,6 @@ class EODataAccessGateway:
 
         self.fetch_external_product_types_metadata()
 
-    def load_external_product_type_metadata(
-        self, product_type_id: str, product_type_conf: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Loads external enhanced metadata for a given product type.
-
-        The existing product type configuration is merged with the one from the external file and
-        the result is returned.
-
-        Existing keys are not updated. Lists are merged also for existing keys.
-        Only the keys defined in `search.discover_product_types.generic_product_type_parsable_metadata`
-        from `eodag/resources/stac_provider.yml` are loaded into the configuration.
-
-        :param product_type_id: Product type ID to update with the external metadata.
-        :type product_type_id: str
-        :param product_type_conf: Product type configuration to update with the external
-            metadata.
-        :type product_type_conf: Dict[str, Any]
-        :returns: The enhanced product type dictionary, None if no external metadata is available
-        :rtype: Optional[Dict[str, Any]]
-        """
-        external_stac_collection_path = product_type_conf.get("stacCollection")
-        if not external_stac_collection_path:
-            return None
-        enhanced_product_type_conf = deepcopy(product_type_conf)
-        logger.info(
-            f"Fetching external enhanced product type metadata for {product_type_id}"
-        )
-        stac_provider_config = load_stac_provider_config()
-        parsable_metadata = stac_provider_config["search"]["discover_product_types"][
-            "generic_product_type_parsable_metadata"
-        ]
-        parsable_metadata = mtd_cfg_as_conversion_and_querypath(parsable_metadata)
-        external_stac_collection = get_ext_product_types_conf(
-            external_stac_collection_path
-        )
-        # Loading external enhanced product types metadata
-        external_stac_collection_parsed = properties_from_json(
-            external_stac_collection,
-            parsable_metadata,
-        )
-        # Merge `external_stac_collection_parsed` into `enhanced_product_type_conf`
-        for ext_cfg_k, ext_cfg_v in external_stac_collection_parsed.items():
-            old_value = enhanced_product_type_conf.get(ext_cfg_k)
-            if old_value is None:
-                enhanced_product_type_conf[ext_cfg_k] = ext_cfg_v
-            elif ext_cfg_k in ("instrument", "platformSerialIdentifier", "keywords"):
-                merged_values = old_value.split(",")
-                new_values = ext_cfg_v.split(",")
-                for v in new_values:
-                    if v not in merged_values:
-                        merged_values.append(v)
-                enhanced_product_type_conf[ext_cfg_k] = ",".join(merged_values)
-        return enhanced_product_type_conf
-
     def get_version(self) -> str:
         """Get eodag package version"""
         return pkg_resources.get_distribution("eodag").version
@@ -628,6 +574,60 @@ class EODataAccessGateway:
             )
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
+
+    def load_external_product_type_metadata(
+        self, product_type_id: str, product_type_conf: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Loads external enhanced metadata for a given product type.
+
+        The existing product type configuration is merged with the one from the external file and
+        the result is returned.
+
+        Existing keys are not updated. Lists are merged also for existing keys.
+        Only the keys defined in `search.discover_product_types.generic_product_type_parsable_metadata`
+        from `eodag/resources/stac_provider.yml` are loaded into the configuration.
+
+        :param product_type_id: Product type ID to update with the external metadata.
+        :type product_type_id: str
+        :param product_type_conf: Product type configuration to update with the external
+            metadata.
+        :type product_type_conf: Dict[str, Any]
+        :returns: The enhanced product type dictionary, None if no external metadata is available
+        :rtype: Optional[Dict[str, Any]]
+        """
+        external_stac_collection_path = product_type_conf.get("stacCollection")
+        if not external_stac_collection_path:
+            return None
+        enhanced_product_type_conf = deepcopy(product_type_conf)
+        logger.info(
+            f"Fetching external enhanced product type metadata for {product_type_id}"
+        )
+        stac_provider_config = load_stac_provider_config()
+        parsable_metadata = stac_provider_config["search"]["discover_product_types"][
+            "generic_product_type_parsable_metadata"
+        ]
+        parsable_metadata = mtd_cfg_as_conversion_and_querypath(parsable_metadata)
+        external_stac_collection = get_ext_product_types_conf(
+            external_stac_collection_path
+        )
+        # Loading external enhanced product types metadata
+        external_stac_collection_parsed = properties_from_json(
+            external_stac_collection,
+            parsable_metadata,
+        )
+        # Merge `external_stac_collection_parsed` into `enhanced_product_type_conf`
+        for ext_cfg_k, ext_cfg_v in external_stac_collection_parsed.items():
+            old_value = enhanced_product_type_conf.get(ext_cfg_k)
+            if old_value is None:
+                enhanced_product_type_conf[ext_cfg_k] = ext_cfg_v
+            elif ext_cfg_k in ("instrument", "platformSerialIdentifier", "keywords"):
+                merged_values = old_value.split(",")
+                new_values = ext_cfg_v.split(",")
+                for v in new_values:
+                    if v not in merged_values:
+                        merged_values.append(v)
+                enhanced_product_type_conf[ext_cfg_k] = ",".join(merged_values)
+        return enhanced_product_type_conf
 
     def fetch_external_product_types_metadata(self) -> None:
         """Fetch external product types metadata and update if needed"""
