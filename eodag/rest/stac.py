@@ -39,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
     format_metadata,
     get_metadata_path,
 )
+from eodag.config import get_ext_product_types_conf
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     deepcopy,
@@ -610,6 +611,25 @@ class StacCollection(StacCommon):
     :type root: str
     """
 
+    # External STAC collections
+    ext_stac_collections: Dict[str, Dict[str, Any]] = dict()
+
+    @classmethod
+    def fetch_external_stac_collections(cls, eodag_api: EODataAccessGateway) -> None:
+        """Load external STAC collections
+
+        :param eodag_api: EODAG python API instance
+        :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
+        """
+        list_product_types = eodag_api.list_product_types()
+        for product_type in list_product_types:
+            ext_stac_collection_path = product_type.get("stacCollection")
+            if not ext_stac_collection_path:
+                continue
+            logger.info(f"Fetching external STAC collection for {product_type['ID']}")
+            ext_stac_collection = get_ext_product_types_conf(ext_stac_collection_path)
+            cls.ext_stac_collections[product_type["ID"]] = ext_stac_collection
+
     def __init__(
         self,
         url: str,
@@ -710,7 +730,6 @@ class StacCollection(StacCommon):
                 providers_models.append(provider_m)
 
             # parse jsonpath
-            self.eodag_api.load_external_product_types_metadata(product_type)
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
@@ -718,6 +737,11 @@ class StacCollection(StacCommon):
                     "providers": providers_models,
                 },
             )
+            # merge EODAG's collection with the external collection
+            product_type_id = product_type.get("_id", None) or product_type["ID"]
+            ext_stac_collection = self.ext_stac_collections.get(product_type_id, {})
+            ext_stac_collection.update(product_type_collection)
+            product_type_collection = ext_stac_collection
             # parse f-strings
             format_args = deepcopy(self.stac_config)
             format_args["collection"] = dict(
