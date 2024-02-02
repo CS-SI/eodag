@@ -45,7 +45,7 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import GENERIC_PRODUCT_TYPE, _deprecated, dict_items_recursive_apply
+from eodag.utils import StreamResponse, _deprecated, dict_items_recursive_apply
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -228,53 +228,23 @@ def download_stac_item_by_id_stream(
     """
     product_type = catalogs[0]
 
-    search_plugin = next(
-        eodag_api._plugins_manager.get_search_plugins(product_type, provider)
+    search_results, _ = eodag_api.search(
+        id=item_id, productType=product_type, provider=provider, **kwargs
     )
-    provider_product_type_config = search_plugin.config.products.get(
-        product_type, {}
-    ) or search_plugin.config.products.get(GENERIC_PRODUCT_TYPE, {})
-    if provider_product_type_config.get("storeDownloadUrl", False):
-        if item_id not in search_plugin.download_info:
-            logger.error("data for item %s not found", item_id)
-            raise NotAvailableError(
-                f"download url for product {item_id} could not be found, please redo "
-                f"the search request to fetch the required data"
-            )
-        product_data = search_plugin.download_info[item_id]
-        properties = {
-            "id": item_id,
-            "orderLink": product_data["orderLink"],
-            "downloadLink": product_data["downloadLink"],
-            "geometry": "-180 -90 180 90",
-        }
-        product = EOProduct(provider or product_data["provider"], properties)
+    if len(search_results) > 0:
+        product = cast(EOProduct, search_results[0])
     else:
-        search_results, _ = eodag_api.search(
-            id=item_id, productType=product_type, provider=provider, **kwargs
+        raise NotAvailableError(
+            f"Could not find {item_id} item in {product_type} collection"
+            + (f" for provider {provider}" if provider is not None else "")
         )
-        if len(search_results) > 0:
-            product = cast(EOProduct, search_results[0])
-        else:
-            raise NotAvailableError(
-                f"Could not find {item_id} item in {product_type} collection for provider {provider}"
-            )
 
-    if product.downloader is None:
-        download_plugin = eodag_api._plugins_manager.get_download_plugin(product)
-        auth_plugin = eodag_api._plugins_manager.get_auth_plugin(
-            download_plugin.provider
-        )
-        product.register_downloader(download_plugin, auth_plugin)
-
-    auth = (
-        product.downloader_auth.authenticate()
-        if product.downloader_auth is not None
-        else product.downloader_auth
-    )
     try:
-        download_stream = product.downloader._stream_download_dict(
-            product, auth=auth, asset=asset
+        download_stream = cast(
+            StreamResponse,
+            product.downloader._stream_download_dict(
+                product, auth=product.downloader_auth.authenticate(), asset=asset
+            ),
         )
     except NotImplementedError:
         logger.warning(

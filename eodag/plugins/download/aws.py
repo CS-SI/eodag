@@ -57,6 +57,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
+    StreamResponse,
     flatten_top_directories,
     get_bucket_name_and_prefix,
     path_to_uri,
@@ -631,7 +632,7 @@ class AwsDownload(Download):
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> StreamResponse:
         r"""
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
@@ -725,11 +726,11 @@ class AwsDownload(Download):
             if assets_values[0].get("type", None):
                 headers["content-type"] = assets_values[0]["type"]
 
-            return dict(
+            return StreamResponse(
                 content=chain(iter([first_chunks_tuple]), chunks_tuples),
                 headers=headers,
             )
-        return dict(
+        return StreamResponse(
             content=stream_zip(chunks_tuples),
             media_type="application/zip",
             headers={
