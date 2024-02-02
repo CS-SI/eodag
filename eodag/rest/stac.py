@@ -621,7 +621,7 @@ class StacCollection(StacCommon):
         :param eodag_api: EODAG python API instance
         :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
         """
-        list_product_types = eodag_api.list_product_types()
+        list_product_types = eodag_api.list_product_types(fetch_providers=False)
         for product_type in list_product_types:
             ext_stac_collection_path = product_type.get("stacCollection")
             if not ext_stac_collection_path:

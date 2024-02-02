@@ -36,6 +36,7 @@ from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
@@ -624,7 +625,7 @@ class EODataAccessGateway:
                 merged_values = old_value.split(",")
                 new_values = ext_cfg_v.split(",")
                 for v in new_values:
-                    if v not in merged_values:
+                    if v != NOT_AVAILABLE and v not in merged_values:
                         merged_values.append(v)
                 enhanced_product_type_conf[ext_cfg_k] = ",".join(merged_values)
         return enhanced_product_type_conf
