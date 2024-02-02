@@ -2229,18 +2229,15 @@ class EODataAccessGateway:
             getattr(plugin.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
-        removed_defaults = {}
+        removed_defaults = []
         for param in kwargs:
             if not kwargs[param]:
-                default = default_values.pop(param, None)
-                removed_defaults[param] = default
-            elif param in default_values:
+                default_values.pop(param, None)
+                removed_defaults.append(param)
+            else:
                 default_values[param] = kwargs[param]
-        kwargs = {
-            key: kwargs[key] for key in kwargs if key not in removed_defaults.keys()
-        }
+        kwargs = {key: kwargs[key] for key in kwargs if key not in removed_defaults}
         kwargs["defaults"] = default_values
-        kwargs["removed_defaults"] = removed_defaults
 
         provider_queryables = (
             plugin.discover_queryables(product_type, **kwargs) or dict()

@@ -1131,7 +1131,6 @@ class TestCore(TestCoreBase):
                 "format": "grib",
                 "time": "00:00",
             },
-            "removed_defaults": {},
         }
         mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
         mock_discover_queryables.reset_mock()
@@ -1144,8 +1143,8 @@ class TestCore(TestCoreBase):
                 "dataset": "reanalysis-era5-single-levels",
                 "format": "grib",
                 "time": "00:00",
+                "month": "02",
             },
-            "removed_defaults": {},
         }
         mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **params)
         mock_discover_queryables.reset_mock()
@@ -1156,8 +1155,7 @@ class TestCore(TestCoreBase):
                 "api_product_type": "reanalysis",
                 "dataset": "reanalysis-era5-single-levels",
                 "time": "00:00",
-            },
-            "removed_defaults": {"format": "grib"},
+            }
         }
         mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
 

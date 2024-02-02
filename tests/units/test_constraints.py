@@ -70,6 +70,12 @@ class TestConstraints(unittest.TestCase):
         self.assertIn("type", queryables)
         queryable = queryables.get("time")
         self.assertSetEqual({"01:00", "12:00", "18:00", "22:00"}, queryable["enum"])
+        queryable = queryables.get("type")
+        self.assertSetEqual({"C", "B"}, queryable["enum"])
+        queryable = queryables.get("year")
+        self.assertSetEqual(
+            {"2000", "2001", "2002", "2003", "2004", "2005"}, queryable["enum"]
+        )
         # only with defaults
         queryables = get_constraint_queryables_with_additional_params(
             constraints,
@@ -85,3 +91,5 @@ class TestConstraints(unittest.TestCase):
         self.assertSetEqual({"01:00", "12:00", "18:00", "22:00"}, queryable["enum"])
         queryable = queryables.get("variable")
         self.assertSetEqual({"a", "b", "e", "f"}, queryable["enum"])
+        queryable = queryables.get("type")
+        self.assertSetEqual({"A", "B", "C"}, queryable["enum"])

@@ -24,7 +24,7 @@ import requests
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.exceptions import TimeOutError, ValidationError
 
 logger = logging.getLogger("eodag.constraints")
@@ -106,6 +106,13 @@ def get_constraint_queryables_with_additional_params(
                     queryables[key] = {}
                     queryables[key]["enum"] = set(constraints[num][key])
 
+    other_values = _get_other_possible_values_for_values_with_defaults(
+        defaults, params, constraints, metadata_mapping
+    )
+    for key in queryables:
+        if key in other_values:
+            queryables[key]["enum"].update(other_values[key])
+
     # check if constraints matching params have been found
     if len(queryables) == 0:
         if len(params) > 1:
@@ -173,3 +180,50 @@ def fetch_constraints(
         else:
             constraints = constraints_data
         return constraints
+
+
+def _get_other_possible_values_for_values_with_defaults(
+    defaults: Dict[str, Any],
+    params: Dict[str, Any],
+    constraints: List[Dict[Any, Any]],
+    metadata_mapping: Dict[str, Union[str, list]],
+) -> Dict[str, Set[Any]]:
+    possible_values = {}
+    for param, default_value in defaults.items():
+        fixed_params = deepcopy(params)
+        param_values = set()
+        for p in defaults:
+            if p != param:
+                fixed_params[p] = defaults[p]
+        for constraint in constraints:
+            provider_key = get_provider_queryable_key(
+                param, constraint, metadata_mapping
+            )
+            if not provider_key:
+                provider_key = param
+            if (
+                _matches_constraint(constraint, fixed_params, metadata_mapping)
+                and provider_key in constraint
+            ):
+                param_values.update(constraint[provider_key])
+        possible_values[provider_key] = param_values
+    return possible_values
+
+
+def _matches_constraint(
+    constraint: Dict[Any, Any],
+    params: Dict[str, Any],
+    metadata_mapping: Dict[str, Union[str, list]],
+) -> bool:
+    for p in params:
+        provider_key = get_provider_queryable_key(p, constraint, metadata_mapping)
+        if provider_key not in constraint:
+            return True
+        if isinstance(params[p], list):
+            for value in params[p]:
+                if value not in constraint[provider_key]:
+                    return False
+        else:
+            if params[p] not in constraint[provider_key]:
+                return False
+    return True

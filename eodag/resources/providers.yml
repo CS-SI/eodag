@@ -2783,9 +2783,11 @@
       format: grib
     ERA5_PL_MONTHLY:
       dataset: reanalysis-era5-pressure-levels-monthly-means
-      api_product_type: reanalysis
+      api_product_type: monthly_averaged_reanalysis
       time: '00:00'
       format: grib
+      variable: divergence
+      pressure_level: '1'
       metadata_mapping:
         completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
         _date:
