@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import importlib
 import json
@@ -23,11 +24,16 @@ import socket
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Dict, List, Optional, Union
+from unittest.mock import Mock
 
 import geojson
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
+from eodag.config import PluginConfig
+from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.download.base import Download
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import TimeOutError
 from tests import mock
@@ -160,62 +166,33 @@ class RequestTestCase(unittest.TestCase):
         resp_json = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_json["links"][0]["href"], "httpz://bar/")
 
-    @mock.patch(
-        "eodag.rest.core.eodag_api.search",
-        autospec=True,
-        return_value=(
-            SearchResult.from_geojson(
-                {
-                    "features": [
-                        {
-                            "properties": {
-                                "snowCover": None,
-                                "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
-                                ".035Z",
-                                "keyword": {},
-                                "productType": "OCN",
-                                "downloadLink": (
-                                    "https://peps.cnes.fr/resto/collections/S1/"
-                                    "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
-                                ),
-                                "eodag_provider": "peps",
-                                "eodag_product_type": "S1_SAR_OCN",
-                                "platformSerialIdentifier": "S1A",
-                                "cloudCover": 0,
-                                "title": "S1A_WV_OCN__2SSV_20180215T235323_"
-                                "20180216T001213_020624_023501_0FD3",
-                                "orbitNumber": 20624,
-                                "instrument": "SAR-C SAR",
-                                "abstract": None,
-                                "eodag_search_intersection": {
-                                    "coordinates": [
-                                        [
-                                            [89.590721, 2.614019],
-                                            [89.771805, 2.575546],
-                                            [89.809341, 2.756323],
-                                            [89.628258, 2.794767],
-                                            [89.590721, 2.614019],
-                                        ]
-                                    ],
-                                    "type": "Polygon",
-                                },
-                                "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-15T23:53:22"
-                                ".871Z",
-                                "platform": None,
-                                "sensorType": None,
-                                "processingLevel": None,
-                                "orbitType": None,
-                                "topicCategory": None,
-                                "orbitDirection": None,
-                                "parentIdentifier": None,
-                                "sensorMode": None,
-                                "quicklook": None,
-                            },
-                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
-                            "type": "Feature",
-                            "geometry": {
+    def mock_search_result(self):
+        """generate eodag_api.search mock results"""
+        search_result = SearchResult.from_geojson(
+            {
+                "features": [
+                    {
+                        "properties": {
+                            "snowCover": None,
+                            "resolution": None,
+                            "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
+                            ".035Z",
+                            "keyword": {},
+                            "productType": "OCN",
+                            "downloadLink": (
+                                "https://peps.cnes.fr/resto/collections/S1/"
+                                "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
+                            ),
+                            "eodag_provider": "peps",
+                            "eodag_product_type": "S1_SAR_OCN",
+                            "platformSerialIdentifier": "S1A",
+                            "cloudCover": 0,
+                            "title": "S1A_WV_OCN__2SSV_20180215T235323_"
+                            "20180216T001213_020624_023501_0FD3",
+                            "orbitNumber": 20624,
+                            "instrument": "SAR-C SAR",
+                            "abstract": None,
+                            "eodag_search_intersection": {
                                 "coordinates": [
                                     [
                                         [89.590721, 2.614019],
@@ -227,56 +204,55 @@ class RequestTestCase(unittest.TestCase):
                                 ],
                                 "type": "Polygon",
                             },
+                            "organisationName": None,
+                            "startTimeFromAscendingNode": "2018-02-15T23:53:22" ".871Z",
+                            "platform": None,
+                            "sensorType": None,
+                            "processingLevel": None,
+                            "orbitType": None,
+                            "topicCategory": None,
+                            "orbitDirection": None,
+                            "parentIdentifier": None,
+                            "sensorMode": None,
+                            "quicklook": None,
                         },
-                        {
-                            "properties": {
-                                "snowCover": None,
-                                "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
-                                ".035Z",
-                                "keyword": {},
-                                "productType": "OCN",
-                                "downloadLink": (
-                                    "https://peps.cnes.fr/resto/collections/S1/"
-                                    "578f1768-e66e-5b86-9363-b19f8931cc7c/download"
-                                ),
-                                "eodag_provider": "peps",
-                                "eodag_product_type": "S1_SAR_OCN",
-                                "platformSerialIdentifier": "S1A",
-                                "cloudCover": 0,
-                                "title": "S1A_WV_OCN__2SSV_20180216T235323_"
-                                "20180217T001213_020624_023501_0FD3",
-                                "orbitNumber": 20624,
-                                "instrument": "SAR-C SAR",
-                                "abstract": None,
-                                "eodag_search_intersection": {
-                                    "coordinates": [
-                                        [
-                                            [89.590721, 2.614019],
-                                            [89.771805, 2.575546],
-                                            [89.809341, 2.756323],
-                                            [89.628258, 2.794767],
-                                            [89.590721, 2.614019],
-                                        ]
-                                    ],
-                                    "type": "Polygon",
-                                },
-                                "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-16T23:53:22"
-                                ".871Z",
-                                "platform": None,
-                                "sensorType": None,
-                                "processingLevel": None,
-                                "orbitType": None,
-                                "topicCategory": None,
-                                "orbitDirection": None,
-                                "parentIdentifier": None,
-                                "sensorMode": None,
-                                "quicklook": None,
-                            },
-                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7c",
-                            "type": "Feature",
-                            "geometry": {
+                        "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
+                        "type": "Feature",
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    [89.590721, 2.614019],
+                                    [89.771805, 2.575546],
+                                    [89.809341, 2.756323],
+                                    [89.628258, 2.794767],
+                                    [89.590721, 2.614019],
+                                ]
+                            ],
+                            "type": "Polygon",
+                        },
+                    },
+                    {
+                        "properties": {
+                            "snowCover": None,
+                            "resolution": None,
+                            "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
+                            ".035Z",
+                            "keyword": {},
+                            "productType": "OCN",
+                            "downloadLink": (
+                                "https://peps.cnes.fr/resto/collections/S1/"
+                                "578f1768-e66e-5b86-9363-b19f8931cc7c/download"
+                            ),
+                            "eodag_provider": "peps",
+                            "eodag_product_type": "S1_SAR_OCN",
+                            "platformSerialIdentifier": "S1A",
+                            "cloudCover": 0,
+                            "title": "S1A_WV_OCN__2SSV_20180216T235323_"
+                            "20180217T001213_020624_023501_0FD3",
+                            "orbitNumber": 20624,
+                            "instrument": "SAR-C SAR",
+                            "abstract": None,
+                            "eodag_search_intersection": {
                                 "coordinates": [
                                     [
                                         [89.590721, 2.614019],
@@ -288,23 +264,57 @@ class RequestTestCase(unittest.TestCase):
                                 ],
                                 "type": "Polygon",
                             },
+                            "organisationName": None,
+                            "startTimeFromAscendingNode": "2018-02-16T23:53:22" ".871Z",
+                            "platform": None,
+                            "sensorType": None,
+                            "processingLevel": None,
+                            "orbitType": None,
+                            "topicCategory": None,
+                            "orbitDirection": None,
+                            "parentIdentifier": None,
+                            "sensorMode": None,
+                            "quicklook": None,
                         },
-                    ],
-                    "type": "FeatureCollection",
-                }
-            ),
-            2,
-        ),
-    )
+                        "id": "578f1768-e66e-5b86-9363-b19f8931cc7c",
+                        "type": "Feature",
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    [89.590721, 2.614019],
+                                    [89.771805, 2.575546],
+                                    [89.809341, 2.756323],
+                                    [89.628258, 2.794767],
+                                    [89.590721, 2.614019],
+                                ]
+                            ],
+                            "type": "Polygon",
+                        },
+                    },
+                ],
+                "type": "FeatureCollection",
+            }
+        )
+        config = PluginConfig()
+        config.priority = 0
+        for p in search_result:
+            p.downloader = Download("peps", config)
+            p.downloader_auth = Authentication("peps", config)
+        return (search_result, len(search_result))
+
+    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
     def _request_valid_raw(
         self,
-        url,
-        mock_search,
-        expected_search_kwargs=None,
-        protocol="GET",
-        post_data=None,
-        search_call_count=None,
+        url: str,
+        mock_search: Mock,
+        expected_search_kwargs: Union[
+            List[Dict[str, Any]], Dict[str, Any], None
+        ] = None,
+        protocol: str = "GET",
+        post_data: Optional[Any] = None,
+        search_call_count: Optional[int] = None,
     ):
+        mock_search.return_value = self.mock_search_result()
         if protocol == "GET":
             response = self.app.get(url, follow_redirects=True)
         else:
@@ -416,7 +426,7 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
         self.assertIn("description", response_content)
-        self.assertIn("not found", response_content["description"])
+        self.assertIn("NotAvailableError", response_content["description"])
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -937,7 +947,10 @@ class RequestTestCase(unittest.TestCase):
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
+        return_value=[
+            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C"},
+            {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
+        ],
     )
     def test_list_product_types_ok(self, list_pt, guess_pt):
         """A simple request for product types with(out) a provider must succeed"""
@@ -973,7 +986,10 @@ class RequestTestCase(unittest.TestCase):
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
+        return_value=[
+            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C"},
+            {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
+        ],
     )
     def test_list_product_types_nok(self, list_pt):
         """A request for product types with a not supported filter must return all product types"""
@@ -991,14 +1007,16 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
+        "eodag.plugins.authentication.base.Authentication.authenticate",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
+        "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
-    def test_download_item_from_catalog(self, mock_download, mock_auth):
+    def test_download_item_from_catalog_stream(
+        self, mock_download: Mock, mock_auth: Mock
+    ):
         """Download through eodag server catalog should return a valid response"""
 
         expected_file = "somewhere.zip"
@@ -1009,6 +1027,7 @@ class RequestTestCase(unittest.TestCase):
                 "content-disposition": f"attachment; filename={expected_file}",
             },
         )
+        mock_auth.return_value = {}
 
         response = self._request_valid_raw(
             f"catalogs/{self.tested_product_type}/items/foo/download"
@@ -1022,32 +1041,25 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
-        "eodag.plugins.apis.usgs.UsgsApi.authenticate",
+        "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
     @mock.patch(
         "eodag.rest.core.eodag_api.download",
         autospec=True,
     )
-    def test_download_item_from_collection_api_plugin(self, mock_download, mock_auth):
+    def test_download_item_from_collection_no_stream(
+        self, mock_download: Mock, mock_stream_download: Mock
+    ):
         """Download through eodag server catalog should return a valid response"""
         # download should be performed locally then deleted if streaming is not available
         tmp_dl_dir = TemporaryDirectory()
         expected_file = f"{tmp_dl_dir.name}.tar"
         Path(expected_file).touch()
         mock_download.return_value = expected_file
+        mock_stream_download.side_effect = NotImplementedError()
 
-        # use an external python API provider for this test and reset downloader
-        self._request_valid_raw.patchings[0].kwargs["return_value"][0][
-            0
-        ].provider = "usgs"
-        self._request_valid_raw.patchings[0].kwargs["return_value"][0][
-            0
-        ].downloader = None
-
-        self._request_valid_raw(
-            "collections/some-collection/items/foo/download?provider=usgs"
-        )
+        self._request_valid_raw("collections/some-collection/items/foo/download")
         mock_download.assert_called_once()
         # downloaded file should have been immediatly deleted from the server
         assert not os.path.exists(

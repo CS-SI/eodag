@@ -206,7 +206,7 @@ def search_stac_items(
     return items
 
 
-def download_stac_item_by_id_stream(
+def download_stac_item(
     catalogs: List[str],
     item_id: str,
     provider: Optional[str] = None,
@@ -236,7 +236,7 @@ def download_stac_item_by_id_stream(
     else:
         raise NotAvailableError(
             f"Could not find {item_id} item in {product_type} collection"
-            + (f" for provider {provider}" if provider is not None else "")
+            + (f" for provider {provider}" if provider else "")
         )
 
     try:
