@@ -46,7 +46,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.core import (
-    download_stac_item_by_id_stream,
+    download_stac_item,
     eodag_api_init,
     fetch_collection_queryable_properties,
     get_detailled_collections_list,
@@ -392,7 +392,7 @@ def stac_collections_item_download(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    return download_stac_item_by_id_stream(
+    return download_stac_item(
         catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
     )
 
@@ -411,7 +411,7 @@ def stac_collections_item_download_asset(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    return download_stac_item_by_id_stream(
+    return download_stac_item(
         catalogs=[collection_id],
         item_id=item_id,
         provider=provider,
@@ -579,7 +579,7 @@ def stac_catalogs_item_download(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item_by_id_stream(
+    return download_stac_item(
         catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
     )
 
@@ -600,7 +600,7 @@ def stac_catalogs_item_download_asset(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item_by_id_stream(
+    return download_stac_item(
         catalogs=list_catalog,
         item_id=item_id,
         provider=provider,

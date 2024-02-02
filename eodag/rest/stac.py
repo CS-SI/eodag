@@ -21,7 +21,8 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from operator import itemgetter
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil.parser
@@ -114,14 +115,15 @@ class StacCommon:
             for i, bbox in enumerate(self.data["extent"]["spatial"]["bbox"]):
                 self.data["extent"]["spatial"]["bbox"][i] = [float(x) for x in bbox]
         # "None" values to None
-        self.data = dict_items_recursive_apply(
-            self.data, lambda k, v: None if v == "None" else v
+        apply_method: Callable[[str, str], Optional[str]] = lambda _, v: (
+            None if v == "None" else v
         )
-
+        self.data = dict_items_recursive_apply(self.data, apply_method)
         # ids and titles as str
-        self.data = dict_items_recursive_apply(
-            self.data, lambda k, v: str(v) if k in ["title", "id"] else v
+        apply_method: Callable[[str, str], Optional[str]] = lambda k, v: (
+            str(v) if k in ["title", "id"] else v
         )
+        self.data = dict_items_recursive_apply(self.data, apply_method)
 
         # empty stac_extensions: "" to []
         if not self.data.get("stac_extensions", True):
@@ -160,7 +162,7 @@ class StacCommon:
         :returns: STAC data dictionnary
         :rtype: dict
         """
-        return geojson.loads(geojson.dumps(self.data))
+        return geojson.loads(geojson.dumps(self.data))  # type: ignore
 
     __geo_interface__ = property(as_dict)
 
@@ -340,11 +342,8 @@ class StacItem(StacCommon):
         }
 
         # move origin asset urls to alternate links and replace with eodag-server ones
-        if getattr(product, "assets", False):
-            if isinstance(product.assets, dict):
-                origin_assets = product.assets
-            else:
-                origin_assets = product.assets.as_dict()
+        if product.assets:
+            origin_assets = product.assets.as_dict()
             # replace origin asset urls with eodag-server ones
             for asset_key, asset_value in origin_assets.items():
                 # use origin asset as default
@@ -435,7 +434,7 @@ class StacItem(StacCommon):
         items["features"] = self.__get_item_list(search_results, catalog)
 
         self.update_data(items)
-        return geojson.loads(geojson.dumps(self.data))
+        return geojson.loads(geojson.dumps(self.data))  # type: ignore
 
     def __filter_item_model_properties(
         self, item_model: Dict[str, Any], product_type: str
@@ -672,20 +671,21 @@ class StacCollection(StacCommon):
             if self.provider:
                 providers = [self.provider]
             else:
-                # get available providers for each product_type
-                providers = [
-                    plugin.provider
-                    for plugin in self.eodag_api._plugins_manager.get_search_plugins(
-                        product_type=(
-                            product_type.get("_id", None) or product_type["ID"]
+                providers = sorted(
+                    [
+                        self.eodag_api.providers_config[p].__dict__
+                        for p in self.eodag_api.available_providers(
+                            product_type=product_type["_id"]
                         )
-                    )
-                ]
+                    ],
+                    key=itemgetter("priority"),
+                    reverse=True,
+                )
             providers_models: List[Dict[str, Any]] = []
             for provider in providers:
                 provider_m = jsonpath_parse_dict_items(
                     provider_model,
-                    {"provider": self.eodag_api.providers_config[provider].__dict__},
+                    {"provider": provider},
                 )
                 providers_models.append(provider_m)
 
@@ -758,12 +758,10 @@ class StacCollection(StacCommon):
             filters={"productType": collection_id}
         )
 
-        try:
-            collection = collection_list[0]
-        except IndexError:
-            raise NotAvailableError("%s collection not found" % collection_id)
+        if not collection_list:
+            raise NotAvailableError(f"Collection {collection_id} does not exist.")
 
-        self.update_data(collection)
+        self.update_data(collection_list[0])
         return self.as_dict()
 
 
@@ -794,7 +792,7 @@ class StacCatalog(StacCommon):
         provider: Optional[str],
         eodag_api: EODataAccessGateway,
         root: str = "/",
-        catalogs: List[str] = [],
+        catalogs: Optional[List[str]] = None,
         fetch_providers: bool = True,
     ) -> None:
         super(StacCatalog, self).__init__(
@@ -848,21 +846,21 @@ class StacCatalog(StacCommon):
 
         return True
 
-    def set_children(self, children: List[Dict[str, Any]] = []) -> bool:
+    def set_children(self, children: Optional[List[Dict[str, Any]]] = None) -> bool:
         """Set catalog children / links
 
         :param children: (optional) Children list
         :type children: list
         """
-        self.children = children
+        self.children = children or []
         self.data["links"] = [
             link for link in self.data["links"] if link["rel"] != "child"
         ]
-        self.data["links"] += children
+        self.data["links"] += self.children
         return True
 
     def set_stac_product_type_by_id(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, **_: Any
     ) -> Dict[str, Any]:
         """Updates catalog with given product_type
 
@@ -897,7 +895,7 @@ class StacCatalog(StacCommon):
 
     # get / set dates filters -------------------------------------------------
 
-    def get_stac_years_list(self, **kwargs: Any) -> List[int]:
+    def get_stac_years_list(self, **_: Any) -> List[int]:
         """Get catalog available years list
 
         :returns: Years list
@@ -907,7 +905,7 @@ class StacCatalog(StacCommon):
 
         return list(range(extent_date_min.year, extent_date_max.year + 1))
 
-    def get_stac_months_list(self, **kwargs: Any) -> List[int]:
+    def get_stac_months_list(self, **_: Any) -> List[int]:
         """Get catalog available months list
 
         :returns: Months list
@@ -922,7 +920,7 @@ class StacCatalog(StacCommon):
             )
         )
 
-    def get_stac_days_list(self, **kwargs: Any) -> List[int]:
+    def get_stac_days_list(self, **_: Any) -> List[int]:
         """Get catalog available days list
 
         :returns: Days list
@@ -936,7 +934,7 @@ class StacCatalog(StacCommon):
             )
         )
 
-    def set_stac_year_by_id(self, year: str, **kwargs: Any) -> Dict[str, Any]:
+    def set_stac_year_by_id(self, year: str, **_: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given year
 
         :param year: Year number
@@ -963,7 +961,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def set_stac_month_by_id(self, month: str, **kwargs: Any) -> Dict[str, Any]:
+    def set_stac_month_by_id(self, month: str, **_: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given month
 
         :param month: Month number
@@ -994,7 +992,7 @@ class StacCatalog(StacCommon):
 
         return parsed_dict
 
-    def set_stac_day_by_id(self, day: str, **kwargs: Any) -> Dict[str, Any]:
+    def set_stac_day_by_id(self, day: str, **_: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given day
 
         :param day: Day number
@@ -1099,7 +1097,7 @@ class StacCatalog(StacCommon):
 
     # get / set cloud_cover filter --------------------------------------------
 
-    def get_stac_cloud_covers_list(self, **kwargs: Any) -> List[int]:
+    def get_stac_cloud_covers_list(self, **_: Any) -> List[int]:
         """Get cloud_cover list
 
         :returns: cloud_cover list
@@ -1107,9 +1105,7 @@ class StacCatalog(StacCommon):
         """
         return list(range(0, 101, 10))
 
-    def set_stac_cloud_cover_by_id(
-        self, cloud_cover: str, **kwargs: Any
-    ) -> Dict[str, Any]:
+    def set_stac_cloud_cover_by_id(self, cloud_cover: str, **_: Any) -> Dict[str, Any]:
         """Updates and returns catalog with given max cloud_cover
 
         :param cloud_cover: Cloud_cover number
@@ -1157,7 +1153,7 @@ class StacCatalog(StacCommon):
         attr = location_config["attr"]
 
         with shapefile.Reader(path) as shp:
-            countries_list: List[str] = [rec[attr] for rec in shp.records()]
+            countries_list: List[str] = [rec[attr] for rec in shp.records()]  # type: ignore
 
         # remove duplicates
         countries_list = list(set(countries_list))
@@ -1203,7 +1199,7 @@ class StacCatalog(StacCommon):
                 if shaperec.record.as_dict().get(attr, None) == location
             ]
 
-        if len(geom_hits) == 0:
+        if not geom_hits:
             logger.warning(
                 "no feature found in %s matching %s=%s", path, attr, location
             )
@@ -1251,7 +1247,7 @@ class StacCatalog(StacCommon):
         return locations_config
 
     def __build_stac_catalog(
-        self, catalogs: List[str] = [], fetch_providers: bool = True
+        self, catalogs: Optional[List[str]] = None, fetch_providers: bool = True
     ) -> StacCatalog:
         """Build nested catalog from catalag list
 
@@ -1270,7 +1266,7 @@ class StacCatalog(StacCommon):
             deepcopy(self.stac_config["catalogs"]), **locations_config
         )
 
-        if len(catalogs) == 0:
+        if not catalogs:
             # Build root catalog combined with landing page
             self.__update_data_from_catalog_config(
                 {
@@ -1300,11 +1296,12 @@ class StacCatalog(StacCommon):
                     for product_type in product_types_list
                 ]
             )
-        else:
-            # use product_types_list as base for building nested catalogs
-            self.__update_data_from_catalog_config(
-                deepcopy(self.stac_config["catalogs"]["product_types_list"])
-            )
+            return self
+
+        # use product_types_list as base for building nested catalogs
+        self.__update_data_from_catalog_config(
+            deepcopy(self.stac_config["catalogs"]["product_types_list"])
+        )
 
         for idx, cat in enumerate(catalogs):
             if idx % 2 == 0:
