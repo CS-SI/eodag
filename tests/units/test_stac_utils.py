@@ -27,6 +27,7 @@ from pygeofilter import ast
 from pygeofilter.values import Geometry
 
 import eodag.rest.utils.rfc3339 as rfc3339
+from eodag.rest.stac import StacCollection
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils.exceptions import ValidationError
@@ -329,6 +330,68 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
                 "end_datetime": datetime(2022, 12, 31),
             },
         )
+
+    @mock.patch("eodag.rest.stac.get_ext_product_types_conf", autospec=True)
+    def test_fetch_external_stac_collections(
+        self, mock_stac_get_ext_product_types_conf
+    ):
+        """Load external STAC collections"""
+        external_json = """{
+            "new_field":"New Value",
+            "title":"A different title for Sentinel 2 MSI Level 1C",
+            "summaries": {
+                "instruments": [
+                    "MSI"
+                ],
+                "platform": [
+                    "SENTINEL-2A",
+                    "SENTINEL-2B"
+                ],
+                "constellation": [
+                    "Sentinel-2"
+                ],
+                "processing:level": [
+                    "L1C"
+                ]
+            }
+        }"""
+        mock_stac_get_ext_product_types_conf.return_value = json.loads(external_json)
+        product_type_conf = self.rest_utils.eodag_api.product_types_config["S2_MSI_L1C"]
+        ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
+        product_type_conf["stacCollection"] = ext_stac_collection_path
+        # using a context manager cause `self.rest_utils.get_stac_collection_by_id needs`
+        # to call the not-patched versione of `eodag.api.core.get_ext_product_types_conf`
+        with mock.patch(
+            "eodag.api.core.get_ext_product_types_conf", autospec=True
+        ) as mock_core_get_ext_product_types_conf:
+            mock_core_get_ext_product_types_conf.return_value = json.loads(
+                external_json
+            )
+            self.rest_utils.eodag_api.fetch_external_product_types_metadata()
+            mock_core_get_ext_product_types_conf.assert_called_once_with(
+                ext_stac_collection_path
+            )
+        StacCollection.fetch_external_stac_collections(self.rest_utils.eodag_api)
+        r = self.rest_utils.get_stac_collection_by_id(
+            url="", root="", collection_id="S2_MSI_L1C"
+        )
+        mock_stac_get_ext_product_types_conf.assert_called_with(
+            ext_stac_collection_path
+        )
+        mock_stac_get_ext_product_types_conf.call_args_list
+        # Fields not supported by EODAG
+        self.assertIn("new_field", r)
+        # Merge lists
+        self.assertEqual(
+            r["summaries"]["platform"][0], "S2A,S2B,SENTINEL-2A,SENTINEL-2B"
+        )
+        # Don't override existings keys
+        self.assertEqual(r["title"], "SENTINEL2 Level-1C")
+        # Restore previous state
+        del self.rest_utils.eodag_api.product_types_config["S2_MSI_L1C"][
+            "stacCollection"
+        ]
+        StacCollection.ext_stac_collections.clear()
 
     def test_contains(self):
         attribute = ast.Attribute("test")

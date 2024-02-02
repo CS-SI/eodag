@@ -34,7 +34,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -1063,6 +1063,104 @@ class TestCore(TestCoreBase):
             structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
             or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
         )
+
+    @mock.patch(
+        "eodag.api.core.get_ext_product_types_conf",
+        autospec=True,
+        return_value=json.loads(
+            """{
+                "new_field":"New Value",
+                "title":"A different title for Sentinel 2 MSI Level 1C",
+                "summaries": {
+                    "instruments": [
+                        "MSI"
+                    ],
+                    "platform": [
+                        "SENTINEL-2A",
+                        "SENTINEL-2B"
+                    ],
+                    "constellation": [
+                        "Sentinel-2"
+                    ],
+                    "processing:level": [
+                        "L1C"
+                    ]
+                }
+            }"""
+        ),
+    )
+    def test_load_external_product_type_metadata(self, mock_get_ext_product_types_conf):
+        """Load the supported EODAG metadata from an external STAC collection"""
+        product_type_conf = deepcopy(self.dag.product_types_config["S2_MSI_L1C"])
+        ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
+        product_type_conf["stacCollection"] = ext_stac_collection_path
+        enhanced_product_type = self.dag.load_external_product_type_metadata(
+            "S2_MSI_L1C",
+            product_type_conf,
+        )
+        mock_get_ext_product_types_conf.assert_called_with(ext_stac_collection_path)
+        # Fields not supported by EODAG
+        self.assertNotIn("new_field", enhanced_product_type)
+        # Merge lists
+        self.assertEqual(
+            enhanced_product_type["platformSerialIdentifier"],
+            "S2A,S2B,SENTINEL-2A,SENTINEL-2B",
+        )
+        # Don't override existings keys
+        self.assertEqual(enhanced_product_type["title"], "SENTINEL2 Level-1C")
+        # The parameter passed `load_external_product_type_metadata` is not modified
+        del product_type_conf["stacCollection"]
+        self.assertDictEqual(
+            product_type_conf,
+            self.dag.product_types_config["S2_MSI_L1C"],
+        )
+
+    @mock.patch(
+        "eodag.api.core.get_ext_product_types_conf",
+        autospec=True,
+        return_value=json.loads(
+            """{
+                "new_field":"New Value",
+                "title":"A different title for Sentinel 2 MSI Level 1C",
+                "summaries": {
+                    "instruments": [
+                        "MSI"
+                    ],
+                    "platform": [
+                        "SENTINEL-2A",
+                        "SENTINEL-2B"
+                    ],
+                    "constellation": [
+                        "Sentinel-2"
+                    ],
+                    "processing:level": [
+                        "L1C"
+                    ]
+                }
+            }"""
+        ),
+    )
+    def test_fetch_external_product_types_metadata(
+        self, mock_get_ext_product_types_conf
+    ):
+        """Updates product types config with metadata from external STAC collections"""
+        product_type_conf = self.dag.product_types_config["S2_MSI_L1C"]
+        ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
+        product_type_conf["stacCollection"] = ext_stac_collection_path
+        self.dag.fetch_external_product_types_metadata()
+        mock_get_ext_product_types_conf.assert_called_with(ext_stac_collection_path)
+        enhanced_product_type = self.dag.product_types_config["S2_MSI_L1C"]
+        # Fields not supported by EODAG
+        self.assertNotIn("new_field", enhanced_product_type)
+        # Merge lists
+        self.assertEqual(
+            enhanced_product_type["platformSerialIdentifier"],
+            "S2A,S2B,SENTINEL-2A,SENTINEL-2B",
+        )
+        # Don't override existings keys
+        self.assertEqual(enhanced_product_type["title"], "SENTINEL2 Level-1C")
+        # Restore the product type
+        del self.dag.product_types_config["S2_MSI_L1C"]["stacCollection"]
 
     @mock.patch("eodag.api.core.open_dir", autospec=True)
     @mock.patch("eodag.api.core.exists_in", autospec=True, return_value=True)
