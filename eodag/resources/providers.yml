@@ -879,7 +879,7 @@
     need_auth: false
     timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     sort:
@@ -1245,7 +1245,7 @@
       - ':'
     pagination:
       count_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products/$count'
-      next_page_url_tpl: '{url}?{search}{sort_by}&$top={items_per_page}&$skip={skip}&$expand=Metadata'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Metadata'
       # 2021/03/19: 2000 is the max, if greater 200 response but contains an error message
       max_items_per_page: 2_000
     sort:
@@ -3171,7 +3171,7 @@
     api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{collection}/search.json'
     need_auth: false
     pagination:
-      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
@@ -3532,7 +3532,7 @@
     need_auth: false
     timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     sort:
@@ -6874,7 +6874,7 @@
     need_auth: true
     timeout: 60
     pagination:
-      next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
       max_items_per_page: 1_000
     sort:

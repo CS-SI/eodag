@@ -20,18 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -195,9 +184,6 @@ class QueryStringSearch(Search):
         self.search_urls: List[str] = []
         self.query_params: Dict[str, str] = dict()
         self.query_string = ""
-        self.sort_by_params: Optional[
-            Union[str, Dict[str, List[Dict[str, str]]]]
-        ] = None
         self.next_page_url = None
         self.next_page_query_obj = None
         self.next_page_merge = None
@@ -487,17 +473,22 @@ class QueryStringSearch(Search):
 
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string once metadata mapping will be done
-        sort_by_params = kwargs.pop("sortBy", None)
-        self.sort_by_params = sort_by_params or getattr(self.config, "sort", {}).get(
+        sort_by_arg_tmp = kwargs.pop("sortBy", None)
+        sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         )
-        if not sort_by_params and getattr(self.config, "sort", {}).get(
+        if not sort_by_arg_tmp and getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         ):
             logger.info(
-                f"{self.provider} is configured with default sorting by '{self.sort_by_params[0][0]}' "
-                f"in {'ascending' if self.sort_by_params[0][1] == 'ASC' else 'descending'} order"
+                f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
+                f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
             )
+        sort_by_params = (
+            ""
+            if sort_by_arg is None
+            else self.transform_sort_by_params_for_search_request(sort_by_arg)
+        )
 
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
@@ -536,11 +527,9 @@ class QueryStringSearch(Search):
         qp, qs = self.build_query_string(product_type, **keywords)
 
         self.query_params = qp
-        self.query_string = qs
-        if self.sort_by_params is not None:
-            self.transform_sort_by_params_for_search_request()
-        # if sorting params do not contain anything, set them to the empty string to put them into the query string
-        self.sort_by_params = self.sort_by_params or ""
+        self.query_string = (
+            qs + sort_by_params if isinstance(sort_by_params, str) else qs
+        )
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
@@ -631,7 +620,6 @@ class QueryStringSearch(Search):
                     page=page,
                     skip=(page - 1) * items_per_page,
                     skip_base_1=(page - 1) * items_per_page + 1,
-                    sort_by=self.sort_by_params,
                 )
             else:
                 next_url = "{}?{}".format(search_endpoint, self.query_string)
@@ -1067,17 +1055,22 @@ class PostJsonSearch(QueryStringSearch):
         kwargs.pop("product_type", None)
         # remove "sortBy" from search args if exists because it is not part of metadata mapping,
         # it will complete the query body once metadata mapping will be done
-        sort_by_params = kwargs.pop("sortBy", None)
-        self.sort_by_params = sort_by_params or getattr(self.config, "sort", {}).get(
+        sort_by_arg_tmp = kwargs.pop("sortBy", None)
+        sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         )
-        if not sort_by_params and getattr(self.config, "sort", {}).get(
+        if not sort_by_arg_tmp and getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         ):
             logger.info(
-                f"{self.provider} is configured with default sorting by '{self.sort_by_params[0][0]}' "
-                f"in {'ascending' if self.sort_by_params[0][1] == 'ASC' else 'descending'} order"
+                f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
+                f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
             )
+        sort_by_params = (
+            {}
+            if sort_by_arg is None
+            else self.transform_sort_by_params_for_search_request(sort_by_arg)
+        )
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
@@ -1162,10 +1155,8 @@ class PostJsonSearch(QueryStringSearch):
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
             return [], 0
-        if self.sort_by_params is not None:
-            self.transform_sort_by_params_for_search_request()
         self.query_params = (
-            qp if not self.sort_by_params else dict(qp, **self.sort_by_params)
+            dict(qp, **sort_by_params) if isinstance(sort_by_params, dict) else qp
         )
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs

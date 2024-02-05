@@ -28,6 +28,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.plugins.base import PluginTopic
+from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -184,15 +185,23 @@ class Search(PluginTopic):
             "metadata_mapping", self.config.metadata_mapping
         )
 
-    def transform_sort_by_params_for_search_request(self) -> None:
+    def transform_sort_by_params_for_search_request(
+        self, sort_by_arg: SortByList  # type: ignore
+    ) -> Union[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
-        the "sortBy" parameter into a provider-specific string or dictionnary"""
+        the "sortBy" argument into a provider-specific string or dictionnary
+
+        :param sort_by_arg: the "sortBy" argument in EODAG format
+        :type sort_by_arg:  :class:`~eodag.types.search_args.SortByList`
+        :returns: The "sortBy" argument in provider-specific format
+        :rtype: Union[str, Dict[str, List[Dict[str, str]]]]
+        """
         if not hasattr(self.config, "sort"):
             raise ValidationError(
                 "{} does not support sorting feature".format(self.provider)
             )
         # remove duplicates
-        self.sort_by_params = list(set(self.sort_by_params))
+        sort_by_arg = list(set(sort_by_arg))
         sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]]
         if self.config.sort.get("sort_url_tpl"):
             sort_by_provider_keyword = None
@@ -201,9 +210,9 @@ class Search(PluginTopic):
             sort_by_provider_keyword = list(self.config.sort["sort_body_tpl"].keys())[0]
             sort_by_params = {sort_by_provider_keyword: []}
         sort_by_params_tmp = []
-        for sort_by_param_arg in self.sort_by_params:
+        for one_sort_by_param in sort_by_arg:
             # Remove leading and trailing whitespace(s) if exist
-            eodag_sort_param = sort_by_param_arg[0]
+            eodag_sort_param = one_sort_by_param[0]
             try:
                 provider_sort_param = self.config.sort["sort_by_mapping"][
                     eodag_sort_param
@@ -223,7 +232,7 @@ class Search(PluginTopic):
                     ),
                     params,
                 )
-            sort_order = sort_by_param_arg[1]
+            sort_order = one_sort_by_param[1]
             sort_by_param: Union[Tuple[str, str], Dict[str, str]]
             # TODO: remove this code block when search args model validation is embeded
             sort_order = sort_order.strip().upper()
@@ -281,5 +290,4 @@ class Search(PluginTopic):
                     and isinstance(sort_by_param, dict)
                 )
                 sort_by_params[sort_by_provider_keyword].append(sort_by_param)
-        self.sort_by_params = sort_by_params
-        return None
+        return sort_by_params

@@ -2364,7 +2364,7 @@ class TestCoreSearch(TestCoreBase):
                 type: QueryStringSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_url_tpl: 'dummy_next_page_url_tpl{sort_by}'
+                    next_page_url_tpl: 'dummy_next_page_url_tpl'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
@@ -2386,8 +2386,10 @@ class TestCoreSearch(TestCoreBase):
 
         self.assertIn(
             "&sortParam=providerSortParam&sortOrder=desc",
-            mock__request.call_args[0][1],
+            mock__request.call_args[0][0].query_string,
         )
+
+        # TODO: sort by with the PostJsonSearch plugin
 
         # TODO: sort by default sorting parameter and sorting order
 
