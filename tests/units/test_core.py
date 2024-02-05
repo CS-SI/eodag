@@ -521,30 +521,30 @@ class TestCore(TestCoreBase):
     }
     SUPPORTED_PROVIDERS = [
         "peps",
-        "usgs",
-        "theia",
-        "creodias",
-        "onda",
-        "aws_eos",
         "astraea_eod",
-        "usgs_satapi_aws",
+        "aws_eos",
+        "cop_ads",
+        "cop_cds",
+        "cop_dataspace",
+        "creodias",
+        "creodias_s3",
+        "dedl",
+        "dedt_lumi",
         "earth_search",
         "earth_search_cog",
         "earth_search_gcs",
         "ecmwf",
-        "cop_ads",
-        "cop_cds",
-        "sara",
-        "meteoblue",
-        "cop_dataspace",
-        "planetary_computer",
+        "eumetsat_ds",
         "hydroweb_next",
+        "meteoblue",
+        "onda",
+        "planetary_computer",
+        "sara",
+        "theia",
+        "usgs",
+        "usgs_satapi_aws",
         "wekeo",
         "wekeo_cmems",
-        "creodias_s3",
-        "dedt_lumi",
-        "dedl",
-        "eumetsat_ds",
     ]
 
     def setUp(self):
@@ -1636,7 +1636,8 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
     def execution_involving_conf_dir(self, inspect=None, conf_dir=None):
         """Check that the path(s) inspected (str, list) are created after the instantation
         of EODataAccessGateway. If they were already there, rename them (.old), instantiate,
-        check, delete the new files, and restore the existing files to there previous name."""
+        check, delete the new files, and restore the existing files to there previous name.
+        """
         if inspect is not None:
             if conf_dir is None:
                 conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
@@ -2350,6 +2351,7 @@ class TestCoreSearch(TestCoreBase):
 
     def test__do_search_does_not_raise_by_default(self):
         """_do_search must not raise any error by default"""
+
         # provider attribute required internally by __do_search for logging purposes.
         class DummyConfig:
             pagination = {}
