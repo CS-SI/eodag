@@ -729,16 +729,13 @@ class StacCollection(StacCommon):
                     )
                 ]
             )
-            providers_models: List[Dict[str, Any]] = []
-            for provider in providers:
-                providers_models.append(self.get_provider_dict(provider["name"]))
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
                     "product_type": product_type,
-                    "providers": providers_models,
+                    "providers": [self.get_provider_dict(p) for p in providers],
                 },
             )
             # override EODAG's collection with the external collection
@@ -756,10 +753,10 @@ class StacCollection(StacCommon):
                 product_type_collection["keywords"] = merged_keywords
             # parse f-strings
             format_args = deepcopy(self.stac_config)
-            format_args["collection"] = dict(
-                product_type_collection,
+            format_args["collection"] = {
+                **product_type_collection,
                 **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
-            )
+            }
             product_type_collection = format_dict_items(
                 product_type_collection, **format_args
             )
