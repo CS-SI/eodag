@@ -173,11 +173,13 @@ class PluginManager:
         :param product_type: (optional) The product type that the constructed plugins
                              must support
         :type product_type: str
-        :param provider: (optional) The provider on which to get the search plugin
+        :param provider: (optional) The provider or the provider group on which to get
+            the search plugins
         :type provider: str
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
-        :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search` or :class:`~eodag.plugins.download.Api`)
+        :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`
+            or :class:`~eodag.plugins.download.Api`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
 
@@ -209,7 +211,9 @@ class PluginManager:
             configs = list(self.providers_config.values())
 
         if provider:
-            configs = [c for c in configs if provider == c.name]
+            configs = [
+                c for c in configs if provider in [getattr(c, "group", None), c.name]
+            ]
 
         if not configs:
             raise UnsupportedProvider(f"{provider} is not (yet) supported")
@@ -233,7 +237,6 @@ class PluginManager:
                 Download,
                 self._build_plugin(product.provider, download, Download),
             )
-            return plugin
         elif api := getattr(plugin_conf, "api", None):
             plugin_conf.api.priority = plugin_conf.priority
             plugin = cast(Api, self._build_plugin(product.provider, api, Api))

@@ -537,9 +537,19 @@ class EODataAccessGateway:
             self.fetch_product_types_list(provider=provider)
 
         product_types: List[Dict[str, Any]] = []
-        if provider is not None:
-            if provider in self.providers_config:
-                provider_supported_products = self.providers_config[provider].products
+
+        if provider:
+            providers = [
+                p
+                for p in self.providers_config.values()
+                if provider in [p.name, getattr(p, "group", None)]
+            ]
+            if len(providers) == 0:
+                raise UnsupportedProvider(
+                    f"The requested provider is not (yet) supported: {provider}"
+                )
+            for p in providers:
+                provider_supported_products = p.products
                 for product_type_id in provider_supported_products:
                     if product_type_id == GENERIC_PRODUCT_TYPE:
                         continue
@@ -551,10 +561,8 @@ class EODataAccessGateway:
                     product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
                         product_types.append(product_type)
-                return sorted(product_types, key=itemgetter("ID"))
-            raise UnsupportedProvider(
-                f"invalid requested provider: {provider} is not (yet) supported"
-            )
+            return sorted(product_types, key=itemgetter("ID"))
+
         # Only get the product types supported by the available providers
         for provider in self.available_providers():
             current_product_type_ids = [pt["ID"] for pt in product_types]
@@ -856,23 +864,48 @@ class EODataAccessGateway:
         # rebuild index after product types list update
         self.build_index()
 
-    def available_providers(self, product_type: Optional[str] = None) -> List[str]:
-        """Gives the sorted list of the available providers
+    def available_providers(
+        self, product_type: Optional[str] = None, by_group: bool = False
+    ) -> List[str]:
+        """Gives the sorted list of the available providers or groups
+
+        The providers or groups are sorted first by their priority level in descending order,
+        and then alphabetically in ascending order for providers or groups with the same
+        priority level.
 
         :param product_type: (optional) Only list providers configured for this product_type
-        :type product_type: str
-        :returns: the sorted list of the available providers
-        :rtype: list
+        :type product_type: Optional[str]
+        :param by_group: (optional) If set to True, list groups instead of providers
+        :type by_group: bool
+        :returns: the sorted list of the available providers or groups
+        :rtype: List[str]
         """
 
         if product_type:
-            return sorted(
-                k
+            providers = [
+                (v.group if by_group and hasattr(v, "group") else k, v.priority)
                 for k, v in self.providers_config.items()
                 if product_type in getattr(v, "products", {}).keys()
-            )
+            ]
         else:
-            return sorted(tuple(self.providers_config.keys()))
+            providers = [
+                (v.group if by_group and hasattr(v, "group") else k, v.priority)
+                for k, v in self.providers_config.items()
+            ]
+
+        # If by_group is True, keep only the highest priority for each group
+        if by_group:
+            group_priority: Dict[str, int] = {}
+            for name, priority in providers:
+                if name not in group_priority or priority > group_priority[name]:
+                    group_priority[name] = priority
+            providers = list(group_priority.items())
+
+        # Sort by priority (descending) and then by name (ascending)
+        providers.sort(key=lambda x: (-x[1], x[0]))
+
+        # Return only the names of the providers or groups
+        return [name for name, _ in providers]
 
     def get_product_type_from_alias(self, alias_or_id: str) -> str:
         """Return the ID of a product type by either its ID or alias
