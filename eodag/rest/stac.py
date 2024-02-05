@@ -668,37 +668,30 @@ class StacCollection(StacCommon):
 
         collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
-            if self.provider:
-                providers = [self.provider]
-            else:
-                providers = sorted(
-                    [
-                        self.eodag_api.providers_config[p].__dict__
-                        for p in self.eodag_api.available_providers(
-                            product_type=product_type["_id"]
-                        )
-                    ],
-                    key=itemgetter("priority"),
-                    reverse=True,
+            # get available providers for each product_type
+            providers = [self.provider] if self.provider else [
+                plugin.provider
+                for plugin in self.eodag_api._plugins_manager.get_search_plugins(
+                    product_type=(
+                        product_type.get("_id", None) or product_type["ID"]
+                    )
                 )
-            providers_models: List[Dict[str, Any]] = []
-            for provider in providers:
-                providers_models.append(self.get_provider_dict(provider["name"]))
+            ]
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
                 collection_model,
                 {
                     "product_type": product_type,
-                    "providers": providers_models,
+                    "providers": [self.get_provider_dict(p) for p in providers],
                 },
             )
             # parse f-strings
             format_args = deepcopy(self.stac_config)
-            format_args["collection"] = dict(
-                product_type_collection,
+            format_args["collection"] = {
+                **product_type_collection,
                 **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
-            )
+            }
             product_type_collection = format_dict_items(
                 product_type_collection, **format_args
             )

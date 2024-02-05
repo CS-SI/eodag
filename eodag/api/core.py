@@ -533,42 +533,33 @@ class EODataAccessGateway:
 
         product_types: List[Dict[str, Any]] = []
 
-        if provider:
-            providers = [
+        providers = (
+            list(self.providers_config.values())
+            if not provider
+            else [
                 p
                 for p in self.providers_config.values()
                 if provider in [p.name, getattr(p, "group", None)]
             ]
-            if len(providers) == 0:
-                raise UnsupportedProvider(
-                    f"The requested provider is not (yet) supported: {provider}"
-                )
-            for p in providers:
-                provider_supported_products = p.products
-                for product_type_id in provider_supported_products:
-                    if product_type_id == GENERIC_PRODUCT_TYPE:
-                        continue
-                    config = self.product_types_config[product_type_id]
-                    config["_id"] = product_type_id
-                    if "alias" in config:
-                        product_type_id = config["alias"]
-                    product_type = dict(ID=product_type_id, **config)
-                    if product_type_id not in product_types:
-                        product_types.append(product_type)
-            return sorted(product_types, key=itemgetter("ID"))
+        )
 
-        # Only get the product types supported by the available providers
-        for provider in self.available_providers():
-            current_product_type_ids = [pt["ID"] for pt in product_types]
-            product_types.extend(
-                [
-                    pt
-                    for pt in self.list_product_types(
-                        provider=provider, fetch_providers=False
-                    )
-                    if pt["ID"] not in current_product_type_ids
-                ]
+        if provider and not providers:
+            raise UnsupportedProvider(
+                f"The requested provider is not (yet) supported: {provider}"
             )
+
+        for p in providers:
+            for product_type_id in p.products:  # type: ignore
+                if product_type_id == GENERIC_PRODUCT_TYPE:
+                    continue
+                config = self.product_types_config[product_type_id]
+                config["_id"] = product_type_id 
+                if "alias" in config:
+                    product_type_id = config["alias"]
+                product_type = {"ID": product_type_id, **config}
+                if product_type not in product_types:
+                    product_types.append(product_type)
+
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
 
