@@ -2330,6 +2330,7 @@ class TestCoreSearch(TestCoreBase):
             "dummy_next_page_url_tpl",
         )
 
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
@@ -2337,11 +2338,21 @@ class TestCoreSearch(TestCoreBase):
         "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
         autospec=True,
     )
-    def test_search_sort_by(self, mock_normalize_results, mock__request):
+    def test_search_sort_by(
+        self,
+        mock_normalize_results,
+        mock_qssearch__request,
+        mock_postjsonsearch__request,
+    ):
         """search must sort results by sorting parameter(s) in their sorting order
-        from the "sortBy" argument or by default sorting parameters if exist"""
-        mock__request.return_value.json.return_value = {
+        from the "sortBy" argument or by default sorting parameter if exists"""
+        mock_qssearch__request.return_value.json.return_value = {
             "properties": {"totalResults": 2},
+            "features": [],
+            "links": [{"rel": "next", "href": "url/to/next/page"}],
+        }
+        mock_postjsonsearch__request.return_value.json.return_value = {
+            "meta": {"found": 2},
             "features": [],
             "links": [{"rel": "next", "href": "url/to/next/page"}],
         }
@@ -2357,7 +2368,8 @@ class TestCoreSearch(TestCoreBase):
         mock_normalize_results.return_value = [p2, p1]
 
         dag = EODataAccessGateway()
-        # sort by a sorting parameter and a sorting order from "sortBy" argument
+
+        # with a GET mode search
         dummy_provider_config = """
         dummy_provider:
             search:
@@ -2384,12 +2396,49 @@ class TestCoreSearch(TestCoreBase):
             sortBy=[("eodagSortParam", "DESC")],
         )
 
+        # a provider-specific string has been created to sort by
         self.assertIn(
             "&sortParam=providerSortParam&sortOrder=desc",
-            mock__request.call_args[0][0].query_string,
+            mock_qssearch__request.call_args[0][0].query_string,
         )
 
-        # TODO: sort by with the PostJsonSearch plugin
+        # with a POST mode search
+        dummy_provider_config = """
+        other_dummy_provider:
+            search:
+                type: PostJsonSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+                    total_items_nb_key_path: '$.meta.found'
+                sort:
+                    sort_body_tpl:
+                        sortby:
+                            field: '{sort_param}'
+                            direction: '{sort_order}'
+                    sort_by_mapping:
+                        eodagSortParam: providerSortParam
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        dag.search(
+            provider="other_dummy_provider",
+            productType="S2_MSI_L1C",
+            sortBy=[("eodagSortParam", "DESC")],
+        )
+
+        # a provider-specific dictionnary has been created to sort by
+        self.assertIn(
+            "sortby", mock_postjsonsearch__request.call_args[0][0].query_params.keys()
+        )
+        self.assertEqual(
+            [{"field": "providerSortParam", "direction": "desc"}],
+            mock_postjsonsearch__request.call_args[0][0].query_params["sortby"],
+        )
 
         # TODO: sort by default sorting parameter and sorting order
 
