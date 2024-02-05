@@ -615,9 +615,7 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertIn("Unsupported provider. You may have a typo", result.output)
         self.assertIn(
-            "Available providers: {}".format(
-                ", ".join(sorted(test_core.TestCore.SUPPORTED_PROVIDERS))
-            ),
+            f"Available providers: {', '.join(test_core.TestCore.SUPPORTED_PROVIDERS)}",
             result.output,
         )
 
