@@ -36,6 +36,7 @@ from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
+from eodag import EOProduct
 from eodag.utils.exceptions import TimeOutError
 from tests import mock
 from tests.context import (
@@ -1232,6 +1233,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
+
     @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
     def test_product_type_queryables_from_constraints(
         self, mock_requests_constraints: Mock
@@ -1374,7 +1376,43 @@ class RequestTestCase(unittest.TestCase):
                         },
                     ],
                 }
-            },
+            })
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
+        autospec=True,
+    )
+    def test_download_without_search_by_id(self, mock_download, mock_auth, mock_plugin):
+        product_id = "a_nice_product"
+        properties = {
+            "id": product_id,
+            "downloadLink": "https://bla.bli",
+            "orderLink": "https://bla.bli/blu",
+            "geometry": "-180 -90 180 90",
+            "title": product_id,
+        }
+        product = EOProduct("onda", properties, productType=self.tested_product_type)
+        mock_plugin.return_value = [product], 1
+        # search products
+        self.app.get(
+            f"search?collections={self.tested_product_type}&provider=onda&"
+            f"bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
+            follow_redirects=True,
+        )
+
+        mock_download.return_value = {"content": iter([""])}
+        # check that download of returned product is working without attempt to execute search
+        self._request_valid_raw(
+            f"collections/{self.tested_product_type}/items/a_nice_product/download?provider=onda",
+            search_call_count=0,
         )
 
     @mock.patch("eodag.rest.core.eodag_api.list_product_types", autospec=True)

@@ -130,6 +130,8 @@ def format_product_types(product_types: List[Dict[str, Any]]) -> str:
 
 
 def _add_to_cache(product_type: str, provider: Optional[str], products: SearchResult):
+    if len(products) == 0:
+        return
     if use_redis:
         for product in products:
             auth = getattr(product, "downloader_auth", None)
