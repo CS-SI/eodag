@@ -228,7 +228,6 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
-            "earth_search",
             "onda",
             "planetary_computer",
             "sara",

@@ -1243,10 +1243,10 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
 
         # search with another product type
         self.assertNotIn(
-            "bar", search_plugin.config.products["S2_MSI_L2A"]["metadata_mapping"]
+            "metadata_mapping", search_plugin.config.products["S1_SAR_GRD"]
         )
         products, estimate = search_plugin.query(
-            productType="S2_MSI_L2A",
+            productType="S1_SAR_GRD",
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
