@@ -1751,6 +1751,10 @@
       productType: landsat-c2-l2
     NAIP:
       productType: naip
+    COP_DEM_GLO30_DGED:
+      productType: cop-dem-glo-30
+    COP_DEM_GLO90_DGED:
+      productType: cop-dem-glo-90
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
