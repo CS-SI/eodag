@@ -3808,11 +3808,11 @@
   url: https://www.wekeo.eu/
   search: !plugin
     type: DataRequestSearch
-    api_endpoint: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/"
-    data_request_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest"
-    metadata_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/"
-    status_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/"
-    result_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
+    api_endpoint: "https://wekeo-broker.prod.wekeo2.eu/databroker/"
+    data_request_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest"
+    metadata_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/querymetadata/"
+    status_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest/status/"
+    result_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
     timeout: 60
     need_auth: true
     auth_error_code: 401
@@ -3841,11 +3841,11 @@
       cloudCover: '$.extraInformation.cloudCover'
       downloadLink: '$.url'
       title: '$.productInfo.product'
-      orderLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
+      orderLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
       storageStatus: 'OFFLINE'
   auth: !plugin
     type: TokenAuth
-    auth_uri: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken'
+    auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
     token_type: json
     token_key: access_token
     request_method: GET
@@ -6714,7 +6714,7 @@
 
   download: !plugin
     type: HTTPDownload
-    base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
+    base_uri: https://wekeo-broker.prod.wekeo2.eu/databroker
     flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
@@ -6722,8 +6722,8 @@
     order_on_response:
       metadata_mapping:
         order_id: '$.orderId'
-        orderStatusLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/status/{order_id}'
-        downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
+        orderStatusLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder/status/{order_id}'
+        downloadLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder/download/{order_id}'
     order_status_method: 'GET'
     order_status_success:
       status: completed

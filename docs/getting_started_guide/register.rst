@@ -119,7 +119,7 @@ to each provider supported by ``eodag``:
 
     .. code-block:: bash
 
-      curl -X GET --header "Authorization: Basic $(echo USERNAME:PASSWORD | base64)" "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken"
+      curl -X GET --header "Authorization: Basic $(echo USERNAME:PASSWORD | base64)" "https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken"
 
     The WEkEO API will respond with a token:
 
@@ -131,4 +131,4 @@ to each provider supported by ``eodag``:
 
     .. code-block:: bash
 
-      curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/termsaccepted/Copernicus_General_License
+      curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.prod.wekeo2.eu/databroker/termsaccepted/Copernicus_General_License
