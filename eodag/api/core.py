@@ -34,6 +34,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import geojson
@@ -45,6 +46,7 @@ from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
+from whoosh.searching import Results
 
 from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
@@ -515,7 +517,10 @@ class EODataAccessGateway:
             self.locations_config = []
 
     def list_product_types(
-        self, provider: Optional[str] = None, fetch_providers: bool = True, filter: Optional[str] = None
+        self,
+        provider: Optional[str] = None,
+        fetch_providers: bool = True,
+        filter: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Lists supported product types.
 
@@ -577,8 +582,8 @@ class EODataAccessGateway:
         return sorted(product_types, key=itemgetter("ID"))
 
     def __apply_product_type_free_text_search_filter(
-        self, product_types: List[str], filter: str
-    ) -> List[str]:
+        self, product_types: List[Dict[str, Any]], filter: str
+    ) -> List[Dict[str, Any]]:
         """Apply the free text search filter to the given list of product types
 
         :param product_types: The list of product types
@@ -596,7 +601,7 @@ class EODataAccessGateway:
         fts_terms = filter.split(",")
         fts_supported_params = {"title", "abstract", "keywords"}
         with self._product_types_index.searcher() as searcher:
-            results = None
+            results: Optional[Results] = None
             # For each search key, do a guess and then upgrade the result (i.e. when
             # merging results, if a hit appears in both results, its position is raised
             # to the top. This way, the top most result will be the hit that best
@@ -604,22 +609,27 @@ class EODataAccessGateway:
             # that crosses the highest number of search params from the given queries
             for term in fts_terms:
                 for search_key in fts_supported_params:
-                    query = QueryParser(
-                        search_key, self._product_types_index.schema
-                    ).parse(term)
-                    if results is None:
-                        results = searcher.search(query, limit=None)
+                    result = cast(
+                        Results,
+                        searcher.search(  # type: ignore
+                            QueryParser(
+                                search_key, self._product_types_index.schema
+                            ).parse(  # type: ignore
+                                term
+                            ),
+                            limit=None,
+                        ),
+                    )
+                    if not results:
+                        results = result
                     else:
-                        results.upgrade_and_extend(searcher.search(query, limit=None))
-            if results is None:
+                        results.upgrade_and_extend(result)  # type: ignore
+            if not results:
                 # no result found -> intersection is empty set
                 return []
-            else:
-                result_ids = {r["ID"] for r in results or []}
-                filtered_product_types = [
-                    p for p in product_types if p["ID"] in result_ids
-                ]
-                return filtered_product_types
+
+            result_ids = {r["ID"] for r in results or []}
+            return [p for p in product_types if p["ID"] in result_ids]
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
