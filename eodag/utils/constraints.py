@@ -218,7 +218,7 @@ def _matches_constraint(
     for p in params:
         provider_key = get_provider_queryable_key(p, constraint, metadata_mapping)
         if provider_key not in constraint:
-            return True
+            continue
         if isinstance(params[p], list):
             for value in params[p]:
                 if value not in constraint[provider_key]:
