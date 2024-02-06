@@ -35,7 +35,6 @@ Commands:
   list             List supported product types
   search           Search satellite images by their product types,...
   serve-rest       Start eodag HTTP server
-  serve-rpc        Start eodag rpc server
   version          Print eodag version and exit
 
   noqa: D103
@@ -587,42 +586,6 @@ def download(ctx: Context, **kwargs: Any) -> None:
             click.echo(
                 "Error during download, a file may have been downloaded but we cannot locate it"
             )
-
-
-@eodag.command(help="Start eodag rpc server")
-@click.option(
-    "-h",
-    "--host",
-    type=click.STRING,
-    default="localhost",
-    help="Interface where to listen for requests",
-)
-@click.option(
-    "-p",
-    "--port",
-    type=click.INT,
-    default=50051,
-    help="The port where to listen for requests",
-)
-@click.option(
-    "-f",
-    "--conf",
-    type=click.Path(exists=True),
-    help="File path to the user configuration file with its credentials",
-)
-@click.pass_context
-def serve_rpc(ctx: Context, host: str, port: int, conf: str) -> None:
-    """Serve EODAG functionalities through a RPC interface"""
-    setup_logging(verbose=ctx.obj["verbosity"])
-    try:
-        from eodag_cube.rpc.server import EODAGRPCServer
-    except ImportError:
-        raise NotImplementedError(
-            "eodag-cube needed for this functionnality, install using `pip install eodag-cube`"
-        )
-
-    server = EODAGRPCServer(host, port, conf)
-    server.serve()
 
 
 @eodag.command(
