@@ -21,7 +21,6 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
-from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -669,14 +668,18 @@ class StacCollection(StacCommon):
         collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
             # get available providers for each product_type
-            providers = [self.provider] if self.provider else [
-                plugin.provider
-                for plugin in self.eodag_api._plugins_manager.get_search_plugins(
-                    product_type=(
-                        product_type.get("_id", None) or product_type["ID"]
+            providers = (
+                [self.provider]
+                if self.provider
+                else [
+                    plugin.provider
+                    for plugin in self.eodag_api._plugins_manager.get_search_plugins(
+                        product_type=(
+                            product_type.get("_id", None) or product_type["ID"]
+                        )
                     )
-                )
-            ]
+                ]
+            )
 
             # parse jsonpath
             product_type_collection = jsonpath_parse_dict_items(
