@@ -1139,21 +1139,21 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                         "id": "foo",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456.SAFE",
                         },
                     },
                     {
                         "id": "bar",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456.SAFE",
                         },
                     },
                     {
                         "id": "bar",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456.SAFE",
                         },
                     },
                 ],
