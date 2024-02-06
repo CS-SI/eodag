@@ -1159,13 +1159,9 @@ class TestCore(TestCoreBase):
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
-    def test_list_sortables(self):
-        """list_sortables must return sortable(s) and its (their) maximum  number dict adapted to provider"""
-        # raise an error if the provider is unsupported
-        with self.assertRaises(UnsupportedProvider):
-            self.dag.list_sortables(provider="not_supported_provider")
-
-        # check if all providers are listed if the method does not have argument
+    def test_available_sortables(self):
+        """available_sortables must return available sortable(s) and its (their)
+        maximum number dict for providers which support the sorting feature"""
         expected_result = {
             "peps": None,
             "usgs": None,
@@ -1286,48 +1282,24 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
         }
-        sortables = self.dag.list_sortables()
+        sortables = self.dag.available_sortables()
         self.assertDictEqual(sortables, expected_result)
 
-        # check if only sortables of the provider given in argument are displayed and if they are set to None
-        # when the provider does not support the sorting feature
-        expected_result = {"peps": None}
-        sortables = self.dag.list_sortables(provider="peps")
+        # check if sortables are set to None when the provider does not support the sorting feature
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
-        self.assertDictEqual(sortables, expected_result)
+        self.assertEqual(sortables["peps"], None)
 
         # check if sortable parameter(s) and its (their) maximum number of a provider are set
         # to their value when the provider supports the sorting feature and has a maximum number of sortables
-        expected_result = {
-            "creodias": {
-                "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                ],
-                "max_sort_params": 1,
-            }
-        }
-        sortables = self.dag.list_sortables(provider="creodias")
         self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
         self.assertTrue(
             self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
         )
-        self.assertDictEqual(sortables, expected_result)
+        if sortables["creodias"]:
+            self.assertIsNotNone(sortables["creodias"]["max_sort_params"])
 
         # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
         # to None when the provider supports the sorting feature and does not have a maximum number of sortables
-        expected_result = {
-            "planetary_computer": {
-                "sortables": [
-                    "id",
-                    "startTimeFromAscendingNode",
-                    "platformSerialIdentifier",
-                ],
-                "max_sort_params": None,
-            }
-        }
-        sortables = self.dag.list_sortables(provider="planetary_computer")
         self.assertTrue(
             hasattr(self.dag.providers_config["planetary_computer"].search, "sort")
         )
@@ -1336,7 +1308,8 @@ class TestCore(TestCoreBase):
                 "max_sort_params"
             )
         )
-        self.assertDictEqual(sortables, expected_result)
+        if sortables["planetary_computer"]:
+            self.assertIsNone(sortables["planetary_computer"]["max_sort_params"])
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

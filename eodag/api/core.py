@@ -2253,48 +2253,16 @@ class EODataAccessGateway:
 
         return provider_queryables
 
-    def list_sortables(
-        self, provider: Optional[str] = None
-    ) -> Dict[str, Optional[ProviderSortables]]:
-        """Lists sortable parameter(s) and its (their) maximum number of a provider if sets,
-        otherwise the ones of all providers.
+    def available_sortables(self) -> Dict[str, Optional[ProviderSortables]]:
+        """For each provider, gives its available sortable parameter(s) and its maximum
+        number of them if it supports the sorting feature, otherwise gives None.
 
-        :param provider: (optional) The name of a provider in which we are about to list its sortable parameter(s) and
-                                    its (their) maximum number
-        :type provider: str
-        :returns: A dictionnary with provider(s) as key(s) and dictionnary of sortable parameter(s) and
+        :returns: A dictionnary with providers as keys and dictionnary of sortable parameter(s) and
                   its (their) maximum number as value(s).
         :rtype: dict
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        sortables = {}
-        if provider is not None:
-            if provider in self.providers_config:
-                provider_search_plugin = next(
-                    self._plugins_manager.get_search_plugins(provider=provider)
-                )
-                if not hasattr(provider_search_plugin.config, "sort"):
-                    sortables[provider] = None
-                    return sortables
-                sort_by_params = list(
-                    provider_search_plugin.config.sort["sort_by_mapping"].keys()
-                )
-                if not provider_search_plugin.config.sort.get("max_sort_params"):
-                    sortables[provider] = {
-                        "sortables": sort_by_params,
-                        "max_sort_params": None,
-                    }
-                    return sortables
-                sortables[provider] = {
-                    "sortables": sort_by_params,
-                    "max_sort_params": provider_search_plugin.config.sort[
-                        "max_sort_params"
-                    ],
-                }
-                return sortables
-            raise UnsupportedProvider(
-                f"invalid requested provider: {provider} is not (yet) supported"
-            )
+        sortables: Dict[str, Optional[ProviderSortables]] = {}
         provider_search_plugins = self._plugins_manager.get_search_plugins()
         for provider_search_plugin in provider_search_plugins:
             provider = provider_search_plugin.provider
