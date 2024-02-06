@@ -23,18 +23,7 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
 
 import geojson
 import pkg_resources
@@ -2166,9 +2155,7 @@ class EODataAccessGateway:
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
     def list_queryables(
-        self,
-        provider: Optional[str] = None,
-        **kwargs: Any,
+        self, provider: Optional[str] = None, **kwargs: Any
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
@@ -2177,11 +2164,14 @@ class EODataAccessGateway:
         :param kwargs: additional filters for queryables (`productType` or other search
                        arguments)
         :type kwargs: Any
+
+        :raises UnsupportedProductType: If the specified product type is not available for the
+                                        provider.
+
         :returns: A dict containing the EODAG queryable properties, associating
                   parameters to their annotated type
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
-        # unknown product type
         available_product_types = [
             pt["ID"] for pt in self.list_product_types(fetch_providers=False)
         ]
@@ -2189,101 +2179,28 @@ class EODataAccessGateway:
         if product_type is not None and product_type not in available_product_types:
             self.fetch_product_types_list()
 
-        # dictionary of the queryable properties of the providers supporting the given product type
-        providers_available_queryables: Dict[
-            str, Dict[str, Annotated[Any, FieldInfo]]
-        ] = dict()
-
-        if provider is None and product_type is None:
-            return model_fields_to_annotated(CommonQueryables.model_fields)
-        elif provider is None:
-            for plugin in self._plugins_manager.get_search_plugins(
-                product_type, provider
-            ):
-                providers_available_queryables[plugin.provider] = self.list_queryables(
-                    provider=plugin.provider, **kwargs
-                )
-
-            # return providers queryables intersection
-            queryables_keys: AbstractSet[str] = set()
-            for queryables in providers_available_queryables.values():
-                queryables_keys = (
-                    queryables_keys & queryables.keys()
-                    if queryables_keys
-                    else queryables.keys()
-                )
-            return {
-                k: v
-                for k, v in providers_available_queryables.popitem()[1].items()
-                if k in queryables_keys
-            }
-
-        all_queryables = copy_deepcopy(
-            model_fields_to_annotated(Queryables.model_fields)
-        )
-
-        try:
-            plugin = next(
-                self._plugins_manager.get_search_plugins(product_type, provider)
-            )
-        except StopIteration:
-            # return default queryables if no plugin is found
+        if not provider and not product_type:
             return model_fields_to_annotated(CommonQueryables.model_fields)
 
-        providers_available_queryables[plugin.provider] = dict()
+        providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
-        # unknown product type: try again after fetch_product_types_list()
-        if (
-            product_type
-            and product_type not in plugin.config.products.keys()
-            and provider is None
-        ):
-            raise UnsupportedProductType(product_type)
-        elif product_type and product_type not in plugin.config.products.keys():
-            raise UnsupportedProductType(
-                f"{product_type} is not available for provider {provider}"
+        for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
+            if product_type and product_type not in plugin.config.products.keys():
+                raise UnsupportedProductType(
+                    f"{product_type} is not available for provider {plugin.provider}"
+                )
+            providers_queryables[plugin.provider] = _list_plugin_queryables(
+                plugin, kwargs, product_type
             )
 
-        metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
-
-        # product_type-specific metadata-mapping
-        metadata_mapping.update(
-            getattr(plugin.config, "products", {})
-            .get(product_type, {})
-            .get("metadata_mapping", {})
+        queryable_keys: Set[str] = set.intersection(  # type: ignore
+            *[set(q.keys()) for q in providers_queryables.values()]
         )
-
-        # default values
-        default_values = deepcopy(
-            getattr(plugin.config, "products", {}).get(product_type, {})
-        )
-        default_values.pop("metadata_mapping", None)
-        kwargs = dict(default_values, **kwargs)
-
-        # remove not mapped parameters or non-queryables
-        for param in list(metadata_mapping.keys()):
-            if NOT_MAPPED in metadata_mapping[param] or not isinstance(
-                metadata_mapping[param], list
-            ):
-                del metadata_mapping[param]
-
-        for key, value in all_queryables.items():
-            annotated_args = get_args(value)
-            if len(annotated_args) < 1:
-                continue
-            field_info = annotated_args[1]
-            if not isinstance(field_info, FieldInfo):
-                continue
-            if key in kwargs:
-                field_info.default = kwargs[key]
-            if field_info.is_required() or (
-                (field_info.alias or key) in metadata_mapping
-            ):
-                providers_available_queryables[plugin.provider][key] = value
-
-        provider_queryables = plugin.discover_queryables(**kwargs) or dict()
-        # use EODAG configured queryables by default
-        provider_queryables.update(providers_available_queryables[provider])
+        queryables = {
+            k: v
+            for k, v in list(providers_queryables.values())[0].items()
+            if k in queryable_keys
+        }
 
         # always keep at least CommonQueryables
         common_queryables = copy_deepcopy(CommonQueryables.model_fields)
@@ -2291,9 +2208,9 @@ class EODataAccessGateway:
             if key in kwargs:
                 queryable.default = kwargs[key]
 
-        provider_queryables.update(model_fields_to_annotated(common_queryables))
+        queryables.update(model_fields_to_annotated(common_queryables))
 
-        return provider_queryables
+        return queryables
 
     def available_sortables(self) -> Dict[str, Optional[ProviderSortables]]:
         """For each provider, gives its available sortable parameter(s) and its maximum
@@ -2327,3 +2244,61 @@ class EODataAccessGateway:
                 ],
             }
         return sortables
+
+
+def _list_plugin_queryables(
+    plugin: Union[Search, Api],
+    filters: Dict[str, Any],
+    product_type: Optional[str] = None,
+) -> Dict[str, Annotated[Any, FieldInfo]]:
+    """
+    Get queryables for a specific search plugin.
+
+    :param plugin: The search plugin (either Search or Api).
+    :type plugin: Union[Search, Api]
+    :param filters: Additional filters for queryables.
+    :type filters: Dict[str, Any]
+    :param product_type: (optional) The product type.
+    :type product_type: Optional[str]
+
+    :return: A dictionary containing the queryable properties, associating parameters to their
+             annotated type.
+    :rtype: Dict[str, Annotated[Any, FieldInfo]]
+    """
+    default_values: Dict[str, Any] = deepcopy(
+        getattr(plugin.config, "products", {}).get(product_type, {})
+    )
+    default_values.pop("metadata_mapping", None)
+
+    queryables: Dict[str, Annotated[Any, FieldInfo]] = (
+        plugin.discover_queryables(**{**default_values, **filters}) or {}
+    )
+
+    metadata_mapping: Dict[str, Any] = deepcopy(
+        getattr(plugin.config, "metadata_mapping", {})
+    )
+    metadata_mapping.update(
+        getattr(plugin.config, "products", {})
+        .get(product_type, {})
+        .get("metadata_mapping", {})
+    )
+
+    for param in list(metadata_mapping.keys()):
+        if NOT_MAPPED in metadata_mapping[param] or not isinstance(
+            metadata_mapping[param], list
+        ):
+            del metadata_mapping[param]
+
+    eoadag_queryables = copy_deepcopy(
+        model_fields_to_annotated(Queryables.model_fields)
+    )
+    for k, v in eoadag_queryables.items():
+        field_info = get_args(v)[1] if len(get_args(v)) > 1 else None
+        if not isinstance(field_info, FieldInfo):
+            continue
+        if k in filters:
+            field_info.default = filters[k]
+        if field_info.is_required() or ((field_info.alias or k) in metadata_mapping):
+            queryables[k] = v
+
+    return queryables
