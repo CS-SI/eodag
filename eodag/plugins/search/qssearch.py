@@ -20,7 +20,18 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -44,6 +55,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -471,20 +483,8 @@ class QueryStringSearch(Search):
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
 
-        # remove "sortBy" from search args if exists because it is not part of metadata mapping,
-        # it will complete the query string once metadata mapping will be done
-        sort_by_arg_tmp = kwargs.pop("sortBy", None)
-        sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
-            "sort_by_default", None
-        )
-        if not sort_by_arg_tmp and getattr(self.config, "sort", {}).get(
-            "sort_by_default", None
-        ):
-            logger.info(
-                f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
-                f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
-            )
-        sort_by_params = (
+        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)  # type: ignore
+        sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
             ""
             if sort_by_arg is None
             else self.transform_sort_by_params_for_search_request(sort_by_arg)
@@ -1053,20 +1053,8 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
-        # remove "sortBy" from search args if exists because it is not part of metadata mapping,
-        # it will complete the query body once metadata mapping will be done
-        sort_by_arg_tmp = kwargs.pop("sortBy", None)
-        sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
-            "sort_by_default", None
-        )
-        if not sort_by_arg_tmp and getattr(self.config, "sort", {}).get(
-            "sort_by_default", None
-        ):
-            logger.info(
-                f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
-                f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
-            )
-        sort_by_params = (
+        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)  # type: ignore
+        sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
             {}
             if sort_by_arg is None
             else self.transform_sort_by_params_for_search_request(sort_by_arg)

@@ -185,6 +185,29 @@ class Search(PluginTopic):
             "metadata_mapping", self.config.metadata_mapping
         )
 
+    def set_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:  # type: ignore
+        """Extract the "sortBy" argument from the kwargs or set it to the provider default sort configuration if needed
+
+        :param kwargs: Search arguments
+        :type kwargs: Dict[str, Any]
+        :returns: The "sortBy" argument from the kwargs or the provider default sort configuration
+        :rtype: :class:`~eodag.types.search_args.SortByList`
+        """
+        # remove "sortBy" from search args if exists because it is not part of metadata mapping,
+        # it will complete the query string or body once metadata mapping will be done
+        sort_by_arg_tmp = kwargs.pop("sortBy", None)
+        sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        )
+        if not sort_by_arg_tmp and getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        ):
+            logger.info(
+                f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
+                f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
+            )
+        return sort_by_arg
+
     def transform_sort_by_params_for_search_request(
         self, sort_by_arg: SortByList  # type: ignore
     ) -> Union[str, Dict[str, List[Dict[str, str]]]]:
@@ -192,7 +215,7 @@ class Search(PluginTopic):
         the "sortBy" argument into a provider-specific string or dictionnary
 
         :param sort_by_arg: the "sortBy" argument in EODAG format
-        :type sort_by_arg:  :class:`~eodag.types.search_args.SortByList`
+        :type sort_by_arg: :class:`~eodag.types.search_args.SortByList`
         :returns: The "sortBy" argument in provider-specific format
         :rtype: Union[str, Dict[str, List[Dict[str, str]]]]
         """
