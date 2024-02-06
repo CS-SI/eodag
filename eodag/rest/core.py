@@ -317,7 +317,6 @@ def _retrieve_from_cache(
             product = pickle.loads(redis_instance.get(cache_key))
             _recreate_s3_client(product)
             return product
-
     else:
         if not provider:
             providers = [result.provider for result in cached_search_results]
