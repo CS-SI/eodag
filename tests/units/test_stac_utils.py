@@ -442,7 +442,7 @@ class TestStacUtils(unittest.TestCase):
     )
     def test_search_stac_items_with_stac_providers(self, mock__request):
         """search_stac_items runs without any error with stac providers"""
-        # mock the PostJsonSearch request with the S2_MSI_L2A earth_search response search dictionary
+        # mock the PostJsonSearch request with the S2_MSI_L1C earth_search response search dictionary
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.return_value = (
             self.earth_search_resp_search_json
@@ -451,7 +451,7 @@ class TestStacUtils(unittest.TestCase):
 
         response = self.rest_utils.search_stac_items(
             url="http://foo/search",
-            arguments={"collections": "S2_MSI_L2A"},
+            arguments={"collections": "S2_MSI_L1C"},
             root="http://foo",
             catalogs=[],
             provider="earth_search",
@@ -465,8 +465,8 @@ class TestStacUtils(unittest.TestCase):
         )
         # check that assets from the provider response search are reformatted in the response
         product_id = self.earth_search_resp_search_json["features"][0]["properties"][
-            "sentinel:product_id"
-        ]
+            "s2:product_uri"
+        ].replace(".SAFE", "")
         for (k, v) in self.earth_search_resp_search_json["features"][0][
             "assets"
         ].items():
@@ -474,7 +474,7 @@ class TestStacUtils(unittest.TestCase):
             # check asset server-mode download link
             self.assertEqual(
                 response["features"][0]["assets"][k]["href"],
-                f"http://foo/collections/S2_MSI_L2A/items/{product_id}/download/{k}?provider=earth_search",
+                f"http://foo/collections/S2_MSI_L1C/items/{product_id}/download/{k}?provider=earth_search",
             )
             # check asset origin download link
             self.assertEqual(

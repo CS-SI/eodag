@@ -1139,21 +1139,21 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                         "id": "foo",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456.SAFE",
                         },
                     },
                     {
                         "id": "bar",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456.SAFE",
                         },
                     },
                     {
                         "id": "bar",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456.SAFE",
                         },
                     },
                 ],
@@ -1243,10 +1243,10 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
 
         # search with another product type
         self.assertNotIn(
-            "bar", search_plugin.config.products["S2_MSI_L2A"]["metadata_mapping"]
+            "metadata_mapping", search_plugin.config.products["S1_SAR_GRD"]
         )
         products, estimate = search_plugin.query(
-            productType="S2_MSI_L2A",
+            productType="S1_SAR_GRD",
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)

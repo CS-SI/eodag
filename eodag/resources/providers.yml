@@ -1682,7 +1682,7 @@
   url: https://www.element84.com/earth-search/
   search: !plugin
     type: StacSearch
-    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
     discover_product_types:
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
@@ -1701,28 +1701,30 @@
       max_items_per_page: 500
     metadata_mapping:
       utmZone:
-        - '{{"query":{{"sentinel:utm_zone":{{"eq":"{utmZone}"}}}}}}'
-        - '$.properties."sentinel:utm_zone"'
+        - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
+        - '$.properties."mgrs:utm_zone"'
       latitudeBand:
-        - '{{"query":{{"sentinel:latitude_band":{{"eq":"{latitudeBand}"}}}}}}'
-        - '$.properties."sentinel:latitude_band"'
+        - '{{"query":{{"mgrs:latitude_band":{{"eq":"{latitudeBand}"}}}}}}'
+        - '$.properties."mgrs:latitude_band"'
       gridSquare:
-        - '{{"query":{{"sentinel:grid_square":{{"eq":"{gridSquare}"}}}}}}'
-        - '$.properties."sentinel:grid_square"'
+        - '{{"query":{{"mgrs:grid_square":{{"eq":"{gridSquare}"}}}}}}'
+        - '$.properties."mgrs:grid_square"'
       tileIdentifier:
-        - '{{"query":{{"sentinel:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"sentinel:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"sentinel:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
+        - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
         - '{utmZone}{latitudeBand}{gridSquare}'
   products:
+    S1_SAR_GRD:
+      productType: sentinel-1-grd
     S2_MSI_L1C:
-      productType: sentinel-s2-l1c
+      productType: sentinel-2-l1c
       metadata_mapping:
-        title: '$.properties."sentinel:product_id"'
+        title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         productPath: |
-          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
+          $.properties."s2:product_uri".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*).SAFE/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
         tilePath: |
-          $.assets.info.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
+          $.assets.tileinfo_metadata.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
         utmZone:
           - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
           - '$.properties."mgrs:utm_zone"'
@@ -1735,18 +1737,14 @@
         tileIdentifier:
           - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
           - '{utmZone}{latitudeBand}{gridSquare}'
-    S2_MSI_L2A:
-      productType: sentinel-s2-l2a
-      metadata_mapping:
-        title: '$.properties."sentinel:product_id"'
-        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
-        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
-        productPath: |
-          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL2A_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL2A_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
-        tilePath: |
-          $.assets.info.href.`sub(/.*/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
-    L8_OLI_TIRS_C1L1:
-      productType: landsat-8-l1-c1
+    LANDSAT_C2L2:
+      productType: landsat-c2-l2
+    NAIP:
+      productType: naip
+    COP_DEM_GLO30_DGED:
+      productType: cop-dem-glo-30
+    COP_DEM_GLO90_DGED:
+      productType: cop-dem-glo-90
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
@@ -1756,12 +1754,6 @@
     products:
       S2_MSI_L1C:
         default_bucket: 'sentinel-s2-l1c'
-        build_safe: true
-        complementary_url_key:
-          - productPath
-          - tilePath
-      S2_MSI_L2A:
-        default_bucket: 'sentinel-s2-l2a'
         build_safe: true
         complementary_url_key:
           - productPath
@@ -1779,7 +1771,7 @@
   url: https://www.element84.com/earth-search/
   search: !plugin
     type: StacSearch
-    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
     discover_product_types:
       fetch_url: null
@@ -1799,9 +1791,10 @@
     metadata_mapping:
       platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
       polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+      title: '{$.properties."s2:product_uri"#remove_extension}'
   products:
     S2_MSI_L2A_COG:
-      productType: sentinel-s2-l2a-cogs
+      productType: sentinel-2-l2a
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
