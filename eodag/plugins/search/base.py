@@ -185,7 +185,7 @@ class Search(PluginTopic):
             "metadata_mapping", self.config.metadata_mapping
         )
 
-    def set_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:  # type: ignore
+    def set_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
         """Extract the "sortBy" argument from the kwargs or set it to the provider default sort configuration if needed
 
         :param kwargs: Search arguments
@@ -208,8 +208,8 @@ class Search(PluginTopic):
             )
         return sort_by_arg
 
-    def transform_sort_by_params_for_search_request(
-        self, sort_by_arg: SortByList  # type: ignore
+    def transform_sort_by_arg_for_search_request(
+        self, sort_by_arg: SortByList
     ) -> Union[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
         the "sortBy" argument into a provider-specific string or dictionnary
@@ -232,7 +232,8 @@ class Search(PluginTopic):
         else:
             sort_by_provider_keyword = list(self.config.sort["sort_body_tpl"].keys())[0]
             sort_by_params = {sort_by_provider_keyword: []}
-        sort_by_params_tmp = []
+        sort_by_params_tmp: List[Dict[str, str]] = []
+        sort_by_param: Dict[str, str]
         for one_sort_by_param in sort_by_arg:
             # Remove leading and trailing whitespace(s) if exist
             eodag_sort_param = one_sort_by_param[0]
@@ -256,7 +257,6 @@ class Search(PluginTopic):
                     params,
                 )
             sort_order = one_sort_by_param[1]
-            sort_by_param: Union[Tuple[str, str], Dict[str, str]]
             # TODO: remove this code block when search args model validation is embeded
             sort_order = sort_order.strip().upper()
             if sort_order[:3] != "ASC" and sort_order[:3] != "DES":
@@ -266,23 +266,14 @@ class Search(PluginTopic):
                 )
             sort_order = sort_order[:3]
 
-            if sort_order == "ASC" and self.config.sort.get("sort_url_tpl"):
-                sort_by_param = (provider_sort_param, "asc")
-            elif sort_order == "ASC":
+            if sort_order == "ASC":
                 sort_by_param = {"field": provider_sort_param, "direction": "asc"}
-            elif sort_order == "DES" and self.config.sort.get("sort_url_tpl"):
-                sort_by_param = (provider_sort_param, "desc")
             else:
                 sort_by_param = {"field": provider_sort_param, "direction": "desc"}
             for sort_by_param_tmp in sort_by_params_tmp:
                 # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
                 # then their sorting order is different and there is a contradiction that would raise an error
-                if (
-                    isinstance(sort_by_param, tuple)
-                    and sort_by_param[0] == sort_by_param_tmp[0]
-                    or isinstance(sort_by_param, dict)
-                    and sort_by_param["field"] == sort_by_param_tmp["field"]
-                ):
+                if sort_by_param["field"] == sort_by_param_tmp["field"]:
                     raise ValidationError(
                         "'{}' parameter is called several times to sort results with different sorting orders. "
                         "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
@@ -302,15 +293,12 @@ class Search(PluginTopic):
                         self.config.sort["max_sort_params"], self.provider
                     )
                 )
-            if isinstance(sort_by_params, str) and isinstance(sort_by_param, tuple):
+            if isinstance(sort_by_params, str):
                 sort_by_params += self.config.sort["sort_url_tpl"].format(
-                    sort_param=sort_by_param[0], sort_order=sort_by_param[1]
+                    sort_param=sort_by_param["field"],
+                    sort_order=sort_by_param["direction"],
                 )
             else:
-                assert (
-                    isinstance(sort_by_params, dict)
-                    and sort_by_provider_keyword
-                    and isinstance(sort_by_param, dict)
-                )
+                assert sort_by_provider_keyword is not None
                 sort_by_params[sort_by_provider_keyword].append(sort_by_param)
         return sort_by_params

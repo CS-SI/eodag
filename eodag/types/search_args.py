@@ -19,20 +19,21 @@ import re
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Union, cast
 
-from pydantic import BaseModel, ConfigDict, Field, conint, conlist, field_validator
+from annotated_types import MinLen
+from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
 from shapely import wkt
 from shapely.errors import GEOSException
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 
 from eodag.types.bbox import BBox
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, Annotated
 
 NumType = Union[float, int]
 GeomArgs = Union[List[NumType], Tuple[NumType], Dict[str, NumType], str, BaseGeometry]
 
 PositiveInt = conint(gt=0)
-SortByList = conlist(Tuple[str, str], min_length=1)
+SortByList = Annotated[List[Tuple[str, str]], MinLen(1)]
 
 
 class SearchArgs(BaseModel):

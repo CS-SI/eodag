@@ -483,11 +483,11 @@ class QueryStringSearch(Search):
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
 
-        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)  # type: ignore
+        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)
         sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
             ""
             if sort_by_arg is None
-            else self.transform_sort_by_params_for_search_request(sort_by_arg)
+            else self.transform_sort_by_arg_for_search_request(sort_by_arg)
         )
 
         provider_product_type = self.map_product_type(product_type)
@@ -1053,11 +1053,11 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
-        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)  # type: ignore
+        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)
         sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
             {}
             if sort_by_arg is None
-            else self.transform_sort_by_params_for_search_request(sort_by_arg)
+            else self.transform_sort_by_arg_for_search_request(sort_by_arg)
         )
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
