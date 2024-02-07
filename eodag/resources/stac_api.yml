@@ -196,6 +196,7 @@ paths:
         - Capabilities
       parameters:
         - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/provider'
       summary: Get the JSON Schema queryables that apply to a given collection.
       operationId: getQueryablesForCollection
       description: |-
@@ -204,6 +205,13 @@ paths:
 
           When used as a subresource of the collection resource,
           it returns queryables pertaining only to that single collection.
+
+          If the selected provider (or an available provider if no provider is selected) has a /queryables endpoint,
+          the queryables will be fetched from there in addition to the EODAG queryables.
+
+          If the selected provider (or an available provider if no provider is selected) provides constraints which define
+          which value is possible for which parameter, these constraints will be used to derive queryables.
+
       responses:
         '200':
           $ref: '#/components/responses/Queryables'
@@ -587,6 +595,15 @@ components:
       schema:
         $ref: '#/components/schemas/collectionsArray'
       explode: false
+    provider:
+      name: provider
+      in: query
+      description: |
+        Provider from which the requested data shall be fetched;
+        If the requested data is available from this provider it will be used instead of the provider with the highest configured priority.
+      required: false
+      schema:
+        type: string
   schemas:
     queryProp:
       description: Apply query operations to a specific property
