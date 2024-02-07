@@ -977,7 +977,9 @@
       id:
         - 'productIdentifier=%{id#remove_extension}%'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier: '$.null'
+      tileIdentifier:
+        - tileId
+        - '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -3498,7 +3500,9 @@
       id:
         - 'productIdentifier={id#remove_extension}'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier: '$.null'
+      tileIdentifier:
+        - tileId
+        - '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
@@ -6835,7 +6839,9 @@
       id:
         - 'productIdentifier=%{id#remove_extension}%'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier: '$.null'
+      tileIdentifier:
+        - tileId
+        - '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
