@@ -2121,15 +2121,15 @@ class EODataAccessGateway:
     def list_queryables(
         self,
         provider: Optional[str] = None,
-        product_type: Optional[str] = None,
+        productType: Optional[str] = None,
         **kwargs: Any,
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
         :type provider: str
-        :param product_type: (optional) The EODAG product type.
-        :type product_type: str
+        :param productType: (optional) The EODAG product type.
+        :type productType: str
         :param kwargs: additional filters for queryables
         :type kwargs: Any
         :returns: A dict containing the EODAG queryable properties, associating
@@ -2140,7 +2140,7 @@ class EODataAccessGateway:
         available_product_types = [
             pt["ID"] for pt in self.list_product_types(fetch_providers=False)
         ]
-        if product_type is not None and product_type not in available_product_types:
+        if productType is not None and productType not in available_product_types:
             self.fetch_product_types_list()
 
         # dictionary of the queryable properties of the providers supporting the given product type
@@ -2148,14 +2148,14 @@ class EODataAccessGateway:
             str, Dict[str, Annotated[Any, FieldInfo]]
         ] = dict()
 
-        if provider is None and product_type is None:
+        if provider is None and productType is None:
             return model_fields_to_annotated(CommonQueryables.model_fields)
         elif provider is None:
             for plugin in self._plugins_manager.get_search_plugins(
-                product_type, provider
+                productType, provider
             ):
                 providers_available_queryables[plugin.provider] = self.list_queryables(
-                    provider=plugin.provider, product_type=product_type, **kwargs
+                    provider=plugin.provider, productType=productType, **kwargs
                 )
 
             # return providers queryables intersection
@@ -2176,7 +2176,7 @@ class EODataAccessGateway:
 
         try:
             plugin = next(
-                self._plugins_manager.get_search_plugins(product_type, provider)
+                self._plugins_manager.get_search_plugins(productType, provider)
             )
         except StopIteration:
             # return default queryables if no plugin is found
@@ -2186,14 +2186,14 @@ class EODataAccessGateway:
 
         # unknown product type: try again after fetch_product_types_list()
         if (
-            product_type
-            and product_type not in plugin.config.products.keys()
+            productType
+            and productType not in plugin.config.products.keys()
             and provider is None
         ):
-            raise UnsupportedProductType(product_type)
-        elif product_type and product_type not in plugin.config.products.keys():
+            raise UnsupportedProductType(productType)
+        elif productType and productType not in plugin.config.products.keys():
             raise UnsupportedProductType(
-                f"{product_type} is not available for provider {provider}"
+                f"{productType} is not available for provider {provider}"
             )
 
         metadata_mapping = deepcopy(getattr(plugin.config, "metadata_mapping", {}))
@@ -2201,7 +2201,7 @@ class EODataAccessGateway:
         # product_type-specific metadata-mapping
         metadata_mapping.update(
             getattr(plugin.config, "products", {})
-            .get(product_type, {})
+            .get(productType, {})
             .get("metadata_mapping", {})
         )
 
@@ -2226,7 +2226,7 @@ class EODataAccessGateway:
 
         # default values
         default_values = deepcopy(
-            getattr(plugin.config, "products", {}).get(product_type, {})
+            getattr(plugin.config, "products", {}).get(productType, {})
         )
         default_values.pop("metadata_mapping", None)
         removed_defaults = []
@@ -2240,7 +2240,7 @@ class EODataAccessGateway:
         kwargs["defaults"] = default_values
 
         provider_queryables = (
-            plugin.discover_queryables(product_type, **kwargs) or dict()
+            plugin.discover_queryables(productType, **kwargs) or dict()
         )
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])

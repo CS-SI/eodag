@@ -1088,7 +1088,7 @@ class TestCore(TestCoreBase):
             self.dag.list_queryables(provider="not_existing_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(product_type="not_existing_product_type")
+            self.dag.list_queryables(productType="not_existing_product_type")
 
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
@@ -1106,7 +1106,7 @@ class TestCore(TestCoreBase):
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
         queryables_peps_s1grd = self.dag.list_queryables(
-            provider="peps", product_type="S1_SAR_GRD"
+            provider="peps", productType="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
         self.assertLess(len(queryables_peps_s1grd), len(queryables_peps_none))
@@ -1123,7 +1123,7 @@ class TestCore(TestCoreBase):
             )
         )
         # default values should be added to params
-        self.dag.list_queryables(provider="cop_cds", product_type="ERA5_SL")
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "defaults": {
                 "api_product_type": "reanalysis",
@@ -1135,7 +1135,7 @@ class TestCore(TestCoreBase):
         mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
-        self.dag.list_queryables(provider="cop_cds", product_type="ERA5_SL", month="02")
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
         params = {
             "month": "02",
             "defaults": {
@@ -1149,7 +1149,7 @@ class TestCore(TestCoreBase):
         mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **params)
         mock_discover_queryables.reset_mock()
         # default values should not be used if unset in params
-        self.dag.list_queryables(provider="cop_cds", product_type="ERA5_SL", format="")
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format="")
         defaults = {
             "defaults": {
                 "api_product_type": "reanalysis",

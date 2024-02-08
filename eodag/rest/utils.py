@@ -1091,7 +1091,7 @@ def fetch_collection_queryable_properties(
     :rtype Dict[str, StacQueryableProperty]: set
     """
     python_queryables = eodag_api.list_queryables(
-        provider=provider, product_type=collection_id, **kwargs
+        provider=provider, productType=collection_id, **kwargs
     )
 
     stac_queryables = dict()
