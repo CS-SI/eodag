@@ -1,14 +1,16 @@
 eodag_search_result.geojson is derived from results from https://peps.cnes.fr/ catalog.
 
-eodag_search_result_awseos.geojson is derived from AWS EOS catalog.
+awseos_search.json, s2l2a_productInfo.json and s2l2a_tileInfo.json are results obtained from AWS EOS catalog and eodag_search_result_awseos.geojson is derived from this catalog.
 
-eodag_search_result_creodias.geojson is derived from results from https://creodias.eu/ catalog.
+creodias_s3_objects.json are results obtained from https://creodias.eu/ catalog through S3 protocol and eodag_search_result_creodias.geojson is derived from results from this catalog.
 
-eodag_search_result_mundi.geojson is derived from results from https://mundiwebservices.com/ catalog.
+earth_search_search.json are results obtained from https://www.element84.com/earth-search/ catalog.
 
-eodag_search_result_onda.geojson is derived from results from https://www.onda-dias.eu/cms/ catalog.
+mundi_search.xml are results obtained from https://mundiwebservices.com/ catalog.
 
-eodag_search_result_peps.geojson is derived from results from https://peps.cnes.fr/ catalog.
+onda_count.json and onda_search.json are results obtained from https://www.onda-dias.eu/cms/ catalog and eodag_search_result_onda.geojson is derived from results from this catalog.
+
+peps_search.json are results obtained from https://peps.cnes.fr/ catalog and eodag_search_result_peps.geojson is derived from results from this catalog.
 
 eodag_search_result_theia.geojson is derived from results from https://theia.cnes.fr/ catalog.
 
