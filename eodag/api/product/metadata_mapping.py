@@ -1410,10 +1410,12 @@ def get_provider_queryable_key(
     """
     if eodag_key not in metadata_mapping:
         return ""
+
     mapping_key = metadata_mapping[eodag_key]
     if isinstance(mapping_key, list):
         for queryable in provider_queryables:
-            if queryable in mapping_key[0]:
+            pattern = rf"\b{queryable}\b"
+            if re.search(pattern, mapping_key[0]):
                 return queryable
         return ""
     else:

@@ -2811,7 +2811,7 @@
           - '{$._date}'
     ERA5_SL_MONTHLY:
       dataset: reanalysis-era5-single-levels-monthly-means
-      api_product_type: reanalysis
+      api_product_type: monthly_averaged_reanalysis
       time: '00:00'
       format: grib
       metadata_mapping:
@@ -2948,7 +2948,7 @@
       system_version: version_5_0
       format: grib.zip
       variable: river_discharge_in_the_last_24_hours
-      model_levels: surface_levels
+      model_levels: surface_level
       leadtime_hour: '24'
       metadata_mapping:
         completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
@@ -3061,7 +3061,7 @@
       rcm: cclm4_8_17
       gcm: ec_earth
       ensemble_member: r12i1p1
-      period: '1_5_c'
+      period: 1_5_c
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'
