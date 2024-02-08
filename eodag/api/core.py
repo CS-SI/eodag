@@ -2133,7 +2133,7 @@ class EODataAccessGateway:
         :param kwargs: additional filters for queryables
         :type kwargs: Any
         :returns: A dict containing the EODAG queryable properties, associating
-                  parameters to their annotaded type
+                  parameters to their annotated type
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         # unknown product type
