@@ -197,6 +197,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/collectionId'
         - $ref: '#/components/parameters/provider'
+        - $ref: '#/components/parameters/queryablesAdditionalParameters'
       summary: Get the JSON Schema queryables that apply to a given collection.
       operationId: getQueryablesForCollection
       description: |-
@@ -206,8 +207,8 @@ paths:
           When used as a subresource of the collection resource,
           it returns queryables pertaining only to that single collection.
 
-          If the selected provider (or an available provider if no provider is selected) has a /queryables endpoint,
-          the queryables will be fetched from there in addition to the EODAG queryables.
+          If no provider is given, the intersection of the queryables of all providers available for this collection will
+          be returned.
 
           If the selected provider (or an available provider if no provider is selected) provides constraints which define
           which value is possible for which parameter, these constraints will be used to derive queryables.
@@ -486,6 +487,22 @@ components:
       required: true
       schema:
         type: string
+    queryablesAdditionalParameters:
+      name: additional parameters
+      in: query
+      description: >-
+        Search parameters that will be used to filter remaining queryable parameters available value, if constraints
+        are set for the given collection.
+        Empty values can be associated to parameters in order to unset existing default values.
+
+        Examples:
+
+        * remove queryables defaults to view all available values `{"system_version": null, "model_levels: null}`
+
+        * add a search parameter to check associated available queryables values `{"variable": "elevation"}`
+
+      schema:
+        type: object
     catalogPath:
       name: catalogPath
       in: path
