@@ -12,12 +12,13 @@ about the license of each project.
 The Apache 2.0 License
 ================================================================
 
-The following components are provided under the  Apache 2.0 License  (https://opensource.org/licenses/Apache-2.0).
+The following components are provided under the Apache 2.0 License (https://opensource.org/licenses/Apache-2.0).
 See project link for details.
 
 https://github.com/requests/requests
 https://github.com/dateutil/dateutil
 https://github.com/boto/boto3
+https://github.com/boto/botocore
 https://github.com/h2non/jsonpath-ng
 https://github.com/CS-SI/eodag-cube
 https://github.com/ecmwf/ecmwf-api-client
@@ -30,7 +31,7 @@ https://github.com/stac-utils/pystac
 The MIT License
 ================================================================
 
-The following components are provided under the  MIT License  (http://www.opensource.org/licenses/mit-license.php).
+The following components are provided under the MIT License (http://www.opensource.org/licenses/mit-license.php).
 See project link for details.
 
 https://pyyaml.org/wiki/PyYAML
@@ -42,13 +43,16 @@ https://github.com/GeospatialPython/pyshp
 https://github.com/python-visualization/folium
 https://github.com/Unidata/netcdf4-python
 https://github.com/tiangolo/fastapi
+https://github.com/urllib3/urllib3
+https://github.com/annotated-types/annotated-types
+https://github.com/pypa/setuptools
 
 
 ================================================================
 The BSD-2-Clause Licence
 ================================================================
 
-The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/BSD-2-Clause).
+The following components are provided under the BSD-2-Clause License (https://opensource.org/licenses/BSD-2-Clause).
 See project link for details.
 
 https://github.com/mchaput/whoosh
@@ -59,7 +63,7 @@ https://github.com/imageio/imageio
 The BSD-3-Clause Licence
 ================================================================
 
-The following components are provided under the  BSD-3-Clause License  (https://opensource.org/licenses/BSD-3-Clause).
+The following components are provided under the BSD-3-Clause License (https://opensource.org/licenses/BSD-3-Clause).
 See project link for details.
 
 https://github.com/pallets/click
@@ -72,6 +76,8 @@ https://github.com/lxml/lxml
 https://github.com/jupyter-widgets/ipywidgets
 https://github.com/jupyter/jupyter
 https://github.com/encode/uvicorn
+https://github.com/encode/starlette
+
 
 The function slugify, located at eodag/utils/__init__.py is a modified version of the function with the same name from
 the Django Project, licensed under the BSD-3-Clause Licence. Follow project link below for more information:
@@ -79,10 +85,11 @@ https://github.com/django/django
 
 
 ================================================================
-The Python-2.0 License
+The Python Software Foundation License
 ================================================================
 
-The following components are provided under the  Python-2.0 License  (https://opensource.org/licenses/Python-2.0).
+The following components are provided under the Python Software Foundation License (https://opensource.org/licenses/Python-2.0).
 See project link for details.
 
 https://github.com/matplotlib
+https://github.com/python/typing_extensions
