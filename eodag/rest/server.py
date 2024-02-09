@@ -17,12 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
-import io
 import logging
 import os
 import traceback
 from contextlib import asynccontextmanager
-from distutils import dist
+from importlib.metadata import version
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -35,7 +34,6 @@ from typing import (
     Union,
 )
 
-import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
@@ -136,18 +134,12 @@ def eodag_openapi() -> Dict[str, Any]:
     if app.openapi_schema:
         return app.openapi_schema
 
-    # eodag metadata
-    distribution = pkg_resources.get_distribution("eodag")
-    metadata_str = distribution.get_metadata(distribution.PKG_INFO)
-    metadata_obj = dist.DistributionMetadata()
-    metadata_obj.read_pkg_file(io.StringIO(metadata_str))
-
     root_catalog = get_stac_catalogs(url="", fetch_providers=False)
     stac_api_version = get_stac_api_version()
 
     openapi_schema = get_openapi(
         title=f"{root_catalog['title']} / eodag",
-        version=getattr(metadata_obj, "version", None),
+        version=version("eodag"),
         routes=app.routes,
     )
 
