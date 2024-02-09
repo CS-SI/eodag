@@ -275,7 +275,7 @@ def strip_accents(s: str) -> str:
     >>> strip_accents('preserve-punct-special-chars:;,?!§%$£œ')
     'preserve-punct-special-chars:;,?!§%$£œ'
     """
-    # Mn stands for a nonspacing combining mark (e.g. '́')
+    # Mn stands for a nonspacing combining mark
     return "".join(
         c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
     )
