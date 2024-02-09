@@ -91,11 +91,9 @@ class Search(PluginTopic):
         return None
 
     def discover_queryables(
-        self, product_type: Optional[str] = None, **kwargs: Any
+        self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
-        :param product_type: (optional) product type
-        :type product_type: str
         :param kwargs: additional filters for queryables
         :type kwargs: Any
         :returns: fetched queryable parameters dict

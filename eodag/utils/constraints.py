@@ -119,6 +119,12 @@ def get_constraint_queryables_with_additional_params(
             raise ValidationError(
                 f"combination of values {str(params)} is not possible"
             )
+        elif len(params) == 1 and len(defaults) > 0:
+            raise ValidationError(
+                f"value {list(params.values())[0]} not available for param {list(params.keys())[0]} "
+                f"with default values {str(defaults)}"
+            )
+
         elif len(params) == 1:
             raise ValidationError(
                 f"value {list(params.values())[0]} not available for param {list(params.keys())[0]}, "

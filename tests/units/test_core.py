@@ -1132,7 +1132,9 @@ class TestCore(TestCoreBase):
                 "time": "00:00",
             },
         }
-        mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
+        mock_discover_queryables.assert_called_once_with(
+            plugin, productType="ERA5_SL", **defaults
+        )
         mock_discover_queryables.reset_mock()
         # default values + additional param
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
@@ -1146,7 +1148,9 @@ class TestCore(TestCoreBase):
                 "month": "02",
             },
         }
-        mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **params)
+        mock_discover_queryables.assert_called_once_with(
+            plugin, productType="ERA5_SL", **params
+        )
         mock_discover_queryables.reset_mock()
         # default values should not be used if unset in params
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format="")
@@ -1157,7 +1161,9 @@ class TestCore(TestCoreBase):
                 "time": "00:00",
             }
         }
-        mock_discover_queryables.assert_called_once_with(plugin, "ERA5_SL", **defaults)
+        mock_discover_queryables.assert_called_once_with(
+            plugin, productType="ERA5_SL", **defaults
+        )
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

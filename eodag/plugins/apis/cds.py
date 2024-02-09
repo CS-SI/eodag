@@ -435,12 +435,10 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         )
 
     def discover_queryables(
-        self, product_type: Optional[str] = None, **kwargs: Any
+        self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
-        :param product_type: (optional) product type
-        :type product_type: str
         :param kwargs: additional filters for queryables
         :type kwargs: Any
         :returns: fetched queryable parameters dict
@@ -449,6 +447,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         constraints_file_url = getattr(self.config, "constraints_file_url", "")
         if not constraints_file_url:
             return {}
+        product_type = kwargs.pop("productType", None)
         if not product_type:
             return {}
         provider_product_type = self.config.products.get(product_type, {}).get(
@@ -485,7 +484,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             )
             default = kwargs.get("defaults", {}).get(param, None)
             annotated_def = json_field_definition_to_python(
-                json_mtd, default_value=default
+                json_mtd, default_value=default, required=True
             )
             field_definitions[param] = get_args(annotated_def)
 
