@@ -25,6 +25,8 @@ import importlib_metadata
 from packaging.requirements import Requirement
 from stdlib_list import stdlib_list
 
+from tests.context import MisconfiguredError
+
 project_path = "./eodag"
 setup_cfg_path = "./setup.cfg"
 allowed_missing_imports = ["eodag"]
@@ -33,7 +35,12 @@ allowed_missing_imports = ["eodag"]
 def get_imports(filepath):
     """Get python imports from the given file path"""
     with open(filepath, "r") as file:
-        root = ast.parse(file.read())
+        try:
+            root = ast.parse(file.read())
+        except UnicodeDecodeError as e:
+            raise MisconfiguredError(
+                f"UnicodeDecodeError in {filepath}: {e.object[max(e.start - 50, 0):min(e.end + 50, len(e.object))]}"
+            ) from e
 
     for node in ast.iter_child_nodes(root):
         if isinstance(node, ast.Import):
