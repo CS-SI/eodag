@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from eodag.utils.exceptions import NotAvailableError
 
@@ -98,6 +98,8 @@ class Asset(UserDict):
     """
 
     product: EOProduct
+    size: int
+    filename: Optional[str]
 
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
         self.product = product

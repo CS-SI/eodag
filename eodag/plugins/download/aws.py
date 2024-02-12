@@ -491,7 +491,7 @@ class AwsDownload(Download):
                         rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                     )
             else:
-                assets_values = getattr(product, "assets", {}).values()
+                assets_values = product.assets.values()
 
             bucket_names_and_prefixes = []
             for complementary_url in assets_values:

@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from requests import Response
 
     from eodag.api.product import EOProduct
+    from eodag.api.product._assets import Asset
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.utils import DownloadedCallback
@@ -1009,7 +1010,7 @@ class HTTPDownload(Download):
 
     def _get_asset_sizes(
         self,
-        assets_values: List[Dict[str, Any]],
+        assets_values: List[Asset],
         auth: Optional[AuthBase],
         params: Optional[Dict[str, str]],
         zipped: bool = False,
@@ -1039,12 +1040,14 @@ class HTTPDownload(Download):
                     )
                 if not getattr(asset, "size", 0):
                     # size from HEAD header / content-disposition / size
-                    asset.size = int(header_content_disposition.get_param("size", 0))
+                    size_str = str(header_content_disposition.get_param("size", 0))
+                    asset.size = int(size_str) if size_str.isdigit() else 0
                 if not getattr(asset, "filename", 0):
                     # filename from HEAD header / content-disposition / size
-                    asset.filename = header_content_disposition.get_param(
+                    asset_filename = header_content_disposition.get_param(
                         "filename", None
                     )
+                    asset.filename = str(asset_filename) if asset_filename else None
 
                 if not getattr(asset, "size", 0):
                     # GET request for size
@@ -1060,11 +1063,12 @@ class HTTPDownload(Download):
                         asset.size = int(stream.headers.get("Content-length", 0))
                         if not getattr(asset, "size", 0):
                             # size from GET header / content-disposition / size
-                            asset.size = int(
+                            size_str = str(
                                 parse_header(
                                     stream.headers.get("content-disposition", "")
                                 ).get_param("size", 0)
                             )
+                            asset.size = int(size_str) if size_str.isdigit() else 0
 
                 total_size += asset.size
         return total_size
