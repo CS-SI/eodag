@@ -50,6 +50,8 @@ if TYPE_CHECKING:
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 try:
     from shapely.errors import GEOSException
@@ -309,7 +311,7 @@ class EOProduct:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.

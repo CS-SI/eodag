@@ -25,6 +25,8 @@ from eodag.utils.exceptions import NotAvailableError
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 
 class AssetsDict(UserDict):
@@ -100,6 +102,7 @@ class Asset(UserDict):
     product: EOProduct
     size: int
     filename: Optional[str]
+    rel_path: str
 
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
         self.product = product
@@ -115,7 +118,7 @@ class Asset(UserDict):
         """
         return self.data
 
-    def download(self, **kwargs: Any) -> str:
+    def download(self, **kwargs: Unpack[DownloadConf]) -> str:
         """Downloads a single asset
 
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`

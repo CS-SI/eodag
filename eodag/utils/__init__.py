@@ -81,6 +81,12 @@ except ImportError:
     # for python < 3.9
     from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
 
+try:
+    from typing import Unpack  # type: ignore # noqa
+except ImportError:
+    # for python < 3.12
+    from typing_extensions import Unpack  # noqa
+
 import click
 import orjson
 import shapefile

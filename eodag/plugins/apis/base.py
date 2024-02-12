@@ -39,7 +39,8 @@ if TYPE_CHECKING:
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
-    from eodag.utils import DownloadedCallback, ProgressCallback, Annotated
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, ProgressCallback, Annotated, Unpack
 
 logger = logging.getLogger("eodag.apis.base")
 
@@ -144,7 +145,7 @@ class Api(PluginTopic):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """
         Base download method. Not available, it must be defined for each plugin.
@@ -182,7 +183,7 @@ class Api(PluginTopic):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Base download_all method.

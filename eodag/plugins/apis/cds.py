@@ -76,11 +76,10 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback, ProgressCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.apis.cds")
-
-CDS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
 class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
@@ -369,17 +368,14 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download data from providers using CDS API"""
-        product_format = product.properties.get("format", "grib")
-        product_extension = CDS_KNOWN_FORMATS.get(product_format, product_format)
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
             **kwargs,
         )
 
@@ -407,7 +403,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         """Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers."""
@@ -430,7 +426,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ):
         """
         Download all using parent (base plugin) method

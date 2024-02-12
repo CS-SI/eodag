@@ -79,7 +79,8 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 
 logger = logging.getLogger("eodag.download.aws")
@@ -237,8 +238,8 @@ class AwsDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> str:
+        **kwargs: Unpack[DownloadConf],
+    ) -> Optional[str]:
         """Download method for AWS S3 API.
 
         The product can be downloaded as it is, or as SAFE-formatted product.
@@ -280,7 +281,7 @@ class AwsDownload(Download):
         product_local_path, record_filename = self._download_preparation(
             product, progress_callback=progress_callback, **kwargs
         )
-        if not record_filename:
+        if not record_filename or not product_local_path:
             return product_local_path
 
         product_conf = getattr(self.config, "products", {}).get(
@@ -392,8 +393,11 @@ class AwsDownload(Download):
         return product_local_path
 
     def _download_preparation(
-        self, product: EOProduct, progress_callback: ProgressCallback, **kwargs: Any
-    ) -> Tuple[str, Optional[str]]:
+        self,
+        product: EOProduct,
+        progress_callback: ProgressCallback,
+        **kwargs: Unpack[DownloadConf],
+    ) -> Tuple[Optional[str], Optional[str]]:
         """
         preparation for the download:
         - check if file was already downloaded
@@ -536,6 +540,8 @@ class AwsDownload(Download):
         for _, pack in enumerate(bucket_names_and_prefixes):
             try:
                 bucket_name, prefix = pack
+                if not prefix:
+                    continue
                 if bucket_name not in authenticated_objects:
                     # get Prefixes longest common base path
                     common_prefix = ""
@@ -550,7 +556,7 @@ class AwsDownload(Download):
                                 [
                                     p
                                     for b, p in bucket_names_and_prefixes
-                                    if b == bucket_name and common_prefix in p
+                                    if p and b == bucket_name and common_prefix in p
                                 ]
                             )
                             < prefixes_in_bucket
@@ -584,7 +590,7 @@ class AwsDownload(Download):
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
         authenticated_objects: Dict[str, Any],
-        asset_filter: str,
+        asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
     ) -> Set[Any]:
@@ -648,7 +654,7 @@ class AwsDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
@@ -1336,7 +1342,7 @@ class AwsDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         download_all using parent (base plugin) method

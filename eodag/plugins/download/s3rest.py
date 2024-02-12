@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -54,6 +54,8 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 logger = logging.getLogger("eodag.download.s3rest")
 
@@ -96,7 +98,7 @@ class S3RestDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download method for S3 REST API.
 
@@ -142,7 +144,7 @@ class S3RestDownload(Download):
             auth: AuthBase,
             progress_callback: ProgressCallback,
             ordered_message: str,
-            **kwargs: Any,
+            **kwargs: Unpack[DownloadConf],
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):

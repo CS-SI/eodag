@@ -106,7 +106,8 @@ if TYPE_CHECKING:
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
-    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback
+    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback, Unpack
+    from eodag.types.download_args import DownloadConf
 
 logger = logging.getLogger("eodag.core")
 
@@ -1876,7 +1877,7 @@ class EODataAccessGateway:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """Download all products resulting from a search.
 
@@ -2051,7 +2052,7 @@ class EODataAccessGateway:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download a single product.
 
