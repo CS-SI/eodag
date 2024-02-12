@@ -78,7 +78,7 @@ class Api(PluginTopic):
 
     auth: Union[AuthBase, Dict[str, str]]
     next_page_url: Optional[str]
-    next_page_query_obj: Dict[str, Any]
+    next_page_query_obj: Optional[Dict[str, Any]]
     _request: Any  # needed by deprecated load_stac_items
 
     def clear(self) -> None:
