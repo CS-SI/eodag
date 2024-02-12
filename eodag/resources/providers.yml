@@ -6903,8 +6903,70 @@
       COP_DEM_GLO90_DGED:
         outputs_extension: .tar
 
+!provider
+  name: wekeo2
+  priority: 0
+  roles:
+    - host
+  description: WEkEO - Copernicus and Sentinel data
+  url: https://www.wekeo.eu/
+  search: !plugin
+    type: PostJsonSearch
+    api_endpoint: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/search'
+    need_auth: true
+    auth_error_code: 401
+    results_entry: 'features'
+    pagination:
+      total_items_nb_key_path: '$.properties.totalResults'
+    query_params_key: 'search'
+    discover_product_types:
+      fetch_url: null
+    metadata_mapping:
+      productType:
+        - '{{"dataset_id": "{productType}"}}'
+        - '$.null'
+      geometry:
+        - '{{"bbox": {geometry#to_bounds}}}'
+        - '$.geometry'
+      id: '$.id'
+      startTimeFromAscendingNode: '$.properties.startdate'
+      completionTimeFromAscendingNode: '$.properties.enddate'
+      downloadLink: '$.properties.location'
+      title: '$.id'
+      storageStatus: 'OFFLINE'
+  products:
+    S3_WAT:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
+      metadata_mapping:
+        orderLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+  auth: !plugin
+    type: TokenAuth
+    auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
+    token_type: json
+    token_key: access_token
+    request_method: GET
+    headers:
+      Authorization: Bearer $token
+  download: !plugin
+    type: HTTPDownload
+    base_uri: https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess
+    flatten_top_dirs: true
+    auth_error_code: 401
+    order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        order_id: '$.downloaded_id'
+        orderStatusLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download?downloaded_id={order_id}'
+        downloadLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download/{order_id}'
+    order_status_method: 'GET'
+    order_status_success:
+      status: Done
+
+
+
 ---
-!provider # creodias_s3
+!provider
   name: creodias_s3
   priority: 0
   description: CloudFerro DIAS data through S3 protocol

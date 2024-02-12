@@ -1220,7 +1220,9 @@ class PostJsonSearch(QueryStringSearch):
                             total_results = _total_results or 0
                         else:
                             total_results += _total_results or 0
-                if isinstance(self.config.pagination["next_page_query_obj"], str):
+                if "next_page_query_obj" in self.config.pagination and isinstance(
+                    self.config.pagination["next_page_query_obj"], str
+                ):
                     # next_page_query_obj needs to be parsed
                     next_page_query_obj = self.config.pagination[
                         "next_page_query_obj"
@@ -1322,7 +1324,6 @@ class StacSearch(PostJsonSearch):
         self, results: List[Dict[str, Any]], **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
-
         products = super(StacSearch, self).normalize_results(results, **kwargs)
 
         # move assets from properties to product's attr
