@@ -2127,7 +2127,8 @@ class EODataAccessGateway:
 
         :param provider: (optional) The provider.
         :type provider: str
-        :param kwargs: additional filters for queryables
+        :param kwargs: additional filters for queryables (`productType` or other search
+                       arguments)
         :type kwargs: Any
         :returns: A dict containing the EODAG queryable properties, associating
                   parameters to their annotated type

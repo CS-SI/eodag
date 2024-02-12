@@ -1085,7 +1085,8 @@ def fetch_collection_queryable_properties(
     :type collection_id: str
     :param provider: (optional) The provider.
     :type provider: str
-    :param kwargs: additional filters for queryables
+    :param kwargs: additional filters for queryables (`productType` or other search
+                   arguments)
     :type kwargs: Any
     :returns: A set containing the STAC standardized queryable properties for a collection.
     :rtype Dict[str, StacQueryableProperty]: set
