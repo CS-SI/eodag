@@ -462,7 +462,10 @@ class AwsDownload(Download):
                 )
 
     def _get_bucket_names_and_prefixes(
-        self, product: EOProduct, asset_filter: str, ignore_assets: bool
+        self,
+        product: EOProduct,
+        asset_filter: Optional[str] = None,
+        ignore_assets: Optional[bool] = False,
     ) -> List[Tuple[str, Optional[str]]]:
         """
         retrieves the bucket names and path prefixes for the assets
