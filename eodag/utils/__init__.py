@@ -34,6 +34,7 @@ import os
 import re
 import shutil
 import string
+import sys
 import types
 import unicodedata
 import warnings
@@ -75,16 +76,14 @@ from urllib.parse import (  # noqa; noqa
 )
 from urllib.request import url2pathname
 
-try:
+if sys.version_info >= (3, 9):
     from typing import Annotated, get_args, get_origin  # noqa
-except ImportError:
-    # for python < 3.9
+else:
     from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
 
-try:
+if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
-except ImportError:
-    # for python < 3.12
+else:
     from typing_extensions import Unpack  # noqa
 
 import click
