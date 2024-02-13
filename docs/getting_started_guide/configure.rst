@@ -58,6 +58,11 @@ one (e.g. credentials). *PEPS*'s configuration template is shown below:
 
    </details>
 
+.. note::
+
+   Please write settings values as plain text, without quotes to avoid ``PyYAML`` interpreting potential special
+   characters. See https://pyyaml.org/wiki/PyYAMLDocumentation for more information.
+
 |
 
 Users can directly modify the default file, which is then loaded automatically:
