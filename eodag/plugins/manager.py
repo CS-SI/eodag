@@ -43,7 +43,7 @@ from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.utils import GENERIC_PRODUCT_TYPE, merge_mappings
-from eodag.utils.exceptions import UnsupportedProvider
+from eodag.utils.exceptions import MisconfiguredError, UnsupportedProvider
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -116,7 +116,9 @@ class PluginManager:
                         self.providers_config = plugin_providers_config
         self.rebuild()
 
-    def rebuild(self, providers_config=None):
+    def rebuild(
+        self, providers_config: Optional[Dict[str, ProviderConfig]] = None
+    ) -> None:
         """(Re)Build plugin manager mapping and cache"""
         if providers_config is not None:
             self.providers_config = providers_config
@@ -220,25 +222,29 @@ class PluginManager:
         :rtype: :class:`~eodag.plugins.download.Download` or :class:`~eodag.plugins.download.Api`
         """
         plugin_conf = self.providers_config[product.provider]
-        try:
-            plugin_conf.download.priority = plugin_conf.priority
-            merge_mappings(
-                getattr(plugin_conf.download, "products", {}), plugin_conf.products
-            )
+        if hasattr(plugin_conf, "download"):
+            if not hasattr(plugin_conf.download, "products"):
+                setattr(plugin_conf.download, "products", plugin_conf.products)
+            else:
+                merge_mappings(plugin_conf.download.products, plugin_conf.products)
             plugin = cast(
                 Download,
                 self._build_plugin(product.provider, plugin_conf.download, Download),
             )
-            return plugin
-        except AttributeError:
+        elif hasattr(plugin_conf, "api"):
             plugin_conf.api.priority = plugin_conf.priority
-            merge_mappings(
-                getattr(plugin_conf.api, "products", {}), plugin_conf.products
-            )
+            if not hasattr(plugin_conf.api, "products"):
+                setattr(plugin_conf.api, "products", plugin_conf.products)
+            else:
+                merge_mappings(plugin_conf.api.products, plugin_conf.products)
             plugin = cast(
                 Api, self._build_plugin(product.provider, plugin_conf.api, Api)
             )
-            return plugin
+        else:
+            raise MisconfiguredError(
+                f"No Download or Api plugin configured for {product.provider}"
+            )
+        return plugin
 
     def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
         """Build and return the authentication plugin for the given product_type and
