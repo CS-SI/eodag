@@ -2250,6 +2250,8 @@ class EODataAccessGateway:
             product_type_queryable = Field(default=product_type)
             common_queryables["productType"] = product_type_queryable
 
-        provider_queryables.update(model_fields_to_annotated(common_queryables))
+        provider_queryables.update(
+            model_fields_to_annotated(common_queryables, {"productType": str})
+        )
 
         return provider_queryables
