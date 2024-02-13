@@ -30,10 +30,11 @@ class TestConstraints(unittest.TestCase):
         self.assertSetEqual({"2000", "2001"}, queryable["enum"])
         self.assertIn("variable", queryables)
         # not existing parameter
-        with self.assertRaises(ValidationError):
-            get_constraint_queryables_with_additional_params(
-                constraints, {"param": "f"}, plugin, "ERA5_SL"
-            )
+        queryables = get_constraint_queryables_with_additional_params(
+            constraints, {"param": "f"}, plugin, "ERA5_SL"
+        )
+        self.assertIn("not_available", queryables)
+        self.assertEqual("param", queryables["not_available"]["enum"].pop())
         # not existing value of parameter
         with self.assertRaises(ValidationError):
             get_constraint_queryables_with_additional_params(

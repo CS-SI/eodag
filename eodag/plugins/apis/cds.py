@@ -41,6 +41,7 @@ from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -58,7 +59,12 @@ from eodag.utils.constraints import (
     fetch_constraints,
     get_constraint_queryables_with_additional_params,
 )
-from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    DownloadError,
+    RequestError,
+    ValidationError,
+)
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
@@ -476,6 +482,25 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             constraint_params = get_constraint_queryables_with_additional_params(
                 constraints, kwargs, self, product_type
             )
+            # query params that are not in constraints but might be default queryables
+            if len(constraint_params) == 1 and "not_available" in constraint_params:
+                not_queryables = set()
+                for constraint_param in constraint_params["not_available"]["enum"]:
+                    param = CommonQueryables.get_queryable_from_alias(constraint_param)
+                    if param in CommonQueryables.model_fields:
+                        kwargs.pop(constraint_param)
+                    else:
+                        not_queryables.add(constraint_param)
+                if not_queryables:
+                    raise ValidationError(
+                        f"parameter(s) {str(not_queryables)} not queryable"
+                    )
+                else:
+                    constraint_params = (
+                        get_constraint_queryables_with_additional_params(
+                            constraints, kwargs, self, product_type
+                        )
+                    )
 
         field_definitions = dict()
         for json_param, json_mtd in constraint_params.items():

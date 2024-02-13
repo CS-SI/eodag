@@ -91,9 +91,12 @@ def get_constraint_queryables_with_additional_params(
         constraint_matches[i] = params_matched
 
     # check if all parameters are available in the constraints
+    not_available_params = set()
     for param, available in params_available.items():
         if not available:
-            raise ValidationError(f"parameter {param} is not queryable")
+            not_available_params.add(param)
+    if not_available_params:
+        return {"not_available": {"enum": not_available_params}}
 
     # add values of constraints matching params
     queryables: Dict[str, Dict[str, Set[Any]]] = {}

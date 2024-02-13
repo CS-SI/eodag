@@ -1091,6 +1091,10 @@ def fetch_collection_queryable_properties(
     :returns: A set containing the STAC standardized queryable properties for a collection.
     :rtype Dict[str, StacQueryableProperty]: set
     """
+    if not collection_id and "collections" in kwargs:
+        collection_ids = kwargs.pop("collections").split(",")
+        collection_id = collection_ids[0]
+
     python_queryables = eodag_api.list_queryables(
         provider=provider, productType=collection_id, **kwargs
     )
