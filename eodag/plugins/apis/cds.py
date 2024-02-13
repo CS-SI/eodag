@@ -18,16 +18,14 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
-from urllib.parse import unquote_plus
 
 import cdsapi
-import geojson
 import requests
 from dateutil.parser import isoparse
 
-from eodag.api.product._assets import Asset
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
@@ -39,12 +37,8 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
-    datetime_range,
     deepcopy,
-    get_geometry_from_various,
     path_to_uri,
-    urlencode,
-    urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
 from eodag.utils.logging import get_logging_verbose
@@ -137,7 +131,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
 
         return non_none_cfg.get(key, default)
 
-    def _preprocess_search_params(self, params: Dict[Any]) -> None:
+    def _preprocess_search_params(self, params: Dict[str, Any]) -> None:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
@@ -148,30 +142,24 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         :param params: Search parameters to be preprocessed.
         :type params: dict
         """
-        _dc_qs = params.get("_dc_qs", None)
-        if _dc_qs is not None:
-            # if available, update search params using datacube query-string
-            _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
-            if "/" in _dc_qp.get("date", ""):
-                (
-                    params["startTimeFromAscendingNode"],
-                    params["completionTimeFromAscendingNode"],
-                ) = _dc_qp["date"].split("/")
-            elif _dc_qp.get("date", None):
-                params["startTimeFromAscendingNode"] = params[
-                    "completionTimeFromAscendingNode"
-                ] = _dc_qp["date"]
+        # if available, update search params using datacube query-string
+        if "/" in params.get("date", ""):
+            (
+                params["startTimeFromAscendingNode"],
+                params["completionTimeFromAscendingNode"],
+            ) = params["date"].split("/")
+        elif params.get("date", None):
+            params["startTimeFromAscendingNode"] = params[
+                "completionTimeFromAscendingNode"
+            ] = params["date"]
 
-            if "/" in _dc_qp.get("area", ""):
-                params["geometry"] = _dc_qp["area"].split("/")
-
-        non_none_params = {k: v for k, v in params.items() if v}
+        if "/" in params.get("area", ""):
+            params["geometry"] = params["area"].split("/")
 
         # productType
-        dataset = params.get("dataset", None)
-        params["productType"] = non_none_params.get("productType", dataset)
+        params["productType"] = params.get("productType", params.get("dataset", None))
 
-        # dates
+        # calculate default temporal extend
         mission_start_dt = datetime.fromisoformat(
             self.get_product_type_cfg(
                 "missionStartDate", DEFAULT_MISSION_START_DATE
@@ -179,23 +167,22 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 "Z", "+00:00"
             )  # before 3.11
         )
-
         default_end_from_cfg = self.config.products.get(params["productType"], {}).get(
             "_default_end_date", None
         )
         default_end_str = (
             default_end_from_cfg
             or (
-                datetime.utcnow()
+                datetime.now(UTC)
                 if params.get("startTimeFromAscendingNode")
                 else mission_start_dt + timedelta(days=1)
             ).isoformat()
         )
 
-        params["startTimeFromAscendingNode"] = non_none_params.get(
+        params["startTimeFromAscendingNode"] = params.get(
             "startTimeFromAscendingNode", mission_start_dt.isoformat()
         )
-        params["completionTimeFromAscendingNode"] = non_none_params.get(
+        params["completionTimeFromAscendingNode"] = params.get(
             "completionTimeFromAscendingNode", default_end_str
         )
 
@@ -206,22 +193,6 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         params[
             "_date"
         ] = f"{params['startTimeFromAscendingNode']}/{end_date.isoformat()}"
-
-        # geometry
-        if "geometry" in params:
-            params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
-
-    def build_query_string(
-        self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
-        """Build The query string using the search parameters"""
-        qp, _ = BuildPostSearchResult.build_query_string(
-            self, product_type=product_type, **kwargs
-        )
-        if "_date" in qp:
-            qp.update(qp.pop("_date", {}))
-
-        return qp, urlencode(qp, doseq=True, quote_via=lambda x, *_args, **_kwargs: x)
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
@@ -242,6 +213,24 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         return BuildPostSearchResult.query(
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
+
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :type results: list
+        :param kwargs: Search arguments
+        :type kwargs: Union[int, str, bool, dict, list]
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        :rtype: list
+        """
+        product_type = kwargs.get("productType")
+        kwargs["dataset"] = self.config.products.get(product_type, {}).get(
+            "dataset", product_type
+        )
+        return BuildPostSearchResult.normalize_results(self, results, **kwargs)
 
     def _get_cds_client(self, **auth_dict: Any) -> cdsapi.Client:
         """Returns cdsapi client."""
@@ -294,50 +283,48 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             logger.debug("Connection checked on CDS API")
         except requests.exceptions.ConnectionError as e:
             logger.error(e)
-            raise RequestError(f"Could not connect to the CDS API '{url}'")
+            raise RequestError(f"Could not connect to the CDS API '{url}'") from e
         except requests.exceptions.HTTPError as e:
             logger.error(e)
-            raise RequestError("The CDS API has returned an unexpected error")
+            raise RequestError("The CDS API has returned an unexpected error") from e
 
         return auth_dict
 
-    def _prepare_download_link(self, product):
+    def _prepare_download_link(self, product: EOProduct):
         """Update product download link with http url obtained from cds api"""
-        # get download request dict from product.location/downloadLink url query string
-        # separate url & parameters
-        query_str = "".join(urlsplit(product.location).fragment.split("?", 1)[1:])
-        download_request = geojson.loads(query_str)
-
-        date_range = download_request.pop("date_range", False)
-        if date_range:
-            date = download_request.pop("date")
-            start, end, *_ = date.split("/")
-            _start = datetime.fromisoformat(start)
-            _end = datetime.fromisoformat(end)
-            d_range = [d for d in datetime_range(_start, _end)]
-            download_request["year"] = [*{str(d.year) for d in d_range}]
-            download_request["month"] = [*{str(d.month) for d in d_range}]
-            download_request["day"] = [*{str(d.day) for d in d_range}]
+        # TODO: remove this mess
+        # date_range = download_request.pop("date_range", False)
+        # if date_range:
+        #     date = download_request.pop("date")
+        #     start, end, *_ = date.split("/")
+        #     _start = datetime.fromisoformat(start)
+        #     _end = datetime.fromisoformat(end)
+        #     d_range = [d for d in datetime_range(_start, _end)]
+        #     download_request["year"] = [*{str(d.year) for d in d_range}]
+        #     download_request["month"] = [*{str(d.month) for d in d_range}]
+        #     download_request["day"] = [*{str(d.day) for d in d_range}]
 
         auth_dict = self.authenticate()
-        dataset_name = download_request.pop("dataset")
 
+        dataset_name = product.remote_location.split("/")[-1]
         # Send download request to CDS web API
         logger.info(
             "Request download on CDS API: dataset=%s, request=%s",
             dataset_name,
-            download_request,
+            product.remote_location_body,
         )
         try:
             client = self._get_cds_client(**auth_dict)
             result = client._api(
-                "%s/resources/%s" % (client.url, dataset_name), download_request, "POST"
+                f"{client.url}/resources/{dataset_name}",
+                product.remote_location_body,
+                "POST",
             )
-            # update product download link through a new asset
-            product.assets["data"] = Asset(product, "data", {"href": result.location})
+            # update product download link asset
+            product.assets["downloadLink"] = {"href": result.location}
         except Exception as e:
             logger.error(e)
-            raise DownloadError(e)
+            raise DownloadError(e) from e
 
     def download(
         self,
@@ -368,14 +355,14 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         self._prepare_download_link(product)
 
         try:
-            return super(CdsApi, self).download(
+            return super().download(
                 product,
                 progress_callback=progress_callback,
                 **kwargs,
             )
         except Exception as e:
             logger.error(e)
-            raise DownloadError(e)
+            raise DownloadError(e) from e
 
     def _stream_download_dict(
         self,
@@ -390,7 +377,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         It contains a generator to streamed download chunks and the response headers."""
 
         self._prepare_download_link(product)
-        return super(CdsApi, self)._stream_download_dict(
+        return super()._stream_download_dict(
             product,
             auth=auth,
             progress_callback=progress_callback,
@@ -412,7 +399,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         """
         Download all using parent (base plugin) method
         """
-        return super(CdsApi, self).download_all(
+        return super().download_all(
             products,
             auth=auth,
             downloaded_callback=downloaded_callback,

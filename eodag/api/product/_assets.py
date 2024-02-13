@@ -40,10 +40,11 @@ class AssetsDict(UserDict):
     """
 
     product: EOProduct
+    data: Dict[str, Asset]
 
     def __init__(self, product: EOProduct, *args: Any, **kwargs: Any) -> None:
         self.product = product
-        super(AssetsDict, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __setitem__(self, key: str, value: Dict[str, Any]) -> None:
         super().__setitem__(key, Asset(self.product, key, value))

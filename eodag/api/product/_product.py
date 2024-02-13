@@ -26,10 +26,10 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import requests
 from requests import RequestException
-from shapely import geometry, wkb, wkt
+from shapely import geometry
 from shapely.errors import ShapelyError
 
-from eodag.api.product._assets import AssetsDict
+from eodag.api.product._assets import Asset, AssetsDict
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.utils import (
@@ -104,18 +104,24 @@ class EOProduct:
     product_type: Optional[str]
     location: str
     remote_location: str
+    remote_location_body: Optional[Dict[str, Any]]
     search_kwargs: Any
     geometry: BaseGeometry
     search_intersection: Optional[BaseGeometry]
     assets: AssetsDict
 
     def __init__(
-        self, provider: str, properties: Dict[str, Any], **kwargs: Any
+        self,
+        provider: str,
+        properties: Dict[str, Any],
+        remote_location_body: Optional[Dict[str, Any]] = None,
+        assets: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         self.provider = provider
         self.product_type = kwargs.get("productType")
+        self.search_kwargs = kwargs
         self.location = self.remote_location = properties.get("downloadLink", "")
-        self.assets = AssetsDict(self)
         self.properties = {
             key: value
             for key, value in properties.items()
@@ -123,57 +129,52 @@ class EOProduct:
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
         }
-        if "geometry" not in properties or (
-            (
-                properties["geometry"] == NOT_AVAILABLE
-                or properties["geometry"] == NOT_MAPPED
-            )
-            and "defaultGeometry" not in properties
+        self._init_geometrie(properties.get("geometry"))
+
+        self.assets = AssetsDict(self, assets)  # type: ignore
+        self.remote_location_body = (
+            assets
+            and assets.get("downloadLink", {}).get("body")
+            or remote_location_body
+        )
+        if not self.assets and self.remote_location_body:
+            # downloadLink asset
+            self.assets["downloadLink"] = {
+                "method": "POST" if self.remote_location_body else "GET",
+                "href": self.remote_location,
+            }
+            if self.remote_location_body:
+                self.assets["downloadLink"]["body"] = self.remote_location_body
+
+        self.driver = self.get_driver()
+        self.downloader: Optional[Union[Api, Download]] = None
+        self.downloader_auth: Optional[Authentication] = None
+
+    def _init_geometrie(self, geom: Any) -> None:
+        """Init geometry and search_intersection"""
+        if (
+            not geom
+            or geom in (NOT_AVAILABLE, NOT_MAPPED)
+            and "defaultGeometry" not in self.properties
         ):
             raise MisconfiguredError(
-                f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
+                "No geometry available to build "
+                f"EOProduct(id={self.properties.get('id', None)}, provider={self.provider})"
             )
-        elif properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties.pop("defaultGeometry")
-        else:
-            product_geometry = properties["geometry"]
-        # Let's try 'latmin lonmin latmax lonmax'
-        if isinstance(product_geometry, str):
-            bbox_pattern = re.compile(
-                r"^(-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*)$"
-            )
-            found_bbox = bbox_pattern.match(product_geometry)
-            if found_bbox:
-                coords = found_bbox.groups()
-                if len(coords) == 4:
-                    product_geometry = geometry.box(
-                        float(coords[1]),
-                        float(coords[0]),
-                        float(coords[3]),
-                        float(coords[2]),
-                    )
-        # Best effort to understand provider specific geometry (the default is to
-        # assume an object implementing the Geo Interface: see
-        # https://gist.github.com/2217756)
-        if isinstance(product_geometry, str):
-            try:
-                product_geometry = wkt.loads(product_geometry)
-            except (ShapelyError, GEOSException):
-                try:
-                    product_geometry = wkb.loads(product_geometry)
-                # Also catching TypeError because product_geometry can be a
-                # string and not a bytes string
-                except (ShapelyError, GEOSException, TypeError):
-                    # Giv up!
-                    raise
-        self.geometry = self.search_intersection = geometry.shape(product_geometry)
-        self.search_kwargs = kwargs
+
+        product_geometry = (
+            self.properties.pop("defaultGeometry") if geom == NOT_AVAILABLE else geom
+        )
+        self.geometry = self.search_intersection = get_geometry_from_various(
+            geometry=product_geometry
+        )
+
         if self.search_kwargs.get("geometry") is not None:
             searched_geom = get_geometry_from_various(
-                **{"geometry": self.search_kwargs["geometry"]}
+                geometry=self.search_kwargs["geometry"]
             )
             try:
-                self.search_intersection = self.geometry.intersection(searched_geom)
+                self.search_intersection = self.geometry.intersection(searched_geom)  # type: ignore
             except (GEOSException, ShapelyError):
                 logger.warning(
                     "Unable to intersect the requested extent: %s with the product "
@@ -182,9 +183,6 @@ class EOProduct:
                     product_geometry,
                 )
                 self.search_intersection = None
-        self.driver = self.get_driver()
-        self.downloader: Optional[Union[Api, Download]] = None
-        self.downloader_auth: Optional[Authentication] = None
 
     def as_dict(self) -> Dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
@@ -233,11 +231,13 @@ class EOProduct:
         properties["id"] = feature["id"]
         provider = feature["properties"]["eodag_provider"]
         product_type = feature["properties"]["eodag_product_type"]
-        obj = cls(provider, properties, productType=product_type)
+
+        obj = cls(
+            provider, properties, productType=product_type, assets=feature.get("assets")
+        )
         obj.search_intersection = geometry.shape(
             feature["properties"]["eodag_search_intersection"]
         )
-        obj.assets = AssetsDict(obj, feature.get("assets", {}))
         return obj
 
     # Implementation of geo-interface protocol (See

@@ -505,10 +505,10 @@ class QueryStringSearch(Search):
                 }
             )
 
-        qp, qs = self.build_query_string(product_type, **keywords)
+        self.query_params, self.query_string = self.build_query_string(
+            product_type, **keywords
+        )
 
-        self.query_params = qp
-        self.query_string = qs
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
@@ -1087,10 +1087,10 @@ class PostJsonSearch(QueryStringSearch):
                 ].get("merge_responses", None)
 
                 self.count_hits = lambda *x, **y: 1
-                self._request = super(PostJsonSearch, self)._request
+                self._request = super()._request
 
                 try:
-                    eo_products, total_items = super(PostJsonSearch, self).query(
+                    eo_products, total_items = super().query(
                         items_per_page=items_per_page, page=page, **kwargs
                     )
                 except Exception:
@@ -1273,7 +1273,7 @@ class StacSearch(PostJsonSearch):
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
 
-        products = super(StacSearch, self).normalize_results(results, **kwargs)
+        products = super().normalize_results(results, **kwargs)
 
         # move assets from properties to product's attr
         for product in products:

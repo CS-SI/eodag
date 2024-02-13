@@ -2143,9 +2143,7 @@
       database:
         - database
         - '$.database'
-      dataset:
-        - dataset
-        - '$.dataset'
+      dataset: $.dataset
       date_range:
         - date_range
         - '$.date_range'
@@ -2545,9 +2543,7 @@
       database:
         - database
         - '$.database'
-      dataset:
-        - dataset
-        - '$.dataset'
+      dataset: $.dataset
       dataset_type:
         - dataset_type
         - '$.dataset_type'
@@ -2906,13 +2902,17 @@
     EFAS_FORECAST:
       dataset: efas-forecast
       format: grib.zip
-      system_version: operational
+      system_version:
+        - operational
       originating_centre: ecmwf
-      api_product_type: control_forecast
+      api_product_type:
+        - control_forecast
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
-      time: '00:00'
-      leadtime_hour: '24'
+      time:
+        - 00:00
+      leadtime_hour:
+        - 24
     EFAS_HISTORICAL:
       dataset: efas-historical
       format: grib.zip

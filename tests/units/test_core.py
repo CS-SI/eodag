@@ -1314,7 +1314,7 @@ class TestCoreGeometry(TestCoreBase):
         # Bad dict with a missing key
         del geometry["lonmin"]
         self.assertRaises(
-            TypeError,
+            AttributeError,
             get_geometry_from_various,
             [],
             geometry=geometry,

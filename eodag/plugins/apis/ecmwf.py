@@ -181,7 +181,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
 
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
-        download_request = geojson.loads(urlsplit(product.location).query)
+        download_request = product.remote_location_body
 
         # Set verbosity
         eodag_verbosity = get_logging_verbose()

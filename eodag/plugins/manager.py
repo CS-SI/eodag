@@ -42,7 +42,7 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils import GENERIC_PRODUCT_TYPE, merge_mappings
 from eodag.utils.exceptions import UnsupportedProvider
 
 if TYPE_CHECKING:
@@ -222,6 +222,9 @@ class PluginManager:
         plugin_conf = self.providers_config[product.provider]
         try:
             plugin_conf.download.priority = plugin_conf.priority
+            merge_mappings(
+                getattr(plugin_conf.download, "products", {}), plugin_conf.products
+            )
             plugin = cast(
                 Download,
                 self._build_plugin(product.provider, plugin_conf.download, Download),
@@ -229,6 +232,9 @@ class PluginManager:
             return plugin
         except AttributeError:
             plugin_conf.api.priority = plugin_conf.priority
+            merge_mappings(
+                getattr(plugin_conf.api, "products", {}), plugin_conf.products
+            )
             plugin = cast(
                 Api, self._build_plugin(product.provider, plugin_conf.api, Api)
             )

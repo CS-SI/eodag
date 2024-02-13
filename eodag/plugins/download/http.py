@@ -197,7 +197,7 @@ class HTTPDownload(Download):
                 product.remote_location = product.location = product.properties[
                     "downloadLink"
                 ]
-                logger.debug(f"Product location updated to {product.location}")
+                logger.debug("Product location updated to %s", product.location)
 
     def orderDownloadStatus(
         self,
@@ -653,31 +653,19 @@ class HTTPDownload(Download):
             product.properties.get("downloadMethod", "").lower()
             or getattr(self.config, "method", "GET").lower()
         )
-        url = product.remote_location
-        if req_method == "post":
-            # separate url & parameters
-            parts = urlparse(url)
-            query_dict = parse_qs(parts.query)
-            if not query_dict and parts.query:
-                query_dict = geojson.loads(parts.query)
-            req_url = parts._replace(query=None).geturl()
-            req_kwargs: Dict[str, Any] = {"json": query_dict} if query_dict else {}
-        else:
-            req_url = url
-            req_kwargs = {}
 
         # url where data is downloaded from can be ftp -> add ftp adapter
         requests_ftp.monkeypatch_session()
         s = requests.Session()
         with s.request(
-            req_method,
-            req_url,
+            method=req_method,
+            url=product.remote_location,
+            json=product.remote_location_body,
             stream=True,
             auth=auth,
             params=params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            **req_kwargs,
         ) as self.stream:
             try:
                 self.stream.raise_for_status()

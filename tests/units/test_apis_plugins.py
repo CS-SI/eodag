@@ -286,10 +286,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_called_once_with(
             mock.ANY,  # ECMWFDataServer instance
-            dict(
-                target=expected_path,
-                **geojson.loads(urlsplit(eoproduct.remote_location).query),
-            ),
+            {
+                "target": expected_path,
+                **eoproduct.remote_location_body,
+            },
         )
         assert path_to_uri(expected_path) == eoproduct.location
 
@@ -314,13 +314,11 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             output_data_path, "%s.nc" % eoproduct.properties["title"]
         )
         path = eoproduct.download(outputs_prefix=output_data_path)
-        download_request = geojson.loads(urlsplit(eoproduct.remote_location).query)
+        download_request = eoproduct.remote_location_body
         download_request.pop("dataset", None)
         mock_ecmwfservice_execute.assert_called_once_with(
             mock.ANY,  # ECMWFService instance
-            dict(
-                **download_request,
-            ),
+            download_request,
             expected_path,
         )
         mock_ecmwfdataserver_retrieve.assert_not_called()
@@ -755,10 +753,15 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
     def test_plugins_apis_cds_query_with_producttype(self):
         """CdsApi.query must build a EOProduct from input parameters with predefined product type"""
         results, _ = self.api_plugin.query(
-            **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
+            **self.query_dates,
+            productType=self.product_type,
+            geometry=get_geometry_from_various(geometry=[1, 2, 3, 4]),
         )
         eoproduct = results[0]
-        assert eoproduct.properties["title"].startswith(self.product_type)
+        assert (
+            eoproduct.properties["title"]
+            == "CAMS_EAC4_20200101_22991d7a82ab9f0add34e782a32b889b207d6f1e"
+        )
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
         # check if product_type_params is a subset of eoproduct.properties
         assert self.product_type_params.items() <= eoproduct.properties.items()
@@ -849,9 +852,8 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
 
-        query_str = "".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:])
-        expected_download_request = geojson.loads(query_str)
-        expected_dataset_name = expected_download_request.pop("dataset")
+        expected_download_request = eoproduct.remote_location_body
+        expected_dataset_name = eoproduct.remote_location.split("/")[-1]
         expected_url = f"{mock_cds_authenticate.return_value['url']}/resources/{expected_dataset_name}"
         expected_path = os.path.join(output_data_path, eoproduct.properties["title"])
 

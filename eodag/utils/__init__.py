@@ -78,6 +78,7 @@ except ImportError:
     from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
 
 import click
+import geojson.geometry
 import orjson
 import shapefile
 import shapely.wkt
@@ -1108,10 +1109,12 @@ def get_geometry_from_various(
             geom = shapely.wkt.loads(geom_arg)
         elif isinstance(geom_arg, BaseGeometry):
             geom = geom_arg
+        elif isinstance(geom_arg, (geojson.geometry.Geometry, dict)):
+            geom = shape(geom_arg)
         elif geom_arg is None:
             pass
         else:
-            raise TypeError("Unexpected geometry type: {}".format(type(geom_arg)))
+            raise TypeError(f"Unexpected geometry type: {type(geom_arg)}")
 
     # look for location name in locations configuration
     locations_dict = {loc["name"]: loc for loc in locations_config}

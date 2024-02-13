@@ -707,7 +707,6 @@ class RequestTestCase(unittest.TestCase):
                 "id": "foo",
                 "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
             },
         )
 
@@ -719,7 +718,6 @@ class RequestTestCase(unittest.TestCase):
                 "id": "foo",
                 "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
             },
         )
 

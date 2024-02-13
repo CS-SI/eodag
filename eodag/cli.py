@@ -364,8 +364,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         results, total = gateway.search(
             page=page, items_per_page=items_per_page, **criteria
         )
-        click.echo("Found a total number of {} products".format(total))
-    click.echo("Returned {} products".format(len(results)))
+        click.echo(f"Found a total number of {total} products")
+    click.echo(f"Returned {len(results)} products")
 
     # Crunch !
     crunch_args = {
@@ -379,7 +379,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     if not storage_filepath.endswith(".geojson"):
         storage_filepath += ".geojson"
     result_storage = gateway.serialize(results, filename=storage_filepath)
-    click.echo("Results stored at '{}'".format(result_storage))
+    click.echo(f"Results stored at '{result_storage}'")
 
 
 @eodag.command(name="list", help="List supported product types")
@@ -560,7 +560,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
                     "Increase verbosity for more details: `eodag -v download [OPTIONS]`"
                 )
             else:
-                click.echo("Downloaded {}".format(downloaded_file))
+                click.echo(f"Downloaded {downloaded_file}")
 
     else:
         # register downloader
@@ -576,12 +576,12 @@ def download(ctx: Context, **kwargs: Any) -> None:
         downloaded_files = satim_api.download_all(search_results)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
-                if downloaded_file is None:
+                if not downloaded_file:
                     click.echo(
                         "A file may have been downloaded but we cannot locate it"
                     )
                 else:
-                    click.echo("Downloaded {}".format(downloaded_file))
+                    click.echo(f"Downloaded {downloaded_file}")
         else:
             click.echo(
                 "Error during download, a file may have been downloaded but we cannot locate it"

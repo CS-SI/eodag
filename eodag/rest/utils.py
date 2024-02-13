@@ -678,10 +678,8 @@ def get_stac_item_by_id(
     :rtype: dict
     """
     product_type = catalogs[0]
-    _dc_qs = kwargs.get("_dc_qs", None)
-
     found_products = search_product_by_id(
-        item_id, product_type=product_type, provider=provider, _dc_qs=_dc_qs
+        item_id, product_type=product_type, provider=provider, **kwargs
     )
 
     if len(found_products) > 0:

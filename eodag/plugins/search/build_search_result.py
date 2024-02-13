@@ -18,18 +18,17 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import quote_plus, unquote_plus
 
-import geojson
 import orjson
 from jsonpath_ng import Fields
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_json
 from eodag.plugins.search.qssearch import PostJsonSearch
-from eodag.utils import dict_items_recursive_sort
+from eodag.utils import sanitize
 
 logger = logging.getLogger("eodag.search.build_search_result")
 
@@ -104,46 +103,32 @@ class BuildPostSearchResult(PostJsonSearch):
         """
         product_type = kwargs.get("productType")
 
-        result = results[0]
+        result: Dict[str, Any] = results[0]
 
-        # datacube query string got from previous search
-        _dc_qs = kwargs.pop("_dc_qs", None)
-        if _dc_qs is not None:
-            qs = unquote_plus(unquote_plus(_dc_qs))
-            unpaginated_query_params = sorted_unpaginated_query_params = geojson.loads(
-                qs
+        # update result with query parameters without pagination (or search-only params)
+        if isinstance(self.config.pagination["next_page_query_obj"], str) and hasattr(
+            self, "query_params_unpaginated"
+        ):
+            unpaginated_query_params = self.query_params_unpaginated
+        elif isinstance(self.config.pagination["next_page_query_obj"], str):
+            next_page_query_obj = orjson.loads(
+                self.config.pagination["next_page_query_obj"].format()
             )
+            unpaginated_query_params = {
+                k: v
+                for k, v in self.query_params.items()
+                if (k, v) not in next_page_query_obj.items()
+            }
         else:
-            # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(self, "query_params_unpaginated"):
-                unpaginated_query_params = self.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
-                next_page_query_obj = orjson.loads(
-                    self.config.pagination["next_page_query_obj"].format()
-                )
-                unpaginated_query_params = {
-                    k: v[0] if (isinstance(v, list) and len(v) == 1) else v
-                    for k, v in self.query_params.items()
-                    if (k, v) not in next_page_query_obj.items()
-                }
-            else:
-                unpaginated_query_params = self.query_params
-
-            # query hash, will be used to build a product id
-            sorted_unpaginated_query_params = dict_items_recursive_sort(
-                unpaginated_query_params
-            )
-            qs = geojson.dumps(sorted_unpaginated_query_params)
-
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
-
-        result = dict(result, **unpaginated_query_params)
+            unpaginated_query_params = self.query_params
 
         # update result with search args if not None (and not auth)
         kwargs.pop("auth", None)
-        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+        result = {
+            **result,
+            **unpaginated_query_params,
+            **{k: v for k, v in kwargs.items() if v},
+        }
 
         # parse porperties
         parsed_properties = properties_from_json(
@@ -156,19 +141,17 @@ class BuildPostSearchResult(PostJsonSearch):
             product_type = parsed_properties.get("productType", None)
 
         # build product id
-        id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s" % (
-            id_prefix,
+        part_hash = hashlib.sha1(
+            json.dumps(self.query_params, sort_keys=True).encode("UTF-8")
+        ).hexdigest()
+        part_datetime = (
             parsed_properties["startTimeFromAscendingNode"]
             .split("T")[0]
-            .replace("-", ""),
-            query_hash,
+            .replace("-", "")
         )
-        parsed_properties["id"] = parsed_properties["title"] = product_id
-
-        # update downloadLink
-        parsed_properties["downloadLink"] += f"?{qs}"
-        parsed_properties["_dc_qs"] = quote_plus(qs)
+        parsed_properties["id"] = parsed_properties["title"] = sanitize(
+            f"{(product_type or self.provider).upper()}_{part_datetime}_{part_hash}"
+        )
 
         # parse metadata needing downloadLink
         for param, mapping in self.config.metadata_mapping.items():
@@ -178,15 +161,16 @@ class BuildPostSearchResult(PostJsonSearch):
                 )
 
         # use product_type_config as default properties
-        parsed_properties = dict(
-            getattr(self.config, "product_type_config", {}),
+        parsed_properties = {
+            **getattr(self.config, "product_type_config", {}),
             **parsed_properties,
-        )
+        }
 
         product = EOProduct(
             provider=self.provider,
             productType=product_type,
             properties=parsed_properties,
+            remote_location_body=self.query_params,
         )
 
         return [

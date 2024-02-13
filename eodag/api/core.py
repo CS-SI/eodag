@@ -1040,8 +1040,6 @@ class EODataAccessGateway:
             return self._search_by_id(
                 search_kwargs.pop("id"), provider=provider, **search_kwargs
             )
-        # remove datacube query string from kwargs which was only needed for search-by-id
-        search_kwargs.pop("_dc_qs", None)
 
         search_kwargs.update(
             page=page,
@@ -1418,8 +1416,6 @@ class EODataAccessGateway:
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
         )
-        # datacube query string
-        _dc_qs = kwargs.pop("_dc_qs", None)
 
         for plugin in search_plugins:
             logger.info(
@@ -1427,10 +1423,7 @@ class EODataAccessGateway:
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
             plugin.clear()
-            if isinstance(plugin, BuildPostSearchResult):
-                results, _ = self._do_search(plugin, id=uid, _dc_qs=_dc_qs, **kwargs)
-            else:
-                results, _ = self._do_search(plugin, id=uid, **kwargs)
+            results, _ = self._do_search(plugin, id=uid, **kwargs)
             if len(results) == 1:
                 if not results[0].product_type:
                     # guess product type from properties
@@ -1439,7 +1432,7 @@ class EODataAccessGateway:
                     # reset driver
                     results[0].driver = results[0].get_driver()
                 return results, 1
-            elif len(results) > 1:
+            if len(results) > 1:
                 if getattr(plugin.config, "two_passes_id_search", False):
                     # check if id of one product exactly matches id that was searched for
                     # required if provider does not offer search by id and therefore other
