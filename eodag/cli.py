@@ -349,20 +349,22 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         user_conf_file_path=conf_file, locations_conf_path=locs_file
     )
 
+    clean = {k: v for k, v in criteria.items() if v is not None and v != []}
+
     # Search
     get_all_products = kwargs.pop("all")
     if get_all_products:
         # search_all needs items_per_page to be None if the user lets eodag determines
         # what value it should take.
         items_per_page = None if items_per_page is None else items_per_page
-        results = gateway.search_all(items_per_page=items_per_page, **criteria)
+        results = gateway.search_all(items_per_page=items_per_page, **clean)
     else:
         # search should better take a value that is not None
         items_per_page = (
             DEFAULT_ITEMS_PER_PAGE if items_per_page is None else items_per_page
         )
         results, total = gateway.search(
-            page=page, items_per_page=items_per_page, **criteria
+            page=page, items_per_page=items_per_page, **clean
         )
         click.echo(f"Found a total number of {total} products")
     click.echo(f"Returned {len(results)} products")
