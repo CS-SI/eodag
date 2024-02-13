@@ -1113,7 +1113,10 @@ class TestCore(TestCoreBase):
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
-            self.assertEqual(str(expected_longer_result[key]), str(queryable))
+            if key == "productType":
+                self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
+            else:
+                self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
     @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
     def test_list_queryables_with_constraints(self, mock_discover_queryables):

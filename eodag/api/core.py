@@ -40,7 +40,7 @@ import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from pydantic.fields import FieldInfo
+from pydantic.fields import Field, FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -2244,8 +2244,12 @@ class EODataAccessGateway:
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])
         # always keep at least CommonQueryables
-        provider_queryables.update(
-            model_fields_to_annotated(CommonQueryables.model_fields)
-        )
+        common_queryables = deepcopy(CommonQueryables.model_fields)
+        if product_type:
+            common_queryables.pop("productType")
+            product_type_queryable = Field(default=product_type)
+            common_queryables["productType"] = product_type_queryable
+
+        provider_queryables.update(model_fields_to_annotated(common_queryables))
 
         return provider_queryables
