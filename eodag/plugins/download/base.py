@@ -290,7 +290,8 @@ class Download(PluginTopic):
         :returns: The MD5 hash
         :rtype: str
         """
-        product_hash = product.product_type + "-" + product.properties["id"]
+        # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
+        product_hash = str(product.product_type) + "-" + str(product.properties["id"])
         return hashlib.md5(product_hash.encode("utf-8")).hexdigest()
 
     def _resolve_archive_depth(self, product_path: str) -> str:
