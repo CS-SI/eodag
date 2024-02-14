@@ -18,7 +18,7 @@
 """EODAG types"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import Field
 from pydantic.fields import FieldInfo
@@ -197,7 +197,7 @@ def python_field_definition_to_json(
 
 
 def model_fields_to_annotated(
-    model_fields: Dict[str, FieldInfo], type_info: Optional[Dict[str, Type[str]]] = None
+    model_fields: Dict[str, FieldInfo]
 ) -> Dict[str, Annotated[Any, FieldInfo]]:
     """Convert BaseModel.model_fields from FieldInfo to Annotated
 
@@ -208,14 +208,11 @@ def model_fields_to_annotated(
     "{'foo': typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)]}"
 
     :param model_fields: BaseModel.model_fields to convert
-    :param type_info: dict including type information not given in the model fields
     :returns: Annotated tuple usable as create_model argument
     """
     annotated_model_fields = dict()
-    if not type_info:
-        type_info = {}
     for param, field_info in model_fields.items():
-        field_type = field_info.annotation or type_info.get(param, None) or type(None)
+        field_type = field_info.annotation or type(None)
         new_field_info = copy_deepcopy(field_info)
         new_field_info.annotation = None
         annotated_model_fields[param] = Annotated[field_type, new_field_info]
