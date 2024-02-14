@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 import os.path
@@ -252,8 +251,9 @@ class S3RestDownload(Download):
                         "Unable to create records directory. Got:\n%s", tb.format_exc()
                     )
             # check if product has already been downloaded
-            url_hash = hashlib.md5(product.remote_location.encode("utf-8")).hexdigest()
-            record_filename = os.path.join(download_records_dir, url_hash)
+            record_filename = os.path.join(
+                download_records_dir, self.generate_record_hash(product)
+            )
             if os.path.isfile(record_filename) and os.path.exists(product_local_path):
                 product.location = path_to_uri(product_local_path)
                 return product_local_path

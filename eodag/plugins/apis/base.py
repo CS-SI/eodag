@@ -61,9 +61,9 @@ class Api(PluginTopic):
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
     - save a *record* file in the directory ``outputs_prefix/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``remote_location`` attribute
-      (``hashlib.md5(remote_location.encode("utf-8")).hexdigest()``) and whose content is
-      the product's ``remote_location`` attribute itself.
+      is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
+      attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+      and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an
       existing file/directory
     - not try to download a product if its *record* file exists as long as the expected
