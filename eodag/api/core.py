@@ -2204,25 +2204,6 @@ class EODataAccessGateway:
             .get("metadata_mapping", {})
         )
 
-        # remove not mapped parameters or non-queryables
-        for param in list(metadata_mapping.keys()):
-            if NOT_MAPPED in metadata_mapping[param] or not isinstance(
-                metadata_mapping[param], list
-            ):
-                del metadata_mapping[param]
-
-        for key, value in all_queryables.items():
-            annotated_args = get_args(value)
-            if len(annotated_args) < 1:
-                continue
-            field_info = annotated_args[1]
-            if not isinstance(field_info, FieldInfo):
-                continue
-            if field_info.is_required() or (
-                (field_info.alias or key) in metadata_mapping
-            ):
-                providers_available_queryables[plugin.provider][key] = value
-
         # default values
         default_values = deepcopy(
             getattr(plugin.config, "products", {}).get(product_type, {})
@@ -2238,16 +2219,40 @@ class EODataAccessGateway:
         kwargs = {key: kwargs[key] for key in kwargs if key not in removed_defaults}
         kwargs["defaults"] = default_values
 
+        # remove not mapped parameters or non-queryables
+        for param in list(metadata_mapping.keys()):
+            if NOT_MAPPED in metadata_mapping[param] or not isinstance(
+                metadata_mapping[param], list
+            ):
+                del metadata_mapping[param]
+
+        for key, value in all_queryables.items():
+            annotated_args = get_args(value)
+            if len(annotated_args) < 1:
+                continue
+            field_info = annotated_args[1]
+            if not isinstance(field_info, FieldInfo):
+                continue
+            if key in default_values:
+                field_info.default = default_values[key]
+            if field_info.is_required() or (
+                (field_info.alias or key) in metadata_mapping
+            ):
+                providers_available_queryables[plugin.provider][key] = value
+
         provider_queryables = (
             plugin.discover_queryables(productType=product_type, **kwargs) or dict()
         )
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])
+
         # always keep at least CommonQueryables
         common_queryables = deepcopy(CommonQueryables.model_fields)
-
         if product_type:
             common_queryables["productType"].default = product_type
+        for key, queryable in common_queryables.items():
+            if key != "productType" and key in default_values:
+                queryable.default = default_values[key]
 
         provider_queryables.update(model_fields_to_annotated(common_queryables))
 

@@ -70,7 +70,7 @@ def get_constraint_queryables_with_additional_params(
             provider_key = get_provider_queryable_key(
                 param, constraint, metadata_mapping
             )
-            if provider_key:
+            if provider_key and provider_key in constraint:
                 eodag_provider_key_mapping[provider_key] = param
                 params_available[param] = True
                 if value in constraint[provider_key]:
@@ -83,7 +83,7 @@ def get_constraint_queryables_with_additional_params(
                 constraint,
                 metadata_mapping,
             )
-            if provider_key:
+            if provider_key and provider_key in constraint:
                 eodag_provider_key_mapping[provider_key] = default_param
                 params_matched[default_param] = False
                 if default_value in constraint[provider_key]:

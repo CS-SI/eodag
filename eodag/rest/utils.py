@@ -1095,9 +1095,19 @@ def fetch_collection_queryable_properties(
         collection_ids = kwargs.pop("collections").split(",")
         collection_id = collection_ids[0]
 
+    if "ids" in kwargs:
+        kwargs["id"] = kwargs.pop("ids")
+
+    if "datetime" in kwargs:
+        dates = get_datetime(kwargs)
+        kwargs["start"] = dates[0]
+        kwargs["end"] = dates[1]
+
     python_queryables = eodag_api.list_queryables(
         provider=provider, productType=collection_id, **kwargs
     )
+    python_queryables.pop("start")
+    python_queryables.pop("end")
 
     stac_queryables = dict()
     for param, queryable in python_queryables.items():
