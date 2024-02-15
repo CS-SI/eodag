@@ -199,9 +199,7 @@ class Search(PluginTopic):
         sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         )
-        if not sort_by_arg_tmp and getattr(self.config, "sort", {}).get(
-            "sort_by_default", None
-        ):
+        if not sort_by_arg_tmp and sort_by_arg:
             logger.info(
                 f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
                 f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
