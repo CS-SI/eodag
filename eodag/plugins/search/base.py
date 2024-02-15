@@ -235,11 +235,11 @@ class Search(PluginTopic):
         for one_sort_by_param in sort_by_arg:
             eodag_sort_param = one_sort_by_param[0]
             try:
-                provider_sort_param = self.config.sort["sort_by_mapping"][
+                provider_sort_param = self.config.sort["sort_param_mapping"][
                     eodag_sort_param
                 ]
             except KeyError:
-                params = set(self.config.sort["sort_by_mapping"].keys())
+                params = set(self.config.sort["sort_param_mapping"].keys())
                 params.add(eodag_sort_param)
                 raise ValidationError(
                     "'{}' parameter is not sortable with {}. "
@@ -248,26 +248,31 @@ class Search(PluginTopic):
                         self.provider,
                         self.provider,
                         ", ".join(
-                            k for k in self.config.sort["sort_by_mapping"].keys()
+                            k for k in self.config.sort["sort_param_mapping"].keys()
                         ),
                     ),
                     params,
                 )
-            sort_order = one_sort_by_param[1]
+            eodag_sort_order = one_sort_by_param[1]
             # TODO: remove this code block when search args model validation is embeded
             # Remove leading and trailing whitespace(s) if exist
-            sort_order = sort_order.strip().upper()
-            if sort_order[:3] != "ASC" and sort_order[:3] != "DES":
+            eodag_sort_order = eodag_sort_order.strip().upper()
+            if eodag_sort_order[:3] != "ASC" and eodag_sort_order[:3] != "DES":
                 raise ValidationError(
                     "Sorting order is invalid: it must be set to 'ASC' (ASCENDING) or "
-                    f"'DESC' (DESCENDING), got '{sort_order}' with '{eodag_sort_param}' instead"
+                    f"'DESC' (DESCENDING), got '{eodag_sort_order}' with '{eodag_sort_param}' instead"
                 )
-            sort_order = sort_order[:3]
+            eodag_sort_order = eodag_sort_order[:3]
 
-            if sort_order == "ASC":
-                sort_by_param = {"field": provider_sort_param, "direction": "asc"}
-            else:
-                sort_by_param = {"field": provider_sort_param, "direction": "desc"}
+            provider_sort_order = (
+                self.config.sort["sort_order_mapping"]["ascending"]
+                if eodag_sort_order == "ASC"
+                else self.config.sort["sort_order_mapping"]["descending"]
+            )
+            sort_by_param = {
+                "field": provider_sort_param,
+                "direction": provider_sort_order,
+            }
             for sort_by_param_tmp in sort_by_params_tmp:
                 # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
                 # then their sorting order is different and there is a contradiction that would raise an error

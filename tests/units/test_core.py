@@ -2353,8 +2353,11 @@ class TestCoreSearch(TestCoreBase):
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
-                    sort_by_mapping:
+                    sort_param_mapping:
                         eodagSortParam: providerSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
                 metadata_mapping:
                     dummy: 'dummy'
             products:
@@ -2389,8 +2392,11 @@ class TestCoreSearch(TestCoreBase):
                         sortby:
                             field: '{sort_param}'
                             direction: '{sort_order}'
-                    sort_by_mapping:
+                    sort_param_mapping:
                         eodagSortParam: providerSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
                 metadata_mapping:
                     dummy: 'dummy'
             products:
@@ -2455,8 +2461,11 @@ class TestCoreSearch(TestCoreBase):
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
-                    sort_by_mapping:
+                    sort_param_mapping:
                         eodagSortParam: providerSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
                 metadata_mapping:
                     dummy: 'dummy'
             products:
@@ -2499,9 +2508,12 @@ class TestCoreSearch(TestCoreBase):
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
-                    sort_by_mapping:
+                    sort_param_mapping:
                         eodagSortParam: providerSortParam
                         otherEodagSortParam: otherProviderSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
                     max_sort_params: 1
                 metadata_mapping:
                     dummy: 'dummy'

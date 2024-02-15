@@ -2270,7 +2270,7 @@ class EODataAccessGateway:
                 sortables[provider] = None
                 continue
             sort_by_params = list(
-                provider_search_plugin.config.sort["sort_by_mapping"].keys()
+                provider_search_plugin.config.sort["sort_param_mapping"].keys()
             )
             if not provider_search_plugin.config.sort.get("max_sort_params"):
                 sortables[provider] = {
