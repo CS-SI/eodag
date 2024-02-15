@@ -109,8 +109,7 @@ class SearchArgs(BaseModel):
                     sort_by_param, tuple
                 ), f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_param)}' instead"
                 sort_param = sort_by_param[0]
-                sort_order = sort_by_param[1]
-                sort_order = sort_order.strip().upper()
+                sort_order = sort_by_param[1].strip().upper()
                 assert re.match(sort_order_pattern, sort_order) is not None, (
                     "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), "
                     f"got '{sort_order}' with '{sort_param}' instead"
