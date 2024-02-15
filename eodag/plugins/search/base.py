@@ -233,7 +233,6 @@ class Search(PluginTopic):
         sort_by_params_tmp: List[Dict[str, str]] = []
         sort_by_param: Dict[str, str]
         for one_sort_by_param in sort_by_arg:
-            # Remove leading and trailing whitespace(s) if exist
             eodag_sort_param = one_sort_by_param[0]
             try:
                 provider_sort_param = self.config.sort["sort_by_mapping"][
@@ -256,6 +255,7 @@ class Search(PluginTopic):
                 )
             sort_order = one_sort_by_param[1]
             # TODO: remove this code block when search args model validation is embeded
+            # Remove leading and trailing whitespace(s) if exist
             sort_order = sort_order.strip().upper()
             if sort_order[:3] != "ASC" and sort_order[:3] != "DES":
                 raise ValidationError(
