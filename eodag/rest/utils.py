@@ -1095,6 +1095,11 @@ def fetch_collection_queryable_properties(
         collection_ids = kwargs.pop("collections").split(",")
         collection_id = collection_ids[0]
 
+    if collection_id and "productType" in kwargs:
+        kwargs.pop("productType")
+    elif "productType" in kwargs:
+        collection_id = kwargs.pop("productType")
+
     if "ids" in kwargs:
         kwargs["id"] = kwargs.pop("ids")
 
