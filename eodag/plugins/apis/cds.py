@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 from urllib.parse import unquote_plus
@@ -351,10 +352,41 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             download_request,
         )
         try:
-            client = self._get_cds_client(**auth_dict)
-            result = client._api(
-                "%s/resources/%s" % (client.url, dataset_name), download_request, "POST"
-            )
+            client: cdsapi.Client = self._get_cds_client(**auth_dict)
+            client.wait_until_complete = False
+            result: cdsapi.api.Result = client.retrieve(dataset_name, download_request)
+            sleep = 1
+            sleep_max = 120
+            retries = 10
+            last_state = None
+            while True:
+                if result.reply["state"] != last_state:
+                    logger.info("Request is %s", result.reply["state"])
+                    last_state = result.reply["state"]
+
+                if result.reply["state"] == "completed":
+                    break
+                if retries <= 0:
+                    raise Exception("Reached maximum number of retries.")
+                if result.reply["state"] in ("queued", "running"):
+                    logger.debug(
+                        "Request ID is %s, sleep %s", result.reply["request_id"], sleep
+                    )
+                    time.sleep(sleep)
+                    sleep *= 1.5
+                    if sleep > sleep_max:
+                        sleep = sleep_max
+                    result.update()
+                    continue
+                if result.reply["state"] == "failed":
+                    raise Exception(
+                        "%s. %s."
+                        % (
+                            result.reply["error"].get("message"),
+                            result.reply["error"].get("reason"),
+                        )
+                    )
+                raise Exception("Unknown CDS API state [%s]" % (result.reply["state"],))
             # update product download link through a new asset
             product.assets["data"] = Asset(product, "data", {"href": result.location})
         except Exception as e:
