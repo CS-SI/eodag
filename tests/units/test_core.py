@@ -1129,6 +1129,7 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "defaults": {
+                "productType": "ERA5_SL",
                 "api_product_type": "reanalysis",
                 "dataset": "reanalysis-era5-single-levels",
                 "format": "grib",
@@ -1144,6 +1145,7 @@ class TestCore(TestCoreBase):
         params = {
             "month": "02",
             "defaults": {
+                "productType": "ERA5_SL",
                 "api_product_type": "reanalysis",
                 "dataset": "reanalysis-era5-single-levels",
                 "format": "grib",
@@ -1159,6 +1161,7 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format="")
         defaults = {
             "defaults": {
+                "productType": "ERA5_SL",
                 "api_product_type": "reanalysis",
                 "dataset": "reanalysis-era5-single-levels",
                 "time": "00:00",

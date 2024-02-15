@@ -2138,7 +2138,7 @@ class EODataAccessGateway:
         available_product_types = [
             pt["ID"] for pt in self.list_product_types(fetch_providers=False)
         ]
-        product_type = kwargs.pop("productType", None)
+        product_type = kwargs.get("productType", None)
         if product_type is not None and product_type not in available_product_types:
             self.fetch_product_types_list()
 
@@ -2154,7 +2154,7 @@ class EODataAccessGateway:
                 product_type, provider
             ):
                 providers_available_queryables[plugin.provider] = self.list_queryables(
-                    provider=plugin.provider, productType=product_type, **kwargs
+                    provider=plugin.provider, **kwargs
                 )
 
             # return providers queryables intersection
@@ -2240,18 +2240,14 @@ class EODataAccessGateway:
             ):
                 providers_available_queryables[plugin.provider][key] = value
 
-        provider_queryables = (
-            plugin.discover_queryables(productType=product_type, **kwargs) or dict()
-        )
+        provider_queryables = plugin.discover_queryables(**kwargs) or dict()
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])
 
         # always keep at least CommonQueryables
         common_queryables = deepcopy(CommonQueryables.model_fields)
-        if product_type:
-            common_queryables["productType"].default = product_type
         for key, queryable in common_queryables.items():
-            if key != "productType" and key in default_values:
+            if key in default_values:
                 queryable.default = default_values[key]
 
         provider_queryables.update(model_fields_to_annotated(common_queryables))
