@@ -483,7 +483,7 @@ class QueryStringSearch(Search):
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
 
-        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)
+        sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
             ""
             if sort_by_arg is None
@@ -1053,7 +1053,7 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
-        sort_by_arg: Optional[SortByList] = self.set_sort_by_arg(kwargs)
+        sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
             {}
             if sort_by_arg is None

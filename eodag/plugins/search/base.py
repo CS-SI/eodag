@@ -185,8 +185,8 @@ class Search(PluginTopic):
             "metadata_mapping", self.config.metadata_mapping
         )
 
-    def set_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
-        """Extract the "sortBy" argument from the kwargs or set it to the provider default sort configuration if needed
+    def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
+        """Extract the "sortBy" argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
         :type kwargs: Dict[str, Any]
