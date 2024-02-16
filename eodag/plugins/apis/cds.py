@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 import logging
-import time
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, cast
 from urllib.parse import unquote_plus
@@ -64,6 +63,8 @@ from eodag.utils.constraints import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    NotAvailableError,
+    RequestError,
     RequestError,
     ValidationError,
 )
@@ -324,7 +325,12 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
 
         return auth_dict
 
-    def _prepare_download_link(self, product: EOProduct) -> None:
+    def _prepare_download_link(
+        self,
+        product: EOProduct,
+        wait: int = DEFAULT_DOWNLOAD_WAIT,
+        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> None:
         """Update product download link with http url obtained from cds api"""
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
@@ -351,42 +357,42 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             dataset_name,
             download_request,
         )
+
+        @self._download_retry(product, wait, timeout)
+        def retrieve_remote_location(
+            product: EOProduct,
+            result: cdsapi.api.Result,
+        ) -> None:
+            result.update()
+            if result.reply["state"] == "completed":
+                pass
+            elif result.reply["state"] in ("queued", "running"):
+                raise NotAvailableError(
+                    "%s(initially %s) ordered, got: %s"
+                    % (
+                        product.properties["title"],
+                        product.properties["storageStatus"],
+                        result.reply["state"],
+                    )
+                )
+            elif result.reply["state"] == "failed":
+                raise RequestError(
+                    "%s. %s."
+                    % (
+                        result.reply["error"].get("message"),
+                        result.reply["error"].get("reason"),
+                    )
+                )
+            else:
+                raise RequestError(
+                    "Unknown CDS API state [%s]" % (result.reply["state"],)
+                )
+
         try:
             client: cdsapi.Client = self._get_cds_client(**auth_dict)
             client.wait_until_complete = False
             result: cdsapi.api.Result = client.retrieve(dataset_name, download_request)
-            sleep = 1
-            sleep_max = 120
-            retries = 10
-            last_state = None
-            while True:
-                if result.reply["state"] != last_state:
-                    logger.info("Request is %s", result.reply["state"])
-                    last_state = result.reply["state"]
-
-                if result.reply["state"] == "completed":
-                    break
-                if retries <= 0:
-                    raise Exception("Reached maximum number of retries.")
-                if result.reply["state"] in ("queued", "running"):
-                    logger.debug(
-                        "Request ID is %s, sleep %s", result.reply["request_id"], sleep
-                    )
-                    time.sleep(sleep)
-                    sleep *= 1.5
-                    if sleep > sleep_max:
-                        sleep = sleep_max
-                    result.update()
-                    continue
-                if result.reply["state"] == "failed":
-                    raise Exception(
-                        "%s. %s."
-                        % (
-                            result.reply["error"].get("message"),
-                            result.reply["error"].get("reason"),
-                        )
-                    )
-                raise Exception("Unknown CDS API state [%s]" % (result.reply["state"],))
+            retrieve_remote_location(product, result)
             # update product download link through a new asset
             product.assets["data"] = Asset(product, "data", {"href": result.location})
         except Exception as e:

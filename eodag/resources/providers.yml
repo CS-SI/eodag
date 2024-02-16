@@ -2206,6 +2206,7 @@
     flatten_top_dirs: True
     constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
     ssl_verify: true
+    order_enabled: true
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
