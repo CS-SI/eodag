@@ -6889,6 +6889,7 @@
     order_method: 'POST'
     ssl_verify: true
     order_on_response:
+
       metadata_mapping:
         order_id: '$.orderId'
         orderStatusLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder/status/{order_id}'
@@ -6929,8 +6930,12 @@
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
       id: '$.id'
-      startTimeFromAscendingNode: '$.properties.startdate'
-      completionTimeFromAscendingNode: '$.properties.enddate'
+      startTimeFromAscendingNode:
+        - '{{"start": "{startTimeFromAscendingNode}"}}'
+        - '$.properties.startdate'
+      completionTimeFromAscendingNode:
+        - '{{"end": "{completionTimeFromAscendingNode}"}}'
+        - '$.properties.enddate'
       downloadLink: '$.properties.location'
       title: '$.id'
       storageStatus: 'OFFLINE'
@@ -6938,13 +6943,20 @@
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
         orderLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
   auth: !plugin
     type: TokenAuth
-    auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
+    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
+    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
     token_type: json
     token_key: access_token
-    request_method: GET
+    refresh_token_key: refresh_token
     headers:
       Authorization: Bearer $token
   download: !plugin
@@ -6956,13 +6968,13 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        order_id: '$.downloaded_id'
-        orderStatusLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download?downloaded_id={order_id}'
+        order_id: '$.download_id'
+        orderStatusLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/downloads?download_id={order_id}'
         downloadLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download/{order_id}'
     order_status_method: 'GET'
+    order_status_results_entry: 'features'
     order_status_success:
       status: Done
-
 
 
 ---

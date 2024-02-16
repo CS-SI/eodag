@@ -284,6 +284,13 @@ class HTTPDownload(Download):
                 response.raise_for_status()
                 status_message = response.text
                 status_dict = response.json()
+                order_status_results_entry = getattr(
+                    self.config, "order_status_results_entry", None
+                )
+                if order_status_results_entry:
+                    status_dict = status_dict[order_status_results_entry]
+                if isinstance(status_dict, list):
+                    status_dict = status_dict[0]
                 # display progress percentage
                 order_status_percent_key = getattr(
                     self.config, "order_status_percent", None
@@ -312,8 +319,14 @@ class HTTPDownload(Download):
                 if (
                     "status" in status_dict
                     and status_dict["status"] == order_status_success_dict["status"]
-                    and "message" in status_dict
-                    and status_dict["message"] == order_status_success_dict["message"]
+                    and (
+                        "message" not in order_status_success_dict
+                        or (
+                            "message" in status_dict
+                            and status_dict["message"]
+                            == order_status_success_dict["message"]
+                        )
+                    )
                 ):
                     product.properties["storageStatus"] = ONLINE_STATUS
                 if (

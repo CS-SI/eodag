@@ -315,6 +315,7 @@ class PluginConfig(yaml.YAMLObject):
     token_uri: str  # OIDCAuthorizationCodeFlowAuth
     token_key: str  # OIDCAuthorizationCodeFlowAuth
     signed_url_key: str  # SASAuth
+    refresh_uri: str  # TokenAuth
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
