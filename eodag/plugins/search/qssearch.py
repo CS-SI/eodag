@@ -1353,7 +1353,7 @@ class StacSearch(PostJsonSearch):
                     or json_param
                 )
 
-                default = kwargs.get("defaults", {}).get(param, None)
+                default = kwargs.get(param, None)
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )

@@ -76,6 +76,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.apis.cds")
 
 CDS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
+# always available queryables (needed as not available in constraints)
+CDS_ALLOWED_QUERYABLES = ["format"]
 
 
 class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
@@ -457,9 +459,21 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         product_type = kwargs.pop("productType", None)
         if not product_type:
             return {}
+
         provider_product_type = self.config.products.get(product_type, {}).get(
             "dataset", None
         )
+        user_provider_product_type = kwargs.pop("dataset", None)
+        if (
+            user_provider_product_type
+            and user_provider_product_type != provider_product_type
+        ):
+            raise ValidationError(
+                f"Cannot change dataset from {provider_product_type} to {user_provider_product_type}"
+            )
+
+        non_empty_kwargs = {k: v for k, v in kwargs.items() if v}
+
         if "{" in constraints_file_url:
             constraints_file_url = constraints_file_url.format(
                 dataset=provider_product_type
@@ -468,7 +482,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         if not constraints:
             return {}
         constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
-        if len(kwargs) == 0 or (len(kwargs) == 1 and len(kwargs["defaults"]) == 0):
+        if len(kwargs) == 0:
             # get values from constraints without additional filters
             for constraint in constraints:
                 for key in constraint.keys():
@@ -479,8 +493,13 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                         constraint_params[key]["enum"] = set(constraint[key])
         else:
             # get values from constraints with additional filters
+            constraints_input_params = {
+                k: v
+                for k, v in non_empty_kwargs.items()
+                if k not in CDS_ALLOWED_QUERYABLES
+            }
             constraint_params = get_constraint_queryables_with_additional_params(
-                constraints, kwargs, self, product_type
+                constraints, constraints_input_params, self, product_type
             )
             # query params that are not in constraints but might be default queryables
             if len(constraint_params) == 1 and "not_available" in constraint_params:
@@ -488,7 +507,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 for constraint_param in constraint_params["not_available"]["enum"]:
                     param = CommonQueryables.get_queryable_from_alias(constraint_param)
                     if param in CommonQueryables.model_fields:
-                        kwargs.pop(constraint_param)
+                        non_empty_kwargs.pop(constraint_param)
                     else:
                         not_queryables.add(constraint_param)
                 if not_queryables:
@@ -496,9 +515,10 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                         f"parameter(s) {str(not_queryables)} not queryable"
                     )
                 else:
+                    # get constraints again without common queryables
                     constraint_params = (
                         get_constraint_queryables_with_additional_params(
-                            constraints, kwargs, self, product_type
+                            constraints, non_empty_kwargs, self, product_type
                         )
                     )
 
@@ -508,7 +528,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 get_queryable_from_provider(json_param, self.config.metadata_mapping)
                 or json_param
             )
-            default = kwargs.get("defaults", {}).get(param, None)
+            default = kwargs.get(param, None)
             annotated_def = json_field_definition_to_python(
                 json_mtd, default_value=default, required=True
             )

@@ -50,9 +50,9 @@ def get_constraint_queryables_with_additional_params(
     :returns: dict containing queryable data
     :rtype: Dict[str, Dict[str, Set[Any]]]
     """
-    params = copy.deepcopy(input_params)
+    defaults = copy.deepcopy(input_params)
     constraint_matches = {}
-    defaults = params.pop("defaults", {})
+    params = {k: v for k, v in defaults.items() if v}
     for p in params.keys():
         defaults.pop(p, None)
     params_available = {k: False for k in params.keys()}
@@ -101,13 +101,20 @@ def get_constraint_queryables_with_additional_params(
     # add values of constraints matching params
     queryables: Dict[str, Dict[str, Set[Any]]] = {}
     for num, matches in constraint_matches.items():
-        if False not in matches.values():
-            for key in constraints[num]:
-                if key in queryables:
-                    queryables[key]["enum"].update(constraints[num][key])
-                else:
-                    queryables[key] = {}
-                    queryables[key]["enum"] = set(constraints[num][key])
+        for key in constraints[num]:
+            other_keys_matching = [v for k, v in matches.items() if k != key]
+            key_matches_a_constraint = any(
+                v.get(key, False) for v in constraint_matches.values()
+            )
+            if False in other_keys_matching or (
+                not key_matches_a_constraint and key in matches
+            ):
+                continue
+            if key in queryables:
+                queryables[key]["enum"].update(constraints[num][key])
+            else:
+                queryables[key] = {}
+                queryables[key]["enum"] = set(constraints[num][key])
 
     other_values = _get_other_possible_values_for_values_with_defaults(
         defaults, params, constraints, metadata_mapping

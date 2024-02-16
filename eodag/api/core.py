@@ -76,6 +76,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
+    copy_deepcopy,
     deepcopy,
     get_args,
     get_geometry_from_various,
@@ -2171,7 +2172,9 @@ class EODataAccessGateway:
                 if k in queryables_keys
             }
 
-        all_queryables = model_fields_to_annotated(Queryables.model_fields)
+        all_queryables = copy_deepcopy(
+            model_fields_to_annotated(Queryables.model_fields)
+        )
 
         try:
             plugin = next(
@@ -2209,15 +2212,7 @@ class EODataAccessGateway:
             getattr(plugin.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
-        removed_defaults = []
-        for param in kwargs:
-            if not kwargs[param]:
-                default_values.pop(param, None)
-                removed_defaults.append(param)
-            else:
-                default_values[param] = kwargs[param]
-        kwargs = {key: kwargs[key] for key in kwargs if key not in removed_defaults}
-        kwargs["defaults"] = default_values
+        kwargs = dict(default_values, **kwargs)
 
         # remove not mapped parameters or non-queryables
         for param in list(metadata_mapping.keys()):
@@ -2233,8 +2228,8 @@ class EODataAccessGateway:
             field_info = annotated_args[1]
             if not isinstance(field_info, FieldInfo):
                 continue
-            if key in default_values:
-                field_info.default = default_values[key]
+            if key in kwargs:
+                field_info.default = kwargs[key]
             if field_info.is_required() or (
                 (field_info.alias or key) in metadata_mapping
             ):
@@ -2245,10 +2240,10 @@ class EODataAccessGateway:
         provider_queryables.update(providers_available_queryables[provider])
 
         # always keep at least CommonQueryables
-        common_queryables = deepcopy(CommonQueryables.model_fields)
+        common_queryables = copy_deepcopy(CommonQueryables.model_fields)
         for key, queryable in common_queryables.items():
-            if key in default_values:
-                queryable.default = default_values[key]
+            if key in kwargs:
+                queryable.default = kwargs[key]
 
         provider_queryables.update(model_fields_to_annotated(common_queryables))
 

@@ -1128,48 +1128,36 @@ class TestCore(TestCoreBase):
         # default values should be added to params
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
-            "defaults": {
-                "productType": "ERA5_SL",
-                "api_product_type": "reanalysis",
-                "dataset": "reanalysis-era5-single-levels",
-                "format": "grib",
-                "time": "00:00",
-            },
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "format": "grib",
+            "time": "00:00",
         }
-        mock_discover_queryables.assert_called_once_with(
-            plugin, productType="ERA5_SL", **defaults
-        )
+        mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
         params = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "format": "grib",
+            "time": "00:00",
             "month": "02",
-            "defaults": {
-                "productType": "ERA5_SL",
-                "api_product_type": "reanalysis",
-                "dataset": "reanalysis-era5-single-levels",
-                "format": "grib",
-                "time": "00:00",
-                "month": "02",
-            },
         }
-        mock_discover_queryables.assert_called_once_with(
-            plugin, productType="ERA5_SL", **params
-        )
+        mock_discover_queryables.assert_called_once_with(plugin, **params)
         mock_discover_queryables.reset_mock()
-        # default values should not be used if unset in params
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format="")
+        # unset default values
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
         defaults = {
-            "defaults": {
-                "productType": "ERA5_SL",
-                "api_product_type": "reanalysis",
-                "dataset": "reanalysis-era5-single-levels",
-                "time": "00:00",
-            }
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "time": "00:00",
+            "format": None,
         }
-        mock_discover_queryables.assert_called_once_with(
-            plugin, productType="ERA5_SL", **defaults
-        )
+        mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

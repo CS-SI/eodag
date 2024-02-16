@@ -20,6 +20,9 @@
     ],
     "type": [
       "A", "B"
+    ],
+    "product_type": [
+      "ensemble_mean", "reanalysis"
     ]
   },
   {
@@ -40,6 +43,9 @@
     ],
     "type": [
       "C", "B"
+    ],
+    "product_type": [
+      "ensemble_mean", "reanalysis"
     ]
   },
   {
@@ -57,6 +63,9 @@
     ],
     "variable": [
       "b", "c"
+    ],
+    "product_type": [
+      "ensemble_mean", "reanalysis"
     ]
   },
   {
@@ -74,6 +83,9 @@
     ],
     "variable": [
       "e", "f"
+    ],
+    "product_type": [
+      "ensemble_mean", "reanalysis"
     ]
   }
 ]
