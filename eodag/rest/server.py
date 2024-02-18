@@ -45,8 +45,6 @@ from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
-from eodag.rest.types.eodag_search import EODAGSearch
-from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.core import (
     download_stac_item,
     eodag_api_init,
@@ -60,6 +58,7 @@ from eodag.rest.core import (
     get_stac_extension_oseo,
     search_stac_items,
 )
+from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
 from eodag.rest.utils import format_pydantic_error, str2json, str2list
@@ -241,7 +240,6 @@ async def handle_invalid_usage_with_validation_error(
         for error_param in error.parameters:
             stac_param = EODAGSearch.to_stac(error_param)
             error.message = error.message.replace(error_param, stac_param)
-    logger.warning(traceback.format_exc())
     return await default_exception_handler(
         request,
         HTTPException(
