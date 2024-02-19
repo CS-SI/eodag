@@ -484,7 +484,8 @@ def stac_collections_items(request: Request, collection_id: str) -> Any:
     response_model_exclude_none=True,
 )
 def list_collection_queryables(
-    request: Request, collection_id: str, provider: Optional[str] = None, **kwargs: Any
+    request: Request,
+    collection_id: str,
 ) -> Any:
     """Returns the list of queryable properties for a specific collection.
 
@@ -496,12 +497,12 @@ def list_collection_queryables(
     :type request: fastapi.Request
     :param collection_id: The identifier of the collection for which to retrieve queryable properties.
     :type collection_id: str
-    :param provider: (optional) The provider for which to retrieve additional properties.
-    :type provider: str
     :returns: A json object containing the list of available queryable properties for the specified collection.
     :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
+    kwargs = dict(request.query_params)
+    provider = kwargs.pop("provider", None)
 
     queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
 
