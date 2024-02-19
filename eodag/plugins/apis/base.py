@@ -98,7 +98,14 @@ class Api(PluginTopic):
     def discover_queryables(
         self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf"""
+        """Fetch queryables list from provider using `discover_queryables` conf
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :type kwargs: Any
+        :returns: fetched queryable parameters dict
+        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
+        """
         return None
 
     def download(
