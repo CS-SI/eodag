@@ -21,6 +21,7 @@ import unittest
 from pydantic_core import ValidationError
 
 from eodag.types import search_args
+from eodag.utils.exceptions import ValidationError as EodagValidationError
 
 
 class TestStacSearch(unittest.TestCase):
@@ -39,7 +40,7 @@ class TestStacSearch(unittest.TestCase):
 
     def test_search_sort_by_arg_with_errors(self):
         """search used with "sortBy" argument must raise errors if the argument is incorrect"""
-        # raise an error with an empty list
+        # raise a Pydantic error with an empty list
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
                 {"productType": "dummy_product_type", "sortBy": []}
@@ -48,7 +49,7 @@ class TestStacSearch(unittest.TestCase):
             "List should have at least 1 item after validation, not 0",
             str(context.exception),
         )
-        # raise an error with syntax errors
+        # raise a Pydantic error with syntax errors
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
                 {"productType": "dummy_product_type", "sortBy": "eodagSortParam ASC"}
@@ -65,7 +66,7 @@ class TestStacSearch(unittest.TestCase):
             "Sort argument must be a list of tuple(s), got a list of '<class 'str'>' instead",
             str(context.exception),
         )
-        # raise an error with a wrong sorting order
+        # raise a Pydantic error with a wrong sorting order
         with self.assertRaises(ValidationError) as context:
             search_args.SearchArgs.model_validate(
                 {
@@ -77,4 +78,17 @@ class TestStacSearch(unittest.TestCase):
             "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), "
             "got 'WRONG_ORDER' with 'eodagSortParam' instead",
             str(context.exception),
+        )
+        # raise an EODAG error with a sorting order called with different values for a same sorting parameter
+        with self.assertRaises(EodagValidationError) as e:
+            search_args.SearchArgs.model_validate(
+                {
+                    "productType": "dummy_product_type",
+                    "sortBy": [("eodagSortParam", "ASC"), ("eodagSortParam", "DESC")],
+                }
+            )
+        self.assertIn(
+            "'eodagSortParam' parameter is called several times to sort results with different sorting "
+            "orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
+            str(e.exception.message),
         )

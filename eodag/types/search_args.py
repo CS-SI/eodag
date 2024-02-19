@@ -28,6 +28,7 @@ from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 
 from eodag.types.bbox import BBox
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, Annotated
+from eodag.utils.exceptions import ValidationError
 
 NumType = Union[float, int]
 GeomArgs = Union[List[NumType], Tuple[NumType], Dict[str, NumType], str, BaseGeometry]
@@ -99,22 +100,35 @@ class SearchArgs(BaseModel):
                   removed and only the 3 first letters in uppercase are kept)
         :rtype: str
         """
-        if sort_by_params is not None:
+        if sort_by_params is None:
+            return None
+
+        assert isinstance(
+            sort_by_params, list
+        ), f"Sort argument must be a list of tuple(s), got a '{type(sort_by_params)}' instead"
+        sort_order_pattern = r"^(ASC|DES)[a-zA-Z]*$"
+        for i, sort_by_param in enumerate(sort_by_params):
             assert isinstance(
-                sort_by_params, list
-            ), f"Sort argument must be a list of tuple(s), got a '{type(sort_by_params)}' instead"
-            sort_order_pattern = r"^(ASC|DES)[a-zA-Z]*$"
-            for i, sort_by_param in enumerate(sort_by_params):
-                assert isinstance(
-                    sort_by_param, tuple
-                ), f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_param)}' instead"
-                # get sorting elements by removing leading and trailing whitespace(s) if exist
-                sort_param = sort_by_param[0].strip()
-                sort_order = sort_by_param[1].strip().upper()
-                assert re.match(sort_order_pattern, sort_order) is not None, (
-                    "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), "
-                    f"got '{sort_order}' with '{sort_param}' instead"
-                )
-                sort_by_params[i] = (sort_param, sort_order[:3])
-            return sort_by_params
-        return None
+                sort_by_param, tuple
+            ), f"Sort argument must be a list of tuple(s), got a list of '{type(sort_by_param)}' instead"
+            # get sorting elements by removing leading and trailing whitespace(s) if exist
+            sort_param = sort_by_param[0].strip()
+            sort_order = sort_by_param[1].strip().upper()
+            assert re.match(sort_order_pattern, sort_order) is not None, (
+                "Sorting order must be set to 'ASC' (ASCENDING) or 'DESC' (DESCENDING), "
+                f"got '{sort_order}' with '{sort_param}' instead"
+            )
+            sort_by_params[i] = (sort_param, sort_order[:3])
+        # remove duplicates
+        pruned_sort_by_params: SortByList = list(set(sort_by_params))  # type: ignore
+        for i, sort_by_param in enumerate(pruned_sort_by_params):
+            for j, sort_by_param_tmp in enumerate(pruned_sort_by_params):
+                # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
+                # then their sorting order is different and there is a contradiction that would raise an error
+                if i != j and sort_by_param[0] == sort_by_param_tmp[0]:
+                    raise ValidationError(
+                        f"'{sort_by_param[0]}' parameter is called several times to sort results with different "
+                        "sorting orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
+                        set([sort_by_param[0]]),
+                    )
+        return pruned_sort_by_params

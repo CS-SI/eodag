@@ -2482,18 +2482,6 @@ class TestCoreSearch(TestCoreBase):
                 "Here is the list of sortable parameter(s) with dummy_provider: eodagSortParam",
                 str(cm_logs.output),
             )
-        # raise an error with a sorting order called with different values for a same sorting parameter
-        with self.assertLogs(level="ERROR") as cm_logs:
-            dag.search(
-                provider="dummy_provider",
-                productType="S2_MSI_L1C",
-                sortBy=[("eodagSortParam", "ASC"), ("eodagSortParam", "DESC")],
-            )
-            self.assertIn(
-                "\\'eodagSortParam\\' parameter is called several times to sort results with different sorting "
-                "orders. Please set it to only one (\\'ASC\\' (ASCENDING) or \\'DESC\\' (DESCENDING))",
-                str(cm_logs.output),
-            )
 
         dummy_provider_config = """
         dummy_provider:

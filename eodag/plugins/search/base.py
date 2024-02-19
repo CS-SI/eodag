@@ -224,6 +224,7 @@ class Search(PluginTopic):
             raise ValidationError(
                 "{} does not support sorting feature".format(self.provider)
             )
+        # TODO: remove this code block when search args model validation is embeded
         # remove duplicates
         sort_by_arg = list(set(sort_by_arg))
 
@@ -272,6 +273,7 @@ class Search(PluginTopic):
                 provider_sort_param,
                 provider_sort_order,
             )
+            # TODO: remove this code block when search args model validation is embeded
             for provider_sort_by_tuple_used in provider_sort_by_tuples_used:
                 # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
                 # then their sorting order is different and there is a contradiction that would raise an error
@@ -284,6 +286,8 @@ class Search(PluginTopic):
                         set([eodag_sort_param]),
                     )
             provider_sort_by_tuples_used.append(provider_sort_by_tuple)
+
+            # TODO: move this code block to the top of this method when search args model validation is embeded
             # check if the limit number of sorting parameter(s) is respected with this sorting parameter
             if (
                 self.config.sort.get("max_sort_params", None)
@@ -296,6 +300,7 @@ class Search(PluginTopic):
                         self.config.sort["max_sort_params"], self.provider
                     )
                 )
+
             parsed_sort_by_tpl: str = self.config.sort["sort_by_tpl"].format(
                 sort_param=provider_sort_by_tuple[0],
                 sort_order=provider_sort_by_tuple[1],
