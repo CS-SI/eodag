@@ -1556,14 +1556,10 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
         creationDate: properties.created
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
     metadata_mapping:
       # redefine the following mapppings as the provider does not support advanced queries/filtering,
       # these parameters will not be queryable
@@ -1685,7 +1681,6 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1695,9 +1690,6 @@
         illuminationElevationAngle: properties.view:sun_elevation
         illuminationAzimuthAngle: properties.view:sun_azimuth
         cloudCover: properties.eo:cloud_cover
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
     metadata_mapping:
       assets: '{$.assets#recursive_sub_str(r"https?(.*)landsatlook.usgs.gov/data/",r"s3\1usgs-landsat/")}'
       awsProductId: '{$.assets.thumbnail.href#replace_str(r".+/([A-Z0-9_]+)/[\w.]+$",r"\1")}'
@@ -1755,7 +1747,6 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1764,9 +1755,6 @@
         platformSerialIdentifier: properties.platform
         resolution: properties.gsd
         cloudCover: properties.eo:cloud_cover
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
     metadata_mapping:
       utmZone:
         - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
@@ -1859,7 +1847,6 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1869,9 +1856,6 @@
         platformSerialIdentifier: properties.platform
         resolution: properties.gsd
         cloudCover: properties.eo:cloud_cover
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
     metadata_mapping:
       platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
       polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
@@ -1914,7 +1898,6 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1923,9 +1906,6 @@
         platformSerialIdentifier: properties.platform
         resolution: properties.gsd
         cloudCover: properties.eo:cloud_cover
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
   products:
     S2_MSI_L1C:
       productType: sentinel-s2-l1c
@@ -3846,14 +3826,10 @@
     pagination:
       max_items_per_page: 1000
     sort:
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
         platformSerialIdentifier: properties.platform
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
     metadata_mapping:
       tileIdentifier:
         - '{{"query":{{"s2:mgrs_tile":{{"eq":"{tileIdentifier}"}}}}}}'
@@ -3909,16 +3885,12 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.start_datetime
         completionTimeFromAscendingNode: properties.end_datetime
         productVersion: properties.version
         processingLevel: processing:level
-      sort_order_mapping:
-        ascending: asc
-        descending: desc
     metadata_mapping:
       startTimeFromAscendingNode:
         - '{{"query":{{"end_datetime":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
