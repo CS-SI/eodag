@@ -42,6 +42,7 @@ from eodag.rest.utils import (
     Cruncher,
     file_to_stream,
     format_pydantic_error,
+    get_datetime,
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime

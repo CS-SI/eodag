@@ -29,6 +29,7 @@ from pygeofilter.values import Geometry
 import eodag.rest.utils.rfc3339 as rfc3339
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
 from tests.context import SearchResult
 from tests.utils import mock_request
@@ -212,6 +213,45 @@ class TestStacUtils(unittest.TestCase):
                 "type": "application/geo+json",
             },
         )
+
+    def test_get_date(self):
+        """Date validation function must correctly validate dates"""
+        self.rest_utils.get_date("2018-01-01")
+        self.rest_utils.get_date("2018-01-01T")
+        self.rest_utils.get_date("2018-01-01T00:00")
+        self.rest_utils.get_date("2018-01-01T00:00:00")
+        self.rest_utils.get_date("2018-01-01T00:00:00Z")
+        self.rest_utils.get_date("20180101")
+
+        self.assertRaises(ValidationError, self.rest_utils.get_date, "foo")
+        self.assertRaises(ValidationError, self.rest_utils.get_date, "foo2018-01-01")
+
+        self.assertIsNone(self.rest_utils.get_date(None))
+
+    def test_get_datetime(self):
+        """get_datetime must extract start and end datetime from datetime request args"""
+        start = "2021-01-01T00:00:00"
+        end = "2021-01-28T00:00:00"
+
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/{end}"})
+        self.assertEqual(dtstart, start)
+        self.assertEqual(dtend, end)
+
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"../{end}"})
+        self.assertEqual(dtstart, None)
+        self.assertEqual(dtend, end)
+
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/.."})
+        self.assertEqual(dtstart, start)
+        self.assertEqual(dtend, None)
+
+        dtstart, dtend = self.rest_utils.get_datetime({"datetime": start})
+        self.assertEqual(dtstart, start)
+        self.assertEqual(dtstart, dtend)
+
+        dtstart, dtend = self.rest_utils.get_datetime({"dtstart": start, "dtend": end})
+        self.assertEqual(dtstart, start)
+        self.assertEqual(dtend, end)
 
 
 class TestEodagCql2jsonEvaluator(unittest.TestCase):
