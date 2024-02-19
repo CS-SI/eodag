@@ -20,13 +20,13 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from pydantic.fields import FieldInfo
+from pydantic.fields import Field, FieldInfo
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback, ProgressCallback, Annotated
+    from eodag.utils import DownloadedCallback, ProgressCallback
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -34,6 +34,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
+    Annotated,
 )
 
 logger = logging.getLogger("eodag.apis.base")
@@ -107,6 +108,23 @@ class Api(PluginTopic):
         :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
         return None
+
+    def get_defaults_as_queryables(
+        self, product_type: str
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        """
+        Return given product type defaut settings as queryables
+
+        :param product_type: given product type
+        :type product_type: str
+        :returns: queryable parameters dict
+        :rtype: Dict[str, Annotated[Any, FieldInfo]]
+        """
+        defaults = self.config.products.get(product_type, {})
+        queryables = {}
+        for parameter, value in defaults.items():
+            queryables[parameter] = Annotated[type(value), Field(default=value)]
+        return queryables
 
     def download(
         self,

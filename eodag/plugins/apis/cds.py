@@ -76,8 +76,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.apis.cds")
 
 CDS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
-# always available queryables (needed as not available in constraints)
-CDS_ALLOWED_QUERYABLES = ["format"]
 
 
 class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
@@ -481,6 +479,12 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         constraints = fetch_constraints(constraints_file_url, self)
         if not constraints:
             return {}
+
+        # defaults
+        default_queryables = self.get_defaults_as_queryables(product_type)
+        # remove dataset from queryables
+        default_queryables.pop("dataset", None)
+
         constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
         if len(kwargs) == 0:
             # get values from constraints without additional filters
@@ -493,11 +497,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                         constraint_params[key]["enum"] = set(constraint[key])
         else:
             # get values from constraints with additional filters
-            constraints_input_params = {
-                k: v
-                for k, v in non_empty_kwargs.items()
-                if k not in CDS_ALLOWED_QUERYABLES
-            }
+            constraints_input_params = {k: v for k, v in non_empty_kwargs.items()}
             constraint_params = get_constraint_queryables_with_additional_params(
                 constraints, constraints_input_params, self, product_type
             )
@@ -506,7 +506,9 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
                 not_queryables = set()
                 for constraint_param in constraint_params["not_available"]["enum"]:
                     param = CommonQueryables.get_queryable_from_alias(constraint_param)
-                    if param in CommonQueryables.model_fields:
+                    if param in dict(
+                        CommonQueryables.model_fields, **default_queryables
+                    ):
                         non_empty_kwargs.pop(constraint_param)
                     else:
                         not_queryables.add(constraint_param)
@@ -535,4 +537,4 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             field_definitions[param] = get_args(annotated_def)
 
         python_queryables = create_model("m", **field_definitions).model_fields
-        return model_fields_to_annotated(python_queryables)
+        return dict(default_queryables, **model_fields_to_annotated(python_queryables))

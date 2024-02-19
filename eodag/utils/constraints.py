@@ -98,6 +98,13 @@ def get_constraint_queryables_with_additional_params(
     if not_available_params:
         return {"not_available": {"enum": not_available_params}}
 
+    # clear constraint_matches if no combination matches
+    matching_combinations = [
+        False not in v.values() for v in constraint_matches.values()
+    ]
+    if not any(matching_combinations):
+        constraint_matches = {}
+
     # add values of constraints matching params
     queryables: Dict[str, Dict[str, Set[Any]]] = {}
     for num, matches in constraint_matches.items():

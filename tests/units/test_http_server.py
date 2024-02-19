@@ -1205,7 +1205,7 @@ class RequestTestCase(unittest.TestCase):
             headers=USER_AGENT,
             timeout=5,
         )
-        self.assertEqual(9, len(res["properties"]))
+        self.assertEqual(10, len(res["properties"]))
         self.assertIn("year", res["properties"])
         self.assertIn("ids", res["properties"])
         self.assertIn("geometry", res["properties"])
