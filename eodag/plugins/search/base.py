@@ -18,7 +18,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+
+import orjson
 
 from pydantic.fields import Field, FieldInfo
 from typing_extensions import Annotated
@@ -35,6 +37,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     Annotated,
     format_dict_items,
+    update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
 
@@ -206,9 +209,9 @@ class Search(PluginTopic):
             )
         return sort_by_arg
 
-    def transform_sort_by_arg_for_search_request(
+    def build_sort_by(
         self, sort_by_arg: SortByList
-    ) -> Union[str, Dict[str, List[Dict[str, str]]]]:
+    ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
         the "sortBy" argument into a provider-specific string or dictionnary
 
@@ -223,17 +226,13 @@ class Search(PluginTopic):
             )
         # remove duplicates
         sort_by_arg = list(set(sort_by_arg))
-        sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]]
-        if self.config.sort.get("sort_url_tpl"):
-            sort_by_provider_keyword = None
-            sort_by_params = ""
-        else:
-            sort_by_provider_keyword = list(self.config.sort["sort_body_tpl"].keys())[0]
-            sort_by_params = {sort_by_provider_keyword: []}
-        sort_by_params_tmp: List[Dict[str, str]] = []
-        sort_by_param: Dict[str, str]
-        for one_sort_by_param in sort_by_arg:
-            eodag_sort_param = one_sort_by_param[0]
+
+        sort_by_qs: str = ""
+        sort_by_qp: Dict[str, Any] = {}
+
+        provider_sort_by_tuples_used: List[Tuple[str, str]] = []
+        for eodag_sort_by_tuple in sort_by_arg:
+            eodag_sort_param = eodag_sort_by_tuple[0]
             try:
                 provider_sort_param = self.config.sort["sort_param_mapping"][
                     eodag_sort_param
@@ -253,7 +252,7 @@ class Search(PluginTopic):
                     ),
                     params,
                 )
-            eodag_sort_order = one_sort_by_param[1]
+            eodag_sort_order = eodag_sort_by_tuple[1]
             # TODO: remove this code block when search args model validation is embeded
             # Remove leading and trailing whitespace(s) if exist
             eodag_sort_order = eodag_sort_order.strip().upper()
@@ -269,14 +268,14 @@ class Search(PluginTopic):
                 if eodag_sort_order == "ASC"
                 else self.config.sort["sort_order_mapping"]["descending"]
             )
-            sort_by_param = {
-                "field": provider_sort_param,
-                "direction": provider_sort_order,
-            }
-            for sort_by_param_tmp in sort_by_params_tmp:
+            provider_sort_by_tuple: Tuple[str, str] = (
+                provider_sort_param,
+                provider_sort_order,
+            )
+            for provider_sort_by_tuple_used in provider_sort_by_tuples_used:
                 # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
                 # then their sorting order is different and there is a contradiction that would raise an error
-                if sort_by_param["field"] == sort_by_param_tmp["field"]:
+                if provider_sort_by_tuple[0] == provider_sort_by_tuple_used[0]:
                     raise ValidationError(
                         "'{}' parameter is called several times to sort results with different sorting orders. "
                         "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
@@ -284,11 +283,12 @@ class Search(PluginTopic):
                         ),
                         set([eodag_sort_param]),
                     )
-            sort_by_params_tmp.append(sort_by_param)
+            provider_sort_by_tuples_used.append(provider_sort_by_tuple)
             # check if the limit number of sorting parameter(s) is respected with this sorting parameter
             if (
                 self.config.sort.get("max_sort_params", None)
-                and len(sort_by_params_tmp) > self.config.sort["max_sort_params"]
+                and len(provider_sort_by_tuples_used)
+                > self.config.sort["max_sort_params"]
             ):
                 raise ValidationError(
                     "Search results can be sorted by only "
@@ -296,12 +296,17 @@ class Search(PluginTopic):
                         self.config.sort["max_sort_params"], self.provider
                     )
                 )
-            if isinstance(sort_by_params, str):
-                sort_by_params += self.config.sort["sort_url_tpl"].format(
-                    sort_param=sort_by_param["field"],
-                    sort_order=sort_by_param["direction"],
+            parsed_sort_by_tpl: str = self.config.sort["sort_by_tpl"].format(
+                sort_param=provider_sort_by_tuple[0],
+                sort_order=provider_sort_by_tuple[1],
+            )
+            try:
+                parsed_sort_by_tpl_dict: Dict[str, Any] = orjson.loads(
+                    parsed_sort_by_tpl
                 )
-            else:
-                assert sort_by_provider_keyword is not None
-                sort_by_params[sort_by_provider_keyword].append(sort_by_param)
-        return sort_by_params
+                sort_by_qp = update_nested_dict(
+                    sort_by_qp, parsed_sort_by_tpl_dict, extend_list_values=True
+                )
+            except orjson.JSONDecodeError:
+                sort_by_qs += parsed_sort_by_tpl
+        return (sort_by_qs, sort_by_qp)

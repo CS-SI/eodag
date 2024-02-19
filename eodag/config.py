@@ -235,8 +235,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for sort during search"""
 
         sort_by_default: List[Tuple[str, str]]
-        sort_url_tpl: str
-        sort_body_tpl: Dict[str, Dict[str, str]]
+        sort_by_tpl: str
         sort_param_mapping: Dict[str, str]
         sort_order_mapping: Dict[Literal["ascending", "descending"], str]
         max_sort_params: Annotated[int, Gt(0)]

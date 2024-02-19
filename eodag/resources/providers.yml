@@ -885,7 +885,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_param_mapping:
         startTimeFromAscendingNode: startDate
         completionTimeFromAscendingNode: completionDate
@@ -1254,7 +1254,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_url_tpl: '&$orderby={sort_param} {sort_order}'
+      sort_by_tpl: '&$orderby={sort_param} {sort_order}'
       sort_param_mapping:
         startTimeFromAscendingNode: beginPosition
         uid: id
@@ -1556,10 +1556,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_body_tpl:
-        sortby:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1688,10 +1685,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_body_tpl:
-        sortby:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1761,10 +1755,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_body_tpl:
-        sortby:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1868,10 +1859,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_body_tpl:
-        sortby:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -1926,10 +1914,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_body_tpl:
-        sortby:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -3199,7 +3184,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_param_mapping:
         startTimeFromAscendingNode: startDate
         completionTimeFromAscendingNode: completionDate
@@ -3562,7 +3547,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_param_mapping:
         startTimeFromAscendingNode: startDate
         completionTimeFromAscendingNode: completionDate
@@ -3861,10 +3846,7 @@
     pagination:
       max_items_per_page: 1000
     sort:
-      sort_body_tpl:
-        sortby:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.datetime
@@ -3927,10 +3909,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_body_tpl:
-        sortBy:
-          field: '{sort_param}'
-          direction: '{sort_order}'
+      sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: properties.start_datetime
@@ -6913,7 +6892,7 @@
     sort:
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
-      sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+      sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
       sort_param_mapping:
         startTimeFromAscendingNode: startDate
         completionTimeFromAscendingNode: completionDate

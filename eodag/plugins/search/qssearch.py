@@ -20,18 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -484,10 +473,8 @@ class QueryStringSearch(Search):
         kwargs.pop("product_type", None)
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
-        sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
-            ""
-            if sort_by_arg is None
-            else self.transform_sort_by_arg_for_search_request(sort_by_arg)
+        sort_by_qs, _ = (
+            ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
 
         provider_product_type = self.map_product_type(product_type)
@@ -527,9 +514,7 @@ class QueryStringSearch(Search):
         qp, qs = self.build_query_string(product_type, **keywords)
 
         self.query_params = qp
-        self.query_string = (
-            qs + sort_by_params if isinstance(sort_by_params, str) else qs
-        )
+        self.query_string = qs + sort_by_qs
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
@@ -1054,10 +1039,8 @@ class PostJsonSearch(QueryStringSearch):
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
-        sort_by_params: Union[str, Dict[str, List[Dict[str, str]]]] = (
-            {}
-            if sort_by_arg is None
-            else self.transform_sort_by_arg_for_search_request(sort_by_arg)
+        _, sort_by_qp = (
+            ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
@@ -1143,9 +1126,7 @@ class PostJsonSearch(QueryStringSearch):
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
             return [], 0
-        self.query_params = (
-            dict(qp, **sort_by_params) if isinstance(sort_by_params, dict) else qp
-        )
+        self.query_params = dict(qp, **sort_by_qp)
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )

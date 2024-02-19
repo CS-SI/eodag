@@ -2352,7 +2352,7 @@ class TestCoreSearch(TestCoreBase):
                     next_page_url_tpl: 'dummy_next_page_url_tpl'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
-                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
                     sort_param_mapping:
                         eodagSortParam: providerSortParam
                     sort_order_mapping:
@@ -2388,10 +2388,7 @@ class TestCoreSearch(TestCoreBase):
                     next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
                     total_items_nb_key_path: '$.meta.found'
                 sort:
-                    sort_body_tpl:
-                        sortby:
-                            field: '{sort_param}'
-                            direction: '{sort_order}'
+                    sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
                     sort_param_mapping:
                         eodagSortParam: providerSortParam
                     sort_order_mapping:
@@ -2460,7 +2457,7 @@ class TestCoreSearch(TestCoreBase):
                     next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
-                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
                     sort_param_mapping:
                         eodagSortParam: providerSortParam
                     sort_order_mapping:
@@ -2507,7 +2504,7 @@ class TestCoreSearch(TestCoreBase):
                     next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
-                    sort_url_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
                     sort_param_mapping:
                         eodagSortParam: providerSortParam
                         otherEodagSortParam: otherProviderSortParam
