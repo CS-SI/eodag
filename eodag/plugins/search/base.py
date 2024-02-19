@@ -221,9 +221,7 @@ class Search(PluginTopic):
         :rtype: Union[str, Dict[str, List[Dict[str, str]]]]
         """
         if not hasattr(self.config, "sort"):
-            raise ValidationError(
-                "{} does not support sorting feature".format(self.provider)
-            )
+            raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
         # remove duplicates
         sort_by_arg = list(set(sort_by_arg))
@@ -234,23 +232,19 @@ class Search(PluginTopic):
         provider_sort_by_tuples_used: List[Tuple[str, str]] = []
         for eodag_sort_by_tuple in sort_by_arg:
             eodag_sort_param = eodag_sort_by_tuple[0]
-            try:
+            if self.config.sort["sort_param_mapping"].get(eodag_sort_param):
                 provider_sort_param = self.config.sort["sort_param_mapping"][
                     eodag_sort_param
                 ]
-            except KeyError:
+            else:
+                joined_eodag_params_to_map = ", ".join(
+                    k for k in self.config.sort["sort_param_mapping"].keys()
+                )
                 params = set(self.config.sort["sort_param_mapping"].keys())
                 params.add(eodag_sort_param)
                 raise ValidationError(
-                    "'{}' parameter is not sortable with {}. "
-                    "Here is the list of sortable parameter(s) with {}: {}".format(
-                        eodag_sort_param,
-                        self.provider,
-                        self.provider,
-                        ", ".join(
-                            k for k in self.config.sort["sort_param_mapping"].keys()
-                        ),
-                    ),
+                    f"'{eodag_sort_param}' parameter is not sortable with {self.provider}. "
+                    f"Here is the list of sortable parameter(s) with {self.provider}: {joined_eodag_params_to_map}",
                     params,
                 )
             eodag_sort_order = eodag_sort_by_tuple[1]
@@ -279,10 +273,8 @@ class Search(PluginTopic):
                 # then their sorting order is different and there is a contradiction that would raise an error
                 if provider_sort_by_tuple[0] == provider_sort_by_tuple_used[0]:
                     raise ValidationError(
-                        "'{}' parameter is called several times to sort results with different sorting orders. "
-                        "Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))".format(
-                            eodag_sort_param
-                        ),
+                        f"'{eodag_sort_param}' parameter is called several times to sort results with different "
+                        "sorting orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
                         set([eodag_sort_param]),
                     )
             provider_sort_by_tuples_used.append(provider_sort_by_tuple)
@@ -295,10 +287,8 @@ class Search(PluginTopic):
                 > self.config.sort["max_sort_params"]
             ):
                 raise ValidationError(
-                    "Search results can be sorted by only "
-                    "{} parameter(s) with {}".format(
-                        self.config.sort["max_sort_params"], self.provider
-                    )
+                    f"Search results can be sorted by only {self.config.sort['max_sort_params']} "
+                    f"parameter(s) with {self.provider}"
                 )
 
             parsed_sort_by_tpl: str = self.config.sort["sort_by_tpl"].format(
