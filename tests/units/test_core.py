@@ -1088,7 +1088,7 @@ class TestCore(TestCoreBase):
             self.dag.list_queryables(provider="not_supported_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(product_type="not_supported_product_type")
+            self.dag.list_queryables(productType="not_supported_product_type")
 
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
