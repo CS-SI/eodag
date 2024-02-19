@@ -1088,7 +1088,7 @@ class TestCore(TestCoreBase):
             self.dag.list_queryables(provider="not_existing_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(product_type="not_existing_product_type")
+            self.dag.list_queryables(productType="not_existing_product_type")
 
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
@@ -1106,14 +1106,58 @@ class TestCore(TestCoreBase):
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
         queryables_peps_s1grd = self.dag.list_queryables(
-            provider="peps", product_type="S1_SAR_GRD"
+            provider="peps", productType="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
         self.assertLess(len(queryables_peps_s1grd), len(queryables_peps_none))
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
-            self.assertEqual(str(expected_longer_result[key]), str(queryable))
+            if key == "productType":
+                self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
+            else:
+                self.assertEqual(str(expected_longer_result[key]), str(queryable))
+
+    @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
+    def test_list_queryables_with_constraints(self, mock_discover_queryables):
+        plugin = next(
+            self.dag._plugins_manager.get_search_plugins(
+                provider="cop_cds", product_type="ERA5_SL"
+            )
+        )
+        # default values should be added to params
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
+        defaults = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "format": "grib",
+            "time": "00:00",
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+        mock_discover_queryables.reset_mock()
+        # default values + additional param
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
+        params = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "format": "grib",
+            "time": "00:00",
+            "month": "02",
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, **params)
+        mock_discover_queryables.reset_mock()
+        # unset default values
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
+        defaults = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "time": "00:00",
+            "format": None,
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

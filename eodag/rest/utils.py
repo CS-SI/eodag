@@ -1077,7 +1077,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 
 def fetch_collection_queryable_properties(
-    collection_id: Optional[str] = None, provider: Optional[str] = None
+    collection_id: Optional[str] = None, provider: Optional[str] = None, **kwargs: Any
 ) -> Dict[str, StacQueryableProperty]:
     """Fetch the queryable properties for a collection.
 
@@ -1085,12 +1085,34 @@ def fetch_collection_queryable_properties(
     :type collection_id: str
     :param provider: (optional) The provider.
     :type provider: str
+    :param kwargs: additional filters for queryables (`productType` or other search
+                   arguments)
+    :type kwargs: Any
     :returns: A set containing the STAC standardized queryable properties for a collection.
     :rtype Dict[str, StacQueryableProperty]: set
     """
+    if not collection_id and "collections" in kwargs:
+        collection_ids = kwargs.pop("collections").split(",")
+        collection_id = collection_ids[0]
+
+    if collection_id and "productType" in kwargs:
+        kwargs.pop("productType")
+    elif "productType" in kwargs:
+        collection_id = kwargs.pop("productType")
+
+    if "ids" in kwargs:
+        kwargs["id"] = kwargs.pop("ids")
+
+    if "datetime" in kwargs:
+        dates = get_datetime(kwargs)
+        kwargs["start"] = dates[0]
+        kwargs["end"] = dates[1]
+
     python_queryables = eodag_api.list_queryables(
-        provider=provider, product_type=collection_id
+        provider=provider, productType=collection_id, **kwargs
     )
+    python_queryables.pop("start")
+    python_queryables.pop("end")
 
     stac_queryables = dict()
     for param, queryable in python_queryables.items():

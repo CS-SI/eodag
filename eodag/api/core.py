@@ -76,6 +76,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
+    copy_deepcopy,
     deepcopy,
     get_args,
     get_geometry_from_various,
@@ -2121,22 +2122,25 @@ class EODataAccessGateway:
     def list_queryables(
         self,
         provider: Optional[str] = None,
-        product_type: Optional[str] = None,
+        **kwargs: Any,
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
         :type provider: str
-        :param product_type: (optional) The EODAG product type.
-        :type product_type: str
+        :param kwargs: additional filters for queryables (`productType` or other search
+                       arguments)
+        :type kwargs: Any
         :returns: A dict containing the EODAG queryable properties, associating
-                  parameters to their annotaded type
+                  parameters to their annotated type
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         # unknown product type
-        if product_type is not None and product_type not in self.list_product_types(
-            fetch_providers=False
-        ):
+        available_product_types = [
+            pt["ID"] for pt in self.list_product_types(fetch_providers=False)
+        ]
+        product_type = kwargs.get("productType", None)
+        if product_type is not None and product_type not in available_product_types:
             self.fetch_product_types_list()
 
         # dictionary of the queryable properties of the providers supporting the given product type
@@ -2151,7 +2155,7 @@ class EODataAccessGateway:
                 product_type, provider
             ):
                 providers_available_queryables[plugin.provider] = self.list_queryables(
-                    provider=plugin.provider, product_type=product_type
+                    provider=plugin.provider, **kwargs
                 )
 
             # return providers queryables intersection
@@ -2168,7 +2172,9 @@ class EODataAccessGateway:
                 if k in queryables_keys
             }
 
-        all_queryables = model_fields_to_annotated(Queryables.model_fields)
+        all_queryables = copy_deepcopy(
+            model_fields_to_annotated(Queryables.model_fields)
+        )
 
         try:
             plugin = next(
@@ -2200,6 +2206,14 @@ class EODataAccessGateway:
             .get(product_type, {})
             .get("metadata_mapping", {})
         )
+
+        # default values
+        default_values = deepcopy(
+            getattr(plugin.config, "products", {}).get(product_type, {})
+        )
+        default_values.pop("metadata_mapping", None)
+        kwargs = dict(default_values, **kwargs)
+
         # remove not mapped parameters or non-queryables
         for param in list(metadata_mapping.keys()):
             if NOT_MAPPED in metadata_mapping[param] or not isinstance(
@@ -2214,17 +2228,23 @@ class EODataAccessGateway:
             field_info = annotated_args[1]
             if not isinstance(field_info, FieldInfo):
                 continue
+            if key in kwargs:
+                field_info.default = kwargs[key]
             if field_info.is_required() or (
                 (field_info.alias or key) in metadata_mapping
             ):
                 providers_available_queryables[plugin.provider][key] = value
 
-        provider_queryables = plugin.discover_queryables(product_type) or dict()
+        provider_queryables = plugin.discover_queryables(**kwargs) or dict()
         # use EODAG configured queryables by default
         provider_queryables.update(providers_available_queryables[provider])
+
         # always keep at least CommonQueryables
-        provider_queryables.update(
-            model_fields_to_annotated(CommonQueryables.model_fields)
-        )
+        common_queryables = copy_deepcopy(CommonQueryables.model_fields)
+        for key, queryable in common_queryables.items():
+            if key in kwargs:
+                queryable.default = kwargs[key]
+
+        provider_queryables.update(model_fields_to_annotated(common_queryables))
 
         return provider_queryables

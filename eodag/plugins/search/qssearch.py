@@ -1282,15 +1282,17 @@ class StacSearch(PostJsonSearch):
         return products
 
     def discover_queryables(
-        self, product_type: Optional[str] = None
+        self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
-        :param product_type: (optional) product type
-        :type product_type: str
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: dict
+        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
+        product_type = kwargs.get("productType", None)
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)
             if product_type
@@ -1350,7 +1352,11 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-                annotated_def = json_field_definition_to_python(json_mtd)
+
+                default = kwargs.get(param, None)
+                annotated_def = json_field_definition_to_python(
+                    json_mtd, default_value=default
+                )
                 field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields

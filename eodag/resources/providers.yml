@@ -2093,6 +2093,7 @@
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
     flatten_top_dirs: True
+    constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2170,9 +2171,6 @@
       expver:
         - expver
         - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
       fcperiod:
         - fcperiod
         - '$.fcperiod'
@@ -2188,9 +2186,6 @@
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'
@@ -2503,7 +2498,11 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     flatten_top_dirs: True
+    constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2581,9 +2580,6 @@
       expver:
         - expver
         - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
       fcperiod:
         - fcperiod
         - '$.fcperiod'
@@ -2596,9 +2592,6 @@
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'
@@ -2790,9 +2783,11 @@
       format: grib
     ERA5_PL_MONTHLY:
       dataset: reanalysis-era5-pressure-levels-monthly-means
-      api_product_type: reanalysis
+      api_product_type: monthly_averaged_reanalysis
       time: '00:00'
       format: grib
+      variable: divergence
+      pressure_level: '1'
       metadata_mapping:
         completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
         _date:
@@ -2816,7 +2811,7 @@
           - '{$._date}'
     ERA5_SL_MONTHLY:
       dataset: reanalysis-era5-single-levels-monthly-means
-      api_product_type: reanalysis
+      api_product_type: monthly_averaged_reanalysis
       time: '00:00'
       format: grib
       metadata_mapping:
@@ -2953,7 +2948,7 @@
       system_version: version_5_0
       format: grib.zip
       variable: river_discharge_in_the_last_24_hours
-      model_levels: surface_levels
+      model_levels: surface_level
       leadtime_hour: '24'
       metadata_mapping:
         completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
@@ -3066,7 +3061,7 @@
       rcm: cclm4_8_17
       gcm: ec_earth
       ensemble_member: r12i1p1
-      period: '1_5_c'
+      period: 1_5_c
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'
@@ -3735,6 +3730,10 @@
   products:
     S1_SAR_GRD:
       productType: sentinel-1-grd
+      metadata_mapping:
+        processingLevel:
+          - '{{"query":{{"s1:processing_level":{{"eq":"{processingLevel}"}}}}}}'
+          - '$.properties."s1:processing_level"'
     S2_MSI_L2A:
       productType: sentinel-2-l2a
     LANDSAT_C2L1:
@@ -3822,6 +3821,8 @@
       total_items_nb_key_path: '$.totItems'
     discover_product_types:
       fetch_url: null
+    constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/{dataset}"
+    constraints_entry: constraints
     metadata_mapping:
       productType:
         - '{{"datasetId": "{productType}"}}'

@@ -61,6 +61,7 @@ class EODAGSearch(BaseModel):
     productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
     ids: Optional[List[str]] = Field(None)
+    id: Optional[List[str]] = Field(None, alias="ids")
     geom: Optional[Geometry] = Field(None, alias="geometry")
     start: Optional[str] = Field(None, alias="start_datetime")
     end: Optional[str] = Field(None, alias="end_datetime")

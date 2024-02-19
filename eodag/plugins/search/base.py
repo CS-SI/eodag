@@ -20,6 +20,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from pydantic.fields import Field, FieldInfo
+
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
     mtd_cfg_as_conversion_and_querypath,
@@ -29,15 +31,13 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
+    Annotated,
     format_dict_items,
 )
 
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
-
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
-    from eodag.utils import Annotated
 
 logger = logging.getLogger("eodag.search.base")
 
@@ -91,10 +91,34 @@ class Search(PluginTopic):
         return None
 
     def discover_queryables(
-        self, product_type: Optional[str] = None
+        self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf"""
+        """Fetch queryables list from provider using `discover_queryables` conf
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :type kwargs: Any
+        :returns: fetched queryable parameters dict
+        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
+        """
         return None
+
+    def get_defaults_as_queryables(
+        self, product_type: str
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        """
+        Return given product type defaut settings as queryables
+
+        :param product_type: given product type
+        :type product_type: str
+        :returns: queryable parameters dict
+        :rtype: Dict[str, Annotated[Any, FieldInfo]]
+        """
+        defaults = self.config.products.get(product_type, {})
+        queryables = {}
+        for parameter, value in defaults.items():
+            queryables[parameter] = Annotated[type(value), Field(default=value)]
+        return queryables
 
     def map_product_type(
         self, product_type: Optional[str], **kwargs: Any

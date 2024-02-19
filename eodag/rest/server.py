@@ -466,14 +466,18 @@ def list_collection_queryables(
     :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
+    query_params = request.query_params.items()
+    additional_params = dict(query_params)
+    additional_params.pop("provider", None)
 
     queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
 
     collection_queryables = fetch_collection_queryable_properties(
-        collection_id, provider
+        collection_id, provider, **additional_params
     )
     for key, collection_queryable in collection_queryables.items():
         queryables[key] = collection_queryable
+    queryables.properties.pop("collections")
 
     return jsonable_encoder(queryables)
 
@@ -680,10 +684,13 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
+    query_params = request.query_params.items()
+    additional_params = dict(query_params)
+    additional_params.pop("provider", None)
     queryables = StacQueryables(q_id=request.state.url)
     if provider:
         queryables.properties.update(
-            fetch_collection_queryable_properties(None, provider)
+            fetch_collection_queryable_properties(None, provider, **additional_params)
         )
 
     return jsonable_encoder(queryables)

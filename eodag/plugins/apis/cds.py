@@ -19,26 +19,35 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
 from urllib.parse import unquote_plus
 
 import cdsapi
 import geojson
 import requests
 from dateutil.parser import isoparse
+from pydantic import create_model
+from pydantic.fields import FieldInfo
+from typing_extensions import get_args
 
 from eodag.api.product._assets import Asset
-from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.product.metadata_mapping import (
+    get_queryable_from_provider,
+    mtd_cfg_as_conversion_and_querypath,
+)
 from eodag.plugins.apis.base import Api
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
+    Annotated,
     datetime_range,
     deepcopy,
     get_geometry_from_various,
@@ -46,7 +55,16 @@ from eodag.utils import (
     urlencode,
     urlsplit,
 )
-from eodag.utils.exceptions import AuthenticationError, DownloadError, RequestError
+from eodag.utils.constraints import (
+    fetch_constraints,
+    get_constraint_queryables_with_additional_params,
+)
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    DownloadError,
+    RequestError,
+    ValidationError,
+)
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
@@ -421,3 +439,102 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             timeout=timeout,
             **kwargs,
         )
+
+    def discover_queryables(
+        self, **kwargs: Any
+    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
+        """Fetch queryables list from provider using `discover_queryables` conf
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :type kwargs: Any
+        :returns: fetched queryable parameters dict
+        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
+        """
+        constraints_file_url = getattr(self.config, "constraints_file_url", "")
+        if not constraints_file_url:
+            return {}
+        product_type = kwargs.pop("productType", None)
+        if not product_type:
+            return {}
+
+        provider_product_type = self.config.products.get(product_type, {}).get(
+            "dataset", None
+        )
+        user_provider_product_type = kwargs.pop("dataset", None)
+        if (
+            user_provider_product_type
+            and user_provider_product_type != provider_product_type
+        ):
+            raise ValidationError(
+                f"Cannot change dataset from {provider_product_type} to {user_provider_product_type}"
+            )
+
+        non_empty_kwargs = {k: v for k, v in kwargs.items() if v}
+
+        if "{" in constraints_file_url:
+            constraints_file_url = constraints_file_url.format(
+                dataset=provider_product_type
+            )
+        constraints = fetch_constraints(constraints_file_url, self)
+        if not constraints:
+            return {}
+
+        # defaults
+        default_queryables = self.get_defaults_as_queryables(product_type)
+        # remove dataset from queryables
+        default_queryables.pop("dataset", None)
+
+        constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
+        if len(kwargs) == 0:
+            # get values from constraints without additional filters
+            for constraint in constraints:
+                for key in constraint.keys():
+                    if key in constraint_params:
+                        constraint_params[key]["enum"].update(constraint[key])
+                    else:
+                        constraint_params[key] = {}
+                        constraint_params[key]["enum"] = set(constraint[key])
+        else:
+            # get values from constraints with additional filters
+            constraints_input_params = {k: v for k, v in non_empty_kwargs.items()}
+            constraint_params = get_constraint_queryables_with_additional_params(
+                constraints, constraints_input_params, self, product_type
+            )
+            # query params that are not in constraints but might be default queryables
+            if len(constraint_params) == 1 and "not_available" in constraint_params:
+                not_queryables = set()
+                for constraint_param in constraint_params["not_available"]["enum"]:
+                    param = CommonQueryables.get_queryable_from_alias(constraint_param)
+                    if param in dict(
+                        CommonQueryables.model_fields, **default_queryables
+                    ):
+                        non_empty_kwargs.pop(constraint_param)
+                    else:
+                        not_queryables.add(constraint_param)
+                if not_queryables:
+                    raise ValidationError(
+                        f"parameter(s) {str(not_queryables)} not queryable"
+                    )
+                else:
+                    # get constraints again without common queryables
+                    constraint_params = (
+                        get_constraint_queryables_with_additional_params(
+                            constraints, non_empty_kwargs, self, product_type
+                        )
+                    )
+
+        field_definitions = dict()
+        for json_param, json_mtd in constraint_params.items():
+            param = (
+                get_queryable_from_provider(json_param, self.config.metadata_mapping)
+                or json_param
+            )
+            default = kwargs.get(param, None)
+            annotated_def = json_field_definition_to_python(
+                json_mtd, default_value=default, required=True
+            )
+            field_definitions[param] = get_args(annotated_def)
+
+        python_queryables = create_model("m", **field_definitions).model_fields
+        return dict(default_queryables, **model_fields_to_annotated(python_queryables))

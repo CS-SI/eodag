@@ -1121,8 +1121,8 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.return_value = MockResponse(
             provider_queryables, status_code=200
         )
-
         # no provider specified (only 1 available for the moment) : queryables intresection returned
+
         res_no_provider = self._request_valid(
             "collections/S1_SAR_GRD/queryables",
             check_links=False,
@@ -1148,9 +1148,9 @@ class RequestTestCase(unittest.TestCase):
         )
         self.assertListEqual(
             list(res_no_provider["properties"].keys()),
-            ["id", "collection", "geometry", "bbox", "datetime", "collections"],
+            ["ids", "geometry", "datetime"],
         )
-        self.assertIn("collection", res_no_provider["properties"])
+        self.assertIn("geometry", res_no_provider["properties"])
         self.assertNotIn("s1:processing_level", res_no_provider["properties"])
 
         mock_requests_get.reset_mock()
@@ -1166,6 +1166,7 @@ class RequestTestCase(unittest.TestCase):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
         )
+
         self.assertListEqual(
             list(res.keys()),
             [
@@ -1178,8 +1179,34 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
+
         # property added from provider queryables
         self.assertIn("s1:processing_level", res["properties"])
         # property updated with info from provider queryables
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
+
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    def test_product_type_queryables_from_constraints(self, mock_requests_constraints):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        mock_requests_constraints.return_value = MockResponse(
+            constraints, status_code=200
+        )
+        res = self._request_valid(
+            "collections/ERA5_SL/queryables?provider=cop_cds",
+            check_links=False,
+        )
+
+        mock_requests_constraints.assert_called_once_with(
+            "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
+            "reanalysis-era5-single-levels/constraints.json",
+            headers=USER_AGENT,
+            timeout=5,
+        )
+        self.assertEqual(10, len(res["properties"]))
+        self.assertIn("year", res["properties"])
+        self.assertIn("ids", res["properties"])
+        self.assertIn("geometry", res["properties"])
+        self.assertNotIn("collections", res["properties"])
