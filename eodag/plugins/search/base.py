@@ -21,9 +21,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import orjson
-
 from pydantic.fields import Field, FieldInfo
-from typing_extensions import Annotated
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
