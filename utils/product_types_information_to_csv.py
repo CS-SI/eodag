@@ -15,9 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import csv
 import os
 import re
+from typing import Any, Dict, List
 
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_default_config
@@ -29,8 +32,8 @@ DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH = os.path.join(
 
 
 def product_types_info_to_csv(
-    product_types_csv_file_path=DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH,
-):
+    product_types_csv_file_path: str = DEFAULT_PRODUCT_TYPES_CSV_FILE_PATH,
+) -> None:
     """Get product types metadata and their availability for providers, and writes it to a csv file
 
     :param product_types_csv_file_path: (optional) Path to product types information csv output file
@@ -53,13 +56,15 @@ def product_types_info_to_csv(
     dag = EODataAccessGateway()
 
     # restore os.environ
-    for k, v in os.environ.items():
+    for k, _ in os.environ.items():
         if eodag_env_pattern.match(k):
             os.environ.pop(k)
     os.environ.update(eodag_env_backup)
 
     product_types = dag.list_product_types(fetch_providers=False)
-    product_types_names = [product_type["ID"] for product_type in product_types]
+    product_types_names: List[str] = [
+        product_type["ID"] for product_type in product_types
+    ]
     metadata_params = list(k for k in product_types[0].keys() if k != "ID")
 
     # csv fieldnames
@@ -73,7 +78,7 @@ def product_types_info_to_csv(
         product_types_writer.writeheader()
 
         # create product types table rows
-        product_types_rows = {}
+        product_types_rows: Dict[str, Any] = {}
         for product_type_name in product_types_names:
             product_types_rows[product_type_name] = {"product type": product_type_name}
             for metadata_param in metadata_params:

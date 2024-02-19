@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG drivers package"""
-from eodag.api.product.drivers.base import NoDriver  # noqa
+from eodag.api.product.drivers.base import DatasetDriver, NoDriver  # noqa
 
 try:
     from eodag_cube.api.product.drivers import DRIVERS

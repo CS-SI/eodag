@@ -9,9 +9,9 @@ latitudeBand,,,,,,:green:`queryable metadata`,,,,,,,,,
 orderLink,,,,,,,,,,metadata only,,,,,
 polarizationChannels,metadata only,,,:green:`queryable metadata`,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,metadata only,,:green:`queryable metadata`,,metadata only,:green:`queryable metadata`
 polarizationMode,,,,,:green:`queryable metadata`,,metadata only,,,,:green:`queryable metadata`,,:green:`queryable metadata`,metadata only,
-quicklook,metadata only,,,,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
+quicklook,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 storageStatus,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-thumbnail,metadata only,,,,metadata only,metadata only,metadata only,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only
-tileIdentifier,,,,metadata only,metadata only,:green:`queryable metadata`,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
+thumbnail,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only,,,metadata only,metadata only,metadata only,metadata only,metadata only
+tileIdentifier,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
 uid,,,,metadata only,metadata only,,,,,metadata only,metadata only,,metadata only,metadata only,
 utmZone,,,,,,:green:`queryable metadata`,,,,,,,,,

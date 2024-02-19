@@ -15,7 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 from collections import UserList
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from shapely.geometry import GeometryCollection, shape
 
@@ -26,6 +29,11 @@ from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
 
+if TYPE_CHECKING:
+    from shapely.geometry.base import BaseGeometry
+
+    from eodag.plugins.crunch.base import Crunch
+
 
 class SearchResult(UserList):
     """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
@@ -34,10 +42,12 @@ class SearchResult(UserList):
     :type products: list(:class:`~eodag.api.product._product.EOProduct`)
     """
 
-    def __init__(self, products):
+    data: List[EOProduct]
+
+    def __init__(self, products: List[EOProduct]) -> None:
         super(SearchResult, self).__init__(products)
 
-    def crunch(self, cruncher, **search_params):
+    def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
 
         :param cruncher: The plugin instance to use to work on the products
@@ -47,24 +57,28 @@ class SearchResult(UserList):
         :returns: The result of the application of the crunching method to the EO products
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
-        crunched_results = cruncher.proceed(self, **search_params)
+        crunched_results = cruncher.proceed(self.data, **search_params)
         return SearchResult(crunched_results)
 
-    def filter_date(self, start=None, end=None):
+    def filter_date(
+        self, start: Optional[str] = None, end: Optional[str] = None
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_date.FilterDate` crunch,
         check its documentation to know more.
         """
         return self.crunch(FilterDate(dict(start=start, end=end)))
 
-    def filter_latest_intersect(self, geometry):
+    def filter_latest_intersect(
+        self, geometry: Union[Dict[str, Any], BaseGeometry, Any]
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect` crunch,
         check its documentation to know more.
         """
         return self.crunch(FilterLatestIntersect({}), geometry=geometry)
 
-    def filter_latest_by_name(self, name_pattern):
+    def filter_latest_by_name(self, name_pattern: str) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_latest_tpl_name.FilterLatestByName` crunch,
         check its documentation to know more.
@@ -73,12 +87,12 @@ class SearchResult(UserList):
 
     def filter_overlap(
         self,
-        geometry,
-        minimum_overlap=0,
-        contains=False,
-        intersects=False,
-        within=False,
-    ):
+        geometry: Any,
+        minimum_overlap: int = 0,
+        contains: bool = False,
+        intersects: bool = False,
+        within: bool = False,
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_overlap.FilterOverlap` crunch,
         check its documentation to know more.
@@ -95,14 +109,16 @@ class SearchResult(UserList):
             geometry=geometry,
         )
 
-    def filter_property(self, operator="eq", **search_property):
+    def filter_property(
+        self, operator: str = "eq", **search_property: Any
+    ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_property.FilterProperty` crunch,
         check its documentation to know more.
         """
         return self.crunch(FilterProperty(dict(operator=operator, **search_property)))
 
-    def filter_online(self):
+    def filter_online(self) -> SearchResult:
         """
         Use cruncher :class:`~eodag.plugins.crunch.filter_property.FilterProperty`,
         filter for online products.
@@ -110,7 +126,7 @@ class SearchResult(UserList):
         return self.filter_property(storageStatus="ONLINE")
 
     @staticmethod
-    def from_geojson(feature_collection):
+    def from_geojson(feature_collection: Dict[str, Any]) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
 
         :param feature_collection: A collection representing a search result.
@@ -119,18 +135,20 @@ class SearchResult(UserList):
         :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         return SearchResult(
-            EOProduct.from_geojson(feature)
-            for feature in feature_collection["features"]
+            [
+                EOProduct.from_geojson(feature)
+                for feature in feature_collection["features"]
+            ]
         )
 
-    def as_geojson_object(self):
+    def as_geojson_object(self) -> Dict[str, Any]:
         """GeoJSON representation of SearchResult"""
         return {
             "type": "FeatureCollection",
             "features": [product.as_dict() for product in self],
         }
 
-    def as_shapely_geometry_object(self):
+    def as_shapely_geometry_object(self) -> GeometryCollection:
         """:class:`shapely.geometry.GeometryCollection` representation of SearchResult"""
         return GeometryCollection(
             [
@@ -139,12 +157,12 @@ class SearchResult(UserList):
             ]
         )
 
-    def as_wkt_object(self):
+    def as_wkt_object(self) -> str:
         """WKT representation of SearchResult"""
         return self.as_shapely_geometry_object().wkt
 
     @property
-    def __geo_interface__(self):
+    def __geo_interface__(self) -> Dict[str, Any]:
         """Implements the geo-interface protocol.
 
         See https://gist.github.com/sgillies/2217756

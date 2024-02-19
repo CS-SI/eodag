@@ -59,21 +59,21 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             cls.providers_config,
             {
                 "provider_text_token_simple_url": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
                     },
                 },
                 "provider_text_token_format_url": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar?username={username}",
                     },
                 },
                 "provider_text_token_header": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
@@ -85,7 +85,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                     },
                 },
                 "provider_json_token_simple_url": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "TokenAuth",
                         "auth_uri": "http://foo.bar",
@@ -209,7 +209,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
             cls.providers_config,
             {
                 "foo_provider": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "HttpQueryStringAuth",
                         "auth_uri": "http://foo.bar",
@@ -289,7 +289,7 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
             cls.providers_config,
             {
                 "foo_provider": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "SASAuth",
                         "auth_uri": "http://foo.bar?href={url}",
@@ -408,7 +408,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             cls.providers_config,
             {
                 "foo_provider": {
-                    "products": {},
+                    "products": {"foo_product": {}},
                     "auth": {
                         "type": "KeycloakOIDCPasswordAuth",
                         "auth_base_uri": "http://foo.bar",

@@ -15,12 +15,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from eodag.api.product import EOProduct
 
 
 class DatasetDriver(metaclass=type):
     """Dataset driver"""
 
-    def get_data_address(self, eo_product, band):
+    def get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Retrieve the address of the dataset represented by `eo_product`.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved

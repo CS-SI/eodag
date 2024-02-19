@@ -17,10 +17,12 @@
 # limitations under the License.
 import unittest
 
+import orjson
 from jsonpath_ng.ext import parse
 from lxml import etree
 from shapely import wkt
 
+from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from tests.context import (
     NOT_AVAILABLE,
     format_metadata,
@@ -490,6 +492,18 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, date="2023-01-31T00:00"), str(expected_result)
         )
 
+    def test_convert_interval_to_datetime_dict(self):
+        to_format = "{date#interval_to_datetime_dict}"
+        formated = format_metadata(to_format, date="2023-01-31T00:00/2023-02-03T00:00")
+        expected_result = {
+            "year": ["2023"],
+            "month": ["01", "02"],
+            "day": ["31", "01", "02", "03"],
+        }
+        formated_dict = orjson.loads(formated.replace("'", '"'))
+        for k in expected_result.keys():
+            self.assertCountEqual(formated_dict[k], expected_result[k])
+
     def test_convert_get_ecmwf_time(self):
         to_format = "{date#get_ecmwf_time}"
         self.assertEqual(
@@ -514,3 +528,45 @@ class TestMetadataFormatter(unittest.TestCase):
                 {"startDate": "2023-10-19T00:00:00Z", "endDate": "2023-10-20T00:00:00Z"}
             ),
         )
+
+
+class TestMetadataMappingFunctions(unittest.TestCase):
+    def test_get_provider_queryable_key(self):
+        metadata_mapping = {
+            "id": "id",
+            "startTimeFromAscendingNode": [
+                "datetime: {startTimeFromAscendingNode}",
+                "$.datetime",
+            ],
+            "api_product_type": ["productType", "$.properties.productType"],
+            "variable": ["variable", "$.variable"],
+            "variable_type": ["variable_type", "$.variable_type"],
+        }
+        provider_queryables = {
+            "datetime": {"type": "str", "description": "datetime"},
+            "id": {"type": "str"},
+            "productType": {"type": "str"},
+            "level": {"type": int},
+            "variable": {"type": "str"},
+            "variable_type": {"type": "str"},
+        }
+        provider_key = get_provider_queryable_key(
+            "startTimeFromAscendingNode", provider_queryables, metadata_mapping
+        )
+        self.assertEqual("datetime", provider_key)
+        provider_key = get_provider_queryable_key(
+            "api_product_type", provider_queryables, metadata_mapping
+        )
+        self.assertEqual("productType", provider_key)
+        provider_key = get_provider_queryable_key(
+            "id", provider_queryables, metadata_mapping
+        )
+        self.assertEqual("id", provider_key)
+        provider_key = get_provider_queryable_key(
+            "variable_type", provider_queryables, metadata_mapping
+        )
+        self.assertEqual("variable_type", provider_key)
+        provider_key = get_provider_queryable_key(
+            "variable", provider_queryables, metadata_mapping
+        )
+        self.assertEqual("variable", provider_key)

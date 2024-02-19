@@ -13,6 +13,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Sentinel products
 * `aws_eos <https://eos.com/>`_: EOS search for Amazon public datasets
 * `creodias <https://creodias.eu/>`_: CloudFerro DIAS
+* `creodias_s3 <https://creodias.eu/>`_: CloudFerro DIAS data through S3 protocol
 * `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS
 * `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 * `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api/>`_: USGS Landsatlook SAT API

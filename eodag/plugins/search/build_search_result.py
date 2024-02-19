@@ -15,20 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import hashlib
 import logging
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote_plus, unquote_plus
 
 import geojson
 import orjson
 from jsonpath_ng import Fields
 
 from eodag.api.product import EOProduct
-from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
-    NOT_MAPPED,
-    properties_from_json,
-)
+from eodag.api.product.metadata_mapping import properties_from_json
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.utils import dict_items_recursive_sort
 
@@ -61,18 +60,26 @@ class BuildPostSearchResult(PostJsonSearch):
     :type config: str
     """
 
-    def count_hits(self, count_url=None, result_type=None):
+    def count_hits(
+        self, count_url: Optional[str] = None, result_type: Optional[str] = None
+    ) -> int:
         """Count method that will always return 1."""
         return 1
 
-    def collect_search_urls(self, page=None, items_per_page=None, count=True, **kwargs):
+    def collect_search_urls(
+        self,
+        page: Optional[int] = None,
+        items_per_page: Optional[int] = None,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
         urls, _ = super(BuildPostSearchResult, self).collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )
         return urls, 1
 
-    def do_search(self, *args, **kwargs):
+    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Perform the actual search request, and return result in a single element."""
         search_url = self.search_urls[0]
         response = self._request(
@@ -83,7 +90,9 @@ class BuildPostSearchResult(PostJsonSearch):
         )
         return [response.json()]
 
-    def normalize_results(self, results, **kwargs):
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list
@@ -97,22 +106,39 @@ class BuildPostSearchResult(PostJsonSearch):
 
         result = results[0]
 
-        # update result with query parameters without pagination (or search-only params)
-        if isinstance(self.config.pagination["next_page_query_obj"], str) and hasattr(
-            self, "query_params_unpaginated"
-        ):
-            unpaginated_query_params = self.query_params_unpaginated
-        elif isinstance(self.config.pagination["next_page_query_obj"], str):
-            next_page_query_obj = orjson.loads(
-                self.config.pagination["next_page_query_obj"].format()
+        # datacube query string got from previous search
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            unpaginated_query_params = sorted_unpaginated_query_params = geojson.loads(
+                qs
             )
-            unpaginated_query_params = {
-                k: v
-                for k, v in self.query_params.items()
-                if (k, v) not in next_page_query_obj.items()
-            }
         else:
-            unpaginated_query_params = self.query_params
+            # update result with query parameters without pagination (or search-only params)
+            if isinstance(
+                self.config.pagination["next_page_query_obj"], str
+            ) and hasattr(self, "query_params_unpaginated"):
+                unpaginated_query_params = self.query_params_unpaginated
+            elif isinstance(self.config.pagination["next_page_query_obj"], str):
+                next_page_query_obj = orjson.loads(
+                    self.config.pagination["next_page_query_obj"].format()
+                )
+                unpaginated_query_params = {
+                    k: v[0] if (isinstance(v, list) and len(v) == 1) else v
+                    for k, v in self.query_params.items()
+                    if (k, v) not in next_page_query_obj.items()
+                }
+            else:
+                unpaginated_query_params = self.query_params
+
+            # query hash, will be used to build a product id
+            sorted_unpaginated_query_params = dict_items_recursive_sort(
+                unpaginated_query_params
+            )
+            qs = geojson.dumps(sorted_unpaginated_query_params)
+
+        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+
         result = dict(result, **unpaginated_query_params)
 
         # update result with search args if not None (and not auth)
@@ -129,20 +155,6 @@ class BuildPostSearchResult(PostJsonSearch):
         if not product_type:
             product_type = parsed_properties.get("productType", None)
 
-        # filter available mapped properties
-        product_available_properties = {
-            k: v
-            for (k, v) in parsed_properties.items()
-            if v not in (NOT_AVAILABLE, NOT_MAPPED)
-        }
-
-        # query hash, will be used to build a product id
-        sorted_unpaginated_query_params = dict_items_recursive_sort(
-            unpaginated_query_params
-        )
-        qs = geojson.dumps(sorted_unpaginated_query_params)
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
-
         # build product id
         id_prefix = (product_type or self.provider).upper()
         product_id = "%s_%s_%s" % (
@@ -152,30 +164,29 @@ class BuildPostSearchResult(PostJsonSearch):
             .replace("-", ""),
             query_hash,
         )
-        product_available_properties["id"] = product_available_properties[
-            "title"
-        ] = product_id
+        parsed_properties["id"] = parsed_properties["title"] = product_id
 
         # update downloadLink
-        product_available_properties["downloadLink"] += f"?{qs}"
+        parsed_properties["downloadLink"] += f"?{qs}"
+        parsed_properties["_dc_qs"] = quote_plus(qs)
 
         # parse metadata needing downloadLink
         for param, mapping in self.config.metadata_mapping.items():
             if Fields("downloadLink") in mapping:
-                product_available_properties.update(
-                    properties_from_json(product_available_properties, {param: mapping})
+                parsed_properties.update(
+                    properties_from_json(parsed_properties, {param: mapping})
                 )
 
         # use product_type_config as default properties
-        product_available_properties = dict(
+        parsed_properties = dict(
             getattr(self.config, "product_type_config", {}),
-            **product_available_properties,
+            **parsed_properties,
         )
 
         product = EOProduct(
             provider=self.provider,
             productType=product_type,
-            properties=product_available_properties,
+            properties=parsed_properties,
         )
 
         return [

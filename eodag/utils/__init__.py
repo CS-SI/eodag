@@ -20,6 +20,8 @@
 Everything that does not fit into one of the specialised categories of utilities in
 this package should go here
 """
+from __future__ import annotations
+
 import ast
 import datetime
 import errno
@@ -36,11 +38,25 @@ import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
+from datetime import datetime as dt
 from email.message import Message
 from glob import glob
+from importlib.metadata import metadata
 from itertools import repeat, starmap
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 # All modules using these should import them from utils package
 from urllib.parse import (  # noqa; noqa
@@ -52,9 +68,14 @@ from urllib.parse import (  # noqa; noqa
     urljoin,
     urlparse,
     urlsplit,
-    urlunparse,
 )
 from urllib.request import url2pathname
+
+try:
+    from typing import Annotated, get_args, get_origin  # noqa
+except ImportError:
+    # for python < 3.9
+    from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
 
 import click
 import orjson
@@ -66,7 +87,7 @@ from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
-from requests.auth import AuthBase
+from requests import HTTPError
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import BaseGeometry
 from tqdm.auto import tqdm
@@ -74,11 +95,11 @@ from tqdm.auto import tqdm
 from eodag.utils import logging as eodag_logging
 from eodag.utils.exceptions import MisconfiguredError
 
-try:
-    from importlib.metadata import metadata  # type: ignore
-except ImportError:  # pragma: no cover
-    # for python < 3.8
-    from importlib_metadata import metadata  # type: ignore
+if TYPE_CHECKING:
+    from jsonpath_ng import JSONPath
+
+    from eodag.api.product import EOProduct
+
 
 logger = py_logging.getLogger("eodag.utils")
 
@@ -92,12 +113,23 @@ USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 HTTP_REQ_TIMEOUT = 5  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
+# default wait times in minutes
+DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
+DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
+
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
 ARRAY_FIELD_MATCH = re.compile(r"^[a-zA-Z0-9-_:]+(\[[0-9\*]+\])+$")
 
+# pagination defaults
+DEFAULT_PAGE = 1
+DEFAULT_ITEMS_PER_PAGE = 20
+# Default maximum number of items per page requested by search_all. 50 instead of 20
+# (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
+DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
-def _deprecated(reason="", version=None):
+
+def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
     """Simple decorator to mark functions/methods/classes as deprecated.
 
     Warning: Does not work with staticmethods!
@@ -109,8 +141,7 @@ def _deprecated(reason="", version=None):
     DeprecationWarning: Call to deprecated function/method foo (why) -- Deprecated since v1.2
     """
 
-    def decorator(callable):
-
+    def decorator(callable: Callable[..., Any]) -> Any:
         if inspect.isclass(callable):
             ctype = "class"
         else:
@@ -120,7 +151,7 @@ def _deprecated(reason="", version=None):
         version_ = f" -- Deprecated since v{version}" if version else ""
 
         @functools.wraps(callable)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             with warnings.catch_warnings():
                 warnings.simplefilter("always", DeprecationWarning)
                 warnings.warn(
@@ -135,39 +166,6 @@ def _deprecated(reason="", version=None):
     return decorator
 
 
-class RequestsTokenAuth(AuthBase):
-    """A custom authentication class to be used with requests module"""
-
-    def __init__(self, token, where, qs_key=None, headers=None):
-        self.token = token
-        self.where = where
-        self.qs_key = qs_key
-        self.headers = headers
-
-    def __call__(self, request):
-        """Perform the actual authentication"""
-        if self.headers and isinstance(self.headers, dict):
-            for k, v in self.headers.items():
-                request.headers[k] = v
-        if self.where == "qs":
-            parts = urlparse(request.url)
-            qs = parse_qs(parts.query)
-            qs[self.qs_key] = self.token
-            request.url = urlunparse(
-                (
-                    parts.scheme,
-                    parts.netloc,
-                    parts.path,
-                    parts.params,
-                    urlencode(qs),
-                    parts.fragment,
-                )
-            )
-        elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
-        return request
-
-
 class FloatRange(click.types.FloatParamType):
     """A parameter that works similar to :data:`click.FLOAT` but restricts the
     value to fit into a range. Fails if the value doesn't fit into the range.
@@ -175,11 +173,18 @@ class FloatRange(click.types.FloatParamType):
 
     name = "percentage"
 
-    def __init__(self, min=None, max=None):
+    def __init__(
+        self, min: Optional[float] = None, max: Optional[float] = None
+    ) -> None:
         self.min = min
         self.max = max
 
-    def convert(self, value, param, ctx):
+    def convert(
+        self,
+        value: Any,
+        param: Optional[click.core.Parameter],
+        ctx: Optional[click.core.Context],
+    ) -> Any:
         """Convert value"""
         rv = click.types.FloatParamType.convert(self, value, param, ctx)
         if (
@@ -210,11 +215,11 @@ class FloatRange(click.types.FloatParamType):
                 )
         return rv
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "FloatRange(%r, %r)" % (self.min, self.max)
 
 
-def slugify(value, allow_unicode=False):
+def slugify(value: Any, allow_unicode: bool = False) -> str:
     """Copied from Django Source code, only modifying last line (no need for safe
     strings).
     source: https://github.com/django/django/blob/master/django/utils/text.py
@@ -236,7 +241,7 @@ def slugify(value, allow_unicode=False):
     return re.sub(r"[-\s]+", "-", value)
 
 
-def sanitize(value):
+def sanitize(value: str) -> str:
     """Sanitize string to be used as a name of a directory.
 
     >>> sanitize('productName')
@@ -260,7 +265,7 @@ def sanitize(value):
     return str(rv)
 
 
-def strip_accents(s):
+def strip_accents(s: str) -> str:
     """Strip accents of a string.
 
     >>> strip_accents('productName')
@@ -270,13 +275,13 @@ def strip_accents(s):
     >>> strip_accents('preserve-punct-special-chars:;,?!§%$£œ')
     'preserve-punct-special-chars:;,?!§%$£œ'
     """
-    # Mn stands for a nonspacing combining mark (e.g. '́')
+    # Mn stands for a nonspacing combining mark
     return "".join(
         c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
     )
 
 
-def uri_to_path(uri):
+def uri_to_path(uri: str) -> str:
     """
     Convert a file URI (e.g. 'file:///tmp') to a local path (e.g. '/tmp')
     """
@@ -289,12 +294,12 @@ def uri_to_path(uri):
     return path
 
 
-def path_to_uri(path):
+def path_to_uri(path: str) -> str:
     """Convert a local absolute path to a file URI"""
     return Path(path).as_uri()
 
 
-def mutate_dict_in_place(func, mapping):
+def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) -> None:
     """Apply func to values of mapping.
 
     The mapping object's values are modified in-place. The function is recursive,
@@ -314,7 +319,7 @@ def mutate_dict_in_place(func, mapping):
             mapping[key] = func(value)
 
 
-def merge_mappings(mapping1, mapping2):
+def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
     """Merge two mappings with string keys, values from `mapping2` overriding values
     from `mapping1`.
 
@@ -368,29 +373,9 @@ def merge_mappings(mapping1, mapping2):
                         and current_value_type == list
                     ):
                         mapping1[m1_keys_lowercase.get(key, key)] = value
-                    elif isinstance(value, str):
-                        # Bool is a type with special meaning in Python, thus the special
-                        # case
-                        if current_value_type is bool:
-                            if value.capitalize() not in ("True", "False"):
-                                raise ValueError(
-                                    "Only true or false strings (case insensitive) are "
-                                    "allowed for booleans"
-                                )
-                            # Get the real Python value of the boolean. e.g: value='tRuE'
-                            # => eval(value.capitalize())=True.
-                            # str.capitalize() transforms the first character of the string
-                            # to a capital letter
-                            mapping1[m1_keys_lowercase.get(key, key)] = eval(
-                                value.capitalize()
-                            )
-                        else:
-                            mapping1[
-                                m1_keys_lowercase.get(key, key)
-                            ] = current_value_type(value)
                     else:
-                        mapping1[m1_keys_lowercase.get(key, key)] = current_value_type(
-                            value
+                        mapping1[m1_keys_lowercase.get(key, key)] = cast_scalar_value(
+                            value, current_value_type
                         )
                 except (TypeError, ValueError):
                     # Ignore any override value that does not have the same type
@@ -404,7 +389,7 @@ def merge_mappings(mapping1, mapping2):
                 mapping1[key] = value
 
 
-def maybe_generator(obj):
+def maybe_generator(obj: Any) -> Iterator[Any]:
     """Generator function that get an arbitrary object and generate values from it if
     the object is a generator."""
     if isinstance(obj, types.GeneratorType):
@@ -414,7 +399,7 @@ def maybe_generator(obj):
         yield obj
 
 
-def get_timestamp(date_time):
+def get_timestamp(date_time: str) -> float:
     """Return the Unix timestamp of an ISO8601 date/datetime in seconds.
 
     If the datetime has no offset, it is assumed to be an UTC datetime.
@@ -430,7 +415,7 @@ def get_timestamp(date_time):
     return dt.timestamp()
 
 
-def datetime_range(start, end):
+def datetime_range(start: dt, end: dt) -> Iterator[dt]:
     """Generator function for all dates in-between start and end date."""
     delta = end - start
     for nday in range(delta.days + 1):
@@ -440,7 +425,7 @@ def datetime_range(start, end):
 class DownloadedCallback:
     """Example class for callback after each download in :meth:`~eodag.api.core.EODataAccessGateway.download_all`"""
 
-    def __call__(self, product):
+    def __call__(self, product: EOProduct) -> None:
         """Callback
 
         :param product: The downloaded EO product
@@ -463,7 +448,7 @@ class ProgressCallback(tqdm):
     individually disabled using `disable=True`.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.kwargs = kwargs.copy()
         if "unit" not in kwargs:
             kwargs["unit"] = "B"
@@ -480,7 +465,7 @@ class ProgressCallback(tqdm):
 
         super(ProgressCallback, self).__init__(*args, **kwargs)
 
-    def __call__(self, increment, total=None):
+    def __call__(self, increment: int, total: Optional[int] = None) -> None:
         """Update the progress bar.
 
         :param increment: Amount of data already processed
@@ -493,7 +478,7 @@ class ProgressCallback(tqdm):
 
         self.update(increment)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args: Any, **kwargs: Any) -> ProgressCallback:
         """Returns another progress callback using the same initial
         keyword-arguments.
 
@@ -513,18 +498,18 @@ class NotebookProgressCallback(tqdm):
 
 
 @_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-def get_progress_callback():
+def get_progress_callback() -> tqdm:
     """Get progress_callback"""
 
     return tqdm()
 
 
-def repeatfunc(func, n, *args):
+def repeatfunc(func: Callable[..., Any], n: int, *args: Any) -> starmap:
     """Call `func` `n` times with `args`"""
     return starmap(func, repeat(args, n))
 
 
-def makedirs(dirpath):
+def makedirs(dirpath: str) -> None:
     """Create a directory in filesystem with parents if necessary"""
     try:
         os.makedirs(dirpath)
@@ -534,7 +519,7 @@ def makedirs(dirpath):
             raise
 
 
-def rename_subfolder(dirpath, name):
+def rename_subfolder(dirpath: str, name: str) -> None:
     """Rename first subfolder found in dirpath with given name,
     raise RuntimeError if no subfolder can be found
 
@@ -578,7 +563,9 @@ def rename_subfolder(dirpath, name):
     )
 
 
-def format_dict_items(config_dict, **format_variables):
+def format_dict_items(
+    config_dict: Dict[str, Any], **format_variables: Any
+) -> Dict[Any, Any]:
     r"""Recursive apply string.format(\**format_variables) to dict elements
 
     >>> format_dict_items(
@@ -597,7 +584,9 @@ def format_dict_items(config_dict, **format_variables):
     return dict_items_recursive_apply(config_dict, format_string, **format_variables)
 
 
-def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
+def jsonpath_parse_dict_items(
+    jsonpath_dict: Dict[str, Any], values_dict: Dict[str, Any]
+) -> Dict[Any, Any]:
     """Recursive parse jsonpath elements in dict
 
     >>> import jsonpath_ng.ext as jsonpath
@@ -618,12 +607,12 @@ def jsonpath_parse_dict_items(jsonpath_dict, values_dict):
 
 
 def update_nested_dict(
-    old_dict,
-    new_dict,
-    extend_list_values=False,
-    allow_empty_values=False,
-    allow_extend_duplicates=True,
-):
+    old_dict: Dict[Any, Any],
+    new_dict: Dict[Any, Any],
+    extend_list_values: bool = False,
+    allow_empty_values: bool = False,
+    allow_extend_duplicates: bool = True,
+) -> Dict[Any, Any]:
     """Update recursively old_dict items with new_dict ones
 
     >>> update_nested_dict(
@@ -707,7 +696,11 @@ def update_nested_dict(
     return old_dict
 
 
-def items_recursive_apply(input_obj, apply_method, **apply_method_parameters):
+def items_recursive_apply(
+    input_obj: Union[Dict[Any, Any], List[Any]],
+    apply_method: Callable[..., Any],
+    **apply_method_parameters: Any,
+) -> Union[Dict[Any, Any], List[Any]]:
     """Recursive apply method to items contained in input object (dict or list)
 
     >>> items_recursive_apply(
@@ -748,7 +741,11 @@ def items_recursive_apply(input_obj, apply_method, **apply_method_parameters):
         return input_obj
 
 
-def dict_items_recursive_apply(config_dict, apply_method, **apply_method_parameters):
+def dict_items_recursive_apply(
+    config_dict: Dict[Any, Any],
+    apply_method: Callable[..., Any],
+    **apply_method_parameters: Any,
+) -> Dict[Any, Any]:
     """Recursive apply method to dict elements
 
     >>> dict_items_recursive_apply(
@@ -766,7 +763,7 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
     :returns: Updated dict
     :rtype: dict
     """
-    result_dict = deepcopy(config_dict)
+    result_dict: Dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_apply(
@@ -784,7 +781,11 @@ def dict_items_recursive_apply(config_dict, apply_method, **apply_method_paramet
     return result_dict
 
 
-def list_items_recursive_apply(config_list, apply_method, **apply_method_parameters):
+def list_items_recursive_apply(
+    config_list: List[Any],
+    apply_method: Callable[..., Any],
+    **apply_method_parameters: Any,
+) -> List[Any]:
     """Recursive apply method to list elements
 
     >>> list_items_recursive_apply(
@@ -820,7 +821,9 @@ def list_items_recursive_apply(config_list, apply_method, **apply_method_paramet
     return result_list
 
 
-def items_recursive_sort(input_obj):
+def items_recursive_sort(
+    input_obj: Union[List[Any], Dict[Any, Any]]
+) -> Union[List[Any], Dict[Any, Any]]:
     """Recursive sort dict items contained in input object (dict or list)
 
     >>> items_recursive_sort(
@@ -846,7 +849,7 @@ def items_recursive_sort(input_obj):
         return input_obj
 
 
-def dict_items_recursive_sort(config_dict):
+def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     """Recursive sort dict elements
 
     >>> dict_items_recursive_sort(
@@ -859,7 +862,7 @@ def dict_items_recursive_sort(config_dict):
     :returns: Updated dict
     :rtype: dict
     """
-    result_dict = deepcopy(config_dict)
+    result_dict: Dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_sort(dict_v)
@@ -871,7 +874,7 @@ def dict_items_recursive_sort(config_dict):
     return dict(sorted(result_dict.items()))
 
 
-def list_items_recursive_sort(config_list):
+def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
     """Recursive sort dicts in list elements
 
     >>> list_items_recursive_sort(["b", {2: 0, 0: 1, 1: 2}])
@@ -882,7 +885,7 @@ def list_items_recursive_sort(config_list):
     :returns: Updated list
     :rtype: list
     """
-    result_list = deepcopy(config_list)
+    result_list: List[Any] = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_sort(list_v)
@@ -894,7 +897,7 @@ def list_items_recursive_sort(config_list):
     return result_list
 
 
-def string_to_jsonpath(*args, force=False):
+def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     """Get jsonpath for "$.foo.bar" like string
 
     >>> string_to_jsonpath(None, "$.foo.bar")
@@ -913,9 +916,9 @@ def string_to_jsonpath(*args, force=False):
     :param force: force conversion even if input string is not detected as a jsonpath
     :type force: bool
     :returns: Parsed value
-    :rtype: str
+    :rtype: str or Child or Root
     """
-    path_str = args[-1]
+    path_str: str = args[-1]
     if JSONPATH_MATCH.match(str(path_str)) or force:
         try:
             common_jsonpath = "$"
@@ -934,7 +937,7 @@ def string_to_jsonpath(*args, force=False):
                         indexed_path = indexed_path_and_indexes[0]
                         parsed_path = Child(parsed_path, Fields(indexed_path))
                         for idx in range(len(indexed_path_and_indexes) - 1):
-                            index = (
+                            index: Union[int, str] = (
                                 indexed_path_and_indexes[idx + 1][:-1]
                                 if idx < len(indexed_path_and_indexes) - 2
                                 else indexed_path_and_indexes[idx + 1]
@@ -974,7 +977,7 @@ def string_to_jsonpath(*args, force=False):
         return path_str
 
 
-def format_string(key, str_to_format, **format_variables):
+def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
     """Format "{foo}" like string
 
     >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
@@ -987,33 +990,35 @@ def format_string(key, str_to_format, **format_variables):
     :returns: Parsed value
     :rtype: str
     """
-    if isinstance(str_to_format, str):
-        # eodag mappings function usage, e.g. '{foo#to_bar}'
-        COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
-        if COMPLEX_QS_REGEX.match(str_to_format) and "#" in str_to_format:
-            from eodag.api.product.metadata_mapping import format_metadata
-
-            result = format_metadata(str_to_format, **format_variables)
-
-        else:
-            # defaultdict usage will return "" for missing keys in format_args
-            try:
-                result = str_to_format.format_map(defaultdict(str, **format_variables))
-            except TypeError as e:
-                raise MisconfiguredError(
-                    f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
-                )
-
-        # try to convert string to python object
-        try:
-            return ast.literal_eval(result)
-        except (SyntaxError, ValueError):
-            return result
-    else:
+    if not isinstance(str_to_format, str):
         return str_to_format
 
+    # eodag mappings function usage, e.g. '{foo#to_bar}'
+    COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
+    if COMPLEX_QS_REGEX.match(str_to_format) and "#" in str_to_format:
+        from eodag.api.product.metadata_mapping import format_metadata
 
-def parse_jsonpath(key, jsonpath_obj, **values_dict):
+        result = format_metadata(str_to_format, **format_variables)
+
+    else:
+        # defaultdict usage will return "" for missing keys in format_args
+        try:
+            result = str_to_format.format_map(defaultdict(str, **format_variables))
+        except TypeError as e:
+            raise MisconfiguredError(
+                f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
+            )
+
+    # try to convert string to python object
+    try:
+        return ast.literal_eval(result)
+    except (SyntaxError, ValueError):
+        return result
+
+
+def parse_jsonpath(
+    key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: Dict[str, Any]
+) -> Optional[str]:
     """Parse jsonpah in jsonpath_obj using values_dict
 
     >>> import jsonpath_ng.ext as jsonpath
@@ -1023,7 +1028,7 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
     :param key: Input item key
     :type key: str
     :param jsonpath_obj: Input item value, to be parsed
-    :type jsonpath_obj: str
+    :type jsonpath_obj: str or jsonpath.Child
     :param values_dict: Values used as args for parsing
     :type values_dict: dict
     :returns: Parsed value
@@ -1036,16 +1041,16 @@ def parse_jsonpath(key, jsonpath_obj, **values_dict):
         return jsonpath_obj
 
 
-def nested_pairs2dict(pairs):
+def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]]:
     """Create a dict using nested pairs
 
     >>> nested_pairs2dict([["foo", [["bar", "baz"]]]])
     {'foo': {'bar': 'baz'}}
 
     :param pairs: Pairs of key / value
-    :type pairs: list
+    :type pairs: list or Any
     :returns: Created dict
-    :rtype: dict
+    :rtype: dict or Any
     """
     d = {}
     try:
@@ -1059,7 +1064,9 @@ def nested_pairs2dict(pairs):
     return d
 
 
-def get_geometry_from_various(locations_config=[], **query_args):
+def get_geometry_from_various(
+    locations_config: List[Dict[str, Any]] = [], **query_args: Any
+) -> BaseGeometry:
     """Creates a shapely geometry using given query kwargs arguments
 
     :param locations_config: (optional) EODAG locations configuration
@@ -1147,17 +1154,22 @@ def get_geometry_from_various(locations_config=[], **query_args):
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data, status_code):
+    def __init__(self, json_data: Any, status_code: int) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
 
-    def json(self):
+    def json(self) -> Any:
         """Return json data"""
         return self.json_data
 
+    def raise_for_status(self) -> None:
+        """raises an exception when the status is not ok"""
+        if self.status_code != 200:
+            raise HTTPError()
 
-def md5sum(file_path):
+
+def md5sum(file_path: str) -> str:
     """Get file MD5 checksum
 
     >>> import os
@@ -1176,7 +1188,7 @@ def md5sum(file_path):
     return hash_md5.hexdigest()
 
 
-def obj_md5sum(data):
+def obj_md5sum(data: Any) -> str:
     """Get MD5 checksum from JSON serializable object
 
     >>> obj_md5sum(None)
@@ -1191,7 +1203,7 @@ def obj_md5sum(data):
 
 
 @functools.lru_cache()
-def cached_parse(str_to_parse):
+def cached_parse(str_to_parse: str) -> JSONPath:
     """Cached jsonpath_ng.ext.parse
 
     >>> cached_parse.cache_clear()
@@ -1217,12 +1229,12 @@ def cached_parse(str_to_parse):
 
 
 @functools.lru_cache()
-def _mutable_cached_yaml_load(config_path):
+def _mutable_cached_yaml_load(config_path: str) -> Any:
     with open(os.path.abspath(os.path.realpath(config_path)), "r") as fh:
         return yaml.load(fh, Loader=yaml.SafeLoader)
 
 
-def cached_yaml_load(config_path):
+def cached_yaml_load(config_path: str) -> Dict[str, Any]:
     """Cached yaml.load
 
     :param config_path: path to the yaml configuration file
@@ -1234,12 +1246,12 @@ def cached_yaml_load(config_path):
 
 
 @functools.lru_cache()
-def _mutable_cached_yaml_load_all(config_path):
+def _mutable_cached_yaml_load_all(config_path: str) -> List[Any]:
     with open(config_path, "r") as fh:
         return list(yaml.load_all(fh, Loader=yaml.Loader))
 
 
-def cached_yaml_load_all(config_path):
+def cached_yaml_load_all(config_path: str) -> List[Any]:
     """Cached yaml.load_all
 
     Load all configurations stored in the configuration file as separated yaml documents
@@ -1252,7 +1264,9 @@ def cached_yaml_load_all(config_path):
     return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
 
 
-def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
+def get_bucket_name_and_prefix(
+    url: str, bucket_path_level: Optional[int] = None
+) -> Tuple[Optional[str], Optional[str]]:
     """Extract bucket name and prefix from URL
 
     :param url: (optional) URL to use as product.location
@@ -1264,7 +1278,7 @@ def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
     """
     bucket, prefix = None, None
 
-    scheme, netloc, path, params, query, fragment = urlparse(url)
+    scheme, netloc, path, _, _, _ = urlparse(url)
     subdomain = netloc.split(".")[0]
     path = path.strip("/")
 
@@ -1282,7 +1296,9 @@ def get_bucket_name_and_prefix(url=None, bucket_path_level=None):
     return bucket, prefix
 
 
-def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
+def flatten_top_directories(
+    nested_dir_root: str, common_subdirs_path: Optional[str] = None
+) -> None:
     """Flatten directory structure, removing common empty sub-directories
 
     :param nested_dir_root: Absolute path of the directory structure to flatten
@@ -1305,7 +1321,7 @@ def flatten_top_directories(nested_dir_root, common_subdirs_path=None):
         shutil.move(tmp_path, nested_dir_root)
 
 
-def deepcopy(sth):
+def deepcopy(sth: Any) -> Any:
     """Customized and faster deepcopy inspired by https://stackoverflow.com/a/45858907
     `_copy_list` and `_copy_dict` available for the moment
 
@@ -1314,9 +1330,11 @@ def deepcopy(sth):
     :returns: Copied object
     :rtype: Any
     """
-    _dispatcher = {}
+    _dispatcher: Dict[Type[Any], Callable[..., Any]] = {}
 
-    def _copy_list(input_list, dispatch):
+    def _copy_list(
+        input_list: List[Any], dispatch: Dict[Type[Any], Callable[..., Any]]
+    ):
         ret = input_list.copy()
         for idx, item in enumerate(ret):
             cp = dispatch.get(type(item))
@@ -1324,7 +1342,9 @@ def deepcopy(sth):
                 ret[idx] = cp(item, dispatch)
         return ret
 
-    def _copy_dict(input_dict, dispatch):
+    def _copy_dict(
+        input_dict: Dict[Any, Any], dispatch: Dict[Type[Any], Callable[..., Any]]
+    ):
         ret = input_dict.copy()
         for key, value in ret.items():
             cp = dispatch.get(type(value))
@@ -1342,7 +1362,7 @@ def deepcopy(sth):
         return cp(sth, _dispatcher)
 
 
-def parse_header(header):
+def parse_header(header: str) -> Message:
     """Parse HTTP header
 
     >>> parse_header(
@@ -1358,3 +1378,34 @@ def parse_header(header):
     m = Message()
     m["content-type"] = header
     return m
+
+
+def cast_scalar_value(value: Any, new_type: Any) -> Any:
+    """Convert a scalar (not nested) value type to the given one
+
+    >>> cast_scalar_value('1', int)
+    1
+    >>> cast_scalar_value(1, str)
+    '1'
+    >>> cast_scalar_value('false', bool)
+    False
+
+    :param value: the scalar value to convert
+    :param new_type: the wanted type
+    :returns: scalar value converted to new_type
+    """
+    if isinstance(value, str) and new_type is bool:
+        # Bool is a type with special meaning in Python, thus the special
+        # case
+        if value.capitalize() not in ("True", "False"):
+            raise ValueError(
+                "Only true or false strings (case insensitive) are "
+                "allowed for booleans"
+            )
+        # Get the real Python value of the boolean. e.g: value='tRuE'
+        # => eval(value.capitalize())=True.
+        # str.capitalize() transforms the first character of the string
+        # to a capital letter
+        return eval(value.capitalize())
+
+    return new_type(value)

@@ -850,9 +850,6 @@
     S2_MSI_L1C:
       collection: S2ST
       productType: S2MSI1C
-    S2_MSI_L2A:
-      collection: S2ST
-      productType: S2MSI2A
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
@@ -980,14 +977,16 @@
       id:
         - 'productIdentifier=%{id#remove_extension}%'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier: '$.null'
+      tileIdentifier:
+        - tileId
+        - '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
         # - '$.geometry'
         - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
       # The url of the quicklook
-      quicklook: '$.properties.quicklook'
+      quicklook: '$.properties.thumbnail'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/download/{uid}'
@@ -1520,6 +1519,9 @@
     type: StacSearch
     api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
     need_auth: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # 2021/03/19: The docs (https://eod-catalog-svc-prod.astraea.earth/api.html#operation/getSearchSTAC)
       # say the max is 10_000. In practice 1_000 products are returned if more are asked (even greater
@@ -1637,6 +1639,9 @@
     type: StacSearch
     api_endpoint: https://landsatlook.usgs.gov/stac-server/search
     need_auth: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # 2021/03/19: no more than 10_000 (if greater, returns a 500 error code)
       # but in practive if an Internal Server Error is returned for more than
@@ -1679,10 +1684,13 @@
   url: https://www.element84.com/earth-search/
   search: !plugin
     type: StacSearch
-    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
     discover_product_types:
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1695,28 +1703,30 @@
       max_items_per_page: 500
     metadata_mapping:
       utmZone:
-        - '{{"query":{{"sentinel:utm_zone":{{"eq":"{utmZone}"}}}}}}'
-        - '$.properties."sentinel:utm_zone"'
+        - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
+        - '$.properties."mgrs:utm_zone"'
       latitudeBand:
-        - '{{"query":{{"sentinel:latitude_band":{{"eq":"{latitudeBand}"}}}}}}'
-        - '$.properties."sentinel:latitude_band"'
+        - '{{"query":{{"mgrs:latitude_band":{{"eq":"{latitudeBand}"}}}}}}'
+        - '$.properties."mgrs:latitude_band"'
       gridSquare:
-        - '{{"query":{{"sentinel:grid_square":{{"eq":"{gridSquare}"}}}}}}'
-        - '$.properties."sentinel:grid_square"'
+        - '{{"query":{{"mgrs:grid_square":{{"eq":"{gridSquare}"}}}}}}'
+        - '$.properties."mgrs:grid_square"'
       tileIdentifier:
-        - '{{"query":{{"sentinel:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"sentinel:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"sentinel:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
+        - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
         - '{utmZone}{latitudeBand}{gridSquare}'
   products:
+    S1_SAR_GRD:
+      productType: sentinel-1-grd
     S2_MSI_L1C:
-      productType: sentinel-s2-l1c
+      productType: sentinel-2-l1c
       metadata_mapping:
-        title: '$.properties."sentinel:product_id"'
+        title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
         productPath: |
-          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
+          $.properties."s2:product_uri".`sub(/([S2AB]{3})_MSIL1C_([0-9]{4})([0-9]{2})([0-9]{2})(T.*).SAFE/, products!\\2!\\3!\\4!\\1_MSIL1C_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
         tilePath: |
-          $.assets.info.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
+          $.assets.tileinfo_metadata.href.`sub(/.*/sentinel-s2-l1c\/(tiles\/.*)\/tileInfo\.json/, \\1)`
         utmZone:
           - '{{"query":{{"mgrs:utm_zone":{{"eq":"{utmZone}"}}}}}}'
           - '$.properties."mgrs:utm_zone"'
@@ -1729,18 +1739,14 @@
         tileIdentifier:
           - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
           - '{utmZone}{latitudeBand}{gridSquare}'
-    S2_MSI_L2A:
-      productType: sentinel-s2-l2a
-      metadata_mapping:
-        title: '$.properties."sentinel:product_id"'
-        platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
-        polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
-        productPath: |
-          $.properties."sentinel:product_id".`sub(/([S2AB]{3})_MSIL2A_([0-9]{4})([0-9]{2})([0-9]{2})(T.*)/, products!\\2!\\3!\\4!\\1_MSIL2A_\\2\\3\\4\\5)`.`sub(/!0*/, /)`
-        tilePath: |
-          $.assets.info.href.`sub(/.*/sentinel-s2-l2a\/(tiles\/.*)\/tileInfo\.json/, \\1)`
-    L8_OLI_TIRS_C1L1:
-      productType: landsat-8-l1-c1
+    LANDSAT_C2L2:
+      productType: landsat-c2-l2
+    NAIP:
+      productType: naip
+    COP_DEM_GLO30_DGED:
+      productType: cop-dem-glo-30
+    COP_DEM_GLO90_DGED:
+      productType: cop-dem-glo-90
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
@@ -1750,12 +1756,6 @@
     products:
       S2_MSI_L1C:
         default_bucket: 'sentinel-s2-l1c'
-        build_safe: true
-        complementary_url_key:
-          - productPath
-          - tilePath
-      S2_MSI_L2A:
-        default_bucket: 'sentinel-s2-l2a'
         build_safe: true
         complementary_url_key:
           - productPath
@@ -1773,10 +1773,13 @@
   url: https://www.element84.com/earth-search/
   search: !plugin
     type: StacSearch
-    api_endpoint: https://earth-search.aws.element84.com/v0/search
+    api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
     discover_product_types:
       fetch_url: null
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1790,9 +1793,10 @@
     metadata_mapping:
       platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
       polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+      title: '{$.properties."s2:product_uri"#remove_extension}'
   products:
     S2_MSI_L2A_COG:
-      productType: sentinel-s2-l2a-cogs
+      productType: sentinel-2-l2a
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
@@ -1812,6 +1816,9 @@
     need_auth: false
     discover_product_types:
       fetch_url: null
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       # Override the default next page url key path of StacSearch because the next link returned
       # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
@@ -1874,6 +1881,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://apps.ecmwf.int/datasets/data/{dataset}'
@@ -2084,6 +2092,8 @@
     type: CdsApi
     api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
     extract: false
+    flatten_top_dirs: True
+    constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2096,6 +2106,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
@@ -2103,12 +2114,21 @@
       accuracy:
         - accuracy
         - '$.accuracy'
+      aerosol_type:
+        - aerosol_type
+        - '$.aerosol_type'
+      altitude:
+        - altitude
+        - '$.altitude'
       anoffset:
         - anoffset
         - '$.anoffset'
       api_product_type:
         - product_type
         - '$.api_product_type'
+      band:
+        - band
+        - '$.band'
       bitmap:
         - bitmap
         - '$.bitmap'
@@ -2151,9 +2171,6 @@
       expver:
         - expver
         - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
       fcperiod:
         - fcperiod
         - '$.fcperiod'
@@ -2163,12 +2180,12 @@
       filter:
         - filter
         - '$.filter'
+      forcing_type:
+        - forcing_type
+        - '$.forcing_type'
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'
@@ -2181,6 +2198,9 @@
       ident:
         - ident
         - '$.ident'
+      input_observations:
+        - input_observations
+        - '$.input_observations'
       interpolation:
         - interpolation
         - '$.interpolation'
@@ -2193,6 +2213,9 @@
       latitude:
         - latitude
         - '$.latitude'
+      level:
+        - level
+        - '$.level'
       levelist:
         - levelist
         - '$.levelist'
@@ -2202,6 +2225,9 @@
       levtype:
         - levtype
         - '$.levtype'
+      location:
+        - location
+        - '$.location'
       longitude:
         - longitude
         - '$.longitude'
@@ -2211,6 +2237,9 @@
       method:
         - method
         - '$.method'
+      model:
+        - model
+        - '$.model'
       model_level:
         - model_level
         - '$.model_level'
@@ -2271,6 +2300,9 @@
       section:
         - section
         - '$.section'
+      sky_type:
+        - sky_type
+        - '$.sky_type'
       source:
         - source
         - '$.source'
@@ -2289,6 +2321,15 @@
       time:
         - time
         - '$.time'
+      time_aggregation:
+        - time_aggregation
+        - '$.time_aggregation'
+      time_reference:
+        - time_reference
+        - '$.time_reference'
+      time_step:
+        - time_step
+        - '$.time_step'
       truncation:
         - truncation
         - '$.truncation'
@@ -2301,93 +2342,150 @@
       variable:
         - variable
         - '$.variable'
+      version:
+        - version
+        - '$.version'
+      quantity:
+        - quantity
+        - '$.quantity'
       year:
         - year
         - '$.year'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
-    CAMS_GACF_AOT:
+    CAMS_GAC_FORECAST:
       dataset: cams-global-atmospheric-composition-forecasts
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
-      levtype: SFC
-      variable:
-        - sea_salt_aerosol_optical_depth_550nm
-        - dust_aerosol_optical_depth_550nm
-        - organic_matter_aerosol_optical_depth_550nm
-        - black_carbon_aerosol_optical_depth_550nm
-        - sulphate_aerosol_optical_depth_550nm
-      time: '00:00'
-      leadtime_hour: 0
       type: forecast
-      format: netcdf
-    CAMS_GACF_RH:
-      dataset: cams-global-atmospheric-composition-forecasts
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
-      variable: 'relative_humidity'
-      pressure_level: ['1', '2', '3', '5', '7', '10', '20', '30', '50', '70', '100', '150', '200', '250', '300', '400', '500', '600', '700', '850', '925', '1000']
+      format: grib
+      variable: ammonium_aerosol_optical_depth_550nm
       time: '00:00'
-      leadtime_hour: 0
+      leadtime_hour: '0'
+      _default_end_date: '2019-07-12T00:00Z'
+    CAMS_GFE_GFAS:
+      dataset: cams-global-fire-emissions-gfas
+      format: grib
+      variable: altitude_of_plume_bottom
+      _default_end_date: '2018-07-03T00:00Z'
+    CAMS_EU_AIR_QUALITY_FORECAST:
+      dataset: cams-europe-air-quality-forecasts
+      model: ensemble
+      format: grib
+      variable: alder_pollen
       type: forecast
-      format: netcdf
-    CAMS_GACF_MR:
-      dataset: cams-global-atmospheric-composition-forecasts
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
-      variable:
-        - sea_salt_aerosol_0.03-0.5um_mixing_ratio
-        - sea_salt_aerosol_0.5-5um_mixing_ratio
-        - sea_salt_aerosol_5-20um_mixing_ratio
-        - dust_aerosol_0.03-0.55um_mixing_ratio
-        - dust_aerosol_0.55-0.9um_mixing_ratio
-        - dust_aerosol_0.9-20um_mixing_ratio
-        - hydrophilic_organic_matter_aerosol_mixing_ratio
-        - hydrophobic_organic_matter_aerosol_mixing_ratio
-        - hydrophilic_black_carbon_aerosol_mixing_ratio
-        - hydrophobic_black_carbon_aerosol_mixing_ratio
-        - sulphate_aerosol_mixing_ratio
-      model_level: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60', '61']
       time: '00:00'
-      leadtime_hour: 0
-      type: forecast
-      format: netcdf
+      level: '0'
+      leadtime_hour: '0'
+      metadata_mapping:
+        geometry:
+          - 'area={geometry#to_nwse_bounds}'
+          - '$.geometry'
+    CAMS_EU_AIR_QUALITY_RE:
+      dataset: cams-europe-air-quality-reanalyses
+      type: validated_reanalysis
+      format: zip
+      variable: nitrogen_dioxide
+      model: ensemble
+      level: '0'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    CAMS_GRF:
+      dataset: cams-global-radiative-forcings
+      format: zip
+      variable: radiative_forcing_of_carbon_dioxide
+      forcing_type: instantaneous
+      band: long_wave
+      sky_type: all_sky
+      level: surface
+      version: '2'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    CAMS_GRF_AUX:
+      dataset: cams-global-radiative-forcing-auxilliary-variables
+      band: short_wave
+      sky_type: clear_sky
+      version: '1.5'
+      format: zip
+      variable: aerosol_radiation_effect
+      aerosol_type: marine
+      level: surface
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    CAMS_SOLAR_RADIATION:
+      dataset: cams-solar-radiation-timeseries
+      sky_type: clear
+      time_step: 1minute
+      time_reference: true_solar_time
+      location:
+        latitude: 0
+        longitude: 0
+      altitude: -999
+      format: csv
+    CAMS_GREENHOUSE_EGG4_MONTHLY:
+      dataset: cams-global-ghg-reanalysis-egg4-monthly
+      format: grib
+      variable: snow_albedo
+      api_product_type: monthly_mean
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    CAMS_GREENHOUSE_EGG4:
+      dataset: cams-global-ghg-reanalysis-egg4
+      format: grib
+      variable: snow_albedo
+      step: '0'
+    CAMS_GREENHOUSE_INVERSION:
+      dataset: cams-global-greenhouse-gas-inversion
+      version: latest
+      variable: carbon_dioxide
+      quantity: mean_column
+      input_observations: surface
+      time_aggregation: instantaneous
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    CAMS_GLOBAL_EMISSIONS:
+      dataset: cams-global-emission-inventories
+      version: latest
+      format: zip
+      variable: acids
+      source: anthropogenic
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
-      stream: oper
-      class: mc
-      expver: '0001'
-      variable:
-        - dust_aerosol_0.03-0.55um_mixing_ratio
-        - dust_aerosol_0.55-0.9um_mixing_ratio
-        - dust_aerosol_0.9-20um_mixing_ratio
-        - dust_aerosol_optical_depth_550nm
-        - hydrophilic_black_carbon_aerosol_mixing_ratio
-        - hydrophilic_organic_matter_aerosol_mixing_ratio
-        - hydrophobic_black_carbon_aerosol_mixing_ratio
-        - hydrophobic_organic_matter_aerosol_mixing_ratio
-        - sea_salt_aerosol_0.03-0.5um_mixing_ratio
-        - sea_salt_aerosol_0.5-5um_mixing_ratio
-        - sea_salt_aerosol_5-20um_mixing_ratio
-        - sea_salt_aerosol_optical_depth_550nm
-        - sulphate_aerosol_optical_depth_550nm
-      model_level: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49', '50', '51', '52', '53', '54', '55', '56', '57', '58', '59', '60']
+      format: grib
+      variable: '2m_dewpoint_temperature'
       time: '00:00'
-      format: netcdf
+    CAMS_EAC4_MONTHLY:
+      dataset: cams-global-reanalysis-eac4-monthly
+      format: grib
+      variable: 2m_dewpoint_temperature
+      api_product_type: monthly_mean
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
-      stream: oper
-      class: mc
-      expver: '0001'
-      step: 0
+      format: grib
       time: '00:00'
-      format: netcdf
 ---
 !provider
   name: cop_cds
@@ -2400,6 +2498,11 @@
     type: CdsApi
     api_endpoint: https://cds.climate.copernicus.eu/api/v2
     extract: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+    flatten_top_dirs: True
+    constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2412,6 +2515,7 @@
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       downloadLink: 'https://cds.climate.copernicus.eu/cdsapp#!/dataset/{dataset}'
@@ -2443,6 +2547,9 @@
       dataset:
         - dataset
         - '$.dataset'
+      dataset_type:
+        - dataset_type
+        - '$.dataset_type'
       date_range:
         - date_range
         - '$.date_range'
@@ -2461,15 +2568,18 @@
       duplicates:
         - duplicates
         - '$.duplicates'
+      ensemble_member:
+        - ensemble_member
+        - '$.ensemble_member'
       expect:
         - expect
         - '$.expect'
+      experiment:
+        - experiment
+        - '$.experiment'
       expver:
         - expver
         - '$.expver'
-      fcmonth:
-        - fcmonth
-        - '$.fcmonth'
       fcperiod:
         - fcperiod
         - '$.fcperiod'
@@ -2482,18 +2592,24 @@
       format:
         - format
         - '$.format'
-      frame:
-        - frame
-        - '$.frame'
       frequency:
         - frequency
         - '$.frequency'
+      gcm:
+        - gcm
+        - '$.gcm'
       grid:
         - grid
         - '$.grid'
       hdate:
         - hdate
         - '$.hdate'
+      horizontal_resolution:
+        - horizontal_resolution
+        - '$.horizontal_resolution'
+      hydrological_model:
+        - hydrological_model
+        - '$.hydrological_model'
       ident:
         - ident
         - '$.ident'
@@ -2515,6 +2631,9 @@
       leadtime_hour:
         - leadtime_hour
         - '$.leadtime_hour'
+      leadtime_month:
+        - leadtime_month
+        - '$.leadtime_month'
       levtype:
         - levtype
         - '$.levtype'
@@ -2527,9 +2646,9 @@
       method:
         - method
         - '$.method'
-      model_level:
-        - model_level
-        - '$.model_level'
+      model_levels:
+        - model_levels
+        - '$.model_levels'
       month:
         - month
         - '$.month'
@@ -2545,6 +2664,9 @@
       origin:
         - origin
         - '$.origin'
+      originating_centre:
+        - originating_centre
+        - '$.originating_centre'
       packing:
         - packing
         - '$.packing'
@@ -2554,18 +2676,30 @@
       param:
         - param
         - '$.param'
+      period:
+        - period
+        - '$.period'
       pressure_level:
         - pressure_level
         - '$.pressure_level'
       priority:
         - priority
         - '$.priority'
+      processing_level:
+        - processing_level
+        - '$.processing_level'
+      processing_type:
+        - processing_type
+        - '$.processing_type'
       product:
         - product
         - '$.product'
       range:
         - range
         - '$.range'
+      rcm:
+        - rcm
+        - '$.rcm'
       refdate:
         - refdate
         - '$.refdate'
@@ -2587,6 +2721,9 @@
       section:
         - section
         - '$.section'
+      sensor_and_algorithm:
+        - sensor_and_algorithm
+        - '$.sensor_and_algorithm'
       source:
         - source
         - '$.source'
@@ -2605,6 +2742,9 @@
       time:
         - time
         - '$.time'
+      time_aggregation:
+        - time_aggregation
+        - '$.time_aggregation'
       truncation:
         - truncation
         - '$.truncation'
@@ -2617,6 +2757,15 @@
       variable:
         - variable
         - '$.variable'
+      variable_type:
+        - variable_type
+        - '$.variable_type'
+      version:
+        - version
+        - '$.version'
+      system_version:
+        - system_version
+        - '$.system_version'
       year:
         - year
         - '$.year'
@@ -2626,7 +2775,293 @@
       dataset: reanalysis-era5-single-levels
       api_product_type: reanalysis
       time: '00:00'
-      format: netcdf
+      format: grib
+    ERA5_PL:
+      dataset: reanalysis-era5-pressure-levels
+      api_product_type: reanalysis
+      time: '00:00'
+      format: grib
+    ERA5_PL_MONTHLY:
+      dataset: reanalysis-era5-pressure-levels-monthly-means
+      api_product_type: monthly_averaged_reanalysis
+      time: '00:00'
+      format: grib
+      variable: divergence
+      pressure_level: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    ERA5_LAND:
+      dataset: reanalysis-era5-land
+      variable: 2m_dewpoint_temperature
+      time: '01:00'
+      format: grib
+    ERA5_LAND_MONTHLY:
+      dataset: reanalysis-era5-land-monthly-means
+      api_product_type: monthly_averaged_reanalysis
+      variable: 2m_dewpoint_temperature
+      time: '00:00'
+      format: grib
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    ERA5_SL_MONTHLY:
+      dataset: reanalysis-era5-single-levels-monthly-means
+      api_product_type: monthly_averaged_reanalysis
+      time: '00:00'
+      format: grib
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    UERRA_EUROPE_SL:
+      dataset: reanalysis-uerra-europe-single-levels
+      origin: mescan_surfex
+      variable: 10m_wind_direction
+      time: '00:00'
+      format: grib
+    SATELLITE_SEA_LEVEL_BLACK_SEA:
+      dataset: satellite-sea-level-black-sea
+      format: zip
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    GLACIERS_DIST_RANDOLPH:
+      dataset: insitu-glaciers-extent
+      variable: glacier_area
+      api_product_type: gridded
+      version: '6_0'
+      format: zip
+    FIRE_HISTORICAL:
+      dataset: cems-fire-historical-v1
+      grid: original_grid
+      dataset_type: consolidated_dataset
+      api_product_type: reanalysis
+      variable: build_up_index
+      system_version: '4_1'
+      format: grib
+    GLOFAS_FORECAST:
+      dataset: cems-glofas-forecast
+      system_version: operational
+      variable: river_discharge_in_the_last_24_hours
+      format: grib
+      hydrological_model: lisflood
+      api_product_type: control_forecast
+      leadtime_hour: '24'
+    GLOFAS_REFORECAST:
+      dataset: cems-glofas-reforecast
+      variable: river_discharge_in_the_last_24_hours
+      format: grib
+      system_version: version_4_0
+      hydrological_model: lisflood
+      api_product_type: control_reforecast
+      leadtime_hour: '24'
+    GLOFAS_HISTORICAL:
+      dataset: cems-glofas-historical
+      system_version: version_4_0
+      variable: river_discharge_in_the_last_24_hours
+      format: grib
+      hydrological_model: lisflood
+      api_product_type: consolidated
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+    GLOFAS_SEASONAL:
+      dataset: cems-glofas-seasonal
+      variable: river_discharge_in_the_last_24_hours
+      format: grib
+      system_version: operational
+      hydrological_model: lisflood
+      leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    GLOFAS_SEASONAL_REFORECAST:
+      dataset: cems-glofas-seasonal-reforecast
+      format: grib
+      variable: river_discharge_in_the_last_24_hours
+      system_version: version_4_0
+      hydrological_model: lisflood
+      leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"hyear": {_date#interval_to_datetime_dict}["year"], "hmonth": {_date#interval_to_datetime_dict}["month"], "hday": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    EFAS_FORECAST:
+      dataset: efas-forecast
+      format: grib.zip
+      system_version: operational
+      originating_centre: ecmwf
+      api_product_type: control_forecast
+      variable: river_discharge_in_the_last_24_hours
+      model_levels: surface_level
+      time: '00:00'
+      leadtime_hour: '24'
+    EFAS_HISTORICAL:
+      dataset: efas-historical
+      format: grib.zip
+      model_levels: surface_level
+      variable: snow_depth_water_equivalent
+      system_version: version_5_0
+      time: '00:00'
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+    EFAS_REFORECAST:
+      dataset: efas-reforecast
+      system_version: version_5_0
+      format: grib.zip
+      api_product_type: control_forecast
+      variable: river_discharge_in_the_last_6_hours
+      model_levels: surface_level
+      leadtime_hour: '6'
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+    EFAS_SEASONAL:
+      dataset: efas-seasonal
+      system_version: operational
+      format: grib.zip
+      variable: river_discharge_in_the_last_24_hours
+      model_levels: surface_level
+      leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    EFAS_SEASONAL_REFORECAST:
+      dataset: efas-seasonal-reforecast
+      system_version: version_5_0
+      format: grib.zip
+      variable: river_discharge_in_the_last_24_hours
+      model_levels: surface_level
+      leadtime_hour: '24'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"hyear": {_date#interval_to_datetime_dict}["year"], "hmonth": {_date#interval_to_datetime_dict}["month"], "hday": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SATELLITE_CARBON_DIOXIDE:
+      dataset: satellite-carbon-dioxide
+      format: zip
+      processing_level: level_2
+      variable: xco2
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4.0'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SATELLITE_METHANE:
+      dataset: satellite-methane
+      format: zip
+      processing_level: level_2
+      variable: xch4
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4.0'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SEASONAL_POSTPROCESSED_PL:
+      dataset: seasonal-postprocessed-pressure-levels
+      format: grib
+      originating_centre: ecmwf
+      system: '4'
+      variable: geopotential_anomaly
+      pressure_level: '10'
+      api_product_type: 'ensemble_mean'
+      leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SEASONAL_POSTPROCESSED_SL:
+      dataset: seasonal-postprocessed-single-levels
+      format: grib
+      originating_centre: ecmwf
+      system: '4'
+      variable: 2m_dewpoint_temperature_anomaly
+      api_product_type: 'ensemble_mean'
+      leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SEASONAL_ORIGINAL_SL:
+      dataset: seasonal-original-single-levels
+      format: grib
+      originating_centre: ecmwf
+      system: '5'
+      variable: 10m_u_component_of_wind
+      leadtime_hour: '6'
+    SEASONAL_ORIGINAL_PL:
+      dataset: seasonal-original-pressure-levels
+      format: grib
+      originating_centre: ecmwf
+      system: '5'
+      variable: geopotential
+      pressure_level: '10'
+      leadtime_hour: '12'
+    SEASONAL_MONTHLY_PL:
+      dataset: seasonal-monthly-pressure-levels
+      format: grib
+      originating_centre: ecmwf
+      system: '5'
+      variable: geopotential
+      pressure_level: '10'
+      api_product_type: monthly_mean
+      leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SEASONAL_MONTHLY_SL:
+      dataset: seasonal-monthly-single-levels
+      format: grib
+      originating_centre: ecmwf
+      system: '5'
+      variable: 10m_u_component_of_wind
+      api_product_type: monthly_mean
+      leadtime_month: '1'
+      metadata_mapping:
+        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
+        _date:
+          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
+          - '{$._date}'
+    SIS_HYDRO_MET_PROJ:
+      dataset: sis-hydrology-meteorology-derived-projections
+      format: zip
+      api_product_type: climate_impact_indicators
+      variable: 2m_air_temperature
+      variable_type: absolute_change_from_reference_period
+      processing_type: original
+      time_aggregation: monthly_mean
+      horizontal_resolution: 5_km
+      experiment: degree_scenario
+      rcm: cclm4_8_17
+      gcm: ec_earth
+      ensemble_member: r12i1p1
+      period: 1_5_c
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
       time: '00:00'
@@ -2925,6 +3360,7 @@
       geometry:
         - '{{"geometry": {geometry#to_geojson} }}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       productType: '$.queries[0].domain'
       storageStatus: '{$.requiresJobQueue#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
       downloadLink: 'https://my.meteoblue.com/dataset/query'
@@ -3059,16 +3495,22 @@
       id:
         - 'productIdentifier={id#remove_extension}'
         - '{$.properties.title#remove_extension}'
-      tileIdentifier: '$.null'
+      tileIdentifier:
+        - tileId
+        - '$.null'
       # The geographic extent of the product
       geometry:
         - 'geometry={geometry#to_rounded_wkt}'
         - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      # The url of the quicklook
+      quicklook: '$.properties.thumbnail'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '$.properties.status'
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      thumbnail: '$.properties.thumbnail'
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
@@ -3288,6 +3730,10 @@
   products:
     S1_SAR_GRD:
       productType: sentinel-1-grd
+      metadata_mapping:
+        processingLevel:
+          - '{{"query":{{"s1:processing_level":{{"eq":"{processingLevel}"}}}}}}'
+          - '$.properties."s1:processing_level"'
     S2_MSI_L2A:
       productType: sentinel-2-l2a
     LANDSAT_C2L1:
@@ -3324,6 +3770,9 @@
     api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
     need_auth: true
     auth_error_code: 401
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
     pagination:
       max_items_per_page: 10_000
     metadata_mapping:
@@ -3355,11 +3804,11 @@
   url: https://www.wekeo.eu/
   search: !plugin
     type: DataRequestSearch
-    api_endpoint: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/"
-    data_request_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest"
-    metadata_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/"
-    status_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/status/"
-    result_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
+    api_endpoint: "https://wekeo-broker.prod.wekeo2.eu/databroker/"
+    data_request_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest"
+    metadata_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/querymetadata/"
+    status_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest/status/"
+    result_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
     timeout: 60
     need_auth: true
     auth_error_code: 401
@@ -3372,6 +3821,8 @@
       total_items_nb_key_path: '$.totItems'
     discover_product_types:
       fetch_url: null
+    constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/{dataset}"
+    constraints_entry: constraints
     metadata_mapping:
       productType:
         - '{{"datasetId": "{productType}"}}'
@@ -3388,11 +3839,11 @@
       cloudCover: '$.extraInformation.cloudCover'
       downloadLink: '$.url'
       title: '$.productInfo.product'
-      orderLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
+      orderLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
       storageStatus: 'OFFLINE'
   auth: !plugin
     type: TokenAuth
-    auth_uri: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken'
+    auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
     token_type: json
     token_key: access_token
     request_method: GET
@@ -6261,7 +6712,7 @@
 
   download: !plugin
     type: HTTPDownload
-    base_uri: https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker
+    base_uri: https://wekeo-broker.prod.wekeo2.eu/databroker
     flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
@@ -6269,9 +6720,354 @@
     order_on_response:
       metadata_mapping:
         order_id: '$.orderId'
-        orderStatusLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/status/{order_id}'
-        downloadLink: 'https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/dataorder/download/{order_id}'
+        orderStatusLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder/status/{order_id}'
+        downloadLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder/download/{order_id}'
     order_status_method: 'GET'
     order_status_success:
       status: completed
       message: "Done!"
+
+---
+!provider
+  name: creodias_s3
+  priority: 0
+  description: CloudFerro DIAS data through S3 protocol
+  roles:
+    - host
+  url: https://creodias.eu/
+  search: !plugin
+    type: CreodiasS3Search
+    api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
+    s3_endpoint: 'https://eodata.cloudferro.com'
+    need_auth: true
+    timeout: 60
+    pagination:
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
+      total_items_nb_key_path: '$.properties.totalResults'
+      max_items_per_page: 1_000
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
+    discover_product_types:
+      fetch_url: https://finder.creodias.eu/attributes.json
+      result_type: json
+      results_entry: 'collections[?billing=="free"]'
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        collection: '$.id'
+      generic_product_type_parsable_metadata:
+        abstract: '$.description'
+        instrument: '{$.summaries.instruments#csv_list}'
+        platform: '{$.summaries.constellation#csv_list}'
+        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
+        processingLevel: '$.summaries."processing:level"'
+        keywords: '{$.keywords#csv_list}'
+        license: '$.license'
+        title: '$.title'
+        missionStartDate: '$.extent.temporal.interval[0][0]'
+    metadata_mapping:
+      uid: '$.id'
+      productType:
+        - productType
+        - '$.properties.productType'
+      platform: '$.properties.collection'
+      platformSerialIdentifier:
+        - platform
+        - '$.properties.platform'
+      instrument:
+        - instrument
+        - '$.properties.instrument'
+      processingLevel:
+        - processingLevel
+        - '$.properties.processingLevel'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '{$.properties.title#remove_extension}'
+      topicCategory: '$.properties.topicCategory'
+      keyword: '$.properties.keywords'
+      abstract: '$.properties.description'
+      resolution:
+        - 'resolution'
+        - '$.properties.resolution'
+      organisationName:
+        - 'organisationName'
+        - '$.properties.organisationName'
+      publicationDate: '$.properties.published'
+      accessConstraint: '$.properties.license'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier:
+        - 'parentIdentifier'
+        - '$.properties.parentIdentifier'
+      acquisitionType: '$.properties.acquisitionType'
+      orbitNumber:
+        - 'orbitNumber'
+        - '$.properties.orbitNumber'
+      orbitDirection:
+        - 'orbitDirection'
+        - '$.properties.orbitDirection'
+      swathIdentifier:
+        - 'swath'
+        - '$.properties.swath'
+      cloudCover:
+        - 'cloudCover=[0,{cloudCover}]'
+        - '$.properties.cloudCover'
+      snowCover:
+        - 'snowCover=[0,{snowCover}]'
+        - '$.properties.snowCover'
+      productVersion: '$.properties.version'
+      productQualityStatus: '$.properties.onlineQualityCheck'
+      processorName: '$.properties.processingName'
+      processingCenter: '$.properties.processingCenter'
+      creationDate: '$.properties.dhusIngestDate'
+      modificationDate: '$.properties.updated'
+      sensorMode:
+        - 'sensorMode'
+        - '$.properties.sensorMode'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - startDate
+        - '$.properties.startDate'
+      completionTimeFromAscendingNode:
+        - completionDate
+        - '$.properties.completionDate'
+      polarizationMode:
+        - 'polarisation'
+        - '$.properties.polarisation'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - 'productIdentifier=%{id#remove_extension}%'
+        - '{$.properties.title#remove_extension}'
+      tileIdentifier:
+        - tileId
+        - '$.null'
+      # The geographic extent of the product
+      geometry:
+        - 'geometry={geometry#to_rounded_wkt}'
+        # - '$.geometry'
+        - '($.geometry.`str()`.`sub(/^\\[\\]$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      # The url of the quicklook
+      quicklook: '$.properties.thumbnail'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      downloadLink: 'https://zipper.creodias.eu/download/{uid}'
+      # storageStatus must be one of ONLINE, STAGING, OFFLINE
+      storageStatus: '$.properties.status'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      thumbnail: '$.properties.thumbnail'
+  download: !plugin
+    type: CreodiasS3Download
+    flatten_top_dirs: True
+    base_uri: 'https://eodata.cloudferro.com'
+    s3_bucket: 'eodata'
+  auth: !plugin
+    type: AwsAuth
+    auth_error_code: 403
+  products:
+    # S1
+    S1_SAR_RAW:
+      productType: RAW
+      collection: Sentinel1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_GRD:
+      productType: GRD
+      collection: Sentinel1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_SLC:
+      productType: SLC
+      collection: Sentinel1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_OCN:
+      productType: OCN
+      collection: Sentinel1
+      metadata_mapping:
+        cloudCover: '$.null'
+    # S2
+    S2_MSI_L1C:
+      collection: SENTINEL-2
+      productType: S2MSI1C
+      prefixes_delimiter: ".jp2"
+    S2_MSI_L2A:
+      collection: SENTINEL-2
+      productType: S2MSI2A
+    # S3 SRAL
+    S3_SRA:
+      productType: SRA
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_SRA_A:
+      productType: SRA_A
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_SRA_BS:
+      productType: SRA_BS
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN:
+      productType: LAN
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_WAT:
+      productType: WAT
+      collection: Sentinel3
+      metadata_mapping:
+        cloudCover: '$.null'
+    # S3 OLCI
+    S3_EFR:
+      productType: EFR
+      collection: Sentinel3
+    S3_ERR:
+      productType: ERR
+      collection: Sentinel3
+    S3_OLCI_L2LRR:
+      productType: LRR
+      collection: Sentinel3
+    S3_OLCI_L2LFR:
+      productType: LFR
+      collection: Sentinel3
+    S3_OLCI_L2WRR:
+      productType: WRR
+      collection: Sentinel3
+    S3_OLCI_L2WFR:
+      productType: WFR
+      collection: Sentinel3
+    # S3 SLSTR
+    S3_SLSTR_L1RBT:
+      productType: RBT
+      collection: Sentinel3
+    S3_SLSTR_L2LST:
+      productType: LST
+      collection: Sentinel3
+    S3_SLSTR_L2WST:
+      productType: WST
+      collection: Sentinel3
+    S3_SLSTR_L2AOD:
+      productType: AOD___
+      collection: Sentinel3
+    S3_SLSTR_L2FRP:
+      productType: FRP___
+      collection: Sentinel3
+    # S3 SY
+    S3_SY_AOD:
+      productType: SY_2_AOD___
+      collection: Sentinel3
+    S3_SY_SYN:
+      productType: SY_2_SYN___
+      collection: Sentinel3
+    S3_SY_V10:
+      productType: SY_2_V10___
+      collection: Sentinel3
+    S3_SY_VG1:
+      productType: SY_2_VG1___
+      collection: Sentinel3
+    S3_SY_VGP:
+      productType: SY_2_VGP___
+      collection: Sentinel3
+    # S5P L1
+    S5P_L1B_IR_SIR:
+      productType: L1B_IR_SIR
+      collection: Sentinel5P
+    S5P_L1B_IR_UVN:
+      productType: L1B_IR_UVN
+      collection: Sentinel5P
+    S5P_L1B_RA_BD1:
+      productType: L1B_RA_BD1
+      collection: Sentinel5P
+    S5P_L1B_RA_BD2:
+      productType: L1B_RA_BD2
+      collection: Sentinel5P
+    S5P_L1B_RA_BD3:
+      productType: L1B_RA_BD3
+      collection: Sentinel5P
+    S5P_L1B_RA_BD4:
+      productType: L1B_RA_BD4
+      collection: Sentinel5P
+    S5P_L1B_RA_BD5:
+      productType: L1B_RA_BD5
+      collection: Sentinel5P
+    S5P_L1B_RA_BD6:
+      productType: L1B_RA_BD6
+      collection: Sentinel5P
+    S5P_L1B_RA_BD7:
+      productType: L1B_RA_BD7
+      collection: Sentinel5P
+    S5P_L1B_RA_BD8:
+      productType: L1B_RA_BD8
+      collection: Sentinel5P
+    # S5P L2
+    S5P_L2_NO2:
+      productType: L2__NO2___
+      collection: Sentinel5P
+    S5P_L2_CLOUD:
+      productType: L2__CLOUD_
+      collection: Sentinel5P
+    S5P_L2_O3:
+      productType: L2__O3____
+      collection: Sentinel5P
+    S5P_L2_CO:
+      productType: L2__CO____
+      collection: Sentinel5P
+    S5P_L2_AER_AI:
+      productType: L2__AER_AI
+      collection: Sentinel5P
+    S5P_L2_O3_PR:
+      productType: L2__O3__PR
+      collection: Sentinel5P
+    S5P_L2_O3_TCL:
+      productType: L2__O3_TCL
+      collection: Sentinel5P
+    S5P_L2_AER_LH:
+      productType: L2__AER_LH
+      collection: Sentinel5P
+    S5P_L2_HCHO:
+      productType: L2__HCHO__
+      collection: Sentinel5P
+    S5P_L2_CH4:
+      productType: L2__CH4___
+      collection: Sentinel5P
+    S5P_L2_NP_BD3:
+      productType: L2__NP_BD3
+      collection: Sentinel5P
+    S5P_L2_NP_BD6:
+      productType: L2__NP_BD6
+      collection: Sentinel5P
+    S5P_L2_NP_BD7:
+      productType: L2__NP_BD7
+      collection: Sentinel5P
+    S5P_L2_SO2:
+      productType: L2__SO2___
+      collection: Sentinel5P
+    # COP DEM
+    COP_DEM_GLO30_DGED:
+      productType: DGE_30
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    COP_DEM_GLO30_DTED:
+      productType: DTE_30
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    COP_DEM_GLO90_DGED:
+      productType: DGE_90
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    COP_DEM_GLO90_DTED:
+      productType: DTE_90
+      collection: CopDem
+      metadata_mapping:
+        cloudCover: '$.null'
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+      collection: '{collection}'

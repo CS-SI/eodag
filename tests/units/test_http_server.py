@@ -28,9 +28,13 @@ import geojson
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
+from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils.exceptions import TimeOutError
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
+    HTTP_REQ_TIMEOUT,
+    TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
     parse_header,
@@ -55,6 +59,18 @@ class RequestTestCase(unittest.TestCase):
         )
         cls.expanduser_mock.start()
 
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
+
+        # disable product types fetch
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+
+        # load fake credentials to prevent providers needing auth for search to be pruned
+        os.environ["EODAG_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "wrong_credentials_conf.yml"
+        )
+
         # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
         # reload eodag.rest.utils to prevent eodag_api cache conflicts
         import eodag.rest.utils
@@ -63,13 +79,6 @@ class RequestTestCase(unittest.TestCase):
         from eodag.rest import server as eodag_http_server
 
         cls.eodag_http_server = eodag_http_server
-
-        # mock os.environ to empty env
-        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
-        cls.mock_os_environ.start()
-
-        # disable product types fetch
-        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
 
     @classmethod
     def tearDownClass(cls):
@@ -445,7 +454,7 @@ class RequestTestCase(unittest.TestCase):
     @mock.patch(
         "eodag.rest.utils.eodag_api.search",
         autospec=True,
-        side_effect=AuthenticationError("you are no authorized"),
+        side_effect=AuthenticationError("you are not authorized"),
     )
     def test_auth_error(self, mock_search):
         """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
@@ -458,9 +467,28 @@ class RequestTestCase(unittest.TestCase):
 
             self.assertIn("description", response_content)
             self.assertIn("AuthenticationError", str(cm_logs.output))
-            self.assertIn("you are no authorized", str(cm_logs.output))
+            self.assertIn("you are not authorized", str(cm_logs.output))
 
         self.assertEqual(500, response.status_code)
+
+    @mock.patch(
+        "eodag.rest.utils.eodag_api.search",
+        autospec=True,
+        side_effect=TimeOutError("too long"),
+    )
+    def test_timeout_error(self, mock_search):
+        """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
+        with self.assertLogs(level="ERROR") as cm_logs:
+            response = self.app.get(
+                f"search?collections={self.tested_product_type}", follow_redirects=True
+            )
+            response_content = json.loads(response.content.decode("utf-8"))
+
+            self.assertIn("description", response_content)
+            self.assertIn("TimeOutError", str(cm_logs.output))
+            self.assertIn("too long", str(cm_logs.output))
+
+        self.assertEqual(504, response.status_code)
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""
@@ -679,6 +707,7 @@ class RequestTestCase(unittest.TestCase):
                 "id": "foo",
                 "provider": None,
                 "productType": self.tested_product_type,
+                "_dc_qs": None,
             },
         )
 
@@ -690,6 +719,7 @@ class RequestTestCase(unittest.TestCase):
                 "id": "foo",
                 "provider": None,
                 "productType": self.tested_product_type,
+                "_dc_qs": None,
             },
         )
 
@@ -829,11 +859,6 @@ class RequestTestCase(unittest.TestCase):
         response = self._request_valid(f"search?collections={self.tested_product_type}")
         self.assertIn("numberMatched", response)
         self.assertIn("numberReturned", response)
-        self.assertIn("context", response)
-        self.assertEqual(1, response["context"]["page"])
-        self.assertEqual(DEFAULT_ITEMS_PER_PAGE, response["context"]["limit"])
-        self.assertIn("matched", response["context"])
-        self.assertIn("returned", response["context"])
 
     def test_search_provider_in_downloadlink(self):
         """Search through eodag server and check that specified provider appears in downloadLink"""
@@ -972,7 +997,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
-        "eodag.plugins.apis.cds.CdsApi.authenticate",
+        "eodag.plugins.apis.usgs.UsgsApi.authenticate",
         autospec=True,
     )
     @mock.patch(
@@ -990,13 +1015,13 @@ class RequestTestCase(unittest.TestCase):
         # use an external python API provider for this test and reset downloader
         self._request_valid_raw.patchings[0].kwargs["return_value"][0][
             0
-        ].provider = "cop_cds"
+        ].provider = "usgs"
         self._request_valid_raw.patchings[0].kwargs["return_value"][0][
             0
         ].downloader = None
 
         self._request_valid_raw(
-            "collections/some-collection/items/foo/download?provider=cop_cds"
+            "collections/some-collection/items/foo/download?provider=usgs"
         )
         mock_download.assert_called_once()
         # downloaded file should have been immediatly deleted from the server
@@ -1032,18 +1057,156 @@ class RequestTestCase(unittest.TestCase):
 
     def test_queryables(self):
         """Request to /queryables should return a valid response."""
-        self._request_valid("queryables", check_links=False)
+        resp = self._request_valid("queryables", check_links=False)
+        self.assertListEqual(
+            list(resp.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_queryables_with_provider(self, mock_requests_get):
+        resp = self._request_valid(
+            "queryables?provider=planetary_computer", check_links=False
+        )
+        self.assertListEqual(
+            list(resp.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+        mock_requests_get.assert_called_once_with(
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+        )
 
     def test_product_type_queryables(self):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
-        self._request_valid(
+        resp = self._request_valid(
             f"collections/{self.tested_product_type}/queryables", check_links=False
         )
+        self.assertListEqual(
+            list(resp.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
 
-    def test_product_type_queryables_with_provider(self):
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider."""
+        queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
+        with open(queryables_path) as f:
+            provider_queryables = json.load(f)
+        mock_requests_get.return_value = MockResponse(
+            provider_queryables, status_code=200
+        )
+        # no provider specified (only 1 available for the moment) : queryables intresection returned
 
-        self._request_valid(
-            f"collections/{self.tested_product_type}/queryables?provider=peps",
+        res_no_provider = self._request_valid(
+            "collections/S1_SAR_GRD/queryables",
             check_links=False,
         )
+        mock_requests_get.assert_called_once_with(
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
+            "sentinel-1-grd/queryables",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+        )
+        # returned queryables
+        self.assertListEqual(
+            list(res_no_provider.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+        self.assertListEqual(
+            list(res_no_provider["properties"].keys()),
+            ["ids", "geometry", "datetime"],
+        )
+        self.assertIn("geometry", res_no_provider["properties"])
+        self.assertNotIn("s1:processing_level", res_no_provider["properties"])
+
+        mock_requests_get.reset_mock()
+
+        # provider specified
+        res = self._request_valid(
+            "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
+            check_links=False,
+        )
+        mock_requests_get.assert_called_once_with(
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
+            "sentinel-1-grd/queryables",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+        )
+
+        self.assertListEqual(
+            list(res.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+
+        # property added from provider queryables
+        self.assertIn("s1:processing_level", res["properties"])
+        # property updated with info from provider queryables
+        self.assertIn("platform", res["properties"])
+        self.assertEqual("string", res["properties"]["platform"]["type"][0])
+
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    def test_product_type_queryables_from_constraints(self, mock_requests_constraints):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        mock_requests_constraints.return_value = MockResponse(
+            constraints, status_code=200
+        )
+        res = self._request_valid(
+            "collections/ERA5_SL/queryables?provider=cop_cds",
+            check_links=False,
+        )
+
+        mock_requests_constraints.assert_called_once_with(
+            "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
+            "reanalysis-era5-single-levels/constraints.json",
+            headers=USER_AGENT,
+            timeout=5,
+        )
+        self.assertEqual(10, len(res["properties"]))
+        self.assertIn("year", res["properties"])
+        self.assertIn("ids", res["properties"])
+        self.assertIn("geometry", res["properties"])
+        self.assertNotIn("collections", res["properties"])

@@ -65,6 +65,8 @@ from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.base import Search
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.types import model_fields_to_annotated
+from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
@@ -76,8 +78,8 @@ from eodag.utils import (
     merge_mappings,
     path_to_uri,
     ProgressCallback,
-    uri_to_path,
     DownloadedCallback,
+    uri_to_path,
     parse_qsl,
     urlsplit,
     GENERIC_PRODUCT_TYPE,
@@ -97,6 +99,7 @@ from eodag.utils.exceptions import (
     PluginImplementationError,
     RequestError,
     UnsupportedDatasetAddressScheme,
+    UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
     STACOpenerError,

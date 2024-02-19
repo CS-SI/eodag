@@ -28,7 +28,6 @@ Then you can start playing with it:
         list             List supported product types
         search           Search satellite images by their product types,...
         serve-rest       Start eodag HTTP server
-        serve-rpc        Start eodag rpc server
         version          Print eodag version and exit
 
 * Each command has its own help, see for instance the help of the ``list`` command with ``eodag list --help``:

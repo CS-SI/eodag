@@ -55,7 +55,7 @@ COPY ./eodag /eodag/eodag
 RUN python -m pip install .
 
 # add python path
-ENV PYTHONPATH="${PYTHONPATH}:/eodag/eodag"
+ENV PYTHONPATH="${PYTHONPATH}:/eodag/eodag/resources"
 
 # copy start-stac script
 COPY ./docker/run-stac-server.sh /eodag/run-stac-server.sh

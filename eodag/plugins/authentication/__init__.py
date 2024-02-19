@@ -16,12 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG authentication package"""
+from __future__ import annotations
+
+from requests.auth import AuthBase
+
 from eodag.plugins.authentication.base import Authentication
 
 
 class DummyAuth(Authentication):
     """Dummy authentication"""
 
-    def authenticate(self):
+    def authenticate(self) -> AuthBase:
         """authenticate"""
-        return self
+        return AuthBase()

@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import io
 import os
 import shutil
 import stat
@@ -180,7 +181,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product.remote_location
         ) = "http://somewhere/dowload_from_location"
         self.product.properties["id"] = "someproduct"
-        self.product.assets = {"foo": {"href": "http://somewhere/download_asset"}}
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
+            b"some content"
+        )
 
         # download asset if ignore_assets = False
         plugin.config.ignore_assets = False
@@ -234,9 +239,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.assets = {
-            "foo": {"href": "http://somewhere/mal:for;matted/something?foo=bar#baz"}
-        }
+        self.product.assets.clear()
+        self.product.assets.update(
+            {"foo": {"href": "http://somewhere/mal:for;matted/something?foo=bar#baz"}}
+        )
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": ""
         }
@@ -282,7 +291,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.assets = {"foo": {"href": "http://somewhere/something"}}
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": '; filename = "somethingelse"'
         }
@@ -300,6 +313,47 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_asset_filter(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must create an outputfile"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "somewhere": {"href": "http://somewhere/something", "title": "foo"},
+                "elsewhere": {"href": "http://elsewhere/anything", "title": "boo"},
+            }
+        )
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": '; filename = "somethingelse"'
+        }
+        mock_requests_head.return_value.headers = {"content-disposition": ""}
+
+        path = plugin.download(
+            self.product, outputs_prefix=self.output_dir, asset="else.*"
+        )
+
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(self.output_dir, "dummy_product", "somethingelse")
+            )
+        )
+        self.assertEqual(2, mock_requests_get.call_count)
+        self.product.location = self.product.remote_location = "http://elsewhere"
+        plugin.download(self.product, outputs_prefix=self.output_dir)
+        self.assertEqual(6, mock_requests_get.call_count)
+
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_assets_filename_from_head(
         self, mock_requests_get, mock_requests_head
     ):
@@ -308,7 +362,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.assets = {"foo": {"href": "http://somewhere/something"}}
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": '; filename = "somethingelse"'
         }
@@ -336,15 +394,21 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
-        self.product.assets = {
-            "foo": {"href": "http://somewhere/a"},
-            "bar": {"href": "http://somewhere/b"},
-        }
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {"href": "http://somewhere/a"},
+                "bar": {"href": "http://somewhere/b"},
+            }
+        )
 
         mock_requests_head.return_value.headers = {
             "Content-length": "1",
             "content-disposition": '; size = "2"',
         }
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "Content-length": "3",
             "content-disposition": '; size = "4"',
@@ -359,10 +423,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.return_value.headers.pop("Content-length")
         mock_progress_callback_reset.reset_mock()
         self.product.location = "http://somewhere"
-        self.product.assets = {
-            "foo": {"href": "http://somewhere/a"},
-            "bar": {"href": "http://somewhere/b"},
-        }
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {"href": "http://somewhere/a"},
+                "bar": {"href": "http://somewhere/b"},
+            }
+        )
         with TemporaryDirectory() as temp_dir:
             plugin.download(self.product, outputs_prefix=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=2 + 2)
@@ -371,24 +438,33 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.return_value.headers.pop("content-disposition")
         mock_progress_callback_reset.reset_mock()
         self.product.location = "http://somewhere"
-        self.product.assets = {
-            "foo": {"href": "http://somewhere/a"},
-            "bar": {"href": "http://somewhere/b"},
-        }
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {"href": "http://somewhere/a"},
+                "bar": {"href": "http://somewhere/b"},
+            }
+        )
         with TemporaryDirectory() as temp_dir:
             plugin.download(self.product, outputs_prefix=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=3 + 3)
 
         # size from GET / content-disposition
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
         mock_requests_get.return_value.__enter__.return_value.headers.pop(
             "Content-length"
         )
         mock_progress_callback_reset.reset_mock()
         self.product.location = "http://somewhere"
-        self.product.assets = {
-            "foo": {"href": "http://somewhere/a"},
-            "bar": {"href": "http://somewhere/b"},
-        }
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {"href": "http://somewhere/a"},
+                "bar": {"href": "http://somewhere/b"},
+            }
+        )
         with TemporaryDirectory() as temp_dir:
             plugin.download(self.product, outputs_prefix=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=4 + 4)
@@ -401,13 +477,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.assets = {
-            "foo": {
-                "href": path_to_uri(
-                    os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
-                )
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {
+                    "href": path_to_uri(
+                        os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
+                    )
+                }
             }
-        }
+        )
 
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
@@ -423,32 +502,38 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        self.product.assets = {
-            "foo": {
-                "href": path_to_uri(
-                    os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
-                )
-            },
-            "bar": {
-                "href": path_to_uri(
-                    os.path.abspath(
-                        os.path.join(os.sep, "somewhere", "something", "else")
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {
+                    "href": path_to_uri(
+                        os.path.abspath(os.path.join(os.sep, "somewhere", "something"))
                     )
-                )
-            },
-            "baz": {
-                "href": path_to_uri(
-                    os.path.abspath(
-                        os.path.join(os.sep, "somewhere", "another", "thing")
+                },
+                "bar": {
+                    "href": path_to_uri(
+                        os.path.abspath(
+                            os.path.join(os.sep, "somewhere", "something", "else")
+                        )
                     )
-                )
-            },
-        }
+                },
+                "baz": {
+                    "href": path_to_uri(
+                        os.path.abspath(
+                            os.path.join(os.sep, "somewhere", "another", "thing")
+                        )
+                    )
+                },
+            }
+        )
 
         path = plugin.download(self.product, outputs_prefix=self.output_dir)
 
         # assets common path
-        self.assertEqual(path, os.path.abspath(os.path.join(os.sep, "somewhere")))
+        self.assertEqual(
+            os.path.normcase(path),
+            os.path.normcase(os.path.abspath(os.path.join(os.sep, "somewhere"))),
+        )
         # empty product download directory should have been removed
         self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
 
@@ -976,10 +1061,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(self.product)
         self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
         self.product.properties["tilePath"] = "http://example.com/tilePath"
-        self.product.assets = {
-            "file1": {"href": "http://example.com/path/to/file1"},
-            "file2": {"href": "http://example.com/path/to/file2"},
-        }
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "file1": {"href": "http://example.com/path/to/file1"},
+                "file2": {"href": "http://example.com/path/to/file2"},
+            }
+        )
         execpected_output = os.path.join(
             self.output_dir, self.product.properties["title"]
         )
@@ -1021,6 +1109,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.assertEqual(mock_flatten_top_directories.call_count, 0)
 
         self.assertEqual(path, execpected_output)
+
+        # with filter for assets
+        self.product.properties["title"] = "newTitle"
+        setattr(self.product, "location", "file://path/to/file")
+        plugin.download(self.product, outputs_prefix=self.output_dir, asset="file1")
+        # 3 additional calls
+        self.assertEqual(7, mock_get_chunk_dest_path.call_count)
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
@@ -1256,3 +1351,64 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         run()
         mock_order.assert_called_once_with(mock.ANY, self.product, auth=None)
         self.assertEqual(mock_order_status.call_count, 2)
+
+
+class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.creodias_s3.CreodiasS3Download._get_authenticated_objects_from_auth_keys",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_creodias_s3(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        product = EOProduct(
+            "creodias_s3",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+        )
+        product.location = product.remote_location = "a"
+        assets = {
+            "a1": {"title": "a1", "href": "s3://eodata/a/a1"},
+            "a2": {"title": "a2", "href": "s3://eodata/a/a2"},
+        }
+        product.assets = assets
+        plugin = self.get_download_plugin(product)
+        product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+        # authenticated objects mock
+        mock_get_authenticated_objects.return_value.keys.return_value = [
+            "a1",
+            "a2",
+        ]
+        mock_get_authenticated_objects.return_value.filter.side_effect = (
+            lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
+        )
+
+        plugin.download(product, outputs_prefix=self.output_dir, auth={})
+
+        mock_get_authenticated_objects.assert_called_once_with(
+            plugin, "eodata", "a", {}
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 2)
+        self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
+        self.assertEqual(mock_check_manifest_file_list.call_count, 0)
+        self.assertEqual(mock_flatten_top_directories.call_count, 1)

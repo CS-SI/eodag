@@ -58,6 +58,11 @@ one (e.g. credentials). *PEPS*'s configuration template is shown below:
 
    </details>
 
+.. note::
+
+   Please write settings values as plain text, without quotes to avoid ``PyYAML`` interpreting potential special
+   characters. See https://pyyaml.org/wiki/PyYAMLDocumentation for more information.
+
 |
 
 Users can directly modify the default file, which is then loaded automatically:
@@ -137,6 +142,7 @@ Core configuration using environment variables
 
 Some EODAG core settings can be overriden using environment variables:
 
+* ``EODAG_CFG_DIR`` customized configuration directory in place of ``~/.config/eodag``
 * ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\
   <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_
 * ``EODAG_LOCS_CFG_FILE`` for defining the desired path to the

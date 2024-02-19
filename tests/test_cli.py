@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
-import random
 import re
 import unittest
 from contextlib import contextmanager
@@ -40,7 +40,6 @@ from tests.context import (
     download,
     eodag,
     search_crunch,
-    setup_logging,
 )
 from tests.units import test_core
 from tests.utils import mock, no_blanks, write_eodag_conf_with_fake_credentials
@@ -80,11 +79,13 @@ class TestEodagCli(unittest.TestCase):
 
     def tearDown(self):
         super(TestEodagCli, self).tearDown()
-        # Default logging: no logging but still displays progress bars
-        setup_logging(1)
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
+        # reset logging
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
 
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
@@ -591,17 +592,21 @@ class TestEodagCli(unittest.TestCase):
 
     def test_eodag_list_product_type_with_provider_ok(self):
         """Calling eodag list with provider should return all supported product types of specified provider"""  # noqa
-        provider = random.choice(test_core.TestCore.SUPPORTED_PROVIDERS)
-        provider_supported_product_types = [
-            pt
-            for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
-            if provider in provs
-            if pt != GENERIC_PRODUCT_TYPE
-        ]
-        result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
-        self.assertEqual(result.exit_code, 0)
-        for pt in provider_supported_product_types:
-            self.assertIn(pt, result.output)
+        for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
+            provider_supported_product_types = [
+                pt
+                for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
+                if provider in provs
+                if pt != GENERIC_PRODUCT_TYPE
+            ]
+            result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
+            self.assertEqual(result.exit_code, 0)
+            for pt in provider_supported_product_types:
+                self.assertIn(
+                    pt,
+                    result.output,
+                    f"{pt} was not found in {provider} supported product types",
+                )
 
     def test_eodag_list_product_type_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa

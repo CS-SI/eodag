@@ -14,4 +14,5 @@ The Python API Reference provides an overview of all public objects, functions a
    eoproduct
    utils
    exceptions
+   types
    call_graphs

@@ -15,18 +15,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Dict, Union
+
 from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
+
+if TYPE_CHECKING:
+    from requests.auth import AuthBase
 
 
 class Authentication(PluginTopic):
     """Plugins authentication Base plugin"""
 
-    def authenticate(self):
+    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""
         raise NotImplementedError
 
-    def validate_config_credentials(self):
+    def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
         # No credentials dict in the config
         try:

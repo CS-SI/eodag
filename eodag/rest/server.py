@@ -15,31 +15,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import io
+from __future__ import annotations
+
 import logging
 import os
-import re
 import traceback
 from contextlib import asynccontextmanager
-from distutils import dist
-from typing import List, Optional, Union
+from importlib.metadata import version
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+)
 
-import pkg_resources
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import ORJSONResponse
-from fastapi.types import Any, Callable, DecoratedCallable
+from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from eodag.api.core import DEFAULT_ITEMS_PER_PAGE
 from eodag.config import load_stac_api_config
+from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.utils import (
-    QueryableProperty,
-    Queryables,
     download_stac_item_by_id_stream,
     eodag_api_init,
     fetch_collection_queryable_properties,
@@ -53,7 +59,7 @@ from eodag.rest.utils import (
     get_stac_item_by_id,
     search_stac_items,
 )
-from eodag.utils import parse_header, update_nested_dict
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, parse_header, update_nested_dict
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
@@ -61,13 +67,18 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
     RequestError,
+    TimeOutError,
     UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
 )
 
+if TYPE_CHECKING:
+    from fastapi.types import DecoratedCallable
+    from requests import Response
+
+
 logger = logging.getLogger("eodag.rest.server")
-CAMEL_TO_SPACE_TITLED = re.compile(r"[:_-]|(?<=[a-z])(?=[A-Z])")
 
 
 class APIRouter(FastAPIRouter):
@@ -104,7 +115,7 @@ router = APIRouter()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """API init and tear-down"""
     eodag_api_init()
     yield
@@ -117,24 +128,18 @@ stac_api_config = load_stac_api_config()
 
 
 @router.get("/api", tags=["Capabilities"], include_in_schema=False)
-def eodag_openapi():
+def eodag_openapi() -> Dict[str, Any]:
     """Customized openapi"""
     logger.debug("URL: /api")
     if app.openapi_schema:
         return app.openapi_schema
-
-    # eodag metadata
-    distribution = pkg_resources.get_distribution("eodag")
-    metadata_str = distribution.get_metadata(distribution.PKG_INFO)
-    metadata_obj = dist.DistributionMetadata()
-    metadata_obj.read_pkg_file(io.StringIO(metadata_str))
 
     root_catalog = get_stac_catalogs(url="", fetch_providers=False)
     stac_api_version = get_stac_api_version()
 
     openapi_schema = get_openapi(
         title=f"{root_catalog['title']} / eodag",
-        version=getattr(metadata_obj, "version", None),
+        version=version("eodag"),
         routes=app.routes,
     )
 
@@ -180,7 +185,9 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def forward_middleware(request: Request, call_next):
+async def forward_middleware(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     """Middleware that handles forward headers and sets request.state.url*"""
 
     forwarded_host = request.headers.get("x-forwarded-host", None)
@@ -199,7 +206,9 @@ async def forward_middleware(request: Request, call_next):
 
 
 @app.exception_handler(StarletteHTTPException)
-async def default_exception_handler(request: Request, error):
+async def default_exception_handler(
+    request: Request, error: Exception
+) -> ORJSONResponse:
     """Default errors handle"""
     description = (
         getattr(error, "description", None)
@@ -216,7 +225,7 @@ async def default_exception_handler(request: Request, error):
 @app.exception_handler(UnsupportedProductType)
 @app.exception_handler(UnsupportedProvider)
 @app.exception_handler(ValidationError)
-async def handle_invalid_usage(request: Request, error):
+async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
     """Invalid usage [400] errors handle"""
     logger.warning(traceback.format_exc())
     return await default_exception_handler(
@@ -229,7 +238,9 @@ async def handle_invalid_usage(request: Request, error):
 
 
 @app.exception_handler(NotAvailableError)
-async def handle_resource_not_found(request: Request, error):
+async def handle_resource_not_found(
+    request: Request, error: Exception
+) -> ORJSONResponse:
     """Not found [404] errors handle"""
     return await default_exception_handler(
         request,
@@ -242,7 +253,7 @@ async def handle_resource_not_found(request: Request, error):
 
 @app.exception_handler(MisconfiguredError)
 @app.exception_handler(AuthenticationError)
-async def handle_auth_error(request: Request, error):
+async def handle_auth_error(request: Request, error: Exception) -> ORJSONResponse:
     """AuthenticationError should be sent as internal server error to the client"""
     logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
@@ -256,7 +267,7 @@ async def handle_auth_error(request: Request, error):
 
 @app.exception_handler(DownloadError)
 @app.exception_handler(RequestError)
-async def handle_server_error(request: Request, error):
+async def handle_server_error(request: Request, error: Exception) -> ORJSONResponse:
     """These errors should be sent as internal server error with details to the client"""
     logger.error(f"{type(error).__name__}: {str(error)}")
     return await default_exception_handler(
@@ -268,8 +279,21 @@ async def handle_server_error(request: Request, error):
     )
 
 
+@app.exception_handler(TimeOutError)
+async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
+    """Timeout [504] errors handle"""
+    logger.error(f"{type(error).__name__}: {str(error)}")
+    return await default_exception_handler(
+        request,
+        HTTPException(
+            status_code=504,
+            detail=f"{type(error).__name__}: {str(error)}",
+        ),
+    )
+
+
 @router.get("/", tags=["Capabilities"])
-def catalogs_root(request: Request):
+def catalogs_root(request: Request) -> Any:
     """STAC catalogs root"""
     logger.debug(f"URL: {request.url}")
 
@@ -284,7 +308,7 @@ def catalogs_root(request: Request):
 
 
 @router.get("/conformance", tags=["Capabilities"])
-def conformance():
+def conformance() -> Any:
     """STAC conformance"""
     logger.debug("URL: /conformance")
     response = get_stac_conformance()
@@ -293,7 +317,7 @@ def conformance():
 
 
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
-def stac_extension_oseo(request: Request):
+def stac_extension_oseo(request: Request) -> Any:
     """STAC OGC / OpenSearch extension for EO"""
     logger.debug(f"URL: {request.url}")
     response = get_stac_extension_oseo(url=request.state.url)
@@ -306,15 +330,15 @@ class SearchBody(BaseModel):
     class which describes the body of a search request
     """
 
-    provider: Union[str, None] = None
+    provider: Optional[str] = None
     collections: Union[List[str], str]
-    datetime: Union[str, None] = None
-    bbox: Union[list, str, None] = None
-    intersects: Union[dict, None] = None
-    limit: Union[int, None] = DEFAULT_ITEMS_PER_PAGE
-    page: Union[int, None] = 1
-    query: Union[dict, None] = None
-    ids: Union[List[str], None] = None
+    datetime: Optional[str] = None
+    bbox: Optional[List[Union[int, float]]] = None
+    intersects: Optional[Dict[str, Any]] = None
+    limit: Optional[int] = DEFAULT_ITEMS_PER_PAGE
+    page: Optional[int] = 1
+    query: Optional[Dict[str, Any]] = None
+    ids: Optional[List[str]] = None
 
 
 @router.get(
@@ -322,15 +346,40 @@ class SearchBody(BaseModel):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download(collection_id, item_id, request: Request):
-    """STAC collection item local download"""
+def stac_collections_item_download(
+    collection_id: str, item_id: str, request: Request
+) -> StreamingResponse:
+    """STAC collection item download"""
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     return download_stac_item_by_id_stream(
-        catalogs=[collection_id], item_id=item_id, provider=provider
+        catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
+    )
+
+
+@router.get(
+    "/collections/{collection_id}/items/{item_id}/download/{asset_filter}",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_collections_item_download_asset(
+    collection_id, item_id, asset_filter, request: Request
+):
+    """STAC collection item asset download"""
+    logger.debug(f"URL: {request.url}")
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    return download_stac_item_by_id_stream(
+        catalogs=[collection_id],
+        item_id=item_id,
+        provider=provider,
+        asset=asset_filter,
+        **arguments,
     )
 
 
@@ -339,7 +388,7 @@ def stac_collections_item_download(collection_id, item_id, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item(collection_id, item_id, request: Request):
+def stac_collections_item(collection_id: str, item_id: str, request: Request) -> Any:
     """STAC collection item by id"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -354,6 +403,7 @@ def stac_collections_item(collection_id, item_id, request: Request):
         root=url_root,
         catalogs=[collection_id],
         provider=provider,
+        **arguments,
     )
 
     if response:
@@ -372,7 +422,7 @@ def stac_collections_item(collection_id, item_id, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(collection_id, request: Request):
+def stac_collections_items(collection_id: str, request: Request) -> Any:
     """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -399,7 +449,7 @@ def stac_collections_items(collection_id, request: Request):
 )
 def list_collection_queryables(
     request: Request, collection_id: str, provider: Optional[str] = None
-) -> Queryables:
+) -> Any:
     """Returns the list of queryable properties for a specific collection.
 
     This endpoint provides a list of properties that can be used as filters when querying
@@ -412,21 +462,24 @@ def list_collection_queryables(
     :type collection_id: str
     :param provider: (optional) The provider for which to retrieve additional properties.
     :type provider: str
-    :returns: An object containing the list of available queryable properties for the specified collection.
-    :rtype: eodag.rest.utils.Queryables
+    :returns: A json object containing the list of available queryable properties for the specified collection.
+    :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
+    query_params = request.query_params.items()
+    additional_params = dict(query_params)
+    additional_params.pop("provider", None)
 
-    queryables = Queryables(q_id=request.state.url, additional_properties=False)
-    conf_args = [collection_id, provider] if provider else [collection_id]
+    queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
 
-    provider_properties = set(fetch_collection_queryable_properties(*conf_args))
+    collection_queryables = fetch_collection_queryable_properties(
+        collection_id, provider, **additional_params
+    )
+    for key, collection_queryable in collection_queryables.items():
+        queryables[key] = collection_queryable
+    queryables.properties.pop("collections")
 
-    for prop in provider_properties:
-        titled_name = re.sub(CAMEL_TO_SPACE_TITLED, " ", prop).title()
-        queryables[prop] = QueryableProperty(description=titled_name)
-
-    return queryables
+    return jsonable_encoder(queryables)
 
 
 @router.get(
@@ -434,7 +487,7 @@ def list_collection_queryables(
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def collection_by_id(collection_id, request: Request):
+def collection_by_id(collection_id: str, request: Request) -> Any:
     """STAC collection by id"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url_root + "/collections"
@@ -458,7 +511,7 @@ def collection_by_id(collection_id, request: Request):
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def collections(request: Request):
+def collections(request: Request) -> Any:
     """STAC collections
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType, processingLevel
@@ -476,6 +529,7 @@ def collections(request: Request):
         arguments=arguments,
         provider=provider,
     )
+
     return jsonable_encoder(response)
 
 
@@ -484,8 +538,31 @@ def collections(request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item_download(catalogs, item_id, request: Request):
-    """STAC item local download"""
+def stac_catalogs_item_download(
+    catalogs: str, item_id: str, request: Request
+) -> StreamingResponse:
+    """STAC Catalog item download"""
+    logger.debug(f"URL: {request.url}")
+
+    arguments = dict(request.query_params)
+    provider = arguments.pop("provider", None)
+
+    list_catalog = catalogs.strip("/").split("/")
+
+    return download_stac_item_by_id_stream(
+        catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
+    )
+
+
+@router.get(
+    "/catalogs/{catalogs:path}/items/{item_id}/download/{asset_filter}",
+    tags=["Data"],
+    include_in_schema=False,
+)
+def stac_catalogs_item_download_asset(
+    catalogs, item_id, asset_filter, request: Request
+):
+    """STAC Catalog item asset download"""
     logger.debug(f"URL: {request.url}")
 
     arguments = dict(request.query_params)
@@ -494,7 +571,11 @@ def stac_catalogs_item_download(catalogs, item_id, request: Request):
     catalogs = catalogs.strip("/").split("/")
 
     return download_stac_item_by_id_stream(
-        catalogs=catalogs, item_id=item_id, provider=provider
+        catalogs=catalogs,
+        item_id=item_id,
+        provider=provider,
+        asset=asset_filter,
+        **arguments,
     )
 
 
@@ -503,7 +584,7 @@ def stac_catalogs_item_download(catalogs, item_id, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item(catalogs, item_id, request: Request):
+def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     """Fetch catalog's single features."""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -512,13 +593,14 @@ def stac_catalogs_item(catalogs, item_id, request: Request):
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
     response = get_stac_item_by_id(
         url=url,
         item_id=item_id,
         root=url_root,
-        catalogs=catalogs,
+        catalogs=list_catalog,
         provider=provider,
+        **arguments,
     )
 
     if response:
@@ -537,7 +619,7 @@ def stac_catalogs_item(catalogs, item_id, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_items(catalogs, request: Request):
+def stac_catalogs_items(catalogs: str, request: Request) -> Any:
     """Fetch catalog's features
     '"""
     logger.debug(f"URL: {request.url}")
@@ -547,13 +629,13 @@ def stac_catalogs_items(catalogs, request: Request):
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
 
     response = search_stac_items(
         url=url,
         arguments=arguments,
         root=url_root,
-        catalogs=catalogs,
+        catalogs=list_catalog,
         provider=provider,
     )
     return jsonable_encoder(response)
@@ -564,7 +646,7 @@ def stac_catalogs_items(catalogs, request: Request):
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def stac_catalogs(catalogs, request: Request):
+def stac_catalogs(catalogs: str, request: Request) -> Any:
     """Describe the given catalog and list available sub-catalogs"""
     logger.debug(f"URL: {request.url}")
     url = request.state.url
@@ -573,11 +655,11 @@ def stac_catalogs(catalogs, request: Request):
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    catalogs = catalogs.strip("/").split("/")
+    list_catalog = catalogs.strip("/").split("/")
     response = get_stac_catalogs(
         url=url,
         root=url_root,
-        catalogs=catalogs,
+        catalogs=list_catalog,
         provider=provider,
     )
     return jsonable_encoder(response)
@@ -586,10 +668,10 @@ def stac_catalogs(catalogs, request: Request):
 @router.get(
     "/queryables",
     tags=["Capabilities"],
-    include_in_schema=False,
     response_model_exclude_none=True,
+    include_in_schema=False,
 )
-def list_queryables(request: Request) -> Queryables:
+def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     """Returns the list of terms available for use when writing filter expressions.
 
     This endpoint provides a list of terms that can be used as filters when querying
@@ -598,12 +680,20 @@ def list_queryables(request: Request) -> Queryables:
 
     :param request: The incoming request object.
     :type request: fastapi.Request
-    :returns: An object containing the list of available queryable terms.
-    :rtype: eodag.rest.utils.Queryables
+    :returns: A json object containing the list of available queryable terms.
+    :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
+    query_params = request.query_params.items()
+    additional_params = dict(query_params)
+    additional_params.pop("provider", None)
+    queryables = StacQueryables(q_id=request.state.url)
+    if provider:
+        queryables.properties.update(
+            fetch_collection_queryable_properties(None, provider, **additional_params)
+        )
 
-    return Queryables(q_id=request.state.url)
+    return jsonable_encoder(queryables)
 
 
 @router.get(
@@ -616,7 +706,9 @@ def list_queryables(request: Request) -> Queryables:
     tags=["STAC"],
     include_in_schema=False,
 )
-def stac_search(request: Request, search_body: Optional[SearchBody] = None):
+def stac_search(
+    request: Request, search_body: Optional[SearchBody] = None
+) -> ORJSONResponse:
     """STAC collections items"""
     logger.debug(f"URL: {request.url}")
     logger.debug(f"Body: {search_body}")
@@ -633,7 +725,11 @@ def stac_search(request: Request, search_body: Optional[SearchBody] = None):
     provider = arguments.pop("provider", None)
 
     response = search_stac_items(
-        url=url, arguments=arguments, root=url_root, provider=provider
+        url=url,
+        arguments=arguments,
+        root=url_root,
+        provider=provider,
+        method=request.method,
     )
     resp = ORJSONResponse(
         content=response, status_code=200, media_type="application/json"

@@ -15,15 +15,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import datetime
 import logging
 import time
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 import dateutil.parser
 from shapely import geometry
+from shapely.geometry.base import BaseGeometry
 
 from eodag.plugins.crunch.base import Crunch
+
+if TYPE_CHECKING:
+    from datetime import datetime as dt
+
+    from eodag.api.product import EOProduct
 
 logger = logging.getLogger("eodag.crunch.latest_intersect")
 
@@ -35,7 +43,7 @@ class FilterLatestIntersect(Crunch):
     """
 
     @staticmethod
-    def sort_product_by_start_date(product):
+    def sort_product_by_start_date(product: EOProduct) -> dt:
         """Get product start date"""
         start_date = product.properties.get("startTimeFromAscendingNode")
         if not start_date:
@@ -44,7 +52,9 @@ class FilterLatestIntersect(Crunch):
             start_date = datetime.datetime(*epoch).isoformat()
         return dateutil.parser.parse(start_date)
 
-    def proceed(self, products, **search_params):
+    def proceed(
+        self, products: List[EOProduct], **search_params: Any
+    ) -> List[EOProduct]:
         """Execute crunch:
         Filter latest products (the ones with a the highest start date) that intersect search extent.
 
@@ -61,9 +71,11 @@ class FilterLatestIntersect(Crunch):
             return []
         # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
-        filtered = []
+        filtered: List[EOProduct] = []
         add_to_filtered = filtered.append
-        footprint = search_params.get("geometry") or search_params.get("geom")
+        footprint: Union[Dict[str, Any], BaseGeometry, Any] = search_params.get(
+            "geometry"
+        ) or search_params.get("geom")
         if not footprint:
             logger.warning(
                 "geometry not found in cruncher arguments, filtering disabled."
@@ -76,7 +88,7 @@ class FilterLatestIntersect(Crunch):
                 footprint["lonmax"],
                 footprint["latmax"],
             )
-        elif not isinstance(footprint, geometry.base.BaseGeometry):
+        elif not isinstance(footprint, BaseGeometry):
             logger.warning(
                 "geometry found in cruncher arguments did not match the expected format."
             )

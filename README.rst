@@ -34,7 +34,7 @@
 ..
 
     Checkout **EODAG Jupyterlab extension**: `eodag-labextension <https://github.com/CS-SI/eodag-labextension>`_!
-    This will bring a fiendly UI to your notebook and help you search and browse for EO products using ``eodag``.
+    This will bring a friendly UI to your notebook and help you search and browse for EO products using ``eodag``.
 
 EODAG (Earth Observation Data Access Gateway) is a command line tool and a plugin-oriented Python framework for searching,
 aggregating results and downloading remote sensed images while offering a unified API for data access regardless of the
@@ -152,12 +152,12 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
 
     # search for items
     $ curl "http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25" \
-    | jq ".context.matched"
+    | jq ".numberMatched"
     6
 
     # browse for items
     $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
-    | jq ".context.matched"
+    | jq ".numberMatched"
     9
 
     # get download link
@@ -173,7 +173,7 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
 
 .. code-block:: bash
 
-    docker run -p 5000:5000 --rm csspace/eodag-server:2.11.0
+    docker run -p 5000:5000 --rm csspace/eodag-server:2.12.0
 
 You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
 Simply run:
@@ -265,4 +265,4 @@ Credits
 
 EODAG is built on top of amazingly useful open source projects. See NOTICE file for details about those projects and
 their licenses.
-Thank you to all the authors of these projects !
+Thank you to all the authors of these projects!

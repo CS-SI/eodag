@@ -19,8 +19,10 @@
 import copy
 import glob
 import json
+import logging
 import os
 import shutil
+import tempfile
 import unittest
 import uuid
 from pathlib import Path
@@ -35,17 +37,21 @@ from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
+    CommonQueryables,
     EODataAccessGateway,
     EOProduct,
     NoMatchingProductType,
     PluginImplementationError,
     ProviderConfig,
+    Queryables,
     RequestError,
     SearchResult,
+    UnsupportedProductType,
     UnsupportedProvider,
     get_geometry_from_various,
     load_default_config,
     makedirs,
+    model_fields_to_annotated,
 )
 from tests.utils import mock, write_eodag_conf_with_fake_credentials
 
@@ -76,14 +82,27 @@ class TestCoreBase(unittest.TestCase):
         # stop Mock and remove tmp config dir
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
+        # reset logging
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
 
 
 class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
+        "CAMS_GAC_FORECAST": ["cop_ads"],
+        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads"],
+        "CAMS_GFE_GFAS": ["cop_ads"],
+        "CAMS_GRF": ["cop_ads"],
+        "CAMS_GRF_AUX": ["cop_ads"],
+        "CAMS_SOLAR_RADIATION": ["cop_ads"],
+        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads"],
+        "CAMS_GREENHOUSE_EGG4": ["cop_ads"],
+        "CAMS_GREENHOUSE_INVERSION": ["cop_ads"],
+        "CAMS_GLOBAL_EMISSIONS": ["cop_ads"],
         "CAMS_EAC4": ["cop_ads"],
-        "CAMS_GACF_AOT": ["cop_ads"],
-        "CAMS_GACF_MR": ["cop_ads"],
-        "CAMS_GACF_RH": ["cop_ads"],
+        "CAMS_EAC4_MONTHLY": ["cop_ads"],
+        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads"],
         "CBERS4_AWFI_L2": ["aws_eos"],
         "CBERS4_AWFI_L4": ["aws_eos"],
         "CBERS4_MUX_L2": ["aws_eos"],
@@ -100,34 +119,34 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_LAI_333M": ["wekeo"],
         "CLMS_GLO_NDVI_1KM_LTS": ["wekeo"],
         "CLMS_GLO_NDVI_333M": ["wekeo"],
-        "COP_DEM_GLO30_DGED": ["creodias", "wekeo"],
-        "COP_DEM_GLO30_DTED": ["creodias"],
-        "COP_DEM_GLO90_DGED": ["creodias", "wekeo"],
-        "COP_DEM_GLO90_DTED": ["creodias"],
+        "COP_DEM_GLO30_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
+        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3"],
+        "COP_DEM_GLO90_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
+        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3"],
         "EEA_DAILY_SSM_1KM": ["wekeo"],
         "EEA_DAILY_SWI_1KM": ["wekeo"],
         "EEA_DAILY_VI": ["wekeo"],
-        "EFAS_FORECAST": ["wekeo"],
-        "EFAS_HISTORICAL": ["wekeo"],
-        "EFAS_REFORECAST": ["wekeo"],
-        "EFAS_SEASONAL": ["wekeo"],
-        "EFAS_SEASONAL_REFORECAST": ["wekeo"],
-        "ERA5_LAND": ["wekeo"],
-        "ERA5_LAND_MONTHLY": ["wekeo"],
-        "ERA5_PL": ["wekeo"],
-        "ERA5_PL_MONTHLY": ["wekeo"],
+        "EFAS_FORECAST": ["cop_cds", "wekeo"],
+        "EFAS_HISTORICAL": ["cop_cds", "wekeo"],
+        "EFAS_REFORECAST": ["cop_cds", "wekeo"],
+        "EFAS_SEASONAL": ["cop_cds", "wekeo"],
+        "EFAS_SEASONAL_REFORECAST": ["cop_cds", "wekeo"],
+        "ERA5_LAND": ["cop_cds", "wekeo"],
+        "ERA5_LAND_MONTHLY": ["cop_cds", "wekeo"],
+        "ERA5_PL": ["cop_cds", "wekeo"],
+        "ERA5_PL_MONTHLY": ["cop_cds", "wekeo"],
         "ERA5_SL": ["cop_cds", "wekeo"],
-        "ERA5_SL_MONTHLY": ["wekeo"],
-        "FIRE_HISTORICAL": ["wekeo"],
-        "GLACIERS_DIST_RANDOLPH": ["wekeo"],
+        "ERA5_SL_MONTHLY": ["cop_cds", "wekeo"],
+        "FIRE_HISTORICAL": ["cop_cds", "wekeo"],
+        "GLACIERS_DIST_RANDOLPH": ["cop_cds", "wekeo"],
         "GLACIERS_ELEVATION_AND_MASS_CHANGE": ["wekeo"],
-        "GLOFAS_FORECAST": ["wekeo"],
-        "GLOFAS_HISTORICAL": ["wekeo"],
-        "GLOFAS_REFORECAST": ["wekeo"],
-        "GLOFAS_SEASONAL": ["wekeo"],
-        "GLOFAS_SEASONAL_REFORECAST": ["wekeo"],
+        "GLOFAS_FORECAST": ["cop_cds", "wekeo"],
+        "GLOFAS_HISTORICAL": ["cop_cds", "wekeo"],
+        "GLOFAS_REFORECAST": ["cop_cds", "wekeo"],
+        "GLOFAS_SEASONAL": ["cop_cds", "wekeo"],
+        "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "wekeo"],
         "L57_REFLECTANCE": ["theia"],
-        "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search", "earth_search_gcs", "onda"],
+        "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
         "LANDSAT_C2L1": [
             "astraea_eod",
@@ -135,7 +154,7 @@ class TestCore(TestCoreBase):
             "usgs",
             "usgs_satapi_aws",
         ],
-        "LANDSAT_C2L2": ["planetary_computer", "usgs"],
+        "LANDSAT_C2L2": ["usgs", "planetary_computer", "earth_search"],
         "LANDSAT_C2L2ALB_BT": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_ST": ["usgs_satapi_aws"],
@@ -149,7 +168,7 @@ class TestCore(TestCoreBase):
         "LANDSAT_TM_C2L1": ["usgs"],
         "LANDSAT_TM_C2L2": ["usgs"],
         "MODIS_MCD43A4": ["astraea_eod", "aws_eos", "planetary_computer"],
-        "NAIP": ["astraea_eod", "aws_eos", "planetary_computer"],
+        "NAIP": ["astraea_eod", "aws_eos", "planetary_computer", "earth_search"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
         "OSO": ["theia"],
@@ -162,17 +181,28 @@ class TestCore(TestCoreBase):
             "aws_eos",
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
+            "earth_search",
             "onda",
             "peps",
             "planetary_computer",
             "sara",
             "wekeo",
         ],
-        "S1_SAR_OCN": ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
-        "S1_SAR_RAW": ["cop_dataspace", "creodias", "onda", "wekeo"],
+        "S1_SAR_OCN": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "peps",
+            "sara",
+            "wekeo",
+        ],
+        "S1_SAR_RAW": ["cop_dataspace", "creodias", "creodias_s3", "onda", "wekeo"],
         "S1_SAR_SLC": [
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
             "onda",
             "peps",
             "sara",
@@ -183,6 +213,7 @@ class TestCore(TestCoreBase):
             "aws_eos",
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
             "earth_search",
             "earth_search_gcs",
             "onda",
@@ -196,9 +227,8 @@ class TestCore(TestCoreBase):
             "aws_eos",
             "cop_dataspace",
             "creodias",
-            "earth_search",
+            "creodias_s3",
             "onda",
-            "peps",
             "planetary_computer",
             "sara",
             "wekeo",
@@ -209,12 +239,13 @@ class TestCore(TestCoreBase):
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
         "S2_MSI_L3A_WASP": ["theia"],
-        "S3_EFR": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_ERR": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_LAN": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
+        "S3_EFR": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
+        "S3_ERR": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
+        "S3_LAN": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
         "S3_OLCI_L2LFR": [
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
             "onda",
             "sara",
             "wekeo",
@@ -222,40 +253,85 @@ class TestCore(TestCoreBase):
         "S3_OLCI_L2LRR": [
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
             "onda",
             "sara",
             "wekeo",
         ],
-        "S3_OLCI_L2WFR": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_OLCI_L2WRR": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
+        "S3_OLCI_L2WFR": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_OLCI_L2WRR": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
         "S3_RAC": ["sara"],
         "S3_SLSTR_L1RBT": [
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
             "onda",
             "sara",
             "wekeo",
         ],
         "S3_SLSTR_L2": ["wekeo"],
-        "S3_SLSTR_L2AOD": ["cop_dataspace", "creodias", "sara", "wekeo"],
+        "S3_SLSTR_L2AOD": ["cop_dataspace", "creodias", "creodias_s3", "sara", "wekeo"],
         "S3_SLSTR_L2FRP": [
             "cop_dataspace",
             "creodias",
+            "creodias_s3",
             "onda",
             "sara",
             "wekeo",
         ],
-        "S3_SLSTR_L2LST": ["cop_dataspace", "creodias", "onda", "sara"],
-        "S3_SLSTR_L2WST": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_SRA": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_SRA_A": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_SRA_BS": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_SY_AOD": ["cop_dataspace", "creodias", "onda", "sara"],
-        "S3_SY_SYN": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
-        "S3_SY_V10": ["cop_dataspace", "creodias", "onda", "sara"],
-        "S3_SY_VG1": ["cop_dataspace", "creodias", "onda", "sara"],
-        "S3_SY_VGP": ["cop_dataspace", "creodias", "onda", "sara"],
-        "S3_WAT": ["cop_dataspace", "creodias", "onda", "sara", "wekeo"],
+        "S3_SLSTR_L2LST": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SLSTR_L2WST": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_SRA": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
+        "S3_SRA_A": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_SRA_BS": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_SY_AOD": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_SYN": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_SY_V10": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_VG1": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_VGP": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_WAT": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
         "S3_OLCI_L2WFR_BC003": ["wekeo"],
         "S3_OLCI_L2WRR_BC003": ["wekeo"],
         "S3_SRA_1A_BC004": ["wekeo"],
@@ -272,45 +348,45 @@ class TestCore(TestCoreBase):
         "S6_P4_L2HR_F06": ["wekeo"],
         "S6_AMR_L2_F06": ["wekeo"],
         "S5P_L1B2_IR_ALL": ["wekeo"],
-        "S5P_L1B_IR_SIR": ["cop_dataspace", "creodias"],
-        "S5P_L1B_IR_UVN": ["cop_dataspace", "creodias"],
-        "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD2": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD3": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD4": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD5": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD6": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD7": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L1B_RA_BD8": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_AER_AI": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_AER_LH": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_CH4": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_CLOUD": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_CO": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_HCHO": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_NO2": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_NP_BD3": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_NP_BD6": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_NP_BD7": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_O3": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "onda"],
-        "S5P_L2_O3_TCL": ["cop_dataspace", "creodias"],
-        "S5P_L2_SO2": ["cop_dataspace", "creodias", "onda"],
-        "SATELLITE_CARBON_DIOXIDE": ["wekeo"],
-        "SATELLITE_METHANE": ["wekeo"],
-        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["wekeo"],
-        "SEASONAL_MONTHLY_PL": ["wekeo"],
-        "SEASONAL_MONTHLY_SL": ["wekeo"],
-        "SEASONAL_ORIGINAL_PL": ["wekeo"],
-        "SEASONAL_ORIGINAL_SL": ["wekeo"],
-        "SEASONAL_POSTPROCESSED_PL": ["wekeo"],
-        "SEASONAL_POSTPROCESSED_SL": ["wekeo"],
-        "SIS_HYDRO_MET_PROJ": ["wekeo"],
+        "S5P_L1B_IR_SIR": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_IR_UVN": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD3": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD4": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD5": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD6": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD7": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD8": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_AER_AI": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_AER_LH": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_CH4": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_CLOUD": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_CO": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_HCHO": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_NO2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_NP_BD3": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_NP_BD6": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_NP_BD7": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_O3": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_O3_TCL": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_SO2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "wekeo"],
+        "SATELLITE_METHANE": ["cop_cds", "wekeo"],
+        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "wekeo"],
+        "SEASONAL_MONTHLY_PL": ["cop_cds", "wekeo"],
+        "SEASONAL_MONTHLY_SL": ["cop_cds", "wekeo"],
+        "SEASONAL_ORIGINAL_PL": ["cop_cds", "wekeo"],
+        "SEASONAL_ORIGINAL_SL": ["cop_cds", "wekeo"],
+        "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "wekeo"],
+        "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "wekeo"],
+        "SIS_HYDRO_MET_PROJ": ["cop_cds", "wekeo"],
         "SPOT5_SPIRIT": ["theia"],
         "SPOT_SWH": ["theia"],
         "SPOT_SWH_OLD": ["theia"],
         "TIGGE_CF_SFC": ["ecmwf"],
-        "UERRA_EUROPE_SL": ["wekeo"],
+        "UERRA_EUROPE_SL": ["cop_cds", "wekeo"],
         "VENUS_L1C": ["theia"],
         "VENUS_L2A_MAJA": ["theia"],
         "VENUS_L3A_MAJA": ["theia"],
@@ -332,6 +408,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "planetary_computer",
             "hydroweb_next",
+            "creodias_s3",
         ],
     }
     SUPPORTED_PROVIDERS = [
@@ -355,6 +432,7 @@ class TestCore(TestCoreBase):
         "planetary_computer",
         "hydroweb_next",
         "wekeo",
+        "creodias_s3",
     ]
 
     def setUp(self):
@@ -378,7 +456,10 @@ class TestCore(TestCoreBase):
     def test_supported_product_types_in_unit_test(self):
         """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
         for product_type in self.dag.list_product_types(fetch_providers=False):
-            self.assertIn(product_type["ID"], self.SUPPORTED_PRODUCT_TYPES.keys())
+            assert (
+                product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+            )
 
     def test_list_product_types_ok(self):
         """Core api must correctly return the list of supported product types"""
@@ -388,6 +469,16 @@ class TestCore(TestCoreBase):
             self.assertListProductTypesRightStructure(product_type)
         # There should be no repeated product type in the output
         self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        # add alias for product type - should still work
+        products = self.dag.product_types_config
+        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        product_types = self.dag.list_product_types(fetch_providers=False)
+        for product_type in product_types:
+            self.assertListProductTypesRightStructure(product_type)
+        # There should be no repeated product type in the output
+        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        # use alias as id
+        self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in product_types])
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
@@ -398,9 +489,14 @@ class TestCore(TestCoreBase):
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
                 self.assertListProductTypesRightStructure(product_type)
-                self.assertIn(
-                    provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
-                )
+                if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
+                    self.assertIn(
+                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
+                    )
+                else:
+                    self.assertIn(
+                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]]
+                    )
 
     def test_list_product_types_for_unsupported_provider(self):
         """Core api must raise UnsupportedProvider error for list_product_types with unsupported provider"""
@@ -532,7 +628,7 @@ class TestCore(TestCoreBase):
         )
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        "eodag.plugins.apis.ecmwf.EcmwfApi.discover_product_types",
         autospec=True,
         return_value={
             "providers_config": {"foo": {"productType": "foo"}},
@@ -781,7 +877,10 @@ class TestCore(TestCoreBase):
         self.assertIn("platformSerialIdentifier", structure)
         self.assertIn("processingLevel", structure)
         self.assertIn("sensorType", structure)
-        self.assertIn(structure["ID"], self.SUPPORTED_PRODUCT_TYPES)
+        assert (
+            structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
+            or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
+        )
 
     @mock.patch("eodag.api.core.open_dir", autospec=True)
     @mock.patch("eodag.api.core.exists_in", autospec=True, return_value=True)
@@ -975,6 +1074,91 @@ class TestCore(TestCoreBase):
         # run a 2nd time: check that it does not raise an error
         self.dag.update_providers_config(new_config)
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_list_queryables(
+        self, mock_discover_queryables, mock_fetch_product_types_list
+    ):
+        """list_queryables must return queryables list adapted to provider and product-type"""
+        with self.assertRaises(UnsupportedProvider):
+            self.dag.list_queryables(provider="not_existing_provider")
+
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.list_queryables(productType="not_existing_product_type")
+
+        queryables_none_none = self.dag.list_queryables()
+        expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
+        self.assertEqual(len(queryables_none_none), len(expected_result))
+        for key, queryable in queryables_none_none.items():
+            # compare obj.__repr__
+            self.assertEqual(str(expected_result[key]), str(queryable))
+
+        queryables_peps_none = self.dag.list_queryables(provider="peps")
+        expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
+        self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
+        self.assertLess(len(queryables_peps_none), len(expected_longer_result))
+        for key, queryable in queryables_peps_none.items():
+            # compare obj.__repr__
+            self.assertEqual(str(expected_longer_result[key]), str(queryable))
+
+        queryables_peps_s1grd = self.dag.list_queryables(
+            provider="peps", productType="S1_SAR_GRD"
+        )
+        self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
+        self.assertLess(len(queryables_peps_s1grd), len(queryables_peps_none))
+        self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
+        for key, queryable in queryables_peps_s1grd.items():
+            # compare obj.__repr__
+            if key == "productType":
+                self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
+            else:
+                self.assertEqual(str(expected_longer_result[key]), str(queryable))
+
+    @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
+    def test_list_queryables_with_constraints(self, mock_discover_queryables):
+        plugin = next(
+            self.dag._plugins_manager.get_search_plugins(
+                provider="cop_cds", product_type="ERA5_SL"
+            )
+        )
+        # default values should be added to params
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
+        defaults = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "format": "grib",
+            "time": "00:00",
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+        mock_discover_queryables.reset_mock()
+        # default values + additional param
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
+        params = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "format": "grib",
+            "time": "00:00",
+            "month": "02",
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, **params)
+        mock_discover_queryables.reset_mock()
+        # unset default values
+        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
+        defaults = {
+            "productType": "ERA5_SL",
+            "api_product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "time": "00:00",
+            "format": None,
+        }
+        mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+
 
 class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
@@ -1039,6 +1223,20 @@ class TestCoreConfWithEnvVar(TestCoreBase):
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreInvolvingConfDir, cls).setUpClass()
+        cls.dag = EODataAccessGateway()
+        # mock os.environ to empty env
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestCoreInvolvingConfDir, cls).tearDownClass()
+        # stop os.environ
+        cls.mock_os_environ.stop()
+
     def setUp(self):
         super(TestCoreInvolvingConfDir, self).setUp()
         self.dag = EODataAccessGateway()
@@ -1055,14 +1253,15 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
                 except OSError:
                     shutil.rmtree(old_path)
 
-    def execution_involving_conf_dir(self, inspect=None):
+    def execution_involving_conf_dir(self, inspect=None, conf_dir=None):
         """Check that the path(s) inspected (str, list) are created after the instantation
         of EODataAccessGateway. If they were already there, rename them (.old), instantiate,
         check, delete the new files, and restore the existing files to there previous name."""
         if inspect is not None:
+            if conf_dir is None:
+                conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
             if isinstance(inspect, str):
                 inspect = [inspect]
-            conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
             olds = []
             currents = []
             for inspected in inspect:
@@ -1093,6 +1292,49 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
     def test_core_object_creates_locations_standard_location(self):
         """The core object must create a locations config file and a shp dir in standard user config location on instantiation"""  # noqa
         self.execution_involving_conf_dir(inspect=["locations.yml", "shp"])
+
+    def test_read_only_home_dir(self):
+        # standard directory
+        home_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
+        self.execution_involving_conf_dir(inspect="eodag.yml", conf_dir=home_dir)
+
+        # user defined directory
+        user_dir = os.path.join(os.path.expanduser("~"), ".config", "another_eodag")
+        os.environ["EODAG_CFG_DIR"] = user_dir
+        self.execution_involving_conf_dir(inspect="eodag.yml", conf_dir=user_dir)
+        shutil.rmtree(user_dir)
+        del os.environ["EODAG_CFG_DIR"]
+
+        # fallback temporary folder
+        def makedirs_side_effect(dir):
+            if dir == os.path.join(os.path.expanduser("~"), ".config", "eodag"):
+                raise OSError("Mock makedirs error")
+            else:
+                return makedirs(dir)
+
+        with mock.patch(
+            "eodag.api.core.makedirs", side_effect=makedirs_side_effect
+        ) as mock_makedirs:
+            # backup temp_dir if exists
+            temp_dir = temp_dir_old = os.path.join(
+                tempfile.gettempdir(), ".config", "eodag"
+            )
+            if os.path.exists(temp_dir):
+                temp_dir_old = f"{temp_dir}.old"
+                shutil.move(temp_dir, temp_dir_old)
+
+            EODataAccessGateway()
+            expected = [unittest.mock.call(home_dir), unittest.mock.call(temp_dir)]
+            mock_makedirs.assert_has_calls(expected)
+            self.assertTrue(os.path.exists(temp_dir))
+
+            # restore temp_dir
+            if temp_dir_old != temp_dir:
+                try:
+                    shutil.rmtree(temp_dir)
+                except OSError:
+                    os.unlink(temp_dir)
+                shutil.move(temp_dir_old, temp_dir)
 
 
 class TestCoreGeometry(TestCoreBase):
@@ -1463,6 +1705,19 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
+    def test__prepare_search_peps_plugins_product_available_with_alias(self):
+        """_prepare_search must return the search plugins when productType is defined and alias is used"""
+        products = self.dag.product_types_config
+        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        prev_fav_provider = self.dag.get_preferred_provider()[0]
+        try:
+            self.dag.set_preferred_provider("peps")
+            base = {"productType": "S2_MSI_ALIAS"}
+            search_plugins, _ = self.dag._prepare_search(**base)
+            self.assertEqual(search_plugins[0].provider, "peps")
+        finally:
+            self.dag.set_preferred_provider(prev_fav_provider)
+
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
         base = {"id": "some_id", "provider": "some_provider"}
@@ -1512,6 +1767,9 @@ class TestCoreSearch(TestCoreBase):
 
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
 
+        from eodag.utils.logging import get_logging_verbose
+
+        _ = get_logging_verbose()
         # get_search_plugins
         mock_get_search_plugins.assert_called_once_with(
             self.dag._plugins_manager, product_type="bar", provider="baz"
@@ -1839,8 +2097,7 @@ class TestCoreSearch(TestCoreBase):
         """search_iter_page must propagate errors"""
         search_plugin.provider = "peps"
         search_plugin.query.side_effect = AttributeError()
-        prepare_seach.return_value = ([search_plugin], {})
-        page_iterator = self.dag.search_iter_page_plugin()
+        page_iterator = self.dag.search_iter_page_plugin(search_plugin=search_plugin)
         with self.assertRaises(AttributeError):
             next(page_iterator)
 
@@ -2055,3 +2312,38 @@ class TestCoreDownload(TestCoreBase):
         with self.assertLogs(level="INFO") as cm:
             self.dag.download(product)
             self.assertIn("Local product detected. Download skipped", str(cm.output))
+
+
+class TestCoreProductAlias(TestCoreBase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestCoreProductAlias, cls).setUpClass()
+        cls.dag = EODataAccessGateway()
+        products = cls.dag.product_types_config
+        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+
+    def test_get_alias_from_product_type(self):
+        # return product alias
+        self.assertEqual(
+            "S2_MSI_ALIAS", self.dag.get_alias_from_product_type("S2_MSI_L1C")
+        )
+        # product type without alias
+        self.assertEqual(
+            "S1_SAR_GRD", self.dag.get_alias_from_product_type("S1_SAR_GRD")
+        )
+        # not existing product type
+        with self.assertRaises(NoMatchingProductType):
+            self.dag.get_alias_from_product_type("JUST_A_TYPE")
+
+    def test_get_product_type_from_alias(self):
+        # return product id
+        self.assertEqual(
+            "S2_MSI_L1C", self.dag.get_product_type_from_alias("S2_MSI_ALIAS")
+        )
+        # product type without alias
+        self.assertEqual(
+            "S1_SAR_GRD", self.dag.get_product_type_from_alias("S1_SAR_GRD")
+        )
+        # not existing product type
+        with self.assertRaises(NoMatchingProductType):
+            self.dag.get_product_type_from_alias("JUST_A_TYPE")

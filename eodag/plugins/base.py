@@ -15,30 +15,39 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
 from eodag.utils.exceptions import PluginNotFoundError
+
+if TYPE_CHECKING:
+    from eodag.config import PluginConfig
 
 
 class EODAGPluginMount(type):
     """Plugin mount"""
 
-    def __init__(cls, name, bases, attrs):
+    def __init__(
+        cls, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]
+    ) -> None:
         if not hasattr(cls, "plugins"):
             # This branch only executes when processing the mount point itself.
             # So, since this is a new plugin type, not an implementation, this
             # class shouldn't be registered as a plugin. Instead, it sets up a
             # list where plugins can be registered later.
-            cls.plugins = []
+            cls.plugins: List[EODAGPluginMount] = []
         else:
             # This must be a plugin implementation, which should be registered.
             # Simply appending it to the list is all that's needed to keep
             # track of it later.
             cls.plugins.append(cls)
 
-    def get_plugins(cls, *args, **kwargs):
+    def get_plugins(cls, *args: Any, **kwargs: Any) -> List[EODAGPluginMount]:
         """Get plugins"""
         return [plugin(*args, **kwargs) for plugin in cls.plugins]
 
-    def get_plugin_by_class_name(cls, name):
+    def get_plugin_by_class_name(cls, name: str) -> EODAGPluginMount:
         """Get plugin by class_name"""
         for plugin in cls.plugins:
             if name == plugin.__name__:
@@ -51,11 +60,11 @@ class EODAGPluginMount(type):
 class PluginTopic(metaclass=EODAGPluginMount):
     """Base of all plugin topics in eodag"""
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         self.config = config
         self.provider = provider
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}(provider={}, priority={}, topic={})".format(
             self.__class__.__name__,
             self.provider,

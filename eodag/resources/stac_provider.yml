@@ -20,7 +20,7 @@ search:
   results_entry: features
   pagination:
     next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
-    total_items_nb_key_path: '$.context.matched'
+    total_items_nb_key_path: '$.numberMatched'
     next_page_url_key_path: '$.links[?(@.rel="next")].href'
     next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
     next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
@@ -30,22 +30,33 @@ search:
     search_param: '{{{{"query":{{{{"{metadata}":{{{{"eq":"{{{metadata}}}" }}}} }}}} }}}}'
     metadata_path: '$.properties.*'
   discover_product_types:
-      fetch_url: '{api_endpoint}/../collections'
-      result_type: json
-      results_entry: '$.collections[*]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
-        productType: '$.id'
-      generic_product_type_parsable_metadata:
-        abstract: '$.description'
-        instrument: '{$.summaries.instruments#csv_list}'
-        platform: '{$.summaries.constellation#csv_list}'
-        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-        processingLevel: '$.summaries."processing:level"'
-        keywords: '{$.keywords#csv_list}'
-        license: '$.license'
-        title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+    fetch_url: '{api_endpoint}/../collections'
+    result_type: json
+    results_entry: '$.collections[*]'
+    generic_product_type_id: '$.id'
+    generic_product_type_parsable_properties:
+      productType: '$.id'
+    generic_product_type_parsable_metadata:
+      abstract: '$.description'
+      instrument: '{$.summaries.instruments#csv_list}'
+      platform: '{$.summaries.constellation#csv_list}'
+      platformSerialIdentifier: '{$.summaries.platform#csv_list}'
+      processingLevel: '$.summaries."processing:level"'
+      keywords: '{$.keywords#csv_list}'
+      license: '$.license'
+      title: '$.title'
+      missionStartDate: '$.extent.temporal.interval[0][0]'
+    metadata_path: '$.properties.*'
+  discover_queryables:
+    fetch_url: '{api_endpoint}/../queryables'
+    product_type_fetch_url: '{api_endpoint}/../collections/{provider_product_type}/queryables'
+    result_type: json
+    results_entry: '$.properties[*]'
+    queryable_parsable_metadata:
+      description: '$.description'
+      title: '$.title'
+      type: '$.type'
+      pattern: '$.pattern'
   common_metadata_mapping_path: '$'
   metadata_mapping:
     # OpenSearch Parameters for Collection Search (Table 3)

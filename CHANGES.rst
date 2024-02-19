@@ -1,11 +1,41 @@
 Release history
 ---------------
 
+2.12.0 (2024-02-19)
++++++++++++++++++++
+
+* Individual product asset download methods (:pull:`932`)
+* New environment variable `EODAG_CFG_DIR` available for custom configuration directory (:pull:`927`)
+* New `list_queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#Queryables>`_
+  method, available through python API and server mode, and using product-types constraints if available (:pull:`911`)
+  (:pull:`917`)(:pull:`974`)(:pull:`977`)(:pull:`978`)(:pull:`981`)(:pull:`1005`)
+* Removes limited RPC server (:pull:`1011`)
+* Product types aliases (:pull:`905`)
+* New provider `creodias_s3` (:pull:`986`)(:pull:`1002`)
+* `earth_search` endpoint updated from v0 to v1 (:pull:`754`)
+* `wekeo` endpoint updated to *wekeo2 wekeo-broker API* (:pull:`1010`)
+* New product types added for `cop_ads` and `cop_cds` (:pull:`898`)
+* Adds missing `tileIdentifier` and `quicklook` for `creodias`, `creodias_s3` and `cop_dataspace` (:pull:`957`)
+  (:pull:`1014`)
+* HTTP download with :class:`~eodag.plugins.apis.cds.CdsApi` (:pull:`946`)
+* Download streaming available for :class:`~eodag.plugins.download.aws.AwsDownload` plugin (:pull:`997`)
+* Lists STAC alternate assets in server mode (:pull:`961`)
+* `_dc_qs` used in server-mode to store :class:`~eodag.plugins.apis.cds.CdsApi` search criteria (:pull:`958`)(:pull:`1000`)
+* New eodag exception :class:`~eodag.utils.exceptions.TimeOutError` (:pull:`982`)
+* Cast loaded environment variables type using config type-hints (:pull:`987`)
+* Type hints fixes (:pull:`880`)(:pull:`983`)
+* Requirements updates (:pull:`1020`)(:pull:`1021`)
+* Various server mode fixes (:pull:`891`)(:pull:`895`)(:pull:`947`)(:pull:`992`)(:pull:`1001`)
+* Various minor fixes and improvements (:pull:`934`)(:pull:`935`)(:pull:`936`)(:pull:`962`)(:pull:`969`)(:pull:`976`)
+  (:pull:`980`)(:pull:`988`)(:pull:`991`)(:pull:`996`)(:pull:`1003`)(:pull:`1009`)(:pull:`1013`)(:pull:`1016`)
+  (:pull:`1019`)(:pull:`1022`)(:pull:`1024`)(:pull:`1025`)
+
 2.11.0 (2023-11-20)
 +++++++++++++++++++
 
 * Fallback mechanism for search (:pull:`753`)(:pull:`807`)
-* `creodias` and `cop_dataspace` configuration update (from `OData` to `OpenSearch`) (:pull:`866`)(:pull:`883`)(:pull:`894`)(:pull:`915`)(:pull:`929`)
+* `creodias` and `cop_dataspace` configuration update (from `OData` to `OpenSearch`) (:pull:`866`)(:pull:`883`)
+  (:pull:`894`)(:pull:`915`)(:pull:`929`)
 * Removes `mundi` provider (:pull:`890`)
 * Copernicus DEM product types available through creodias (:pull:`882`)
 * `wekeo` driver update and new product types (:pull:`798`)(:pull:`840`)(:pull:`856`)(:pull:`902`)
@@ -13,14 +43,19 @@ Release history
 * Refresh token usage in `KeycloakOIDCPasswordAuth` (`creodias` and `cop_dataspace`) (:pull:`921`)
 * Per-provider search timeout (:pull:`841`)
 * New `EODAG_PROVIDERS_CFG_FILE` environment variable for custom provider configuration setting (:pull:`836`)
-* Many server-mode updates and fixes: `queryables` endpoints (:pull:`795`), built-in Swagger doc update (:pull:`846`), exceptions handling (:pull:`794`)(:pull:`806`)(:pull:`812`)(:pull:`829`),
+* Many server-mode updates and fixes: `queryables` endpoints (:pull:`795`), built-in Swagger doc update (:pull:`846`),
+  exceptions handling (:pull:`794`)(:pull:`806`)(:pull:`812`)(:pull:`829`),
   provider setting (:pull:`808`) and returned information (:pull:`884`)(:pull:`879`), multithreaded requests (:pull:`843`),
-  opened time intervals fixes (:pull:`837`), search-by-ids fix (:pull:`822`), intersects parameter fixes (:pull:`796`)(:pull:`797`)
+  opened time intervals fixes (:pull:`837`), search-by-ids fix (:pull:`822`), intersects parameter fixes (:pull:`796`)
+  (:pull:`797`)
 * Adds support for Python 3.12 (:pull:`892`) and removes support for Python 3.7 (:pull:`903`)
 * Fixes plugin manager rebuild (solves preferred provider issues) (:pull:`919`)
 * Reformatted logs (:pull:`842`)(:pull:`885`)
 * Adds static type information (:pull:`863`)
-* Various minor fixes and improvements (:pull:`759`)(:pull:`788`)(:pull:`791`)(:pull:`793`)(:pull:`802`)(:pull:`804`)(:pull:`805`)(:pull:`813`)(:pull:`818`)(:pull:`819`)(:pull:`821`)(:pull:`824`)(:pull:`825`)(:pull:`828`)(:pull:`830`)(:pull:`832`)(:pull:`835`)(:pull:`838`)(:pull:`844`)(:pull:`867`)(:pull:`868`)(:pull:`872`)(:pull:`877`)(:pull:`878`)(:pull:`881`)(:pull:`893`)(:pull:`899`)(:pull:`913`)(:pull:`920`)(:pull:`925`)(:pull:`926`)
+* Various minor fixes and improvements (:pull:`759`)(:pull:`788`)(:pull:`791`)(:pull:`793`)(:pull:`802`)(:pull:`804`)
+  (:pull:`805`)(:pull:`813`)(:pull:`818`)(:pull:`819`)(:pull:`821`)(:pull:`824`)(:pull:`825`)(:pull:`828`)(:pull:`830`)
+  (:pull:`832`)(:pull:`835`)(:pull:`838`)(:pull:`844`)(:pull:`867`)(:pull:`868`)(:pull:`872`)(:pull:`877`)(:pull:`878`)
+  (:pull:`881`)(:pull:`893`)(:pull:`899`)(:pull:`913`)(:pull:`920`)(:pull:`925`)(:pull:`926`)
 
 2.11.0b1 (2023-07-28)
 +++++++++++++++++++++
@@ -66,7 +101,7 @@ Release history
   (:pull:`659`)
 * Fetch product types optimization (:pull:`683`)
 * Fixes external product types update for unknown provider (:pull:`682`)
-* Default dates and refactor for `CdsApi` and `EcmwfApi` (:pull:`672`)(:pull:`678`)(:pull:`679`)
+* Default dates and refactor for `:class:`~eodag.plugins.apis.cds.CdsApi` and `:class:`~eodag.plugins.apis.cds.EcmwfApi` (:pull:`672`)(:pull:`678`)(:pull:`679`)
 * `peps` `storageStatus` update (:pull:`677`)
 * Customized and faster `deepcopy` (:pull:`664`)
 * Various minor fixes and improvements (:pull:`665`)(:pull:`666`)(:pull:`667`)(:pull:`668`)(:pull:`669`)(:pull:`670`)

@@ -91,29 +91,65 @@ jobs:
       with:
         files: artifacts/*/junit-report.xml
 
-    - name: Publish Coverage Report for Ubuntu
-      uses: 5monkeys/cobertura-action@master
-      if: ${{ github.event_name == 'pull_request' }}
+    - name: Produce the coverage report for Ubuntu
+      uses: insightsengineering/coverage-action@v2
       with:
+        # Path to the Cobertura XML report.
         path: artifacts/unit-test-results-python3.12-ubuntu-latest/coverage.xml
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        pull_request_number: ${{ github.pull_request.number }}
-        minimum_coverage: 70
-        fail_below_threshold: false
-        only_changed_files: true
-        report_name: Code Coverage (Ubuntu)
+        # Minimum total coverage, if you want to the
+        # workflow to enforce it as a standard.
+        # This has no effect if the `fail` arg is set to `false`.
+        threshold: 70
+        # Fail the workflow if the minimum code coverage
+        # reuqirements are not satisfied.
+        fail: false
+        # Publish the rendered output as a PR comment
+        publish: true
+        # Create a coverage diff report.
+        diff: true
+        # Branch to diff against.
+        # Compare the current coverage to the coverage
+        # determined on this branch.
+        diff-branch: develop
+        # This is where the coverage reports for the
+        # `diff-branch` are stored.
+        # Branch is created if it doesn't already exist'.
+        diff-storage: _xml_coverage_reports
+        # A custom title that can be added to the code
+        # coverage summary in the PR comment.
+        coverage-summary-title: "Code Coverage (Ubuntu)"
+        # Make the code coverage report togglable
+        togglable-report: true
 
-    - name: Publish Coverage Report for Windows
-      uses: 5monkeys/cobertura-action@master
-      if: ${{ github.event_name == 'pull_request' }}
+    - name: Produce the coverage report for Windows
+      uses: insightsengineering/coverage-action@v2
       with:
+        # Path to the Cobertura XML report.
         path: artifacts/unit-test-results-python3.12-windows-latest/coverage.xml
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        pull_request_number: ${{ github.pull_request.number }}
-        minimum_coverage: 70
-        fail_below_threshold: false
-        only_changed_files: true
-        report_name: Code Coverage (Windows)
+        # Minimum total coverage, if you want to the
+        # workflow to enforce it as a standard.
+        # This has no effect if the `fail` arg is set to `false`.
+        threshold: 70
+        # Fail the workflow if the minimum code coverage
+        # reuqirements are not satisfied.
+        fail: false
+        # Publish the rendered output as a PR comment
+        publish: true
+        # Create a coverage diff report.
+        diff: true
+        # Branch to diff against.
+        # Compare the current coverage to the coverage
+        # determined on this branch.
+        diff-branch: develop
+        # This is where the coverage reports for the
+        # `diff-branch` are stored.
+        # Branch is created if it doesn't already exist'.
+        diff-storage: _xml_coverage_reports_win
+        # A custom title that can be added to the code
+        # coverage summary in the PR comment.
+        coverage-summary-title: "Code Coverage (Windows)"
+        # Make the code coverage report togglable
+        togglable-report: true
 
   build-docs:
     name: Build the docs

@@ -22,6 +22,9 @@ to each provider supported by ``eodag``:
   `Authenticate using an OTP <https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication>`__
   to see how to proceed.
 
+* ``creodias_s3``: Create an account on `creodias <https://creodias.eu/>`__, then go to `keymanager <https://eodata-keymanager.creodias.eu/>`__ and
+  click `Add credential` to generate the s3 access key and secret key. Add those credentials to the user configuration file (variables `aws_access_key_id` and `aws_secret_access_key`).
+
 * ``onda``: create an account `here: <https://www.onda-dias.eu/cms/>`__
 
 * ``ecmwf``: create an account `here <https://apps.ecmwf.int/registration/>`__.
@@ -116,7 +119,7 @@ to each provider supported by ``eodag``:
 
     .. code-block:: bash
 
-      curl -X GET --header "Authorization: Basic $(echo USERNAME:PASSWORD | base64)" "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/gettoken"
+      curl -X GET --header "Authorization: Basic $(echo USERNAME:PASSWORD | base64)" "https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken"
 
     The WEkEO API will respond with a token:
 
@@ -128,4 +131,4 @@ to each provider supported by ``eodag``:
 
     .. code-block:: bash
 
-      curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/termsaccepted/Copernicus_General_License
+      curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.prod.wekeo2.eu/databroker/termsaccepted/Copernicus_General_License

@@ -15,13 +15,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import logging.config
+from typing import Optional
 
 disable_tqdm = False
 
 
-def setup_logging(verbose, no_progress_bar=False):
+def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
     """Define logging level
 
     :param verbose: Accepted values:
@@ -121,7 +123,7 @@ def setup_logging(verbose, no_progress_bar=False):
         raise ValueError("'verbose' must be one of: 0, 1, 2, 3")
 
 
-def get_logging_verbose():
+def get_logging_verbose() -> Optional[int]:
     """Get logging verbose level
 
     >>> from eodag import setup_logging

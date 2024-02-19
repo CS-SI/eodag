@@ -22,11 +22,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
+import boto3
 import dateutil
+import requests
 import responses
 import yaml
+from botocore.stub import Stubber
 from requests import RequestException
 
+from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -34,6 +38,7 @@ from tests.context import (
     USER_AGENT,
     AuthenticationError,
     EOProduct,
+    MisconfiguredError,
     PluginManager,
     RequestError,
     cached_parse,
@@ -525,6 +530,19 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.requests.get",
+        autospec=True,
+        side_effect=requests.exceptions.Timeout(),
+    )
+    def test_plugins_search_querystringseach_timeout(self, mock__request):
+        search_plugin = self.get_search_plugin(self.product_type, "peps")
+        with self.assertRaises(TimeOutError):
+            search_plugin.query(
+                productType="S1_SAR_SLC",
+                auth=None,
+            )
 
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
@@ -1073,7 +1091,6 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
         mock__request.return_value = mock.Mock()
         result = {
-            "context": {"matched": 1},
             "features": [
                 {
                     "id": "foo",
@@ -1117,27 +1134,26 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
             {
-                "context": {"page": 1, "limit": 2, "matched": 1, "returned": 2},
                 "features": [
                     {
                         "id": "foo",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20201009T012345_N0209_R008_T31TCJ_20201009T123456.SAFE",
                         },
                     },
                     {
                         "id": "bar",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20200910T012345_N0209_R008_T31TCJ_20200910T123456.SAFE",
                         },
                     },
                     {
                         "id": "bar",
                         "geometry": geojson_geometry,
                         "properties": {
-                            "sentinel:product_id": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456",
+                            "s2:product_uri": "S2B_MSIL1C_20201010T012345_N0209_R008_T31TCJ_20201010T123456.SAFE",
                         },
                     },
                 ],
@@ -1171,7 +1187,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
             {
-                "context": {"matched": 3},
                 "features": [
                     {
                         "id": "foo",
@@ -1204,7 +1219,6 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         """The metadata mapping for a stac provider should not mix specific product-types metadata-mapping"""
         mock__request.return_value = mock.Mock()
         result = {
-            "context": {"matched": 1},
             "features": [
                 {
                     "id": "foo",
@@ -1229,13 +1243,49 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
 
         # search with another product type
         self.assertNotIn(
-            "bar", search_plugin.config.products["S2_MSI_L2A"]["metadata_mapping"]
+            "metadata_mapping", search_plugin.config.products["S1_SAR_GRD"]
         )
         products, estimate = search_plugin.query(
-            productType="S2_MSI_L2A",
+            productType="S1_SAR_GRD",
             auth=None,
         )
         self.assertNotIn("bar", products[0].properties)
+
+    @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
+    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_astraea_eod(
+        self, mock__request
+    ):
+        """The metadata mapping for a astraea_eod should correctly build assets"""
+        mock__request.return_value = mock.Mock()
+        result = {
+            "features": [
+                {
+                    "id": "foo",
+                    "geometry": None,
+                    "assets": {
+                        "productInfo": {"href": "s3://foo.bar/baz/productInfo.json"}
+                    },
+                },
+            ],
+        }
+        product_type = "S1_SAR_GRD"
+        mock__request.return_value.json.side_effect = [result]
+        search_plugin = self.get_search_plugin(product_type, "astraea_eod")
+
+        products, _ = search_plugin.query(
+            productType=product_type,
+            auth=None,
+        )
+        self.assertIn("productInfo", products[0].assets)
+        self.assertEqual(
+            products[0].assets["productInfo"]["href"],
+            "s3://foo.bar/baz/productInfo.json",
+        )
+        self.assertIn("manifest.safe", products[0].assets)
+        self.assertEqual(
+            products[0].assets["manifest.safe"]["href"],
+            "s3://foo.bar/baz/manifest.safe",
+        )
 
 
 class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
@@ -1482,3 +1532,82 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             )
 
         run()
+
+
+class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginCreodiasS3Search, self).setUp()
+        self.provider = "creodias_s3"
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_creodias_s3_links(self, mock_request):
+        # s3 links should be added to products with register_downloader
+        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
+        client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        stubber = Stubber(client)
+        s3_response_file = (
+            Path(TEST_RESOURCES_PATH) / "provider_responses/creodias_s3_objects.json"
+        )
+        with open(s3_response_file) as f:
+            list_objects_response = json.load(f)
+        creodias_search_result_file = (
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+        )
+        with open(creodias_search_result_file) as f:
+            creodias_search_result = json.load(f)
+        mock_request.return_value = MockResponse(creodias_search_result, 200)
+
+        res = search_plugin.query("S1_SAR_GRD")
+        for product in res[0]:
+            download_plugin = self.plugins_manager.get_download_plugin(product)
+            auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+            stubber.add_response("list_objects", list_objects_response)
+            stubber.activate()
+            setattr(auth_plugin, "s3_client", client)
+            # fails if credentials are missing
+            auth_plugin.config.credentials = {
+                "aws_access_key_id": "",
+                "aws_secret_access_key": "",
+            }
+            with self.assertRaisesRegex(
+                MisconfiguredError,
+                r"^Incomplete credentials .* \['aws_access_key_id', 'aws_secret_access_key'\]$",
+            ):
+                product.register_downloader(download_plugin, auth_plugin)
+            auth_plugin.config.credentials = {
+                "aws_access_key_id": "foo",
+                "aws_secret_access_key": "bar",
+            }
+            product.register_downloader(download_plugin, auth_plugin)
+        assets = res[0][0].assets
+        # check if s3 links have been created correctly
+        for asset in assets.values():
+            self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_creodias_s3_client_error(self, mock_request):
+        # request error should be raised when there is an error when fetching data from the s3
+        search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
+        client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
+        stubber = Stubber(client)
+
+        creodias_search_result_file = (
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+        )
+        with open(creodias_search_result_file) as f:
+            creodias_search_result = json.load(f)
+        mock_request.return_value = MockResponse(creodias_search_result, 200)
+
+        with self.assertRaises(RequestError):
+            res = search_plugin.query("S1_SAR_GRD")
+            for product in res[0]:
+                download_plugin = self.plugins_manager.get_download_plugin(product)
+                auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+                auth_plugin.config.credentials = {
+                    "aws_access_key_id": "foo",
+                    "aws_secret_access_key": "bar",
+                }
+                stubber.add_client_error("list_objects")
+                stubber.activate()
+                setattr(auth_plugin, "s3_client", client)
+                product.register_downloader(download_plugin, auth_plugin)
