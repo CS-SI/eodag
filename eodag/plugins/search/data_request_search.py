@@ -41,7 +41,12 @@ from eodag.utils import (
     deepcopy,
     string_to_jsonpath,
 )
-from eodag.utils.exceptions import NotAvailableError, RequestError, TimeOutError
+from eodag.utils.exceptions import (
+    NotAvailableError,
+    RequestError,
+    TimeOutError,
+    ValidationError,
+)
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -128,6 +133,9 @@ class DataRequestSearch(Search):
         """
         performs the search for a provider where several steps are required to fetch the data
         """
+        if kwargs.get("sortBy"):
+            raise ValidationError(f"{self.provider} does not support sorting feature")
+
         product_type = kwargs.get("productType", None)
         # replace "product_type" to "providerProductType" in search args if exists
         # for compatibility with DataRequestSearch method
