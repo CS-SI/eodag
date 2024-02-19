@@ -2269,17 +2269,17 @@ class EODataAccessGateway:
             if not hasattr(provider_search_plugin.config, "sort"):
                 sortables[provider] = None
                 continue
-            sort_by_params = list(
+            sortable_params = list(
                 provider_search_plugin.config.sort["sort_param_mapping"].keys()
             )
             if not provider_search_plugin.config.sort.get("max_sort_params"):
                 sortables[provider] = {
-                    "sortables": sort_by_params,
+                    "sortables": sortable_params,
                     "max_sort_params": None,
                 }
                 continue
             sortables[provider] = {
-                "sortables": sort_by_params,
+                "sortables": sortable_params,
                 "max_sort_params": provider_search_plugin.config.sort[
                     "max_sort_params"
                 ],

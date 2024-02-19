@@ -2418,7 +2418,7 @@ class TestCoreSearch(TestCoreBase):
 
         # TODO: sort by default sorting parameter and sorting order
 
-    def test_search_sort_by_errors(self):
+    def test_search_sort_by_raise_errors(self):
         """search used with "sortBy" argument must raise errors if the argument is incorrect or if the provider does
         not support a maximum number of sorting parameter, one sorting parameter or the sorting feature"""
         dag = EODataAccessGateway()
