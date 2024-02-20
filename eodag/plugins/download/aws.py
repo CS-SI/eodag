@@ -1266,9 +1266,9 @@ class AwsDownload(Download):
                 found_dict["file_beam"],
                 found_dict["file_pol"],
                 s1_title_suffix,
-                S1_IMG_NB_PER_POLAR.get(
-                    product.properties["polarizationMode"], {}
-                ).get(found_dict["file_pol"].upper(), 1),
+                S1_IMG_NB_PER_POLAR.get(product.properties["polarizationMode"], {}).get(
+                    found_dict["file_pol"].upper(), 1
+                ),
             )
         elif matched := S1_ANNOT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
