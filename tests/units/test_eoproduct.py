@@ -391,8 +391,6 @@ class TestEOProduct(EODagTestCase):
             # Teardown
             self._clean_product(product_dir_path)
 
-    # TODO: add a test on tarfiles extraction
-
     def test_eoproduct_download_http_dynamic_options(self):
         """eoproduct.download must accept the download options to be set automatically"""
         # Setup
