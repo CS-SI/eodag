@@ -115,11 +115,15 @@ class BuildPostSearchResult(PostJsonSearch):
             )
         else:
             # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(self, "query_params_unpaginated"):
+            if (
+                "next_page_query_obj" in self.config.pagination
+                and isinstance(self.config.pagination["next_page_query_obj"], str)
+                and hasattr(self, "query_params_unpaginated")
+            ):
                 unpaginated_query_params = self.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
+            elif "next_page_query_obj" in self.config.pagination and isinstance(
+                self.config.pagination["next_page_query_obj"], str
+            ):
                 next_page_query_obj = orjson.loads(
                     self.config.pagination["next_page_query_obj"].format()
                 )
@@ -131,7 +135,7 @@ class BuildPostSearchResult(PostJsonSearch):
             else:
                 unpaginated_query_params = self.query_params
 
-            # query hash, will be used to build a product id
+                # query hash, will be used to build a product id
             sorted_unpaginated_query_params = dict_items_recursive_sort(
                 unpaginated_query_params
             )
@@ -157,9 +161,12 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s" % (
+        product_id = "%s_%s_%s_%s" % (
             id_prefix,
             parsed_properties["startTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            parsed_properties["completionTimeFromAscendingNode"]
             .split("T")[0]
             .replace("-", ""),
             query_hash,

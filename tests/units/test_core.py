@@ -176,6 +176,7 @@ class TestCore(TestCoreBase):
         "PLD_PAN": ["theia"],
         "PLD_PANSHARPENED": ["theia"],
         "PLD_XS": ["theia"],
+        "POLYTOPE_TEST": ["polytope"],
         "S1_SAR_GRD": [
             "astraea_eod",
             "aws_eos",
@@ -433,6 +434,7 @@ class TestCore(TestCoreBase):
         "hydroweb_next",
         "wekeo",
         "creodias_s3",
+        "polytope",
     ]
 
     def setUp(self):
