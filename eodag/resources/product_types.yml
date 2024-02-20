@@ -781,6 +781,30 @@ S3_EFR:
   title: SENTINEL3 EFR
   missionStartDate: "2016-02-16T00:00:00Z"
 
+S3_EFR_BC002:
+  abstract: |
+    OLCI (Ocean and Land Colour Instrument) Full resolution: 300m at nadir. Level 1 products are calibrated
+    Top Of Atmosphere radiance values at OLCI 21 spectral bands. Radiances are computed from the instrument digital
+    counts by applying geo-referencing, radiometric processing (non-linearity correction, smear correction, dark offset
+    correction, absolute gain calibration adjusted for gain evolution with time), and stray-light correction for
+    straylight effects in OLCI camera's spectrometer and ground imager. Additionally, spatial resampling of OLCI pixels
+    to the 'ideal' instrument grid, initial pixel classification, and annotation at tie points with auxiliary
+    meteorological data and acquisition geometry are provided. The radiance products are accompanied by error estimate
+    products, however the error values are currently not available. - All Sentinel-3 NRT products are available at
+    pick-up point in less than 3h. - All Sentinel-3 Non Time Critical (NTC) products are available at pick-up point in
+    less than 30 days. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the
+    EU Copernicus programme.
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,EFR,BC002
+  sensorType: OPTICAL
+  license: proprietary
+  title:  OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-04-25T00:00:00Z"
+  missionEndDate: "2019-10-29T00:00:00Z"
+
 S3_ERR:
   abstract: |
     OLCI (Ocean and Land Colour Instrument) Reduced resolution: 1200m at nadir. All Sentinel-3 NRT products are
@@ -803,6 +827,29 @@ S3_ERR:
   license: proprietary
   title: SENTINEL3 ERR
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_ERR_BC002:
+  abstract: |
+    OLCI (Ocean and Land Colour Instrument) Reduced resolution: 1200m at nadir. Level 1 products are calibrated
+    Top Of Atmosphere radiance values at OLCI 21 spectral bands. Radiances are computed from the instrument digital
+    counts by applying geo-referencing, radiometric processing (non-linearity correction, smear correction, dark
+    offset correction, absolute gain calibration adjusted for gain evolution with time), and stray-light correction
+    for straylight effects in OLCI camera's spectrometer and ground imager. Additionally, spatial resampling of
+    OLCI pixels to the 'ideal' instrument grid, initial pixel classification, and annotation at tie points with
+    auxiliary meteorological data and acquisition geometry are provided. The radiance products are accompanied
+    by error estimate products, however the error values are currently not available. Sentinel-3 is part of a
+    series of Sentinel satellites, under the umbrella of the EU Copernicus programme. This collection contains
+    reprocessed data from baseline collection 002. Operational data can be found in the corresponding collection.
+  instrument: OLCI
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,ERR,BC002
+  sensorType: OPTICAL
+  license: proprietary
+  title:  OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-04-25T00:00:00Z"
+  missionEndDate: "2019-10-29T00:00:00Z"
 
 S3_RAC:
   abstract: |
@@ -959,6 +1006,27 @@ S3_SLSTR_L1RBT:
   license: proprietary
   title: SENTINEL3 SLSTR Level-1
   missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_SLSTR_L1RBT_BC003:
+  abstract: |
+    The SLSTR level 1 products contain: the radiances of the 6 visible (VIS), Near Infra-Red (NIR) and
+    Short Wave Infra-Red (SWIR) bands (on the A and B stripe grids); the Brightness Temperature (BT) for
+    the 3 Thermal Infra-Red (TIR) bands; the BT for the 2 Fire (FIR) bands. Resolution: 1km at nadir (TIR),
+    500m (VIS). All are provided for both the oblique and nadir view. These measurements are accompanied
+    with grid and time information, quality flags, error estimates and meteorological auxiliary data.
+    Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU Copernicus programme.
+    This collection contains reprocessed data from baseline collection 003. Operational data can be found
+    in the corresponding collection.
+  instrument: SLSTR
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1
+  keywords: SLSTR,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1RBT,RBT,VIS,NIR,SWIR,BT,TIR,FIR,Reprocessed,BC003
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: SLSTR Level 1B Radiances and Brightness Temperatures (version BC003) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-04-19T00:00:00Z"
+  missionEndDate: "2018-04-04T00:00:00Z"
 
 S3_SLSTR_L1RBT_BC004:
   abstract: |
@@ -1153,6 +1221,24 @@ S3_SRA_1A_BC004:
   title: SENTINEL3 SRAL Level-1A Unpacked - Reprocessed from BC004
   missionStartDate: "2016-03-01T00:00:00Z"
 
+S3_SRA_1A_BC005:
+  abstract: |
+    Fundamental science and engineering product development supporting operational users. This product is most relevant
+    to SAR processing specialists allowing fundamental studies on SAR processing such as Doppler beam formation and for
+    calibration studies using ground-based Transponders. Sentinel-3 is part of a series of Sentinel satellites, under
+    the umbrella of the EU Copernicus programme. This dataset contains reprocessed data from Baseline Collection 005,
+    and is continued by the operational NTC data stream from 10/Mar/2023 onwards.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1A
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1A,REPROCESSED,BC005
+  sensorType: RADAR
+  license: proprietary
+  title: SRAL Level 1A Unpacked L0 Complex Echoes (version BC005) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-05-05T00:00:00Z"
+  missionEndDate: "2023-03-09T00:00:00Z"
+
 S3_SRA_1B_BC004:
   abstract: |
     SRAL Level 1B (version BC004) - Sentinel-3 - Reprocessed
@@ -1170,6 +1256,25 @@ S3_SRA_1B_BC004:
   license: proprietary
   title: SENTINEL3 SRAL Level-1B - Reprocessed from BC004
   missionStartDate: "2016-03-01T00:00:00Z"
+  missionEndDate: "2019-12-31T00:00:00Z"
+
+S3_SRA_1B_BC005:
+  abstract: |
+    SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or Synthetic
+    Aperture Radar (SAR) mode both for C Band and Ku band. When the altimeter is in SAR mode, this product also contains
+    the so-called Pseudo LRM (PLRM) echoes. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella
+    of the EU Copernicus programme. This dataset contains reprocessed data from Baseline Collection 005, and is continued
+    by the operational NTC data stream from 10/Mar/2023 onwards.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1B
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,BC005
+  sensorType: RADAR
+  license: proprietary
+  title:  SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-05-05T00:00:00Z"
+  missionEndDate: "2023-03-09T00:00:00Z"
 
 S3_SRA_BS_BC004:
   abstract: |
@@ -1191,6 +1296,28 @@ S3_SRA_BS_BC004:
   license: proprietary
   title: SENTINEL3 SRAL Level-1B Stack Echoes - Reprocessed from BC004
   missionStartDate: "2016-03-01T00:00:00Z"
+  missionEndDate: "2019-12-31T00:00:00Z"
+
+S3_SRA_BS_BC005:
+  abstract: |
+    SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or Synthetic
+    Aperture Radar (SAR) mode both for C Band and Ku band. When the altimeter is in SAR mode, this product also
+    contains the so-called Pseudo LRM (PLRM) echoes. Complex (In-phase and Quadrature) echoes (I's and Q;s) after
+    slant/Doppler range correction. This product is most relevant to geophysical retrieval algorithm developers
+    (over ocean, land and ice surfaces), surface characterisations studies (e.g. impact of sea state bias, wave
+    directional effects etc) and Quality Control systems. Sentinel-3 is part of a series of Sentinel satellites, under
+    the umbrella of the EU Copernicus programme. This dataset contains reprocessed data from Baseline Collection 005,
+    and is continued by the operational NTC data stream from 10/Mar/2023 onwards.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L1B
+  keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES,BC005
+  sensorType: RADAR
+  license: proprietary
+  title:  SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-05-05T00:00:00Z"
+  missionEndDate: "2023-03-09T00:00:00Z"
 
 S3_WAT:
   abstract: |
@@ -1236,6 +1363,29 @@ S3_WAT_BC004:
   license: proprietary
   title: SRAL Level 2 Altimetry Global - Reprocessed from BC004
   missionStartDate: "2016-03-01T00:00:00Z"
+  missionEndDate: "2019-12-31T00:00:00Z"
+
+S3_WAT_BC005:
+  abstract: |
+    The products contain the typical altimetry measurements, like the altimeter range, the sea surface height, the wind
+    speed, significant wave height and all required geophysical corrections and related flags. Also the sea Ice
+    freeboard measurement is included. The measurements in the standard data file provide the measurements in low
+    (1 Hz = approx. 7km) and high resolution (20 Hz = approx. 300 m), in LRM mode or in SAR mode, for both C-band and
+    Ku band. The SAR mode is the default mode. The reduced measurement data file contains 1 Hz measurements only. The
+    enhanced measurement data file contains also the waveforms and associated parameters and the pseudo LRM
+    measurements when in SAR mode. Sentinel-3 is part of a series of Sentinel satellites, under the umbrella of the EU
+    Copernicus programme. This collection contains reprocessed data from baseline collection 004. Operational data can
+    be found in the corresponding collection.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,WAT,REPROCESSED,BC005
+  sensorType: RADAR
+  license: proprietary
+  title: SRAL Level 2 Altimetry Global (version BC005) - Sentinel-3 - Reprocessed
+  missionStartDate: "2016-05-05T00:00:00Z"
+  missionEndDate: "2023-03-09T00:00:00Z"
 
 S3_LAN:
   abstract: LAN or SR_2_LAN___ (peps)
