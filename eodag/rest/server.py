@@ -453,14 +453,35 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(request: Request, collection_id: str) -> Any:
+def stac_collections_items(
+    request: Request,
+    collection_id: str,
+    provider: Optional[str] = None,
+    ids: Optional[str] = None,
+    bbox: Optional[str] = None,
+    datetime: Optional[str] = None,
+    limit: Optional[int] = None,
+    page: Optional[int] = None,
+    sortby: Optional[str] = None,
+    crunch: Optional[str] = None,
+) -> Any:
     """STAC collections items"""
     logger.debug("URL: %s", request.url)
 
-    base_args: Dict[str, Any] = dict(request.query_params)
-    base_args["collections"] = [collection_id]
+    base_args = {
+        "provider": provider,
+        "collections": [collection_id],
+        "ids": str2list(ids),
+        "datetime": datetime,
+        "bbox": str2list(bbox),
+        "limit": limit,
+        "page": page,
+        "sortby": sortby2list(sortby),
+        "crunch": crunch,
+    }
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
+    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
+
     try:
         search_request = SearchPostRequest.model_validate(clean)
     except pydanticValidationError as e:
