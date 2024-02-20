@@ -118,6 +118,8 @@ class EODAGSearch(BaseModel):
     sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
     raise_errors: bool = False
 
+    server_mode: bool = True  # TODO: remove when refactoring polytope
+
     _to_eodag_map: Dict[str, str] = PrivateAttr()
 
     @model_validator(mode="after")

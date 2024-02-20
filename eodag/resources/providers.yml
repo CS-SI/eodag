@@ -7219,7 +7219,7 @@
     metadata_mapping:
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
       completionTimeFromAscendingNode:
-        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
+        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}/by/1"}}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       productType: '$.productType'
@@ -7258,13 +7258,11 @@
     POLYTOPE_TEST:
       productType: destination-earth
       class: rd
-      expver: i4vo
-      stream: lwda
+      expver: i7yv
       time: 0000
       domain: g
       type: fc
       levtype: sfc
-      anoffset: 9
       step: 3
       param: 31
   download: !plugin
