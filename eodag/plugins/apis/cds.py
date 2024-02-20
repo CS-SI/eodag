@@ -17,10 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, cast
-from urllib.parse import unquote_plus
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
+from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import cdsapi
 import geojson
@@ -32,6 +33,8 @@ from typing_extensions import get_args
 
 from eodag.api.product import Asset  # type: ignore
 from eodag.api.product.metadata_mapping import (
+    ONLINE_STATUS,
+    STAGING_STATUS,
     get_queryable_from_provider,
     mtd_cfg_as_conversion_and_querypath,
 )
@@ -47,6 +50,8 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
+    HTTP_REQ_TIMEOUT,
+    USER_AGENT,
     Annotated,
     StreamResponse,
     datetime_range,
@@ -63,6 +68,7 @@ from eodag.utils.constraints import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     NotAvailableError,
     RequestError,
     RequestError,
@@ -325,12 +331,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
 
         return auth_dict
 
-    def _prepare_download_link(
-        self,
-        product: EOProduct,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-    ) -> None:
+    def create_order_link(self, product: EOProduct):
         """Update product download link with http url obtained from cds api"""
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
@@ -348,56 +349,138 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             download_request["month"] = [*{str(d.month) for d in d_range}]
             download_request["day"] = [*{str(d.day) for d in d_range}]
 
-        auth_dict = self.authenticate()
         dataset_name = download_request.pop("dataset")
-
-        # Send download request to CDS web API
-        logger.info(
-            "Request download on CDS API: dataset=%s, request=%s",
+        endpoint = getattr(self.config, "api_endpoint", None)
+        if not endpoint:
+            raise MisconfiguredError("Missing endpoint configuration")
+        url = "%s/resources/%s?%s" % (
+            endpoint,
             dataset_name,
-            download_request,
+            json.dumps(download_request),
         )
+        logger.debug(f"orderLink={url}")
+        product.properties["orderLink"] = url
 
-        @self._download_retry(product, wait, timeout)
-        def retrieve_remote_location(
-            product: EOProduct,
-            result: cdsapi.api.Result,
-        ) -> None:
-            result.update()
-            if result.reply["state"] == "completed":
-                pass
-            elif result.reply["state"] in ("queued", "running"):
+    def orderDownload(
+        self,
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> None:
+        """Send product order request.
+
+        It will be executed once before the download retry loop, if the product is OFFLINE
+        and has `orderLink` in its properties.
+        Product ordering can be configured using the following download plugin parameters:
+
+            - **order_enabled**: Wether order is enabled or not (may not use this method
+              if no `orderLink` exists)
+
+            - **order_method**: (optional) HTTP request method, GET (default) or POST
+
+            - **order_on_response**: (optional) things to do with obtained order response:
+
+              - *metadata_mapping*: edit or add new product propoerties properties
+
+        Product properties used for order:
+
+            - **orderLink**: order request URL
+
+        :param product: The EO product to order
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param kwargs: download additional kwargs
+        :type kwargs: Union[str, bool, dict]
+        """
+        super(CdsApi, self).orderDownload(
+            product,
+            requests.auth.HTTPBasicAuth(
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            ),
+            **kwargs,
+        )
+        product.properties["storageStatus"] = STAGING_STATUS
+
+    def orderDownloadStatus(
+        self,
+        product: EOProduct,
+        auth: Optional[PluginConfig] = None,
+        **kwargs: Union[str, bool, Dict[str, Any]],
+    ) -> None:
+        """Send product order status request.
+
+        It will be executed before each download retry.
+        Product order status request can be configured using the following download plugin parameters:
+
+            - **order_status_method**: (optional) HTTP request method, GET (default) or POST
+
+        Product properties used for order status:
+
+            - **orderStatusLink**: order status request URL
+
+        :param product: The ordered EO product
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :param auth: (optional) The configuration of a plugin of type Authentication
+        :type auth: :class:`~eodag.config.PluginConfig`
+        :param kwargs: download additional kwargs
+        :type kwargs: Union[str, bool, dict]
+        """
+        status_method = getattr(self.config, "order_status_method", "GET").lower()
+        if status_method == "post":
+            # separate url & parameters
+            parts = urlparse(str(product.properties["orderStatusLink"]))
+            query_dict = parse_qs(parts.query)
+            if not query_dict and parts.query:
+                query_dict = geojson.loads(parts.query)
+            status_url = parts._replace(query=None).geturl()
+            status_kwargs = {"json": query_dict} if query_dict else {}
+        else:
+            status_url = product.properties["orderStatusLink"]
+            status_kwargs = {}
+
+        with requests.request(
+            method=status_method,
+            url=status_url,
+            auth=auth,
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=dict(
+                getattr(self.config, "order_status_headers", {}), **USER_AGENT
+            ),
+            **status_kwargs,
+        ) as response:
+            response.raise_for_status()
+            status_dict = response.json()
+            logger.debug(response.text)
+            logger.info(
+                f"{product.properties['title']} order status: {status_dict['state']}"
+            )
+            if status_dict["state"] == "completed":
+                product.location = product.remote_location = status_dict["location"]
+                product.properties["storageStatus"] = ONLINE_STATUS
+            elif status_dict["state"] in ("queued", "running"):
+                product.properties["storageStatus"] = STAGING_STATUS
                 raise NotAvailableError(
                     "%s(initially %s) ordered, got: %s"
                     % (
                         product.properties["title"],
                         product.properties["storageStatus"],
-                        result.reply["state"],
+                        status_dict["state"],
                     )
                 )
-            elif result.reply["state"] == "failed":
+            elif status_dict["state"] == "failed":
                 raise RequestError(
                     "%s. %s."
                     % (
-                        result.reply["error"].get("message"),
-                        result.reply["error"].get("reason"),
+                        status_dict["error"].get("message"),
+                        status_dict["error"].get("reason"),
                     )
                 )
             else:
                 raise RequestError(
-                    "Unknown CDS API state [%s]" % (result.reply["state"],)
+                    "Unknown CDS API state [%s]" % (status_dict["state"],)
                 )
-
-        try:
-            client: cdsapi.Client = self._get_cds_client(**auth_dict)
-            client.wait_until_complete = False
-            result: cdsapi.api.Result = client.retrieve(dataset_name, download_request)
-            retrieve_remote_location(product, result)
-            # update product download link through a new asset
-            product.assets["data"] = Asset(product, "data", {"href": result.location})
-        except Exception as e:
-            logger.error(e)
-            raise DownloadError(e)
 
     def download(
         self,
@@ -410,6 +493,11 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
     ) -> Optional[str]:
         """Download data from providers using CDS API"""
 
+        if not auth:
+            auth = requests.auth.HTTPBasicAuth(
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            )
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
@@ -422,11 +510,12 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
                 product.location = path_to_uri(fs_path)
             return fs_path
 
-        self._prepare_download_link(product)
+        self.create_order_link(product)
 
         try:
             return super(CdsApi, self).download(
                 product,
+                auth,
                 progress_callback=progress_callback,
                 **kwargs,
             )
@@ -446,7 +535,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         """Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers."""
 
-        self._prepare_download_link(product)
+        self.create_order_link(product)
         return super(CdsApi, self)._stream_download_dict(
             product,
             auth=auth,

@@ -2207,6 +2207,12 @@
     constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
     ssl_verify: true
     order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        order_id: '$.request_id'
+        orderStatusLink: 'https://ads.atmosphere.copernicus.eu/api/v2/tasks/{order_id}'
+    order_status_method: 'GET'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2220,8 +2226,7 @@
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # storageStatus set to ONLINE for consistency between providers
-      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
       # Copernicus ADS specific parameters
       accuracy:
@@ -2617,6 +2622,13 @@
       product_type_fetch_url: null
     flatten_top_dirs: True
     constraints_file_url: "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json"
+    order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        order_id: '$.request_id'
+        orderStatusLink: 'https://cds.climate.copernicus.eu/api/v2/tasks/{order_id}'
+    order_status_method: 'GET'
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2630,8 +2642,7 @@
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # storageStatus set to ONLINE for consistency between providers
-      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+      storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: 'https://cds.climate.copernicus.eu/cdsapp#!/dataset/{dataset}'
       # Copernicus CDS specific parameters
       accuracy:
