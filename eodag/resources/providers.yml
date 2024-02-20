@@ -6708,3 +6708,200 @@
         <<: *orderable_mm
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
+---
+!provider # MARK: eumetsat_ds
+  name: eumetsat_ds
+  priority: 0
+  description: EUMETSAT Data Store
+  roles:
+    - host
+  url: https://www.eumetsat.int/
+  search: !plugin
+    type: QueryStringSearch
+    api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
+    need_auth: false
+    pagination:
+      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
+      total_items_nb_key_path: '$.totalResults'
+      # 2024/02/01: 500 is the max, no error if greater
+      max_items_per_page: 500
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_by_tpl: '&sort={sort_param},{sort_order}'
+      sort_param_mapping:
+        startTimeFromAscendingNode: start,time
+        publicationDate: publicationDate,
+      sort_order_mapping:
+        ascending: '1'
+        descending: '0'
+      max_sort_params: 1
+    literal_search_params:
+      format: json
+    metadata_mapping:
+      # Opensearch resource identifier within the search engine context (in our case
+      # within the context of the data provider)
+      uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      productType:
+        - type
+        - '$.properties.productInformation.productType'
+      platform:
+        - sat
+        - '$.properties.acquisitionInformation[0].platform.platformShortName'
+      instrument: '$.properties.acquisitionInformation[0].instrument.instrumentShortName'
+
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title:
+        - title
+        - '{$.properties.title#remove_extension}'
+      publicationDate:
+        - publication
+        - '$.null'
+
+      # OpenSearch Parameters for Product Search (Table 5)
+      parentIdentifier:
+        - pi
+        - '$.properties.parentIdentifier'
+      orbitNumber:
+        - orbit
+        - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
+      orbitDirection:
+        - orbitdir
+        - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection'
+      modificationDate: '$.properties.updated'
+
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - dtstart
+        - '{$.properties.date#replace_str(r"\/.*","")}'
+      completionTimeFromAscendingNode:
+        - dtend
+        - '{$.properties.date#replace_str(r".*\/","")}'
+
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - id
+        - '{$.properties.identifier#remove_extension}'
+      utmZone:
+        - zone
+        - '$.null'
+      tileIdentifier:
+        - t6
+        - '$.null'
+      # The geographic extent of the product
+      geometry:
+        - 'geo={geometry#to_rounded_wkt}'
+        - '$.geometry'
+      # The url of the quicklook
+      quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
+      # The url to download the product "as is" (literal or as a template to be completed either after the search result
+      # is obtained from the provider or during the eodag download phase)
+      downloadLink: '$.properties.links.data[?(@.title="Product download")].href'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+
+      # Additional metadata provided by the providers but that don't appear in the reference spec
+      timeliness:
+        - timeliness
+        - '$.properties.productInformation.timeliness'
+      relativeOrbitNumber:
+        - relorbit
+        - '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
+      cycleNumber:
+        - cycle
+        - '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'
+      fire:
+        - fire
+        - '$.properties.extraInformation.fireDetected'
+      size:
+        - size
+        - '$.properties.productInformation.size'
+  products:
+    # S3 SRAL
+    S3_SRA:
+      productType: SR_1_SRA___
+      parentIdentifier: EO:EUM:DAT:0406
+    S3_SRA_A:
+      productType: SR_1_SRA_A_
+      parentIdentifier: EO:EUM:DAT:0413
+    S3_SRA_1A_BC004:
+      productType: SR_1_SRA_A_
+      parentIdentifier: EO:EUM:DAT:0583
+    S3_SRA_1A_BC005:
+      productType: SR_1_SRA_A_
+      parentIdentifier: EO:EUM:DAT:0836
+    S3_SRA_1B_BC004:
+      productType: SR_1_SRA___
+      parentIdentifier: EO:EUM:DAT:0584
+    S3_SRA_1B_BC005:
+      productType: SR_1_SRA___
+      parentIdentifier: EO:EUM:DAT:0833
+    S3_SRA_BS:
+      productType: SR_1_SRA_BS
+      parentIdentifier: EO:EUM:DAT:0414
+    S3_SRA_BS_BC004:
+      productType: SR_1_SRA_BS
+      parentIdentifier: EO:EUM:DAT:0585
+    S3_SRA_BS_BC005:
+      productType: SR_1_SRA_BS
+      parentIdentifier: EO:EUM:DAT:0835
+    S3_WAT:
+      productType: SR_2_WAT___
+      parentIdentifier: EO:EUM:DAT:0415
+    S3_WAT_BC004:
+      productType: SR_2_WAT___
+      parentIdentifier: EO:EUM:DAT:0586
+    S3_WAT_BC005:
+      productType: SR_2_WAT___
+      parentIdentifier: EO:EUM:DAT:0834
+    # S3 OLCI
+    S3_EFR:
+      productType: OL_1_EFR___
+      parentIdentifier: EO:EUM:DAT:0409
+    S3_EFR_BC002:
+      productType: OL_1_EFR___
+      parentIdentifier: EO:EUM:DAT:0577
+    S3_ERR:
+      productType: OL_1_ERR___
+      parentIdentifier: EO:EUM:DAT:0410
+    S3_ERR_BC002:
+      productType: OL_1_ERR___
+      parentIdentifier: EO:EUM:DAT:0578
+    S3_OLCI_L2WRR:
+      productType: OL_2_WRR___
+      parentIdentifier: EO:EUM:DAT:0408
+    S3_OLCI_L2WRR_BC003:
+      productType: OL_2_WRR___
+      parentIdentifier: EO:EUM:DAT:0557
+    S3_OLCI_L2WFR:
+      productType: OL_2_WFR___
+      parentIdentifier: EO:EUM:DAT:0407
+    S3_OLCI_L2WFR_BC003:
+      productType: OL_2_WFR___
+      parentIdentifier: EO:EUM:DAT:0556
+    # S3 SLSTR
+    S3_SLSTR_L1RBT:
+      productType: SL_1_RBT___
+      parentIdentifier: EO:EUM:DAT:0411
+    S3_SLSTR_L1RBT_BC003:
+      productType: SL_1_RBT___
+      parentIdentifier: EO:EUM:DAT:0581
+    S3_SLSTR_L1RBT_BC004:
+      productType: SL_1_RBT___
+      parentIdentifier: EO:EUM:DAT:0615
+    S3_SLSTR_L2WST:
+      productType: SL_2_WST___
+      parentIdentifier: EO:EUM:DAT:0412
+    S3_SLSTR_L2WST_BC003:
+      productType: SL_2_WST___
+      parentIdentifier: EO:EUM:DAT:0582
+    S3_SLSTR_L2AOD:
+      productType: SL_2_AOD___
+      parentIdentifier: EO:EUM:DAT:0416
+    S3_SLSTR_L2FRP:
+      productType: SL_2_FRP___
+      parentIdentifier: EO:EUM:DAT:0417
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+      parentIdentifier: '{parentIdentifier}'

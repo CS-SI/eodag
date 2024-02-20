@@ -1451,6 +1451,13 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
+            "eumetsat_ds": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "publicationDate",
+                ],
+                "max_sort_params": 1,
+            },
         }
         sortables = self.dag.available_sortables()
         self.assertDictEqual(sortables, expected_result)
