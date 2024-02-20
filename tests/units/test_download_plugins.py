@@ -20,11 +20,11 @@ import os
 import shutil
 import stat
 import tarfile
-from typing import Any, Callable, Dict
 import unittest
 import zipfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
+from typing import Any, Callable, Dict
 from unittest import mock
 
 import responses
@@ -190,12 +190,18 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         return Response()
 
-    def _set_download_simulation(self, mock_requests_session: Callable[[], None], local_product_as_archive_path: str):
+    def _set_download_simulation(
+        self,
+        mock_requests_session: Callable[[], None],
+        local_product_as_archive_path: str,
+    ):
         mock_requests_session.return_value = self._download_response_archive(
             local_product_as_archive_path
         )
 
-    def _dummy_product(self, provider: str, properties: Dict[str, Any], productType: str):
+    def _dummy_product(
+        self, provider: str, properties: Dict[str, Any], productType: str
+    ):
         return EOProduct(
             provider,
             properties,
@@ -210,7 +216,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         properties: Dict[str, Any],
         productType: str,
     ):
-        self._set_download_simulation(mock_requests_session, local_product_as_archive_path)
+        self._set_download_simulation(
+            mock_requests_session, local_product_as_archive_path
+        )
         dl_config = config.PluginConfig.from_mapping(
             {
                 "base_uri": "fake_base_uri",
@@ -272,12 +280,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             {key: "" for key in DEFAULT_METADATA_MAPPING if key not in eoproduct_props}
         )
 
-        product = self._dummy_downloadable_product(#self._dummy_downloadable_product(
+        product = self._dummy_downloadable_product(
             mock_requests_session,
             local_product_as_archive_path,
             provider,
             eoproduct_props,
-            product_type
+            product_type,
         )
         outputs_extension = getattr(
             product.downloader.config, "outputs_extension", ".zip"
@@ -306,7 +314,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
-    def test_plugins_download_http_tar_file_with_zip_extension_ok(self, mock_requests_session):
+    def test_plugins_download_http_tar_file_with_zip_extension_ok(
+        self, mock_requests_session
+    ):
         """HTTPDownload.download() must change the outputs extension from '.zip' to '.tar' and keep the content
         of the output as it is when it is a tar file and outputs extension is set to '.zip'"""
 
@@ -360,7 +370,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             local_product_as_archive_path,
             provider,
             eoproduct_props,
-            product_type
+            product_type,
         )
         outputs_extension = getattr(
             product.downloader.config, "outputs_extension", ".zip"
@@ -438,7 +448,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         when the result is a file without a '.zip' outputs extension"""
 
         # we use a provider having '.nc' as outputs file extension in its configuration
-        self.product = EOProduct(
+        product = EOProduct(
             "meteoblue",
             dict(
                 geometry="POINT (0 0)",
@@ -447,12 +457,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             ),
         )
 
-        plugin = self.get_download_plugin(self.product)
+        plugin = self.get_download_plugin(product)
         outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
-        self.product.location = self.product.remote_location = "http://somewhere"
-        self.product.properties["id"] = "someproduct"
+        product.location = product.remote_location = "http://somewhere"
+        product.properties["id"] = "someproduct"
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(product, outputs_prefix=self.output_dir)
 
         self.assertTrue(
             path == os.path.join(self.output_dir, "dummy_product")
@@ -474,7 +484,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_session.assert_called_once_with(
             mock.ANY,
             "post",
-            self.product.remote_location,
+            product.remote_location,
             stream=True,
             auth=None,
             params={},
