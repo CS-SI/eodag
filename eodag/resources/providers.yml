@@ -6913,10 +6913,11 @@
   url: https://www.wekeo.eu/
   search: !plugin
     type: PostJsonSearch
-    api_endpoint: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/search'
+    api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
     need_auth: true
     auth_error_code: 401
     results_entry: 'features'
+    two_passes_id_search: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
     query_params_key: 'search'
@@ -6931,25 +6932,62 @@
         - '$.geometry'
       id: '$.id'
       startTimeFromAscendingNode:
-        - '{{"start": "{startTimeFromAscendingNode}"}}'
+        - '{{"startDate": "{startTimeFromAscendingNode}"}}'
         - '$.properties.startdate'
       completionTimeFromAscendingNode:
-        - '{{"end": "{completionTimeFromAscendingNode}"}}'
+        - '{{"completionDate": "{completionTimeFromAscendingNode}"}}'
         - '$.properties.enddate'
       downloadLink: '$.properties.location'
       title: '$.id'
       storageStatus: 'OFFLINE'
   products:
+    S1_SAR:
+      productType: EO:ESA:DAT:SENTINEL-1
+      metadata_mapping:
+        id:
+          - '{{"sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"sensorMode": "{sensorMode}"}}'
+          - '{$.id#get_sensor_mode_from_s1_id}'
+        providerProductType:
+          - '{{"productType": "{providerProductType}"}}'
+          - '$.null'
+        swath:
+          - '{{"swath": "{swath}"}}'
+          - '$.null'
+        timeliness:
+          - '{{"timeliness": "{timeliness}"}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"orbitDirection": "{orbitDirection}"}}'
+          - '$.null'
+        polarisation:
+          - '{{"polarisation": "{polarisation}"}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"missionTakeId": "{missionTakeId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
+        id:
+          - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
         startTimeFromAscendingNode:
           - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
           - '$.properties.startdate'
         completionTimeFromAscendingNode:
           - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
           - '$.properties.enddate'
-        orderLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
@@ -6961,7 +6999,7 @@
       Authorization: Bearer $token
   download: !plugin
     type: HTTPDownload
-    base_uri: https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess
+    base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
     flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
@@ -6969,8 +7007,8 @@
     order_on_response:
       metadata_mapping:
         order_id: '$.download_id'
-        orderStatusLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/downloads?download_id={order_id}'
-        downloadLink: 'https://hda-broker.prod.wekeo2.eu/api/v1/dataaccess/download/{order_id}'
+        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={order_id}'
+        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{order_id}'
     order_status_method: 'GET'
     order_status_results_entry: 'features'
     order_status_success:

@@ -665,14 +665,14 @@ class HTTPDownload(Download):
         )
 
     def _process_exception(
-        self, e: RequestException, product: EOProduct, ordered_message: str
+        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
     ) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
             auth_errors = [auth_errors]
-        response_text = e.response.text.strip() if e.response else ""
-        if e.response and e.response.status_code in auth_errors:
+        response_text = e.response.text.strip() if e and e.response else ""
+        if e and e.response and e.response.status_code in auth_errors:
             raise AuthenticationError(
                 "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                 % (
@@ -688,6 +688,7 @@ class HTTPDownload(Download):
                 if ordered_message and not response_text
                 else response_text
             )
+
             raise NotAvailableError(
                 "%s(initially %s) requested, returned: %s"
                 % (
@@ -699,11 +700,14 @@ class HTTPDownload(Download):
         else:
             import traceback as tb
 
-            logger.error(
-                "Error while getting resource :\n%s\n%s",
-                tb.format_exc(),
-                response_text,
-            )
+            if e:
+                logger.error(
+                    "Error while getting resource :\n%s\n%s",
+                    tb.format_exc(),
+                    response_text,
+                )
+            else:
+                logger.error("Error while getting resource :\n%s", tb.format_exc())
 
     def _stream_download(
         self,
@@ -787,6 +791,8 @@ class HTTPDownload(Download):
             except RequestException as e:
                 self._process_exception(e, product, ordered_message)
             else:
+                if self.stream.status_code == 202:  # status accepted instead of OK
+                    self._process_exception(None, product, ordered_message)
                 stream_size = self._check_stream_size(product)
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)

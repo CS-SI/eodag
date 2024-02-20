@@ -589,6 +589,38 @@ S1_SAR_RAW:
   title: SENTINEL1 SAR Level-0
   missionStartDate: "2014-04-03T00:00:00Z"
 
+S1_SAR:
+  abstract: |
+    SENTINEL-1 is an imaging radar mission providing continuous all-weather, day-and-night imagery at C-band. The
+    SENTINEL-1 constellation provides high reliability, improved revisit time, geographical coverage and rapid data
+    dissemination to support operational applications in the priority areas of marine monitoring, land monitoring and
+    emergency services.
+    The SENTINEL-1 Synthetic Aperture Radar (SAR) instrument may acquire data in four exclusive modes:
+    Stripmap (SM) - A standard SAR stripmap imaging mode where the ground swath is illuminated with a continuous
+    sequence of pulses, while the antenna beam is pointing to a fixed azimuth and elevation angle.
+    Interferometric Wide swath (IW) - Data is acquired in three swaths using the Terrain Observation with Progressive
+    Scanning SAR (TOPSAR) imaging technique. In IW mode, bursts are synchronised from pass to pass to ensure the alignment of interferometric pairs. IW is SENTINEL-1's primary operational mode over land.
+    Extra Wide swath (EW) - Data is acquired in five swaths using the TOPSAR imaging technique. EW mode provides very
+    large swath coverage at the expense of spatial resolution.
+    Wave (WV) - Data is acquired in small stripmap scenes called "vignettes", situated at regular intervals of 100 km
+    along track. The vignettes are acquired by alternating, acquiring one vignette at a near range incidence angle while
+    the next vignette is acquired at a far range incidence angle. WV is SENTINEL-1's operational mode over open ocean.
+    SENTINEL-1 data products distributed by ESA include:
+    Raw Level-0 data (for specific usage)
+    Processed Level-1 Single Look Complex (SLC) data comprising complex imagery with amplitude and phase (systematic
+    distribution limited to specific relevant areas)
+    Ground Range Detected (GRD) Level-1 data with multi-looked intensity only (systematically distributed)
+    Level-2 Ocean (OCN) data for retrieved geophysical parameters of the ocean (systematically distributed).
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L0,L1,L2
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L0,L1,L2,GRD,RAW,OCN
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 SAR
+  missionStartDate: "2014-04-03T00:00:00Z"
+
 # Sentinel 2 ------------------------------------------------------------------
 S2_MSI_L1C:
   abstract: |
