@@ -656,6 +656,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
+        def convert_get_platform_from_s3_id(product_id: str) -> str:
+            parts: List[str] = re.split(r"_(?!_)", product_id)
+            return "Sentinel-" + parts[0][1:]
+
+        @staticmethod
         def convert_split_id_into_s5p_params(product_id: str) -> Dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {

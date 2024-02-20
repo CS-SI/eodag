@@ -783,7 +783,6 @@ class HTTPDownload(Download):
         ) as self.stream:
             try:
                 self.stream.raise_for_status()
-
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(
                     exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
@@ -791,8 +790,14 @@ class HTTPDownload(Download):
             except RequestException as e:
                 self._process_exception(e, product, ordered_message)
             else:
-                if self.stream.status_code == 202:  # status accepted instead of OK
-                    self._process_exception(None, product, ordered_message)
+                if getattr(self.config, "order_status_in_progress", None):
+                    # order still in progress but no error
+                    status_running = getattr(self.config, "order_status_in_progress")[
+                        "response_code"
+                    ]
+                    if self.stream.status_code == status_running:
+                        product.properties["storageStatus"] = "ORDERED"
+                        self._process_exception(None, product, ordered_message)
                 stream_size = self._check_stream_size(product)
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)

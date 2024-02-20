@@ -6930,7 +6930,9 @@
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
-      id: '$.id'
+      id:
+        - '{{"productIdentifier": {id}}}'
+        - '$.id'
       startTimeFromAscendingNode:
         - '{{"startDate": "{startTimeFromAscendingNode}"}}'
         - '$.properties.startdate'
@@ -6940,12 +6942,25 @@
       downloadLink: '$.properties.location'
       title: '$.id'
       storageStatus: 'OFFLINE'
+      processingLevel:
+        - '{{"processingLevel": "{processingLevel}"}}'
+        - '$.null'
+      providerProductType:
+        - '{{"productType": "{providerProductType}"}}'
+        - '$.null'
+      timeliness:
+        - '{{"timeliness": "{timeliness}"}}'
+        - '$.null'
+      orbitDirection:
+        - '{{"orbitDirection": "{orbitDirection}"}}'
+        - '$.null'
   products:
-    S1_SAR:
+    S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1
+      providerProductType: GRD
       metadata_mapping:
         id:
-          - '{{"sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
+          - '{{"productType": "GRD", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
           - '{$.id#remove_extension}'
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
@@ -6953,17 +6968,8 @@
         sensorMode:
           - '{{"sensorMode": "{sensorMode}"}}'
           - '{$.id#get_sensor_mode_from_s1_id}'
-        providerProductType:
-          - '{{"productType": "{providerProductType}"}}'
-          - '$.null'
         swath:
           - '{{"swath": "{swath}"}}'
-          - '$.null'
-        timeliness:
-          - '{{"timeliness": "{timeliness}"}}'
-          - '$.null'
-        orbitDirection:
-          - '{{"orbitDirection": "{orbitDirection}"}}'
           - '$.null'
         polarisation:
           - '{{"polarisation": "{polarisation}"}}'
@@ -6975,6 +6981,179 @@
           - '{{"missionTakeId": "{missionTakeId}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+    S1_SAR_RAW:
+      productType: EO:ESA:DAT:SENTINEL-1
+      providerProductType: RAW
+      metadata_mapping:
+        id:
+          - '{{"productType": "RAW", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"sensorMode": "{sensorMode}"}}'
+          - '{$.id#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"swath": "{swath}"}}'
+          - '$.null'
+        polarisation:
+          - '{{"polarisation": "{polarisation}"}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"missionTakeId": "{missionTakeId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+    S1_SAR_OCN:
+      productType: EO:ESA:DAT:SENTINEL-1
+      providerProductType: OCN
+      metadata_mapping:
+        id:
+          - '{{"productType": "OCN", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"sensorMode": "{sensorMode}"}}'
+          - '{$.id#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"swath": "{swath}"}}'
+          - '$.null'
+        polarisation:
+          - '{{"polarisation": "{polarisation}"}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"missionTakeId": "{missionTakeId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+    S1_SAR_SLC:
+      productType: EO:ESA:DAT:SENTINEL-1
+      providerProductType: SLC
+      metadata_mapping:
+        id:
+          - '{{"productType": "SLC", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s1_id}'
+        sensorMode:
+          - '{{"sensorMode": "{sensorMode}"}}'
+          - '{$.id#get_sensor_mode_from_s1_id}'
+        swath:
+          - '{{"swath": "{swath}"}}'
+          - '$.null'
+        polarisation:
+          - '{{"polarisation": "{polarisation}"}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"missionTakeId": "{missionTakeId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+    S2_MSI_L1C:
+      productType: EO:ESA:DAT:SENTINEL-2
+      processingLevel: S2MSI1C
+      metadata_mapping:
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"cloudCover": "{cloudCover}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+    S2_MSI_L2A:
+      productType: EO:ESA:DAT:SENTINEL-2
+      processingLevel: S2MSI2A
+      metadata_mapping:
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"cloudCover": "{cloudCover}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+    S2_MSI_L2AP:
+      productType: EO:ESA:DAT:SENTINEL-2
+      processingLevel: S2MSI2AP
+      metadata_mapping:
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s2_id}'
+        cloudCover:
+          - '{{"cloudCover": "{cloudCover}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+    S3_LAN_HY:
+      productType: EO:ESA:DAT:SENTINEL-3
+      providerProductType: SR_2_LAN_HY
+      processingLevel: 2
+      metadata_mapping:
+        id:
+          - '{{"productType": "SR_2_LAN_HY", "timeliness": {id#split_id_into_s3_params}["timeliness"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '2'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+    S3_LAN_SI:
+      productType: EO:ESA:DAT:SENTINEL-3
+      providerProductType: SR_2_LAN_SI
+      processingLevel: 2
+      metadata_mapping:
+        id:
+          - '{{"productType": "SR_2_LAN_SI", "timeliness": {id#split_id_into_s3_params}["timeliness"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '2'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+    S3_LAN_LI:
+      productType: EO:ESA:DAT:SENTINEL-3
+      providerProductType: SR_2_LAN_LI
+      processingLevel: 2
+      metadata_mapping:
+        id:
+          - '{{"productType": "SR_2_LAN_LI", "timeliness": {id#split_id_into_s3_params}["timeliness"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '2'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+    S3_SLSTR_L1RBT:
+      productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
+      providerProductType: SL_1_RBT___
+      metadata_mapping:
+        id:
+          - '{{"productType", "value": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
@@ -7013,6 +7192,10 @@
     order_status_results_entry: 'features'
     order_status_success:
       status: Done
+    order_status_error:
+      status: Error
+    order_status_in_progress:
+      response_code: 202
 
 
 ---

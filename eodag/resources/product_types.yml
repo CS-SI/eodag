@@ -589,38 +589,6 @@ S1_SAR_RAW:
   title: SENTINEL1 SAR Level-0
   missionStartDate: "2014-04-03T00:00:00Z"
 
-S1_SAR:
-  abstract: |
-    SENTINEL-1 is an imaging radar mission providing continuous all-weather, day-and-night imagery at C-band. The
-    SENTINEL-1 constellation provides high reliability, improved revisit time, geographical coverage and rapid data
-    dissemination to support operational applications in the priority areas of marine monitoring, land monitoring and
-    emergency services.
-    The SENTINEL-1 Synthetic Aperture Radar (SAR) instrument may acquire data in four exclusive modes:
-    Stripmap (SM) - A standard SAR stripmap imaging mode where the ground swath is illuminated with a continuous
-    sequence of pulses, while the antenna beam is pointing to a fixed azimuth and elevation angle.
-    Interferometric Wide swath (IW) - Data is acquired in three swaths using the Terrain Observation with Progressive
-    Scanning SAR (TOPSAR) imaging technique. In IW mode, bursts are synchronised from pass to pass to ensure the alignment of interferometric pairs. IW is SENTINEL-1's primary operational mode over land.
-    Extra Wide swath (EW) - Data is acquired in five swaths using the TOPSAR imaging technique. EW mode provides very
-    large swath coverage at the expense of spatial resolution.
-    Wave (WV) - Data is acquired in small stripmap scenes called "vignettes", situated at regular intervals of 100 km
-    along track. The vignettes are acquired by alternating, acquiring one vignette at a near range incidence angle while
-    the next vignette is acquired at a far range incidence angle. WV is SENTINEL-1's operational mode over open ocean.
-    SENTINEL-1 data products distributed by ESA include:
-    Raw Level-0 data (for specific usage)
-    Processed Level-1 Single Look Complex (SLC) data comprising complex imagery with amplitude and phase (systematic
-    distribution limited to specific relevant areas)
-    Ground Range Detected (GRD) Level-1 data with multi-looked intensity only (systematically distributed)
-    Level-2 Ocean (OCN) data for retrieved geophysical parameters of the ocean (systematically distributed).
-  instrument: SAR
-  platform: SENTINEL1
-  platformSerialIdentifier: S1A,S1B
-  processingLevel: L0,L1,L2
-  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L0,L1,L2,GRD,RAW,OCN
-  sensorType: RADAR
-  license: proprietary
-  title: SENTINEL1 SAR
-  missionStartDate: "2014-04-03T00:00:00Z"
-
 # Sentinel 2 ------------------------------------------------------------------
 S2_MSI_L1C:
   abstract: |
@@ -1279,6 +1247,78 @@ S3_LAN:
   sensorType: RADAR
   license: proprietary
   title: SENTINEL3 SRAL Level-2 LAN
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_LAN_HY:
+  abstract: |
+    Sentinel-3 STM payload includes two main instruments: the Sentinel-3 Radar ALtimeter (SRAL) and a MicroWave
+    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth’s surface. It is the first
+    radar altimeter operating exclusively with delay-Doppler capabilities, which provides a significant improvement of
+    the along-track resolution compared to conventional Low Resolution Mode (LRM) altimeters. This enhancement is
+    highly valuable over continental and sea ice surfaces, considering their heterogeneous characteristics.
+    ESA and the Sentinel-3 Mission Performance Cluster (MPC) have developed in 2021-2022 dedicated delay-Doppler and
+    Level-2 processing chains for the generation of new Sentinel-3 STM LAND level-2 products over inland waters,
+    sea-ice, and land ice areas. The main objective of these so-called “Thematic Products” is to address the specific
+    needs of the user communities related to the three different Thematic surfaces.
+    For Hydrology Thematic Products, the coverage includes all the continental surfaces, except the Antarctica ice
+    sheet, and Greenland ice sheet interior. Over coastal zones the 50 km common area between Land and Marine products
+    remains. Therefore, the Hydrology products cover up to 25 km over surfaces considered as Marine.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN,HYDROLOGY
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 LAN HYDRO
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_LAN_SI:
+  abstract: |
+    Sentinel-3 STM payload includes two main instruments: the Sentinel-3 Radar ALtimeter (SRAL) and a MicroWave
+    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth’s surface. It is the first
+    radar altimeter operating exclusively with delay-Doppler capabilities, which provides a significant improvement of
+    the along-track resolution compared to conventional Low Resolution Mode (LRM) altimeters. This enhancement is
+    highly valuable over continental and sea ice surfaces, considering their heterogeneous characteristics.
+    ESA and the Sentinel-3 Mission Performance Cluster (MPC) have developed in 2021-2022 dedicated delay-Doppler and
+    Level-2 processing chains for the generation of new Sentinel-3 STM LAND level-2 products over inland waters,
+    sea-ice, and land ice areas. The main objective of these so-called “Thematic Products” is to address the specific
+    needs of the user communities related to the three different Thematic surfaces.
+    Each Sentinel-3 STM Land Thematic Product has a dedicated geographical coverage, defined in a Thematic Mask. For Sea
+    Ice Thematic Products, the mask remains static, and the coverage was calculated by the Expert Support
+    Laboratories (ESL) of the Sentinel-3 MPC, based on the maximum of sea ice extent given a NSIDC sea ice climatology.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN,SEA,ICE
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 LAN SEA ICE
+  missionStartDate: "2016-02-16T00:00:00Z"
+
+S3_LAN_LI:
+  abstract: |
+    Sentinel-3 STM payload includes two main instruments: the Sentinel-3 Radar ALtimeter (SRAL) and a MicroWave
+    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth’s surface. It is the first
+    radar altimeter operating exclusively with delay-Doppler capabilities, which provides a significant improvement of
+    the along-track resolution compared to conventional Low Resolution Mode (LRM) altimeters. This enhancement is
+    highly valuable over continental and sea ice surfaces, considering their heterogeneous characteristics.
+    ESA and the Sentinel-3 Mission Performance Cluster (MPC) have developed in 2021-2022 dedicated delay-Doppler and
+    Level-2 processing chains for the generation of new Sentinel-3 STM LAND level-2 products over inland waters,
+    sea-ice, and land ice areas. The main objective of these so-called “Thematic Products” is to address the specific
+    needs of the user communities related to the three different Thematic surfaces.
+    Each Sentinel-3 STM Land Thematic Product has a dedicated geographical coverage, defined in a Thematic Mask. For
+    Land Ice Thematic Products, the mask includes the Antarctica and Greenland ice sheets, along with glacier areas as
+    defined in the Randolph Glacier Inventory (RGI) database.
+  instrument: SRAL
+  platform: SENTINEL3
+  platformSerialIdentifier: S3A,S3B
+  processingLevel: L2
+  keywords: SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L2,LAN,LAND,ICE
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
 
 # S3 SYNERGY
