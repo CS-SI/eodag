@@ -231,7 +231,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             fh.write(product.properties["downloadLink"])
         logger.debug("Download recorded in %s", record_filename)
 
-        # do not try to extract or delete grib/netcdf or a directory
+        # do not try to extract a directory
         kwargs["extract"] = False
 
         product_path = self._finalize(
