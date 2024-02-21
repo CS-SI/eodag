@@ -510,9 +510,12 @@ def search_products(
         if not products and eodag_api.search_errors:
             search_error = RequestError(
                 "No result could be obtained from any available provider and following "
-                "error(s) appeared while searching:"
+                "error(s) occured while searching:"
             )
             search_error.history = eodag_api.search_errors
+            for one_search_error in eodag_api.search_errors:
+                if getattr(one_search_error[1], "parameters", None):
+                    search_error.parameters.update(one_search_error[1].parameters)
             raise search_error
 
         products = filter_products(products, arguments, **criterias)

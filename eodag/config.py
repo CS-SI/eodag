@@ -27,6 +27,7 @@ from typing import (
     ItemsView,
     Iterator,
     List,
+    Literal,
     Optional,
     Tuple,
     TypedDict,
@@ -40,6 +41,7 @@ import requests
 import yaml
 import yaml.constructor
 import yaml.parser
+from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from pkg_resources import resource_filename
 from requests.auth import AuthBase
@@ -47,6 +49,7 @@ from requests.auth import AuthBase
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    Annotated,
     cached_yaml_load,
     cached_yaml_load_all,
     cast_scalar_value,
@@ -228,6 +231,15 @@ class PluginConfig(yaml.YAMLObject):
         count_endpoint: str
         start_page: int
 
+    class Sort(TypedDict):
+        """Configuration for sort during search"""
+
+        sort_by_default: List[Tuple[str, str]]
+        sort_by_tpl: str
+        sort_param_mapping: Dict[str, str]
+        sort_order_mapping: Dict[Literal["ascending", "descending"], str]
+        max_sort_params: Annotated[int, Gt(0)]
+
     class OrderStatusOnSuccess(TypedDict):
         """Configuration for order on-success during download"""
 
@@ -251,6 +263,7 @@ class PluginConfig(yaml.YAMLObject):
     result_type: str
     results_entry: str
     pagination: PluginConfig.Pagination
+    sort: PluginConfig.Sort
     query_params_key: str
     discover_metadata: Dict[str, str]
     discover_product_types: Dict[str, Any]

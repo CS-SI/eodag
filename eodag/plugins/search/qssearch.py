@@ -44,6 +44,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
@@ -471,6 +472,11 @@ class QueryStringSearch(Search):
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
 
+        sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
+        sort_by_qs, _ = (
+            ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
+        )
+
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
         keywords["productType"] = (
@@ -510,7 +516,11 @@ class QueryStringSearch(Search):
         self.query_params = qp
         self.query_string = qs
         self.search_urls, total_items = self.collect_search_urls(
-            page=page, items_per_page=items_per_page, count=count, **kwargs
+            page=page,
+            items_per_page=items_per_page,
+            count=count,
+            sort_by_qs=sort_by_qs,
+            **kwargs,
         )
         if not count and hasattr(self, "total_items_nb"):
             # do not try to extract total_items from search results if count is False
@@ -559,6 +569,10 @@ class QueryStringSearch(Search):
         urls = []
         total_results = 0 if count else None
 
+        # use only sort_by parameters for search, not for count
+        #  and remove potential leading '&'
+        qs_with_sort = (self.query_string + kwargs.get("sort_by_qs", "")).strip("&")
+
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
             total_results = None
@@ -594,14 +608,14 @@ class QueryStringSearch(Search):
                             total_results += _total_results or 0
                 next_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
-                    search=self.query_string,
+                    search=qs_with_sort,
                     items_per_page=items_per_page,
                     page=page,
                     skip=(page - 1) * items_per_page,
                     skip_base_1=(page - 1) * items_per_page + 1,
                 )
             else:
-                next_url = "{}?{}".format(search_endpoint, self.query_string)
+                next_url = "{}?{}".format(search_endpoint, qs_with_sort)
             urls.append(next_url)
         return urls, total_results
 
@@ -1032,6 +1046,10 @@ class PostJsonSearch(QueryStringSearch):
         product_type = kwargs.get("productType", None)
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
+        sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
+        _, sort_by_qp = (
+            ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
+        )
         provider_product_type = self.map_product_type(product_type)
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
@@ -1116,7 +1134,7 @@ class PostJsonSearch(QueryStringSearch):
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
             return [], 0
-        self.query_params = qp
+        self.query_params = dict(qp, **sort_by_qp)
         self.search_urls, total_items = self.collect_search_urls(
             page=page, items_per_page=items_per_page, count=count, **kwargs
         )

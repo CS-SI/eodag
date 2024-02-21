@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -90,7 +90,6 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
-    sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
 
     @model_validator(mode="before")
     @classmethod
@@ -124,21 +123,6 @@ class EODAGSearch(BaseModel):
         if isinstance(v, list):
             return ",".join(v)
         return v
-
-    @field_validator("sortBy", mode="before")
-    @classmethod
-    def convert_stac_to_eodag_sortby(
-        cls,
-        sortby_post_params: List[Dict[str, str]],
-    ) -> List[Tuple[str, str]]:
-        """
-        Convert STAC POST sortby to EODAG sortby
-        """
-        eodag_sortby: List[Tuple[str, str]] = []
-        for sortby_post_param in sortby_post_params:
-            field = cls.snake_to_camel(cls.to_eodag(sortby_post_param["field"]))
-            eodag_sortby.append((field, sortby_post_param["direction"]))
-        return eodag_sortby
 
     @field_validator("productType")
     @classmethod

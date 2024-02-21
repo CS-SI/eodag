@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+import orjson
 from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
@@ -27,13 +28,16 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.plugins.base import PluginTopic
+from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     Annotated,
     format_dict_items,
+    update_nested_dict,
 )
+from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -181,3 +185,120 @@ class Search(PluginTopic):
         return self.config.products.get(product_type, {}).get(
             "metadata_mapping", self.config.metadata_mapping
         )
+
+    def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
+        """Extract the "sortBy" argument from the kwargs or the provider default sort configuration
+
+        :param kwargs: Search arguments
+        :type kwargs: Dict[str, Any]
+        :returns: The "sortBy" argument from the kwargs or the provider default sort configuration
+        :rtype: :class:`~eodag.types.search_args.SortByList`
+        """
+        # remove "sortBy" from search args if exists because it is not part of metadata mapping,
+        # it will complete the query string or body once metadata mapping will be done
+        sort_by_arg_tmp = kwargs.pop("sortBy", None)
+        sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
+            "sort_by_default", None
+        )
+        if not sort_by_arg_tmp and sort_by_arg:
+            logger.info(
+                f"{self.provider} is configured with default sorting by '{sort_by_arg[0][0]}' "
+                f"in {'ascending' if sort_by_arg[0][1] == 'ASC' else 'descending'} order"
+            )
+        return sort_by_arg
+
+    def build_sort_by(
+        self, sort_by_arg: SortByList
+    ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
+        """Build the sorting part of the query string or body by transforming
+        the "sortBy" argument into a provider-specific string or dictionnary
+
+        :param sort_by_arg: the "sortBy" argument in EODAG format
+        :type sort_by_arg: :class:`~eodag.types.search_args.SortByList`
+        :returns: The "sortBy" argument in provider-specific format
+        :rtype: Union[str, Dict[str, List[Dict[str, str]]]]
+        """
+        if not hasattr(self.config, "sort"):
+            raise ValidationError(f"{self.provider} does not support sorting feature")
+        # TODO: remove this code block when search args model validation is embeded
+        # remove duplicates
+        sort_by_arg = list(set(sort_by_arg))
+
+        sort_by_qs: str = ""
+        sort_by_qp: Dict[str, Any] = {}
+
+        provider_sort_by_tuples_used: List[Tuple[str, str]] = []
+        for eodag_sort_by_tuple in sort_by_arg:
+            eodag_sort_param = eodag_sort_by_tuple[0]
+            provider_sort_param = self.config.sort["sort_param_mapping"].get(
+                eodag_sort_param, None
+            )
+            if not provider_sort_param:
+                joined_eodag_params_to_map = ", ".join(
+                    k for k in self.config.sort["sort_param_mapping"].keys()
+                )
+                params = set(self.config.sort["sort_param_mapping"].keys())
+                params.add(eodag_sort_param)
+                raise ValidationError(
+                    f"'{eodag_sort_param}' parameter is not sortable with {self.provider}. "
+                    f"Here is the list of sortable parameter(s) with {self.provider}: {joined_eodag_params_to_map}",
+                    params,
+                )
+            eodag_sort_order = eodag_sort_by_tuple[1]
+            # TODO: remove this code block when search args model validation is embeded
+            # Remove leading and trailing whitespace(s) if exist
+            eodag_sort_order = eodag_sort_order.strip().upper()
+            if eodag_sort_order[:3] != "ASC" and eodag_sort_order[:3] != "DES":
+                raise ValidationError(
+                    "Sorting order is invalid: it must be set to 'ASC' (ASCENDING) or "
+                    f"'DESC' (DESCENDING), got '{eodag_sort_order}' with '{eodag_sort_param}' instead"
+                )
+            eodag_sort_order = eodag_sort_order[:3]
+
+            provider_sort_order = (
+                self.config.sort["sort_order_mapping"]["ascending"]
+                if eodag_sort_order == "ASC"
+                else self.config.sort["sort_order_mapping"]["descending"]
+            )
+            provider_sort_by_tuple: Tuple[str, str] = (
+                provider_sort_param,
+                provider_sort_order,
+            )
+            # TODO: remove this code block when search args model validation is embeded
+            for provider_sort_by_tuple_used in provider_sort_by_tuples_used:
+                # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,
+                # then their sorting order is different and there is a contradiction that would raise an error
+                if provider_sort_by_tuple[0] == provider_sort_by_tuple_used[0]:
+                    raise ValidationError(
+                        f"'{eodag_sort_param}' parameter is called several times to sort results with different "
+                        "sorting orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
+                        set([eodag_sort_param]),
+                    )
+            provider_sort_by_tuples_used.append(provider_sort_by_tuple)
+
+            # TODO: move this code block to the top of this method when search args model validation is embeded
+            # check if the limit number of sorting parameter(s) is respected with this sorting parameter
+            if (
+                self.config.sort.get("max_sort_params", None)
+                and len(provider_sort_by_tuples_used)
+                > self.config.sort["max_sort_params"]
+            ):
+                raise ValidationError(
+                    f"Search results can be sorted by only {self.config.sort['max_sort_params']} "
+                    f"parameter(s) with {self.provider}"
+                )
+
+            parsed_sort_by_tpl: str = self.config.sort["sort_by_tpl"].format(
+                sort_param=provider_sort_by_tuple[0],
+                sort_order=provider_sort_by_tuple[1],
+            )
+            try:
+                parsed_sort_by_tpl_dict: Dict[str, Any] = orjson.loads(
+                    parsed_sort_by_tpl
+                )
+                sort_by_qp = update_nested_dict(
+                    sort_by_qp, parsed_sort_by_tpl_dict, extend_list_values=True
+                )
+            except orjson.JSONDecodeError:
+                sort_by_qs += parsed_sort_by_tpl
+        return (sort_by_qs, sort_by_qp)

@@ -1093,6 +1093,7 @@ class RequestTestCase(unittest.TestCase):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
         )
+        # TODO: with an unsupported provider
 
     def test_product_type_queryables(self):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
@@ -1111,6 +1112,7 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
+        # TODO: with an unsupported product type
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
@@ -1121,8 +1123,8 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.return_value = MockResponse(
             provider_queryables, status_code=200
         )
-        # no provider specified (only 1 available for the moment) : queryables intresection returned
 
+        # no provider specified (only 1 available for the moment) : queryables intersection returned
         res_no_provider = self._request_valid(
             "collections/S1_SAR_GRD/queryables",
             check_links=False,

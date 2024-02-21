@@ -1470,10 +1470,11 @@ components:
           - 34
         collections:
           - S2_MSI_L1C
-        platform:
-          eq: S2A
-        eo:cloud_cover:
-          lte: 80
+        query:
+          platform:
+            eq: S2A
+          eo:cloud_cover:
+            lte: 80
         limit: 10
     limit:
       type: integer
