@@ -2349,7 +2349,7 @@ class TestCoreSearch(TestCoreBase):
                 type: QueryStringSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_url_tpl: 'dummy_next_page_url_tpl'
+                    next_page_url_tpl: '{url}?{search}'
                     total_items_nb_key_path: '$.properties.totalResults'
                 sort:
                     sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
@@ -2374,8 +2374,8 @@ class TestCoreSearch(TestCoreBase):
 
         # a provider-specific string has been created to sort by
         self.assertIn(
-            "&sortParam=providerSortParam&sortOrder=desc",
-            mock_qssearch__request.call_args[0][0].query_string,
+            "sortParam=providerSortParam&sortOrder=desc",
+            mock_qssearch__request.call_args[0][1],
         )
 
         # with a POST mode search
