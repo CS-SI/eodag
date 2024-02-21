@@ -230,11 +230,10 @@ class Search(PluginTopic):
         provider_sort_by_tuples_used: List[Tuple[str, str]] = []
         for eodag_sort_by_tuple in sort_by_arg:
             eodag_sort_param = eodag_sort_by_tuple[0]
-            if self.config.sort["sort_param_mapping"].get(eodag_sort_param):
-                provider_sort_param = self.config.sort["sort_param_mapping"][
-                    eodag_sort_param
-                ]
-            else:
+            provider_sort_param = self.config.sort["sort_param_mapping"].get(
+                eodag_sort_param, None
+            )
+            if not provider_sort_param:
                 joined_eodag_params_to_map = ", ".join(
                     k for k in self.config.sort["sort_param_mapping"].keys()
                 )

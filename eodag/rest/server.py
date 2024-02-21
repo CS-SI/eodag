@@ -306,14 +306,14 @@ async def handle_download_error(request: Request, error: Exception) -> ORJSONRes
 @app.exception_handler(RequestError)
 async def handle_request_error(request: Request, error: RequestError) -> ORJSONResponse:
     """RequestError should be sent as internal server error with details to the client"""
-    if getattr(error, "history", None) and error.history:
+    if getattr(error, "history", None):
         error_history_tmp = list(error.history)
         for i, search_error in enumerate(error_history_tmp):
             if search_error[1].__class__.__name__ in ERRORS_WITH_500_STATUS_CODE:
                 search_error[1].args = ("an internal error occured",)
                 error_history_tmp[i] = search_error
                 continue
-            if getattr(error, "parameters", None) and error.parameters:
+            if getattr(error, "parameters", None):
                 for error_param in error.parameters:
                     stac_param = EODAGSearch.to_stac(error_param)
                     search_error[1].args = (
