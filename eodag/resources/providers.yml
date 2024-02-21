@@ -7128,12 +7128,47 @@
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
-    S3_SLSTR_L1RBT:
-      productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
-      providerProductType: SL_1_RBT___
+    S3_OLCI_L2LFR:
+      productType: EO:ESA:DAT:SENTINEL-3
+      providerProductType: OL_2_LFR___
+      processingLevel: 2
       metadata_mapping:
         id:
-          - '{{"productType", "value": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{{"productType": "OL_2_LFR___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '2'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+    S3_OLCI_L2LRR:
+      productType: EO:ESA:DAT:SENTINEL-3
+      providerProductType: OL_2_LRR___
+      processingLevel: 2
+      metadata_mapping:
+        id:
+          - '{{"productType": "OL_2_LRR___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '2'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+    S3_SLSTR_L2:
+      productType: EO:ESA:DAT:SENTINEL-3
+      providerProductType: SL_2_LST___
+      processingLevel: 2
+      metadata_mapping:
+        id:
+          - '{{"productType": "SL_2_LST___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "startDate": {id#split_id_into_s3_params}["startDate"], "completionDate": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '2'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+    S3_EFR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
         startTimeFromAscendingNode:
           - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
@@ -7145,15 +7180,192 @@
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
         relativeOrbitNumber:
-          - '{{"stringInputValues": [{{"name": "relorbit", "value": "{relativeOrbitNumber}"}}]}}'
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
           - '$.null'
         orbitNumber:
-          - '{{"stringInputValues": [{{"name": "orbit", "value": "{orbitNumber}"}}]}}'
+          - '{{"orbit": "{orbitNumber}"}}'
           - '$.null'
         cycleNumber:
-          - '{{"stringInputValues": [{{"name": "cycle", "value": "{cycleNumber}"}}]}}'
+          - '{{"cycle": "{cycleNumber}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
+    S3_ERR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
+    S3_OLCI_L2WFR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
+    S3_OLCI_L2WRR:
+      productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
+    S3_SRA:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
+    S3_SRA_A:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
+    S3_SRA_BS:
+      productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
+      metadata_mapping:
+        id:
+          - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
+
+    S3_SLSTR_L1RBT:
+      productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
+      providerProductType: SL_1_RBT___
+      metadata_mapping:
+        id:
+          - '{{"productType", "value": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+          - '$.properties.enddate'
+        platform:
+          - '{{"sat": "{platform}"}}'
+          - '{$.id#get_platform_from_s3_id}'
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        orbitNumber:
+          - '{{"orbit": "{orbitNumber}"}}'
+          - '$.null'
+        cycleNumber:
+          - '{{"cycle": "{cycleNumber}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
@@ -7167,6 +7379,19 @@
           - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
           - '$.properties.enddate'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+    S5P_L1B2_IR_ALL:
+      productType: EO:ESA:DAT:SENTINEL-5P
+      metadata_mapping:
+        id:
+          - '{{"productType": {id#split_id_into_s5p_params}["productType"], "processingMode": {id#split_id_into_s5p_params}["processingMode"], "processingLevel": {id#split_id_into_s5p_params}["processingLevel"], "startDate": {id#split_id_into_s5p_params}["startDate"], "completionDate": {id#split_id_into_s5p_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s5p_id}'
+        processingMode:
+          - '{{"processingMode": "{processingMode}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
