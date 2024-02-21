@@ -6722,6 +6722,7 @@
     need_auth: false
     pagination:
       next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
+      start_page: 0
       total_items_nb_key_path: '$.totalResults'
       # 2024/02/01: 500 is the max, no error if greater
       max_items_per_page: 500
