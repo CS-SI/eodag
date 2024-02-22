@@ -834,8 +834,9 @@ class TestEODagEndToEndComplete(EndToEndBase):
         record_dir = os.path.join(self.tmp_download_path, ".downloaded")
         self.assertTrue(os.path.isdir(record_dir))
         # It must contain a file per product downloade, whose name is
-        # the MD5 hash of the product's remote location
-        expected_hash = hashlib.md5(product.remote_location.encode("utf-8")).hexdigest()
+        # the MD5 hash of the product's ``product_type`` and ``properties['id']``
+        expected_hash = product.product_type + "-" + product.properties["id"]
+        expected_hash = hashlib.md5(expected_hash.encode("utf-8")).hexdigest()
         record_file = os.path.join(record_dir, expected_hash)
         self.assertTrue(os.path.isfile(record_file))
         # Its content must be the product's remote location

@@ -86,9 +86,9 @@ class Download(PluginTopic):
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
     - save a *record* file in the directory ``outputs_prefix/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``remote_location`` attribute
-      (``hashlib.md5(remote_location.encode("utf-8")).hexdigest()``) and whose content is
-      the product's ``remote_location`` attribute itself.
+      is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
+      attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+      and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an
       existing file/directory
     - not try to download a product if its *record* file exists as long as the expected
@@ -246,8 +246,9 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        record_filename = os.path.join(download_records_dir, url_hash)
+        record_filename = os.path.join(
+            download_records_dir, self.generate_record_hash(product)
+        )
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info(
                 f"Product already downloaded: {fs_path}",
@@ -277,6 +278,21 @@ class Download(PluginTopic):
             os.remove(record_filename)
 
         return fs_path, record_filename
+
+    def generate_record_hash(self, product: EOProduct) -> str:
+        """Generate the record hash of the given product.
+
+        The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
+        (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+
+        :param product: The product to calculate the record hash
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :returns: The MD5 hash
+        :rtype: str
+        """
+        # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
+        product_hash = str(product.product_type) + "-" + str(product.properties["id"])
+        return hashlib.md5(product_hash.encode("utf-8")).hexdigest()
 
     def _resolve_archive_depth(self, product_path: str) -> str:
         """Update product_path using archive_depth from provider configuration.
