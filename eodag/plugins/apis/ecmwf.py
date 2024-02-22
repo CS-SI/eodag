@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -37,6 +38,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     get_geometry_from_various,
     path_to_uri,
+    sanitize,
     urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError
@@ -179,6 +181,13 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
                 product.location = path_to_uri(fs_path)
             return fs_path
 
+        new_fs_path = os.path.join(
+            os.path.dirname(fs_path), sanitize(product.properties["title"])
+        )
+        if not os.path.isdir(new_fs_path):
+            os.makedirs(new_fs_path)
+        fs_path = os.path.join(new_fs_path, os.path.basename(fs_path))
+
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
         download_request = geojson.loads(urlsplit(product.location).query)
@@ -222,11 +231,11 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             fh.write(product.properties["downloadLink"])
         logger.debug("Download recorded in %s", record_filename)
 
-        # do not try to extract or delete grib/netcdf
+        # do not try to extract a directory
         kwargs["extract"] = False
 
         product_path = self._finalize(
-            fs_path,
+            new_fs_path,
             progress_callback=progress_callback,
             outputs_extension=f".{product_extension}",
             **kwargs,

@@ -332,6 +332,11 @@ class Download(PluginTopic):
         extract = (
             extract if extract is not None else getattr(self.config, "extract", True)
         )
+        if not extract:
+            logger.info("Extraction not activated. The product is available as is.")
+            progress_callback(1, total=1)
+            return fs_path
+
         delete_archive = kwargs.pop("delete_archive", None)
         delete_archive = (
             delete_archive
@@ -339,11 +344,6 @@ class Download(PluginTopic):
             else getattr(self.config, "delete_archive", True)
         )
         outputs_extension = kwargs.pop("outputs_extension", ".zip")
-
-        if not extract:
-            logger.info("Extraction not activated. The product is available as is.")
-            progress_callback(1, total=1)
-            return fs_path
 
         product_path = (
             fs_path[: fs_path.index(outputs_extension)]
@@ -373,7 +373,6 @@ class Download(PluginTopic):
                 f"Extraction cancelled, destination directory already exists and is not empty: {product_path}"
             )
             progress_callback(1, total=1)
-            product_path = self._resolve_archive_depth(product_path)
             return product_path
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
@@ -402,14 +401,28 @@ class Download(PluginTopic):
                             path=extraction_dir,
                         )
                         progress_callback(1)
-                shutil.move(extraction_dir, outputs_dir)
+                # in some cases, only a lone file is extracted without being in a directory
+                # then, we create a directory in which we place this file
+                product_extraction_path = self._resolve_archive_depth(extraction_dir)
+                if os.path.isfile(product_extraction_path) and not os.path.isdir(
+                    outputs_dir
+                ):
+                    os.makedirs(outputs_dir)
+                shutil.move(product_extraction_path, outputs_dir)
 
-            elif fs_path.endswith(".tar.gz"):
+            elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
                     progress_callback(1)
-                shutil.move(extraction_dir, outputs_dir)
+                # in some cases, only a lone file is extracted without being in a directory
+                # then, we create a directory in which we place this file
+                product_extraction_path = self._resolve_archive_depth(extraction_dir)
+                if os.path.isfile(product_extraction_path) and not os.path.isdir(
+                    outputs_dir
+                ):
+                    os.makedirs(outputs_dir)
+                shutil.move(product_extraction_path, outputs_dir)
             else:
                 progress_callback(1, total=1)
 
@@ -428,8 +441,6 @@ class Download(PluginTopic):
         # close progress bar if needed
         if close_progress_callback:
             progress_callback.close()
-
-        product_path = self._resolve_archive_depth(product_path)
 
         return product_path
 

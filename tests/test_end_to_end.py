@@ -493,21 +493,21 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(
             *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_ads(self):
         product = self.execute_search(
             *COP_ADS_SEARCH_ARGS, search_kwargs_dict=COP_ADS_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_cds(self):
         product = self.execute_search(
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sara(self):
@@ -517,7 +517,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_meteoblue(self):
         product = self.execute_search(*METEOBLUE_SEARCH_ARGS)
-        expected_filename = "{}.nc".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_wekeo(self):
@@ -890,11 +890,8 @@ class TestEODagEndToEndComplete(EndToEndBase):
         self.assertNotEqual(prev_location, product.location)
         # The location must follow the file URI scheme
         self.assertTrue(product.location.startswith("file://"))
-        # The location must point to a SAFE directory
-        self.assertTrue(product.location.endswith("SAFE"))
-        # The path must point to a SAFE directory
+        # The path must point to a directory
         self.assertTrue(os.path.isdir(product_dir_path))
-        self.assertTrue(product_dir_path.endswith("SAFE"))
 
         # The downloaded & extracted product should not be downloaded again if
         # the download method is executed again

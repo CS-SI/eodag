@@ -384,12 +384,14 @@ class TestEOProduct(EODagTestCase):
             # Check that the extracted dir has at least one file, there are more
             # but that should be enough.
             self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
-            # The zip file should is around
-            product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
+            # The zip file should be around
+            product_zip_file = product_dir_path.with_suffix(".zip")
             self.assertTrue(product_zip_file.is_file)
         finally:
             # Teardown
             self._clean_product(product_dir_path)
+
+    # TODO: add a test on tarfiles extraction
 
     def test_eoproduct_download_http_dynamic_options(self):
         """eoproduct.download must accept the download options to be set automatically"""
@@ -426,7 +428,7 @@ class TestEOProduct(EODagTestCase):
             # but that should be enough.
             self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
             # The downloaded zip file is still around
-            product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
+            product_zip_file = product_dir_path.with_suffix(".zip")
             self.assertTrue(product_zip_file.is_file)
         finally:
             # Teardown (all the created files are within outputs_prefix)

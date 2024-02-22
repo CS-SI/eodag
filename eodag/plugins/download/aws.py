@@ -242,7 +242,7 @@ class AwsDownload(Download):
         SAFE-build is configured for a given provider and product type.
         If the product title is configured to be updated during download and
         SAFE-formatted, its destination path will be:
-        `{outputs_prefix}/{title}/{updated_title}.SAFE`
+        `{outputs_prefix}/{title}`
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
@@ -1154,8 +1154,7 @@ class AwsDownload(Download):
         # S2 L2A Tile files -----------------------------------------------
         if matched := S2L2A_TILE_IMG_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/IMG_DATA/R%s/T%s%s%s_%s_%s_%s.jp2" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/IMG_DATA/R%s/T%s%s%s_%s_%s_%s.jp2" % (
                 found_dict["num"],
                 found_dict["res"],
                 found_dict["tile1"],
@@ -1167,16 +1166,14 @@ class AwsDownload(Download):
             )
         elif matched := S2L2A_TILE_AUX_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/AUX_DATA/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/AUX_DATA/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         # S2 L2A QI Masks
         elif matched := S2_TILE_QI_MSK_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/QI_DATA/MSK_%sPRB_%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/QI_DATA/MSK_%sPRB_%s" % (
                 found_dict["num"],
                 found_dict["file_base"],
                 found_dict["file_suffix"],
@@ -1184,8 +1181,7 @@ class AwsDownload(Download):
         # S2 L2A QI PVI
         elif matched := S2_TILE_QI_PVI_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/QI_DATA/%s_%s_PVI.jp2" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/QI_DATA/%s_%s_PVI.jp2" % (
                 found_dict["num"],
                 title_part3,
                 title_date1,
@@ -1193,15 +1189,13 @@ class AwsDownload(Download):
         # S2 Tile files ---------------------------------------------------
         elif matched := S2_TILE_PREVIEW_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/preview/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/preview/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         elif matched := S2_TILE_IMG_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/IMG_DATA/T%s%s%s_%s_%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/IMG_DATA/T%s%s%s_%s_%s" % (
                 found_dict["num"],
                 found_dict["tile1"],
                 found_dict["tile2"],
@@ -1211,97 +1205,74 @@ class AwsDownload(Download):
             )
         elif matched := S2_TILE_THUMBNAIL_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         elif matched := S2_TILE_MTD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/MTD_TL.xml" % (
-                product.properties["title"],
-                found_dict["num"],
-            )
+            product_path = "GRANULE/%s/MTD_TL.xml" % found_dict["num"]
         elif matched := S2_TILE_AUX_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/AUX_DATA/AUX_%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/AUX_DATA/AUX_%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         elif matched := S2_TILE_QI_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/QI_DATA/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/QI_DATA/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         # S2 Tiles generic
         elif matched := S2_TILE_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         # S2 Product files
         elif matched := S2_PROD_DS_MTD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/DATASTRIP/%s/MTD_DS.xml" % (
-                product.properties["title"],
-                ds_dir,
-            )
+            product_path = "DATASTRIP/%s/MTD_DS.xml" % ds_dir
         elif matched := S2_PROD_DS_QI_REPORT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/DATASTRIP/%s/QI_DATA/%s.xml" % (
-                product.properties["title"],
+            product_path = "DATASTRIP/%s/QI_DATA/%s.xml" % (
                 ds_dir,
                 found_dict["filename"],
             )
         elif matched := S2_PROD_DS_QI_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/DATASTRIP/%s/QI_DATA/%s" % (
-                product.properties["title"],
+            product_path = "DATASTRIP/%s/QI_DATA/%s" % (
                 ds_dir,
                 found_dict["file"],
             )
         elif matched := S2_PROD_INSPIRE_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/INSPIRE.xml" % (product.properties["title"],)
+            product_path = "INSPIRE.xml"
         elif matched := S2_PROD_MTD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/MTD_MSI%s.xml" % (
-                product.properties["title"],
-                s2_processing_level,
-            )
+            product_path = "MTD_MSI%s.xml" % s2_processing_level
         # S2 Product generic
         elif matched := S2_PROD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/%s" % (
-                product.properties["title"],
-                found_dict["file"],
-            )
+            product_path = "%s" % found_dict["file"]
         # S1 --------------------------------------------------------------
         elif matched := S1_CALIB_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = (
-                "%s.SAFE/annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml"
-                % (
-                    product.properties["title"],
-                    found_dict["file_prefix"],
-                    product.properties["platformSerialIdentifier"].lower(),
-                    found_dict["file_beam"],
-                    found_dict["file_pol"],
-                    s1_title_suffix,
-                    S1_IMG_NB_PER_POLAR.get(
-                        product.properties["polarizationMode"], {}
-                    ).get(found_dict["file_pol"].upper(), 1),
-                )
+            product_path = "annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml" % (
+                found_dict["file_prefix"],
+                product.properties["platformSerialIdentifier"].lower(),
+                found_dict["file_beam"],
+                found_dict["file_pol"],
+                s1_title_suffix,
+                S1_IMG_NB_PER_POLAR.get(product.properties["polarizationMode"], {}).get(
+                    found_dict["file_pol"].upper(), 1
+                ),
             )
         elif matched := S1_ANNOT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/annotation/%s-%s-grd-%s-%s-%03d.xml" % (
-                product.properties["title"],
+            product_path = "annotation/%s-%s-grd-%s-%s-%03d.xml" % (
                 product.properties["platformSerialIdentifier"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
@@ -1312,8 +1283,7 @@ class AwsDownload(Download):
             )
         elif matched := S1_MEAS_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/measurement/%s-%s-grd-%s-%s-%03d.%s" % (
-                product.properties["title"],
+            product_path = "measurement/%s-%s-grd-%s-%s-%03d.%s" % (
                 product.properties["platformSerialIdentifier"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
@@ -1325,18 +1295,14 @@ class AwsDownload(Download):
             )
         elif matched := S1_REPORT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/%s.SAFE-%s" % (
-                product.properties["title"],
+            product_path = "%s.SAFE-%s" % (
                 product.properties["title"],
                 found_dict["file"],
             )
         # S1 generic
         elif matched := S1_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/%s" % (
-                product.properties["title"],
-                found_dict["file"],
-            )
+            product_path = "%s" % found_dict["file"]
         # out of SAFE format
         else:
             raise NotAvailableError(f"Ignored {chunk.key} out of SAFE matching pattern")
