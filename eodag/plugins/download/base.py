@@ -282,7 +282,7 @@ class Download(PluginTopic):
     def generate_record_hash(self, product: EOProduct) -> str:
         """Generate the record hash of the given product.
 
-        The MD5 hash is build from the product's ``product_type`` and ``properties['id']`` attributes
+        The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
         (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
 
         :param product: The product to calculate the record hash
