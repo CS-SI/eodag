@@ -466,8 +466,7 @@ class HTTPDownload(Download):
                 if not os.path.isdir(new_fs_path):
                     os.makedirs(new_fs_path)
                 shutil.move(fs_path, new_fs_path)
-                # WARNING: A strong assumption is made here: there is only one file in the directory
-                file_path = os.path.join(new_fs_path, os.listdir(new_fs_path)[0])
+                file_path = os.path.join(new_fs_path, os.path.basename(fs_path))
                 new_file_path = file_path[: file_path.index(".zip")]
                 shutil.move(file_path, new_file_path)
             # in the case where the outputs extension has not been set
@@ -485,6 +484,7 @@ class HTTPDownload(Download):
                 product.location = path_to_uri(product_path)
                 return product_path
             else:
+                # not a file (dir with zip extension)
                 shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path

@@ -399,11 +399,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
-    def test_plugins_download_http_file_with_zip_extension_ok(
+    def test_plugins_download_http_nonzip_file_with_zip_extension_ok(
         self, mock_requests_session
     ):
         """HTTPDownload.download() must create an output directory
-        when the result is a file with a '.zip' outputs extension"""
+        when the result is a non-zip file with a '.zip' outputs extension"""
 
         plugin = self.get_download_plugin(self.product)
         outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
