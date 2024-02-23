@@ -6954,6 +6954,43 @@
       orbitDirection:
         - '{{"orbitDirection": "{orbitDirection}"}}'
         - '$.null'
+      variable:
+        - '{{"variable": {variable}}}'
+        - '$.null'
+      leadtime_hour:
+        - '{{"leadtime_hour": {leadtime_hour}}}'
+        - '$.null'
+      leadtime_month:
+        - '{{"leadtime_month": {leadtime_month}}}'
+        - '$.null'
+      origin:
+        - '{{"origin": "{origin}"}}'
+        - '$.null'
+      system:
+        - '{{"system": "{system}"}}'
+        - '$.null'
+      format:
+        - '{{"format": "{format}"}}'
+        - '$.null'
+      pressure_level:
+        - '{{"pressure_level": {pressure_level}}}'
+        - '$.null'
+      sensor_and_algorithm:
+        - '{{"sensor_and_algorithm": "{sensor_and_algorithm}"}}'
+        - '$.null'
+      version:
+        - '{{"version": {version}}}'
+        - '$.null'
+      time:
+        - '{{"time": {time}}}'
+        - '$.null'
+      region:
+        - '{{"region": "{region}"}}'
+        - '$.null'
+      type:
+        - '{{"type": "{type}"}}'
+        - '$.null'
+
   products:
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -7379,8 +7416,9 @@
           - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
           - '$.properties.enddate'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
-    S5P_L1B2_IR_ALL:
+    S5P_L1B_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P
+      processingLevel: L1B
       metadata_mapping:
         id:
           - '{{"productType": {id#split_id_into_s5p_params}["productType"], "processingMode": {id#split_id_into_s5p_params}["processingMode"], "processingLevel": {id#split_id_into_s5p_params}["processingLevel"], "startDate": {id#split_id_into_s5p_params}["startDate"], "completionDate": {id#split_id_into_s5p_params}["endDate"]}}'
@@ -7392,6 +7430,440 @@
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+    S5P_L2_IR_ALL:
+      productType: EO:ESA:DAT:SENTINEL-5P
+      processingLevel: L2
+      metadata_mapping:
+        id:
+          - '{{"productType": {id#split_id_into_s5p_params}["productType"], "processingMode": {id#split_id_into_s5p_params}["processingMode"], "processingLevel": {id#split_id_into_s5p_params}["processingLevel"], "startDate": {id#split_id_into_s5p_params}["startDate"], "completionDate": {id#split_id_into_s5p_params}["endDate"]}}'
+          - '{$.id#remove_extension}'
+        processingLevel:
+          - '{{"processingLevel": "{processingLevel}"}}'
+          - '{$.id#get_processing_level_from_s5p_id}'
+        processingMode:
+          - '{{"processingMode": "{processingMode}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+    SEASONAL_ORIGINAL_SL:
+      productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
+      variable:
+        - 10m_u_component_of_wind
+        - 10m_v_component_of_wind
+        - 10m_wind_gust_since_previous_post_processing
+      leadtime_hour:
+        - "0"
+        - "6"
+        - "12"
+        - "18"
+        - "24"
+        - "30"
+        - "36"
+        - "42"
+        - "48"
+        - "54"
+        - "60"
+        - "66"
+        - "72"
+        - "78"
+        - "84"
+        - "90"
+        - "96"
+        - "102"
+        - "108"
+        - "114"
+        - "120"
+        - "126"
+        - "132"
+        - "138"
+        - "144"
+        - "150"
+        - "156"
+        - "162"
+        - "168"
+        - "174"
+        - "180"
+        - "186"
+        - "192"
+        - "198"
+      origin: ecmwf
+      system: "51"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS"}}'
+    SEASONAL_ORIGINAL_PL:
+      productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
+      variable:
+        - geopotential
+        - temperature
+      pressure_level:
+        - "10"
+        - "30"
+        - "50"
+        - "100"
+        - "200"
+        - "300"
+        - "400"
+        - "500"
+        - "700"
+        - "850"
+        - "925"
+        - "1000"
+      leadtime_hour:
+        - "12"
+        - "24"
+        - "36"
+        - "48"
+        - "60"
+        - "72"
+        - "84"
+        - "96"
+        - "108"
+        - "120"
+        - "132"
+        - "144"
+        - "156"
+        - "168"
+        - "180"
+        - "192"
+      origin: ecmwf
+      system: "51"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS"}}'
+    SEASONAL_POSTPROCESSED_SL:
+      productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
+      providerProductType:
+        - ensemble_mean
+      variable:
+        - 10m_u_component_of_wind_anomaly
+        - 10m_v_component_of_wind_anomaly
+        - 10m_wind_gust_anomaly
+        - 10m_wind_speed_anomaly
+      leadtime_month:
+        - "1"
+      origin: ecmwf
+      system: "51"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        providerProductType:
+          - '{{"productType": {providerProductType}}}'
+          - '$.null'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS"}}'
+    SEASONAL_POSTPROCESSED_PL:
+      productType: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
+      providerProductType:
+        - ensemble_mean
+      variable:
+        - geopotential_anomaly
+        - specific_humidity_anomaly
+        - temperature_anomaly
+        - u_component_of_wind_anomaly
+        - v_component_of_wind_anomaly
+      pressure_level:
+        - "10"
+        - "30"
+        - "50"
+        - "100"
+        - "200"
+        - "300"
+        - "400"
+        - "500"
+        - "700"
+        - "850"
+        - "925"
+        - "1000"
+      leadtime_month:
+        - "1"
+      origin: ecmwf
+      system: "5"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        providerProductType:
+          - '{{"productType": {providerProductType}}}'
+          - '$.null'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS"}}'
+    SEASONAL_MONTHLY_SL:
+      productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
+      variable:
+        - 10m_u_component_of_wind
+        - 10m_wind_gust_since_previous_post_processing
+        - 10m_v_component_of_wind
+      providerProductType:
+        - ensemble_mean
+      leadtime_month:
+        - "1"
+      origin: ecmwf
+      system: "51"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS"}}'
+    SEASONAL_MONTHLY_PL:
+      productType: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
+      variable:
+        - geopotential
+        - temperature
+      providerProductType:
+        - ensemble_mean
+      leadtime_month:
+        - "1"
+      pressure_level:
+        - "10"
+        - "30"
+        - "50"
+        - "100"
+        - "200"
+        - "300"
+        - "400"
+        - "500"
+        - "700"
+        - "850"
+        - "925"
+        - "1000"
+      origin: ecmwf
+      system: "51"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS"}}'
+    SATELLITE_CARBON_DIOXIDE:
+      productType: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
+      processingLevel:
+        - level_2
+      version:
+        - "4.0"
+      variable: xco2
+      sensor_and_algorithm: sciamachy_wfmd
+      format: zip
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        processingLevel:
+          - '{{"processing_level": {processingLevel}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE"}}'
+    GLACIERS_DIST_RANDOLPH:
+      productType: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
+      variable:
+        - glacier_area
+      providerProductType:
+        - gridded
+      format: zip
+      version: "6_0"
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        version:
+          - '{{"version": "{version}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT"}}'
+    GRIDDED_GLACIERS_MASS_CHANGE:
+      productType: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
+      variable: glacier_mass_change
+      format: zip
+      version: "wgms_fog_2022_09"
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "hydrological_year": "{startTimeFromAscendingNode#get_hydrological_year}"
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        version:
+          - '{{"product_version": "{version}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DERIVED_GRIDDED_GLACIER_MASS_CHANGE"}}'
+    SATELLITE_METHANE:
+      productType: EO:ECMWF:DAT:SATELLITE_METHANE
+      processingLevel:
+        - level_2
+      version:
+        - "4.0"
+      variable: xch4
+      sensor_and_algorithm: sciamachy_wfmd
+      format: zip
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        processingLevel:
+          - '{{"processing_level": {processingLevel}}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SATELLITE_METHANE"}}'
+    UERRA_EUROPE_SL:
+      productType: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      variable: total_cloud_cover
+      origin: uerra_harmonie
+      format: grib # netcdf format may fail
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS"}}'
+    SATELLITE_SEA_ICE_EDGE_TYPE:
+      productType: EO:ECMWF:DAT:SATELLITE_SEA_ICE_EDGE_TYPE
+      variable:
+        - sea_ice_type
+      region: northern_hemisphere
+      type: cdr
+      version: "3_0"
+      format: zip
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        version:
+          - '{{"version": "{version}"}}'
+          - '$.null'
+        type:
+          - '{{"cdr_type": "{type}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_ICE_EDGE_TYPE"}}'
+
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'

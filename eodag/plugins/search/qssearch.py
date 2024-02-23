@@ -33,8 +33,10 @@ from typing import (
     cast,
 )
 from urllib.error import URLError
+from urllib.parse import unquote, unquote_plus
 from urllib.request import Request, urlopen
 
+import geojson
 import orjson
 import requests
 import yaml
@@ -1078,30 +1080,37 @@ class PostJsonSearch(QueryStringSearch):
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
         provider_product_type = self.map_product_type(product_type)
-        keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
-
-        if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
-            keywords["productType"] = provider_product_type
-        elif product_type:
-            keywords["productType"] = product_type
-
-        # provider product type specific conf
-        self.product_type_def_params = self.get_product_type_def_params(
-            product_type, **kwargs
-        )
-
-        # Add to the query, the queryable parameters set in the provider product type definition
-        keywords.update(
-            {
-                k: v
-                for k, v in self.product_type_def_params.items()
-                if k not in keywords.keys()
-                and k in self.config.metadata_mapping.keys()
-                and isinstance(self.config.metadata_mapping[k], list)
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            qp = geojson.loads(qs)
+        else:
+            keywords = {
+                k: v for k, v in kwargs.items() if k != "auth" and v is not None
             }
-        )
 
-        qp, _ = self.build_query_string(product_type, **keywords)
+            if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
+                keywords["productType"] = provider_product_type
+            elif product_type:
+                keywords["productType"] = product_type
+
+            # provider product type specific conf
+            self.product_type_def_params = self.get_product_type_def_params(
+                product_type, **kwargs
+            )
+
+            # Add to the query, the queryable parameters set in the provider product type definition
+            keywords.update(
+                {
+                    k: v
+                    for k, v in self.product_type_def_params.items()
+                    if k not in keywords.keys()
+                    and k in self.config.metadata_mapping.keys()
+                    and isinstance(self.config.metadata_mapping[k], list)
+                }
+            )
+
+            qp, _ = self.build_query_string(product_type, **keywords)
 
         for query_param, query_value in qp.items():
             if (
@@ -1175,6 +1184,17 @@ class PostJsonSearch(QueryStringSearch):
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
+
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
+        """Build EOProducts from provider results"""
+        results = super(PostJsonSearch, self).normalize_results(results, **kwargs)
+        for product in results:
+            decoded_link = unquote(product.properties["downloadLink"])
+            if decoded_link[0] == "{":  # not a url but a dict
+                product.properties["_dc_qs"] = product.properties["downloadLink"]
+        return results
 
     def collect_search_urls(
         self,

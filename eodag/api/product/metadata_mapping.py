@@ -834,6 +834,15 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
 
+        @staticmethod
+        def convert_get_hydrological_year(date: str):
+            utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
+            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object_second_year = date_object + timedelta(days=365)
+            return (
+                f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
+            )
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(

@@ -1424,6 +1424,45 @@ S5P_L1B2_IR_ALL:
   title: Sentinel-5 Precursor Level 1B and Level 2 Irradiances for the SWIR and UNV bands
   missionStartDate: "2017-10-13T00:00:00Z"
 
+S5P_L1B_IR_ALL:
+  abstract: |
+    Solar irradiance spectra for all bands (UV1-6 and SWIR)
+    The TROPOMI instrument is a space-borne, nadir-viewing, imaging spectrometer covering wavelength bands between the
+    ultraviolet and the shortwave infrared. The instrument, the single payload of the Sentinel-5P spacecraft, uses
+    passive remote sensing techniques to attain its objective by measuring, at the Top Of Atmosphere (TOA), the solar
+    radiation reflected by and radiated from the earth. The instrument operates in a push-broom configuration
+    (non-scanning), with a swath width of ~2600 km on the Earth's surface. The typical pixel size (near nadir) will
+    be 7x3.5 km2 for all spectral bands, with the exception of the UV1 band (7x28 km2) and SWIR bands (7x7 km2).
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L1B
+  keywords: SENTINEL,SENTINEL5P,S5P,L1,L1B,TROPOMI,IR,SIR,SWIR,Irradiances,UVN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 1B Irradiances for the SWIR and UNV bands
+  missionStartDate: "2017-10-13T00:00:00Z"
+
+S5P_L2_IR_ALL:
+  abstract: |
+    The TROPOMI instrument is a space-borne, nadir-viewing, imaging spectrometer covering wavelength bands between the
+    ultraviolet and the shortwave infrared. The instrument, the single payload of the Sentinel-5P spacecraft, uses
+    passive remote sensing techniques to attain its objective by measuring, at the Top Of Atmosphere (TOA), the solar
+    radiation reflected by and radiated from the earth. The instrument operates in a push-broom configuration
+    (non-scanning), with a swath width of ~2600 km on the Earth's surface. The typical pixel size (near nadir) will
+    be 7x3.5 km2 for all spectral bands, with the exception of the UV1 band (7x28 km2) and SWIR bands (7x7 km2).
+    Level 2 data provides total columns of ozone, sulfur dioxide, nitrogen dioxide, carbon monoxide, formaldehyde,
+    tropospheric columns of ozone, vertical profiles of ozone and cloud & aerosol information.
+  instrument: TROPOMI
+  platform: SENTINEL5P
+  platformSerialIdentifier: S5P
+  processingLevel: L2
+  keywords: SENTINEL,SENTINEL5P,S5P,L2,TROPOMI
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sentinel-5 Precursor Level 2 Data
+  missionStartDate: "2018-04-01T00:00:00Z"
+
 S5P_L1B_IR_SIR:
   abstract: |
     Solar irradiance spectra for the SWIR bands (band 7 and band 8).
@@ -2739,6 +2778,45 @@ GLACIERS_DIST_RANDOLPH:
   missionStartDate: "2000-01-01T00:00:00Z"
   missionEndDate:  "2000-12-31T23:59:00Z"
 
+GRIDDED_GLACIERS_MASS_CHANGE:
+  abstract: |
+    The dataset provides annual glacier mass changes distributed on a global regular grid at 0.5° resolution (latitude,
+    longitude). Glaciers play a fundamental role in the Earth’s water cycles. They are one of the most important
+    freshwater resources for societies and ecosystems and the recent increase in ice melt contributes directly to the
+    rise of ocean levels. Due to this they have been declared as an Essential Climate Variable (ECV) by GCOS, the Global
+    Climate Observing System. Within the Copernicus Services, the global gridded annual glacier mass change dataset
+    provides information on changing glacier resources by combining glacier change observations from the Fluctuations
+    of Glaciers (FoG) database that is brokered from World Glacier Monitoring Service (WGMS). Previous glacier products
+    were provided to the Copernicus Climate Change Service (C3S) Climate Data Store (CDS) as a homogenized
+    state-of-the-art glacier dataset with separated elevation and mass change time series collected by scientists and
+    the national correspondents of each country as provided to the WGMS (see Related data). The new approach combines
+    glacier mass balances from in-situ observations with glacier elevation changes from remote sensing to generate a new
+    gridded product of annual glacier mass changes and related uncertainties for every hydrological year since 1975/76
+    provided in a 0.5°x0.5° global regular grid. The dataset bridges the gap on spatio-temporal coverage of glacier
+    change observations, providing for the first time in the CDS an annually resolved glacier mass change product using
+    the glacier elevation change sample as calibration. This goal has become feasible at the global scale thanks to a
+    new globally near-complete (96 percent of the world glaciers) dataset of glacier elevation change observations recently
+    ingested by the FoG database. To develop the distributed glacier change product the glacier outlines were used from
+    the Randolph Glacier Inventory 6.0 (see Related data). A glacier is considered to belong to a grid-point when its
+    geometric centroid lies within the grid point. The centroid is obtained from the glacier outlines from the Randolph
+    Glacier Inventory 6.0. The glacier mass changes in the unit Gigatonnes (1 Gt = 1x10^9 tonnes) correspond to the
+    total mass of water lost/gained over the glacier surface during a given year. Note that to propagate to mm/cm/m of
+    water column on the grid cell, the grid cell area needs to be considered. Also note that the data is provided for
+    hydrological years, which vary between the Northern Hemisphere (01 October to 30 September next year) and the
+    Southern Hemisphere (01 April to 31 March next year). This dataset has been produced by researchers at the WGMS on
+    behalf of Copernicus Climate Change Service. Variables in the dataset/application are: Glacier mass change Variables
+    in the dataset/application are: Uncertainty
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,WGMS,INSITU,CDS,C3S,glacier,randolph,mass,gridded
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Glacier mass change gridded data from 1976 to present derived from the Fluctuations of Glaciers Database
+  missionStartDate: "1975-01-01T00:00:00Z"
+
+
 SATELLITE_CARBON_DIOXIDE:
   abstract: |
     This dataset provides observations of atmospheric carbon dioxide (CO2)\namounts obtained from observations
@@ -2815,6 +2893,48 @@ SATELLITE_METHANE:
   license: proprietary
   title: Methane data from 2002 to present derived from satellite observations
   missionStartDate: "2002-10-01T00:00:00Z"
+
+SATELLITE_SEA_ICE_EDGE_TYPE:
+  abstract: |
+    This dataset provides daily gridded data of sea ice edge and sea ice type derived from brightness temperatures
+    measured by satellite passive microwave radiometers. Sea ice is an important component of our climate system and
+    a sensitive indicator of climate change. Its presence or its retreat has a strong impact on air-sea interactions,
+    the Earth’s energy budget as well as marine ecosystems. It is recognized by the Global Climate Observing System as
+    an Essential Climate Variable. Sea ice edge and type are some of the parameters used to characterise sea ice. Other
+    parameters include sea ice concentration and sea ice thickness, also available in the Climate Data Store. Sea ice
+    edge and type are defined as follows: Sea ice edge classifies the sea surface into open water, open ice, and closed
+    ice depending on the amount of sea ice present in each grid cell. This variable is provided for both the Northern
+    and Southern Hemispheres. Note that a sea ice concentration threshold of 30% is used to distinguish between open
+    water and open ice, which differs from the 15% threshold commonly used for other sea ice products such as sea ice
+    extent. Sea ice type classifies ice-covered areas into two categories based on the age of the sea ice: multiyear
+    ice versus seasonal first-year ice. This variable is currently only available for the Northern Hemisphere and
+    limited to the extended boreal winter months (mid-October through April). Sea ice type classification during summer
+    is difficult due to the effect of melting at the ice surface which disturbs the passive microwave signature. Both
+    sea ice products are based on measurements from the series of Scanning Multichannel Microwave Radiometer (SMMR),
+    Special Sensor Microwave/Imager (SSM/I), and Special Sensor Microwave Imager/Sounder (SSMIS) sensors and share the
+    same algorithm baseline. However, sea ice edge makes use of two lower frequencies near 19 GHz and 37 GHz and a
+    higher frequency near 90 GHz whereas sea ice type only uses the two lower frequencies. This dataset combines
+    Climate Data Records (CDRs), which are intended to have sufficient length, consistency, and continuity to assess
+    climate variability and change, and Interim Climate Data Records (ICDRs), which provide regular temporal extensions
+    to the CDRs and where consistency with the CDRs is expected but not extensively checked. For this dataset, both the
+    CDR and ICDR parts of each product were generated using the same software and algorithms. The CDRs of sea ice edge
+    and type currently extend from 25 October 1978 to 31 December 2020 whereas the corresponding ICDRs extend from
+    January 2021 to present (with a 16-day latency behind real time). All data from the current release of the datasets
+    (version 2.0) are Level-4 products, in which data gaps are filled by temporal and spatial interpolation. For product
+    limitations and known issues, please consult the Product User Guide. This dataset is produced on behalf of
+    Copernicus Climate Change Service (C3S), with heritage from the operational products generated by EUMETSAT Ocean and
+    Sea Ice Satellite Application Facility (OSI SAF). Variables in the dataset/application are: Sea ice edge, Sea ice
+    type Variables in the dataset/application are: Status flag, Uncertainty
+    platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,sea,ice
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sea ice edge and type daily gridded data from 1978 to present derived from satellite observations
+  missionStartDate: "1979-01-01T00:00:00Z"
+  missionEndDate: "2023-05-02-02T23:59:59"
 
 SEASONAL_POSTPROCESSED_PL:
   abstract: |
