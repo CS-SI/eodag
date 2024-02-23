@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import traceback
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from json import JSONDecodeError
