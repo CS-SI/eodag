@@ -136,12 +136,13 @@ class SearchPostRequest(BaseModel):
             raise ValueError('Only filter language "cql2-json" is accepted')
         return self
 
-    @model_validator(mode="after")
-    def only_one_spatial(self) -> Self:
+    @model_validator(mode="before")
+    @classmethod
+    def only_one_spatial(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Check bbox and intersects are not both supplied."""
-        if self.bbox and self.intersects:
+        if "intersects" in values and "bbox" in values:
             raise ValueError("intersects and bbox parameters are mutually exclusive")
-        return self
+        return values
 
     @property
     def start_date(self) -> Optional[str]:

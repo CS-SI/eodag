@@ -241,7 +241,7 @@ async def handle_invalid_usage_with_validation_error(
         for error_param in error.parameters:
             stac_param = EODAGSearch.to_stac(error_param)
             error.message = error.message.replace(error_param, stac_param)
-    logger.warning(traceback.format_exc())
+    logger.debug(traceback.format_exc())
     return await default_exception_handler(
         request,
         HTTPException(

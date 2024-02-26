@@ -33,6 +33,7 @@ from typing import (
     NamedTuple,
     Optional,
     Tuple,
+    Union,
 )
 from urllib.parse import unquote_plus, urlencode
 
@@ -75,8 +76,12 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
     :param e: A Pydantic ValidationError object
     :tyype e: pydanticValidationError
     """
-    error_header = f"Invalid request, {e.error_count()} error(s): "
-    error_messages = [err["msg"] for err in e.errors()]
+    error_header = f"Invalid request, {e.error_count()} error(s). "
+
+    error_messages = [
+        f'{err["loc"][0]}: {err["msg"]}' if err["loc"] else err["msg"]
+        for err in e.errors()
+    ]
     return error_header + "; ".join(set(error_messages))
 
 
@@ -111,7 +116,7 @@ def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
         raise ValidationError(f"{k}: Incorrect JSON object") from e
 
 
-def flatten_list(nested_list: List[Any]) -> List[Any]:
+def flatten_list(nested_list: Union[Any, List[Any]]) -> List[Any]:
     """Flatten a nested list structure into a single list."""
     if not isinstance(nested_list, list):
         return [nested_list]
