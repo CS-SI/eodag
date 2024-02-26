@@ -251,6 +251,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -263,5 +264,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            ssl_verify=ssl_verify,
             **kwargs,
         )

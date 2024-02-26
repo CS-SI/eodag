@@ -403,6 +403,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> StreamResponse:
         """Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
@@ -415,6 +416,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            ssl_verify=ssl_verify,
             **kwargs,
         )
 
@@ -426,6 +428,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool =True,
         **kwargs: Any,
     ):
         """
@@ -438,6 +441,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            ssl_verify=ssl_verify,
             **kwargs,
         )
 

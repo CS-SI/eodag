@@ -96,6 +96,7 @@
     need_auth: true
     auth_error_code: 403
     results_entry: 'results'
+    ssl_verify: true
     pagination:
       next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
       total_items_nb_key_path: '$.meta.found'
@@ -548,6 +549,7 @@
     type: QueryStringSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
     need_auth: false
+    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -707,11 +709,13 @@
     archive_depth: 2
     order_enabled: true
     auth_error_code: 403
+    ssl_verify: true
     dl_url_params:
       issuerId: theia
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
+    ssl_verify: true
 
 ---
 !provider
@@ -727,6 +731,7 @@
     type: QueryStringSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
     need_auth: false
+    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -861,11 +866,13 @@
     archive_depth: 2
     order_enabled: true
     auth_error_code: 401
+    ssl_verify: true
     dl_url_params:
       issuerId: peps
   auth: !plugin
     type: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
+    ssl_verify: true
 ---
 !provider
   name: creodias
@@ -879,6 +886,7 @@
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
     timeout: 60
+    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -1014,6 +1022,7 @@
     extract: true
     order_enabled: false
     archive_depth: 2
+    ssl_verify: true
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: 'https://identity.cloudferro.com/auth'
@@ -1023,6 +1032,7 @@
     token_provision: qs
     token_qs_key: 'token'
     auth_error_code: 401
+    ssl_verify: true
   products:
       # S1
     S1_SAR_RAW:
@@ -1240,6 +1250,7 @@
     api_endpoint: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
     timeout: 60
     need_auth: false
+    ssl_verify: true
     dont_quote:
       - '['
       - ']'
@@ -1528,10 +1539,12 @@
     auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
+    ssl_verify: true
     order_headers:
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
+    ssl_verify: true
 
 ---
 !provider
@@ -1545,6 +1558,7 @@
     type: StacSearch
     api_endpoint: https://eod-catalog-svc-prod.astraea.earth/search
     need_auth: false
+    ssl_verify: true
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -1627,6 +1641,7 @@
     type: AwsDownload
     requester_pays: True
     flatten_top_dirs: True
+    ssl_verify: true
     products:
       S1_SAR_GRD:
         default_bucket: 'sentinel-s1-l1c'
@@ -1659,6 +1674,7 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+    ssl_verify: true
 
 ---
 !provider
@@ -1672,6 +1688,7 @@
     type: StacSearch
     api_endpoint: https://landsatlook.usgs.gov/stac-server/search
     need_auth: false
+    ssl_verify: true
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -1716,8 +1733,10 @@
     type: AwsDownload
     requester_pays: True
     flatten_top_dirs: True
+    ssl_verify: true
   auth: !plugin
     type: AwsAuth
+    ssl_verify: true
 
 ---
 !provider
@@ -1731,6 +1750,7 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
+    ssl_verify: true
     discover_product_types:
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
     discover_queryables:
@@ -1810,6 +1830,7 @@
     type: AwsDownload
     requester_pays: True
     flatten_top_dirs: True
+    ssl_verify: true
     products:
       S2_MSI_L1C:
         default_bucket: 'sentinel-s2-l1c'
@@ -1819,6 +1840,7 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+    ssl_verify: true
 
 ---
 !provider
@@ -1832,6 +1854,7 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v1/search
     need_auth: false
+    ssl_verify: true
     discover_product_types:
       fetch_url: null
     discover_queryables:
@@ -1872,6 +1895,7 @@
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://sentinel-cogs.s3.us-west-2.amazonaws.com'
+    ssl_verify: true
 ---
 !provider
   name: earth_search_gcs
@@ -1884,6 +1908,7 @@
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
     need_auth: false
+    ssl_verify: true
     discover_product_types:
       fetch_url: null
     discover_queryables:
@@ -1933,11 +1958,13 @@
     type: AwsDownload
     base_uri: https://storage.googleapis.com
     ignore_assets: True
+    ssl_verify: true
     products:
       S2_MSI_L1C:
         default_bucket: 'gcp-public-data-sentinel-2'
   auth: !plugin
     type: AwsAuth
+    ssl_verify: true
 ---
 !provider
   name: ecmwf
@@ -3160,6 +3187,7 @@
     # but can be very slow if not enough metdata is provided.
     api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{collection}/search.json'
     need_auth: false
+    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -3423,9 +3451,11 @@
     archive_depth: 2
     order_enabled: true
     auth_error_code: 403
+    ssl_verify: true
   auth: !plugin
     type: GenericAuth
     method: basic
+    ssl_verify: true
 ---
 !provider
   name: meteoblue
@@ -3438,6 +3468,7 @@
     type: BuildPostSearchResult
     api_endpoint: 'https://my.meteoblue.com/dataset/query'
     need_auth: true
+    ssl_verify: true
     pagination:
       next_page_query_obj: '{{"checkOnly":true}}'
     discover_metadata:
@@ -3497,6 +3528,7 @@
     extract: False
     order_enabled: true
     order_method: 'POST'
+    ssl_verify: true
     order_on_response:
       metadata_mapping:
         order_id: '$.id'
@@ -3511,6 +3543,7 @@
   auth: !plugin
     type: HttpQueryStringAuth
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
+    ssl_verify: true
 ---
 !provider
   name: cop_dataspace
@@ -3524,6 +3557,7 @@
     api_endpoint: 'http://catalogue.dataspace.copernicus.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
     timeout: 60
+    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -3623,6 +3657,7 @@
     extract: true
     order_enabled: false
     archive_depth: 2
+    ssl_verify: true
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: 'https://identity.dataspace.copernicus.eu/auth'
@@ -3632,6 +3667,7 @@
     token_provision: qs
     token_qs_key: 'token'
     auth_error_code: 401
+    ssl_verify: true
   products:
     # S2
     S2_MSI_L1C:
@@ -3827,6 +3863,7 @@
     type: StacSearch
     api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
     need_auth: false
+    ssl_verify: true
     pagination:
       max_items_per_page: 1000
     sort:
@@ -3862,10 +3899,12 @@
     base_uri: 'https://planetarycomputer.microsoft.com/api/stac/download'
     flatten_top_dirs: True
     auth_error_code: 403
+    ssl_verify: true
   auth: !plugin
     type: SASAuth
     auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
     signed_url_key: href
+    ssl_verify: true
     headers:
       Ocp-Apim-Subscription-Key: "{apikey}"
 ---
@@ -3881,6 +3920,7 @@
     api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
     need_auth: true
     auth_error_code: 401
+    ssl_verify: true
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -3910,8 +3950,10 @@
     base_uri: https://hydroweb.next.theia-land.fr
     flatten_top_dirs: true
     auth_error_code: 401
+    ssl_verify: true
   auth: !plugin
     type: HTTPHeaderAuth
+    ssl_verify: true
     headers:
       X-API-Key: "{apikey}"
 ---
@@ -3935,6 +3977,7 @@
     results_entry: content
     two_passes_id_search: true
     dates_required: true
+    ssl_verify: true
     pagination:
       start_page: 0
       max_items_per_page: 20
@@ -3967,6 +4010,7 @@
     token_type: json
     token_key: access_token
     request_method: GET
+    ssl_verify: true
     headers:
       Authorization: Bearer $token
   products:
@@ -6838,6 +6882,7 @@
     auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
+    ssl_verify: true
     order_on_response:
       metadata_mapping:
         order_id: '$.orderId'
@@ -6867,6 +6912,7 @@
     s3_endpoint: 'https://eodata.cloudferro.com'
     need_auth: true
     timeout: 60
+    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
@@ -7001,9 +7047,11 @@
     flatten_top_dirs: True
     base_uri: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
+    ssl_verify: true
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    ssl_verify: true
   products:
     # S1
     S1_SAR_RAW:

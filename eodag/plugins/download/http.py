@@ -230,6 +230,8 @@ class HTTPDownload(Download):
         :type kwargs: Union[str, bool, dict]
         """
         status_method = getattr(self.config, "order_status_method", "GET").lower()
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+        
         if status_method == "post":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderStatusLink"]))
@@ -250,6 +252,7 @@ class HTTPDownload(Download):
             headers=dict(
                 getattr(self.config, "order_status_headers", {}), **USER_AGENT
             ),
+            verify=ssl_verify,
             **status_kwargs,
         ) as response:
             try:
@@ -303,6 +306,7 @@ class HTTPDownload(Download):
                         product.properties["searchLink"],
                         timeout=HTTP_REQ_TIMEOUT,
                         headers=USER_AGENT,
+                        verify=ssl_verify,
                     )
                     response.raise_for_status()
                     if (
@@ -535,6 +539,7 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> StreamResponse:
         r"""
@@ -569,6 +574,7 @@ class HTTPDownload(Download):
                     auth,
                     progress_callback,
                     assets_values=assets_values,
+                    ssl_verify=ssl_verify,
                     **kwargs,
                 )
 
@@ -609,7 +615,7 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+        chunks = self._stream_download(product, auth, progress_callback,ssl_verify, **kwargs)
         # start reading chunks to set product.headers
         first_chunk = next(chunks)
 
@@ -663,6 +669,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        ssl_verify: bool = True,
         **kwargs: Dict[str, Any],
     ) -> Iterator[Any]:
         """
@@ -728,6 +735,7 @@ class HTTPDownload(Download):
             params=params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=ssl_verify,
             **req_kwargs,
         ) as self.stream:
             try:
@@ -753,6 +761,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
         if progress_callback is None:
@@ -822,6 +831,7 @@ class HTTPDownload(Download):
                 params=params,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify,
             ) as stream:
                 try:
                     stream.raise_for_status()
@@ -877,6 +887,7 @@ class HTTPDownload(Download):
         record_filename: str,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
+        ssl_verify:bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> str:
         """Download product assets if they exist"""
@@ -893,7 +904,7 @@ class HTTPDownload(Download):
         assets_values = product.assets.get_values(kwargs.get("asset", None))
 
         chunks_tuples = self._stream_download_assets(
-            product, auth, progress_callback, assets_values=assets_values, **kwargs
+            product, auth, progress_callback, assets_values=assets_values, ssl_verify=ssl_verify, **kwargs
         )
 
         # remove existing incomplete file
@@ -1006,6 +1017,7 @@ class HTTPDownload(Download):
         auth: Optional[PluginConfig],
         params: Optional[Dict[str, str]],
         zipped: bool = False,
+        ssl_verify: bool = True,
     ) -> int:
         total_size = 0
 
@@ -1048,6 +1060,7 @@ class HTTPDownload(Download):
                         params=params,
                         headers=USER_AGENT,
                         timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                        verify=ssl_verify,
                     ) as stream:
                         # size from GET header / Content-length
                         asset.size = int(stream.headers.get("Content-length", 0))
@@ -1070,6 +1083,7 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ):
         """
@@ -1082,5 +1096,6 @@ class HTTPDownload(Download):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            ssl_verify=ssl_verify,
             **kwargs,
         )
