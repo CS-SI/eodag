@@ -32,7 +32,7 @@ import re
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 
-import iso8601
+import dateutil.parser
 from pystac.utils import datetime_to_str
 
 RFC3339_PATTERN = (
@@ -64,8 +64,7 @@ def rfc3339_str_to_datetime(s: str) -> datetime:
     if not result:
         raise ValueError("Invalid RFC3339 datetime.")
 
-    # Parse with pyiso8601
-    return iso8601.parse_date(s)
+    return dateutil.parser.isoparse(s)
 
 
 def str_to_interval(
