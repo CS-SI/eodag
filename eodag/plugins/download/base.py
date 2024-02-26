@@ -112,6 +112,7 @@ class Download(PluginTopic):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool =True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Optional[str]:
         r"""
@@ -149,6 +150,7 @@ class Download(PluginTopic):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Dict[str, Any]:
         r"""
@@ -441,6 +443,7 @@ class Download(PluginTopic):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> List[str]:
         """
@@ -521,6 +524,7 @@ class Download(PluginTopic):
                                     progress_callback=product_progress_callback,
                                     wait=wait,
                                     timeout=-1,
+                                    ssl_verify=ssl_verify,
                                     **kwargs,
                                 )
                             )

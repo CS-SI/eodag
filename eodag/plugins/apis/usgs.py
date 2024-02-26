@@ -234,6 +234,7 @@ class UsgsApi(Download, Api):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool =True,
         **kwargs: Any,
     ) -> Optional[str]:
         """Download data from USGS catalogues"""
@@ -322,6 +323,7 @@ class UsgsApi(Download, Api):
                     stream=True,
                     headers=USER_AGENT,
                     timeout=wait * 60,
+                    verify=ssl_verify,
                 ) as stream:
                     try:
                         stream.raise_for_status()
@@ -401,6 +403,7 @@ class UsgsApi(Download, Api):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -413,5 +416,6 @@ class UsgsApi(Download, Api):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
+            ssl_verify=ssl_verify,
             **kwargs,
         )
