@@ -861,6 +861,7 @@ class QueryStringSearch(Search):
     ) -> Response:
         try:
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+            ssl_verify = getattr(self.config, "ssl_verify", True)
             # auth if needed
             kwargs: Dict[str, Any] = {}
             if (
@@ -896,7 +897,7 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message)
                 response = requests.get(
-                    url, timeout=timeout, headers=USER_AGENT, **kwargs
+                    url, timeout=timeout, headers=USER_AGENT, verify=ssl_verify, **kwargs
                 )
                 response.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -967,13 +968,14 @@ class ODataV4Search(QueryStringSearch):
 
         if getattr(self.config, "per_product_metadata_query", False):
             final_result = []
+            ssl_verify = getattr(self.config, "ssl_verify", True)
             # Query the products entity set for basic metadata about the product
             for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
                     response = requests.get(
-                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
                     )
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
