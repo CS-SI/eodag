@@ -92,13 +92,6 @@ def is_dict_str_any(var: Any) -> bool:
     return False
 
 
-def is_list_str(var: Any) -> bool:
-    """Verify whether the variable is of type list[str]"""
-    if isinstance(var, List):
-        return all(isinstance(e, str) for e in var)  # type: ignore
-    return False
-
-
 def str2list(v: Optional[str]) -> Optional[List[str]]:
     """Convert string to list base on , delimiter."""
     if v:

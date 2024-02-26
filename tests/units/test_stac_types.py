@@ -211,7 +211,7 @@ class TestSearchPostRequest(unittest.TestCase):
 
 class TestEODAGSearch(unittest.TestCase):
     def test_remove_custom_extensions(self):
-        values = {"unk:test1": "value", "oseo:test2": "value", "collection": "value"}
+        values = {"unk:test1": "value", "oseo:test2": "value", "collections": ["value"]}
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
                 exclude_none=True
@@ -229,7 +229,7 @@ class TestEODAGSearch(unittest.TestCase):
     def test_remove_keys(self):
         values = {
             "datetime": "2023-12-18T16:41:35Z",
-            "collection": "value",
+            "collections": ["value"],
             "bbox": "value",
             "intersects": {"type": "Point", "coordinates": [1, 1]},
             "raise_errors": False,
@@ -249,7 +249,7 @@ class TestEODAGSearch(unittest.TestCase):
     def test_assemble_geom(self):
         values = {
             "geometry": {"type": "Point", "coordinates": [1, 1]},
-            "collection": "value",
+            "collections": ["value"],
         }
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
@@ -281,7 +281,7 @@ class TestEODAGSearch(unittest.TestCase):
         )
 
         # Test with one collection in collection
-        values = {"collection": "test_collection", "test": "value"}
+        values = {"collections": ["test_collection"], "test": "value"}
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
                 exclude_none=True
@@ -293,28 +293,6 @@ class TestEODAGSearch(unittest.TestCase):
                 "page": 1,
                 "raise_errors": False,
             },
-        )
-
-        # Test with same collection in collections and collection
-        values = {"collections": ["test_producttype"], "collection": "test_producttype"}
-        self.assertEqual(
-            eodag_search.EODAGSearch.model_validate(values).model_dump(
-                exclude_none=True
-            ),
-            {
-                "productType": "test_producttype",
-                "items_per_page": 20,
-                "page": 1,
-                "raise_errors": False,
-            },
-        )
-
-        # Test with different collections in collections and collection
-        values = {"collections": ["value1"], "collection": "value2", "test": "value"}
-        with self.assertRaises(ValidationError) as context:
-            eodag_search.EODAGSearch.model_validate(values)
-        self.assertTrue(
-            "Only one collection is supported per search" in str(context.exception)
         )
 
         # Test with more than one collection in collections
@@ -329,7 +307,7 @@ class TestEODAGSearch(unittest.TestCase):
         # Test with valid query
         values = {
             "query": {"properties.test": {"eq": "value"}},
-            "collection": "test_collection",
+            "collections": ["test_collection"],
         }
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
@@ -345,44 +323,47 @@ class TestEODAGSearch(unittest.TestCase):
         )
 
         # Test with invalid query syntax
-        values = {"query": "invalid", "collection": "test_collection"}
+        values = {"query": {"invalid": "invalid"}, "collections": ["test_collection"]}
         with self.assertRaises(ValidationError) as context:
             eodag_search.EODAGSearch.model_validate(values)
-        self.assertTrue("Invalid query syntax" in str(context.exception))
+        self.assertTrue(
+            "Exactly 1 operator must be specified per property"
+            in str(context.exception)
+        )
 
         # Test with multiple operators for a property
         values = {
             "query": {"properties.test": {"eq": "value", "lte": "value"}},
-            "collection": "test_collection",
+            "collections": ["test_collection"],
         }
         with self.assertRaises(ValidationError) as context:
             eodag_search.EODAGSearch.model_validate(values)
         self.assertTrue(
-            "Query filter: exactly 1 operator must be specified per property"
+            "Exactly 1 operator must be specified per property"
             in str(context.exception)
         )
 
         # Test with unsupported operator
         values = {
             "query": {"properties.test": {"neq": "value"}},
-            "collection": "test_collection",
+            "collections": ["test_collection"],
         }
         with self.assertRaises(ValidationError) as context:
             eodag_search.EODAGSearch.model_validate(values)
         self.assertTrue(
-            'Query filter: only the "eq" and "lte" operators are supported, with "lte" only for eo:cloud_cover'
+            'Only the "eq" and "lte" operators are supported, with "lte" only for eo:cloud_cover'
             in str(context.exception)
         )
 
         # Test with "lte" operator for a non-cloud_cover property
         values = {
             "query": {"properties.test": {"lte": "value"}},
-            "collection": "test_collection",
+            "collections": ["test_collection"],
         }
         with self.assertRaises(ValidationError) as context:
             eodag_search.EODAGSearch.model_validate(values)
         self.assertTrue(
-            'Query filter: "lte" operator is only supported for eo:cloud_cover'
+            '"lte" operator is only supported for eo:cloud_cover'
             in str(context.exception)
         )
 
@@ -415,15 +396,14 @@ class TestEODAGSearch(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             eodag_search.EODAGSearch.parse_cql(values)
         self.assertTrue(
-            "Error in parsing filter: the result is not a proper dictionary"
-            in str(context.exception)
+            "The parsed filter is not a proper dictionary" in str(context.exception)
         )
 
     def test_join_instruments(self):
         # Test with string
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(
-                {"instruments": "value", "collection": "test_collection"}
+                {"instruments": "value", "collections": ["test_collection"]}
             ).model_dump(exclude_none=True),
             {
                 "instrument": "value",
@@ -437,7 +417,10 @@ class TestEODAGSearch(unittest.TestCase):
         # Test with list of strings
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(
-                {"instruments": ["value1", "value2"], "collection": "test_collection"}
+                {
+                    "instruments": ["value1", "value2"],
+                    "collections": ["test_collection"],
+                }
             ).model_dump(exclude_none=True),
             {
                 "instrument": "value1,value2",
@@ -451,7 +434,7 @@ class TestEODAGSearch(unittest.TestCase):
     def test_convert_stac_to_eodag_sortby(self):
         values = {
             "sortby": [{"field": "test", "direction": "desc"}],
-            "collection": "test_collection",
+            "collections": ["test_collection"],
         }
         self.assertEqual(
             eodag_search.EODAGSearch.model_validate(values).model_dump(
@@ -491,7 +474,7 @@ class TestEODAGSearch(unittest.TestCase):
                 {
                     "start": "2023-12-18T16:41:35+00:00",
                     "end": "2023-12-19T16:41:35+00:00",
-                    "collection": "test_collection",
+                    "collections": ["test_collection"],
                 }
             ).model_dump(exclude_none=True),
             {
@@ -510,7 +493,7 @@ class TestEODAGSearch(unittest.TestCase):
                 {
                     "start": "2023-12-20T16:41:35",
                     "end": "2023-12-21T16:41:35",
-                    "collection": "test_collection",
+                    "collections": ["test_collection"],
                 }
             ).model_dump(exclude_none=True),
             {
@@ -521,24 +504,6 @@ class TestEODAGSearch(unittest.TestCase):
                 "page": 1,
                 "raise_errors": False,
             },
-        )
-
-    def test_snake_to_camel(self):
-        # Test with valid snake_case string
-        self.assertEqual(
-            eodag_search.EODAGSearch.snake_to_camel("test_string"), "testString"
-        )
-
-        # Test with empty string
-        self.assertEqual(eodag_search.EODAGSearch.snake_to_camel(""), "")
-
-        # Test with string that has no underscores
-        self.assertEqual(eodag_search.EODAGSearch.snake_to_camel("test"), "test")
-
-        # Test with string that has multiple underscores
-        self.assertEqual(
-            eodag_search.EODAGSearch.snake_to_camel("test_string_example"),
-            "testStringExample",
         )
 
     def test_alias_to_property(self):

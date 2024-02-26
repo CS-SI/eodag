@@ -122,13 +122,6 @@ class TestStacUtils(unittest.TestCase):
             ["value1", "value2", "value3"],
         )
 
-    def test_is_list_str(self):
-        """is_list_str verifies whether the input variable is of type List[str]"""
-        self.assertTrue(self.rest_utils.is_list_str(["value1", "value2", "value3"]))
-        self.assertFalse(self.rest_utils.is_list_str(["value1", 2, "value3"]))
-        self.assertFalse(self.rest_utils.is_list_str("not a list"))
-        self.assertFalse(self.rest_utils.is_list_str(None))
-
     def test_is_dict_str_any(self):
         """is_dict_str_any verifies whether the input variable is of type Dict[str, Any]"""
         self.assertTrue(
@@ -290,10 +283,23 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
         )
         self.assertEqual(
             self.evaluator.predicate(
-                ast.GeometryIntersects(attribute, value), attribute, value
+                ast.GeometryIntersects(ast.Attribute("geometry"), value),
+                ast.Attribute("geometry"),
+                value,
             ),
-            {"test": "value"},
+            {"geometry": "value"},
         )
+        with self.assertRaises(ValueError) as context:
+            self.evaluator.predicate(
+                ast.GeometryIntersects(attribute, value),
+                attribute,
+                value,
+            )
+        self.assertTrue(
+            'GeometryIntersects is only supported for "geometry"'
+            in str(context.exception)
+        )
+
         self.assertEqual(
             self.evaluator.predicate(
                 ast.LessEqual(attribute, datetime(2022, 1, 1)),
@@ -326,13 +332,20 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
 
     def test_contains(self):
         attribute = ast.Attribute("test")
-        sub_nodes = ["value1", "value2"]
         self.assertEqual(
             self.evaluator.contains(
-                ast.In(attribute, sub_nodes, False), attribute, "value1", "value2"
+                ast.In(attribute, ["value1", "value2"], False),
+                attribute,
+                "value1",
+                "value2",
             ),
             {"test": ["value1", "value2"]},
         )
+        with self.assertRaises(ValueError) as context:
+            self.evaluator.contains(
+                ast.In(attribute, "value1", False), attribute, "value1"
+            )
+        self.assertTrue('"in" expects a value in list format' in str(context.exception))
 
     def test_combination(self):
         self.assertEqual(

@@ -68,6 +68,16 @@ class EodagEvaluator(Evaluator):
         if not isinstance(lhs, ast.Attribute):
             raise ValueError(f"First element in {node} must be the property")
 
+        if isinstance(node, ast.Equal) and not isinstance(
+            rhs, (int, float, complex, str)
+        ):
+            raise ValueError(
+                f"Second element in {node} must be a string or a numeric value"
+            )
+
+        if isinstance(node, ast.GeometryIntersects) and not lhs.name == "geometry":
+            raise ValueError('GeometryIntersects is only supported for "geometry"')
+
         if isinstance(node, (ast.Equal, ast.GeometryIntersects)):
             return {lhs.name: rhs}
 
@@ -89,6 +99,8 @@ class EodagEvaluator(Evaluator):
     @handle(ast.In)
     def contains(self, node: ast.In, lhs: Any, *rhs: Any):
         """handle in keyword"""
+        if not isinstance(node.sub_nodes, list):  # type: ignore
+            raise ValueError('"in" expects a value in list format')
         return {lhs.name: list(rhs)}
 
     @handle(ast.And)

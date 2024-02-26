@@ -64,7 +64,7 @@ def rfc3339_str_to_datetime(s: str) -> datetime:
     if not result:
         raise ValueError("Invalid RFC3339 datetime.")
 
-    return dateutil.parser.isoparse(s)
+    return dateutil.parser.isoparse(s).replace(tzinfo=timezone.utc)
 
 
 def str_to_interval(

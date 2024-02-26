@@ -25,11 +25,13 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    PrivateAttr,
+    ValidationError,
     ValidationInfo,
     field_validator,
     model_validator,
 )
+from pydantic.alias_generators import to_camel
+from pydantic_core import InitErrorDetails, PydanticCustomError
 from pygeofilter.parsers.cql2_json import parse as parse_json
 from shapely.geometry import (
     GeometryCollection,
@@ -42,12 +44,7 @@ from shapely.geometry import (
     Polygon,
 )
 
-from eodag.rest.utils import (
-    flatten_list,
-    is_dict_str_any,
-    is_list_str,
-    list_to_str_list,
-)
+from eodag.rest.utils import flatten_list, is_dict_str_any, list_to_str_list
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE
 
@@ -80,7 +77,9 @@ class EODAGSearch(BaseModel):
     productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
     ids: Optional[List[str]] = Field(None)
-    id: Optional[List[str]] = Field(None, alias="ids")
+    id: Optional[List[str]] = Field(
+        None, alias="ids"
+    )  # TODO: remove when updating queryables
     geom: Optional[Geometry] = Field(None, alias="geometry")
     start: Optional[str] = Field(None, alias="start_datetime")
     end: Optional[str] = Field(None, alias="end_datetime")
@@ -118,7 +117,7 @@ class EODAGSearch(BaseModel):
     sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
     raise_errors: bool = False
 
-    _to_eodag_map: Dict[str, str] = PrivateAttr()
+    _to_eodag_map: Dict[str, str]
 
     @model_validator(mode="after")
     def set_raise_errors(self) -> Self:
@@ -134,106 +133,114 @@ class EODAGSearch(BaseModel):
         self.completionTimeFromAscendingNode = None  # pylint: disable=invalid-name
         return self
 
-    @model_validator(mode="before")
-    @classmethod
-    def remove_custom_extensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    @model_validator(mode="after")
+    def parse_extra_fields(self) -> Self:
         """process unknown and oseo EODAG custom extensions fields"""
         # Transform EODAG custom extensions OSEO and UNK.
+        if not self.__pydantic_extra__:
+            return self
+
         keys_to_update: Dict[str, str] = {}
-        for key in values.keys():
+        for key in self.__pydantic_extra__.keys():
             if key.startswith("unk:"):
                 keys_to_update[key] = key[len("unk:") :]
             elif key.startswith("oseo:"):
                 keys_to_update[key] = key[len("oseo:") :]
 
         for old_key, new_key in keys_to_update.items():
-            values[cls.snake_to_camel(new_key)] = values.pop(old_key)
+            self.__pydantic_extra__[to_camel(new_key)] = self.__pydantic_extra__.pop(
+                old_key
+            )
 
-        return values
+        return self
 
     @model_validator(mode="before")
     @classmethod
     def remove_keys(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Remove 'datetime', 'crunch', 'intersects', and 'bbox' keys"""
-        for key in ["datetime", "crunch", "intersects", "bbox"]:
+        for key in ["datetime", "crunch", "intersects", "bbox", "filter_lang"]:
             values.pop(key, None)
         return values
 
     @model_validator(mode="before")
     @classmethod
-    def convert_collections_to_product_type(
-        cls, values: Dict[str, Any]
+    def parse_collections(
+        cls, values: Dict[str, Any], info: ValidationInfo
     ) -> Dict[str, Any]:
-        """convert collections and collection to productType"""
-        collections = values.pop("collections", [])
-        collection = values.pop("collection", [])
+        """convert collections to productType"""
 
-        if collection and isinstance(collection, str):
-            collection = [collection]
-        elif collection and not is_list_str(collection):  # type: ignore
-            raise ValueError("Collection must be a string or a list of strings")
-
-        if collections and not is_list_str(collections):  # type: ignore
-            raise ValueError("Collections must a list of strings")
-
-        combined_collections = cast(
-            List[str],
-            [c for c in collections if c]  # type: ignore
-            + [c for c in collection if c and c not in collections],  # type: ignore
-        )
-
-        if len(combined_collections) > 1:
-            raise ValueError("Only one collection is supported per search")
-
-        if combined_collections:
-            values["productType"] = combined_collections[0]
+        if collections := values.pop("collections", None):
+            if len(collections) > 1:
+                raise ValueError("Only one collection is supported per search")
+            values["productType"] = collections[0]
+        else:
+            if not getattr(info, "context", None) or not info.context.get(  # type: ignore
+                "isCatalog"
+            ):
+                raise ValueError("A collection is required")
 
         return values
 
     @model_validator(mode="before")
     @classmethod
-    def convert_query_to_dict(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_query(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """
         Convert a STAC query parameter filter with the "eq" operator to a dict.
         """
+
+        def add_error(error_message: str, input: Any) -> None:
+            errors.append(
+                InitErrorDetails(
+                    type=PydanticCustomError("invalid_query", error_message),  # type: ignore
+                    loc=("query",),
+                    input=input,
+                )
+            )
+
         query = values.pop("query", None)
-        if query is None:
+        if not query:
             return values
 
-        if not is_dict_str_any(query):
-            raise ValueError("Invalid query syntax")
-
         query_props: Dict[str, Any] = {}
+        errors: List[InitErrorDetails] = []
         for property_name, conditions in cast(Dict[str, Any], query).items():
-            # Remove the "properties." prefix if present
-            prefix = "properties."
-            prop = property_name
-            if property_name.startswith(prefix):
-                prop = property_name[len(prefix) :]
+            # Remove the prefix "properties." if present
+            prop = property_name.replace("properties.", "", 1)
 
             # Check if exactly one operator is specified per property
             if not is_dict_str_any(conditions) or len(conditions) != 1:  # type: ignore
-                raise ValueError(
-                    "Query filter: exactly 1 operator must be specified per property"
+                add_error(
+                    "Exactly 1 operator must be specified per property",
+                    query[property_name],
                 )
+                continue
 
             # Retrieve the operator and its value
             operator, value = next(iter(cast(Dict[str, Any], conditions).items()))
 
             # Validate the operator
             if operator == "lte" and prop != "eo:cloud_cover":
-                raise ValueError(
-                    'Query filter: "lte" operator is only supported for eo:cloud_cover'
+                add_error(
+                    '"lte" operator is only supported for eo:cloud_cover',
+                    query[property_name],
                 )
+                continue
 
-            if operator not in ("eq", "lte"):
-                raise ValueError(
-                    'Query filter: only the "eq" and "lte" operators are supported'
-                    ', with "lte" only for eo:cloud_cover'
+            elif operator not in ("eq", "lte"):
+                add_error(
+                    'Only the "eq" and "lte" operators are supported'
+                    ', with "lte" only for eo:cloud_cover',
+                    query[property_name],
                 )
+                continue
 
             # Add the property name and value to the result dictionary
             query_props[prop] = value
+
+        if errors:
+            raise ValidationError.from_exception_data(
+                title=cls.__name__, line_errors=errors
+            )
 
         return {**values, **query_props}
 
@@ -243,16 +250,57 @@ class EODAGSearch(BaseModel):
         """
         Process cql2 filter
         """
-        values.pop("filter_lang", None)
+
+        def add_error(error_message: str) -> None:
+            errors.append(
+                InitErrorDetails(
+                    type=PydanticCustomError("invalid_filter", error_message),  # type: ignore
+                    loc=("filter",),
+                )
+            )
+
         filter_ = values.pop("filter", None)
         if not filter_:
             return values
-        parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
-        if not is_dict_str_any(parsing_result):
-            raise ValueError(
-                "Error in parsing filter: the result is not a proper dictionary"
+
+        errors: List[InitErrorDetails] = []
+        try:
+            parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
+        except ValueError as e:
+            add_error(str(e))
+            raise ValidationError.from_exception_data(
+                title=cls.__name__, line_errors=errors
             )
+
+        if not is_dict_str_any(parsing_result):
+            add_error("The parsed filter is not a proper dictionary")
+            raise ValidationError.from_exception_data(
+                title=cls.__name__, line_errors=errors
+            )
+
         cql_args: Dict[str, Any] = cast(Dict[str, Any], parsing_result)
+
+        invalid_keys = {
+            "collections": 'Use "collection" instead of "collections"',
+            "ids": 'Use "id" instead of "ids"',
+        }
+        for k, m in invalid_keys.items():
+            if k in cql_args:
+                add_error(m)
+
+        if errors:
+            raise ValidationError.from_exception_data(
+                title=cls.__name__, line_errors=errors
+            )
+
+        # convert collection to EODAG collections
+        if col := cql_args.pop("collection", None):
+            cql_args["collections"] = col if isinstance(col, list) else [col]
+
+        # convert id to EODAG ids
+        if id := cql_args.pop("id", None):
+            cql_args["ids"] = id if isinstance(id, list) else [id]
+
         return {**values, **cql_args}
 
     @field_validator("instrument", mode="before")
@@ -265,7 +313,7 @@ class EODAGSearch(BaseModel):
 
     @field_validator("sortBy", mode="before")
     @classmethod
-    def convert_stac_to_eodag_sortby(
+    def parse_sortby(
         cls,
         sortby_post_params: List[Dict[str, str]],
     ) -> List[Tuple[str, str]]:
@@ -279,28 +327,13 @@ class EODAGSearch(BaseModel):
         return [
             (
                 special_fields.get(
-                    cls.snake_to_camel(cls.to_eodag(param["field"])),
-                    cls.snake_to_camel(cls.to_eodag(param["field"])),
+                    to_camel(cls.to_eodag(param["field"])),
+                    to_camel(cls.to_eodag(param["field"])),
                 ),
                 param["direction"],
             )
             for param in sortby_post_params
         ]
-
-    @field_validator("productType")
-    @classmethod
-    def verify_producttype_is_present(
-        cls, v: Optional[str], info: ValidationInfo
-    ) -> Optional[str]:
-        """Verify productType is present when required"""
-        if not v and (
-            not info
-            or not getattr(info, "context", None)
-            or not info.context.get("isCatalog")  # type: ignore
-        ):
-            raise ValueError("A collection is required")
-
-        return v
 
     @field_validator("start", "end")
     @classmethod
@@ -309,13 +342,6 @@ class EODAGSearch(BaseModel):
         if v.endswith("+00:00"):
             return v.replace("+00:00", "") + "Z"
         return v
-
-    @classmethod
-    def snake_to_camel(cls, snake_str: str) -> str:
-        """Convert snake_case to camelCase"""
-        # Split the string by underscore and capitalize each component except the first one
-        components = snake_str.split("_")
-        return components[0] + "".join(x.title() for x in components[1:])
 
     @classmethod
     def _create_to_eodag_map(cls) -> None:
