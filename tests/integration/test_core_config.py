@@ -255,6 +255,7 @@ class TestCoreProductTypesConfig(TestCase):
             auth=mock.ANY,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
         mock_urlopen.return_value.json.return_value = {}
