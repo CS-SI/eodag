@@ -2998,11 +2998,81 @@ SATELLITE_SEA_LEVEL_BLACK_SEA:
   instrument:
   platformSerialIdentifier:
   processingLevel:
-  keywords: Climate,ECMWF,CDS,C3S,methane,sea
+  keywords: Climate,ECMWF,CDS,C3S,sea,level,Black Sea
   sensorType: HYDROLOGICAL
   license: proprietary
   title: Sea level daily gridded data from satellite observations for the Black Sea from 1993 to 2020
   missionStartDate: "1993-01-01T00:00:00Z"
+
+SATELLITE_SEA_LEVEL_GLOBAL:
+  abstract: |
+    This data set provides gridded daily global estimates of sea level anomaly based on satellite altimetry
+    measurements. The rise in global mean sea level in recent decades has been one of the most important and well-known
+    consequences of climate warming, putting a large fraction of the world population and economic infrastructure at
+    greater risk of flooding. However, changes in the global average sea level mask regional variations that can be one
+    order of magnitude larger. Therefore, it is essential to measure changes in sea level over the world’s oceans as
+    accurately as possible. Sea level anomaly is defined as the height of water over the mean sea surface in a given
+    time and region. In this dataset sea level anomalies are computed with respect to a twenty-year mean reference
+    period (1993-2012) using up-to-date altimeter standards. In the past, the altimeter sea level datasets were
+    distributed on the CNES AVISO altimetry portal until their production was taken over by the Copernicus Marine
+    Environment Monitoring Service (CMEMS) and the Copernicus Climate Change Service (C3S) in 2015 and 2016
+    respectively. The sea level data set provided here by C3S is climate-oriented, that is, dedicated to the monitoring
+    of the long-term evolution of sea level and the analysis of the ocean/climate indicators, both requiring a
+    homogeneous and stable sea level record. To achieve this, a steady two-satellite merged constellation is used at all
+    time steps in the production system: one satellite serves as reference and ensures the long-term stability of the
+    data record; the other satellite (which varies across the record) is used to improve accuracy, sample mesoscale
+    processes and provide coverage at high latitudes. The C3S sea level data set is used to produce Ocean Monitoring
+    Indicators (e.g. global and regional mean sea level evolution), available in the CMEMS catalogue. The CMEMS sea
+    level dataset has a more operational focus as it is dedicated to the retrieval of mesoscale signals in the context
+    of ocean modeling and analysis of the ocean circulation on a global or regional scale. Such applications require the
+    most accurate sea level estimates at each time step with the best spatial sampling of the ocean with all satellites
+    available, with less emphasis on long-term stability and homogeneity. This data set is updated three times a year
+    with a delay of about 6 months relative to present time. This delay is mainly due to the timeliness of the input
+    data, the centred processing temporal window and the validation process. However, these processing and validation
+    steps are essential to enhance the stability and accuracy of the sea level products and make them suitable for
+    climate applications. This dataset includes estimates of sea level anomaly and absolute dynamic topography together
+    with the corresponding geostrophic velocities. More details about the sea level retrieval algorithms, additional
+    filters, optimisation procedures, and the error estimation are given in the Documentation tab. Variables in the
+    dataset/application are: Absolute dynamic topography, Absolute geostrophic velocity meridian component, Absolute
+    geostrophic velocity zonal component, Geostrophic velocity anomalies meridian component, Geostrophic velocity
+    anomalies zonal component, Sea level anomaly
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Climate,ECMWF,CDS,C3S,sea,level,global
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Sea level gridded data from satellite observations for the global ocean
+  missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2022-08-04T23:59:59Z"
+
+SATELLITE_SEA_LEVEL_MEDITERRANEAN:
+  abstract: |
+    Sea level anomaly is the height of water over the mean sea surface in a given time and region. In this dataset sea
+    level anomalies are computed with respect to a twenty-year mean reference period (1993-2012). Up-to-date altimeter
+    standards are used to estimate the sea level anomalies with a mapping algorithm specifically dedicated to the
+    Mediterranean Sea. The steady number of reference satellite used in the production of this dataset contributes to
+    the long-term stability of the sea level record. Improvements of the accuracy, sampling of meso-scale processes and
+    of the high-latitude coverage were achieved by using a few additional satellite missions. New data are provided with
+    a delay of about 4-5 months relatively to near-real time or interim sea level products. This delay is mainly due to
+    the timeliness of the input data, the centred processing temporal window and the validation process. However, this
+    processing and validation adds stability and accuracy to the sea level variables and make them adapted to climate
+    applications. This dataset includes uncertainties for each grid cell. More details about the sea level retrieval,
+    additional filters, optimisation procedures, and the error estimation are given in the Documentation section.
+    Variables in the dataset/application are: Absolute dynamic topography, Absolute geostrophic velocity meridian
+    component, Absolute geostrophic velocity zonal component, Geostrophic velocity anomalies meridian component,
+    Geostrophic velocity anomalies zonal component, Sea level anomaly
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: Climate,ECMWF,CDS,C3S,sea,level,mediterranean
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Sea level daily gridded data from satellite observations for the Mediterranean Sea
+  missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2018-11-01T:23:59:59Z"
 
 SEASONAL_POSTPROCESSED_SL:
   abstract: |

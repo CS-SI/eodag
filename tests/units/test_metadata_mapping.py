@@ -542,7 +542,7 @@ class TestMetadataFormatter(unittest.TestCase):
     def test_convert_get_hydrological_year(self):
         to_format = "{date#get_hydrological_year}"
         self.assertEqual(
-            format_metadata(to_format, date="2010-01-11T17:42:24Z"), "2010_11"
+            format_metadata(to_format, date="2010-01-11T17:42:24Z"), str(["2010_11"])
         )
 
 
