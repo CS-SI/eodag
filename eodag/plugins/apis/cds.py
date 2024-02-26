@@ -23,13 +23,12 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
 from urllib.parse import parse_qs, unquote_plus, urlparse
 
-import cdsapi
 import geojson
 import requests
 from dateutil.parser import isoparse
 from pydantic import create_model
 from pydantic.fields import FieldInfo
-from requests.auth import AuthBase
+from requests.auth import HTTPBasicAuth
 from typing_extensions import get_args
 
 from eodag.api.product import Asset  # type: ignore
@@ -75,7 +74,6 @@ from eodag.utils.exceptions import (
     RequestError,
     ValidationError,
 )
-from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
     from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -107,6 +105,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         # init self.config.metadata_mapping using Search Base plugin
         Search.__init__(self, provider, config)
 
+        self.auth = self._create_auth_plugin()
         # needed by QueryStringSearch.build_query_string / format_free_text_search
         self.config.__dict__.setdefault("free_text_search_operations", {})
         # needed for compatibility
@@ -274,68 +273,19 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
 
-    def _get_cds_client(self, **auth_dict: Any) -> cdsapi.Client:
-        """Returns cdsapi client."""
-        # eodag logging info
-        eodag_verbosity = get_logging_verbose()
-        eodag_logger = logging.getLogger("eodag")
-
-        client = cdsapi.Client(
-            # disable cdsapi default logging and handle it on eodag side
-            # until https://github.com/ecmwf/cdsapi/pull/47 is merged
-            quiet=True,
-            verify=True,
-            **auth_dict,
-        )
-
-        if eodag_verbosity is None or eodag_verbosity == 1:
-            client.logger.setLevel(logging.WARNING)
-        elif eodag_verbosity == 2:
-            client.logger.setLevel(logging.INFO)
-        elif eodag_verbosity == 3:
-            client.logger.setLevel(logging.DEBUG)
-        else:
-            client.logger.setLevel(logging.WARNING)
-
-        if len(eodag_logger.handlers) > 0:
-            client.logger.addHandler(eodag_logger.handlers[0])
-
-        return client
-
-    def authenticate(self) -> AuthBase:
+    def _create_auth_plugin(self) -> HTTPBasicAuth:
         """Returns the Authentication Plugin
 
-        Checks that the API's endpoint is online, but the credentials are not verified.
-
         :returns: Authentication Plugin
-        :rtype: :class:`requests.auth.AuthBase`
-        :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
-        :raises: :class:`~eodag.utils.exceptions.RequestError`
+        :rtype: :class:`requests.auth.HTTPBasicAuth`
         """
         # Get credentials from eodag or using cds conf
         uid = getattr(self.config, "credentials", {}).get("username", None)
         api_key = getattr(self.config, "credentials", {}).get("password", None)
-        url = getattr(self.config, "api_endpoint", None)
-        if not all([uid, api_key, url]):
+        if not all([uid, api_key]):
             raise AuthenticationError("Missing authentication information")
 
-        auth_dict: Dict[str, str] = {"key": f"{uid}:{api_key}", "url": str(url)}
-
-        client = self._get_cds_client(**auth_dict)
-        auth = None
-        try:
-            # Note: it only checks if the web service is online (no credentials check)
-            client.status()
-            logger.debug("Connection checked on CDS API")
-            auth = requests.auth.HTTPBasicAuth(uid, api_key)
-        except requests.exceptions.ConnectionError as e:
-            logger.error(e)
-            raise RequestError(f"Could not connect to the CDS API '{url}'")
-        except requests.exceptions.HTTPError as e:
-            logger.error(e)
-            raise RequestError("The CDS API has returned an unexpected error")
-
-        return auth
+        return HTTPBasicAuth(uid, api_key)
 
     def prepare_order_link(self, product: EOProduct):
         """Update product download link with http url obtained from cds api"""
@@ -496,7 +446,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         """Download data from providers using CDS API"""
 
         if not auth:
-            auth = self.authenticate()
+            auth = self.auth
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
