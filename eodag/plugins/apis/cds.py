@@ -29,6 +29,7 @@ import requests
 from dateutil.parser import isoparse
 from pydantic import create_model
 from pydantic.fields import FieldInfo
+from requests.auth import AuthBase
 from typing_extensions import get_args
 
 from eodag.api.product import Asset  # type: ignore
@@ -301,11 +302,13 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
 
         return client
 
-    def authenticate(self) -> Dict[str, str]:
-        """Returns information needed for auth
+    def authenticate(self) -> AuthBase:
+        """Returns the Authentication Plugin
 
-        :returns: {key, url} dictionary
-        :rtype: dict
+        Checks that the API's endpoint is online, but the credentials are not verified.
+
+        :returns: Authentication Plugin
+        :rtype: :class:`requests.auth.AuthBase`
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
         :raises: :class:`~eodag.utils.exceptions.RequestError`
         """
@@ -319,9 +322,12 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         auth_dict: Dict[str, str] = {"key": f"{uid}:{api_key}", "url": str(url)}
 
         client = self._get_cds_client(**auth_dict)
+        auth = None
         try:
+            # Note: it only checks if the web service is online (no credentials check)
             client.status()
             logger.debug("Connection checked on CDS API")
+            auth = requests.auth.HTTPBasicAuth(uid, api_key)
         except requests.exceptions.ConnectionError as e:
             logger.error(e)
             raise RequestError(f"Could not connect to the CDS API '{url}'")
@@ -329,9 +335,9 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             logger.error(e)
             raise RequestError("The CDS API has returned an unexpected error")
 
-        return auth_dict
+        return auth
 
-    def create_order_link(self, product: EOProduct):
+    def prepare_order_link(self, product: EOProduct):
         """Update product download link with http url obtained from cds api"""
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
@@ -358,7 +364,6 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             dataset_name,
             json.dumps(download_request),
         )
-        logger.debug(f"orderLink={url}")
         product.properties["orderLink"] = url
 
     def orderDownload(
@@ -395,10 +400,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         """
         super(CdsApi, self).orderDownload(
             product,
-            requests.auth.HTTPBasicAuth(
-                self.config.credentials["username"],
-                self.config.credentials["password"],
-            ),
+            auth,
             **kwargs,
         )
         product.properties["storageStatus"] = STAGING_STATUS
@@ -494,10 +496,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         """Download data from providers using CDS API"""
 
         if not auth:
-            auth = requests.auth.HTTPBasicAuth(
-                self.config.credentials["username"],
-                self.config.credentials["password"],
-            )
+            auth = self.authenticate()
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
@@ -510,7 +509,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
                 product.location = path_to_uri(fs_path)
             return fs_path
 
-        self.create_order_link(product)
+        self.prepare_order_link(product)
 
         try:
             return super(CdsApi, self).download(
@@ -535,7 +534,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         """Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers."""
 
-        self.create_order_link(product)
+        self.prepare_order_link(product)
         return super(CdsApi, self)._stream_download_dict(
             product,
             auth=auth,
