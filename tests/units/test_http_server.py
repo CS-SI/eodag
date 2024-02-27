@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import geojson
+import httpx
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
@@ -310,20 +311,18 @@ class RequestTestCase(unittest.TestCase):
         expected_search_kwargs: Union[
             List[Dict[str, Any]], Dict[str, Any], None
         ] = None,
-        protocol: str = "GET",
+        method: str = "GET",
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
-    ):
+    ) -> httpx.Response:
         mock_search.return_value = self.mock_search_result()
-        if protocol == "GET":
-            response = self.app.get(url, follow_redirects=True)
-        else:
-            response = self.app.post(
-                url,
-                data=json.dumps(post_data),
-                follow_redirects=True,
-                headers={"Content-Type": "application/json"},
-            )
+        response = self.app.request(
+            method,
+            url,
+            json=post_data,
+            follow_redirects=True,
+            headers={"Content-Type": "application/json"} if method == "POST" else {},
+        )
 
         if search_call_count is not None:
             self.assertEqual(mock_search.call_count, search_call_count)
@@ -349,17 +348,19 @@ class RequestTestCase(unittest.TestCase):
 
     def _request_valid(
         self,
-        url,
-        expected_search_kwargs=None,
-        protocol="GET",
-        post_data=None,
-        search_call_count=None,
-        check_links=True,
-    ):
+        url: str,
+        expected_search_kwargs: Union[
+            List[Dict[str, Any]], Dict[str, Any], None
+        ] = None,
+        method: str = "GET",
+        post_data: Optional[Any] = None,
+        search_call_count: Optional[int] = None,
+        check_links: bool = True,
+    ) -> Any:
         response = self._request_valid_raw(
             url,
             expected_search_kwargs=expected_search_kwargs,
-            protocol=protocol,
+            method=method,
             post_data=post_data,
             search_call_count=search_call_count,
         )
@@ -372,7 +373,7 @@ class RequestTestCase(unittest.TestCase):
 
         return result
 
-    def assert_links_valid(self, element):
+    def assert_links_valid(self, element: Any):
         """Checks that element links are valid"""
         self.assertIsInstance(element, dict)
         self.assertIn("links", element, f"links not found in {str(element)}")
@@ -412,15 +413,23 @@ class RequestTestCase(unittest.TestCase):
             f"missing {required_links_rel} relation(s) in {links}",
         )
 
-    def _request_not_valid(self, url):
-        response = self.app.get(url, follow_redirects=True)
+    def _request_not_valid(
+        self, url: str, method: str = "GET", post_data: Optional[Any] = None
+    ) -> None:
+        response = self.app.request(
+            method,
+            url,
+            json=post_data,
+            follow_redirects=True,
+            headers={"Content-Type": "application/json"} if method == "POST" else {},
+        )
         response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
         self.assertIn("description", response_content)
         self.assertIn("invalid", response_content["description"].lower())
 
-    def _request_not_found(self, url):
+    def _request_not_found(self, url: str):
         response = self.app.get(url, follow_redirects=True)
         response_content = json.loads(response.content.decode("utf-8"))
 
@@ -469,7 +478,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
         side_effect=AuthenticationError("you are not authorized"),
     )
-    def test_auth_error(self, mock_search):
+    def test_auth_error(self, mock_search: Mock):
         """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
 
         with self.assertLogs(level="ERROR") as cm_logs:
@@ -489,7 +498,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
         side_effect=TimeOutError("too long"),
     )
-    def test_timeout_error(self, mock_search):
+    def test_timeout_error(self, mock_search: Mock):
         """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
         with self.assertLogs(level="ERROR") as cm_logs:
             response = self.app.get(
@@ -763,7 +772,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with cloudCover filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "bbox": [0, 43, 1, 44],
@@ -783,7 +792,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with intersects filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "intersects": {
@@ -804,7 +813,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with datetime filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "2018-01-20/2018-01-25",
@@ -820,7 +829,7 @@ class RequestTestCase(unittest.TestCase):
         )
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "2018-01-20/..",
@@ -835,7 +844,7 @@ class RequestTestCase(unittest.TestCase):
         )
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "../2018-01-25",
@@ -850,7 +859,7 @@ class RequestTestCase(unittest.TestCase):
         )
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "2018-01-20",
@@ -869,7 +878,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with ids filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "ids": ["foo", "bar"],
@@ -915,7 +924,7 @@ class RequestTestCase(unittest.TestCase):
         # with provider (post)
         response = self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={"collections": [self.tested_product_type], "provider": "onda"},
         )
         response_items = [f for f in response["features"]]
@@ -952,7 +961,7 @@ class RequestTestCase(unittest.TestCase):
             {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
         ],
     )
-    def test_list_product_types_ok(self, list_pt, guess_pt):
+    def test_list_product_types_ok(self, list_pt: Mock, guess_pt: Mock):
         """A simple request for product types with(out) a provider must succeed"""
         for url in ("/collections",):
             r = self.app.get(url)
@@ -991,7 +1000,7 @@ class RequestTestCase(unittest.TestCase):
             {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
         ],
     )
-    def test_list_product_types_nok(self, list_pt):
+    def test_list_product_types_nok(self, list_pt: Mock):
         """A request for product types with a not supported filter must return all product types"""
         url = "/collections?platform=gibberish"
         r = self.app.get(url)
@@ -1109,7 +1118,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
-    def test_queryables_with_provider(self, mock_requests_get):
+    def test_queryables_with_provider(self, mock_requests_get: Mock):
         resp = self._request_valid(
             "queryables?provider=planetary_computer", check_links=False
         )
@@ -1152,7 +1161,7 @@ class RequestTestCase(unittest.TestCase):
         # TODO: with an unsupported product type
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
-    def test_product_type_queryables_with_provider(self, mock_requests_get):
+    def test_product_type_queryables_with_provider(self, mock_requests_get: Mock):
         """Request a collection-specific list of queryables for a given provider."""
         queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
         with open(queryables_path) as f:
@@ -1226,7 +1235,9 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
     @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
-    def test_product_type_queryables_from_constraints(self, mock_requests_constraints):
+    def test_product_type_queryables_from_constraints(
+        self, mock_requests_constraints: Mock
+    ):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
@@ -1249,3 +1260,121 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("ids", res["properties"])
         self.assertIn("geometry", res["properties"])
         self.assertNotIn("collections", res["properties"])
+
+    def test_cql_post_search(self):
+        self._request_valid(
+            "search",
+            method="POST",
+            post_data={
+                "filter": {
+                    "op": "and",
+                    "args": [
+                        {
+                            "op": "in",
+                            "args": [{"property": "id"}, ["foo", "bar"]],
+                        },
+                        {
+                            "op": "=",
+                            "args": [
+                                {"property": "collection"},
+                                self.tested_product_type,
+                            ],
+                        },
+                    ],
+                }
+            },
+            search_call_count=2,
+            expected_search_kwargs=[
+                {
+                    "provider": None,
+                    "id": "foo",
+                    "productType": self.tested_product_type,
+                },
+                {
+                    "provider": None,
+                    "id": "bar",
+                    "productType": self.tested_product_type,
+                },
+            ],
+        )
+
+        self._request_valid(
+            "search",
+            method="POST",
+            post_data={
+                "filter-lang": "cql2-json",
+                "filter": {
+                    "op": "and",
+                    "args": [
+                        {
+                            "op": "=",
+                            "args": [
+                                {"property": "collection"},
+                                self.tested_product_type,
+                            ],
+                        },
+                        {"op": "=", "args": [{"property": "eo:cloud_cover"}, 10]},
+                        {
+                            "op": "t_intersects",
+                            "args": [
+                                {"property": "datetime"},
+                                {
+                                    "interval": [
+                                        "2018-01-20T00:00:00Z",
+                                        "2018-01-25T00:00:00Z",
+                                    ]
+                                },
+                            ],
+                        },
+                        {
+                            "op": "s_intersects",
+                            "args": [
+                                {"property": "geometry"},
+                                {
+                                    "type": "Polygon",
+                                    "coordinates": [
+                                        [[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            expected_search_kwargs={
+                "productType": "S2_MSI_L1C",
+                "geom": {
+                    "type": "Polygon",
+                    "coordinates": [[[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]],
+                },
+                "start": "2018-01-20T00:00:00Z",
+                "end": "2018-01-25T00:00:00Z",
+                "cloudCover": 10,
+                "page": 1,
+                "items_per_page": 20,
+                "raise_errors": False,
+            },
+        )
+
+        self._request_not_valid(
+            "search",
+            method="POST",
+            post_data={
+                "filter": {
+                    "op": "and",
+                    "args": [
+                        {
+                            "op": "in",
+                            "args": [{"property": "id"}, "foo", "bar"],
+                        },
+                        {
+                            "op": "=",
+                            "args": [
+                                {"property": "collections"},
+                                self.tested_product_type,
+                            ],
+                        },
+                    ],
+                }
+            },
+        )

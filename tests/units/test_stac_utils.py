@@ -268,7 +268,7 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
 
     def test_temporal(self):
         dt = datetime.now()
-        self.assertEqual(self.evaluator.temporal(dt), dt.isoformat())
+        self.assertEqual(self.evaluator.temporal(dt), dt.strftime("%Y-%m-%dT%H:%M:%SZ"))
 
     def test_interval(self):
         result = self.evaluator.interval(None, "value1", "value2")

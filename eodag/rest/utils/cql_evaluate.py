@@ -43,7 +43,7 @@ class EodagEvaluator(Evaluator):
     @handle(dt)
     def temporal(self, node: dt) -> str:
         """handle datetime"""
-        return node.isoformat()
+        return node.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @handle(Interval)
     def interval(self, _, *interval: Any) -> List[Any]:
