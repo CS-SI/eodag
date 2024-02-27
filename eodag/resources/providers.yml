@@ -7005,7 +7005,39 @@
       aggregation:
         - '{{"aggregation": "{aggregation}"}}'
         - '$.null'
-
+      model:
+        - '{{"model": {model}}}'
+        - '$.null'
+      level:
+        - '{{"level": {level}}}'
+        - '$.null'
+      forcing_type:
+        - '{{"forcing_type": "{forcing_type}"}}'
+        - '$.null'
+      sky_type:
+        - '{{"sky_type": {sky_type}}}'
+        - '$.null'
+      band:
+        - '{{"band": {band}}}'
+        - '$.null'
+      aerosol_type:
+        - '{{"aerosol_type": {aerosol_type}}}'
+        - '$.null'
+      step:
+        - '{{"step": {step}}}'
+        - '$.null'
+      longitude:
+        - '{{"longitude": "{longitude}"}}'
+        - '$.null'
+      latitude:
+        - '{{"latitude": "{latitude}"}}'
+        - '$.null'
+      altitude:
+        - '{{"altitude": "{altitude}"}}'
+        - '$.null'
+      time_reference:
+        - '{{"time_reference": "{time_reference}"}}'
+        - '$.null'
   products:
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -8359,6 +8391,206 @@
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_GREENHOUSE_GAS_INVERSION"}}'
+    CAMS_EU_AIR_QUALITY_RE:
+      productType: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES
+      type:
+        - validated_reanalysis
+      format: zip
+      variable:
+       - nitrogen_dioxide
+      model:
+       - ensemble
+      level:
+        - '0'
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        type:
+          - '{{"type": {type}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES"}}'
+    CAMS_GRF:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS
+      format: zip
+      variable:
+        - radiative_forcing_of_carbon_dioxide
+      forcing_type: instantaneous
+      band:
+        - long_wave
+      sky_type:
+        - all_sky
+      level:
+        - surface
+      version:
+        - '2'
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS"}}'
+    CAMS_GRF_AUX:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES
+      band:
+        - short_wave
+      sky_type:
+        - clear_sky
+      version:
+        - '1.5'
+      format: zip
+      variable:
+        - aerosol_radiation_effect
+      aerosol_type:
+        - marine
+      level:
+        - surface
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES"}}'
+    CAMS_GREENHOUSE_EGG4:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4
+      format: grib
+      variable:
+        - snow_albedo
+      step:
+        - '0'
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4"}}'
+    CAMS_GREENHOUSE_EGG4_MONTHLY:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY
+      format: grib
+      variable:
+        - snow_albedo
+      providerProductType:
+        - monthly_mean_by_hour_of_day
+      step:
+        - '3'
+      time:
+        - '00:00'
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY"}}'
+    CAMS_EU_AIR_QUALITY_FORECAST:
+      productType: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS
+      model:
+        - ensemble
+      format: grib
+      variable:
+        - alder_pollen
+      type:
+        - forecast
+      time:
+        - '00:00'
+      level:
+        - '0'
+      leadtime_hour:
+        - '0'
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        type:
+          - '{{"type": {type}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS"}}'
+    CAMS_GAC_FORECAST:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
+      type:
+        - forecast
+      format: grib
+      variable:
+        - ammonium_aerosol_optical_depth_550nm
+      time:
+        - '00:00'
+      leadtime_hour:
+        - '0'
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        type:
+          - '{{"type": {type}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS"}}'
+    CAMS_SOLAR_RADIATION:
+      productType: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
+      sky_type: clear
+      step: 1minute
+      time_reference: true_solar_time
+      altitude: -999
+      format: csv
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        step:
+          - '{{"time_step": "{step}"}}'
+          - '$.null'
+        sky_type:
+          - '{{"sky_type": "{sky_type}"}}'
+          - '$.null'
+        geometry:
+          - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES"}}'
 
   auth: !plugin
     type: TokenAuth

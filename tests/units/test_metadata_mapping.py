@@ -545,6 +545,23 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, date="2010-01-11T17:42:24Z"), str(["2010_11"])
         )
 
+    def test_convert_to_longitude_latitude(self):
+        to_format = "{input_geom_unformatted#to_longitude_latitude}"
+        geometry = (
+            """POLYGON ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42))"""
+        )
+
+        self.assertEqual(
+            format_metadata(to_format, input_geom_unformatted=geometry),
+            str({"lon": 1.455, "lat": 43.59}),
+        )
+        geometry = """POINT (1.23 43.42)"""
+
+        self.assertEqual(
+            format_metadata(to_format, input_geom_unformatted=geometry),
+            str({"lon": 1.23, "lat": 43.42}),
+        )
+
 
 class TestMetadataMappingFunctions(unittest.TestCase):
     def test_get_provider_queryable_key(self):

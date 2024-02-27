@@ -465,6 +465,15 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return georss
 
         @staticmethod
+        def convert_to_longitude_latitude(
+            input_geom_unformatted: Any,
+        ) -> Dict[str, float]:
+            bounds = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
+            lon = (bounds[0] + bounds[2]) / 2
+            lat = (bounds[1] + bounds[3]) / 2
+            return {"lon": lon, "lat": lat}
+
+        @staticmethod
         def convert_csv_list(values_list: Any) -> Any:
             if isinstance(values_list, list):
                 return ",".join([str(x) for x in values_list])
