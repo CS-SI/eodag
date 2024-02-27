@@ -927,17 +927,27 @@ class HTTPDownload(Download):
             asset_path = chunk_tuple[0]
             asset_chunks = chunk_tuple[4]
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
+            asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
             asset_abs_path_dir = os.path.dirname(asset_abs_path)
             if not os.path.isdir(asset_abs_path_dir):
                 os.makedirs(asset_abs_path_dir)
+            # remove temporary file
+            if os.path.isfile(asset_abs_path_temp):
+                os.remove(asset_abs_path_temp)
             if not os.path.isfile(asset_abs_path):
-                with open(asset_abs_path, "wb") as fhandle:
+                logger.debug("Downloading to temporary file '%s'", asset_abs_path_temp)
+                with open(asset_abs_path_temp, "wb") as fhandle:
                     for chunk in asset_chunks:
                         if chunk:
                             fhandle.write(chunk)
                             progress_callback(len(chunk))
-
+                logger.debug(
+                    "Download completed. Renaming temporary file '%s' to '%s'",
+                    os.path.basename(asset_abs_path_temp),
+                    os.path.basename(asset_abs_path),
+                )
+                os.rename(asset_abs_path_temp, asset_abs_path)
         # only one local asset
         if local_assets_count == len(assets_urls) and local_assets_count == 1:
             # remove empty {fs_dir_path}
