@@ -886,7 +886,7 @@ class HTTPDownload(Download):
             if os.path.isfile(asset_abs_path_temp):
                 os.remove(asset_abs_path_temp)
             if not os.path.isfile(asset_abs_path):
-                logger.info("Downloading to temporary file '%s'", asset_abs_path_temp)
+                logger.debug("Downloading to temporary file '%s'", asset_abs_path_temp)
                 with open(asset_abs_path_temp, "wb") as fhandle:
                     for chunk in asset_chunks:
                         if chunk:
