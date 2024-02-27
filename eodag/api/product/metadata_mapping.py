@@ -514,6 +514,27 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return dict(input_dict, **new_items_dict)
 
         @staticmethod
+        def convert_dict_filter(
+            input_dict: Dict[Any, Any], jsonpath_filter_str: str
+        ) -> Dict[Any, Any]:
+            """Fitlers dict items using jsonpath"""
+
+            jsonpath_filter = string_to_jsonpath(jsonpath_filter_str, force=True)
+            if isinstance(jsonpath_filter, str) or not isinstance(input_dict, dict):
+                return {}
+
+            keys_list = list(input_dict.keys())
+            matches = jsonpath_filter.find(input_dict)
+            result = {}
+            for match in matches:
+                # extract key index from matched jsonpath
+                matched_jsonpath_str = str(match.full_path)
+                matched_index = int(matched_jsonpath_str.split(".")[-1][1:-1])
+                key = keys_list[matched_index]
+                result[key] = match.value
+            return result
+
+        @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
             cmin, cmax, cstep = [x.strip() for x in args.split(",")]
             return string[int(cmin) : int(cmax) : int(cstep)]

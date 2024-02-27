@@ -1770,6 +1770,7 @@
       tileIdentifier:
         - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
         - '{utmZone}{latitudeBand}{gridSquare}'
+      assets: '{$.assets#dict_filter($[?(href=~"^s3.*")])}'
   products:
     S1_SAR_GRD:
       productType: sentinel-1-grd
@@ -1862,6 +1863,7 @@
       platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
       polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
       title: '{$.properties."s2:product_uri"#remove_extension}'
+      assets: '{$.assets#dict_filter($[?(href=~"^http.*")])}'
   products:
     S2_MSI_L2A_COG:
       productType: sentinel-2-l2a
