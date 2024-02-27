@@ -231,7 +231,7 @@ class HTTPDownload(Download):
         """
         status_method = getattr(self.config, "order_status_method", "GET").lower()
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        
+
         if status_method == "post":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderStatusLink"]))
@@ -615,7 +615,9 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(product, auth, progress_callback,ssl_verify, **kwargs)
+        chunks = self._stream_download(
+            product, auth, progress_callback, ssl_verify, **kwargs
+        )
         # start reading chunks to set product.headers
         first_chunk = next(chunks)
 
@@ -887,7 +889,7 @@ class HTTPDownload(Download):
         record_filename: str,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        ssl_verify:bool = True,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> str:
         """Download product assets if they exist"""
@@ -904,7 +906,12 @@ class HTTPDownload(Download):
         assets_values = product.assets.get_values(kwargs.get("asset", None))
 
         chunks_tuples = self._stream_download_assets(
-            product, auth, progress_callback, assets_values=assets_values, ssl_verify=ssl_verify, **kwargs
+            product,
+            auth,
+            progress_callback,
+            assets_values=assets_values,
+            ssl_verify=ssl_verify,
+            **kwargs,
         )
 
         # remove existing incomplete file

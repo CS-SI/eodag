@@ -429,7 +429,7 @@ class AwsDownload(Download):
             product.product_type, {}
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        
+
         if build_safe and "fetch_metadata" in product_conf.keys():
             fetch_format = product_conf["fetch_metadata"]["fetch_format"]
             update_metadata = product_conf["fetch_metadata"]["update_metadata"]
@@ -439,7 +439,10 @@ class AwsDownload(Download):
             logger.info("Fetching extra metadata from %s" % fetch_url)
             try:
                 resp = requests.get(
-                    fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
+                    fetch_url,
+                    headers=USER_AGENT,
+                    timeout=HTTP_REQ_TIMEOUT,
+                    verify=ssl_verify,
                 )
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
@@ -713,7 +716,12 @@ class AwsDownload(Download):
         )
         assets_values = product.assets.get_values(asset_filter)
         chunks_tuples = self._stream_download(
-            unique_product_chunks, product, build_safe, progress_callback, assets_values,ssl_verify
+            unique_product_chunks,
+            product,
+            build_safe,
+            progress_callback,
+            assets_values,
+            ssl_verify,
         )
         outputs_filename = (
             sanitize(product.properties["title"])
@@ -1323,7 +1331,7 @@ class AwsDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify : bool = True,
+        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> List[str]:
         """

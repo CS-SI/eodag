@@ -43,13 +43,13 @@ class RequestsSASAuth(AuthBase):
         auth_uri: str,
         signed_url_key: str,
         headers: Optional[Dict[str, str]] = None,
-        ssl_verify:bool = True
+        ssl_verify: bool = True,
     ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
         self.headers = headers
         self.signed_urls: Dict[str, str] = {}
-        self.ssl_verify=ssl_verify
+        self.ssl_verify = ssl_verify
 
     def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
@@ -65,7 +65,10 @@ class RequestsSASAuth(AuthBase):
             logger.debug(f"Signed URL request: {req_signed_url}")
             try:
                 response = requests.get(
-                    req_signed_url, headers=self.headers, timeout=HTTP_REQ_TIMEOUT, verify=self.ssl_verify
+                    req_signed_url,
+                    headers=self.headers,
+                    timeout=HTTP_REQ_TIMEOUT,
+                    verify=self.ssl_verify,
                 )
                 response.raise_for_status()
                 signed_url = response.json().get(self.signed_url_key)

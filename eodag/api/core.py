@@ -1868,7 +1868,7 @@ class EODataAccessGateway:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify: bool =True,
+        ssl_verify: bool = True,
         **kwargs: Any,
     ) -> List[str]:
         """Download all products resulting from a search.
@@ -2097,7 +2097,11 @@ class EODataAccessGateway:
             return uri_to_path(product.location)
         self._setup_downloader(product)
         path = product.download(
-            progress_callback=progress_callback, wait=wait, timeout=timeout,ssl_verify=ssl_verify, **kwargs
+            progress_callback=progress_callback,
+            wait=wait,
+            timeout=timeout,
+            ssl_verify=ssl_verify,
+            **kwargs,
         )
 
         return path
