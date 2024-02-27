@@ -289,12 +289,17 @@ class DataRequestSearch(Search):
         except requests.RequestException as e:
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
-    def _check_request_status(self, data_request_id: str,ssl_verify:bool= True) -> bool:
+    def _check_request_status(
+        self, data_request_id: str, ssl_verify: bool = True
+    ) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         try:
             status_resp = requests.get(
-                status_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
+                status_url,
+                headers=self.auth.headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             status_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -317,7 +322,11 @@ class DataRequestSearch(Search):
             return status_data["status"] == "completed"
 
     def _get_result_data(
-        self, data_request_id: str, items_per_page: int, page: int,ssl_verify:bool =True
+        self,
+        data_request_id: str,
+        items_per_page: int,
+        page: int,
+        ssl_verify: bool = True,
     ) -> Dict[str, Any]:
         page = page - 1 + self.config.pagination.get("start_page", 1)
         url = self.config.result_url.format(
@@ -325,7 +334,10 @@ class DataRequestSearch(Search):
         )
         try:
             return requests.get(
-                url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
+                url,
+                headers=self.auth.headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             ).json()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc

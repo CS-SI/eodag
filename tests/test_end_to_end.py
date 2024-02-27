@@ -344,7 +344,9 @@ class TestEODagEndToEnd(EndToEndBase):
     def tearDownClass(cls):
         cls.tmp_download_dir.cleanup()
 
-    def execute_download(self, product, expected_filename, wait_sec=5, timeout_sec=120,ssl_verify=True):
+    def execute_download(
+        self, product, expected_filename, wait_sec=5, timeout_sec=120, ssl_verify=True
+    ):
         """Download the product in a child process, avoiding to perform the entire
         download, then do some checks and delete the downloaded result from the
         filesystem.
@@ -520,11 +522,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_wekeo(self):
-        product = self.execute_search(*WEKEO_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename, timeout_sec=40)
-        
     def test_end_to_end_search_download_wekeo(self):
         product = self.execute_search(*WEKEO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])

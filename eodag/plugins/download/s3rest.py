@@ -137,7 +137,7 @@ class S3RestDownload(Download):
             auth: PluginConfig,
             progress_callback: ProgressCallback,
             ordered_message: str,
-            ssl_verify:bool = True,
+            ssl_verify: bool = True,
             **kwargs: Any,
         ):
             # check order status
@@ -173,7 +173,11 @@ class S3RestDownload(Download):
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
             bucket_contents = requests.get(
-                nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
+                nodes_list_url,
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             try:
                 bucket_contents.raise_for_status()

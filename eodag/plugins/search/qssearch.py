@@ -897,7 +897,11 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message)
                 response = requests.get(
-                    url, timeout=timeout, headers=USER_AGENT, verify=ssl_verify, **kwargs
+                    url,
+                    timeout=timeout,
+                    headers=USER_AGENT,
+                    verify=ssl_verify,
+                    **kwargs,
                 )
                 response.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -975,7 +979,10 @@ class ODataV4Search(QueryStringSearch):
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
                     response = requests.get(
-                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
+                        metadata_url,
+                        headers=USER_AGENT,
+                        timeout=HTTP_REQ_TIMEOUT,
+                        verify=ssl_verify,
                     )
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:

@@ -427,7 +427,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify: bool =True,
+        ssl_verify: bool = True,
         **kwargs: Any,
     ):
         """
