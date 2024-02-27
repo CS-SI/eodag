@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 
-from pydantic_core import ValidationError
+from pydantic import ValidationError
 
 from eodag.rest.types import eodag_search, stac_search
 
