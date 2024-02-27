@@ -1092,6 +1092,7 @@ class RequestTestCase(unittest.TestCase):
             url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
+            verify=True,
         )
         # TODO: with an unsupported provider
 
@@ -1134,6 +1135,7 @@ class RequestTestCase(unittest.TestCase):
             "sentinel-1-grd/queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
+            verify=True,
         )
         # returned queryables
         self.assertListEqual(
@@ -1167,6 +1169,7 @@ class RequestTestCase(unittest.TestCase):
             "sentinel-1-grd/queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
+            verify=True,
         )
 
         self.assertListEqual(
