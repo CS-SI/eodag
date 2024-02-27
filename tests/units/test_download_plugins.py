@@ -197,6 +197,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         mock_requests_session.assert_not_called()
         # re-enable product download
@@ -226,6 +227,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         mock_requests_session.assert_not_called()
 
@@ -272,6 +274,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         # Check if the HEAD request has been called once for size & filename request
         mock_requests_head.assert_called_once_with(
@@ -1014,6 +1017,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             self.product.properties["tileInfo"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         self.assertEqual(mock_get_authenticated_objects.call_count, 2)
         mock_get_authenticated_objects.assert_any_call(
@@ -1096,6 +1100,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             self.product.properties["tileInfo"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "example", "", None

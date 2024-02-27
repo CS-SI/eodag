@@ -956,7 +956,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             products[1].properties["uid"],
         )
         mock_requests_get.assert_called_with(
-            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT,verify=True
         )
         # we check that two requests have been called, one per product
         self.assertEqual(mock_requests_get.call_count, 2)
@@ -1391,6 +1391,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             self.search_plugin.config.status_url + "123",
             headers=getattr(self.search_plugin.auth, "headers", ""),
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         assert successful
         mock_requests_get.return_value = MockResponse(
@@ -1408,6 +1409,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             ),
             headers=getattr(self.search_plugin.auth, "headers", ""),
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
