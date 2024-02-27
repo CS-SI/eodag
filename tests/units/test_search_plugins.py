@@ -959,7 +959,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             products[1].properties["uid"],
         )
         mock_requests_get.assert_called_with(
-            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT,verify=True
+            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT, verify=True
         )
         # we check that two requests have been called, one per product
         self.assertEqual(mock_requests_get.call_count, 2)
