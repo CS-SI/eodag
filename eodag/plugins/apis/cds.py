@@ -105,7 +105,6 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         # init self.config.metadata_mapping using Search Base plugin
         Search.__init__(self, provider, config)
 
-        self.auth = self._create_auth_plugin()
         # needed by QueryStringSearch.build_query_string / format_free_text_search
         self.config.__dict__.setdefault("free_text_search_operations", {})
         # needed for compatibility
@@ -446,7 +445,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         """Download data from providers using CDS API"""
 
         if not auth:
-            auth = self.auth
+            auth = self._create_auth_plugin()
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
@@ -464,8 +463,10 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
         try:
             return super(CdsApi, self).download(
                 product,
-                auth,
+                auth=auth,
                 progress_callback=progress_callback,
+                wait=wait,
+                timeout=timeout,
                 **kwargs,
             )
         except Exception as e:
