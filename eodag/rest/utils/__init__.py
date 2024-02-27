@@ -76,7 +76,7 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
     :param e: A Pydantic ValidationError object
     :tyype e: pydanticValidationError
     """
-    error_header = f"Invalid request, {e.error_count()} error(s). "
+    error_header = f"{e.error_count()} error(s). "
 
     error_messages = [
         f'{err["loc"][0]}: {err["msg"]}' if err["loc"] else err["msg"]

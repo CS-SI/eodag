@@ -16,11 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime as dt
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pygeofilter import ast
 from pygeofilter.backends.evaluator import Evaluator, handle
 from pygeofilter.values import Geometry, Interval
+
+simpleNode = Union[ast.Attribute, str, int, complex, float, List[Any], Tuple[Any, ...]]
 
 
 class EodagEvaluator(Evaluator):
@@ -28,10 +30,8 @@ class EodagEvaluator(Evaluator):
     Evaluate a cql2 json expression and transform it to a STAC args object
     """
 
-    @handle(ast.Attribute, Interval, str, int, float)
-    def attribute(
-        self, node: Union[str, ast.Attribute, Interval], *_
-    ) -> Union[str, ast.Attribute, Interval]:
+    @handle(ast.Attribute, str, int, complex, float, list, tuple)
+    def attribute(self, node: simpleNode, *_) -> simpleNode:
         """handle attribute and literal"""
         return node
 
@@ -66,29 +66,37 @@ class EodagEvaluator(Evaluator):
         Verify the property is first attribute in each predicate
         """
         if not isinstance(lhs, ast.Attribute):
-            raise ValueError(f"First element in {node} must be the property")
+            raise ValueError(
+                f'invalid cql syntax, first argument in "{node.op.value}" must be a property'
+            )
 
         if isinstance(node, ast.Equal) and not isinstance(
             rhs, (int, float, complex, str)
         ):
             raise ValueError(
-                f"Second element in {node} must be a string or a numeric value"
+                f'second argument in property "{lhs.name}" must be a string or a numeric value'
             )
 
         if isinstance(node, ast.GeometryIntersects) and not lhs.name == "geometry":
-            raise ValueError('GeometryIntersects is only supported for "geometry"')
+            raise ValueError(
+                f'operator {node.op.value} is not supported for property "{lhs.name}"'
+            )
 
         if isinstance(node, (ast.Equal, ast.GeometryIntersects)):
             return {lhs.name: rhs}
 
         if isinstance(node, ast.LessEqual):
             if not isinstance(node.rhs, dt):
-                raise ValueError("<= is only supported for datetime")
+                raise ValueError(
+                    f'operator "<=" is not supported for property "{lhs.name}"'
+                )
             return {"end_datetime": rhs}
 
         if isinstance(node, ast.GreaterEqual):
             if not isinstance(node.rhs, dt):
-                raise ValueError(">= is only supported for datetime")
+                raise ValueError(
+                    f'operator ">=" is not supported for property "{lhs.name}"'
+                )
             return {"start_datetime": rhs}
 
         if isinstance(node, ast.TimeOverlaps):
@@ -100,7 +108,9 @@ class EodagEvaluator(Evaluator):
     def contains(self, node: ast.In, lhs: Any, *rhs: Any):
         """handle in keyword"""
         if not isinstance(node.sub_nodes, list):  # type: ignore
-            raise ValueError('"in" expects a value in list format')
+            raise ValueError(
+                f'property "{lhs.name}" expects a value in list format with operator "in"'
+            )
         return {lhs.name: list(rhs)}
 
     @handle(ast.And)

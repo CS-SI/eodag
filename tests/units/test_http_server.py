@@ -427,7 +427,6 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertIn("description", response_content)
-        self.assertIn("invalid", response_content["description"].lower())
 
     def _request_not_found(self, url: str):
         response = self.app.get(url, follow_redirects=True)

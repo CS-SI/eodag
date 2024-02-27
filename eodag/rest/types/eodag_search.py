@@ -266,11 +266,11 @@ class EODAGSearch(BaseModel):
         errors: List[InitErrorDetails] = []
         try:
             parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
-        except ValueError as e:
+        except (ValueError, NotImplementedError) as e:
             add_error(str(e))
             raise ValidationError.from_exception_data(
                 title=cls.__name__, line_errors=errors
-            )
+            ) from e
 
         if not is_dict_str_any(parsing_result):
             add_error("The parsed filter is not a proper dictionary")

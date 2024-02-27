@@ -296,7 +296,7 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
                 value,
             )
         self.assertTrue(
-            'GeometryIntersects is only supported for "geometry"'
+            'operator INTERSECTS is not supported for property "test"'
             in str(context.exception)
         )
 
@@ -345,7 +345,10 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
             self.evaluator.contains(
                 ast.In(attribute, "value1", False), attribute, "value1"
             )
-        self.assertTrue('"in" expects a value in list format' in str(context.exception))
+        self.assertTrue(
+            'property "test" expects a value in list format with operator "in"'
+            in str(context.exception)
+        )
 
     def test_combination(self):
         self.assertEqual(
