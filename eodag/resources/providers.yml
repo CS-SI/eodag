@@ -5652,13 +5652,6 @@
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES"}}'
     CMEMS_GLOBAL_PHY_001_024__cur_anfc_0_083deg_P1D:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5667,16 +5660,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__cur_anfc_0_083deg_P1M:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_P1M-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5685,16 +5674,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_P1M-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__so_anfc_0_083deg_P1D:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5703,16 +5688,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__so_anfc_0_083deg_P1M:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-so_anfc_0.083deg_P1M-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5721,17 +5702,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-so_anfc_0.083deg_P1M-m_202211"}}'
-
     CMEMS_GLOBAL_PHY_001_024__cur_anfc_0_083deg_PT6H:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5740,16 +5716,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__so_anfc_0_083deg_PT6H:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-so_anfc_0.083deg_PT6H-i_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5758,16 +5730,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-so_anfc_0.083deg_PT6H-i_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__wcur_anfc_0_083deg_P1M:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-wcur_anfc_0.083deg_P1M-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5776,16 +5744,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-wcur_anfc_0.083deg_P1M-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__wcur_anfc_0_083deg_P1D:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-wcur_anfc_0.083deg_P1D-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5794,16 +5758,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-wcur_anfc_0.083deg_P1D-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__thetao_anfc_0_083deg_P1M:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-thetao_anfc_0.083deg_P1M-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5812,16 +5772,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-thetao_anfc_0.083deg_P1M-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__thetao_anfc_0_083deg_P1D:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5830,16 +5786,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__thetao_anfc_0_083deg_PT6H:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-thetao_anfc_0.083deg_PT6H-i_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5848,16 +5800,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy-thetao_anfc_0.083deg_PT6H-i_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__anfc_merged-uv_PT1H-i_202211:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_merged-uv_PT1H-i_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5866,16 +5814,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_merged-uv_PT1H-i_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__anfc_0_083deg_P1M-m_202211:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_P1M-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5884,16 +5828,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_P1M-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__anfc_0_083deg_PT1H-m_202211:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_PT1H-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5902,16 +5842,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_PT1H-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__anfc_0_083deg_P1D-m_202211:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5920,16 +5856,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202211"}}'
     CMEMS_GLOBAL_PHY_001_024__anfc_0_083deg_static_202211:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_static_202211
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5938,16 +5870,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_PHY_001_024:cmems_mod_glo_phy_anfc_0.083deg_static_202211"}}'
     CMEMS_GLOBAL_BGC_001_028__anfc_0_25deg_static_202311:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc_anfc_0.25deg_static_202311
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5956,16 +5884,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc_anfc_0.25deg_static_202311"}}'
     CMEMS_GLOBAL_BGC_001_028__bio_anfc_0_25deg_P1D-m_202311:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-bio_anfc_0.25deg_P1D-m_202311
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5974,16 +5898,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-bio_anfc_0.25deg_P1D-m_202311"}}'
     CMEMS_GLOBAL_BGC_001_028__car_anfc_0_25deg_P1M-m_202311:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-car_anfc_0.25deg_P1M-m_202311
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -5992,16 +5912,12 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-car_anfc_0.25deg_P1M-m_202311"}}'
     CMEMS_GLOBAL_BGC_001_028__bio_anfc_0_25deg_P1M-m_202311:
       productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-bio_anfc_0.25deg_P1M-m_202311
-      variable:
-        - depth
-        - latitude
-        - longitude
-        - time
-        - uo
-        - vo
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -6010,7 +5926,305 @@
         completionTimeFromAscendingNode:
           - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-bio_anfc_0.25deg_P1M-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__car_anfc_0_25deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-car_anfc_0.25deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-car_anfc_0.25deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__co2_anfc_0_25deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-co2_anfc_0.25deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-co2_anfc_0.25deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__co2_anfc_0_25deg_P1M-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-co2_anfc_0.25deg_P1M-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-co2_anfc_0.25deg_P1M-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__nut_anfc_0_25deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-nut_anfc_0.25deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__nut_anfc_0_25deg_P1M-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-nut_anfc_0.25deg_P1M-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-nut_anfc_0.25deg_P1M-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__optics_anfc_0_25deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-optics_anfc_0.25deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-optics_anfc_0.25deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__optics_anfc_0_25deg_P1M-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-optics_anfc_0.25deg_P1M-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-optics_anfc_0.25deg_P1M-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__pft_anfc_0_25deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-pft_anfc_0.25deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_BGC_001_028__pft_anfc_0_25deg_P1M-m_202311:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-pft_anfc_0.25deg_P1M-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_BGC_001_028:cmems_mod_glo_bgc-pft_anfc_0.25deg_P1M-m_202311"}}'
+    CMEMS_GLOBAL_WAV_001_027:
+      productType: EO:MO:DAT:GLOBAL_ANALYSISFORECAST_WAV_001_027:cmems_mod_glo_wav_anfc_0.083deg_PT3H-i_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_ANALYSISFORECAST_WAV_001_027:cmems_mod_glo_wav_anfc_0.083deg_PT3H-i_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_BGC_001_033__my_0_083deg-lmtl_PT1D-i_202211:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_BGC_001_033:cmems_mod_glo_bgc_my_0.083deg-lmtl_PT1D-i_202211
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_BGC_001_033:cmems_mod_glo_bgc_my_0.083deg-lmtl_PT1D-i_202211"}}'
+    CMEMS_GLOBAL_MULTIYEAR_BGC_001_033__my_0_083deg-lmtl-Fphy_PT1D-i_202211:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_BGC_001_033:cmems_mod_glo_bgc_my_0.083deg-lmtl-Fphy_PT1D-i_202211
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_BGC_001_033:cmems_mod_glo_bgc_my_0.083deg-lmtl-Fphy_PT1D-i_202211"}}'
+    CMEMS_GLOBAL_MULTIYEAR_WAV_001_032__my_0_2deg_PT3H-i_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_WAV_001_032:cmems_mod_glo_wav_my_0.2deg_PT3H-i_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_WAV_001_032:cmems_mod_glo_wav_my_0.2deg_PT3H-i_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_WAV_001_032__myint_0_2deg_PT3H-i_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_WAV_001_032:cmems_mod_glo_wav_myint_0.2deg_PT3H-i_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_WAV_001_032:cmems_mod_glo_wav_myint_0.2deg_PT3H-i_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_PHY_001_030___my_0_083deg_static_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_my_0.083deg_static_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_my_0.083deg_static_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_PHY_001_030___myint_0_083deg_P1M-m_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_myint_0.083deg_P1M-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_myint_0.083deg_P1M-m_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_PHY_001_030___myint_0_083deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_myint_0.083deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_myint_0.083deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_PHY_001_030___my_0_083deg_P1D-m_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_my_0.083deg_P1D-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_my_0.083deg_P1D-m_202311"}}'
+    CMEMS_GLOBAL_MULTIYEAR_PHY_001_030___my_0_083deg_P1M-m_202311:
+      productType: EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_my_0.083deg_P1M-m_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:GLOBAL_MULTIYEAR_PHY_001_030:cmems_mod_glo_phy_my_0.083deg_P1M-m_202311"}}'
+    CMEMS_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010__3d_rep_weekly_202112:
+      productType: EO:MO:DAT:MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:cmems_obs_glo_bgc3d_rep_weekly_202112
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:cmems_obs_glo_bgc3d_rep_weekly_202112"}}'
+    CMEMS_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010__3d_rep_clim_202112:
+      productType: EO:MO:DAT:MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:cmems_obs_glo_bgc3d_rep_clim_202112
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:cmems_obs_glo_bgc3d_rep_clim_202112"}}'
+
 
   auth: !plugin
     type: TokenAuth

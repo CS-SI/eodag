@@ -562,6 +562,17 @@ class TestMetadataFormatter(unittest.TestCase):
             str({"lon": 1.23, "lat": 43.42}),
         )
 
+    def test_convert_get_variables_from_path(self):
+        to_format = "{path#get_variables_from_path}"
+        self.assertEqual(
+            format_metadata(to_format, path="productA.nc?depth,latitude"),
+            str(["depth", "latitude"]),
+        )
+        self.assertEqual(
+            format_metadata(to_format, path="productA.nc"),
+            str([]),
+        )
+
 
 class TestMetadataMappingFunctions(unittest.TestCase):
     def test_get_provider_queryable_key(self):

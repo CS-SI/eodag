@@ -852,6 +852,13 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
             ]
 
+        @staticmethod
+        def convert_get_variables_from_path(path: str):
+            if "?" not in path:
+                return []
+            variables = path.split("?")[1]
+            return variables.split(",")
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(
