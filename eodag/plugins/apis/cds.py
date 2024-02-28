@@ -31,7 +31,6 @@ from pydantic.fields import FieldInfo
 from requests.auth import HTTPBasicAuth
 from typing_extensions import get_args
 
-from eodag.api.product import Asset  # type: ignore
 from eodag.api.product.metadata_mapping import (
     ONLINE_STATUS,
     STAGING_STATUS,
@@ -70,7 +69,6 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NotAvailableError,
-    RequestError,
     RequestError,
     ValidationError,
 )
