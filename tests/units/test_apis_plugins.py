@@ -28,6 +28,7 @@ from unittest import mock
 import geojson
 import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
+from requests.auth import HTTPBasicAuth
 from shapely.geometry import shape
 
 from eodag.utils import MockResponse
@@ -49,7 +50,6 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     path_to_uri,
-    setup_logging,
     urlsplit,
 )
 
@@ -686,33 +686,6 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             "format": "grib",
         }
 
-    def test_plugins_apis_cds_logging(self):
-        """CdsApi must init client with logging level"""
-
-        # auth dict needed for client init
-        auth_dict = {"key": "foo:some-key", "url": "https://bar"}
-
-        # 0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG
-        setup_logging(0)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.WARNING)
-
-        setup_logging(1)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.WARNING)
-
-        setup_logging(2)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.INFO)
-
-        setup_logging(3)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.DEBUG)
-
-        logger = logging.getLogger("eodag")
-        logger.handlers = []
-        logger.level = 0
-
     def test_plugins_apis_cds_query_dates_missing(self):
         """CdsApi.query must use default dates if missing"""
         # given start & stop
@@ -826,98 +799,125 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
-    @mock.patch("cdsapi.api.Client.status", autospec=True)
-    def test_plugins_apis_cds_authenticate(self, mock_client_status):
-        """CdsApi.authenticate must return a credentials dict"""
+    def test_plugins_apis_cds_create_auth_plugin(self):
+        """CdsApi._create_auth_plugin must return a HTTPBasicAuth object"""
         # auth using eodag credentials
         credentials = {
             "username": "foo",
             "password": "bar",
-            "api_endpoint": "http://foo.bar.baz",
         }
         self.api_plugin.config.credentials = credentials
-        auth_dict = self.api_plugin.authenticate()
-        assert credentials["username"] in auth_dict["key"]
-        assert credentials["password"] in auth_dict["key"]
-        assert auth_dict["url"] == self.api_plugin.config.api_endpoint
+        auth = self.api_plugin._create_auth_plugin()
+        self.assertIsInstance(auth, HTTPBasicAuth)
+        self.assertEqual(credentials["username"], auth.username)
+        self.assertEqual(credentials["password"], auth.password)
         del self.api_plugin.config.credentials
 
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
-    @mock.patch("cdsapi.api.Client._api", autospec=True)
+    @mock.patch("eodag.plugins.apis.cds.CdsApi._create_auth_plugin", autospec=True)
     def test_plugins_apis_cds_download(
         self,
-        mock_client_api,
-        mock_cds_authenticate,
+        mock_cds_create_auth_plugin,
         mock_fetch_product_types_list,
-        mock_get,
-        mock_head,
     ):
-        """CdsApi.download must call the authenticate function and cdsapi Client retrieve"""
-        mock_cds_authenticate.return_value = {
-            "key": "foo:bar",
-            "url": "http://foo.bar.baz",
-        }
-        mock_client_api.return_value.location = "http://somewhere/something"
+        """CdsApi.download must call the authenticate and ordering the product functions"""
 
-        mock_get.return_value.__enter__.return_value.iter_content.return_value = (
-            io.BytesIO(b"some content")
-        )
-        mock_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": ""
-        }
-        mock_head.return_value.headers = {"content-disposition": ""}
+        mock_cds_create_auth_plugin.return_value = HTTPBasicAuth("uid", "api_key")
+        endpoint = self.api_plugin.config.api_endpoint
 
-        dag = EODataAccessGateway()
-        dag.set_preferred_provider("cop_ads")
-        output_data_path = os.path.join(os.path.expanduser("~"), "data")
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            responses.add(
+                responses.POST,
+                f"{endpoint}/resources/{self.product_dataset}",
+                status=200,
+                content_type="application/octet-stream",
+                body=b'{"state": "queued", "request_id": "dummy_request_id"}',
+                auto_calculate_content_length=True,
+            )
+            responses.add(
+                responses.GET,
+                f"{endpoint}/tasks/dummy_request_id",
+                status=200,
+                content_type="application/octet-stream",
+                body=b'{"state": "running", "request_id": "dummy_request_id"}',
+                auto_calculate_content_length=True,
+            )
+            responses.add(
+                responses.GET,
+                f"{endpoint}/tasks/dummy_request_id",
+                status=200,
+                content_type="application/octet-stream",
+                body=(
+                    b'{"state": "completed", '
+                    b'"request_id": "dummy_request_id", '
+                    b'"location": "http://somewhere/download/dummy_request_id"}'
+                ),
+                auto_calculate_content_length=True,
+            )
+            responses.add(
+                responses.GET,
+                "http://somewhere/download/dummy_request_id",
+                status=200,
+                content_type="application/octet-stream",
+                adding_headers={"content-disposition": ""},
+                body=b"some content",
+                auto_calculate_content_length=True,
+            )
 
-        # public dataset request
-        results, _ = dag.search(
-            **self.query_dates,
-            **self.custom_query_params,
-        )
-        eoproduct = results[0]
+            dag = EODataAccessGateway()
+            dag.set_preferred_provider("cop_ads")
+            output_data_path = os.path.join(os.path.expanduser("~"), "data")
 
-        query_str = "".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:])
-        expected_download_request = geojson.loads(query_str)
-        expected_dataset_name = expected_download_request.pop("dataset")
-        expected_url = f"{mock_cds_authenticate.return_value['url']}/resources/{expected_dataset_name}"
-        expected_path = os.path.join(output_data_path, eoproduct.properties["title"])
+            # public dataset request
+            results, _ = dag.search(
+                **self.query_dates,
+                **self.product_type_params,
+            )
+            eoproduct = results[0]
 
-        path = eoproduct.download(outputs_prefix=output_data_path)
-        mock_client_api.assert_called_once_with(
-            mock.ANY,  # instance
-            expected_url,
-            expected_download_request,
-            "POST",
-        )
+            # expected values
+            query_str = "".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:])
+            expected_download_request = geojson.loads(query_str)
+            expected_dataset_name = expected_download_request.pop("dataset")
+            expected_order_link = "%s/resources/%s?%s" % (
+                dag.providers_config["cop_ads"].api.api_endpoint,
+                expected_dataset_name,
+                json.dumps(expected_download_request),
+            )
+            expected_remote_location = "http://somewhere/download/dummy_request_id"
+            expected_path = os.path.join(
+                output_data_path, eoproduct.properties["title"]
+            )
+            # here download
+            path = eoproduct.download(
+                outputs_prefix=output_data_path,
+                wait=0.001 / 60,
+                timeout=0.2 / 60,
+            )
+            mock_cds_create_auth_plugin.assert_called_once()
+            self.assertEqual(eoproduct.properties["orderLink"], expected_order_link)
+            self.assertEqual(eoproduct.remote_location, expected_remote_location)
+            self.assertEqual(path, expected_path)
+            self.assertEqual(eoproduct.location, path_to_uri(expected_path))
 
-        assert path == expected_path
-        assert path_to_uri(expected_path) == eoproduct.location
+        run()
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
+    @mock.patch("eodag.plugins.apis.cds.CdsApi._create_auth_plugin", autospec=True)
     @mock.patch("eodag.plugins.apis.cds.CdsApi.download", autospec=True)
-    @mock.patch("cdsapi.api.Client.retrieve", autospec=True)
     def test_plugins_apis_cds_download_all(
         self,
-        mock_client_retrieve,
         mock_cds_download,
-        mock_cds_authenticate,
+        mock_cds_create_auth_plugin,
         mock_fetch_product_types_list,
     ):
         """CdsApi.download_all must call download on each product"""
-        mock_cds_authenticate.return_value = {
-            "key": "foo:bar",
-            "url": "http://foo.bar.baz",
-        }
+        mock_cds_create_auth_plugin.return_value = HTTPBasicAuth("foo", "bar")
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("cop_ads")
