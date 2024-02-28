@@ -18,7 +18,7 @@
 """Model describing a STAC search POST request"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
 
 from pydantic import (
     BaseModel,
@@ -26,13 +26,11 @@ from pydantic import (
     Field,
     PositiveInt,
     StringConstraints,
-    conlist,
     field_validator,
     model_validator,
 )
 from shapely.geometry import (
     GeometryCollection,
-    LinearRing,
     LineString,
     MultiLineString,
     MultiPoint,
@@ -55,8 +53,6 @@ if TYPE_CHECKING:
 NumType = Union[float, int]
 
 BBox = Union[
-    conlist(NumType, min_length=4, max_length=4),
-    conlist(NumType, min_length=6, max_length=6),
     Tuple[NumType, NumType, NumType, NumType],
     Tuple[NumType, NumType, NumType, NumType, NumType, NumType],
 ]
@@ -68,7 +64,6 @@ Geometry = Union[
     MultiLineString,
     Polygon,
     MultiPolygon,
-    LinearRing,
     GeometryCollection,
 ]
 
@@ -147,12 +142,14 @@ class SearchPostRequest(BaseModel):
     @property
     def start_date(self) -> Optional[str]:
         """Extract the start date from the datetime string."""
-        return self.get_dates(pos="start")
+        start = str_to_interval(self.datetime)[0]
+        return start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else None
 
     @property
     def end_date(self) -> Optional[str]:
         """Extract the end date from the datetime string."""
-        return self.get_dates(pos="end")
+        end = str_to_interval(self.datetime)[1]
+        return end.strftime("%Y-%m-%dT%H:%M:%SZ") if end else None
 
     @field_validator("ids", "collections", mode="before")
     @classmethod
@@ -173,14 +170,6 @@ class SearchPostRequest(BaseModel):
             return shape(v)
 
         raise ValueError("Not a valid geometry")
-
-    @field_validator("bbox", mode="before")
-    @classmethod
-    def str_bbox_to_list(cls, v: Union[str, BBox]) -> BBox:
-        """convert bbox str to list of NumType"""
-        if isinstance(v, str):
-            return [float(b.strip()) for b in v.split(",")]
-        return v
 
     @field_validator("bbox")
     @classmethod
@@ -225,7 +214,7 @@ class SearchPostRequest(BaseModel):
                 continue
 
             # throws ValueError if invalid RFC 3339 string
-            dates.append(rfc3339_str_to_datetime(value).isoformat())
+            dates.append(rfc3339_str_to_datetime(value).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
         if dates[0] == ".." and dates[1] == "..":
             raise ValueError(
@@ -248,39 +237,11 @@ class SearchPostRequest(BaseModel):
         mutually exclusive.
         """
         if self.bbox:
-            return cast(
-                Polygon,
-                Polygon(
-                    (
-                        (self.bbox[0], self.bbox[1]),
-                        (self.bbox[0], self.bbox[3]),
-                        (self.bbox[2], self.bbox[3]),
-                        (self.bbox[2], self.bbox[1]),
-                    )
-                ),
-            )
+            return Polygon.from_bounds(*self.bbox)  # type: ignore
+
         if self.intersects:
             return self.intersects
         return None
-
-    def get_dates(self, pos: Literal["start", "end"]) -> Optional[str]:
-        """extract start or end dates from datetime"""
-        if not self.datetime:
-            return None
-
-        if "/" not in self.datetime:
-            return rfc3339_str_to_datetime(self.datetime).isoformat()
-
-        interval = str_to_interval(self.datetime)
-        if not interval:
-            return None
-
-        start, end = interval
-
-        if pos == "end":
-            return end.isoformat() if end else None
-        else:
-            return start.isoformat() if start else None
 
 
 def sortby2list(

@@ -1,39 +1,25 @@
 # -*- coding: utf-8 -*-
-# MIT License
-
-# Copyright (c) 2020 Arturo AI
-# Copyright (c) 2023 CS Systemes d'Information, https://www.csgroup.eu/
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-"""
-rfc3339.
-
-Taken from stac_fastapi.types to not depend of stac_fastapi.types until it supports pydantic v2
-https://github.com/stac-utils/stac-fastapi/issues/593
-
-"""
+# Copyright 2023, CS Systemes d'Information, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import datetime
 import re
-from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 import dateutil.parser
-from pystac.utils import datetime_to_str
 
 RFC3339_PATTERN = (
     r"^(\d{4})-(\d{2})-(\d{2})"
@@ -42,19 +28,16 @@ RFC3339_PATTERN = (
 )
 
 
-def rfc3339_str_to_datetime(s: str) -> datetime:
+def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
     """Convert a string conforming to RFC 3339 to a :class:`datetime.datetime`.
 
-    Uses :meth:`iso8601.parse_date` under the hood.
+    :param s: The string to convert to :class:`datetime.datetime`
+    :type s: str
 
-    Args:
-        s (str) : The string to convert to :class:`datetime.datetime`.
+    :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
+    :rtype: :class:`datetime.datetime`
 
-    Returns:
-        str: The datetime represented by the ISO8601 (RFC 3339) formatted string.
-
-    Raises:
-        ValueError: If the string is not a valid RFC 3339 string.
+    raises: :class:`ValueError`
     """
     # Uppercase the string
     s = s.upper()
@@ -64,12 +47,12 @@ def rfc3339_str_to_datetime(s: str) -> datetime:
     if not result:
         raise ValueError("Invalid RFC3339 datetime.")
 
-    return dateutil.parser.isoparse(s).replace(tzinfo=timezone.utc)
+    return dateutil.parser.isoparse(s).replace(tzinfo=datetime.timezone.utc)
 
 
 def str_to_interval(
-    interval: str,
-) -> Optional[Tuple[Optional[datetime], Optional[datetime]]]:
+    interval: Optional[str],
+) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Extract a tuple of datetimes from an interval string.
 
     Interval strings are defined by
@@ -77,15 +60,18 @@ def str_to_interval(
     form '1985-04-12T23:20:50.52Z/1986-04-12T23:20:50.52Z', and allow either the start
     or end (but not both) to be open-ended with '..' or ''.
 
-    Args:
-        interval (str) : The interval string to convert to a :class:`datetime.datetime`
+    :param interval: The interval string to convert to a :class:`datetime.datetime`
         tuple.
+    :type interval: str
 
-    Raises:
-        ValueError: If the string is not a valid interval string.
+    :raises: :class:`ValueError`
     """
     if not interval:
-        raise ValueError("Empty interval string is invalid.")
+        return (None, None)
+
+    if "/" not in interval:
+        date = rfc3339_str_to_datetime(interval)
+        return (date, date)
 
     values = interval.split("/")
     if len(values) != 2:
@@ -106,13 +92,3 @@ def str_to_interval(
         raise ValueError("Start datetime cannot be before end datetime.")
     else:
         return start, end
-
-
-def now_in_utc() -> datetime:
-    """Return a datetime value of now with the UTC timezone applied."""
-    return datetime.now(timezone.utc)
-
-
-def now_to_rfc3339_str() -> str:
-    """Return an RFC 3339 string representing now."""
-    return datetime_to_str(now_in_utc())

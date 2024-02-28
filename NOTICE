@@ -46,6 +46,8 @@ https://github.com/tiangolo/fastapi
 https://github.com/urllib3/urllib3
 https://github.com/annotated-types/annotated-types
 https://github.com/pypa/setuptools
+https://github.com/pydantic/pydantic
+https://github.com/pydantic/pydantic-core
 https://github.com/geopython/pygeofilter
 
 
