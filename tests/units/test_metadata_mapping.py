@@ -239,6 +239,16 @@ class TestMetadataFormatter(unittest.TestCase):
             "{'a': {'title': 'foo'}, 'b': {'href': 'bar', 'title': 'baz'}}",
         )
 
+    def test_convert_dict_filter(self):
+        to_format = '{fieldname#dict_filter($[?(href=~"^s3.*")])}'
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                fieldname={"a": {"href": "https://foo"}, "b": {"href": "s3://bar"}},
+            ),
+            "{'b': {'href': 's3://bar'}}",
+        )
+
     def test_convert_slice_str(self):
         to_format = "{fieldname#slice_str(1,12,2)}"
         self.assertEqual(
