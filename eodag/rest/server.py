@@ -435,7 +435,7 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     base_args["collections"] = [collection_id]
     base_args["limit"] = 1
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
+    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
 
     search_request = SearchPostRequest.model_validate(clean)
 
@@ -455,14 +455,33 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(request: Request, collection_id: str) -> Any:
-    """STAC collections items"""
-    logger.debug("URL: %s", request.url)
+def stac_collections_items(
+    collection_id: str,
+    request: Request,
+    provider: Optional[str] = None,
+    bbox: Optional[str] = None,
+    datetime: Optional[str] = None,
+    limit: Optional[int] = None,
+    page: Optional[int] = None,
+    sortby: Optional[str] = None,
+    crunch: Optional[str] = None,
+) -> ORJSONResponse:
+    """Fetch collection's features"""
+    logger.debug("URL: %s", request.state.url)
 
-    base_args: Dict[str, Any] = dict(request.query_params)
-    base_args["collections"] = [collection_id]
+    base_args = {
+        "provider": provider,
+        "collections": [collection_id],
+        "datetime": datetime,
+        "bbox": str2list(bbox),
+        "limit": limit,
+        "page": page,
+        "sortby": sortby2list(sortby),
+        "crunch": crunch,
+    }
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
+    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
+
     try:
         search_request = SearchPostRequest.model_validate(clean)
     except pydanticValidationError as e:
@@ -626,7 +645,7 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     base_args["ids"] = [item_id]
     base_args["limit"] = 1
 
-    clean = {k: v for k, v in base_args.items() if v is not None}
+    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
 
     search_request = SearchPostRequest.model_validate(clean)
 
@@ -646,17 +665,36 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_items(catalogs: str, request: Request) -> Any:
-    """Fetch catalog's features
-    '"""
-    logger.debug("URL: %s", request.url)
+def stac_catalogs_items(
+    catalogs: str,
+    request: Request,
+    provider: Optional[str] = None,
+    bbox: Optional[str] = None,
+    datetime: Optional[str] = None,
+    limit: Optional[int] = None,
+    page: Optional[int] = None,
+    sortby: Optional[str] = None,
+    crunch: Optional[str] = None,
+) -> ORJSONResponse:
+    """Fetch catalog's features"""
+    logger.debug("URL: %s", request.state.url)
 
-    base_args = dict(request.query_params)
+    base_args = {
+        "provider": provider,
+        "datetime": datetime,
+        "bbox": str2list(bbox),
+        "limit": limit,
+        "page": page,
+        "sortby": sortby2list(sortby),
+        "crunch": crunch,
+    }
+
+    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
 
     list_catalog = catalogs.strip("/").split("/")
 
     try:
-        search_request = SearchPostRequest.model_validate(base_args)
+        search_request = SearchPostRequest.model_validate(clean)
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
@@ -743,7 +781,7 @@ def get_search(
     filter: Optional[str] = None,  # pylint: disable=redefined-builtin
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
-):
+) -> ORJSONResponse:
     """Handler for GET /search"""
     logger.debug("URL: %s", request.state.url)
 

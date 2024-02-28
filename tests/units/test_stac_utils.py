@@ -370,14 +370,3 @@ class TestRfc3339(unittest.TestCase):
             datetime(2023, 12, 19, 16, 41, 35, tzinfo=timezone.utc),
         )
         self.assertEqual(rfc3339.str_to_interval(test_str), expected_result)
-
-    def test_now_in_utc(self):
-        now = rfc3339.now_in_utc()
-        self.assertEqual(now.tzinfo, timezone.utc)
-
-    def test_now_to_rfc3339_str(self):
-        now = rfc3339.now_in_utc()
-        now_str = rfc3339.now_to_rfc3339_str()
-        now_from_str = datetime.fromisoformat(now_str.replace("Z", "+00:00"))
-        time_diff = now - now_from_str
-        self.assertTrue(abs(time_diff.total_seconds()) < 1)

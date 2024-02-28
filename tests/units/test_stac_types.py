@@ -121,26 +121,6 @@ class TestSearchPostRequest(unittest.TestCase):
         except ValidationError:
             self.fail("SearchPostRequest raised ValidationError unexpectedly!")
 
-    def test_str_bbox_to_list(self):
-        # Test with string
-        values = {"bbox": "-180,-90,180,90"}
-        try:
-            stac_search.SearchPostRequest.model_validate(values)
-        except ValidationError:
-            self.fail("SearchPostRequest raised ValidationError unexpectedly!")
-
-        # Test with list of numbers
-        values = {"bbox": [-180, -90, 180, 90]}
-        try:
-            stac_search.SearchPostRequest.model_validate(values)
-        except ValidationError:
-            self.fail("SearchPostRequest raised ValidationError unexpectedly!")
-
-        # Test with invalid string
-        values = {"bbox": "invalid"}
-        with self.assertRaises(ValidationError):
-            stac_search.SearchPostRequest.model_validate(values)
-
     def test_validate_bbox(self):
         # Test with incorrect bbox
         values = {"bbox": [180, -90, -180, 90]}
@@ -190,23 +170,6 @@ class TestSearchPostRequest(unittest.TestCase):
         values = {"datetime": "invalid"}
         with self.assertRaises(ValidationError):
             stac_search.SearchPostRequest.model_validate(values)
-
-    def test_get_dates(self):
-        # Test with single datetime
-        req = stac_search.SearchPostRequest(datetime="2023-12-18T19:56:32Z")
-        self.assertEqual(req.get_dates("start"), "2023-12-18T19:56:32+00:00")
-        self.assertEqual(req.get_dates("end"), "2023-12-18T19:56:32+00:00")
-
-        # Test with datetime interval
-        req = stac_search.SearchPostRequest(
-            datetime="2023-12-18T19:56:32Z/2023-12-19T19:56:32Z"
-        )
-        self.assertEqual(req.get_dates("start"), "2023-12-18T19:56:32+00:00")
-        self.assertEqual(req.get_dates("end"), "2023-12-19T19:56:32+00:00")
-
-        # Test with invalid datetime
-        with self.assertRaises(ValidationError):
-            stac_search.SearchPostRequest(datetime="invalid")
 
 
 class TestEODAGSearch(unittest.TestCase):
