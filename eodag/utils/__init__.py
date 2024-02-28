@@ -120,7 +120,7 @@ GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
-HTTP_REQ_TIMEOUT = 5  # in seconds
+HTTP_REQ_TIMEOUT = 45  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 # default wait times in minutes

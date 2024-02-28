@@ -1191,9 +1191,10 @@ class PostJsonSearch(QueryStringSearch):
         """Build EOProducts from provider results"""
         results = super(PostJsonSearch, self).normalize_results(results, **kwargs)
         for product in results:
-            decoded_link = unquote(product.properties["downloadLink"])
-            if decoded_link[0] == "{":  # not a url but a dict
-                product.properties["_dc_qs"] = product.properties["downloadLink"]
+            if "downloadLink" in product.properties:
+                decoded_link = unquote(product.properties["downloadLink"])
+                if decoded_link[0] == "{":  # not a url but a dict
+                    product.properties["_dc_qs"] = product.properties["downloadLink"]
         return results
 
     def collect_search_urls(

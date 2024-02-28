@@ -90,19 +90,19 @@ class TestCoreBase(unittest.TestCase):
 
 class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
-        "CAMS_GAC_FORECAST": ["cop_ads"],
-        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads"],
-        "CAMS_GFE_GFAS": ["cop_ads"],
-        "CAMS_GRF": ["cop_ads"],
-        "CAMS_GRF_AUX": ["cop_ads"],
-        "CAMS_SOLAR_RADIATION": ["cop_ads"],
-        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads"],
-        "CAMS_GREENHOUSE_EGG4": ["cop_ads"],
-        "CAMS_GREENHOUSE_INVERSION": ["cop_ads"],
-        "CAMS_GLOBAL_EMISSIONS": ["cop_ads"],
-        "CAMS_EAC4": ["cop_ads"],
-        "CAMS_EAC4_MONTHLY": ["cop_ads"],
-        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads"],
+        "CAMS_GAC_FORECAST": ["cop_ads", "wekeo"],
+        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "wekeo"],
+        "CAMS_GFE_GFAS": ["cop_ads", "wekeo"],
+        "CAMS_GRF": ["cop_ads", "wekeo"],
+        "CAMS_GRF_AUX": ["cop_ads", "wekeo"],
+        "CAMS_SOLAR_RADIATION": ["cop_ads", "wekeo"],
+        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads", "wekeo"],
+        "CAMS_GREENHOUSE_EGG4": ["cop_ads", "wekeo"],
+        "CAMS_GREENHOUSE_INVERSION": ["cop_ads", "wekeo"],
+        "CAMS_GLOBAL_EMISSIONS": ["cop_ads", "wekeo"],
+        "CAMS_EAC4": ["cop_ads", "wekeo"],
+        "CAMS_EAC4_MONTHLY": ["cop_ads", "wekeo"],
+        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads", "wekeo"],
         "CBERS4_AWFI_L2": ["aws_eos"],
         "CBERS4_AWFI_L4": ["aws_eos"],
         "CBERS4_MUX_L2": ["aws_eos"],
@@ -119,6 +119,8 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_LAI_333M": ["wekeo"],
         "CLMS_GLO_NDVI_1KM_LTS": ["wekeo"],
         "CLMS_GLO_NDVI_333M": ["wekeo"],
+        "CMEMS_GLOBAL_PHY_001_024": ["wekeo"],
+        "CMEMS_GLOBAL_BGC_001_028": ["wekeo"],
         "COP_DEM_GLO30_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
         "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3"],
         "COP_DEM_GLO90_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
@@ -145,6 +147,7 @@ class TestCore(TestCoreBase):
         "GLOFAS_REFORECAST": ["cop_cds", "wekeo"],
         "GLOFAS_SEASONAL": ["cop_cds", "wekeo"],
         "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "wekeo"],
+        "GRIDDED_GLACIERS_MASS_CHANGE": ["wekeo"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
@@ -341,6 +344,9 @@ class TestCore(TestCoreBase):
         "S3_SLSTR_L1RBT_BC004": ["wekeo"],
         "S3_SLSTR_L2WST_BC003": ["wekeo"],
         "S3_OLCI_L4BALTIC": ["wekeo"],
+        "S3_LAN_HY": ["wekeo"],
+        "S3_LAN_SI": ["wekeo"],
+        "S3_LAN_LI": ["wekeo"],
         "S6_P4_L1AHR_F06": ["wekeo"],
         "S6_P4_L1BLR_F06": ["wekeo"],
         "S6_P4_L1BAHR_F06": ["wekeo"],
@@ -348,6 +354,8 @@ class TestCore(TestCoreBase):
         "S6_P4_L2HR_F06": ["wekeo"],
         "S6_AMR_L2_F06": ["wekeo"],
         "S5P_L1B2_IR_ALL": ["wekeo"],
+        "S5P_L1B_IR_ALL": ["wekeo"],
+        "S5P_L2_IR_ALL": ["wekeo"],
         "S5P_L1B_IR_SIR": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_IR_UVN": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
@@ -375,6 +383,9 @@ class TestCore(TestCoreBase):
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "wekeo"],
         "SATELLITE_METHANE": ["cop_cds", "wekeo"],
         "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "wekeo"],
+        "SATELLITE_SEA_ICE_EDGE_TYPE": ["wekeo"],
+        "SATELLITE_SEA_LEVEL_GLOBAL": ["wekeo"],
+        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["wekeo"],
         "SEASONAL_MONTHLY_PL": ["cop_cds", "wekeo"],
         "SEASONAL_MONTHLY_SL": ["cop_cds", "wekeo"],
         "SEASONAL_ORIGINAL_PL": ["cop_cds", "wekeo"],
@@ -456,10 +467,16 @@ class TestCore(TestCoreBase):
     def test_supported_product_types_in_unit_test(self):
         """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
         for product_type in self.dag.list_product_types(fetch_providers=False):
-            assert (
-                product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-                or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-            )
+            if "__" in product_type["ID"]:
+                self.assertTrue(
+                    product_type["ID"].split("__")[0]
+                    in self.SUPPORTED_PRODUCT_TYPES.keys()
+                )
+            else:
+                assert (
+                    product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                    or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                )
 
     def test_list_product_types_ok(self):
         """Core api must correctly return the list of supported product types"""
@@ -489,7 +506,12 @@ class TestCore(TestCoreBase):
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
                 self.assertListProductTypesRightStructure(product_type)
-                if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
+                if "__" in product_type["ID"]:
+                    self.assertIn(
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"].split("__")[0]],
+                    )
+                elif product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
                         provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
                     )
@@ -925,10 +947,15 @@ class TestCore(TestCoreBase):
         self.assertIn("platformSerialIdentifier", structure)
         self.assertIn("processingLevel", structure)
         self.assertIn("sensorType", structure)
-        assert (
-            structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
-            or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
-        )
+        if "__" in structure["ID"]:
+            self.assertTrue(
+                structure["ID"].split("__")[0] in self.SUPPORTED_PRODUCT_TYPES
+            )
+        else:
+            self.assertTrue(
+                structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
+                or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
+            )
 
     @mock.patch("eodag.api.core.open_dir", autospec=True)
     @mock.patch("eodag.api.core.exists_in", autospec=True, return_value=True)
@@ -1707,7 +1734,6 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
             "S2_MSI_L3A_WASP",
-            "EEA_DAILY_VI",
         ]
         self.assertEqual(actual, expected)
 

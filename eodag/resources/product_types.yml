@@ -2927,6 +2927,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
     type Variables in the dataset/application are: Status flag, Uncertainty
     platform:
   instrument:
+  platform:
   platformSerialIdentifier:
   processingLevel:
   keywords: ECMWF,CDS,C3S,sea,ice
@@ -3966,6 +3967,51 @@ EEA_DAILY_VI:
   license: proprietary
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
+
+# Copernicus Marine Service (CMEMS) ----------------------------------------------------------
+CMEMS_GLOBAL_PHY_001_024:
+  abstract: |
+    The Operational Mercator global ocean analysis and forecast system at 1/12 degree is providing 10 days of 3D global
+    ocean forecasts updated daily. The time series is aggregated in time in order to reach a two full year’s time series
+    sliding window. This product includes daily and monthly mean files of temperature, salinity, currents, sea level,
+    mixed layer depth and ice parameters from the top to the bottom over the global ocean. It also includes hourly mean
+    surface fields for sea level height, temperature and currents. The global ocean output files are displayed with a
+    1/12 degree horizontal resolution with regular longitude/latitude equirectangular projection. 50 vertical levels are
+    ranging from 0 to 5500 meters. This product also delivers a special dataset for surface current which also includes
+    wave and tidal drift called SMOC (Surface merged Ocean Current). DOI (product) : https://doi.org/10.48670/moi-00016
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,analysis,forecast,marine,Mercator,physics,ocean
+  sensorType:
+  license: proprietary
+  title: Global Ocean Physics Analysis and Forecast
+  missionStartDate: "2021-11-30T00:00:00Z"
+
+CMEMS_GLOBAL_BGC_001_028:
+  abstract: |
+    The Operational Mercator Ocean biogeochemical global ocean analysis and forecast system at 1/4 degree is providing
+    10 days of 3D global ocean forecasts updated weekly. The time series is aggregated in time, in order to reach a two
+    full year’s time series sliding window. This product includes daily and monthly mean files of biogeochemical
+    parameters (chlorophyll, nitrate, phosphate, silicate, dissolved oxygen, dissolved iron, primary production,
+    phytoplankton, PH, and surface partial pressure of carbon dioxyde) over the global ocean. The global ocean output
+    files are displayed with a 1/4 degree horizontal resolution with regular longitude/latitude equirectangular
+    projection. 50 vertical levels are ranging from 0 to 5700 meters. * NEMO version (v3.6_STABLE) * Forcings:
+    GLOBAL_ANALYSIS_FORECAST_PHYS_001_024 at daily frequency. * Outputs mean fields are interpolated on a standard
+    regular grid in NetCDF format. * Initial conditions: World Ocean Atlas 2013 for nitrate, phosphate, silicate and
+    dissolved oxygen, GLODAPv2 for DIC and Alkalinity, and climatological model outputs for Iron and DOC *
+    Quality/Accuracy/Calibration information: See the related
+    QuID[http://catalogue.marine.copernicus.eu/documents/QUID/CMEMS-GLO-QUID-001-028.pdf] DOI (product): https://doi.org/10.48670/moi-00015
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,analysis,forecast,marine,biogeochemical,biogeochemistry,ocean
+  sensorType:
+  license: proprietary
+  title: Global Ocean Biogeochemistry Analysis and Forecast
+  missionStartDate: "2021-11-30T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
