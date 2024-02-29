@@ -21,6 +21,7 @@ import base64
 import logging
 import os
 import re
+import tempfile
 import urllib.parse
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
@@ -472,9 +473,13 @@ class EOProduct:
         if base_dir is not None:
             quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
         else:
-            quicklooks_base_dir = os.path.join(
-                self.downloader.config.outputs_prefix, "quicklooks"
+            tempdir = tempfile.gettempdir()
+            outputs_prefix = (
+                getattr(self.downloader.config, "outputs_prefix", tempdir)
+                if self.downloader
+                else tempdir
             )
+            quicklooks_base_dir = os.path.join(outputs_prefix, "quicklooks")
         if not os.path.isdir(quicklooks_base_dir):
             os.makedirs(quicklooks_base_dir)
         quicklook_file = os.path.join(
