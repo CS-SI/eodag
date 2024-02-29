@@ -4246,7 +4246,7 @@ CMEMS_MULTIOBS_GLO_PHY_W_3D_REP:
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2018-12-31T23:59:59Z"
 
-CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT:
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
     products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
@@ -4264,10 +4264,31 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT:
   keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,NRT,daily
   sensorType:
   license: proprietary
-  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite observations
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite observations - Plankton
   missionStartDate: "2023-04-10T00:00:00Z"
 
-CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY:
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_OPTICS:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily
+    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
+    Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
+    DOI (product) : https://doi.org/10.48670/moi-00278
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,optics,BBP,RRS,CDM,NRT,daily
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite observations - Optics
+  missionStartDate: "2023-04-10T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
     products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
@@ -4285,10 +4306,31 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY:
   keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,MY,daily
   sensorType:
   license: proprietary
-  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing)
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing) - Plankton
   missionStartDate: "1997-04-09T00:00:00Z"
 
-CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT:
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_OPTICS:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
+    OLCI-S3A & S3B for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL),
+    Phytoplankton Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily.
+    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
+    Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
+    DOI (product) : https://doi.org/10.48670/moi-00280
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,optics,BBP,RRS,CDM,MY,daily
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing) - Optics
+  missionStartDate: "1997-04-09T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
     products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
@@ -4307,8 +4349,128 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT:
   keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,NRT,monthly,interpolated
   sensorType:
   license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time) - Plankton
+  missionStartDate: "2023-04-10T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_OPTICS:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
+    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal
+    resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide a "cloud free" product.
+    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
+    Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
+    DOI (product) : https://doi.org/10.48670/moi-00279
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,optics,BBP,CDM,RRS,NRT,monthly,interpolated
+  sensorType:
+  license: proprietary
   title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time)
   missionStartDate: "2023-04-10T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the ""multi"" products, and S3A & S3B only for the ""olci"" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
+    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS).
+    * Temporal resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide
+    a ""cloud free"" product. * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs.
+    * Recent products are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets
+    called Multi-Years (MY). To find the Copernicus-GlobColour products in the catalogue, use the search keyword ""GlobColour""."
+    DOI (product) : https://doi.org/10.48670/moi-00281
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,MY,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-09-01T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_OPTICS:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the ""multi"" products, and S3A & S3B only for the ""olci"" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
+    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS).
+    * Temporal resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide
+    a ""cloud free"" product. * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs.
+    * Recent products are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets
+    called Multi-Years (MY). To find the Copernicus-GlobColour products in the catalogue, use the search keyword ""GlobColour""."
+    DOI (product) : https://doi.org/10.48670/moi-00281
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,optics,BBP,CDM,RRS,MY,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-09-01T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_MONTHLY:
+  abstract: |
+    For the Global Ocean Satellite Observations, Brockmann Consult (BC) is providing Bio-Geo_Chemical (BGC) products based
+    on the ESA-CCI inputs. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
+    * Variables: Chlorophyll-a (CHL). * Temporal resolutions: monthly. * Spatial resolutions: 4 km (multi). * Recent products
+    are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY).
+    To find these products in the catalogue, use the search keyword ""ESA-CCI"".
+    DOI (product) : https://doi.org/10.48670/moi-00283
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,plankton,MY,monthly,ESA-CCI
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton MY L4 monthly observations
+  missionStartDate: "1997-09-04T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_PLANKTON:
+  abstract: |
+    For the Global Ocean Satellite Observations, Brockmann Consult (BC) is providing Bio-Geo_Chemical (BGC) products based
+    on the ESA-CCI inputs. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
+    * Variables: Chlorophyll-a (CHL). * Temporal resolutions: monthly. * Spatial resolutions: 4 km (multi). * Recent products
+    are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY).
+    To find these products in the catalogue, use the search keyword ""ESA-CCI"".
+    DOI (product) : https://doi.org/10.48670/moi-00283
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,plankton,chlorophyll,MY,daily,ESA-CCI
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations - Plankton
+  missionStartDate: "1997-09-04T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_REFLECTANCE:
+  abstract: |
+    For the Global Ocean Satellite Observations, Brockmann Consult (BC) is providing Bio-Geo_Chemical (BGC) products based
+    on the ESA-CCI inputs. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
+    * Variables: Chlorophyll-a (CHL). * Temporal resolutions: monthly. * Spatial resolutions: 4 km (multi). * Recent products
+    are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY).
+    To find these products in the catalogue, use the search keyword ""ESA-CCI"".
+    DOI (product) : https://doi.org/10.48670/moi-00283
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,reflectance,MY,daily,ESA-CCI
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations - Reflectance
+  missionStartDate: "1997-09-04T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:

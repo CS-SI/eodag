@@ -6406,7 +6406,7 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_PHY_W_3D_REP_015_007:dataset-omega-3d-rep-weekly_202003"}}'
-    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT__plankton_nrt_l3-olci-4km_P1D_202207:
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON__l3-olci-4km_P1D_202207:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-olci-4km_P1D_202207
       metadata_mapping:
         id: '$.id'
@@ -6420,7 +6420,7 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-olci-4km_P1D_202207"}}'
-    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT__plankton_nrt_l3-olci-300m_P1D_202207:
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON__l3-olci-300m_P1D_202207:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-olci-300m_P1D_202207
       metadata_mapping:
         id: '$.id'
@@ -6434,7 +6434,7 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-olci-300m_P1D_202207"}}'
-    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT__plankton_nrt_l3-multi-4km_P1D_202311:
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON__nrt_l3-multi-4km_P1D_202311:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-multi-4km_P1D_202311
       metadata_mapping:
         id: '$.id'
@@ -6448,7 +6448,7 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-multi-4km_P1D_202311"}}'
-    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY__plankton_my_l3-olci-4km_P1D_202207:
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_PLANKTON__l3-olci-4km_P1D_202207:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-plankton_my_l3-olci-4km_P1D_202207
       metadata_mapping:
         id: '$.id'
@@ -6462,7 +6462,7 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-plankton_my_l3-olci-4km_P1D_202207"}}'
-    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY__plankton_my_l3-olci-300m_P1D_202207:
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_PLANKTON__l3-olci-300m_P1D_202207:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-plankton_my_l3-olci-300m_P1D_202211
       metadata_mapping:
         id: '$.id'
@@ -6476,7 +6476,7 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-plankton_my_l3-olci-300m_P1D_202211"}}'
-    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY__plankton_my_l3-multi-4km_P1D_202311:
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_PLANKTON__l3-multi-4km_P1D_202311:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D_202311
       metadata_mapping:
         id: '$.id'
@@ -6490,6 +6490,272 @@
           - '{{"variables": {variable}}}'
           - '{$.properties.location#get_variables_from_path}'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON__l4-multi-4km_P1M_202311:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-multi-4km_P1M_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON__l4-gapfree-multi-4km_P1D_202311:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-gapfree-multi-4km_P1D_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-gapfree-multi-4km_P1D_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON__l4-olci-4km_P1M_202207:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-olci-4km_P1M_202207
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-olci-4km_P1M_202207"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON__l4-olci-300m_P1M_202207:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-olci-300m_P1M_202211
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-plankton_nrt_l4-olci-300m_P1M_202211"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON__l4-olci-300m_P1M_202207:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-olci-300m_P1M_202211
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-olci-300m_P1M_202211"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON__l4-olci-4km_P1M_202207:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-olci-4km_P1M_202207
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-olci-4km_P1M_202207"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON__l4-multi-4km_P1M_202311:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON__l4-gapfree-multi-4km_P1D_202311:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_MONTHLY:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_108:c3s_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M_202207
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_108:c3s_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M_202207"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_OPTICS:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-optics_nrt_l3-multi-4km_P1D_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-optics_nrt_l3-multi-4km_P1D_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_OPTICS:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-optics_my_l3-multi-4km_P1D_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_103:cmems_obs-oc_glo_bgc-optics_my_l3-multi-4km_P1D_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_PLANKTON:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_107:c3s_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D_202303
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_107:c3s_obs-oc_glo_bgc-plankton_my_l3-multi-4km_P1D_202303"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_REFLECTANCE:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_107:c3s_obs-oc_glo_bgc-reflectance_my_l3-multi-4km_P1D_202303
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_MY_009_107:c3s_obs-oc_glo_bgc-reflectance_my_l3-multi-4km_P1D_202303"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_OPTICS__l4-multi-4km_P1M_202311:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-reflectance_my_l4-multi-4km_P1M_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-reflectance_my_l4-multi-4km_P1M_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_OPTICS__l4-olci-4km_P1M_202207:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-reflectance_my_l4-olci-4km_P1M_202207
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-reflectance_my_l4-olci-4km_P1M_202207"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_OPTICS__l4-olci-300m_P1M_202211:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-reflectance_my_l4-olci-300m_P1M_202211
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_MY_009_104:cmems_obs-oc_glo_bgc-reflectance_my_l4-olci-300m_P1M_202211"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_OPTICS__l4-multi-4km_P1M_202311:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-reflectance_nrt_l4-multi-4km_P1M_202311
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-reflectance_nrt_l4-multi-4km_P1M_202311"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_OPTICS__l4-olci-4km_P1M_202207:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-reflectance_nrt_l4-olci-4km_P1M_202207
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-reflectance_nrt_l4-olci-4km_P1M_202207"}}'
+    CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_OPTICS__l4-olci-300m_P1M_202211:
+      productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-reflectance_nrt_l4-olci-300m_P1M_202211
+      metadata_mapping:
+        id: '$.id'
+        startTimeFromAscendingNode:
+          - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.startdate'
+        completionTimeFromAscendingNode:
+          - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+          - '$.properties.enddate'
+        variable:
+          - '{{"variables": {variable}}}'
+          - '{$.properties.location#get_variables_from_path}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:cmems_obs-oc_glo_bgc-reflectance_nrt_l4-olci-300m_P1M_202211"}}'
 
   auth: !plugin
     type: TokenAuth
