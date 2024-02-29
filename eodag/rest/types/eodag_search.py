@@ -219,22 +219,21 @@ class EODAGSearch(BaseModel):
             operator, value = next(iter(cast(Dict[str, Any], conditions).items()))
 
             # Validate the operator
-            if operator == "lte" and prop != "eo:cloud_cover":
+            if operator not in ("eq", "lte", "in") or (
+                operator == "lte" and prop != "eo:cloud_cover"
+            ):
                 add_error(
-                    '"lte" operator is only supported for eo:cloud_cover',
+                    f'operator "{operator}" is not supported for property "{prop}"',
+                    query[property_name],
+                )
+                continue
+            if operator == "in" and not isinstance(value, list):
+                add_error(
+                    f'operator "{operator}" requires a value of type list',
                     query[property_name],
                 )
                 continue
 
-            elif operator not in ("eq", "lte"):
-                add_error(
-                    'Only the "eq" and "lte" operators are supported'
-                    ', with "lte" only for eo:cloud_cover',
-                    query[property_name],
-                )
-                continue
-
-            # Add the property name and value to the result dictionary
             query_props[prop] = value
 
         if errors:
