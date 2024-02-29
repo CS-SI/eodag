@@ -462,38 +462,28 @@ def stac_collections_items(
     bbox: Optional[str] = None,
     datetime: Optional[str] = None,
     limit: Optional[int] = None,
+    query: Optional[str] = None,
     page: Optional[int] = None,
     sortby: Optional[str] = None,
+    filter: Optional[str] = None,
+    filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Fetch collection's features"""
-    logger.debug("URL: %s", request.state.url)
 
-    base_args = {
-        "provider": provider,
-        "collections": [collection_id],
-        "datetime": datetime,
-        "bbox": str2list(bbox),
-        "limit": limit,
-        "page": page,
-        "sortby": sortby2list(sortby),
-        "crunch": crunch,
-    }
-
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    try:
-        search_request = SearchPostRequest.model_validate(clean)
-    except pydanticValidationError as e:
-        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
-
-    response = search_stac_items(
+    return get_search(
         request=request,
-        search_request=search_request,
-        catalogs=[collection_id],
-    )
-    return ORJSONResponse(
-        content=response, status_code=200, media_type="application/json"
+        provider=provider,
+        collections=collection_id,
+        bbox=bbox,
+        datetime=datetime,
+        limit=limit,
+        query=query,
+        page=page,
+        sortby=sortby,
+        filter=filter,
+        filter_lang=filter_lang,
+        crunch=crunch,
     )
 
 

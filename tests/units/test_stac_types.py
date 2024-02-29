@@ -314,7 +314,7 @@ class TestEODAGSearch(unittest.TestCase):
         with self.assertRaises(ValidationError) as context:
             eodag_search.EODAGSearch.model_validate(values)
         self.assertTrue(
-            'Only the "eq" and "lte" operators are supported, with "lte" only for eo:cloud_cover'
+            'operator "neq" is not supported for property "test"'
             in str(context.exception)
         )
 
@@ -326,7 +326,7 @@ class TestEODAGSearch(unittest.TestCase):
         with self.assertRaises(ValidationError) as context:
             eodag_search.EODAGSearch.model_validate(values)
         self.assertTrue(
-            '"lte" operator is only supported for eo:cloud_cover'
+            'operator "lte" is not supported for property "test"'
             in str(context.exception)
         )
 

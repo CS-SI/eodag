@@ -229,7 +229,7 @@ class EODAGSearch(BaseModel):
                 continue
             if operator == "in" and not isinstance(value, list):
                 add_error(
-                    f'operator "{operator}" requires a value of type list',
+                    f'operator "{operator}" requires a value of type list for property "{prop}"',
                     query[property_name],
                 )
                 continue
