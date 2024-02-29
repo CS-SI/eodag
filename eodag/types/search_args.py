@@ -17,7 +17,7 @@
 # limitations under the License.
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from annotated_types import MinLen
 from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
@@ -65,21 +65,21 @@ class SearchArgs(BaseModel):
 
     @field_validator("geom", mode="before")
     @classmethod
-    def check_geom(cls, v: GeomArgs) -> BaseGeometry:
+    def check_geom(cls, v: Any) -> BaseGeometry:
         """Validate geom"""
         # GeoJSON geometry
-        if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:
+        if isinstance(v, dict) and v.get("type") in GEOMETRY_TYPES:  # type: ignore
             return cast(BaseGeometry, shape(v))
 
         # Bounding Box
         if isinstance(v, (list, tuple, dict)):
-            return BBox(v).to_polygon()
+            return BBox(v).to_polygon()  # type: ignore
 
         if isinstance(v, str):
             # WKT geometry
             try:
-                return cast(Polygon, wkt.loads(v))
-            except GEOSException as e:
+                return cast(Polygon, wkt.loads(v))  # type: ignore
+            except GEOSException as e:  # type: ignore
                 raise ValueError(f"Invalid geometry WKT string: {v}") from e
 
         if isinstance(v, BaseGeometry):

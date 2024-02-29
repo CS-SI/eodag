@@ -28,6 +28,7 @@ from eodag.api.product._assets import AssetsDict
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import QueryStringSearch
+from eodag.utils import guess_file_type
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
 
 DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
@@ -75,7 +76,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                     endpoint_url=config.base_uri,
                     **auth_dict,
                 )
-            logger.debug(f"Listing assets in {prefix}")
+            logger.debug("Listing assets in %s", prefix)
             product.assets = AssetsDict(product)
             for asset in auth.s3_client.list_objects(
                 Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
@@ -96,6 +97,8 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                         "roles": [role],
                         "href": f"s3://{config.s3_bucket}/{asset['Key']}",
                     }
+                    if mime_type := guess_file_type(asset["Key"]):
+                        product.assets[asset_basename]["type"] = mime_type
             # update driver
             product.driver = product.get_driver()
 
@@ -104,10 +107,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                 raise AuthenticationError(
                     f"Authentication failed on {config.base_uri} s3"
                 ) from e
-            else:
-                raise RequestError(
-                    "assets for product %s could not be found", prefix
-                ) from e
+            raise RequestError(f"assets for product {prefix} could not be found") from e
 
 
 class CreodiasS3Search(QueryStringSearch):

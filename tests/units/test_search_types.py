@@ -18,7 +18,7 @@
 
 import unittest
 
-from pydantic_core import ValidationError
+from pydantic import ValidationError
 
 from eodag.types import search_args
 from eodag.utils.exceptions import ValidationError as EodagValidationError

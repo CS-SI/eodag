@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import importlib
 import json
@@ -23,12 +24,18 @@ import socket
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Dict, List, Optional, Union
+from unittest.mock import Mock
 
 import geojson
+import httpx
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
-from eodag.utils import USER_AGENT, MockResponse
+from eodag.config import PluginConfig
+from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.download.base import Download
+from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import TimeOutError
 from tests import mock
 from tests.context import (
@@ -72,10 +79,10 @@ class RequestTestCase(unittest.TestCase):
         )
 
         # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
-        # reload eodag.rest.utils to prevent eodag_api cache conflicts
-        import eodag.rest.utils
+        # reload eodag.rest.core to prevent eodag_api cache conflicts
+        import eodag.rest.core
 
-        importlib.reload(eodag.rest.utils)
+        importlib.reload(eodag.rest.core)
         from eodag.rest import server as eodag_http_server
 
         cls.eodag_http_server = eodag_http_server
@@ -160,62 +167,33 @@ class RequestTestCase(unittest.TestCase):
         resp_json = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_json["links"][0]["href"], "httpz://bar/")
 
-    @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
-        autospec=True,
-        return_value=(
-            SearchResult.from_geojson(
-                {
-                    "features": [
-                        {
-                            "properties": {
-                                "snowCover": None,
-                                "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
-                                ".035Z",
-                                "keyword": {},
-                                "productType": "OCN",
-                                "downloadLink": (
-                                    "https://peps.cnes.fr/resto/collections/S1/"
-                                    "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
-                                ),
-                                "eodag_provider": "peps",
-                                "eodag_product_type": "S1_SAR_OCN",
-                                "platformSerialIdentifier": "S1A",
-                                "cloudCover": 0,
-                                "title": "S1A_WV_OCN__2SSV_20180215T235323_"
-                                "20180216T001213_020624_023501_0FD3",
-                                "orbitNumber": 20624,
-                                "instrument": "SAR-C SAR",
-                                "abstract": None,
-                                "eodag_search_intersection": {
-                                    "coordinates": [
-                                        [
-                                            [89.590721, 2.614019],
-                                            [89.771805, 2.575546],
-                                            [89.809341, 2.756323],
-                                            [89.628258, 2.794767],
-                                            [89.590721, 2.614019],
-                                        ]
-                                    ],
-                                    "type": "Polygon",
-                                },
-                                "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-15T23:53:22"
-                                ".871Z",
-                                "platform": None,
-                                "sensorType": None,
-                                "processingLevel": None,
-                                "orbitType": None,
-                                "topicCategory": None,
-                                "orbitDirection": None,
-                                "parentIdentifier": None,
-                                "sensorMode": None,
-                                "quicklook": None,
-                            },
-                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
-                            "type": "Feature",
-                            "geometry": {
+    def mock_search_result(self):
+        """generate eodag_api.search mock results"""
+        search_result = SearchResult.from_geojson(
+            {
+                "features": [
+                    {
+                        "properties": {
+                            "snowCover": None,
+                            "resolution": None,
+                            "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
+                            ".035Z",
+                            "keyword": {},
+                            "productType": "OCN",
+                            "downloadLink": (
+                                "https://peps.cnes.fr/resto/collections/S1/"
+                                "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
+                            ),
+                            "eodag_provider": "peps",
+                            "eodag_product_type": "S1_SAR_OCN",
+                            "platformSerialIdentifier": "S1A",
+                            "cloudCover": 0,
+                            "title": "S1A_WV_OCN__2SSV_20180215T235323_"
+                            "20180216T001213_020624_023501_0FD3",
+                            "orbitNumber": 20624,
+                            "instrument": "SAR-C SAR",
+                            "abstract": None,
+                            "eodag_search_intersection": {
                                 "coordinates": [
                                     [
                                         [89.590721, 2.614019],
@@ -227,56 +205,55 @@ class RequestTestCase(unittest.TestCase):
                                 ],
                                 "type": "Polygon",
                             },
+                            "organisationName": None,
+                            "startTimeFromAscendingNode": "2018-02-15T23:53:22" ".871Z",
+                            "platform": None,
+                            "sensorType": None,
+                            "processingLevel": None,
+                            "orbitType": None,
+                            "topicCategory": None,
+                            "orbitDirection": None,
+                            "parentIdentifier": None,
+                            "sensorMode": None,
+                            "quicklook": None,
                         },
-                        {
-                            "properties": {
-                                "snowCover": None,
-                                "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
-                                ".035Z",
-                                "keyword": {},
-                                "productType": "OCN",
-                                "downloadLink": (
-                                    "https://peps.cnes.fr/resto/collections/S1/"
-                                    "578f1768-e66e-5b86-9363-b19f8931cc7c/download"
-                                ),
-                                "eodag_provider": "peps",
-                                "eodag_product_type": "S1_SAR_OCN",
-                                "platformSerialIdentifier": "S1A",
-                                "cloudCover": 0,
-                                "title": "S1A_WV_OCN__2SSV_20180216T235323_"
-                                "20180217T001213_020624_023501_0FD3",
-                                "orbitNumber": 20624,
-                                "instrument": "SAR-C SAR",
-                                "abstract": None,
-                                "eodag_search_intersection": {
-                                    "coordinates": [
-                                        [
-                                            [89.590721, 2.614019],
-                                            [89.771805, 2.575546],
-                                            [89.809341, 2.756323],
-                                            [89.628258, 2.794767],
-                                            [89.590721, 2.614019],
-                                        ]
-                                    ],
-                                    "type": "Polygon",
-                                },
-                                "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-16T23:53:22"
-                                ".871Z",
-                                "platform": None,
-                                "sensorType": None,
-                                "processingLevel": None,
-                                "orbitType": None,
-                                "topicCategory": None,
-                                "orbitDirection": None,
-                                "parentIdentifier": None,
-                                "sensorMode": None,
-                                "quicklook": None,
-                            },
-                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7c",
-                            "type": "Feature",
-                            "geometry": {
+                        "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
+                        "type": "Feature",
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    [89.590721, 2.614019],
+                                    [89.771805, 2.575546],
+                                    [89.809341, 2.756323],
+                                    [89.628258, 2.794767],
+                                    [89.590721, 2.614019],
+                                ]
+                            ],
+                            "type": "Polygon",
+                        },
+                    },
+                    {
+                        "properties": {
+                            "snowCover": None,
+                            "resolution": None,
+                            "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
+                            ".035Z",
+                            "keyword": {},
+                            "productType": "OCN",
+                            "downloadLink": (
+                                "https://peps.cnes.fr/resto/collections/S1/"
+                                "578f1768-e66e-5b86-9363-b19f8931cc7c/download"
+                            ),
+                            "eodag_provider": "peps",
+                            "eodag_product_type": "S1_SAR_OCN",
+                            "platformSerialIdentifier": "S1A",
+                            "cloudCover": 0,
+                            "title": "S1A_WV_OCN__2SSV_20180216T235323_"
+                            "20180217T001213_020624_023501_0FD3",
+                            "orbitNumber": 20624,
+                            "instrument": "SAR-C SAR",
+                            "abstract": None,
+                            "eodag_search_intersection": {
                                 "coordinates": [
                                     [
                                         [89.590721, 2.614019],
@@ -288,31 +265,64 @@ class RequestTestCase(unittest.TestCase):
                                 ],
                                 "type": "Polygon",
                             },
+                            "organisationName": None,
+                            "startTimeFromAscendingNode": "2018-02-16T23:53:22" ".871Z",
+                            "platform": None,
+                            "sensorType": None,
+                            "processingLevel": None,
+                            "orbitType": None,
+                            "topicCategory": None,
+                            "orbitDirection": None,
+                            "parentIdentifier": None,
+                            "sensorMode": None,
+                            "quicklook": None,
                         },
-                    ],
-                    "type": "FeatureCollection",
-                }
-            ),
-            2,
-        ),
-    )
+                        "id": "578f1768-e66e-5b86-9363-b19f8931cc7c",
+                        "type": "Feature",
+                        "geometry": {
+                            "coordinates": [
+                                [
+                                    [89.590721, 2.614019],
+                                    [89.771805, 2.575546],
+                                    [89.809341, 2.756323],
+                                    [89.628258, 2.794767],
+                                    [89.590721, 2.614019],
+                                ]
+                            ],
+                            "type": "Polygon",
+                        },
+                    },
+                ],
+                "type": "FeatureCollection",
+            }
+        )
+        config = PluginConfig()
+        config.priority = 0
+        for p in search_result:
+            p.downloader = Download("peps", config)
+            p.downloader_auth = Authentication("peps", config)
+        return (search_result, len(search_result))
+
+    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
     def _request_valid_raw(
         self,
-        url,
-        mock_search,
-        expected_search_kwargs=None,
-        protocol="GET",
-        post_data=None,
-        search_call_count=None,
-    ):
-        if protocol == "GET":
-            response = self.app.get(url, follow_redirects=True)
-        else:
-            response = self.app.post(
-                url,
-                data=json.dumps(post_data),
-                follow_redirects=True,
-            )
+        url: str,
+        mock_search: Mock,
+        expected_search_kwargs: Union[
+            List[Dict[str, Any]], Dict[str, Any], None
+        ] = None,
+        method: str = "GET",
+        post_data: Optional[Any] = None,
+        search_call_count: Optional[int] = None,
+    ) -> httpx.Response:
+        mock_search.return_value = self.mock_search_result()
+        response = self.app.request(
+            method,
+            url,
+            json=post_data,
+            follow_redirects=True,
+            headers={"Content-Type": "application/json"} if method == "POST" else {},
+        )
 
         if search_call_count is not None:
             self.assertEqual(mock_search.call_count, search_call_count)
@@ -338,17 +348,19 @@ class RequestTestCase(unittest.TestCase):
 
     def _request_valid(
         self,
-        url,
-        expected_search_kwargs=None,
-        protocol="GET",
-        post_data=None,
-        search_call_count=None,
-        check_links=True,
-    ):
+        url: str,
+        expected_search_kwargs: Union[
+            List[Dict[str, Any]], Dict[str, Any], None
+        ] = None,
+        method: str = "GET",
+        post_data: Optional[Any] = None,
+        search_call_count: Optional[int] = None,
+        check_links: bool = True,
+    ) -> Any:
         response = self._request_valid_raw(
             url,
             expected_search_kwargs=expected_search_kwargs,
-            protocol=protocol,
+            method=method,
             post_data=post_data,
             search_call_count=search_call_count,
         )
@@ -361,7 +373,7 @@ class RequestTestCase(unittest.TestCase):
 
         return result
 
-    def assert_links_valid(self, element):
+    def assert_links_valid(self, element: Any):
         """Checks that element links are valid"""
         self.assertIsInstance(element, dict)
         self.assertIn("links", element, f"links not found in {str(element)}")
@@ -401,21 +413,28 @@ class RequestTestCase(unittest.TestCase):
             f"missing {required_links_rel} relation(s) in {links}",
         )
 
-    def _request_not_valid(self, url):
-        response = self.app.get(url, follow_redirects=True)
+    def _request_not_valid(
+        self, url: str, method: str = "GET", post_data: Optional[Any] = None
+    ) -> None:
+        response = self.app.request(
+            method,
+            url,
+            json=post_data,
+            follow_redirects=True,
+            headers={"Content-Type": "application/json"} if method == "POST" else {},
+        )
         response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
         self.assertIn("description", response_content)
-        self.assertIn("invalid", response_content["description"].lower())
 
-    def _request_not_found(self, url):
+    def _request_not_found(self, url: str):
         response = self.app.get(url, follow_redirects=True)
         response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(404, response.status_code)
         self.assertIn("description", response_content)
-        self.assertIn("not found", response_content["description"])
+        self.assertIn("NotAvailableError", response_content["description"])
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -435,6 +454,7 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -444,6 +464,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -452,11 +473,11 @@ class RequestTestCase(unittest.TestCase):
         self._request_not_found("search?collections=ZZZ&bbox=0,43,1,44")
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         side_effect=AuthenticationError("you are not authorized"),
     )
-    def test_auth_error(self, mock_search):
+    def test_auth_error(self, mock_search: Mock):
         """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
 
         with self.assertLogs(level="ERROR") as cm_logs:
@@ -472,11 +493,11 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(500, response.status_code)
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         side_effect=TimeOutError("too long"),
     )
-    def test_timeout_error(self, mock_search):
+    def test_timeout_error(self, mock_search: Mock):
         """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
         with self.assertLogs(level="ERROR") as cm_logs:
             response = self.app.get(
@@ -496,19 +517,21 @@ class RequestTestCase(unittest.TestCase):
             f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
+                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(result1.features), 2)
         result2 = self._request_valid(
-            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&filter=latestIntersect",
+            f"search?collections={self.tested_product_type}&bbox=89.65,2.65,89.7,2.7&crunch=filterLatestIntersect",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
+                raise_errors=False,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -522,9 +545,10 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -533,8 +557,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -543,8 +568,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -553,9 +579,10 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -568,6 +595,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -576,9 +604,10 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -590,9 +619,10 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -604,9 +634,10 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -618,9 +649,10 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -642,15 +674,18 @@ class RequestTestCase(unittest.TestCase):
         )
 
     def test_catalog_browse_date_search(self):
-        """Browsing catalogs with date filtering through eodag server should return a valid response"""
+        """
+        Browsing catalogs with date filtering through eodag server should return a valid response
+        """
         self._request_valid(
             f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
+                raise_errors=False,
             ),
         )
         # args & catalog intersection
@@ -660,8 +695,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -670,8 +706,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-02-01T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-02-01T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -680,8 +717,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00",
-                end="2018-01-05T00:00:00",
+                start="2018-01-01T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
@@ -690,8 +728,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-05T00:00:00",
-                end="2018-01-05T00:00:00",
+                start="2018-01-05T00:00:00Z",
+                end="2018-01-05T00:00:00Z",
+                raise_errors=False,
             ),
         )
         result = self._request_valid(
@@ -705,9 +744,8 @@ class RequestTestCase(unittest.TestCase):
             f"catalogs/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
-                "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
+                "provider": None,
             },
         )
 
@@ -717,9 +755,8 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/items/foo",
             expected_search_kwargs={
                 "id": "foo",
-                "provider": None,
                 "productType": self.tested_product_type,
-                "_dc_qs": None,
+                "provider": None,
             },
         )
 
@@ -734,7 +771,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with cloudCover filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "bbox": [0, 43, 1, 44],
@@ -746,6 +783,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 cloudCover=10,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -753,7 +791,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with intersects filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "intersects": {
@@ -766,6 +804,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
             ),
         )
 
@@ -773,7 +812,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with datetime filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "2018-01-20/2018-01-25",
@@ -782,13 +821,14 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-25T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-25T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "2018-01-20/..",
@@ -797,12 +837,13 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "../2018-01-25",
@@ -811,12 +852,13 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                end="2018-01-25T00:00:00",
+                end="2018-01-25T00:00:00Z",
+                raise_errors=False,
             ),
         )
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "datetime": "2018-01-20",
@@ -825,8 +867,9 @@ class RequestTestCase(unittest.TestCase):
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00",
-                end="2018-01-20T00:00:00",
+                start="2018-01-20T00:00:00Z",
+                end="2018-01-20T00:00:00Z",
+                raise_errors=False,
             ),
         )
 
@@ -834,7 +877,7 @@ class RequestTestCase(unittest.TestCase):
         """POST search with ids filtering through eodag server should return a valid response"""
         self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={
                 "collections": [self.tested_product_type],
                 "ids": ["foo", "bar"],
@@ -880,7 +923,7 @@ class RequestTestCase(unittest.TestCase):
         # with provider (post)
         response = self._request_valid(
             "search",
-            protocol="POST",
+            method="POST",
             post_data={"collections": [self.tested_product_type], "provider": "onda"},
         )
         response_items = [f for f in response["features"]]
@@ -907,14 +950,17 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.guess_product_type", autospec=True, return_value=[]
+        "eodag.rest.core.eodag_api.guess_product_type", autospec=True, return_value=[]
     )
     @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
+        "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
+        return_value=[
+            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C"},
+            {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
+        ],
     )
-    def test_list_product_types_ok(self, list_pt, guess_pt):
+    def test_list_product_types_ok(self, list_pt: Mock, guess_pt: Mock):
         """A simple request for product types with(out) a provider must succeed"""
         for url in ("/collections",):
             r = self.app.get(url)
@@ -946,11 +992,14 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.list_product_types",
+        "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C"}, {"ID": "S2_MSI_L2A"}],
+        return_value=[
+            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C"},
+            {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
+        ],
     )
-    def test_list_product_types_nok(self, list_pt):
+    def test_list_product_types_nok(self, list_pt: Mock):
         """A request for product types with a not supported filter must return all product types"""
         url = "/collections?platform=gibberish"
         r = self.app.get(url)
@@ -966,24 +1015,27 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
+        "eodag.plugins.authentication.base.Authentication.authenticate",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
+        "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
-    def test_download_item_from_catalog(self, mock_download, mock_auth):
+    def test_download_item_from_catalog_stream(
+        self, mock_download: Mock, mock_auth: Mock
+    ):
         """Download through eodag server catalog should return a valid response"""
 
         expected_file = "somewhere.zip"
 
-        mock_download.return_value = dict(
-            content=(i for i in range(0)),
+        mock_download.return_value = StreamResponse(
+            content=iter(bytes(i) for i in range(0)),
             headers={
                 "content-disposition": f"attachment; filename={expected_file}",
             },
         )
+        mock_auth.return_value = {}
 
         response = self._request_valid_raw(
             f"catalogs/{self.tested_product_type}/items/foo/download"
@@ -997,32 +1049,25 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
-        "eodag.plugins.apis.usgs.UsgsApi.authenticate",
+        "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
     @mock.patch(
-        "eodag.rest.utils.eodag_api.download",
+        "eodag.rest.core.eodag_api.download",
         autospec=True,
     )
-    def test_download_item_from_collection_api_plugin(self, mock_download, mock_auth):
+    def test_download_item_from_collection_no_stream(
+        self, mock_download: Mock, mock_stream_download: Mock
+    ):
         """Download through eodag server catalog should return a valid response"""
         # download should be performed locally then deleted if streaming is not available
         tmp_dl_dir = TemporaryDirectory()
         expected_file = f"{tmp_dl_dir.name}.tar"
         Path(expected_file).touch()
         mock_download.return_value = expected_file
+        mock_stream_download.side_effect = NotImplementedError()
 
-        # use an external python API provider for this test and reset downloader
-        self._request_valid_raw.patchings[0].kwargs["return_value"][0][
-            0
-        ].provider = "usgs"
-        self._request_valid_raw.patchings[0].kwargs["return_value"][0][
-            0
-        ].downloader = None
-
-        self._request_valid_raw(
-            "collections/some-collection/items/foo/download?provider=usgs"
-        )
+        self._request_valid_raw("collections/some-collection/items/foo/download")
         mock_download.assert_called_once()
         # downloaded file should have been immediatly deleted from the server
         assert not os.path.exists(
@@ -1072,7 +1117,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
-    def test_queryables_with_provider(self, mock_requests_get):
+    def test_queryables_with_provider(self, mock_requests_get: Mock):
         resp = self._request_valid(
             "queryables?provider=planetary_computer", check_links=False
         )
@@ -1115,7 +1160,7 @@ class RequestTestCase(unittest.TestCase):
         # TODO: with an unsupported product type
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
-    def test_product_type_queryables_with_provider(self, mock_requests_get):
+    def test_product_type_queryables_with_provider(self, mock_requests_get: Mock):
         """Request a collection-specific list of queryables for a given provider."""
         queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
         with open(queryables_path) as f:
@@ -1189,7 +1234,9 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
     @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
-    def test_product_type_queryables_from_constraints(self, mock_requests_constraints):
+    def test_product_type_queryables_from_constraints(
+        self, mock_requests_constraints: Mock
+    ):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
@@ -1212,3 +1259,121 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("ids", res["properties"])
         self.assertIn("geometry", res["properties"])
         self.assertNotIn("collections", res["properties"])
+
+    def test_cql_post_search(self):
+        self._request_valid(
+            "search",
+            method="POST",
+            post_data={
+                "filter": {
+                    "op": "and",
+                    "args": [
+                        {
+                            "op": "in",
+                            "args": [{"property": "id"}, ["foo", "bar"]],
+                        },
+                        {
+                            "op": "=",
+                            "args": [
+                                {"property": "collection"},
+                                self.tested_product_type,
+                            ],
+                        },
+                    ],
+                }
+            },
+            search_call_count=2,
+            expected_search_kwargs=[
+                {
+                    "provider": None,
+                    "id": "foo",
+                    "productType": self.tested_product_type,
+                },
+                {
+                    "provider": None,
+                    "id": "bar",
+                    "productType": self.tested_product_type,
+                },
+            ],
+        )
+
+        self._request_valid(
+            "search",
+            method="POST",
+            post_data={
+                "filter-lang": "cql2-json",
+                "filter": {
+                    "op": "and",
+                    "args": [
+                        {
+                            "op": "=",
+                            "args": [
+                                {"property": "collection"},
+                                self.tested_product_type,
+                            ],
+                        },
+                        {"op": "=", "args": [{"property": "eo:cloud_cover"}, 10]},
+                        {
+                            "op": "t_intersects",
+                            "args": [
+                                {"property": "datetime"},
+                                {
+                                    "interval": [
+                                        "2018-01-20T00:00:00Z",
+                                        "2018-01-25T00:00:00Z",
+                                    ]
+                                },
+                            ],
+                        },
+                        {
+                            "op": "s_intersects",
+                            "args": [
+                                {"property": "geometry"},
+                                {
+                                    "type": "Polygon",
+                                    "coordinates": [
+                                        [[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            expected_search_kwargs={
+                "productType": "S2_MSI_L1C",
+                "geom": {
+                    "type": "Polygon",
+                    "coordinates": [[[0, 43], [0, 44], [1, 44], [1, 43], [0, 43]]],
+                },
+                "start": "2018-01-20T00:00:00Z",
+                "end": "2018-01-25T00:00:00Z",
+                "cloudCover": 10,
+                "page": 1,
+                "items_per_page": 20,
+                "raise_errors": False,
+            },
+        )
+
+        self._request_not_valid(
+            "search",
+            method="POST",
+            post_data={
+                "filter": {
+                    "op": "and",
+                    "args": [
+                        {
+                            "op": "in",
+                            "args": [{"property": "id"}, "foo", "bar"],
+                        },
+                        {
+                            "op": "=",
+                            "args": [
+                                {"property": "collections"},
+                                self.tested_product_type,
+                            ],
+                        },
+                    ],
+                }
+            },
+        )

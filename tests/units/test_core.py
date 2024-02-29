@@ -719,7 +719,8 @@ class TestCore(TestCoreBase):
             {"productType": "foo"},
         )
         self.assertEqual(
-            self.dag.product_types_config.source["foo"], {"title": "Foo collection"}
+            self.dag.product_types_config.source["foo"],
+            {"_id": "foo", "title": "Foo collection"},
         )
 
         # update existing provider conf and check that discover_product_types() is launched for it

@@ -17,7 +17,7 @@
 # limitations under the License.
 
 stac_version: 1.0.0
-stac_api_version: 1.0.0-rc.3
+stac_api_version: 1.0.0
 
 # Capabilities ----------------------------------------------------------------
 
@@ -53,13 +53,26 @@ landing_page:
 # http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes
 conformance:
   conformsTo:
-    - https://api.stacspec.org/v1.0.0-rc.3/core
-    - https://api.stacspec.org/v1.0.0-rc.3/item-search
-    - https://api.stacspec.org/v1.0.0-rc.3/ogcapi-features
-    - https://api.stacspec.org/v1.0.0-rc.3/collections
+    - https://api.stacspec.org/v1.0.0/core
+    - https://api.stacspec.org/v1.0.0/item-search
+    - https://api.stacspec.org/v1.0.0/item-search#query
+    - https://api.stacspec.org/v1.0.0/item-search#filter
+    - https://api.stacspec.org/v1.0.0/item-search#sort
+    - https://api.stacspec.org/v1.0.0/ogcapi-features
+    - https://api.stacspec.org/v1.0.0/ogcapi-features#query
+    - https://api.stacspec.org/v1.0.0/ogcapi-features#sort
+    - https://api.stacspec.org/v1.0.0/collections
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
+    - http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter
+    - http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter
+    - http://www.opengis.net/spec/cql2/1.0/conf/cql2-text
+    - http://www.opengis.net/spec/cql2/1.0/conf/cql2-json
+    - http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2
+    - http://www.opengis.net/spec/cql2/1.0/conf/basic-spatial-operators
+    - http://www.opengis.net/spec/cql2/1.0/conf/temporal-operators
+    - http://www.opengis.net/spec/cql2/1.0/conf/advanced-comparison-operators
 
 # https://stacspec.org/STAC-api.html#operation/getCollections
 collections:
@@ -147,20 +160,12 @@ items:
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
-    # implement next/prev page links
-    # https://github.com/radiantearth/stac-spec/blob/master/api-spec/api-spec.md#paging-extension
-    - rel: next
-      href: '$.search_results.next'
-      title: Next page
-      type: application/geo+json
-      method: '$.search_results.method'
-      body: '$.search_results.body'
   # time and date when the response was generated
-  timeStamp: '$.search_results.timeStamp'
+  timeStamp: '$.timeStamp'
   # count request result
-  numberMatched: '$.search_results.numberMatched'
+  numberMatched: '$.numberMatched'
   # len(features)
-  numberReturned: '$.search_results.numberReturned'
+  numberReturned: '$.numberReturned'
 
 # https://stacspec.org/STAC-api.html#operation/getFeature
 item:
@@ -216,20 +221,7 @@ item:
     - rel: collection
       title: "{item[collection]}"
       href: "{catalog[url]}"
-  assets:
-    downloadLink:
-        title: 'Download link'
-        href: "{catalog[url]}/items/{item[id]}/download"
-        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-        type: 'application/zip'
-        _dc_qs: '$.product.properties._dc_qs'
-    thumbnail:
-        title: 'Thumbnail'
-        href: '$.product.properties.quicklook'
-        type: 'image/jpeg'
-        role: thumbnail
-        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-    origin_assets: '$.product.assets'
+
 # product properties not needed in items
 metadata_ignore:
   - title

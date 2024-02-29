@@ -107,6 +107,7 @@ paths:
       description: |-
           Fetch features in the given catalog provided with `catalogPath`.
       parameters:
+        - $ref: '#/components/parameters/provider'
         - $ref: '#/components/parameters/catalogPath'
         - $ref: '#/components/parameters/bbox'
         - $ref: '#/components/parameters/datetime'
@@ -130,6 +131,7 @@ paths:
           Fetch the feature with id `featureId` in the given catalog provided
           with `cataloPath`.
       parameters:
+        - $ref: '#/components/parameters/provider'
         - $ref: '#/components/parameters/catalogPath'
         - $ref: '#/components/parameters/featureId'
       responses:
@@ -148,6 +150,7 @@ paths:
             Download the feature with id `featureId` in the given catalog provided
             with `catalogPath`.
         parameters:
+          - $ref: '#/components/parameters/provider'
           - $ref: '#/components/parameters/catalogPath'
           - $ref: '#/components/parameters/featureId'
         responses:
@@ -169,6 +172,8 @@ paths:
       summary: The feature collections in the dataset.
       description: A body of Feature Collections that belong or are used together with additional links. Request may not return the full set of metadata per Feature Collection.
       operationId: getCollections
+      parameters:
+        - $ref: '#/components/parameters/provider'
       responses:
         '200':
           $ref: '#/components/responses/Collections'
@@ -225,6 +230,7 @@ paths:
       tags:
         - Data
       parameters:
+        - $ref: '#/components/parameters/provider'
         - $ref: '#/components/parameters/collectionId'
         - $ref: '#/components/parameters/bbox'
         - $ref: '#/components/parameters/datetime'
@@ -254,6 +260,7 @@ paths:
       tags:
         - Data
       parameters:
+        - $ref: '#/components/parameters/provider'
         - $ref: '#/components/parameters/collectionId'
         - $ref: '#/components/parameters/featureId'
       summary: fetch a single feature
@@ -275,6 +282,7 @@ paths:
       tags:
         - Data
       parameters:
+        - $ref: '#/components/parameters/provider'
         - $ref: '#/components/parameters/collectionId'
         - $ref: '#/components/parameters/featureId'
       summary: download a single feature assets archive
@@ -300,24 +308,19 @@ paths:
       description: |-
         Retrieve Items matching filters. Intended as a shorthand API for simple
         queries.
-
-        This method is optional, but you MUST implement `POST /search` if you
-        want to implement this method.
-
-        If this endpoint is implemented on a server, it is required to add a
-        link referring to this endpoint with `rel` set to `search` to the
-        `links` array in `GET /`. As `GET` is the default method, the `method`
-        may not be set explicitly in the link.
       operationId: getSearchSTAC
       tags:
         - STAC
       parameters:
-      - $ref: '#/components/parameters/bbox'
-      - $ref: '#/components/parameters/datetime'
-      - $ref: '#/components/parameters/limit'
-      - $ref: '#/components/parameters/intersects'
-      - $ref: '#/components/parameters/ids'
-      - $ref: '#/components/parameters/collectionsArray'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/intersects'
+        - $ref: '#/components/parameters/ids'
+        - $ref: '#/components/parameters/collectionsArray'
+        - $ref: '#/components/parameters/provider'
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/sortby'
       responses:
         '200':
           description: A feature collection.
@@ -342,22 +345,22 @@ paths:
       description: |-
         Retrieve items matching filters. Intended as the standard, full-featured
         query API.
-
-        This method is mandatory to implement if `GET /search` is implemented.
-        If this endpoint is implemented on a server, it is required to add a
-        link referring to this endpoint with `rel` set to `search` and `method`
-        set to `POST` to the `links` array in `GET /`.
       tags:
         - STAC
       operationId: postSearchSTAC
       requestBody:
         description: |
-          The `POST /search` JSON body specification is detailed in the [STAC specification](https://api.stacspec.org/v1.0.0/item-search/)
+          The `POST /search` JSON body specification is detailed in the
+          [STAC specification](https://api.stacspec.org/v1.0.0/item-search/).
+          Both [Query](https://github.com/stac-api-extensions/query) and
+          [Filter](https://github.com/stac-api-extensions/filter) extensions are supported.
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/searchBody'
+              allOf:
+                - $ref: '#/components/schemas/searchBody'
+                - $ref: 'https://api.stacspec.org/v1.0.0-beta.3/item-search/openapi.yaml#/components/schemas/components-schemas-searchBody'
       responses:
         '200':
           description: A feature collection.
@@ -621,6 +624,30 @@ components:
       required: false
       schema:
         type: string
+    filter:
+      name: filter
+      x-stac-api-fragment: filter
+      in: query
+      description: |-
+        A CQL filter expression for filtering items.
+      required: false
+      schema:
+        oneOf:
+          - $ref: 'https://api.stacspec.org/v1.0.0-beta.3/item-search/openapi.yaml#/components/schemas/booleanValueExpression'
+          - $ref: '#/components/schemas/filter-cql-text'
+    sortby:
+      name: sortby
+      x-stac-api-fragment: sort
+      in: query
+      description: |-
+        An array of property names, prefixed by either "+" for ascending or
+        "-" for descending. If no prefix is provided, "+" is assumed.
+      required: false
+      schema:
+        type: string
+        example: '+start_datetime'
+      style: form
+      explode: false
   schemas:
     queryProp:
       description: Apply query operations to a specific property
@@ -1125,6 +1152,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/link'
+    filter-cql-text:
+      description: |
+        A CQL filter expression in the 'cql-text' encoding.
+      type: string
     geometryGeoJSON:
       oneOf:
         - $ref: '#/components/schemas/pointGeoJSON'
@@ -1454,6 +1485,7 @@ components:
       description: The search criteria
       type: object
       allOf:
+        - $ref:  '#/components/schemas/providerFilter'
         - $ref: '#/components/schemas/collectionsFilter'
         - $ref: '#/components/schemas/bboxFilter'
         - $ref: '#/components/schemas/datetimeFilter'
@@ -1475,6 +1507,7 @@ components:
             eq: S2A
           eo:cloud_cover:
             lte: 80
+        provider: peps
         limit: 10
     limit:
       type: integer
@@ -1579,6 +1612,9 @@ components:
       properties:
         collections:
           $ref: '#/components/schemas/collectionsArray'
+    providerFilter:
+      type: string
+      description: Only interrogate the specifiec provider
     queryFilter:
       description: An object representing a query filter.
       type: object

@@ -29,6 +29,7 @@ import functools
 import hashlib
 import inspect
 import logging as py_logging
+import mimetypes
 import os
 import re
 import shutil
@@ -38,6 +39,7 @@ import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
+from dataclasses import dataclass
 from datetime import datetime as dt
 from email.message import Message
 from glob import glob
@@ -52,10 +54,12 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 # All modules using these should import them from utils package
@@ -89,7 +93,7 @@ from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError
 from shapely.geometry import Polygon, shape
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
@@ -1083,7 +1087,10 @@ def get_geometry_from_various(
         geom_arg = query_args["geometry"]
 
         bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
-        if isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
+        if isinstance(geom_arg, dict) and geom_arg.get("type") in GEOMETRY_TYPES:
+            # geojson geometry
+            geom = cast(BaseGeometry, shape(geom_arg))
+        elif isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
             # bbox dict
             geom = Polygon(
                 (
@@ -1409,3 +1416,19 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
         return eval(value.capitalize())
 
     return new_type(value)
+
+
+@dataclass
+class StreamResponse:
+    """Represents a streaming response"""
+
+    content: Iterator[bytes]
+    headers: Optional[Mapping[str, str]] = None
+    media_type: Optional[str] = None
+
+
+def guess_file_type(file: str) -> Optional[str]:
+    """guess the mime type of a file or URL based on its extension"""
+    mimetypes.add_type("text/xml", ".xsd")
+    mime_type, _ = mimetypes.guess_type(file, False)
+    return mime_type
