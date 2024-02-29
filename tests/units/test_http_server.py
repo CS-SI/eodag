@@ -1378,7 +1378,7 @@ class RequestTestCase(unittest.TestCase):
             },
         )
 
-    @mock.patch("eodag.rest.utils.eodag_api.list_product_types", autospec=True)
+    @mock.patch("eodag.rest.core.eodag_api.list_product_types", autospec=True)
     def test_collection_free_text_search(self, list_pt: Mock):
         """Test STAC Collection free-text search"""
 
