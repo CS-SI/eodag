@@ -308,14 +308,6 @@ paths:
       description: |-
         Retrieve Items matching filters. Intended as a shorthand API for simple
         queries.
-
-        This method is optional, but you MUST implement `POST /search` if you
-        want to implement this method.
-
-        If this endpoint is implemented on a server, it is required to add a
-        link referring to this endpoint with `rel` set to `search` to the
-        `links` array in `GET /`. As `GET` is the default method, the `method`
-        may not be set explicitly in the link.
       operationId: getSearchSTAC
       tags:
         - STAC
@@ -353,17 +345,15 @@ paths:
       description: |-
         Retrieve items matching filters. Intended as the standard, full-featured
         query API.
-
-        This method is mandatory to implement if `GET /search` is implemented.
-        If this endpoint is implemented on a server, it is required to add a
-        link referring to this endpoint with `rel` set to `search` and `method`
-        set to `POST` to the `links` array in `GET /`.
       tags:
         - STAC
       operationId: postSearchSTAC
       requestBody:
         description: |
-          The `POST /search` JSON body specification is detailed in the [STAC specification](https://api.stacspec.org/v1.0.0/item-search/)
+          The `POST /search` JSON body specification is detailed in the
+          [STAC specification](https://api.stacspec.org/v1.0.0/item-search/).
+          Both [Query](https://github.com/stac-api-extensions/query) and
+          [Filter](https://github.com/stac-api-extensions/filter) extensions are supported.
         required: true
         content:
           application/json:
