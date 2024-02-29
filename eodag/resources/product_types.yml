@@ -3969,7 +3969,7 @@ EEA_DAILY_VI:
   missionStartDate:
 
 # Copernicus Marine Service (CMEMS) ----------------------------------------------------------
-CMEMS_GLOBAL_PHY_001_024:
+CMEMS_GLOBAL_PHY:
   abstract: |
     The Operational Mercator global ocean analysis and forecast system at 1/12 degree is providing 10 days of 3D global
     ocean forecasts updated daily. The time series is aggregated in time in order to reach a two full year’s time series
@@ -3989,7 +3989,7 @@ CMEMS_GLOBAL_PHY_001_024:
   title: Global Ocean Physics Analysis and Forecast
   missionStartDate: "2021-11-30T00:00:00Z"
 
-CMEMS_GLOBAL_BGC_001_028:
+CMEMS_GLOBAL_BGC:
   abstract: |
     The Operational Mercator Ocean biogeochemical global ocean analysis and forecast system at 1/4 degree is providing
     10 days of 3D global ocean forecasts updated weekly. The time series is aggregated in time, in order to reach a two
@@ -4013,7 +4013,7 @@ CMEMS_GLOBAL_BGC_001_028:
   title: Global Ocean Biogeochemistry Analysis and Forecast
   missionStartDate: "2021-11-30T00:00:00Z"
 
-CMEMS_GLOBAL_WAV_001_027:
+CMEMS_GLOBAL_WAV:
   abstract: |
     The operational global ocean analysis and forecast system of Météo-France with a resolution of 1/12 degree is
     providing daily analyses and 10 days forecasts for the global ocean sea surface waves. This product includes
@@ -4040,7 +4040,7 @@ CMEMS_GLOBAL_WAV_001_027:
   title: Global Ocean Waves Analysis and Forecast
   missionStartDate: "2021-11-30T00:00:00Z"
 
-CMEMS_GLOBAL_MULTIYEAR_BGC_001_033:
+CMEMS_GLOBAL_MULTIYEAR_BGC:
   abstract: |
     The Low and Mid-Trophic Levels (LMTL) reanalysis for global ocean is produced at [https://www.cls.fr CLS] on behalf
     of Global Ocean Marine Forecasting Center. It provides 2D fields of biomass content of zooplankton and six functional
@@ -4064,7 +4064,7 @@ CMEMS_GLOBAL_MULTIYEAR_BGC_001_033:
   missionStartDate: "1998-01-01T00:00:00Z"
   missionEndDate: "2022-12-31T23:59:59Z"
 
-CMEMS_GLOBAL_MULTIYEAR_WAV_001_032:
+CMEMS_GLOBAL_MULTIYEAR_WAV:
   abstract: |
     GLOBAL_REANALYSIS_WAV_001_032 for the global wave reanalysis describing past sea states since years 1993. This product
     also bears the name of WAVERYS within the GLO-HR MFC. for correspondence to other global multi-year products like GLORYS.
@@ -4086,7 +4086,7 @@ CMEMS_GLOBAL_MULTIYEAR_WAV_001_032:
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2023-04-30T23:59:59Z"
 
-CMEMS_GLOBAL_MULTIYEAR_PHY_001_030:
+CMEMS_GLOBAL_MULTIYEAR_PHY:
   abstract: |
     The GLORYS12V1 product is the CMEMS global ocean eddy-resolving (1/12° horizontal resolution, 50 vertical levels)
     reanalysis covering the altimetry (1993 onward). It is based largely on the current real-time global forecasting CMEMS
@@ -4108,7 +4108,7 @@ CMEMS_GLOBAL_MULTIYEAR_PHY_001_030:
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2023-04-30T23:59:59Z"
 
-CMEMS_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
+CMEMS_MULTIOBS_GLO_BIO_BGC_3D_REP:
   abstract: |
     This product consists of 3D fields of Particulate Organic Carbon (POC), Particulate Backscattering coefficient (bbp)
     and Chlorophyll-a concentration (Chla) at depth. The reprocessed product is provided at 0.25°x0.25° horizontal resolution,
@@ -4126,6 +4126,189 @@ CMEMS_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   license: proprietary
   title: Global Ocean 3D Chlorophyll-a concentration, Particulate Backscattering coefficient and Particulate Organic carbon
   missionStartDate: "1998-01-01T00:00:00Z"
+
+CMEMS_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON:
+  abstract: |
+    This product consists of vertical profiles of the concentration of nutrients (nitrates, phosphates, and silicates) and
+    carbonate system variables (total alkalinity, dissolved inorganic carbon, pH, and partial pressure of carbon dioxide),
+    computed for each Argo float equipped with an oxygen sensor. The method called CANYON (Carbonate system and Nutrients
+    concentration from hYdrological properties and Oxygen using a Neural-network) is based on a neural network trained using
+    high-quality nutrient data collected over the last 30 years (GLODAPv2 database, https://www.glodap.info/). The method
+    is applied to each Argo float equipped with an oxygen sensor using as input the properties measured by the float
+    (pressure, temperature, salinity, oxygen), and its date and position. Product Citation: Please refer to our Technical FAQ
+    for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    DOI (product) : https://doi.org/10.48670/moi-00048
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,marine,ocean,nutrients,carbonate,vertical,CANYON
+  sensorType:
+  license: proprietary
+  title: Nutrient and carbon profiles vertical distribution
+  missionStartDate: "2002-09-01T00:00:00Z"
+  missionEndDate: "2022-08-31T23:59:59Z"
+
+CMEMS_MULTIOBS_GLO_PHY_MY:
+  abstract: |
+    This product is a L4 REP global total velocity field at 0m and 15m together with its individual components
+    (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency
+    and at 1/4 degree regular grid. The total velocity fields are obtained by combining CMEMS satellite Geostrophic surface
+    currents and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5* in NRT).
+    1 hourly product, daily and monthly means are available. This product has been initiated in the frame of CNES/CLS projects.
+    Then it has been consolidated during the Globcurrent project (funded by the ESA User Element Program).
+    Product Citation: Please refer to our Technical FAQ for citing products:
+    http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    DOI (product) : https://doi.org/10.48670/mds-00327
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,marine,ocean,REP,Globcurrent,surface
+  sensorType:
+  license: proprietary
+  title: Global Total (COPERNICUS-GLOBCURRENT), Ekman and Geostrophic currents
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+CMEMS_MULTIOBS_GLO_PHY_NRT:
+  abstract: |
+    This product is a L4 NRT global total velocity field at 0m and 15m together with its individual components
+    (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency
+    and at 1/4 degree regular grid. The total velocity fields are obtained by combining CMEMS satellite Geostrophic surface
+    currents and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5* in NRT).
+    1 hourly product, daily and monthly means are available. This product has been initiated in the frame of CNES/CLS projects.
+    Then it has been consolidated during the Globcurrent project (funded by the ESA User Element Program).
+    Product Citation: Please refer to our Technical FAQ for citing products:
+    http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    DOI (product) : https://doi.org/10.48670/mds-00327
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,marine,ocean,NRT,Globcurrent,surface
+  sensorType:
+  license: proprietary
+  title: Global Total (COPERNICUS-GLOBCURRENT), Ekman and Geostrophic currents
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+CMEMS_MULTIOBS_GLO_PHY_SSS_L3_MYNRT:
+  abstract: |
+    The product MULTIOBS_GLO_PHY_SSS_L3_MYNRT_015_014 is a reformatting and a simplified version of the CATDS L3 product
+    called “2Q” or “L2Q”. it is an intermediate product, that provides, in daily files, SSS corrected from land-sea contamination
+    and latitudinal bias, with/without rain freshening correction.
+    DOI (product) : https://doi.org/10.1016/j.rse.2016.02.061
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,NRT,Salinity,surface
+  sensorType:
+  license: proprietary
+  title: SMOS CATDS Qualified (L2Q) Sea Surface Salinity product
+  missionStartDate: "2010-01-01T00:00:00Z"
+
+CMEMS_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT:
+  abstract: |
+    You can find here the Multi Observation Global Ocean ARMOR3D L4 analysis and multi-year reprocessing. It consists of
+    3D Temperature, Salinity, Heights, Geostrophic Currents and Mixed Layer Depth, available on a 1/4 degree regular grid
+    and on 50 depth levels from the surface down to the bottom. The product includes 4 datasets: * dataset-armor-3d-nrt-weekly,
+    which delivers near-real-time (NRT) weekly data * dataset-armor-3d-nrt-monthly, which delivers near-real-time (NRT) monthly
+    data * dataset-armor-3d-rep-weekly, which delivers multi-year reprocessed (REP) weekly data * dataset-armor-3d-rep-monthly,
+    which delivers multi-year reprocessed (REP) monthly data DOI (product) : https://doi.org/10.48670/moi-00052
+    Product Citation: Please refer to our Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,Salinity,surface,geostrophic,ARMOR3D
+  sensorType:
+  license: proprietary
+  title: Multi Observation Global Ocean 3D Temperature Salinity Height Geostrophic Current and MLD
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+CMEMS_MULTIOBS_GLO_PHY_W_3D_REP:
+  abstract: |
+    Short description: You can find here the OMEGA3D observation-based quasi-geostrophic vertical and horizontal ocean currents
+    developed by the Consiglio Nazionale delle Ricerche. The data are provided weekly over a regular grid at 1/4° horizontal
+    resolution, from the surface to 1500 m depth (representative of each Wednesday). The velocities are obtained by solving
+    a diabatic formulation of the Omega equation, starting from ARMOR3D data (MULTIOBS_GLO_PHY_REP_015_002 which corresponds
+    to former version of MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012) and ERA-Interim surface fluxes.
+    DOI (product) : https://commons.datacite.org/doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007
+    Product citation: Please refer to our Technical FAQ for citing products.http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,OMEGA3D,geostrophic,currents
+  sensorType:
+  license: proprietary
+  title: Global Observed Ocean Physics 3D Quasi-Geostrophic Currents (OMEGA3D)
+  missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2018-12-31T23:59:59Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily
+    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
+    Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
+    DOI (product) : https://doi.org/10.48670/moi-00278
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,NRT,daily
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite observations
+  missionStartDate: "2023-04-10T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
+    OLCI-S3A & S3B for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL),
+    Phytoplankton Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily.
+    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
+    Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
+    DOI (product) : https://doi.org/10.48670/moi-00280
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,MY,daily
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-04-09T00:00:00Z"
+
+CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT:
+  abstract: |
+    For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
+    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
+    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal
+    resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide a "cloud free" product.
+    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
+    Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
+    DOI (product) : https://doi.org/10.48670/moi-00279
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,chlorophyll,plankton,NRT,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time)
+  missionStartDate: "2023-04-10T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
