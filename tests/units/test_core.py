@@ -27,6 +27,7 @@ import unittest
 import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import Mock
 
 from pkg_resources import resource_filename
 from shapely import wkt
@@ -1082,8 +1083,8 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_list_queryables(
-        self, mock_discover_queryables, mock_fetch_product_types_list
-    ):
+        self, mock_discover_queryables: Mock, mock_fetch_product_types_list: Mock
+    ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
@@ -1120,7 +1121,7 @@ class TestCore(TestCoreBase):
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
     @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
-    def test_list_queryables_with_constraints(self, mock_discover_queryables):
+    def test_list_queryables_with_constraints(self, mock_discover_queryables: Mock):
         plugin = next(
             self.dag._plugins_manager.get_search_plugins(
                 provider="cop_cds", product_type="ERA5_SL"

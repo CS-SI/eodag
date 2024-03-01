@@ -2154,10 +2154,20 @@ class EODataAccessGateway:
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         available_product_types = [
-            pt["ID"] for pt in self.list_product_types(fetch_providers=False)
+            pt["ID"]
+            for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
-        product_type = kwargs.get("productType", None)
-        if product_type is not None and product_type not in available_product_types:
+        product_type = kwargs.get("productType")
+
+        if product_type:
+            try:
+                kwargs["productType"] = product_type = self.get_product_type_from_alias(
+                    product_type
+                )
+            except NoMatchingProductType as e:
+                raise UnsupportedProductType(f"{product_type} is not available") from e
+
+        if product_type and product_type not in available_product_types:
             self.fetch_product_types_list()
 
         if not provider and not product_type:
@@ -2166,10 +2176,6 @@ class EODataAccessGateway:
         providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
-            if product_type and product_type not in plugin.config.products.keys():
-                raise UnsupportedProductType(
-                    f"{product_type} is not available for provider {plugin.provider}"
-                )
             providers_queryables[plugin.provider] = _list_plugin_queryables(
                 plugin, kwargs, product_type
             )
