@@ -251,6 +251,7 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
             auth=auth,
+            verify=True,
         )
 
         # check auth query string

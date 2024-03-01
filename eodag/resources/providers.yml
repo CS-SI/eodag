@@ -886,7 +886,6 @@
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
     timeout: 60
-    ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
       total_items_nb_key_path: '$.properties.totalResults'
