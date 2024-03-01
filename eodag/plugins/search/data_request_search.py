@@ -289,11 +289,11 @@ class DataRequestSearch(Search):
         except requests.RequestException as e:
             raise RequestError(f"_cancel_request failed: {str(e)}")
 
-    def _check_request_status(
-        self, data_request_id: str, ssl_verify: bool = True
-    ) -> bool:
+    def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         try:
             status_resp = requests.get(
                 status_url,
@@ -326,9 +326,10 @@ class DataRequestSearch(Search):
         data_request_id: str,
         items_per_page: int,
         page: int,
-        ssl_verify: bool = True,
     ) -> Dict[str, Any]:
         page = page - 1 + self.config.pagination.get("start_page", 1)
+
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )

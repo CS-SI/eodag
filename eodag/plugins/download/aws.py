@@ -635,7 +635,6 @@ class AwsDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Dict[str, Any]:
         r"""
@@ -720,7 +719,6 @@ class AwsDownload(Download):
             build_safe,
             progress_callback,
             assets_values,
-            ssl_verify,
         )
         outputs_filename = (
             sanitize(product.properties["title"])
@@ -755,7 +753,6 @@ class AwsDownload(Download):
         build_safe: bool,
         progress_callback: ProgressCallback,
         assets_values: List[Dict[str, Any]],
-        ssl_verify: bool = True,
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
         """Yield product data chunks"""
 
@@ -1330,7 +1327,6 @@ class AwsDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> List[str]:
         """
@@ -1343,6 +1339,5 @@ class AwsDownload(Download):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
-            ssl_verify=ssl_verify,
             **kwargs,
         )

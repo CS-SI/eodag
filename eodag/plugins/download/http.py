@@ -538,7 +538,6 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Dict[str, Any]:
         r"""
@@ -573,7 +572,6 @@ class HTTPDownload(Download):
                     auth,
                     progress_callback,
                     assets_values=assets_values,
-                    ssl_verify=ssl_verify,
                     **kwargs,
                 )
 
@@ -614,9 +612,7 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(
-            product, auth, progress_callback, ssl_verify, **kwargs
-        )
+        chunks = self._stream_download(product, auth, progress_callback, **kwargs)
         # start reading chunks to set product.headers
         first_chunk = next(chunks)
 
@@ -670,7 +666,6 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        ssl_verify: bool = True,
         **kwargs: Dict[str, Any],
     ) -> Iterator[Any]:
         """
@@ -728,6 +723,8 @@ class HTTPDownload(Download):
         # url where data is downloaded from can be ftp -> add ftp adapter
         requests_ftp.monkeypatch_session()
         s = requests.Session()
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         with s.request(
             req_method,
             req_url,
@@ -762,7 +759,6 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
         if progress_callback is None:
@@ -816,6 +812,8 @@ class HTTPDownload(Download):
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
+
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         # loop for assets download
         for asset in assets_values:
@@ -888,7 +886,6 @@ class HTTPDownload(Download):
         record_filename: str,
         auth: Optional[PluginConfig] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ) -> str:
         """Download product assets if they exist"""
@@ -909,7 +906,6 @@ class HTTPDownload(Download):
             auth,
             progress_callback,
             assets_values=assets_values,
-            ssl_verify=ssl_verify,
             **kwargs,
         )
 
@@ -1013,9 +1009,9 @@ class HTTPDownload(Download):
         auth: Optional[PluginConfig],
         params: Optional[Dict[str, str]],
         zipped: bool = False,
-        ssl_verify: bool = True,
     ) -> int:
         total_size = 0
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         # loop for assets size & filename
         for asset in assets_values:
@@ -1079,7 +1075,6 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        ssl_verify: bool = True,
         **kwargs: Union[str, bool, Dict[str, Any]],
     ):
         """
@@ -1092,6 +1087,5 @@ class HTTPDownload(Download):
             progress_callback=progress_callback,
             wait=wait,
             timeout=timeout,
-            ssl_verify=ssl_verify,
             **kwargs,
         )

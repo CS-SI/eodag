@@ -137,7 +137,6 @@ class S3RestDownload(Download):
             auth: PluginConfig,
             progress_callback: ProgressCallback,
             ordered_message: str,
-            ssl_verify: bool = True,
             **kwargs: Any,
         ):
             # check order status
@@ -172,6 +171,9 @@ class S3RestDownload(Download):
 
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
+
+            ssl_verify = getattr(self.config, "ssl_verify", True)
+
             bucket_contents = requests.get(
                 nodes_list_url,
                 auth=auth,

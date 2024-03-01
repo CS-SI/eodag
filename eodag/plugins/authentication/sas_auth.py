@@ -100,6 +100,7 @@ class SASAuth(Authentication):
 
         # update headers with subscription key if exists
         apikey = getattr(self.config, "credentials", {}).get("apikey", None)
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         if apikey:
             headers_update = format_dict_items(self.config.headers, apikey=apikey)
             headers.update(headers_update)
@@ -108,4 +109,5 @@ class SASAuth(Authentication):
             auth_uri=self.config.auth_uri,
             signed_url_key=self.config.signed_url_key,
             headers=headers,
+            ssl_verify=ssl_verify,
         )
