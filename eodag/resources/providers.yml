@@ -718,6 +718,7 @@
     type: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
     ssl_verify: true
+    credentials_type: req_data
 
 ---
 !provider # peps
@@ -5511,8 +5512,6 @@
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
-    headers:
-      Authorization: "Bearer {token}"
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
@@ -5618,8 +5617,6 @@
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
-    headers:
-      Authorization: "Bearer {token}"
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
@@ -6198,3 +6195,11 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
+  auth: !plugin
+    type: TokenAuth
+    auth_uri: 'https://api.eumetsat.int/token'
+    auth_error_code: 401
+    req_data:
+      grant_type: client_credentials
+    token_type: json
+    token_key: access_token
