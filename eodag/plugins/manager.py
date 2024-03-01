@@ -206,7 +206,13 @@ class PluginManager:
             ]
 
         if not configs:
-            raise UnsupportedProvider
+            if product_type:
+                raise UnsupportedProvider(
+                    f"The product type {product_type} is not available with provider {provider}"
+                )
+            raise UnsupportedProvider(
+                f"The requested provider is not (yet) supported: {provider}"
+            )
 
         for config in sorted(configs, key=attrgetter("priority"), reverse=True):
             yield get_plugin()
