@@ -2423,7 +2423,8 @@ class TestCoreSearch(TestCoreBase):
 
     def test_search_sort_by_raise_errors(self):
         """search used with "sortBy" argument must raise errors if the argument is incorrect or if the provider does
-        not support a maximum number of sorting parameter, one sorting parameter or the sorting feature"""
+        not support a maximum number of sorting parameter, one sorting parameter or the sorting feature
+        """
         dag = EODataAccessGateway()
         dummy_provider_config = """
         dummy_provider:
@@ -2718,3 +2719,73 @@ class TestCoreProductAlias(TestCoreBase):
         # not existing product type
         with self.assertRaises(NoMatchingProductType):
             self.dag.get_product_type_from_alias("JUST_A_TYPE")
+
+
+class TestCoreProviderGroup(TestCoreBase):
+    group = ("peps", "creodias")
+    group_name = "testgroup"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.dag = EODataAccessGateway()
+        providers = cls.dag.providers_config
+
+        setattr(providers[cls.group[0]], "group", cls.group_name)
+        setattr(providers[cls.group[1]], "group", cls.group_name)
+
+    def test_available_providers_by_group(self) -> None:
+        """
+        The method available_providers returns only one entry for both grouped providers
+        """
+        # drop the provider names grouped as they are grouped under "testgroup" name
+        providers = self.dag.available_providers()
+        providers.remove(self.group[0])
+        providers.remove(self.group[1])
+        providers.append(self.group_name)
+
+        self.assertCountEqual(self.dag.available_providers(by_group=True), providers)
+
+    def test_list_product_types(self) -> None:
+        """
+        List the product types for the provider group.
+        EODAG return the merged list of product types from both providers of the group.
+        """
+
+        earth_search_products = self.dag.list_product_types(
+            self.group[0], fetch_providers=False
+        )
+        earth_search_cog_products = self.dag.list_product_types(
+            self.group[1], fetch_providers=False
+        )
+
+        merged_list = list(
+            {
+                d["ID"]: d for d in earth_search_products + earth_search_cog_products
+            }.values()
+        )
+
+        self.assertCountEqual(
+            self.dag.list_product_types(self.group_name, fetch_providers=False),
+            merged_list,
+        )
+
+    def test_get_search_plugins(
+        self,
+    ) -> None:
+        """
+        The method _plugins_manager.get_search_plugins is called with provider group
+        It returns a list containing the 2 grouped plugins
+        """
+        plugin1 = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group[0])
+        )
+        plugin2 = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group[1])
+        )
+
+        group_plugins = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group_name)
+        )
+
+        self.assertCountEqual(group_plugins, [*plugin1, *plugin2])
