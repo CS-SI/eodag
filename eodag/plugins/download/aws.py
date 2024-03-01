@@ -428,6 +428,8 @@ class AwsDownload(Download):
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         if build_safe and "fetch_metadata" in product_conf.keys():
             fetch_format = product_conf["fetch_metadata"]["fetch_format"]
             update_metadata = product_conf["fetch_metadata"]["update_metadata"]
@@ -437,7 +439,10 @@ class AwsDownload(Download):
             logger.info("Fetching extra metadata from %s" % fetch_url)
             try:
                 resp = requests.get(
-                    fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                    fetch_url,
+                    headers=USER_AGENT,
+                    timeout=HTTP_REQ_TIMEOUT,
+                    verify=ssl_verify,
                 )
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
@@ -710,7 +715,11 @@ class AwsDownload(Download):
         )
         assets_values = product.assets.get_values(asset_filter)
         chunks_tuples = self._stream_download(
-            unique_product_chunks, product, build_safe, progress_callback, assets_values
+            unique_product_chunks,
+            product,
+            build_safe,
+            progress_callback,
+            assets_values,
         )
         outputs_filename = (
             sanitize(product.properties["title"])

@@ -292,9 +292,14 @@ class DataRequestSearch(Search):
     def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         try:
             status_resp = requests.get(
-                status_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                status_url,
+                headers=self.auth.headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             status_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -320,12 +325,17 @@ class DataRequestSearch(Search):
         self, data_request_id: str, items_per_page: int, page: int
     ) -> Dict[str, Any]:
         page = page - 1 + self.config.pagination.get("start_page", 1)
+
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )
         try:
             return requests.get(
-                url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                url,
+                headers=self.auth.headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             ).json()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
