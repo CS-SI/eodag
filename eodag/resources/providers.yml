@@ -3970,8 +3970,8 @@
     - host
   description: WEkEO - Copernicus and Sentinel data
   url: https://www.wekeo.eu/
-  # ancres to avoid duplications
-  ancre: &cmems_mapping
+  # anchors to avoid duplications
+  anchor_cmems: &cmems_mapping
     id: '$.id'
     startTimeFromAscendingNode:
       - '{{"min_date": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
@@ -3982,6 +3982,32 @@
     variable:
       - '{{"variables": {variable}}}'
       - '{$.properties.location#get_variables_from_path}'
+  anchor_date_cds: &cds_day_month_year
+    startTimeFromAscendingNode:
+      - |
+        {{
+          "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+          "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+          "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+        }}
+      - $.properties.startDate
+    completionTimeFromAscendingNode: $.properties.endDate
+  anchor_day_month: &cds_ads_month_year
+    startTimeFromAscendingNode:
+      - |
+        {{
+          "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+          "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+        }}
+      - $.properties.startDate
+    completionTimeFromAscendingNode: $.properties.endDate
+  anchor_dates_eum: &eo_eum_dates
+    startTimeFromAscendingNode:
+      - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
+      - '$.properties.startdate'
+    completionTimeFromAscendingNode:
+      - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
+      - '$.properties.enddate'
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
@@ -4325,12 +4351,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4350,12 +4371,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4375,12 +4391,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4400,12 +4411,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4425,12 +4431,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4450,12 +4451,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4475,12 +4471,7 @@
         id:
           - '{{"timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4502,12 +4493,7 @@
         id:
           - '{{"productType", "value": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
@@ -4527,12 +4513,7 @@
         id:
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
-          - '$.properties.enddate'
+        <<: *eo_eum_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P
@@ -4608,15 +4589,7 @@
       format: grib
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4662,15 +4635,7 @@
       format: grib
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4695,14 +4660,7 @@
         providerProductType:
           - '{{"productType": {providerProductType}}}'
           - '$.null'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4741,14 +4699,7 @@
         providerProductType:
           - '{{"productType": {providerProductType}}}'
           - '$.null'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4772,14 +4723,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4815,14 +4759,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4839,15 +4776,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -4866,15 +4795,7 @@
       version: "6_0"
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4916,15 +4837,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         processingLevel:
           - '{{"processing_level": {processingLevel}}}'
           - '$.null'
@@ -4940,15 +4853,7 @@
       format: grib # netcdf format may fail
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -4964,15 +4869,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
@@ -4987,15 +4884,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -5009,15 +4898,7 @@
       version: vDT2021
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
@@ -5029,15 +4910,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
-              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -5421,14 +5294,7 @@
         - monthly_mean
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -5443,14 +5309,7 @@
       aggregation: instantaneous
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         aggregation:
           - '{{"time_aggregation": "{aggregation}"}}'
           - '$.null'
@@ -5475,14 +5334,7 @@
         - '0'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         type:
           - '{{"type": {type}}}'
           - '$.null'
@@ -5504,14 +5356,7 @@
         - '2'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS"}}'
     CAMS_GRF_AUX:
@@ -5531,14 +5376,7 @@
         - surface
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES"}}'
     CAMS_GREENHOUSE_EGG4:
@@ -5571,14 +5409,7 @@
         - '00:00'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - |
-            {{
-              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
-              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
-            }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+        <<: *cds_ads_month_year
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
