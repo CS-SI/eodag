@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
@@ -70,25 +70,47 @@ class TokenAuth(Authentication):
         """Authenticate"""
         self.validate_config_credentials()
 
+        # append data to req if some are specified in config
+        req_data: Dict[str, str] = getattr(self.config, "req_data", {})
+        # append credentials to req auth or req data according to config
+        if getattr(self.config, "credentials_type", "req_auth") == "req_data":
+            req_data = dict(req_data, **self.config.credentials)
+            req_auth: Optional[Tuple[str, str]] = None
+        else:
+            credentials = list(self.config.credentials.values())
+            req_auth = (credentials[0], credentials[1])
+
         # append headers to req if some are specified in config
-        req_kwargs: Dict[str, Any] = (
-            {"headers": dict(self.config.headers, **USER_AGENT)}
-            if hasattr(self.config, "headers")
-            else {"headers": USER_AGENT}
-        )
-        req_kwargs["headers"].pop("Authorization", None)
+        req_kwargs: Dict[str, Any] = {
+            "headers": dict(self.config.headers, **USER_AGENT)
+        }
         s = requests.Session()
         try:
             # First get the token
-            response = self._token_request(session=s, req_kwargs=req_kwargs)
+            response = self._token_request(session=s, req_kwargs=req_kwargs, req_data=req_data, req_auth=req_auth)
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except RequestException as e:
             response_text = getattr(e.response, "text", "").strip()
-            raise AuthenticationError(
-                f"Could no get authentication token: {str(e)}, {response_text}"
-            )
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if (
+                e.response is not None
+                and getattr(e.response, "status_code", None)
+                and e.response.status_code in auth_errors
+            ):
+                raise AuthenticationError(
+                    f"HTTP Error {e.response.status_code} returned, {response_text}\n"
+                    f"Please check your credentials for {self.provider}"
+                )
+            # other error
+            else:
+                raise AuthenticationError(
+                    f"Could no get authentication token: {str(e)}, {response_text}"
+                )
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]
@@ -105,7 +127,7 @@ class TokenAuth(Authentication):
             )
 
     def _token_request(
-        self, session: requests.Session, req_kwargs: Dict[str, Any]
+        self, session: requests.Session, req_kwargs: Dict[str, Any], req_data: Dict[str, str], req_auth: Optional[Tuple[str, str]]
     ) -> requests.Response:
         retries = Retry(
             total=3,
@@ -131,13 +153,8 @@ class TokenAuth(Authentication):
         # append headers to req if some are specified in config
         session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
         method = getattr(self.config, "request_method", "POST")
-        if method == "POST":
-            req_kwargs["data"] = self.config.credentials
-        else:
-            req_kwargs["auth"] = (
-                self.config.credentials["username"],
-                self.config.credentials["password"],
-            )
+        req_kwargs["data"] = req_data
+        req_kwargs["auth"] = req_auth
         return session.request(
             method=method,
             url=self.config.auth_uri,
