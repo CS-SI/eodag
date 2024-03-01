@@ -4466,11 +4466,354 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_REFLECTANCE:
   platform:
   platformSerialIdentifier:
   processingLevel: L4
-  keywords: CMEMS,global,marine,ocean,biogeochemical,BGC,reflectance,MY,daily,ESA-CCI
+  keywords: CMEMS,global,marine,ocean,ice,biogeochemical,BGC,reflectance,MY,daily,ESA-CCI
   sensorType:
   license: proprietary
   title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations - Reflectance
   missionStartDate: "1997-09-04T00:00:00Z"
+
+CMEMS_GLO_SEAICE_L4_NRT_CONC:
+  abstract: |
+    For the Global - Arctic and Antarctic - Ocean. The OSI SAF delivers three global sea ice products in operational mode:
+    sea ice concentration, sea ice edge, sea ice type (OSI-401 OSI-402 and OSI-403). These products are delivered daily at
+    10km resolution in a polar stereographic projection covering the Northern Hemisphere and the Southern Hemisphere. It is
+    the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
+    resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
+    have a time-span of 2 days. DOI (product) : https://doi.org/10.48670/moi-00134
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,ice,arctic,antarctic,OSI-SAF,concentration
+  sensorType:
+  license: proprietary
+  title: Global Ocean - Arctic and Antarctic - Sea Ice Concentration
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+CMEMS_GLO_SEAICE_L4_NRT_EDGE:
+  abstract: |
+    For the Global - Arctic and Antarctic - Ocean. The OSI SAF delivers three global sea ice products in operational mode:
+    sea ice concentration, sea ice edge, sea ice type (OSI-401 OSI-402 and OSI-403). These products are delivered daily at
+    10km resolution in a polar stereographic projection covering the Northern Hemisphere and the Southern Hemisphere. It is
+    the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
+    resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
+    have a time-span of 2 days. DOI (product) : https://doi.org/10.48670/moi-00134
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,ice,arctic,antarctic,OSI-SAF,edge
+  sensorType:
+  license: proprietary
+  title: Global Ocean - Arctic and Antarctic - Sea Ice Edge
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+CMEMS_GLO_SEAICE_L4_NRT_TYPE:
+  abstract: |
+    For the Global - Arctic and Antarctic - Ocean. The OSI SAF delivers three global sea ice products in operational mode:
+    sea ice concentration, sea ice edge, sea ice type (OSI-401 OSI-402 and OSI-403). These products are delivered daily at
+    10km resolution in a polar stereographic projection covering the Northern Hemisphere and the Southern Hemisphere. It is
+    the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
+    resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
+    have a time-span of 2 days. DOI (product) : https://doi.org/10.48670/moi-00134
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,ice,arctic,antarctic,OSI-SAF,type
+  sensorType:
+  license: proprietary
+  title: Global Ocean - Arctic and Antarctic - Sea Ice Type
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+CMEMS_GLO_SEAICE_L4_NRT_DRIFT:
+  abstract: |
+    For the Global - Arctic and Antarctic - Ocean. The OSI SAF delivers three global sea ice products in operational mode:
+    sea ice concentration, sea ice edge, sea ice type (OSI-401 OSI-402 and OSI-403). These products are delivered daily at
+    10km resolution in a polar stereographic projection covering the Northern Hemisphere and the Southern Hemisphere. It is
+    the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
+    resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
+    have a time-span of 2 days. DOI (product) : https://doi.org/10.48670/moi-00134
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,ice,arctic,antarctic,OSI-SAF,drift
+  sensorType:
+  license: proprietary
+  title: Global Ocean - Arctic and Antarctic - Sea Ice Drift
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+CMEMS_GLO_SEAICE_DRIFT_SAR:
+  abstract: |
+    DTU Space produces polar covering Near Real Time gridded ice displacement fields obtained by MCC processing of Sentinel-1 SAR,
+    Envisat ASAR WSM swath data or RADARSAT ScanSAR Wide mode data . The nominal temporal span between processed swaths is 24hours,
+    the nominal product grid resolution is a 10km. DOI (product) : https://doi.org/10.48670/moi-00135
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,ice,SAR,drift,HR
+  sensorType:
+  license: proprietary
+  title: Global Ocean - High Resolution SAR Sea Ice Drift
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+CMEMS_GLO_SEAICE_CONC_REP:
+  abstract: |
+    The CDR and ICDR sea ice concentration dataset of the EUMETSAT OSI SAF (OSI-450-a and OSI-430-a), covering the period
+    from October 1978 to present, with 16 days delay. It used passive microwave data from SMMR, SSM/I and SSMIS. Sea ice
+    concentration is computed from atmospherically corrected PMW brightness temperatures, using a combination of state-of-the-art
+    algorithms and dynamic tie points. It includes error bars for each grid cell (uncertainties). This version 3.0 of the CDR
+    (OSI-450-a, 1978-2020) and ICDR (OSI-430-a, 2021-present with 16 days latency) was released in November 2022
+    DOI (product) : https://doi.org/10.48670/moi-00136
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,ice,concentration,OSI-SAF,reprocessed
+  sensorType:
+  license: proprietary
+  title: Global Ocean Sea Ice Concentration Time Series REPROCESSED (OSI-SAF)
+  missionStartDate: "1979-01-01T00:00:00Z"
+
+CMEMS_GLO_SEALEVEL_PHY_L4_NRT:
+  abstract: |
+    Altimeter satellite gridded Sea Level Anomalies (SLA) computed with respect to a twenty-year [1993, 2012] mean. The SLA
+    is estimated by Optimal Interpolation, merging the L3 along-track measurement from the different altimeter missions available.
+    Part of the processing is fitted to the Global Ocean. (see QUID document or http://duacs.cls.fr [http://duacs.cls.fr] pages
+    for processing details). The product gives additional variables (i.e. Absolute Dynamic Topography and geostrophic currents
+    (absolute and anomalies)). It serves in near-real time applications. This product is processed by the DUACS multimission
+    altimeter data processing system. DOI (product) : https://doi.org/10.48670/moi-00149
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,SLA,sea,level,anomalies,NRT,DUACS,surface
+  sensorType:
+  license: proprietary
+  title: Global Ocean Gridded L4 Sea Surface Heights and Derived Variables NRT
+  missionStartDate: "2022-01-01T00:00:00Z"
+
+CMEMS_GLO_SEALEVEL_PHY_MDT:
+  abstract: |
+    Mean Dynamic Topography that combines the global CNES-CLS-2022 MDT, the Black Sea CMEMS2020 MDT and the Med Sea CMEMS2020 MDT.
+    It is an estimate of the mean over the 1993-2012 period of the sea surface height above geoid. This is consistent with
+    the reference time period also used in the DUACS products DOI (product) : https://doi.org/10.48670/moi-00150
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,sea,level,MDA,topography,surface
+  sensorType:
+  license: proprietary
+  title: Global Ocean Mean Dynamic Topography
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+CMEMS_GLO_SST_L3S_NRT:
+  abstract: |
+    For the Global Ocean- Sea Surface Temperature L3 Observations . This product provides daily foundation sea surface
+    temperature from multiple satellite sources. The data are intercalibrated. This product consists in a fusion of sea surface
+    temperature observations from multiple satellite sensors, daily, over a 0.1° resolution global grid. It includes observations
+    by polar orbiting (NOAA-18 & NOAAA-19/AVHRR, METOP-A/AVHRR, ENVISAT/AATSR, AQUA/AMSRE, TRMM/TMI) and geostationary
+    (MSG/SEVIRI, GOES-11) satellites . The observations of each sensor are intercalibrated prior to merging using a bias correction
+    based on a multi-sensor median reference correcting the large-scale cross-sensor biases.3 more datasets are available
+    that only contain "per sensor type" data : Polar InfraRed (PIR), Polar MicroWave (PMW), Geostationary InfraRed (GIR)
+    DOI (product) : https://doi.org/10.48670/moi-00164
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,sea,surface,temperature,SST
+  sensorType:
+  license: proprietary
+  title: ODYSSEA Global Ocean - Sea Surface Temperature Multi-sensor L3 Observations
+  missionStartDate: "2021-01-01T00:00:00Z"
+
+CMEMS_GLO_SST_L4_NRT:
+  abstract: |
+    For the Global Ocean- the OSTIA global foundation Sea Surface Temperature product provides daily gap-free maps of :
+    Foundation Sea Surface Temperature at 0.05° x 0.05° horizontal grid resolution, using in-situ and satellite data from
+    both infrared and microwave radiometers. The Operational Sea Surface Temperature and Ice Analysis (OSTIA) system is run
+    by the UK's Met Office and delivered by IFREMER PU. OSTIA uses satellite data provided by the GHRSST project together
+    with in-situ observations to determine the sea surface temperature. A high resolution (1/20° - approx. 6 km) daily analysis
+    of sea surface temperature (SST) is produced for the global ocean and some lakes.
+    DOI (product) : https://doi.org/10.48670/moi-00165
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,sea,surface,temperature,SST,daily,OSTIA,NRT
+  sensorType:
+  license: proprietary
+  title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Analysis
+  missionStartDate: "2007-01-01T00:00:00Z"
+
+CMEMS_GLO_SST_L4_REP:
+  abstract: |
+    Short description : The OSTIA (Good et al., 2020) global sea surface temperature reprocessed product provides daily gap-free
+    maps of foundation sea surface temperature and ice concentration (referred to as an L4 product) at 0.05deg.x 0.05deg.
+    horizontal grid resolution, using in-situ and satellite data. This product provides the foundation Sea Surface Temperature,
+    which is the temperature free of diurnal variability. DOI (product) : https://doi.org/10.48670/moi-00168
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,sea,surface,temperature,SST,daily,OSTIA,reprocessed
+  sensorType:
+  license: proprietary
+  title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Reprocessed
+  missionStartDate: "1981-10-01T00:00:00Z"
+  missionEndDate: "2022-05-31T23:59:59Z"
+
+CMEMS_GLO_SST_L4_REP_CCI:
+  abstract: |
+    The ESA SST CCI global Sea Surface Temperature Reprocessed product provides gap-free maps of daily average SST
+    at 20 cm depth at 0.05deg. x 0.05deg. horizontal grid resolution, using satellite data from the (A)ATSRs, SLSTR and the
+    AVHRR series of sensors (Merchant et al., 2019). The ESA SST CCI level 4 analyses was produced by running the
+    Operational Sea Surface Temperature and Sea Ice Analysis (OSTIA) system (Good et al., 2020) to provide a high resolution
+    (1/20deg. - approx. 5km grid resolution) daily analysis of the daily average sea surface temperature (SST) at 20 cm depth
+    for the global ocean. Only (A)ATSR, SLSTR and AVHRR satellite data processed by the ESA SST CCI projects were used,
+    giving a stable product. It also uses reprocessed sea-ice concentration data from the EUMETSAT OSI-SAF (OSI-450 and OSI-430;
+    Lavergne et al., 2019). DOI (product) : https://doi.org/10.48670/moi-00169
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,sea,surface,temperature,SST,daily,OSTIA,reprocessed,ESA,CCI
+  sensorType:
+  license: proprietary
+  title: ESA SST CCI reprocessed sea surface temperature analyses
+  missionStartDate: "1981-09-01T00:00:00Z"
+  missionEndDate: "2022-10-31T23:59:59Z"
+
+CMEMS_GLO_SST_L4_REP_C3S:
+  abstract: |
+    The CS3 global Sea Surface Temperature Reprocessed product provides gap-free maps of daily average SST
+    at 20 cm depth at 0.05deg. x 0.05deg. horizontal grid resolution, using satellite data from the (A)ATSRs, SLSTR and the
+    AVHRR series of sensors (Merchant et al., 2019). The C3S level 4 analyses was produced by running the
+    Operational Sea Surface Temperature and Sea Ice Analysis (OSTIA) system (Good et al., 2020) to provide a high resolution
+    (1/20deg. - approx. 5km grid resolution) daily analysis of the daily average sea surface temperature (SST) at 20 cm depth
+    for the global ocean. Only (A)ATSR, SLSTR and AVHRR satellite data processed by the C3S projects were used,
+    giving a stable product. It also uses reprocessed sea-ice concentration data from the EUMETSAT OSI-SAF (OSI-450 and OSI-430;
+    Lavergne et al., 2019). DOI (product) : https://doi.org/10.48670/moi-00169
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,sea,surface,temperature,SST,daily,OSTIA,reprocessed,C3S
+  sensorType:
+  license: proprietary
+  title: C3S reprocessed sea surface temperature analyses
+  missionStartDate: "1981-09-01T00:00:00Z"
+  missionEndDate: "2022-10-31T23:59:59Z"
+
+CMEMS_GLO_WAVE_SPC_L4_NRT:
+  abstract: |
+    Near-Real-Time multi-mission global satellite-based spectral integral parameters. Only valid data are used, based on the
+    L3 corresponding product. Included wave parameters are partition significant wave height, partition peak period and partition
+    peak or principal direction. Those parameters are propagated in space and time at a 3-hour timestep and on a regular space
+    grid, providing information of the swell propagation characteristics, from source to land. One file gathers one swell
+    system, gathering observations originating from the same storm source. This product is processed by the WAVE-TAC multi-mission
+    SAR data processing system to serve in near-real time the main operational oceanography and climate forecasting centers
+    in Europe and worldwide. It processes data from the following SAR missions: Sentinel-1A and Sentinel-1B. All the spectral
+    parameter measurements are optimally interpolated using swell observations belonging to the same swell field. The SAR data
+    processing system produces wave integral parameters by partition (partition significant wave height, partition peak period
+    and partition peak or principal direction) and the associated standard deviation and density of propagated observations.
+    DOI (product) : https://doi.org/10.48670/moi-00175
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,wave,spectral,NRT,WAVE-TAC
+  sensorType:
+  license: proprietary
+  title: Global Ocean L4 Spectral Parameters From NRT Satellite Measurements
+  missionStartDate: "2021-11-01T00:00:00Z"
+
+CMEMS_GLO_WAVE_SWH_L3_NRT:
+  abstract: |
+    Near-Real-Time mono-mission satellite-based along-track significant wave height. Only valid data are included, based on
+    a rigorous editing combining various criteria such as quality flags (surface flag, presence of ice) and thresholds on
+    parameter values. Such thresholds are applied on parameters linked to significant wave height determination from retracking
+    (e.g. SWH, sigma0, range, off nadir angle…). All the missions are homogenized with respect to a reference mission
+    (Jason-3 until April 2022, Sentinel-6A afterwards) and calibrated on in-situ buoy measurements. Finally, an along-track
+    filter is applied to reduce the measurement noise. As a support of information to the significant wave height, wind speed
+    measured by the altimeters is also processed and included in the files. Wind speed values are provided by upstream products (L2)
+    for each mission and are based on different algorithms. Only valid data are included and all the missions are homogenized
+    with respect to the reference mission. This product is processed by the WAVE-TAC multi-mission altimeter data processing system.
+    It serves in near-real time the main operational oceanography and climate forecasting centers in Europe and worldwide. It
+    processes operational data (OGDR and NRT, produced in near-real-time) from the following altimeter missions:
+    Sentinel-6A, Jason-3, Sentinel-3A, Sentinel-3B, Cryosat-2, SARAL/AltiKa, CFOSAT ; and interim data (IGDR, 1 to 2 days delay)
+    from Hai Yang-2B mission. One file containing valid SWH is produced for each mission and for a 3-hour time window.
+    It contains the filtered SWH (VAVH), the unfiltered SWH (VAVH_UNFILTERED) and the wind speed (wind_speed).
+    DOI (product) : https://doi.org/10.48670/moi-00179
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,wave,significant,height,SWH,NRT
+  sensorType:
+  license: proprietary
+  title: Global Ocean L3 Significant Wave Height From NRT Satellite Measurements
+  missionStartDate: "2023-08-01T00:00:00Z"
+
+CMEMS_GLO_WAVE_SWH_L4_NRT:
+  abstract: |
+    Near-Real-Time gridded multi-mission merged satellite significant wave height. Only valid data are included. This product
+    is processed in Near-Real-Time by the WAVE-TAC multi-mission altimeter data processing system and is based on CMEMS level-3
+    SWH datasets (see the product CMEMS_GLO_WAVE_SWH_L3_NRT). It merges along-track SWH data from the following
+    missions: Jason-3, Sentinel-3A, Sentinel-3B, SARAL/AltiKa, Cryosat-2, CFOSAT and HaiYang-2B. The resulting gridded product has
+    a 2° horizontal resolution and is produced daily. Different SWH fields are produced: VAVH_DAILY fields are daily statistics
+    computed from all available level 3 along-track measurements from 00 UTC until 23:59 UTC ; VAVH_INST field provides an estimate
+    of the instantaneous wave field at 12:00UTC (noon), using all available Level 3 along-track measurements and accounting for their
+    spatial and temporal proximity. DOI (product) : https://doi.org/10.48670/moi-00180
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,wave,significant,height,SWH,NRT,WAVE-TEC
+  sensorType:
+  license: proprietary
+  title: Global Ocean L4 Significant Wave Height From NRT Satellite Measurements
+  missionStartDate: "2019-06-26T00:00:00Z"
+
+CMEMS_GLO_WIND_L4_NRT:
+  abstract: |
+    For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 degrees horizontal
+    spatial resolution. Scatterometer observations for Metop-B and Metop-C ASCAT and their collocated European Centre for
+    Medium-Range Weather Forecasts (ECMWF) operational model variables are used to calculate temporally-averaged difference fields.
+    These fields are used to correct for persistent biases in hourly ECMWF operational model fields. The product provides
+    stress-equivalent wind and stress variables as well as their divergence and curl. The applied bias corrections, the standard
+    deviation of the differences (for wind and stress fields) and difference of variances (for divergence and curl fields) are
+    included in the product. DOI (product) : https://doi.org/10.48670/moi-00305
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,surface,wind,stress,NRT,scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Hourly Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "2020-07-05T00:00:00Z"
+
+CMEMS_GLO_WIND_L4_MY:
+  abstract: |
+    For the Global Ocean - The product contains monthly Level-4 sea surface wind and stress fields at 0.25 degrees horizontal
+    spatial resolution. The monthly averaged wind and stress fields are based on monthly average ECMWF ERA5 reanalysis fields,
+    corrected for persistent biases using all available Level-3 scatterometer observations from the Metop-A, Metop-B and Metop-C ASCAT,
+    QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT satellite instruments. The product provides monthly mean stress-equivalent wind and
+    stress variables as well as their standard deviation. The number of observations used to calculate the monthly averages are
+    included in the product. DOI (product) : https://doi.org/10.48670/moi-00181
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,surface,wind,stress,monthly,averaged,scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "1992-05-16T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
