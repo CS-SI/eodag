@@ -30,7 +30,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic.alias_generators import to_camel
+from pydantic.alias_generators import to_camel, to_snake
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from pygeofilter.parsers.cql2_json import parse as parse_json
 from shapely.geometry import (
@@ -326,8 +326,8 @@ class EODAGSearch(BaseModel):
         return [
             (
                 special_fields.get(
-                    to_camel(cls.to_eodag(param["field"])),
-                    to_camel(cls.to_eodag(param["field"])),
+                    cls.to_eodag(param["field"]),
+                    cls.to_eodag(param["field"]),
                 ),
                 param["direction"],
             )
@@ -363,7 +363,7 @@ class EODAGSearch(BaseModel):
         """Convert a STAC parameter to its matching EODAG name"""
         if not isinstance(cls._to_eodag_map, dict) or not cls._to_eodag_map:
             cls._create_to_eodag_map()
-        return cls._to_eodag_map.get(value, value)
+        return to_camel(to_snake(cls._to_eodag_map.get(value, value)))
 
     @classmethod
     def to_stac(cls, field_name: str) -> str:
