@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import tarfile
 import zipfile
@@ -101,7 +102,12 @@ class UsgsApi(Api):
             except USGSAuthExpiredError:
                 api.logout()
                 continue
-            except USGSError:
+            except USGSError as e:
+                if str(e).startswith("AUTH_REVOKED"):
+                    # If error code is "AUTH_REVOKED" then api.logout() fails to logout
+                    # Manually removing file with API key
+                    os.remove(api.TMPFILE)
+                    continue
                 raise AuthenticationError(
                     "Please check your USGS credentials."
                 ) from None
