@@ -3811,6 +3811,7 @@ CLMS_GLO_NDVI_333M:
   license: proprietary
   title: Global 10-daily Normalized Difference Vegetation Index 333M
   missionStartDate: "2014-01-01T00:00:00Z"
+  missionEndDate: "2021-01-01T23:59:59Z"
 
 CLMS_GLO_NDVI_1KM_LTS:
   abstract: |

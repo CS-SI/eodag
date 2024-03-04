@@ -4008,6 +4008,13 @@
     completionTimeFromAscendingNode:
       - '{{"dtend": "{completionTimeFromAscendingNode}"}}'
       - '$.properties.enddate'
+  anchor_dates_clms: &clms_dates
+    startTimeFromAscendingNode:
+      - '{{"start": "{startTimeFromAscendingNode}"}}'
+      - '$.properties.startdate'
+    completionTimeFromAscendingNode:
+      - '{{"end": "{completionTimeFromAscendingNode}"}}'
+      - '$.properties.enddate'
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
@@ -6098,6 +6105,96 @@
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_PHY_CLIMATE_L4_MY_012_003:cmems_obs-wind_glo_phy_my_l4_P1M_202211"}}'
+    CLMS_GLO_NDVI_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_GLO_NDVI_1KM_LTS:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
+    EEA_DAILY_VI:
+      productType: EO:EEA:DAT:CLMS_HRVPP_VI
+      metadata_mapping:
+        id:
+          - '{{"uid": {id}}}'
+          - '$.id'
+        <<: *clms_dates
+        relativeOrbitNumber:
+          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+          - '$.null'
+        version:
+          - '{{"productVersion": "{version}"}}'
+          - '$.null'
+        platformSerialIdentifier:
+          - '{{"platformSerialIdentifier": "{platformSerialIdentifier}"}}'
+          - '{$.id#get_platform_from_eea_id}'
+        tileIdentifier:
+          - '{{"tileId": "{tileIdentifier}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
+    COP_DEM_GLO30_DGED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2023_1
+      metadata_mapping:
+        id: '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2023_1"}}'
+    COP_DEM_GLO30_DTED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-30-DTED__2023_1
+      metadata_mapping:
+        id: '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-30-DTED__2023_1"}}'
+    COP_DEM_GLO90_DGED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2023_1
+      metadata_mapping:
+        id: '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DGED__2023_1"}}'
+    COP_DEM_GLO90_DTED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-90-DTED__2023_1
+      metadata_mapping:
+        id: '$.id'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DTED__2023_1"}}'
+    CLMS_CORINE:
+      productType: EO:CLMS:DAT:CORINE
+      providerProductType: Corine Land Cover 2018
+      format: GeoTiff100mt
+      metadata_mapping:
+        id: '$.id'
+        providerProductType:
+          - '{{"product_type": "{providerProductType}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CORINE"}}'
+    CLMS_GLO_FCOVER_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        productGroupId:
+          - '{{"productGroupId": "{productGroupId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_GLO_DMP_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        productGroupId:
+          - '{{"productGroupId": "{productGroupId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_GLO_GDMP_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        productGroupId:
+          - '{{"productGroupId": "{productGroupId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
 
   auth: !plugin
     type: TokenAuth
