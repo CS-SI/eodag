@@ -106,8 +106,8 @@ if TYPE_CHECKING:
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
-    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback, Unpack
     from eodag.types.download_args import DownloadConf
+    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.core")
 

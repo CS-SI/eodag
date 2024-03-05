@@ -33,14 +33,14 @@ from eodag.utils import (
 )
 
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
+    from typing import Any, Dict, List, Optional, Tuple, Union
+
     from requests.auth import AuthBase
-    from typing import Any, Dict, List, Optional, Union, Tuple
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import DownloadedCallback, ProgressCallback, Annotated, Unpack
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.apis.base")
 
