@@ -5667,22 +5667,22 @@
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_PHY_SSS_L3_MYNRT_015_014:cmems_obs-mob_glo_phy-sss_mynrt_smos_P1D_202211"}}'
-    CMEMS_MULTIOBS_GLO_PHY_SSS_L3_MYNRT__3d-rep-weekly_202012:
+    CMEMS_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT__3d-rep-weekly_202012:
       productType: EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-rep-weekly_202012
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-rep-weekly_202012"}}'
-    CMEMS_MULTIOBS_GLO_PHY_SSS_L3_MYNRT__3d-rep-monthly_202012:
+    CMEMS_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT__3d-rep-monthly_202012:
       productType: EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-rep-monthly_202012
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-rep-monthly_202012"}}'
-    CMEMS_MULTIOBS_GLO_PHY_SSS_L3_MYNRT__3d-nrt-monthly_202012:
+    CMEMS_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT__3d-nrt-monthly_202012:
       productType: EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-nrt-monthly_202012
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-nrt-monthly_202012"}}'
-    CMEMS_MULTIOBS_GLO_PHY_SSS_L3_MYNRT__3d-nrt-weekly_202012:
+    CMEMS_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT__3d-nrt-weekly_202012:
       productType: EO:MO:DAT:MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:dataset-armor-3d-nrt-weekly_202012
       metadata_mapping:
         <<: *cmems_mapping
@@ -6410,6 +6410,24 @@
           - '{{"productGroupId": "{productGroupId}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_GLO_FAPAR_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        productGroupId:
+          - '{{"productGroupId": "{productGroupId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_GLO_LAI_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        productGroupId:
+          - '{{"productGroupId": "{productGroupId}"}}'
+          - '$.null'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
     FIRE_HISTORICAL:
       productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
       providerProductType: reanalysis
