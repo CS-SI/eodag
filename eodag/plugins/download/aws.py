@@ -43,6 +43,7 @@ import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
+from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -74,7 +75,6 @@ from eodag.utils.exceptions import (
 
 if TYPE_CHECKING:
     from boto3.resources.collection import ResourceCollection
-    from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -265,7 +265,9 @@ class AwsDownload(Download):
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
-        if auth is None or isinstance(auth, AuthBase):
+        if auth is None:
+            auth = {}
+        if isinstance(auth, AuthBase):
             raise MisconfiguredError("Please use AwsAuth plugin with AwsDownload")
 
         if progress_callback is None:
@@ -507,8 +509,8 @@ class AwsDownload(Download):
     def _do_authentication(
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
-        auth: Dict[str, str],
-    ) -> Tuple[Dict[str, Any], ResourceCollection[Any]]:
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+    ) -> Tuple[Dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
@@ -519,6 +521,13 @@ class AwsDownload(Download):
         :return: authenticated objects per bucket, list of available objects
         :rtype: Tuple[Dict[str, Any], ResourceCollection[Any]]
         """
+        if not isinstance(auth, (dict, type(None))):
+            raise AuthenticationError(
+                "Incompatible authentication information, expected dict or None, got %s"
+                % type(auth)
+            )
+        if auth is None:
+            auth = {}
         authenticated_objects: Dict[str, Any] = {}
         auth_error_messages: Set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
@@ -632,7 +641,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,

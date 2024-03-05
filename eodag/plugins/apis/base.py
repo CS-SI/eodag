@@ -76,6 +76,11 @@ class Api(PluginTopic):
       (it certainly indicates that the download didn't complete)
     """
 
+    auth: Union[AuthBase, Dict[str, str]]
+    next_page_url: Optional[str]
+    next_page_query_obj: Dict[str, Any]
+    _request: Any  # needed by deprecated load_stac_items
+
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
         pass

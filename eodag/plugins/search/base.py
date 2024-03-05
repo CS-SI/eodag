@@ -18,10 +18,10 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import orjson
-from pydantic.fields import Field, FieldInfo
+from pydantic.fields import Field
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
@@ -40,6 +40,9 @@ from eodag.utils import (
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
@@ -55,11 +58,16 @@ class Search(PluginTopic):
     :type config: :class:`~eodag.config.PluginConfig`
     """
 
+    auth: Union[AuthBase, Dict[str, str]]
+    next_page_url: Optional[str]
+    next_page_query_obj: Dict[str, Any]
+    _request: Any  # needed by deprecated load_stac_items
+
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Search, self).__init__(provider, config)
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas = DEFAULT_METADATA_MAPPING.copy()
+        metas: Dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata
         if self.config.metadata_mapping:
@@ -174,7 +182,7 @@ class Search(PluginTopic):
 
     def get_metadata_mapping(
         self, product_type: Optional[str] = None
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Union[str, List[str]]]:
         """Get the plugin metadata mapping configuration (product type specific if exists)
 
         :param product_type: the desired product type
@@ -182,9 +190,11 @@ class Search(PluginTopic):
         :returns: The product type specific metadata-mapping
         :rtype: dict
         """
-        return self.config.products.get(product_type, {}).get(
-            "metadata_mapping", self.config.metadata_mapping
-        )
+        if product_type:
+            return self.config.products.get(product_type, {}).get(
+                "metadata_mapping", self.config.metadata_mapping
+            )
+        return self.config.metadata_mapping
 
     def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
         """Extract the "sortBy" argument from the kwargs or the provider default sort configuration

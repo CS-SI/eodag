@@ -33,6 +33,7 @@ import requests
 import requests_ftp
 from lxml import etree
 from requests import RequestException
+from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -67,7 +68,6 @@ from eodag.utils.exceptions import (
 
 if TYPE_CHECKING:
     from requests import Response
-    from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -388,7 +388,7 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
-        if not isinstance(auth, AuthBase):
+        if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         if progress_callback is None:
@@ -564,7 +564,7 @@ class HTTPDownload(Download):
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         :rtype: dict
         """
-        if not isinstance(auth, AuthBase):
+        if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         # download assets if exist instead of remote_location

@@ -26,6 +26,7 @@ from xml.parsers.expat import ExpatError
 
 import requests
 from requests import RequestException
+from requests.auth import AuthBase
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import Download
@@ -51,8 +52,6 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from requests.auth import AuthBase
-
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
 
@@ -119,7 +118,7 @@ class S3RestDownload(Download):
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
-        if not isinstance(auth, AuthBase):
+        if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
         if progress_callback is None:

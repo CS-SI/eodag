@@ -20,7 +20,18 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypedDict,
+    cast,
+)
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -32,6 +43,7 @@ from pydantic import create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
+from requests.auth import AuthBase
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -1219,7 +1231,10 @@ class PostJsonSearch(QueryStringSearch):
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         try:
             # auth if needed
-            kwargs = {}
+            RequestsKwargs = TypedDict(
+                "RequestsKwargs", {"auth": AuthBase}, total=False
+            )
+            kwargs: RequestsKwargs = {}
             if (
                 getattr(self.config, "need_auth", False)
                 and hasattr(self, "auth")
