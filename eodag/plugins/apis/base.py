@@ -35,6 +35,7 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     Annotated,
+    deepcopy,
 )
 
 logger = logging.getLogger("eodag.apis.base")
@@ -120,7 +121,9 @@ class Api(PluginTopic):
         :returns: queryable parameters dict
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
-        defaults = self.config.products.get(product_type, {})
+        defaults = deepcopy(self.config.products.get(product_type, {}))
+        defaults.pop("metadata_mapping", None)
+
         queryables = {}
         for parameter, value in defaults.items():
             queryables[parameter] = Annotated[type(value), Field(default=value)]
