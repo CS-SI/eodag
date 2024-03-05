@@ -4247,6 +4247,29 @@ CMEMS_MULTIOBS_GLO_PHY_W_3D_REP:
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2018-12-31T23:59:59Z"
 
+CMEMS_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP:
+  abstract: |
+    This product corresponds to a REP L4 time series of monthly global reconstructed surface ocean pCO2, air-sea fluxes of CO2,
+    pH, total alkalinity, dissolved inorganic carbon, saturation state with respect to calcite and aragonite, and associated
+    uncertainties on a 0.25° x 0.25° regular grid. The product is obtained from an ensemble-based forward feed neural network
+    approach mapping situ data for surface ocean fugacity (SOCAT data base, Bakker et al.  2016, https://www.socat.info/) and
+    sea surface salinity, temperature, sea surface height, chlorophyll a, mixed layer depth and atmospheric CO2 mole fraction.
+    Sea-air flux fields are computed from the air-sea gradient of pCO2 and the dependence on wind speed of Wanninkhof (2014).
+    Surface ocean pH on total scale, dissolved inorganic carbon, and saturation states are then computed from surface ocean pCO2
+    and reconstructed surface ocean alkalinity using the CO2sys speciation software.
+    Product Citation: Please refer to our Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    DOI (product): https://doi.org/10.48670/moi-00047
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,global,marine,ocean,surface,carbon,SOCAT,reprocessed
+  sensorType:
+  license: proprietary
+  title: Global Ocean Surface Carbon
+  missionStartDate: "1985-01-15T00:00:00Z"
+  missionEndDate: "2021-12-15T23:59:59Z"
+
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
@@ -4815,6 +4838,46 @@ CMEMS_GLO_WIND_L4_MY:
   license: proprietary
   title: Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model
   missionStartDate: "1992-05-16T00:00:00Z"
+
+CMEMS_GLO_WIND_L3_NRT:
+  abstract: |
+    For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
+    with resolutions corresponding to the L2 swath products: *0.5 degrees grid for the 50 km scatterometer L2 inputs, 0.25 degrees
+    grid based on 25 km scatterometer swath observations, and 0.125 degrees based on 12.5 km scatterometer swath observations, i.e.,
+    from the coastal products. Data from ascending and descending passes are gridded separately. The product provides stress-equivalent
+    wind and stress variables as well as their divergence and curl. The NRT L3 products follow the NRT availability of the EUMETSAT
+    OSI SAF L2 products and are available for: *The ASCAT scatterometers on Metop-A (discontinued on 15/11/2021), Metop-B and Metop-C
+    at 0.125 and 0.25 degrees; *The OSCAT scatterometer on Scatsat-1 at 0.25 and 0.5 degrees (discontinued on 28/2/2021);
+    *The HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees; DOI (product): https://doi.org/10.48670/moi-00182
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,surface,wind,stress,NRT,scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Daily Gridded Sea Surface Winds from Scatterometer
+  missionStartDate: "2016-01-01T00:00:00Z"
+
+CMEMS_GLO_WIND_L3_REP:
+  abstract: |
+    For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
+    with resolutions corresponding to the L2 swath products: *0.5 degrees grid for the 50 km scatterometer L2 inputs, 0.25 degrees
+    grid based on 25 km scatterometer swath observations, and 0.125 degrees based on 12.5 km scatterometer swath observations, i.e.,
+    from the coastal products. Data from ascending and descending passes are gridded separately. The product provides stress-equivalent
+    wind and stress variables as well as their divergence and curl. The REP L3 products follow the REP availability of the
+    EUMETSAT OSI SAF L2 products and are available for: The ASCAT scatterometer on MetOp-A and Metop-B at 0.125 and 0.25 degrees;
+    The Seawinds scatterometer on QuikSCAT at 0.25 and 0.5 degrees; The AMI scatterometer on ERS-1 and ERS-2 at 0.25 degrees;
+    The OSCAT scatterometer on Oceansat-2 at 0.25 and 0.5 degrees; DOI (product): https://doi.org/10.48670/moi-00183
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L3
+  keywords: CMEMS,global,marine,ocean,surface,wind,stress,REP,reprocessed,scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Daily Gridded Reprocessed L3 Sea Surface Winds from Scatterometer
+  missionStartDate: "2016-01-01T00:00:00Z"
 
 # METEOBLUE --------------------------------------------------------------------------
 NEMSGLOBAL_TCDC:

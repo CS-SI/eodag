@@ -4034,6 +4034,35 @@
     completionTimeFromAscendingNode:
       - '{{"end": "{completionTimeFromAscendingNode}"}}'
       - '$.properties.enddate'
+  anchor_s1_sar: &s1_sar_params
+    processingLevel:
+      - '{{"processingLevel": "{processingLevel}"}}'
+      - '{$.id#get_processing_level_from_s1_id}'
+    sensorMode:
+      - '{{"sensorMode": "{sensorMode}"}}'
+      - '{$.id#get_sensor_mode_from_s1_id}'
+    swath:
+      - '{{"swath": "{swath}"}}'
+      - '$.null'
+    polarisation:
+      - '{{"polarisation": "{polarisation}"}}'
+      - '$.null'
+    relativeOrbitNumber:
+      - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+      - '$.null'
+    missionTakeId:
+      - '{{"missionTakeId": "{missionTakeId}"}}'
+      - '$.null'
+  anchor_orbit_cycle: &orbit_cycle
+    relativeOrbitNumber:
+      - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
+      - '$.null'
+    orbitNumber:
+      - '{{"orbit": "{orbitNumber}"}}'
+      - '$.null'
+    cycleNumber:
+      - '{{"cycle": "{cycleNumber}"}}'
+      - '$.null'
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
@@ -4175,24 +4204,7 @@
         id:
           - '{{"productType": "GRD", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        processingLevel:
-          - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s1_id}'
-        sensorMode:
-          - '{{"sensorMode": "{sensorMode}"}}'
-          - '{$.id#get_sensor_mode_from_s1_id}'
-        swath:
-          - '{{"swath": "{swath}"}}'
-          - '$.null'
-        polarisation:
-          - '{{"polarisation": "{polarisation}"}}'
-          - '$.null'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        missionTakeId:
-          - '{{"missionTakeId": "{missionTakeId}"}}'
-          - '$.null'
+        <<: *s1_sar_params
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_RAW:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -4201,24 +4213,7 @@
         id:
           - '{{"productType": "RAW", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        processingLevel:
-          - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s1_id}'
-        sensorMode:
-          - '{{"sensorMode": "{sensorMode}"}}'
-          - '{$.id#get_sensor_mode_from_s1_id}'
-        swath:
-          - '{{"swath": "{swath}"}}'
-          - '$.null'
-        polarisation:
-          - '{{"polarisation": "{polarisation}"}}'
-          - '$.null'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        missionTakeId:
-          - '{{"missionTakeId": "{missionTakeId}"}}'
-          - '$.null'
+        <<: *s1_sar_params
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_OCN:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -4227,24 +4222,7 @@
         id:
           - '{{"productType": "OCN", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        processingLevel:
-          - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s1_id}'
-        sensorMode:
-          - '{{"sensorMode": "{sensorMode}"}}'
-          - '{$.id#get_sensor_mode_from_s1_id}'
-        swath:
-          - '{{"swath": "{swath}"}}'
-          - '$.null'
-        polarisation:
-          - '{{"polarisation": "{polarisation}"}}'
-          - '$.null'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        missionTakeId:
-          - '{{"missionTakeId": "{missionTakeId}"}}'
-          - '$.null'
+        <<: *s1_sar_params
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_SLC:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -4253,24 +4231,7 @@
         id:
           - '{{"productType": "SLC", "sensorMode": {id#split_id_into_s1_params}["sensorMode"], "processingLevel": {id#split_id_into_s1_params}["processingLevel"], "startDate": {id#split_id_into_s1_params}["startDate"], "completionDate": {id#split_id_into_s1_params}["endDate"]}}'
           - '{$.id#remove_extension}'
-        processingLevel:
-          - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s1_id}'
-        sensorMode:
-          - '{{"sensorMode": "{sensorMode}"}}'
-          - '{$.id#get_sensor_mode_from_s1_id}'
-        swath:
-          - '{{"swath": "{swath}"}}'
-          - '$.null'
-        polarisation:
-          - '{{"polarisation": "{polarisation}"}}'
-          - '$.null'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        missionTakeId:
-          - '{{"missionTakeId": "{missionTakeId}"}}'
-          - '$.null'
+        <<: *s1_sar_params
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S2_MSI_L1C:
       productType: EO:ESA:DAT:SENTINEL-2
@@ -4387,15 +4348,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
     S3_ERR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
@@ -4407,15 +4360,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
@@ -4427,15 +4372,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
@@ -4447,15 +4384,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
@@ -4467,15 +4396,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
@@ -4487,15 +4408,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
@@ -4507,15 +4420,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
 
     S3_SLSTR_L1RBT:
@@ -4529,15 +4434,7 @@
         platform:
           - '{{"sat": "{platform}"}}'
           - '{$.id#get_platform_from_s3_id}'
-        relativeOrbitNumber:
-          - '{{"relativeOrbitNumber": "{relativeOrbitNumber}"}}'
-          - '$.null'
-        orbitNumber:
-          - '{{"orbit": "{orbitNumber}"}}'
-          - '$.null'
-        cycleNumber:
-          - '{{"cycle": "{cycleNumber}"}}'
-          - '$.null'
+        <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
@@ -5795,6 +5692,11 @@
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_PHY_W_3D_REP_015_007:dataset-omega-3d-rep-weekly_202003"}}'
+    CMEMS_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP:
+      productType: EO:MO:DAT:MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:dataset-carbon-rep-monthly_202311
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:dataset-carbon-rep-monthly_202311"}}'
     CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON__l3-olci-4km_P1D_202207:
       productType: EO:MO:DAT:OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:cmems_obs-oc_glo_bgc-plankton_nrt_l3-olci-4km_P1D_202207
       metadata_mapping:
@@ -6130,6 +6032,294 @@
       metadata_mapping:
         <<: *cmems_mapping
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_PHY_CLIMATE_L4_MY_012_003:cmems_obs-wind_glo_phy_my_l4_P1M_202211"}}'
+    CMEMS_GLO_WIND_L3_NRT___HY-2B_HSCAT_25_ASC_V2_202012:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_25_ASC_V2_202012"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_25_ASC_V2_202012
+    CMEMS_GLO_WIND_L3_NRT___HY-2B_HSCAT_25_DES_V2_202012:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_25_DES_V2_202012"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_25_DES_V2_202012
+    CMEMS_GLO_WIND_L3_NRT___HY-2B_HSCAT_50_ASC_V2_202012:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_50_ASC_V2_202012"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_50_ASC_V2_202012
+    CMEMS_GLO_WIND_L3_NRT___HY-2B_HSCAT_50_DES_V2_202012:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_50_DES_V2_202012"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2B_HSCAT_50_DES_V2_202012
+    CMEMS_GLO_WIND_L3_NRT___HY-2C_HSCAT_25_ASC_V2_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_25_ASC_V2_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_25_ASC_V2_202112
+    CMEMS_GLO_WIND_L3_NRT___HY-2C_HSCAT_25_DES_V2_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_25_DES_V2_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_25_DES_V2_202112
+    CMEMS_GLO_WIND_L3_NRT___HY-2C_HSCAT_50_ASC_V2_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_50_ASC_V2_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_50_ASC_V2_202112
+    CMEMS_GLO_WIND_L3_NRT___HY-2C_HSCAT_50_DES_V2_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_50_DES_V2_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2C_HSCAT_50_DES_V2_202112
+    CMEMS_GLO_WIND_L3_NRT___HY-2D_HSCAT_25_ASC_V2_202211:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_25_ASC_V2_202211"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_25_ASC_V2_202211
+    CMEMS_GLO_WIND_L3_NRT___HY-2D_HSCAT_25_DES_V2_202211:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_25_DES_V2_202211"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_25_DES_V2_202211
+    CMEMS_GLO_WIND_L3_NRT___HY-2D_HSCAT_50_ASC_V2_202211:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_50_ASC_V2_202211"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_50_ASC_V2_202211
+    CMEMS_GLO_WIND_L3_NRT___HY-2D_HSCAT_50_DES_V2_202211:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_50_DES_V2_202211"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_HY-2D_HSCAT_50_DES_V2_202211
+    CMEMS_GLO_WIND_L3_NRT___METOP-A_ASCAT_12_ASC_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_12_ASC_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_12_ASC_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-A_ASCAT_12_DES_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_12_DES_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_12_DES_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-A_ASCAT_25_ASC_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_25_ASC_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_25_ASC_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-A_ASCAT_25_DES_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_25_DES_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-A_ASCAT_25_DES_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-B_ASCAT_12_ASC_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_12_ASC_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_12_ASC_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-B_ASCAT_12_DES_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_12_DES_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_12_DES_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-B_ASCAT_25_ASC_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_25_ASC_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_25_ASC_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-B_ASCAT_25_DES_V2:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_25_DES_V2"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-B_ASCAT_25_DES_V2
+    CMEMS_GLO_WIND_L3_NRT___METOP-C_ASCAT_12_ASC_V2_201912:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_12_ASC_V2_201912"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_12_ASC_V2_201912
+    CMEMS_GLO_WIND_L3_NRT___METOP-C_ASCAT_12_DES_V2_201912:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_12_DES_V2_201912"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_12_DES_V2_201912
+    CMEMS_GLO_WIND_L3_NRT___METOP-C_ASCAT_25_ASC_V2_201912:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_25_ASC_V2_201912"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_25_ASC_V2_201912
+    CMEMS_GLO_WIND_L3_NRT___METOP-C_ASCAT_25_DES_V2_201912:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_25_DES_V2_201912"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_METOP-C_ASCAT_25_DES_V2_201912
+    CMEMS_GLO_WIND_L3_NRT___SCATSAT-1_OSCAT_25_ASC_V2_201811:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_25_ASC_V2_201811"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_25_ASC_V2_201811
+    CMEMS_GLO_WIND_L3_NRT___SCATSAT-1_OSCAT_25_DES_V2_201811:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_25_DES_V2_201811"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_25_DES_V2_201811
+    CMEMS_GLO_WIND_L3_NRT___SCATSAT-1_OSCAT_50_ASC_V2_201811:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_50_ASC_V2_201811"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_50_ASC_V2_201811
+    CMEMS_GLO_WIND_L3_NRT___SCATSAT-1_OSCAT_50_DES_V2_201811:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_50_DES_V2_201811"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:KNMI-GLO-WIND_L3-OBS_SCATSAT-1_OSCAT_50_DES_V2_201811
+    CMEMS_GLO_WIND_L3_REP___ERS-1_SCAT_25_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-1_SCAT_25_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-1_SCAT_25_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___ERS-1_SCAT_25_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-1_SCAT_25_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-1_SCAT_25_DES_202007
+    CMEMS_GLO_WIND_L3_REP___ERS-2_SCAT_25_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-2_SCAT_25_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-2_SCAT_25_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___ERS-2_SCAT_25_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-2_SCAT_25_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_ERS-2_SCAT_25_DES_202007
+    CMEMS_GLO_WIND_L3_REP___METOP-A_ASCAT_12_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_12_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_12_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___METOP-A_ASCAT_12_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_12_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_12_DES_202007
+    CMEMS_GLO_WIND_L3_REP___METOP-A_ASCAT_25_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_25_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_25_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___METOP-A_ASCAT_25_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_25_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-A_ASCAT_25_DES_202007
+    CMEMS_GLO_WIND_L3_REP___METOP-B_ASCAT_12_ASC_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_12_ASC_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_12_ASC_202112
+    CMEMS_GLO_WIND_L3_REP___METOP-B_ASCAT_12_DES_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_12_DES_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_12_DES_202112
+    CMEMS_GLO_WIND_L3_REP___METOP-B_ASCAT_25_ASC_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_25_ASC_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_25_ASC_202112
+    CMEMS_GLO_WIND_L3_REP___METOP-B_ASCAT_25_DES_202112:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_25_DES_202112"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_METOP-B_ASCAT_25_DES_202112
+    CMEMS_GLO_WIND_L3_REP___OCEANSAT2_OSCAT_25_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_25_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_25_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___OCEANSAT2_OSCAT_25_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_25_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_25_DES_202007
+    CMEMS_GLO_WIND_L3_REP___OCEANSAT2_OSCAT_50_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_50_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_50_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___OCEANSAT2_OSCAT_50_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_50_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_OCEANSAT2_OSCAT_50_DES_202007
+    CMEMS_GLO_WIND_L3_REP___QUIKSCAT_SEAWINDS_25_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_25_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_25_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___QUIKSCAT_SEAWINDS_25_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_25_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_25_DES_202007
+    CMEMS_GLO_WIND_L3_REP___QUIKSCAT_SEAWINDS_50_ASC_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_50_ASC_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_50_ASC_202007
+    CMEMS_GLO_WIND_L3_REP___QUIKSCAT_SEAWINDS_50_DES_202007:
+      metadata_mapping:
+        <<: *cmems_mapping
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location":
+          "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_50_DES_202007"}}'
+      productType: EO:MO:DAT:WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:KNMI-GLO-WIND_L3-REP-OBS_QUIKSCAT_SEAWINDS_50_DES_202007
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
       metadata_mapping:
