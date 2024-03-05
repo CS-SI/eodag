@@ -476,14 +476,12 @@ class QueryStringSearch(Search):
         :param count: (optional) To trigger a count request
         :type count: bool
         """
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType", product_type)
         if product_type == GENERIC_PRODUCT_TYPE:
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
             return [], 0
-        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
-        kwargs.pop("product_type", None)
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         sort_by_qs, _ = (
