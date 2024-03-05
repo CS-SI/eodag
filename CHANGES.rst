@@ -1,6 +1,11 @@
 Release history
 ---------------
 
+2.12.1 (2024-03-05)
++++++++++++++++++++
+
+* :class:`~eodag.plugins.apis.cds.CdsApi` queryables fix (:pull:`1048`)
+
 2.12.0 (2024-02-19)
 +++++++++++++++++++
 
