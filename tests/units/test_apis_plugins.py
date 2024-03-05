@@ -941,14 +941,15 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         queryables = self.api_plugin.discover_queryables(
             productType="CAMS_EU_AIR_QUALITY_RE"
         )
-        self.assertEqual(12, len(queryables))
+        self.assertEqual(11, len(queryables))
         self.assertIn("variable", queryables)
+        self.assertNotIn("metadata_mapping", queryables)
         # with additional param
         queryables = self.api_plugin.discover_queryables(
             productType="CAMS_EU_AIR_QUALITY_RE",
             variable="a",
         )
-        self.assertEqual(12, len(queryables))
+        self.assertEqual(11, len(queryables))
         queryable = queryables.get("variable")
         self.assertEqual("a", queryable.__metadata__[0].get_default())
         queryable = queryables.get("month")
