@@ -3982,7 +3982,7 @@
     variable:
       - '{{"variables": {variable}}}'
       - '{$.properties.location#get_variables_from_path}'
-  anchor_date_cds: &cds_day_month_year
+  anchor_day_month_year: &day_month_year
     startTimeFromAscendingNode:
       - |
         {{
@@ -3992,12 +3992,31 @@
         }}
       - $.properties.startDate
     completionTimeFromAscendingNode: $.properties.endDate
-  anchor_day_month: &cds_ads_month_year
+  anchor_hist_day_month_year: &hist_day_month_year
+    startTimeFromAscendingNode:
+      - |
+        {{
+          "hyear": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+          "hmonth": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+          "hday": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+        }}
+      - $.properties.startDate
+    completionTimeFromAscendingNode: $.properties.endDate
+  anchor_year_month: &month_year
     startTimeFromAscendingNode:
       - |
         {{
           "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
           "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
+        }}
+      - $.properties.startDate
+    completionTimeFromAscendingNode: $.properties.endDate
+  anchor_hist_year_month: &hist_month_year
+    startTimeFromAscendingNode:
+      - |
+        {{
+          "hyear": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+          "hmonth": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
         }}
       - $.properties.startDate
     completionTimeFromAscendingNode: $.properties.endDate
@@ -4141,6 +4160,12 @@
         - '$.null'
       time_reference:
         - '{{"time_reference": "{time_reference}"}}'
+        - '$.null'
+      grid:
+        - '{{"grid": "{grid}"}}'
+        - '$.null'
+      soil_level:
+        - '{{"soil_level": {soil_level}}}'
         - '$.null'
   products:
     S1_SAR_GRD:
@@ -4596,7 +4621,7 @@
       format: grib
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4642,7 +4667,7 @@
       format: grib
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4667,7 +4692,7 @@
         providerProductType:
           - '{{"productType": {providerProductType}}}'
           - '$.null'
-        <<: *cds_ads_month_year
+        <<: *month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4706,7 +4731,7 @@
         providerProductType:
           - '{{"productType": {providerProductType}}}'
           - '$.null'
-        <<: *cds_ads_month_year
+        <<: *month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4730,7 +4755,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
-        <<: *cds_ads_month_year
+        <<: *month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4766,7 +4791,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
-        <<: *cds_ads_month_year
+        <<: *month_year
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
@@ -4783,7 +4808,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -4802,7 +4827,7 @@
       version: "6_0"
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4844,7 +4869,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         processingLevel:
           - '{{"processing_level": {processingLevel}}}'
           - '$.null'
@@ -4860,7 +4885,7 @@
       format: grib # netcdf format may fail
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -4876,7 +4901,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
@@ -4891,7 +4916,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -4905,7 +4930,7 @@
       version: vDT2021
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
@@ -4917,7 +4942,7 @@
       format: zip
       metadata_mapping:
         id: '$.id'
-        <<: *cds_day_month_year
+        <<: *day_month_year
         variable:
           - '{{"variable": "{variable}"}}'
           - '$.null'
@@ -5301,7 +5326,7 @@
         - monthly_mean
       metadata_mapping:
         id: '$.id'
-        <<: *cds_ads_month_year
+        <<: *month_year
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -5316,7 +5341,7 @@
       aggregation: instantaneous
       metadata_mapping:
         id: '$.id'
-        <<: *cds_ads_month_year
+        <<: *month_year
         aggregation:
           - '{{"time_aggregation": "{aggregation}"}}'
           - '$.null'
@@ -5341,7 +5366,7 @@
         - '0'
       metadata_mapping:
         id: '$.id'
-        <<: *cds_ads_month_year
+        <<: *month_year
         type:
           - '{{"type": {type}}}'
           - '$.null'
@@ -5363,7 +5388,7 @@
         - '2'
       metadata_mapping:
         id: '$.id'
-        <<: *cds_ads_month_year
+        <<: *month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS"}}'
     CAMS_GRF_AUX:
@@ -5383,7 +5408,7 @@
         - surface
       metadata_mapping:
         id: '$.id'
-        <<: *cds_ads_month_year
+        <<: *month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES"}}'
     CAMS_GREENHOUSE_EGG4:
@@ -5416,7 +5441,7 @@
         - '00:00'
       metadata_mapping:
         id: '$.id'
-        <<: *cds_ads_month_year
+        <<: *month_year
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -6195,6 +6220,336 @@
           - '{{"productGroupId": "{productGroupId}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF"}}'
+    FIRE_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
+      providerProductType: reanalysis
+      variable:
+        - fire_danger_index
+        - build_up_index
+        - drought_code
+        - duff_moisture_code
+        - fine_fuel_moisture_code
+        - fire_daily_severity_rating
+        - fire_weather_index
+        - initial_fire_spread_index
+        - keetch_byram_drought_index
+        - burning_index
+        - energy_release_component
+        - ignition_component
+      version:
+        - "4_1"
+      format:
+        - "grib"
+      grid: original_grid
+      type: consolidated_dataset
+      metadata_mapping:
+        id: '$.id'
+        <<: *day_month_year
+        providerProductType:
+          - '{{"product_type": "{providerProductType}"}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        format:
+          - '{{"format": {format}}}'
+          - '$.null'
+        type:
+          - '{{"dataset_type": "{type}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"}}'
+    GLOFAS_FORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
+      variable: river_discharge_in_the_last_24_hours
+      version:
+        - operational
+      leadtime_hour:
+        - "24"
+      model:
+        - lisflood
+      providerProductType:
+        - control_forecast
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        <<: *day_month_year
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model:
+          - '{{"hydrological_model": {model}}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST"}}'
+    GLOFAS_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL
+      variable:
+        - river_discharge_in_the_last_24_hours
+      version:
+        - version_4_0
+      model:
+        - lisflood
+      providerProductType:
+        - consolidated
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        <<: *hist_day_month_year
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model:
+          - '{{"hydrological_model": {model}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL"}}'
+    GLOFAS_REFORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST
+      variable:
+        - river_discharge_in_the_last_24_hours
+      providerProductType:
+        - control_reforecast
+      leadtime_hour:
+        - "24"
+      version:
+        - version_4_0
+      model:
+        - lisflood
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        <<: *hist_day_month_year
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model:
+          - '{{"hydrological_model": {model}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST"}}'
+    GLOFAS_SEASONAL:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL
+      variable:
+        - river_discharge_in_the_last_24_hours
+      version:
+        - operational
+      model:
+        - htessel_lisflood
+      leadtime_hour:
+        - "24"
+        - "48"
+        - "72"
+        - "96"
+        - "120"
+        - "144"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        <<: *month_year
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model:
+          - '{{"hydrological_model": {model}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL"}}'
+    GLOFAS_SEASONAL_REFORECAST:
+      productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST
+      variable:
+        - river_discharge_in_the_last_24_hours
+      version:
+        - version_4_0
+      model:
+        - lisflood
+      leadtime_hour:
+        - "24"
+      format: grib
+      metadata_mapping:
+        id: '$.id'
+        <<: *hist_month_year
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model:
+          - '{{"hydrological_model": {model}}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST"}}'
+    EFAS_FORECAST:
+      productType: EO:ECMWF:DAT:EFAS_FORECAST
+      providerProductType:
+        - control_forecast
+      soil_level:
+        - "1"
+      leadtime_hour:
+        - "0"
+        - "6"
+        - "12"
+        - "18"
+        - "24"
+      version:
+        - operational
+      origin: ecmwf
+      variable: volumetric_soil_moisture
+      model_level: soil_levels
+      time:
+        - 00:00
+      format: grib.zip
+      metadata_mapping:
+        id: '$.id'
+        <<: *day_month_year
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model_level:
+          - '{{"model_levels": "{model_level}"}}'
+          - '$.null'
+        origin:
+          - '{{"originating_centre": "{origin}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_FORECAST"}}'
+    EFAS_HISTORICAL:
+      productType: EO:ECMWF:DAT:EFAS_HISTORICAL
+      version:
+        - version_5_0
+      variable: volumetric_soil_moisture
+      model_level: soil_levels
+      soil_level:
+        - "1"
+      time:
+        - 00:00
+      metadata_mapping:
+        id: '$.id'
+        <<: *hist_day_month_year
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model_level:
+          - '{{"model_levels": "{model_level}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_HISTORICAL"}}'
+    EFAS_REFORECAST:
+      productType: EO:ECMWF:DAT:EFAS_REFORECAST
+      providerProductType:
+        - control_forecast
+      version:
+        - version_5_0
+      soil_level:
+        - "1"
+      leadtime_hour:
+        - "6"
+        - "12"
+        - "18"
+        - "24"
+      variable: volumetric_soil_moisture
+      model_level: soil_levels
+      format: grib.zip
+      metadata_mapping:
+        id: '$.id'
+        <<: *hist_day_month_year
+        providerProductType:
+          - '{{"product_type": {providerProductType}}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model_level:
+          - '{{"model_levels": "{model_level}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_REFORECAST"}}'
+    EFAS_SEASONAL:
+      productType: EO:ECMWF:DAT:EFAS_SEASONAL
+      version:
+        - operational
+      leadtime_hour:
+        - "24"
+        - "48"
+        - "72"
+        - "96"
+        - "120"
+        - "144"
+        - "168"
+        - "192"
+      variable: volumetric_soil_moisture
+      model_level: soil_levels
+      soil_level:
+        - "1"
+      format: grib.zip
+      metadata_mapping:
+        id: '$.id'
+        <<: *month_year
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model_level:
+          - '{{"model_levels": "{model_level}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_SEASONAL"}}'
+    EFAS_SEASONAL_REFORECAST:
+      productType: EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST
+      version:
+        - "version_5_0"
+      leadtime_hour:
+        - "24"
+        - "48"
+        - "72"
+        - "96"
+        - "120"
+        - "144"
+        - "168"
+        - "192"
+      variable: volumetric_soil_moisture
+      model_level: soil_levels
+      soil_level:
+        - "1"
+      format: grib.zip
+      metadata_mapping:
+        id: '$.id'
+        <<: *hist_month_year
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        model_level:
+          - '{{"model_levels": "{model_level}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST"}}'
 
   auth: !plugin
     type: TokenAuth
