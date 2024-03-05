@@ -27,7 +27,6 @@ from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
@@ -60,7 +59,7 @@ logger = logging.getLogger("eodag.apis.ecmwf")
 ECMWF_MARS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
-class EcmwfApi(Download, Api, BuildPostSearchResult):
+class EcmwfApi(Api, BuildPostSearchResult):
     """A plugin that enables to build download-request and download data on ECMWF MARS.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -271,3 +270,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             timeout=timeout,
             **kwargs,
         )
+
+    def clear(self) -> None:
+        """Clear search context"""
+        pass
