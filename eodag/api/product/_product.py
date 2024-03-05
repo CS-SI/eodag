@@ -142,7 +142,7 @@ class EOProduct:
             raise MisconfiguredError(
                 f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
             )
-        elif properties["geometry"] == NOT_AVAILABLE:
+        elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
             product_geometry = properties.pop("defaultGeometry")
         else:
             product_geometry = properties["geometry"]
