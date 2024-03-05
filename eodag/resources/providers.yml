@@ -6736,6 +6736,23 @@
       max_sort_params: 1
     literal_search_params:
       format: json
+    discover_product_types:
+      fetch_url: https://api.eumetsat.int/data/browse/1.0.0/collections?format=json
+      result_type: json
+      results_entry: '$.links[*]'
+      generic_product_type_id: '$.title'
+      generic_product_type_parsable_properties:
+        parentIdentifier: '$.title'
+      generic_product_type_parsable_metadata:
+        abstract: '$.null'
+        instrument: '$.null'
+        platform: '$.null'
+        platformSerialIdentifier: '$.null'
+        processingLevel: '$.null'
+        keywords: '$.null'
+        license: '$.null'
+        title: '$.title'
+        missionStartDate: '$.null'
     metadata_mapping:
       # Opensearch resource identifier within the search engine context (in our case
       # within the context of the data provider)
@@ -6791,6 +6808,7 @@
       geometry:
         - 'geo={geometry#to_rounded_wkt}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # The url of the quicklook
       quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
