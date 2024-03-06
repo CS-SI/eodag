@@ -145,6 +145,10 @@ html_theme_options = {
     "repository_branch": "develop",
     "path_to_docs": "docs",
     "use_download_button": True,
+    "logo": {
+        "image_light": "_static/eodag_logo_160.png",
+        "image_dark": "_static/eodag_logo_160r.png",
+    },
 }
 
 html_logo = "_static/eodag_logo.png"
