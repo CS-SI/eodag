@@ -123,19 +123,6 @@ html_theme = "sphinx_book_theme"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {
-#     "logo": "eodag_logo.png",
-#     "logo_name": False,
-#     "fixed_sidebar": True,
-#     "show_powered_by": False,
-#     "github_user": "CS-SI",
-#     "github_repo": "eodag",
-#     "github_type": "star",
-#     "github_banner": True,
-#     "page_width": "1140px",
-#     "pre_bg": "#eeffcc",
-# }
 
 html_theme_options = {
     "repository_url": "https://github.com/CS-SI/eodag",
@@ -151,7 +138,7 @@ html_theme_options = {
     },
 }
 
-html_logo = "_static/eodag_logo.png"
+html_logo = "_static/eodag_logo_160.png"
 html_title = ""
 
 html_favicon = "_static/favicon-32x32.png"
