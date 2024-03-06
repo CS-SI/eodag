@@ -530,8 +530,7 @@ class AwsDownload(Download):
         """
         if not isinstance(auth, (dict, type(None))):
             raise AuthenticationError(
-                "Incompatible authentication information, expected dict or None, got %s"
-                % type(auth)
+                f"Incompatible authentication information, expected dict or None, got {type(auth)}"
             )
         if auth is None:
             auth = {}
