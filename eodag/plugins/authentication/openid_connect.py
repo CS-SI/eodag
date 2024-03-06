@@ -28,7 +28,12 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    RequestError,
+    TimeOutError,
+)
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
@@ -198,7 +203,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         }
         # Add the credentials
         login_data.update(self.config.credentials)
-        auth_uri = getattr(self.config, "authentication_uri", None)
+
         # Retrieve the authentication_uri from the login form if so configured
         if self.config.authentication_uri_source == "login-form":
             # Given that the login_form_xpath resolves to an HTML element, if suffices to add '/@action' to get
@@ -206,6 +211,14 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )[0]
+            if not auth_uri:
+                raise RequestError(
+                    f"Could not get auth_uri from {self.config.login_form_xpath}"
+                )
+        else:
+            auth_uri = getattr(self.config, "authentication_uri", None)
+            if not auth_uri:
+                raise MisconfiguredError("authentication_uri is missing")
         return self.session.post(
             auth_uri, data=login_data, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
         )
@@ -261,7 +274,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                     "client_secret": self.config.client_secret,
                 }
             )
-        post_request_kwargs = {
+        post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
         r = self.session.post(

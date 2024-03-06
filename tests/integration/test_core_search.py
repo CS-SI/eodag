@@ -29,6 +29,7 @@ from tests.context import (
     NoMatchingProductType,
     RequestError,
     USGSError,
+    ValidationError,
 )
 from tests.utils import mock
 
@@ -77,9 +78,14 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # QueryStringSearch / peps
         self.dag.set_preferred_provider("peps")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, productType="foo", raise_errors=True
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(
+            RequestError, next, self.dag.search_iter_page(productType="foo")
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
@@ -147,9 +153,14 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # ODataV4Search / onda
         self.dag.set_preferred_provider("onda")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, productType="foo", raise_errors=True
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(
+            RequestError, next, self.dag.search_iter_page(productType="foo")
+        )
 
     @mock.patch(
         "eodag.plugins.apis.usgs.api.scene_search", autospec=True, side_effect=USGSError

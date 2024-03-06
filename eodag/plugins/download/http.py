@@ -25,7 +25,18 @@ import zipfile
 from datetime import datetime
 from email.message import Message
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    cast,
+)
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -33,6 +44,7 @@ import requests
 import requests_ftp
 from lxml import etree
 from requests import RequestException
+from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -69,9 +81,11 @@ if TYPE_CHECKING:
     from requests import Response
 
     from eodag.api.product import EOProduct
+    from eodag.api.product._assets import Asset
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 logger = logging.getLogger("eodag.download.http")
 
@@ -114,8 +128,8 @@ class HTTPDownload(Download):
     def orderDownload(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        auth: Optional[AuthBase] = None,
+        **kwargs: Unpack[DownloadConf],
     ) -> None:
         """Send product order request.
 
@@ -138,12 +152,16 @@ class HTTPDownload(Download):
 
         :param product: The EO product to order
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
         order_method = getattr(self.config, "order_method", "GET").lower()
+        OrderKwargs = TypedDict(
+            "OrderKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
+        )
+        order_kwargs: OrderKwargs = {}
         if order_method == "post":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderLink"]))
@@ -151,7 +169,8 @@ class HTTPDownload(Download):
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             order_url = parts._replace(query=None).geturl()
-            order_kwargs = {"json": query_dict} if query_dict else {}
+            if query_dict:
+                order_kwargs["json"] = query_dict
         else:
             order_url = product.properties["orderLink"]
             order_kwargs = {}
@@ -204,8 +223,8 @@ class HTTPDownload(Download):
     def orderDownloadStatus(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        auth: Optional[AuthBase] = None,
+        **kwargs: Unpack[DownloadConf],
     ) -> None:
         """Send product order status request.
 
@@ -224,12 +243,16 @@ class HTTPDownload(Download):
 
         :param product: The ordered EO product
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
         status_method = getattr(self.config, "order_status_method", "GET").lower()
+        StatusKwargs = TypedDict(
+            "StatusKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
+        )
+        status_kwargs: StatusKwargs = {}
         if status_method == "post":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderStatusLink"]))
@@ -335,7 +358,7 @@ class HTTPDownload(Download):
                             new_search_metadata_mapping = (
                                 self.config.order_status_on_success["metadata_mapping"]
                             )
-                            order_metadata_mapping_jsonpath = {}
+                            order_metadata_mapping_jsonpath: Dict[str, Any] = {}
                             order_metadata_mapping_jsonpath = (
                                 mtd_cfg_as_conversion_and_querypath(
                                     new_search_metadata_mapping,
@@ -375,11 +398,11 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download a product using HTTP protocol.
 
@@ -387,23 +410,25 @@ class HTTPDownload(Download):
         the user is warned, it is renamed to remove the zip extension and
         no further treatment is done (no extraction)
         """
+        if auth is not None and not isinstance(auth, AuthBase):
+            raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
+
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
             )
             progress_callback = ProgressCallback(disable=True)
 
-        kwargs.pop("outputs_extension", "parameter not available in kwargs")
         outputs_extension = getattr(self.config, "products", {}).get(
             product.product_type, {}
         ).get("outputs_extension", None) or getattr(
             self.config, "outputs_extension", ".zip"
         )
+        kwargs["outputs_extension"] = kwargs.get("outputs_extension", outputs_extension)
 
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
-            outputs_extension=outputs_extension,
             **kwargs,
         )
         if not fs_path or not record_filename:
@@ -436,11 +461,11 @@ class HTTPDownload(Download):
         @self._download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
-            auth: PluginConfig,
+            auth: AuthBase,
             progress_callback: ProgressCallback,
             wait: int,
             timeout: int,
-            **kwargs: Dict[str, Any],
+            **kwargs: Unpack[DownloadConf],
         ) -> None:
             chunks = self._stream_download(product, auth, progress_callback, **kwargs)
 
@@ -476,10 +501,10 @@ class HTTPDownload(Download):
                 if not new_fs_path.endswith(".tar"):
                     new_fs_path += ".tar"
                 shutil.move(fs_path, new_fs_path)
+                kwargs["outputs_extension"] = ".tar"
                 product_path = self._finalize(
                     new_fs_path,
                     progress_callback=progress_callback,
-                    outputs_extension=".tar",
                     **kwargs,
                 )
                 product.location = path_to_uri(product_path)
@@ -505,7 +530,6 @@ class HTTPDownload(Download):
         product_path = self._finalize(
             fs_path,
             progress_callback=progress_callback,
-            outputs_extension=outputs_extension,
             **kwargs,
         )
         product.location = path_to_uri(product_path)
@@ -531,11 +555,11 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
@@ -543,8 +567,8 @@ class HTTPDownload(Download):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -560,6 +584,9 @@ class HTTPDownload(Download):
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         :rtype: dict
         """
+        if auth is not None and not isinstance(auth, AuthBase):
+            raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
+
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
             try:
@@ -625,12 +652,13 @@ class HTTPDownload(Download):
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
             auth_errors = [auth_errors]
+        response_text = e.response.text.strip() if e.response else ""
         if e.response and e.response.status_code in auth_errors:
             raise AuthenticationError(
                 "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                 % (
                     e.response.status_code,
-                    e.response.text.strip(),
+                    response_text,
                     self.provider,
                 )
             )
@@ -638,8 +666,8 @@ class HTTPDownload(Download):
         elif product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
             msg = (
                 ordered_message
-                if ordered_message and not e.response.text.strip()
-                else e.response.text.strip()
+                if ordered_message and not response_text
+                else response_text
             )
             raise NotAvailableError(
                 "%s(initially %s) requested, returned: %s"
@@ -655,15 +683,15 @@ class HTTPDownload(Download):
             logger.error(
                 "Error while getting resource :\n%s\n%s",
                 tb.format_exc(),
-                e.response.text.strip(),
+                response_text,
             )
 
     def _stream_download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Dict[str, Any],
+        **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         """
         fetches a zip file containing the assets of a given product as a stream
@@ -671,7 +699,7 @@ class HTTPDownload(Download):
         :param product: product for which the assets should be downloaded
         :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -751,9 +779,10 @@ class HTTPDownload(Download):
     def _stream_download_assets(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        assets_values: List[Asset] = [],
+        **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
@@ -765,8 +794,6 @@ class HTTPDownload(Download):
 
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
-
-        assets_values = kwargs.get("assets_values", [])
 
         # get extra parameters to pass to the query
         params = kwargs.pop("dl_url_params", None) or getattr(
@@ -846,15 +873,20 @@ class HTTPDownload(Download):
                             "content-disposition", None
                         )
                         if asset_content_disposition:
-                            asset.filename = parse_header(
-                                asset_content_disposition
-                            ).get_param("filename", None)
+                            asset.filename = cast(
+                                Optional[str],
+                                parse_header(asset_content_disposition).get_param(
+                                    "filename", None
+                                ),
+                            )
 
                     if not getattr(asset, "filename", None):
                         # default filename extracted from path
                         asset.filename = os.path.basename(asset.rel_path)
 
-                    asset.rel_path = os.path.join(asset_rel_dir, asset.filename)
+                    asset.rel_path = os.path.join(
+                        asset_rel_dir, cast(str, asset.filename)
+                    )
 
                     if len(assets_values) == 1:
                         # apply headers to asset
@@ -875,9 +907,9 @@ class HTTPDownload(Download):
         product: EOProduct,
         fs_dir_path: str,
         record_filename: str,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download product assets if they exist"""
         if progress_callback is None:
@@ -979,7 +1011,7 @@ class HTTPDownload(Download):
         return fs_dir_path
 
     def _handle_asset_exception(
-        self, e: RequestException, asset: Dict[str, Any], raise_errors: bool = False
+        self, e: RequestException, asset: Asset, raise_errors: bool = False
     ) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
@@ -1002,8 +1034,8 @@ class HTTPDownload(Download):
 
     def _get_asset_sizes(
         self,
-        assets_values: List[Dict[str, Any]],
-        auth: Optional[PluginConfig],
+        assets_values: List[Asset],
+        auth: Optional[AuthBase],
         params: Optional[Dict[str, str]],
         zipped: bool = False,
     ) -> int:
@@ -1032,12 +1064,14 @@ class HTTPDownload(Download):
                     )
                 if not getattr(asset, "size", 0):
                     # size from HEAD header / content-disposition / size
-                    asset.size = int(header_content_disposition.get_param("size", 0))
+                    size_str = str(header_content_disposition.get_param("size", 0))
+                    asset.size = int(size_str) if size_str.isdigit() else 0
                 if not getattr(asset, "filename", 0):
                     # filename from HEAD header / content-disposition / size
-                    asset.filename = header_content_disposition.get_param(
+                    asset_filename = header_content_disposition.get_param(
                         "filename", None
                     )
+                    asset.filename = str(asset_filename) if asset_filename else None
 
                 if not getattr(asset, "size", 0):
                     # GET request for size
@@ -1053,11 +1087,12 @@ class HTTPDownload(Download):
                         asset.size = int(stream.headers.get("Content-length", 0))
                         if not getattr(asset, "size", 0):
                             # size from GET header / content-disposition / size
-                            asset.size = int(
+                            size_str = str(
                                 parse_header(
                                     stream.headers.get("content-disposition", "")
                                 ).get_param("size", 0)
                             )
+                            asset.size = int(size_str) if size_str.isdigit() else 0
 
                 total_size += asset.size
         return total_size
@@ -1065,12 +1100,12 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ):
         """
         Download all using parent (base plugin) method

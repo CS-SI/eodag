@@ -26,6 +26,8 @@ from string import Formatter
 from typing import (
     TYPE_CHECKING,
     Any,
+    AnyStr,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -40,7 +42,7 @@ import orjson
 import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
-from jsonpath_ng.jsonpath import Child
+from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
@@ -151,7 +153,7 @@ def get_search_param(map_value: List[str]) -> str:
     return map_value[0]
 
 
-def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
+def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
@@ -203,8 +205,8 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         )
 
         def __init__(self) -> None:
-            self.custom_converter = None
-            self.custom_args = None
+            self.custom_converter: Optional[Callable] = None
+            self.custom_args: Optional[str] = None
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
@@ -479,12 +481,15 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         @staticmethod
         def convert_get_group_name(string: str, pattern: str) -> str:
             try:
-                return re.search(pattern, str(string)).lastgroup
+                match = re.search(pattern, str(string))
+                if match:
+                    return match.lastgroup or NOT_AVAILABLE
             except AttributeError:
-                logger.warning(
-                    "Could not extract property from %s using %s", string, pattern
-                )
-                return NOT_AVAILABLE
+                pass
+            logger.warning(
+                "Could not extract property from %s using %s", string, pattern
+            )
+            return NOT_AVAILABLE
 
         @staticmethod
         def convert_replace_str(string: str, args: str) -> str:
@@ -812,7 +817,10 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         @staticmethod
         def convert_get_dates_from_string(text: str, split_param="-"):
             reg = "[0-9]{8}" + split_param + "[0-9]{8}"
-            dates_str = re.search(reg, text).group()
+            match = re.search(reg, text)
+            if not match:
+                return NOT_AVAILABLE
+            dates_str = match.group()
             dates = dates_str.split(split_param)
             start_date = datetime.strptime(dates[0], "%Y%m%d")
             end_date = datetime.strptime(dates[1], "%Y%m%d")
@@ -926,13 +934,18 @@ def properties_from_json(
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
-        discovered_properties = string_to_jsonpath(discovery_path).find(json)
+        discovery_jsonpath = string_to_jsonpath(discovery_path)
+        discovered_properties = (
+            discovery_jsonpath.find(json)
+            if isinstance(discovery_jsonpath, JSONPath)
+            else []
+        )
         for found_jsonpath in discovered_properties:
             if "metadata_path_id" in discovery_config.keys():
                 found_key_paths = string_to_jsonpath(
                     discovery_config["metadata_path_id"], force=True
                 ).find(found_jsonpath.value)
-                if not found_key_paths:
+                if not found_key_paths or isinstance(found_key_paths, int):
                     continue
                 found_key = found_key_paths[0].value
                 used_jsonpath = Child(
@@ -955,7 +968,9 @@ def properties_from_json(
                         discovery_config["metadata_path_value"], force=True
                     ).find(found_jsonpath.value)
                     properties[found_key] = (
-                        found_value_path[0].value if found_value_path else NOT_AVAILABLE
+                        found_value_path[0].value
+                        if found_value_path and not isinstance(found_value_path, int)
+                        else NOT_AVAILABLE
                     )
                 else:
                     # default value got from metadata_path
@@ -971,7 +986,7 @@ def properties_from_json(
 
 
 def properties_from_xml(
-    xml_as_text: str,
+    xml_as_text: AnyStr,
     mapping: Any,
     empty_ns_prefix: str = "ns",
     discovery_config: Optional[Dict[str, Any]] = None,

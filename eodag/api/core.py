@@ -87,6 +87,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    EodagError,
     MisconfiguredError,
     NoMatchingProductType,
     PluginImplementationError,
@@ -105,7 +106,8 @@ if TYPE_CHECKING:
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
-    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.core")
 
@@ -502,10 +504,10 @@ class EODataAccessGateway:
             locations_config = load_yml_config(locations_conf_path)
 
             main_key = next(iter(locations_config))
-            locations_config = locations_config[main_key]
+            main_locations_config = locations_config[main_key]
 
             logger.info("Locations configuration loaded from %s" % locations_conf_path)
-            self.locations_config: List[Dict[str, Any]] = locations_config
+            self.locations_config: List[Dict[str, Any]] = main_locations_config
         else:
             logger.info(
                 "Could not load locations configuration from %s" % locations_conf_path
@@ -612,9 +614,8 @@ class EODataAccessGateway:
 
                 if not ext_product_types_conf:
                     # empty ext_product_types conf
-                    discover_kwargs = dict(provider=provider) if provider else {}
-                    ext_product_types_conf = self.discover_product_types(
-                        **discover_kwargs
+                    ext_product_types_conf = (
+                        self.discover_product_types(provider=provider) or {}
                     )
 
             # update eodag product types list with new conf
@@ -693,8 +694,8 @@ class EODataAccessGateway:
                 # or not in ext_product_types_conf (if eodag system conf != eodag conf used for ext_product_types_conf)
 
             # discover product types for user configured provider
-            provider_ext_product_types_conf = self.discover_product_types(
-                provider=provider
+            provider_ext_product_types_conf = (
+                self.discover_product_types(provider=provider) or {}
             )
 
             # update eodag product types list with new conf
@@ -738,7 +739,9 @@ class EODataAccessGateway:
                     auth_plugin = self._plugins_manager.get_auth_plugin(
                         search_plugin.provider
                     )
-                    if callable(getattr(auth_plugin, "authenticate", None)):
+                    if auth_plugin and callable(
+                        getattr(auth_plugin, "authenticate", None)
+                    ):
                         try:
                             search_plugin.auth = auth_plugin.authenticate()
                         except (AuthenticationError, MisconfiguredError) as e:
@@ -934,6 +937,8 @@ class EODataAccessGateway:
             )
             if kwargs.get(param, None) is not None
         }
+        if not self._product_types_index:
+            raise EodagError("Missing product types index")
         with self._product_types_index.searcher() as searcher:
             results = None
             # For each search key, do a guess and then upgrade the result (i.e. when
@@ -965,7 +970,7 @@ class EODataAccessGateway:
         locations: Optional[Dict[str, str]] = None,
         provider: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[SearchResult, int]:
+    ) -> Tuple[SearchResult, Optional[int]]:
         """Look for products matching criteria on known providers.
 
         The default behaviour is to look for products on the provider with the
@@ -1448,7 +1453,7 @@ class EODataAccessGateway:
                     # parameters which might not given an exact result are used
                     for result in results:
                         if result.properties["id"] == uid.split(".")[0]:
-                            return [results[0]], 1
+                            return SearchResult([results[0]]), 1
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
@@ -1676,7 +1681,7 @@ class EODataAccessGateway:
         can_authenticate = callable(getattr(auth_plugin, "authenticate", None))
 
         results: List[EOProduct] = []
-        total_results = 0
+        total_results: Optional[int] = 0
 
         try:
             if need_auth and auth_plugin and can_authenticate:
@@ -1779,7 +1784,11 @@ class EODataAccessGateway:
                     eo_product.register_downloader(download_plugin, auth_plugin)
 
             results.extend(res)
-            total_results = None if nb_res is None else total_results + nb_res
+            total_results = (
+                None
+                if (nb_res is None or total_results is None)
+                else total_results + nb_res
+            )
             if count:
                 logger.info(
                     "Found %s result(s) on provider '%s'",
@@ -1868,7 +1877,7 @@ class EODataAccessGateway:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """Download all products resulting from a search.
 
@@ -2043,7 +2052,7 @@ class EODataAccessGateway:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download a single product.
 

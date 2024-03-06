@@ -65,16 +65,17 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
         try:
             auth_dict = auth.authenticate()
             required_creds = ["aws_access_key_id", "aws_secret_access_key"]
-            if not all(getattr(auth, x) for x in required_creds):
+            if not all(x in auth_dict for x in required_creds):
                 raise MisconfiguredError(
                     f"Incomplete credentials for {product.provider}, missing "
-                    f"{[x for x in required_creds if not getattr(auth, x)]}"
+                    f"{[x for x in required_creds if x not in auth_dict]}"
                 )
             if not getattr(auth, "s3_client", None):
                 auth.s3_client = boto3.client(
                     "s3",
                     endpoint_url=config.base_uri,
-                    **auth_dict,
+                    aws_access_key_id=auth_dict["aws_access_key_id"],
+                    aws_secret_access_key=auth_dict["aws_secret_access_key"],
                 )
             logger.debug("Listing assets in %s", prefix)
             product.assets = AssetsDict(product)

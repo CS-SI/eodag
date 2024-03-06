@@ -20,7 +20,18 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypedDict,
+    cast,
+)
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -32,6 +43,7 @@ from pydantic import create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
+from requests.auth import AuthBase
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -67,6 +79,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     RequestError,
     TimeOutError,
+    ValidationError,
 )
 
 if TYPE_CHECKING:
@@ -341,7 +354,7 @@ class QueryStringSearch(Search):
             return None
         else:
             try:
-                conf_update_dict = {
+                conf_update_dict: Dict[str, Any] = {
                     "providers_config": {},
                     "product_types_config": {},
                 }
@@ -463,14 +476,12 @@ class QueryStringSearch(Search):
         :param count: (optional) To trigger a count request
         :type count: bool
         """
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType", product_type)
         if product_type == GENERIC_PRODUCT_TYPE:
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
             return [], 0
-        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
-        kwargs.pop("product_type", None)
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         sort_by_qs, _ = (
@@ -510,6 +521,9 @@ class QueryStringSearch(Search):
                     and isinstance(product_type_metadata_mapping[k], list)
                 }
             )
+
+        if product_type is None:
+            raise ValidationError("Required productType is missing")
 
         qp, qs = self.build_query_string(product_type, **keywords)
 
@@ -552,7 +566,7 @@ class QueryStringSearch(Search):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        quote_via: Callable[[Any], str] = lambda x, *_args, **_kwargs: x
+        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
         return (
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),
@@ -1219,7 +1233,10 @@ class PostJsonSearch(QueryStringSearch):
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         try:
             # auth if needed
-            kwargs = {}
+            RequestsKwargs = TypedDict(
+                "RequestsKwargs", {"auth": AuthBase}, total=False
+            )
+            kwargs: RequestsKwargs = {}
             if (
                 getattr(self.config, "need_auth", False)
                 and hasattr(self, "auth")

@@ -60,7 +60,7 @@ class HTTPHeaderAuth(Authentication):
     Expect an undefined behaviour if you use empty braces in header value strings.
     """
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> HeaderAuth:
         """Authenticate"""
         self.validate_config_credentials()
         headers = {

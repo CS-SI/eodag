@@ -18,15 +18,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING
 
 from pydantic.fields import Field, FieldInfo
-
-if TYPE_CHECKING:
-    from eodag.api.product import EOProduct
-    from eodag.api.search_result import SearchResult
-    from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback, ProgressCallback
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -37,6 +31,16 @@ from eodag.utils import (
     Annotated,
     deepcopy,
 )
+
+if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Tuple, Union
+
+    from requests.auth import AuthBase
+
+    from eodag.api.product import EOProduct
+    from eodag.api.search_result import SearchResult
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.apis.base")
 
@@ -72,6 +76,11 @@ class Api(PluginTopic):
       product's file/directory. If the *record* file only is found, it must be deleted
       (it certainly indicates that the download didn't complete)
     """
+
+    auth: Union[AuthBase, Dict[str, str]]
+    next_page_url: Optional[str]
+    next_page_query_obj: Optional[Dict[str, Any]]
+    _request: Any  # needed by deprecated load_stac_items
 
     def clear(self) -> None:
         """Method used to clear a search context between two searches."""
@@ -132,19 +141,19 @@ class Api(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Union[AuthBase, Dict[str, str]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -169,20 +178,20 @@ class Api(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Base download_all method.
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
                                     :class:`~eodag.api.product.DownloadedCallback` and override

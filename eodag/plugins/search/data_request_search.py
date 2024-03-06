@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 import requests
 
@@ -61,6 +61,8 @@ class DataRequestSearch(Search):
         - check the status of the request job
         - if finished - fetch the result of the job
     """
+
+    data_request_id: Optional[str]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(DataRequestSearch, self).__init__(provider, config)
@@ -106,7 +108,7 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
-        self.download_info = {}
+        self.download_info: Dict[str, Any] = {}
         self.data_request_id = None
 
     def discover_product_types(self) -> Optional[Dict[str, Any]]:
@@ -137,16 +139,20 @@ class DataRequestSearch(Search):
             raise ValidationError(f"{self.provider} does not support sorting feature")
 
         product_type = kwargs.get("productType", None)
+
+        if product_type is None:
+            raise ValidationError("Required productType is missing")
+
         # replace "product_type" to "providerProductType" in search args if exists
         # for compatibility with DataRequestSearch method
         if kwargs.get("product_type"):
             kwargs["providerProductType"] = kwargs.pop("product_type", None)
-        provider_product_type = self._map_product_type(product_type or "")
+        provider_product_type = cast(str, self._map_product_type(product_type or ""))
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
         if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
             keywords["productType"] = provider_product_type
-        elif product_type:
+        else:
             keywords["productType"] = product_type
 
         # provider product type specific conf
@@ -279,9 +285,10 @@ class DataRequestSearch(Search):
     def _cancel_request(self, data_request_id: str) -> None:
         logger.info("deleting request job %s", data_request_id)
         delete_url = f"{self.config.data_request_url}/{data_request_id}"
+        headers = getattr(self.auth, "headers", USER_AGENT)
         try:
             delete_resp = requests.delete(
-                delete_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                delete_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
             delete_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -292,9 +299,10 @@ class DataRequestSearch(Search):
     def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
+        headers = getattr(self.auth, "headers", USER_AGENT)
         try:
             status_resp = requests.get(
-                status_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                status_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
             status_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -323,10 +331,9 @@ class DataRequestSearch(Search):
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )
+        headers = getattr(self.auth, "headers", USER_AGENT)
         try:
-            return requests.get(
-                url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
-            ).json()
+            return requests.get(url, headers=headers, timeout=HTTP_REQ_TIMEOUT).json()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException:

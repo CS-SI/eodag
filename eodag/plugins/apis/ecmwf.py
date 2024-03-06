@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING
 
 import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
@@ -45,10 +45,15 @@ from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Tuple, Union
+
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback, ProgressCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.apis.ecmwf")
 
@@ -158,21 +163,23 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download data from ECMWF MARS"""
         product_format = product.properties.get("format", "grib")
         product_extension = ECMWF_MARS_KNOWN_FORMATS.get(product_format, product_format)
+        kwargs["outputs_extension"] = kwargs.get(
+            "outputs_extension", f".{product_extension}"
+        )
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
             **kwargs,
         )
 
@@ -237,7 +244,6 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         product_path = self._finalize(
             new_fs_path,
             progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
             **kwargs,
         )
         product.location = path_to_uri(product_path)
@@ -246,12 +252,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Download all using parent (base plugin) method

@@ -21,11 +21,13 @@ import base64
 import logging
 import os
 import re
+import tempfile
 import urllib.parse
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import requests
 from requests import RequestException
+from requests.auth import AuthBase
 from shapely import geometry, wkb, wkt
 from shapely.errors import ShapelyError
 
@@ -49,6 +51,8 @@ if TYPE_CHECKING:
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 try:
     from shapely.errors import GEOSException
@@ -308,7 +312,7 @@ class EOProduct:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.
@@ -469,9 +473,13 @@ class EOProduct:
         if base_dir is not None:
             quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
         else:
-            quicklooks_base_dir = os.path.join(
-                self.downloader.config.outputs_prefix, "quicklooks"
+            tempdir = tempfile.gettempdir()
+            outputs_prefix = (
+                getattr(self.downloader.config, "outputs_prefix", tempdir)
+                if self.downloader
+                else tempdir
             )
+            quicklooks_base_dir = os.path.join(outputs_prefix, "quicklooks")
         if not os.path.isdir(quicklooks_base_dir):
             os.makedirs(quicklooks_base_dir)
         quicklook_file = os.path.join(
@@ -497,6 +505,8 @@ class EOProduct:
                 if self.downloader_auth is not None
                 else None
             )
+            if not isinstance(auth, AuthBase):
+                auth = None
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,

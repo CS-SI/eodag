@@ -1323,7 +1323,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.download(self.product, outputs_prefix=self.output_dir)
 
         mock_get_authenticated_objects.assert_called_once_with(
-            plugin, "somebucket", "path/to/some", None
+            plugin, "somebucket", "path/to/some", {}
         )
         self.assertEqual(mock_get_chunk_dest_path.call_count, 0)
         self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
@@ -1366,7 +1366,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.download(self.product, outputs_prefix=self.output_dir)
 
         mock_get_authenticated_objects.assert_called_once_with(
-            plugin, "somebucket", "path/to/some", None
+            plugin, "somebucket", "path/to/some", {}
         )
         self.assertEqual(mock_get_chunk_dest_path.call_count, 0)
         self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
@@ -1434,11 +1434,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
         self.assertEqual(mock_get_authenticated_objects.call_count, 2)
         mock_get_authenticated_objects.assert_any_call(
-            plugin, "somebucket", "path/to/some", None
+            plugin, "somebucket", "path/to/some", {}
         )
-        mock_get_authenticated_objects.assert_any_call(
-            plugin, "example", "here/is", None
-        )
+        mock_get_authenticated_objects.assert_any_call(plugin, "example", "here/is", {})
         self.assertEqual(mock_get_chunk_dest_path.call_count, 2)
         mock_get_chunk_dest_path.assert_any_call(
             plugin, product=self.product, chunk=mock.ANY, build_safe=True
@@ -1515,7 +1513,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
         )
         mock_get_authenticated_objects.assert_called_once_with(
-            plugin, "example", "", None
+            plugin, "example", "", {}
         )
         self.assertEqual(mock_get_chunk_dest_path.call_count, 4)
         mock_get_chunk_dest_path.assert_any_call(

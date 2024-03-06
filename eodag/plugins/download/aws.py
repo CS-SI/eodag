@@ -43,6 +43,7 @@ import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
+from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -67,6 +68,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     NotAvailableError,
     TimeOutError,
 )
@@ -77,7 +79,8 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 
 logger = logging.getLogger("eodag.download.aws")
@@ -231,12 +234,12 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> str:
+        **kwargs: Unpack[DownloadConf],
+    ) -> Optional[str]:
         """Download method for AWS S3 API.
 
         The product can be downloaded as it is, or as SAFE-formatted product.
@@ -247,7 +250,7 @@ class AwsDownload(Download):
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
+        :param auth: (optional) authenticated object
         :type auth: Union[AuthBase, Dict[str, str]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
@@ -263,6 +266,11 @@ class AwsDownload(Download):
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if auth is None:
+            auth = {}
+        if isinstance(auth, AuthBase):
+            raise MisconfiguredError("Please use AwsAuth plugin with AwsDownload")
+
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -273,7 +281,7 @@ class AwsDownload(Download):
         product_local_path, record_filename = self._download_preparation(
             product, progress_callback=progress_callback, **kwargs
         )
-        if not record_filename:
+        if not record_filename or not product_local_path:
             return product_local_path
 
         product_conf = getattr(self.config, "products", {}).get(
@@ -385,8 +393,11 @@ class AwsDownload(Download):
         return product_local_path
 
     def _download_preparation(
-        self, product: EOProduct, progress_callback: ProgressCallback, **kwargs: Any
-    ) -> Tuple[str, Optional[str]]:
+        self,
+        product: EOProduct,
+        progress_callback: ProgressCallback,
+        **kwargs: Unpack[DownloadConf],
+    ) -> Tuple[Optional[str], Optional[str]]:
         """
         preparation for the download:
         - check if file was already downloaded
@@ -455,7 +466,10 @@ class AwsDownload(Download):
                 )
 
     def _get_bucket_names_and_prefixes(
-        self, product: EOProduct, asset_filter: str, ignore_assets: bool
+        self,
+        product: EOProduct,
+        asset_filter: Optional[str] = None,
+        ignore_assets: Optional[bool] = False,
     ) -> List[Tuple[str, Optional[str]]]:
         """
         retrieves the bucket names and path prefixes for the assets
@@ -484,7 +498,7 @@ class AwsDownload(Download):
                         rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                     )
             else:
-                assets_values = getattr(product, "assets", {}).values()
+                assets_values = product.assets.values()
 
             bucket_names_and_prefixes = []
             for complementary_url in assets_values:
@@ -502,8 +516,8 @@ class AwsDownload(Download):
     def _do_authentication(
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
-        auth: Dict[str, str],
-    ) -> Tuple[Dict[str, Any], ResourceCollection[Any]]:
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+    ) -> Tuple[Dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
@@ -514,11 +528,19 @@ class AwsDownload(Download):
         :return: authenticated objects per bucket, list of available objects
         :rtype: Tuple[Dict[str, Any], ResourceCollection[Any]]
         """
+        if not isinstance(auth, (dict, type(None))):
+            raise AuthenticationError(
+                f"Incompatible authentication information, expected dict or None, got {type(auth)}"
+            )
+        if auth is None:
+            auth = {}
         authenticated_objects: Dict[str, Any] = {}
         auth_error_messages: Set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
             try:
                 bucket_name, prefix = pack
+                if not prefix:
+                    continue
                 if bucket_name not in authenticated_objects:
                     # get Prefixes longest common base path
                     common_prefix = ""
@@ -533,7 +555,7 @@ class AwsDownload(Download):
                                 [
                                     p
                                     for b, p in bucket_names_and_prefixes
-                                    if b == bucket_name and common_prefix in p
+                                    if p and b == bucket_name and common_prefix in p
                                 ]
                             )
                             < prefixes_in_bucket
@@ -567,7 +589,7 @@ class AwsDownload(Download):
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
         authenticated_objects: Dict[str, Any],
-        asset_filter: str,
+        asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
     ) -> Set[Any]:
@@ -627,11 +649,11 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
@@ -1314,12 +1336,12 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         download_all using parent (base plugin) method

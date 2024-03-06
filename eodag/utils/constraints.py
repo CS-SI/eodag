@@ -17,7 +17,7 @@
 # limitations under the License.
 import copy
 import logging
-from typing import Any, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 
 import requests
 
@@ -26,6 +26,9 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
 from eodag.utils.exceptions import TimeOutError, ValidationError
+
+if TYPE_CHECKING:
+    from requests.auth import AuthBase
 
 logger = logging.getLogger("eodag.constraints")
 
@@ -171,10 +174,11 @@ def fetch_constraints(
         headers = USER_AGENT
         logger.debug("fetching constraints from %s", constraints_url)
         if hasattr(plugin, "auth"):
+            auth = plugin.auth if isinstance(plugin.auth, AuthBase) else None
             res = requests.get(
                 constraints_url,
                 headers=headers,
-                auth=plugin.auth,
+                auth=auth,
                 timeout=HTTP_REQ_TIMEOUT,
             )
         else:

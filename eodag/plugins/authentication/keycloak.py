@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, TypedDict
 
 import requests
 
@@ -82,7 +82,17 @@ class KeycloakOIDCPasswordAuth(Authentication):
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
     # already retrieved token store, to be used if authenticate() fails (OTP use-case)
     retrieved_token: str = ""
-    token_info: Dict[str, Union[str, datetime]] = {}
+
+    class TokenInfo(TypedDict, total=False):
+        """Token infos"""
+
+        refresh_token: str
+        refresh_time: datetime
+        token_time: datetime
+        access_token_expiration: float
+        refresh_token_expiration: float
+
+    token_info: TokenInfo = {}
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
@@ -149,7 +159,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
         logger.debug("using already retrieved access token")
         return self.retrieved_token
 
-    def _request_new_token(self) -> Dict[str, str]:
+    def _request_new_token(self) -> Dict[str, Any]:
         logger.debug("fetching new access token")
         req_data = {
             "client_id": self.config.client_id,
@@ -184,7 +194,8 @@ class KeycloakOIDCPasswordAuth(Authentication):
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
             if (
-                hasattr(e.response, "status_code")
+                e.response
+                and hasattr(e.response, "status_code")
                 and e.response.status_code in auth_errors
             ):
                 raise AuthenticationError(
@@ -196,7 +207,7 @@ class KeycloakOIDCPasswordAuth(Authentication):
                 import traceback as tb
 
                 logger.error(
-                    f"Provider {self.provider} returned {e.response.status_code}: {response_text}"
+                    f"Provider {self.provider} returned {getattr(e.response, 'status_code', '')}: {response_text}"
                 )
                 raise AuthenticationError(
                     "Something went wrong while trying to get access token:\n{}".format(

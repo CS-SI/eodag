@@ -55,10 +55,13 @@ from eodag.utils.exceptions import (
 from eodag.utils.notebook import NotebookWidgets
 
 if TYPE_CHECKING:
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 
 logger = logging.getLogger("eodag.download.base")
@@ -109,19 +112,19 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -146,19 +149,19 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -182,7 +185,7 @@ class Download(PluginTopic):
         self,
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Tuple[Optional[str], Optional[str]]:
         """Check if file has already been downloaded, and prepare product download
 
@@ -234,7 +237,9 @@ class Download(PluginTopic):
             prefix,
             f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{outputs_extension}",
         )
-        fs_dir_path = fs_path.replace(outputs_extension, "")
+        fs_dir_path = (
+            fs_path.replace(outputs_extension, "") if outputs_extension else fs_path
+        )
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
             os.makedirs(download_records_dir)
@@ -319,7 +324,7 @@ class Download(PluginTopic):
         self,
         fs_path: str,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Finalize the download process.
 
@@ -464,12 +469,12 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Base download_all method.
@@ -479,8 +484,8 @@ class Download(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
                                     :class:`~eodag.api.product.DownloadedCallback` and override
@@ -638,7 +643,7 @@ class Download(PluginTopic):
         """
 
         def decorator(download: Callable[..., T]) -> Callable[..., T]:
-            def download_and_retry(*args: Any, **kwargs: Any) -> T:
+            def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
                 start_time = datetime.now()
                 stop_time = start_time + timedelta(minutes=timeout)
@@ -662,7 +667,7 @@ class Download(PluginTopic):
                                     f"Product is not available for download and order is not supported for"
                                     f" {self.provider}, {e}"
                                 )
-                            not_available_info = e
+                            not_available_info = str(e)
                             pass
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:

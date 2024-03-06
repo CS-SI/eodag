@@ -20,12 +20,13 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
 from requests import RequestException
+from requests.auth import AuthBase
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import Download
@@ -45,6 +46,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     NotAvailableError,
     RequestError,
 )
@@ -52,6 +54,8 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 logger = logging.getLogger("eodag.download.s3rest")
 
@@ -90,18 +94,18 @@ class S3RestDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download method for S3 REST API.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -116,6 +120,9 @@ class S3RestDownload(Download):
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if auth is not None and not isinstance(auth, AuthBase):
+            raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
+
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -134,10 +141,10 @@ class S3RestDownload(Download):
         @self._download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
-            auth: PluginConfig,
+            auth: AuthBase,
             progress_callback: ProgressCallback,
             ordered_message: str,
-            **kwargs: Any,
+            **kwargs: Unpack[DownloadConf],
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):

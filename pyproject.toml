@@ -7,8 +7,6 @@ fallback_version = "2.12.2.dev0"
 
 [[tool.mypy.overrides]]
 module = [
-    "boto3",
-    "botocore.*",
     "cdsapi",
     "click",
     "click.*",
