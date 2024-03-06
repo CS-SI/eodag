@@ -1,6 +1,22 @@
 .green {
     color: green;
 }
+
+table.datatable {
+    display: block; overflow-x: auto; width: 100%; max-height: 500px; font-size: smaller; border-bottom: 0px;
+}
+
+table.datatable th:nth-child(2), table.datatable td:nth-child(2),
+table.datatable th:nth-child(3), table.datatable td:nth-child(3),
+table.datatable th:nth-child(5), table.datatable td:nth-child(5),
+table.datatable th:nth-child(7), table.datatable td:nth-child(7),
+table.datatable th:nth-child(8), table.datatable td:nth-child(8),
+table.datatable th:nth-child(9), table.datatable td:nth-child(9),
+table.datatable th:nth-child(10), table.datatable td:nth-child(10),
+table.datatable th:nth-child(11), table.datatable td:nth-child(11) {
+    display: none;
+}
+
 table.params {
     display: block;
     overflow-x: auto;

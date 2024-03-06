@@ -39,7 +39,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "sphinx_copybutton",
-    "sphinxcontrib.jquery",
 ]
 
 # Notebook integration parameters
@@ -146,7 +145,6 @@ html_theme_options = {
     "repository_branch": "develop",
     "path_to_docs": "docs",
     "use_download_button": True,
-    "extra_navbar": "",
 }
 
 html_logo = "_static/eodag_logo.png"
@@ -163,13 +161,9 @@ html_static_path = ["_static"]
 # or fully qualified paths (eg. https://...)
 html_css_files = [
     "custom.css",
-    "https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css",
 ]
 
-html_js_files = [
-    "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
-    "product_types.js",
-]
+html_js_files = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
