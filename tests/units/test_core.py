@@ -332,6 +332,7 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
+            "earth_search",
             "onda",
             "planetary_computer",
             "sara",
