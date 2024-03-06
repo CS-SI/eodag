@@ -111,7 +111,7 @@ to each provider supported by ``eodag``:
 
   * Add your WEkEO credentials (*username*, *password*) to the user configuration file.
 
-  * Depending on which data you want to retriev, you will then need to accept terms and conditions (for once). To do this, follow the
+  * Depending on which data you want to retrieve, you will then need to accept terms and conditions (for once). To do this, follow the
     `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
     or run the following commands in your terminal.
 
@@ -139,7 +139,7 @@ to each provider supported by ``eodag``:
 
       curl --request PUT --header 'accept: application/json' --header 'Authorization: Bearer <access_token>' https://gateway.prod.wekeo2.eu/hda-broker/api/v1/termsaccepted/<licence_name>
 
-   The licence name depends on which data you want to retrieve. To use all datasets available in wekeo, the following licences have to be accepted.
+   The licence name depends on which data you want to retrieve. To use all datasets available in wekeo, the following licences have to be accepted:
 
     * EUMETSAT_Copernicus_Data_Licence
     * Copernicus_Land_Monitoring_Service_Data_Policy

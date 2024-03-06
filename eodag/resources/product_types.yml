@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -+- coding: utf-8 -+-
 # Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
@@ -927,7 +927,7 @@ S3_OLCI_L4BALTIC:
   abstract: |
     Baltic Sea Surface Ocean Colour Plankton from Sentinel-3 OLCI L4 monthly observations
     For the Baltic Sea Ocean Satellite Observations, the Italian National Research Council (CNR – Rome, Italy), is
-    providing Bio-Geo_Chemical (BGC) regional datasets: * ''plankton'' with the phytoplankton chlorophyll
+    providing Bio-Geo_Chemical (BGC) regional datasets: + ''plankton'' with the phytoplankton chlorophyll
     concentration (CHL) evaluated via region-specific neural network (Brando et al. 2021) Upstreams: OLCI-S3A & S3B
     Temporal resolution: monthly Spatial resolution: 300 meters To find this product in the catalogue, use the search
     keyword ""OCEANCOLOUR_BAL_BGC_L4_NRT"". DOI (product) : https://doi.org/10.48670/moi-00295
@@ -3998,10 +3998,10 @@ CMEMS_GLOBAL_BGC:
     parameters (chlorophyll, nitrate, phosphate, silicate, dissolved oxygen, dissolved iron, primary production,
     phytoplankton, PH, and surface partial pressure of carbon dioxyde) over the global ocean. The global ocean output
     files are displayed with a 1/4 degree horizontal resolution with regular longitude/latitude equirectangular
-    projection. 50 vertical levels are ranging from 0 to 5700 meters. * NEMO version (v3.6_STABLE) * Forcings:
-    GLOBAL_ANALYSIS_FORECAST_PHYS_001_024 at daily frequency. * Outputs mean fields are interpolated on a standard
-    regular grid in NetCDF format. * Initial conditions: World Ocean Atlas 2013 for nitrate, phosphate, silicate and
-    dissolved oxygen, GLODAPv2 for DIC and Alkalinity, and climatological model outputs for Iron and DOC *
+    projection. 50 vertical levels are ranging from 0 to 5700 meters. + NEMO version (v3.6_STABLE) + Forcings:
+    GLOBAL_ANALYSIS_FORECAST_PHYS_001_024 at daily frequency. + Outputs mean fields are interpolated on a standard
+    regular grid in NetCDF format. + Initial conditions: World Ocean Atlas 2013 for nitrate, phosphate, silicate and
+    dissolved oxygen, GLODAPv2 for DIC and Alkalinity, and climatological model outputs for Iron and DOC +
     Quality/Accuracy/Calibration information: See the related
     QuID[http://catalogue.marine.copernicus.eu/documents/QUID/CMEMS-GLO-QUID-001-028.pdf] DOI (product): https://doi.org/10.48670/moi-00015
   instrument:
@@ -4048,11 +4048,11 @@ CMEMS_GLOBAL_MULTIYEAR_BGC:
     groups of micronekton. It uses the LMTL component of SEAPODYM dynamical population model (http://www.seapodym.eu).
     No data assimilation has been done. This product also contains forcing data: net primary production, euphotic depth,
     depth of each pelagic layers zooplankton and micronekton inhabit, average temperature and currents over pelagic layers.
-    Forcings sources: * Ocean currents and temperature (CMEMS multiyear product) * Net Primary Production computed from
+    Forcings sources: + Ocean currents and temperature (CMEMS multiyear product) + Net Primary Production computed from
     chlorophyll a, Sea Surface Temperature and Photosynthetically Active Radiation observations (chlorophyll from CMEMS
     multiyear product, SST from NOAA NCEI AVHRR-only Reynolds, PAR from INTERIM) and relaxed by model outputs at high
     latitudes (CMEMS biogeochemistry multiyear product)
-    Vertical coverage: * Epipelagic layer * Upper mesopelagic layer * Lower mesopelagic layer (max. 1000m)
+    Vertical coverage: + Epipelagic layer + Upper mesopelagic layer + Lower mesopelagic layer (max. 1000m)
     DOI (product) : https://doi.org/10.48670/moi-00020
   instrument:
   platform:
@@ -4155,7 +4155,7 @@ CMEMS_MULTIOBS_GLO_PHY_MY:
     This product is a L4 REP global total velocity field at 0m and 15m together with its individual components
     (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency
     and at 1/4 degree regular grid. The total velocity fields are obtained by combining CMEMS satellite Geostrophic surface
-    currents and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5* in NRT).
+    currents and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5+ in NRT).
     1 hourly product, daily and monthly means are available. This product has been initiated in the frame of CNES/CLS projects.
     Then it has been consolidated during the Globcurrent project (funded by the ESA User Element Program).
     Product Citation: Please refer to our Technical FAQ for citing products:
@@ -4176,7 +4176,7 @@ CMEMS_MULTIOBS_GLO_PHY_NRT:
     This product is a L4 NRT global total velocity field at 0m and 15m together with its individual components
     (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency
     and at 1/4 degree regular grid. The total velocity fields are obtained by combining CMEMS satellite Geostrophic surface
-    currents and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5* in NRT).
+    currents and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5+ in NRT).
     1 hourly product, daily and monthly means are available. This product has been initiated in the frame of CNES/CLS projects.
     Then it has been consolidated during the Globcurrent project (funded by the ESA User Element Program).
     Product Citation: Please refer to our Technical FAQ for citing products:
@@ -4212,9 +4212,9 @@ CMEMS_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT:
   abstract: |
     You can find here the Multi Observation Global Ocean ARMOR3D L4 analysis and multi-year reprocessing. It consists of
     3D Temperature, Salinity, Heights, Geostrophic Currents and Mixed Layer Depth, available on a 1/4 degree regular grid
-    and on 50 depth levels from the surface down to the bottom. The product includes 4 datasets: * dataset-armor-3d-nrt-weekly,
-    which delivers near-real-time (NRT) weekly data * dataset-armor-3d-nrt-monthly, which delivers near-real-time (NRT) monthly
-    data * dataset-armor-3d-rep-weekly, which delivers multi-year reprocessed (REP) weekly data * dataset-armor-3d-rep-monthly,
+    and on 50 depth levels from the surface down to the bottom. The product includes 4 datasets: + dataset-armor-3d-nrt-weekly,
+    which delivers near-real-time (NRT) weekly data + dataset-armor-3d-nrt-monthly, which delivers near-real-time (NRT) monthly
+    data + dataset-armor-3d-rep-weekly, which delivers multi-year reprocessed (REP) weekly data + dataset-armor-3d-rep-monthly,
     which delivers multi-year reprocessed (REP) monthly data DOI (product) : https://doi.org/10.48670/moi-00052
     Product Citation: Please refer to our Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
   instrument:
@@ -4273,11 +4273,11 @@ CMEMS_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP:
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
-    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. + Variables: Chlorophyll-a (CHL), Phytoplankton
     Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
-    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily
-    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). + Temporal resolutions: daily
+    + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. + Recent products are organized in
     datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
     Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
     DOI (product) : https://doi.org/10.48670/moi-00278
@@ -4294,11 +4294,11 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_PLANKTON:
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_OPTICS:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
-    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. + Variables: Chlorophyll-a (CHL), Phytoplankton
     Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
-    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily
-    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). + Temporal resolutions: daily
+    + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. + Recent products are organized in
     datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
     Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
     DOI (product) : https://doi.org/10.48670/moi-00278
@@ -4315,11 +4315,11 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_NRT_OPTICS:
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
-    OLCI-S3A & S3B for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL),
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
+    OLCI-S3A & S3B for the "multi" products, and S3A & S3B only for the "olci" products. + Variables: Chlorophyll-a (CHL),
     Phytoplankton Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
-    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily.
-    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). + Temporal resolutions: daily.
+    + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. + Recent products are organized in
     datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
     Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
     DOI (product) : https://doi.org/10.48670/moi-00280
@@ -4336,11 +4336,11 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_PLANKTON:
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_OPTICS:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
-    OLCI-S3A & S3B for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL),
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1,
+    OLCI-S3A & S3B for the "multi" products, and S3A & S3B only for the "olci" products. + Variables: Chlorophyll-a (CHL),
     Phytoplankton Functional types and sizes (PFT), Suspended Matter (SPM), Secchi Transparency Depth (ZSD), Diffuse Attenuation (KD490),
-    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal resolutions: daily.
-    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). + Temporal resolutions: daily.
+    + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. + Recent products are organized in
     datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
     Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
     DOI (product) : https://doi.org/10.48670/moi-00280
@@ -4357,12 +4357,12 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_OPTICS:
 CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
-    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. + Variables: Chlorophyll-a (CHL), Phytoplankton
     Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
-    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal
+    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). + Temporal
     resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide a "cloud free" product.
-    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. + Recent products are organized in
     datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
     Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
     DOI (product) : https://doi.org/10.48670/moi-00279
@@ -4379,12 +4379,12 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_PLANKTON:
 CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_OPTICS:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
-    for the "multi" products, and S3A & S3B only for the "olci" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the "multi" products, and S3A & S3B only for the "olci" products. + Variables: Chlorophyll-a (CHL), Phytoplankton
     Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
-    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). * Temporal
+    Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS). + Temporal
     resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide a "cloud free" product.
-    * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. * Recent products are organized in
+    + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs. + Recent products are organized in
     datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY). To find the
     Copernicus-GlobColour products in the catalogue, use the search keyword "GlobColour".
     DOI (product) : https://doi.org/10.48670/moi-00279
@@ -4401,13 +4401,13 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L4_NRT_OPTICS:
 CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
-    for the ""multi"" products, and S3A & S3B only for the ""olci"" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the ""multi"" products, and S3A & S3B only for the ""olci"" products. + Variables: Chlorophyll-a (CHL), Phytoplankton
     Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
     Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS).
-    * Temporal resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide
-    a ""cloud free"" product. * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs.
-    * Recent products are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets
+    + Temporal resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide
+    a ""cloud free"" product. + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs.
+    + Recent products are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets
     called Multi-Years (MY). To find the Copernicus-GlobColour products in the catalogue, use the search keyword ""GlobColour""."
     DOI (product) : https://doi.org/10.48670/moi-00281
   instrument:
@@ -4423,13 +4423,13 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_PLANKTON:
 CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_OPTICS:
   abstract: |
     For the Global Ocean Satellite Observations, ACRI-ST company (Sophia Antipolis, France) is providing Bio-Geo-Chemical (BGC)
-    products based on the Copernicus-GlobColour processor. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
-    for the ""multi"" products, and S3A & S3B only for the ""olci"" products. * Variables: Chlorophyll-a (CHL), Phytoplankton
+    products based on the Copernicus-GlobColour processor. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the ""multi"" products, and S3A & S3B only for the ""olci"" products. + Variables: Chlorophyll-a (CHL), Phytoplankton
     Functional types and sizes (PFT), Primary Production (PP), Suspended Matter (SPM), Secchi Transparency Depth (ZSD),
     Diffuse Attenuation (KD490), Particulate Backscattering (BBP), Absorption Coef. (CDM) and Reflectance (RRS).
-    * Temporal resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide
-    a ""cloud free"" product. * Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs.
-    * Recent products are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets
+    + Temporal resolutions: monthly plus, for some variables, daily gap-free based on a space-time interpolation to provide
+    a ""cloud free"" product. + Spatial resolutions: 4 km and a finer resolution based on olci 300 meters inputs.
+    + Recent products are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets
     called Multi-Years (MY). To find the Copernicus-GlobColour products in the catalogue, use the search keyword ""GlobColour""."
     DOI (product) : https://doi.org/10.48670/moi-00281
   instrument:
@@ -4445,8 +4445,8 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_OPTICS:
 CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_MONTHLY:
   abstract: |
     For the Global Ocean Satellite Observations, Brockmann Consult (BC) is providing Bio-Geo_Chemical (BGC) products based
-    on the ESA-CCI inputs. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
-    * Variables: Chlorophyll-a (CHL). * Temporal resolutions: monthly. * Spatial resolutions: 4 km (multi). * Recent products
+    on the ESA-CCI inputs. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
+    + Variables: Chlorophyll-a (CHL). + Temporal resolutions: monthly. + Spatial resolutions: 4 km (multi). + Recent products
     are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY).
     To find these products in the catalogue, use the search keyword ""ESA-CCI"".
     DOI (product) : https://doi.org/10.48670/moi-00283
@@ -4463,8 +4463,8 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L4_MY_MONTHLY:
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_PLANKTON:
   abstract: |
     For the Global Ocean Satellite Observations, Brockmann Consult (BC) is providing Bio-Geo_Chemical (BGC) products based
-    on the ESA-CCI inputs. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
-    * Variables: Chlorophyll-a (CHL). * Temporal resolutions: monthly. * Spatial resolutions: 4 km (multi). * Recent products
+    on the ESA-CCI inputs. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
+    + Variables: Chlorophyll-a (CHL). + Temporal resolutions: monthly. + Spatial resolutions: 4 km (multi). + Recent products
     are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY).
     To find these products in the catalogue, use the search keyword ""ESA-CCI"".
     DOI (product) : https://doi.org/10.48670/moi-00283
@@ -4481,8 +4481,8 @@ CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_PLANKTON:
 CMEMS_OCEANCOLOUR_GLO_BGC_L3_MY_DAILY_REFLECTANCE:
   abstract: |
     For the Global Ocean Satellite Observations, Brockmann Consult (BC) is providing Bio-Geo_Chemical (BGC) products based
-    on the ESA-CCI inputs. * Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
-    * Variables: Chlorophyll-a (CHL). * Temporal resolutions: monthly. * Spatial resolutions: 4 km (multi). * Recent products
+    on the ESA-CCI inputs. + Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the ""multi"" products.
+    + Variables: Chlorophyll-a (CHL). + Temporal resolutions: monthly. + Spatial resolutions: 4 km (multi). + Recent products
     are organized in datasets called Near Real Time (NRT) and long time-series (from 1997) in datasets called Multi-Years (MY).
     To find these products in the catalogue, use the search keyword ""ESA-CCI"".
     DOI (product) : https://doi.org/10.48670/moi-00283
@@ -4842,13 +4842,13 @@ CMEMS_GLO_WIND_L4_MY:
 CMEMS_GLO_WIND_L3_NRT:
   abstract: |
     For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
-    with resolutions corresponding to the L2 swath products: *0.5 degrees grid for the 50 km scatterometer L2 inputs, 0.25 degrees
+    with resolutions corresponding to the L2 swath products: +0.5 degrees grid for the 50 km scatterometer L2 inputs, 0.25 degrees
     grid based on 25 km scatterometer swath observations, and 0.125 degrees based on 12.5 km scatterometer swath observations, i.e.,
     from the coastal products. Data from ascending and descending passes are gridded separately. The product provides stress-equivalent
     wind and stress variables as well as their divergence and curl. The NRT L3 products follow the NRT availability of the EUMETSAT
-    OSI SAF L2 products and are available for: *The ASCAT scatterometers on Metop-A (discontinued on 15/11/2021), Metop-B and Metop-C
-    at 0.125 and 0.25 degrees; *The OSCAT scatterometer on Scatsat-1 at 0.25 and 0.5 degrees (discontinued on 28/2/2021);
-    *The HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees; DOI (product): https://doi.org/10.48670/moi-00182
+    OSI SAF L2 products and are available for: +The ASCAT scatterometers on Metop-A (discontinued on 15/11/2021), Metop-B and Metop-C
+    at 0.125 and 0.25 degrees; +The OSCAT scatterometer on Scatsat-1 at 0.25 and 0.5 degrees (discontinued on 28/2/2021);
+    +The HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees; DOI (product): https://doi.org/10.48670/moi-00182
   instrument:
   platform:
   platformSerialIdentifier:
@@ -4862,7 +4862,7 @@ CMEMS_GLO_WIND_L3_NRT:
 CMEMS_GLO_WIND_L3_REP:
   abstract: |
     For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
-    with resolutions corresponding to the L2 swath products: *0.5 degrees grid for the 50 km scatterometer L2 inputs, 0.25 degrees
+    with resolutions corresponding to the L2 swath products: +0.5 degrees grid for the 50 km scatterometer L2 inputs, 0.25 degrees
     grid based on 25 km scatterometer swath observations, and 0.125 degrees based on 12.5 km scatterometer swath observations, i.e.,
     from the coastal products. Data from ascending and descending passes are gridded separately. The product provides stress-equivalent
     wind and stress variables as well as their divergence and curl. The REP L3 products follow the REP availability of the
