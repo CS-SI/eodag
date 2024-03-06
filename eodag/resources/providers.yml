@@ -6736,6 +6736,11 @@
       max_sort_params: 1
     literal_search_params:
       format: json
+    discover_metadata:
+      auto_discovery: true
+      metadata_pattern: '^[a-zA-Z0-9_]+$'
+      search_param: '{metadata}={{{metadata}}}'
+      metadata_path: '$.properties.*'
     discover_product_types:
       fetch_url: https://api.eumetsat.int/data/browse/1.0.0/collections?format=json
       result_type: json
