@@ -4334,7 +4334,7 @@
       completionTimeFromAscendingNode:
         - '{{"completionDate": "{completionTimeFromAscendingNode}"}}'
         - '$.properties.enddate'
-      downloadLink: '$.properties.location'
+      downloadLink: '{$.properties.location#replace_str("%","%%")}'
       title: '$.id'
       storageStatus: 'OFFLINE'
       processingLevel:
@@ -6815,10 +6815,10 @@
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # The url of the quicklook
-      quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
+      quicklook: '{$.properties.links.previews[?(@.title="Quicklook")].href#replace_str("%","%%")}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.links.data[?(@.title="Product download")].href'
+      downloadLink: '{$.properties.links.data[?(@.title="Product download")].href#replace_str("%","%%")}'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
 
@@ -6926,6 +6926,12 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: 'https://api.eumetsat.int/data/download/1.0.0'
+    extract: true
+    flatten_top_dirs: True
+    ignore_assets: True
   auth: !plugin
     type: TokenAuth
     auth_uri: 'https://api.eumetsat.int/token'

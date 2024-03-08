@@ -22,7 +22,6 @@ import logging
 import os
 import re
 import tempfile
-import urllib.parse
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import requests
@@ -286,8 +285,7 @@ class EOProduct:
                 setattr(
                     self,
                     location_attr,
-                    urllib.parse.unquote(getattr(self, location_attr))
-                    % vars(self.downloader.config),
+                    getattr(self, location_attr) % vars(self.downloader.config),
                 )
             except ValueError as e:
                 logger.debug(
@@ -298,15 +296,7 @@ class EOProduct:
         for k, v in self.properties.items():
             if isinstance(v, str):
                 try:
-                    if "%" in v:
-                        parsed = urllib.parse.urlparse(v)
-                        prop = urllib.parse.unquote(parsed.path) % vars(
-                            self.downloader.config
-                        )
-                        parsed = parsed._replace(path=urllib.parse.quote(prop))
-                        self.properties[k] = urllib.parse.urlunparse(parsed)
-                    else:
-                        self.properties[k] = v % vars(self.downloader.config)
+                    self.properties[k] = v % vars(self.downloader.config)
                 except (TypeError, ValueError) as e:
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
@@ -360,17 +350,10 @@ class EOProduct:
             else self.downloader_auth
         )
 
-        self.remote_location = urllib.parse.unquote(self.remote_location)
-        try:
-            # resolve remote location if needed with downloader configuration
-            self.remote_location = self.remote_location % vars(self.downloader.config)
-        except ValueError as e:
-            logger.debug(
-                f"Could not resolve product.remote_location ({self.remote_location})"
-                f" in download: {str(e)}"
-            )
-        if not self.location.startswith("file"):
-            self.location = urllib.parse.unquote(self.location)
+        # resolve remote location if needed with downloader configuration
+        self.remote_location = self.remote_location.replace("%", "%%") % vars(
+            self.downloader.config
+        )
 
         progress_callback, close_progress_callback = self._init_progress_bar(
             progress_callback
