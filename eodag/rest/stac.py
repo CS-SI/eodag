@@ -637,10 +637,29 @@ class StacCollection(StacCommon):
         """
         if filters is None:
             filters = {}
+        free_text_filter = filters.pop("q", None)
+
+        # product types matching filters
         try:
-            guessed_product_types = self.eodag_api.guess_product_type(**filters)
+            guessed_product_types = (
+                self.eodag_api.guess_product_type(**filters) if filters else []
+            )
         except NoMatchingProductType:
             guessed_product_types = []
+
+        # product types matching free text filter
+        if free_text_filter and not guessed_product_types:
+            whooshable_filter = " OR ".join(
+                [f"({x})" for x in free_text_filter.split(",")]
+            )
+            try:
+                guessed_product_types = self.eodag_api.guess_product_type(
+                    whooshable_filter
+                )
+            except NoMatchingProductType:
+                guessed_product_types = []
+
+        # list product types with all metadata using guessed ids
         if guessed_product_types:
             product_types = [
                 pt

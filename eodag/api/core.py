@@ -289,7 +289,7 @@ class EODataAccessGateway:
             product_types_schema = Schema(
                 ID=fields.STORED,
                 alias=fields.ID,
-                abstract=fields.STORED,
+                abstract=fields.TEXT,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
                 platformSerialIdentifier=fields.IDLIST,
@@ -297,7 +297,7 @@ class EODataAccessGateway:
                 sensorType=fields.ID,
                 md5=fields.ID,
                 license=fields.ID,
-                title=fields.ID,
+                title=fields.TEXT,
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
@@ -914,9 +914,22 @@ class EODataAccessGateway:
 
         return self.product_types_config[product_type].get("alias", product_type)
 
-    def guess_product_type(self, **kwargs: Any) -> List[str]:
-        """Find eodag product types codes that best match a set of search params
+    def guess_product_type(
+        self,
+        free_text_filter: Optional[str] = None,
+        intersect: bool = False,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Find eodag product types ids that best match a set of search params
 
+        See https://whoosh.readthedocs.io/en/latest/querylang.html#the-default-query-language
+        for syntax.
+
+        :param free_text_filter: whoosh compatible free text search filter used to search
+                                 `title`, `abstract` and `keywords`
+        :type free_text_filter: Optional[str]
+        :param intersect: join results for each parameter using INTERSECT instead of UNION
+        :type intersect: bool
         :param kwargs: A set of search parameters as keywords arguments
         :returns: The best match for the given parameters
         :rtype: list[str]
@@ -924,6 +937,9 @@ class EODataAccessGateway:
         """
         if kwargs.get("productType", None):
             return [kwargs["productType"]]
+        free_text_search_params = (
+            ["title", "abstract", "keywords"] if free_text_filter else []
+        )
         supported_params = {
             param
             for param in (
@@ -934,6 +950,8 @@ class EODataAccessGateway:
                 "sensorType",
                 "keywords",
                 "md5",
+                "abstract",
+                "title",
             )
             if kwargs.get(param, None) is not None
         }
@@ -941,19 +959,35 @@ class EODataAccessGateway:
             raise EodagError("Missing product types index")
         with self._product_types_index.searcher() as searcher:
             results = None
-            # For each search key, do a guess and then upgrade the result (i.e. when
-            # merging results, if a hit appears in both results, its position is raised
-            # to the top. This way, the top most result will be the hit that best
+            # Using `upgrade_and_extend`, for each search key, do a guess and
+            # then upgrade the result (i.e. when merging results,
+            # if a hit appears in both results, its position is raised
+            # to the top). This way, the top most result will be the hit that best
             # matches the given queries. Put another way, this best guess is the one
             # that crosses the highest number of search params from the given queries
+
+            # Always use UNION to join free_text_search results
+            for search_key in free_text_search_params:
+                query = QueryParser(search_key, self._product_types_index.schema).parse(
+                    free_text_filter
+                )
+                if results is None:
+                    results = searcher.search(query, limit=None)
+                else:
+                    results.upgrade_and_extend(searcher.search(query, limit=None))
+
+            # join results from kwargs using UNION or INTERSECT
             for search_key in supported_params:
                 query = QueryParser(search_key, self._product_types_index.schema).parse(
                     kwargs[search_key]
                 )
                 if results is None:
                     results = searcher.search(query, limit=None)
+                elif intersect:
+                    results.filter(searcher.search(query, limit=None))
                 else:
                     results.upgrade_and_extend(searcher.search(query, limit=None))
+
             guesses: List[str] = [r["ID"] for r in results or []]
         if guesses:
             return guesses
