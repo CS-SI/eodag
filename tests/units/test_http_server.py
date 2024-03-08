@@ -964,7 +964,6 @@ class RequestTestCase(unittest.TestCase):
         """A simple request for product types with(out) a provider must succeed"""
         for url in ("/collections",):
             r = self.app.get(url)
-            self.assertTrue(guess_pt.called)
             self.assertTrue(list_pt.called)
             self.assertEqual(200, r.status_code)
             self.assertListEqual(
@@ -1379,10 +1378,12 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch("eodag.rest.core.eodag_api.list_product_types", autospec=True)
-    def test_collection_free_text_search(self, list_pt: Mock):
+    @mock.patch("eodag.rest.core.eodag_api.guess_product_type", autospec=True)
+    def test_collection_free_text_search(self, guess_pt: Mock, list_pt: Mock):
         """Test STAC Collection free-text search"""
 
         url = "/collections?q=TERM1,TERM2"
         r = self.app.get(url)
-        list_pt.assert_called_once_with(provider=None, filter="TERM1,TERM2")
+        list_pt.assert_called_once_with(provider=None)
+        guess_pt.assert_called_once_with("(TERM1) OR (TERM2)")
         self.assertEqual(200, r.status_code)

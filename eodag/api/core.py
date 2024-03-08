@@ -34,7 +34,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 import geojson
@@ -46,7 +45,6 @@ from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
-from whoosh.searching import Results
 
 from eodag.api.product.metadata_mapping import (
     NOT_MAPPED,
@@ -517,10 +515,7 @@ class EODataAccessGateway:
             self.locations_config = []
 
     def list_product_types(
-        self,
-        provider: Optional[str] = None,
-        fetch_providers: bool = True,
-        filter: Optional[str] = None,
+        self, provider: Optional[str] = None, fetch_providers: bool = True
     ) -> List[Dict[str, Any]]:
         """Lists supported product types.
 
@@ -530,8 +525,6 @@ class EODataAccessGateway:
         :param fetch_providers: (optional) Whether to fetch providers for new product
                                 types or not
         :type fetch_providers: bool
-        :param filter: (optional) Comma separated list of free text search terms.
-        :type filter: str
         :returns: The list of the product types that can be accessed using eodag.
         :rtype: list(dict)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
@@ -554,17 +547,10 @@ class EODataAccessGateway:
                     product_type = dict(ID=product_type_id, **config)
                     if product_type_id not in product_types:
                         product_types.append(product_type)
-            else:
-                raise UnsupportedProvider(
-                    f"invalid requested provider: {provider} is not (yet) supported"
-                )
-
-            if filter:
-                product_types = self.__apply_product_type_free_text_search_filter(
-                    product_types, filter=filter
-                )
-            return sorted(product_types, key=itemgetter("ID"))
-
+                return sorted(product_types, key=itemgetter("ID"))
+            raise UnsupportedProvider(
+                f"invalid requested provider: {provider} is not (yet) supported"
+            )
         # Only get the product types supported by the available providers
         for provider in self.available_providers():
             current_product_type_ids = [pt["ID"] for pt in product_types]
@@ -572,64 +558,13 @@ class EODataAccessGateway:
                 [
                     pt
                     for pt in self.list_product_types(
-                        provider=provider, fetch_providers=False, filter=filter
+                        provider=provider, fetch_providers=False
                     )
                     if pt["ID"] not in current_product_type_ids
                 ]
             )
-
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
-
-    def __apply_product_type_free_text_search_filter(
-        self, product_types: List[Dict[str, Any]], filter: str
-    ) -> List[Dict[str, Any]]:
-        """Apply the free text search filter to the given list of product types
-
-        :param product_types: The list of product types
-        :type product_types: list
-        :param filter: Comma separated list of search terms (ex. "EO,Earth Observation")
-        :type filter: str
-        :returns: The new list of product types
-        :rtype: list
-
-        """
-        # Apply the free text search
-        if not filter:
-            # no filter was given -> return the original list
-            return product_types
-        fts_terms = filter.split(",")
-        fts_supported_params = {"title", "abstract", "keywords"}
-        with self._product_types_index.searcher() as searcher:
-            results: Optional[Results] = None
-            # For each search key, do a guess and then upgrade the result (i.e. when
-            # merging results, if a hit appears in both results, its position is raised
-            # to the top. This way, the top most result will be the hit that best
-            # matches the given queries. Put another way, this best guess is the one
-            # that crosses the highest number of search params from the given queries
-            for term in fts_terms:
-                for search_key in fts_supported_params:
-                    result = cast(
-                        Results,
-                        searcher.search(  # type: ignore
-                            QueryParser(
-                                search_key, self._product_types_index.schema
-                            ).parse(  # type: ignore
-                                term
-                            ),
-                            limit=None,
-                        ),
-                    )
-                    if not results:
-                        results = result
-                    else:
-                        results.upgrade_and_extend(result)  # type: ignore
-            if not results:
-                # no result found -> intersection is empty set
-                return []
-
-            result_ids = {r["ID"] for r in results or []}
-            return [p for p in product_types if p["ID"] in result_ids]
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
@@ -979,9 +914,22 @@ class EODataAccessGateway:
 
         return self.product_types_config[product_type].get("alias", product_type)
 
-    def guess_product_type(self, **kwargs: Any) -> List[str]:
-        """Find eodag product types codes that best match a set of search params
+    def guess_product_type(
+        self,
+        free_text_filter: Optional[str] = None,
+        intersect: bool = False,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Find eodag product types ids that best match a set of search params
 
+        See https://whoosh.readthedocs.io/en/latest/querylang.html#the-default-query-language
+        for syntax.
+
+        :param free_text_filter: whoosh compatible free text search filter used to search
+                                 `title`, `abstract` and `keywords`
+        :type free_text_filter: Optional[str]
+        :param intersect: join results for each parameter using INTERSECT instead of UNION
+        :type intersect: bool
         :param kwargs: A set of search parameters as keywords arguments
         :returns: The best match for the given parameters
         :rtype: list[str]
@@ -989,6 +937,9 @@ class EODataAccessGateway:
         """
         if kwargs.get("productType", None):
             return [kwargs["productType"]]
+        free_text_search_params = (
+            ["title", "abstract", "keywords"] if free_text_filter else []
+        )
         supported_params = {
             param
             for param in (
@@ -999,6 +950,8 @@ class EODataAccessGateway:
                 "sensorType",
                 "keywords",
                 "md5",
+                "abstract",
+                "title",
             )
             if kwargs.get(param, None) is not None
         }
@@ -1006,19 +959,35 @@ class EODataAccessGateway:
             raise EodagError("Missing product types index")
         with self._product_types_index.searcher() as searcher:
             results = None
-            # For each search key, do a guess and then upgrade the result (i.e. when
-            # merging results, if a hit appears in both results, its position is raised
-            # to the top. This way, the top most result will be the hit that best
+            # Using `upgrade_and_extend`, for each search key, do a guess and
+            # then upgrade the result (i.e. when merging results,
+            # if a hit appears in both results, its position is raised
+            # to the top). This way, the top most result will be the hit that best
             # matches the given queries. Put another way, this best guess is the one
             # that crosses the highest number of search params from the given queries
+
+            # Always use UNION to join free_text_search results
+            for search_key in free_text_search_params:
+                query = QueryParser(search_key, self._product_types_index.schema).parse(
+                    free_text_filter
+                )
+                if results is None:
+                    results = searcher.search(query, limit=None)
+                else:
+                    results.upgrade_and_extend(searcher.search(query, limit=None))
+
+            # join results from kwargs using UNION or INTERSECT
             for search_key in supported_params:
                 query = QueryParser(search_key, self._product_types_index.schema).parse(
                     kwargs[search_key]
                 )
                 if results is None:
                     results = searcher.search(query, limit=None)
+                elif intersect:
+                    results.filter(searcher.search(query, limit=None))
                 else:
                     results.upgrade_and_extend(searcher.search(query, limit=None))
+
             guesses: List[str] = [r["ID"] for r in results or []]
         if guesses:
             return guesses
