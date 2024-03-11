@@ -119,7 +119,7 @@ to each provider supported by ``eodag``:
 
     .. code-block:: bash
 
-      curl -X POST --data '{"username": "juser", "password": "password"}' -H "Content-Type: application/json" "https://gateway.prod.wekeo2.eu/hda-broker/gettoken"
+      curl -X POST --data '{"username": "USERNAME", "password": "PASSWORD"}' -H "Content-Type: application/json" "https://gateway.prod.wekeo2.eu/hda-broker/gettoken"
 
     The WEkEO API will respond with a token:
 
