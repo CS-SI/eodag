@@ -420,6 +420,10 @@ class TestStacCoreRedis(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestStacCoreRedis, cls).tearDownClass()
+        # stop Mock and remove tmp config dir
+        cls.expanduser_mock.stop()
+        cls.tmp_home_dir.cleanup()
+        # stop os.environ
         cls.mock_os_environ.stop()
 
     @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
