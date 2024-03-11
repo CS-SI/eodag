@@ -32,11 +32,11 @@ import httpx
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
+from eodag import EOProduct
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag import EOProduct
 from eodag.utils.exceptions import TimeOutError
 from tests import mock
 from tests.context import (
@@ -1233,7 +1233,6 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
-
     @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
     def test_product_type_queryables_from_constraints(
         self, mock_requests_constraints: Mock
@@ -1376,7 +1375,8 @@ class RequestTestCase(unittest.TestCase):
                         },
                     ],
                 }
-            })
+            },
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
@@ -1408,7 +1408,7 @@ class RequestTestCase(unittest.TestCase):
             follow_redirects=True,
         )
 
-        mock_download.return_value = {"content": iter([""])}
+        mock_download.return_value = StreamResponse(content=iter([b""]))
         # check that download of returned product is working without attempt to execute search
         self._request_valid_raw(
             f"collections/{self.tested_product_type}/items/a_nice_product/download?provider=onda",

@@ -19,11 +19,14 @@
 import importlib
 import json
 import os
+import pickle
 import unittest
 from tempfile import TemporaryDirectory
+from typing import Any, Union
 
 import pytest
 
+from eodag import EOProduct
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
@@ -366,3 +369,108 @@ class TestStacCore(unittest.TestCase):
             match="Call to deprecated function/method get_templates_path",
         ):
             self.assertTrue(os.path.isdir(self.rest_core.get_templates_path()))
+
+
+class MockRedis:
+    def __init__(self, cache=None):
+        if cache is None:
+            cache = dict()
+        self.cache = cache
+
+    def get(self, key: str) -> Union[str, None]:
+        if key in self.cache:
+            return self.cache[key]
+        return None  # return nil
+
+    def set(self, key: str, value: Any) -> Union[str, None]:
+        if isinstance(self.cache, dict):
+            self.cache[key] = value
+            return "OK"
+        return None  # return nil in case of some issue
+
+    def exists(self, key: str) -> int:
+        if key in self.cache:
+            return 1
+        return 0
+
+
+class TestStacCoreRedis(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestStacCoreRedis, cls).setUpClass()
+        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        cls.mock_os_environ.start()
+        os.environ["REDIS_HOST"] = "a"
+        os.environ["EODAG_EXT_PRODUCT_TYPES_CFG_FILE"] = ""
+
+        # Mock home and eodag conf directory to tmp dir
+        cls.tmp_home_dir = TemporaryDirectory()
+        cls.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=cls.tmp_home_dir.name
+        )
+        cls.expanduser_mock.start()
+
+        # import after having mocked home_dir because it launches http server (and EODataAccessGateway)
+        import eodag.rest.core as rest_core
+
+        importlib.reload(rest_core)
+
+        cls.rest_core = rest_core
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestStacCoreRedis, cls).tearDownClass()
+        cls.mock_os_environ.stop()
+
+    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
+    def test_search_and_add_to_redis_cache(self, mock_search):
+        product1_properties = {
+            "id": "p1",
+            "geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
+            "title": "P1",
+        }
+        product2_properties = {
+            "id": "p2",
+            "geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
+            "title": "P2",
+        }
+        product1 = EOProduct(
+            provider="peps", properties=product1_properties, productType="S2_MSI_L1C"
+        )
+        product2 = EOProduct(
+            provider="peps", properties=product2_properties, productType="S2_MSI_L1C"
+        )
+        mock_search.return_value = (SearchResult([product1, product2]), 2)
+
+        with mock.patch("eodag.rest.core.redis_instance", MockRedis()) as mock_redis:
+            self.rest_core.search_stac_items(
+                request=mock_request("http://foo/search?collections=S2_MSI_L1C"),
+                search_request=SearchPostRequest.model_validate(
+                    {"collections": ["S2_MSI_L1C"]}
+                ),
+            )
+            self.assertTrue(mock_redis.get("S2_MSI_L1C_peps_p1"))
+            self.assertTrue(mock_redis.get("S2_MSI_L1C_peps_p2"))
+
+    def test_retrieve_from_cache(self):
+        product1_properties = {
+            "id": "p1",
+            "geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
+            "title": "P1",
+        }
+        product2_properties = {
+            "id": "p2",
+            "geometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
+            "title": "P2",
+        }
+        product1 = EOProduct(
+            provider="peps", properties=product1_properties, productType="S2_MSI_L1C"
+        )
+        product2 = EOProduct(
+            provider="peps", properties=product2_properties, productType="S2_MSI_L1C"
+        )
+        with mock.patch("eodag.rest.core.redis_instance", MockRedis()) as mock_redis:
+            mock_redis.set("S2_MSI_L1C_peps_p1", pickle.dumps(product1))
+            mock_redis.set("S2_MSI_L1C_peps_p2", pickle.dumps(product2))
+            p = self.rest_core._retrieve_from_cache("peps", "S2_MSI_L1C", "p1")
+            self.assertDictEqual(product1.properties, p.properties)

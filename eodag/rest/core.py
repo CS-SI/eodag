@@ -20,7 +20,7 @@ import datetime
 import logging
 import os
 import re
-from typing import Any, Callable, Dict, List, Optional, cast, Deque
+from typing import Any, Callable, Deque, Dict, List, Optional, cast
 
 import boto3
 import dateutil
@@ -48,8 +48,12 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import StreamResponse, _deprecated, dict_items_recursive_apply, \
-    DEFAULT_DEQUE_MAX_LEN
+from eodag.utils import (
+    DEFAULT_DEQUE_MAX_LEN,
+    StreamResponse,
+    _deprecated,
+    dict_items_recursive_apply,
+)
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -68,6 +72,7 @@ crunchers = {
     "filterLatestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
     "filterOverlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
+
 
 class CacheRecord:
     """cache record"""
