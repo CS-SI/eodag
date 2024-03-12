@@ -35,10 +35,7 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag.api.product.metadata_mapping import (
-    NOT_MAPPED,
-    mtd_cfg_as_conversion_and_querypath,
-)
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     SimpleYamlProxyConfig,
@@ -54,7 +51,7 @@ from eodag.config import (
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, Queryables
+from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -67,7 +64,6 @@ from eodag.utils import (
     _deprecated,
     copy_deepcopy,
     deepcopy,
-    get_args,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
@@ -2195,8 +2191,8 @@ class EODataAccessGateway:
         providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
-            providers_queryables[plugin.provider] = _list_plugin_queryables(
-                plugin, kwargs, product_type
+            providers_queryables[plugin.provider] = plugin.list_queryables(
+                filters=kwargs, product_type=product_type
             )
 
         queryable_keys: Set[str] = set.intersection(  # type: ignore
@@ -2250,61 +2246,3 @@ class EODataAccessGateway:
                 ],
             }
         return sortables
-
-
-def _list_plugin_queryables(
-    plugin: Union[Search, Api],
-    filters: Dict[str, Any],
-    product_type: Optional[str] = None,
-) -> Dict[str, Annotated[Any, FieldInfo]]:
-    """
-    Get queryables for a specific search plugin.
-
-    :param plugin: The search plugin (either Search or Api).
-    :type plugin: Union[Search, Api]
-    :param filters: Additional filters for queryables.
-    :type filters: Dict[str, Any]
-    :param product_type: (optional) The product type.
-    :type product_type: Optional[str]
-
-    :return: A dictionary containing the queryable properties, associating parameters to their
-             annotated type.
-    :rtype: Dict[str, Annotated[Any, FieldInfo]]
-    """
-    default_values: Dict[str, Any] = deepcopy(
-        getattr(plugin.config, "products", {}).get(product_type, {})
-    )
-    default_values.pop("metadata_mapping", None)
-
-    queryables: Dict[str, Annotated[Any, FieldInfo]] = (
-        plugin.discover_queryables(**{**default_values, **filters}) or {}
-    )
-
-    metadata_mapping: Dict[str, Any] = deepcopy(
-        getattr(plugin.config, "metadata_mapping", {})
-    )
-    metadata_mapping.update(
-        getattr(plugin.config, "products", {})
-        .get(product_type, {})
-        .get("metadata_mapping", {})
-    )
-
-    for param in list(metadata_mapping.keys()):
-        if NOT_MAPPED in metadata_mapping[param] or not isinstance(
-            metadata_mapping[param], list
-        ):
-            del metadata_mapping[param]
-
-    eoadag_queryables = copy_deepcopy(
-        model_fields_to_annotated(Queryables.model_fields)
-    )
-    for k, v in eoadag_queryables.items():
-        field_info = get_args(v)[1] if len(get_args(v)) > 1 else None
-        if not isinstance(field_info, FieldInfo):
-            continue
-        if k in filters:
-            field_info.default = filters[k]
-        if field_info.is_required() or ((field_info.alias or k) in metadata_mapping):
-            queryables[k] = v
-
-    return queryables

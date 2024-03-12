@@ -471,6 +471,11 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
                 f"Cannot change dataset from {provider_product_type} to {user_provider_product_type}"
             )
 
+        # defaults
+        default_queryables = self._get_defaults_as_queryables(product_type)
+        # remove dataset from queryables
+        default_queryables.pop("dataset", None)
+
         non_empty_kwargs = {k: v for k, v in kwargs.items() if v}
 
         if "{" in constraints_file_url:
@@ -479,12 +484,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
             )
         constraints = fetch_constraints(constraints_file_url, self)
         if not constraints:
-            return {}
-
-        # defaults
-        default_queryables = self.get_defaults_as_queryables(product_type)
-        # remove dataset from queryables
-        default_queryables.pop("dataset", None)
+            return default_queryables
 
         constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
         if len(kwargs) == 0:

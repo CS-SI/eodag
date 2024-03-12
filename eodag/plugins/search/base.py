@@ -18,30 +18,36 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING
 
 import orjson
-from pydantic.fields import Field
+from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
+    NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.plugins.base import PluginTopic
+from eodag.types import model_fields_to_annotated
+from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     Annotated,
+    copy_deepcopy,
     deepcopy,
     format_dict_items,
+    get_args,
     update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
+    from typing import Any, Dict, List, Optional, Tuple, Union
+
     from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
@@ -116,13 +122,15 @@ class Search(PluginTopic):
         :returns: fetched queryable parameters dict
         :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
-        return None
+        raise NotImplementedError(
+            f"discover_queryables is not implemeted for plugin {self.__class__.__name__}"
+        )
 
-    def get_defaults_as_queryables(
+    def _get_defaults_as_queryables(
         self, product_type: str
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """
-        Return given product type defaut settings as queryables
+        Return given product type default settings as queryables
 
         :param product_type: given product type
         :type product_type: str
@@ -317,3 +325,62 @@ class Search(PluginTopic):
             except orjson.JSONDecodeError:
                 sort_by_qs += parsed_sort_by_tpl
         return (sort_by_qs, sort_by_qp)
+
+    def list_queryables(
+        self,
+        filters: Dict[str, Any],
+        product_type: Optional[str] = None,
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        """
+        Get queryables
+
+        :param filters: Additional filters for queryables.
+        :type filters: Dict[str, Any]
+        :param product_type: (optional) The product type.
+        :type product_type: Optional[str]
+
+        :return: A dictionary containing the queryable properties, associating parameters to their
+                annotated type.
+        :rtype: Dict[str, Annotated[Any, FieldInfo]]
+        """
+        default_values: Dict[str, Any] = deepcopy(
+            getattr(self.config, "products", {}).get(product_type, {})
+        )
+        default_values.pop("metadata_mapping", None)
+
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        try:
+            queryables = self.discover_queryables(**{**default_values, **filters}) or {}
+        except NotImplementedError:
+            pass
+
+        metadata_mapping: Dict[str, Any] = deepcopy(
+            getattr(self.config, "metadata_mapping", {})
+        )
+        metadata_mapping.update(
+            getattr(self.config, "products", {})
+            .get(product_type, {})
+            .get("metadata_mapping", {})
+        )
+
+        for param in list(metadata_mapping.keys()):
+            if NOT_MAPPED in metadata_mapping[param] or not isinstance(
+                metadata_mapping[param], list
+            ):
+                del metadata_mapping[param]
+
+        eoadag_queryables = copy_deepcopy(
+            model_fields_to_annotated(Queryables.model_fields)
+        )
+        for k, v in eoadag_queryables.items():
+            field_info = get_args(v)[1] if len(get_args(v)) > 1 else None
+            if not isinstance(field_info, FieldInfo):
+                continue
+            if k in filters:
+                field_info.default = filters[k]
+            if field_info.is_required() or (
+                (field_info.alias or k) in metadata_mapping
+            ):
+                queryables[k] = v
+
+        return queryables
