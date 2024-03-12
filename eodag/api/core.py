@@ -75,10 +75,12 @@ from eodag.utils.exceptions import (
     EodagError,
     MisconfiguredError,
     NoMatchingProductType,
+    NotAvailableError,
     PluginImplementationError,
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.stac_reader import fetch_stac_items
 
@@ -1613,6 +1615,16 @@ class EODataAccessGateway:
         if not provider:
             provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
+        to_remove = []
+        for i, p in enumerate(providers):
+            try:
+                self.list_queryables(p, **kwargs)
+            except NotAvailableError:
+                if i == len(providers) - 1:
+                    raise
+                else:
+                    to_remove.append(p)
+        providers = [p for p in providers if p not in to_remove]
         if provider not in providers:
             logger.warning(
                 "Product type '%s' is not available with provider '%s'. "
@@ -2212,7 +2224,18 @@ class EODataAccessGateway:
             if key in kwargs:
                 queryable.default = kwargs[key]
 
+
         queryables.update(model_fields_to_annotated(common_queryables))
+        for key in kwargs:
+            if key in [
+                "startTimeFromAscendingNode",
+                "completionTimeFromAscendingNode",
+                "productType",
+                "geometry",
+            ]:
+                continue
+            elif key not in queryables.keys():
+                raise ValidationError(f"parameter {key} not queryable")
 
         return queryables
 
