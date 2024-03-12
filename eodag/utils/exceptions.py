@@ -115,3 +115,7 @@ class TimeOutError(RequestError):
             f"Request timeout {timeout_msg} for URL {url}" if url else str(exception)
         )
         super().__init__(message)
+
+
+class LicenceError(EodagError):
+    """An error indicating that Terms and Conditions have to be accepted to access a product"""

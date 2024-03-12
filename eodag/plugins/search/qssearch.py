@@ -79,6 +79,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    LicenceError,
     MisconfiguredError,
     RequestError,
     TimeOutError,
@@ -1301,6 +1302,8 @@ class PostJsonSearch(QueryStringSearch):
         except (requests.RequestException, URLError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
+            licence_error_code = getattr(self.config, "licence_error_code", None)
+            licence_error_message = getattr(self.config, "licence_error_message", None)
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
             if (
@@ -1313,6 +1316,16 @@ class PostJsonSearch(QueryStringSearch):
                         err.response.text.strip(),
                         self.provider,
                     )
+                )
+            if (
+                licence_error_code
+                and hasattr(err.response, "status_code")
+                and err.response.status_code == licence_error_code
+                and licence_error_message
+                and licence_error_message in err.response.text
+            ):
+                raise LicenceError(
+                    f"{err.response.text}; Please check that you have accepted the necessary terms and conditions!"
                 )
             if exception_message:
                 logger.exception(exception_message)
