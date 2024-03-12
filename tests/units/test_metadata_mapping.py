@@ -537,6 +537,43 @@ class TestMetadataFormatter(unittest.TestCase):
             ),
         )
 
+    def test_convert_assets_list_to_dict(self):
+        # by default, the name of the asset is searched in "title" value
+        to_format = "{assets#assets_list_to_dict}"
+        assets_list = [
+            {"href": "foo", "title": "asset1", "name": "foo-name"},
+            {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+            {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+            {"href": "qux", "title": "asset3", "name": "qux-name"},
+        ]
+        expected_result = {
+            "asset1": assets_list[0],
+            "path/to/asset1": assets_list[1],
+            "asset2": assets_list[2],
+            "asset3": assets_list[3],
+        }
+        self.assertEqual(
+            format_metadata(to_format, assets=assets_list), str(expected_result)
+        )
+
+        # we can adapt if the name of the asset is in the value of a different key
+        to_format = "{assets#assets_list_to_dict(name)}"
+        assets_list = [
+            {"href": "foo", "title": "foo-title", "name": "asset1"},
+            {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+            {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+            {"href": "qux", "title": "qux-title", "name": "asset3"},
+        ]
+        expected_result = {
+            "asset1": assets_list[0],
+            "path/to/asset1": assets_list[1],
+            "asset2": assets_list[2],
+            "asset3": assets_list[3],
+        }
+        self.assertEqual(
+            format_metadata(to_format, assets=assets_list), str(expected_result)
+        )
+
 
 class TestMetadataMappingFunctions(unittest.TestCase):
     def test_get_provider_queryable_key(self):
