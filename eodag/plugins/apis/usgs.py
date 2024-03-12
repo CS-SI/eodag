@@ -35,7 +35,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -66,7 +65,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.apis.usgs")
 
 
-class UsgsApi(Download, Api):
+class UsgsApi(Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

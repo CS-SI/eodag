@@ -82,7 +82,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.apis.cds")
 
 
-class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
+class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
     """A plugin that enables to build download-request and download data on CDS API.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -323,7 +323,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
 
         return auth_dict
 
-    def _prepare_download_link(self, product):
+    def _prepare_download_link(self, product: EOProduct) -> None:
         """Update product download link with http url obtained from cds api"""
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
@@ -539,3 +539,7 @@ class CdsApi(HTTPDownload, Api, BuildPostSearchResult):
 
         python_queryables = create_model("m", **field_definitions).model_fields
         return dict(default_queryables, **model_fields_to_annotated(python_queryables))
+
+    def clear(self) -> None:
+        """Clear search context"""
+        pass

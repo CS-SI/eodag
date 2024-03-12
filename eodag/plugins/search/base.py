@@ -34,6 +34,7 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     Annotated,
+    deepcopy,
     format_dict_items,
     update_nested_dict,
 )
@@ -128,8 +129,10 @@ class Search(PluginTopic):
         :returns: queryable parameters dict
         :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
-        defaults = self.config.products.get(product_type, {})
-        queryables = {}
+        defaults = deepcopy(self.config.products.get(product_type, {}))
+        defaults.pop("metadata_mapping", None)
+
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
         for parameter, value in defaults.items():
             queryables[parameter] = Annotated[type(value), Field(default=value)]
         return queryables
