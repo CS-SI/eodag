@@ -260,6 +260,7 @@ class DataRequestSearch(Search):
         self, product_type: str, eodag_product_type: str, **kwargs: Any
     ) -> str:
         headers = getattr(self.auth, "headers", USER_AGENT)
+        ssl_verify = getattr(self.config.ssl_verify, "ssl_verify", True)
         try:
             url = self.config.data_request_url
             request_body = format_query_params(
@@ -269,7 +270,11 @@ class DataRequestSearch(Search):
                 f"Sending search job request to {url} with {str(request_body)}"
             )
             request_job = requests.post(
-                url, json=request_body, headers=headers, timeout=HTTP_REQ_TIMEOUT
+                url,
+                json=request_body,
+                headers=headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             request_job.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -300,9 +305,14 @@ class DataRequestSearch(Search):
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
         headers = getattr(self.auth, "headers", USER_AGENT)
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         try:
             status_resp = requests.get(
-                status_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
+                status_url,
+                headers=headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             status_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -331,9 +341,12 @@ class DataRequestSearch(Search):
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         headers = getattr(self.auth, "headers", USER_AGENT)
         try:
-            return requests.get(url, headers=headers, timeout=HTTP_REQ_TIMEOUT).json()
+            return requests.get(
+                url, headers=headers, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
+            ).json()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException:

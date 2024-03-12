@@ -158,6 +158,7 @@ class HTTPDownload(Download):
         :type kwargs: Union[str, bool, dict]
         """
         order_method = getattr(self.config, "order_method", "GET").lower()
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         OrderKwargs = TypedDict(
             "OrderKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
         )
@@ -174,13 +175,13 @@ class HTTPDownload(Download):
         else:
             order_url = product.properties["orderLink"]
             order_kwargs = {}
-
         with requests.request(
             method=order_method,
             url=order_url,
             auth=auth,
             timeout=HTTP_REQ_TIMEOUT,
             headers=dict(getattr(self.config, "order_headers", {}), **USER_AGENT),
+            verify=ssl_verify,
             **order_kwargs,
         ) as response:
             try:
@@ -253,6 +254,9 @@ class HTTPDownload(Download):
             "StatusKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
         )
         status_kwargs: StatusKwargs = {}
+
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         if status_method == "post":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderStatusLink"]))
@@ -273,6 +277,7 @@ class HTTPDownload(Download):
             headers=dict(
                 getattr(self.config, "order_status_headers", {}), **USER_AGENT
             ),
+            verify=ssl_verify,
             **status_kwargs,
         ) as response:
             try:
@@ -326,6 +331,7 @@ class HTTPDownload(Download):
                         product.properties["searchLink"],
                         timeout=HTTP_REQ_TIMEOUT,
                         headers=USER_AGENT,
+                        verify=ssl_verify,
                     )
                     response.raise_for_status()
                     if (
@@ -833,6 +839,7 @@ class HTTPDownload(Download):
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
         )
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         # loop for assets download
         for asset in assets_values:
@@ -849,6 +856,7 @@ class HTTPDownload(Download):
                 params=params,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify,
             ) as stream:
                 try:
                     stream.raise_for_status()
@@ -1041,6 +1049,7 @@ class HTTPDownload(Download):
     ) -> int:
         total_size = 0
 
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         # loop for assets size & filename
         for asset in assets_values:
             if not asset["href"].startswith("file:"):
@@ -1082,6 +1091,7 @@ class HTTPDownload(Download):
                         params=params,
                         headers=USER_AGENT,
                         timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                        verify=ssl_verify,
                     ) as stream:
                         # size from GET header / Content-length
                         asset.size = int(stream.headers.get("Content-length", 0))

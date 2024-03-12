@@ -178,8 +178,15 @@ class S3RestDownload(Download):
 
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
+
+            ssl_verify = getattr(self.config, "ssl_verify", True)
+
             bucket_contents = requests.get(
-                nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                nodes_list_url,
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             try:
                 bucket_contents.raise_for_status()
@@ -310,6 +317,7 @@ class S3RestDownload(Download):
                     auth=auth,
                     headers=USER_AGENT,
                     timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
                 ) as stream:
                     try:
                         stream.raise_for_status()

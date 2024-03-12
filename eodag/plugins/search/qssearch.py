@@ -69,6 +69,7 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
     get_args,
+    get_ssl_context,
     quote,
     string_to_jsonpath,
     update_nested_dict,
@@ -875,6 +876,9 @@ class QueryStringSearch(Search):
     ) -> Response:
         try:
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+            ssl_verify = getattr(self.config, "ssl_verify", True)
+
+            ssl_ctx = get_ssl_context(ssl_verify)
             # auth if needed
             kwargs: Dict[str, Any] = {}
             if (
@@ -885,6 +889,7 @@ class QueryStringSearch(Search):
                 kwargs["auth"] = self.auth
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
+
             if hasattr(self.config, "dont_quote"):
                 # keep unquoted desired params
                 base_url, params = url.split("?") if "?" in url else (url, "")
@@ -902,7 +907,7 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message.replace(url, prep.url))
                 urllib_req = Request(prep.url, headers=USER_AGENT)
-                urllib_response = urlopen(urllib_req, timeout=timeout)
+                urllib_response = urlopen(urllib_req, timeout=timeout, context=ssl_ctx)
                 # build Response
                 adapter = HTTPAdapter()
                 response = cast(Response, adapter.build_response(prep, urllib_response))
@@ -910,7 +915,11 @@ class QueryStringSearch(Search):
                 if info_message:
                     logger.info(info_message)
                 response = requests.get(
-                    url, timeout=timeout, headers=USER_AGENT, **kwargs
+                    url,
+                    timeout=timeout,
+                    headers=USER_AGENT,
+                    verify=ssl_verify,
+                    **kwargs,
                 )
                 response.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -981,13 +990,17 @@ class ODataV4Search(QueryStringSearch):
 
         if getattr(self.config, "per_product_metadata_query", False):
             final_result = []
+            ssl_verify = getattr(self.config, "ssl_verify", True)
             # Query the products entity set for basic metadata about the product
             for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
                     response = requests.get(
-                        metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                        metadata_url,
+                        headers=USER_AGENT,
+                        timeout=HTTP_REQ_TIMEOUT,
+                        verify=ssl_verify,
                     )
                     response.raise_for_status()
                 except requests.exceptions.Timeout as exc:
@@ -1231,6 +1244,7 @@ class PostJsonSearch(QueryStringSearch):
         exception_message: Optional[str] = None,
     ) -> Response:
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             # auth if needed
             RequestsKwargs = TypedDict(
@@ -1255,6 +1269,7 @@ class PostJsonSearch(QueryStringSearch):
                 json=self.query_params,
                 headers=USER_AGENT,
                 timeout=timeout,
+                verify=ssl_verify,
                 **kwargs,
             )
             response.raise_for_status()

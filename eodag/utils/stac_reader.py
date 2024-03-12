@@ -28,7 +28,7 @@ import concurrent.futures
 import orjson
 import pystac
 
-from eodag.utils import HTTP_REQ_TIMEOUT
+from eodag.utils import HTTP_REQ_TIMEOUT, get_ssl_context
 from eodag.utils.exceptions import STACOpenerError
 
 logger = logging.getLogger("eodag.utils.stac_reader")
@@ -38,10 +38,11 @@ class _TextOpener:
     """Exhaust read methods for pystac.StacIO in the order defined
     in the openers list"""
 
-    def __init__(self, timeout: int) -> None:
+    def __init__(self, timeout: int, ssl_verify: bool) -> None:
         self.openers = [self.read_local_json, self.read_http_remote_json]
         # Only used by read_http_remote_json
         self.timeout = timeout
+        self.ssl_verify = ssl_verify
 
     @staticmethod
     def read_local_json(url: str, as_json: bool = False) -> Any:
@@ -59,8 +60,10 @@ class _TextOpener:
 
     def read_http_remote_json(self, url: str, as_json: bool = False) -> Any:
         """Read JSON remote HTTP file"""
+        ssl_ctx = get_ssl_context(self.ssl_verify)
+
         try:
-            res = urlopen(url, timeout=self.timeout)
+            res = urlopen(url, timeout=self.timeout, context=ssl_ctx)
             content_type = res.getheader("Content-Type")
             if content_type is None:
                 encoding = "utf-8"
@@ -102,6 +105,7 @@ def fetch_stac_items(
     recursive: bool = False,
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
+    ssl_verify: bool = True,
 ) -> List[Dict[str, Any]]:
     """Fetch STAC item from a single item file or items from a catalog.
 
@@ -113,13 +117,15 @@ def fetch_stac_items(
     :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
     :type timeout: float
+    :param ssl_verify: (optional) SSL Verification for HTTP request
+    :type ssl_verify: bool
     :returns: The items found in `stac_path`
     :rtype: :class:`list`
     """
 
     # URI opener used by PySTAC internally, instantiated here
     # to retrieve the timeout.
-    _text_opener = _TextOpener(timeout)
+    _text_opener = _TextOpener(timeout, ssl_verify)
     pystac.StacIO.read_text = _text_opener
 
     stac_obj = pystac.read_file(stac_path)

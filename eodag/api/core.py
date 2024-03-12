@@ -2024,6 +2024,7 @@ class EODataAccessGateway:
         provider: Optional[str] = None,
         productType: Optional[str] = None,
         timeout: int = HTTP_REQ_TIMEOUT,
+        ssl_verify: bool = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
@@ -2057,6 +2058,7 @@ class EODataAccessGateway:
             recursive=recursive,
             max_connections=max_connections,
             timeout=timeout,
+            ssl_verify=ssl_verify,
         )
         feature_collection = geojson.FeatureCollection(features)
 

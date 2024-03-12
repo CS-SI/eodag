@@ -19,6 +19,7 @@
 import copy
 import logging
 import os
+import ssl
 import sys
 import unittest
 from contextlib import closing
@@ -33,6 +34,7 @@ from tests.context import (
     deepcopy,
     flatten_top_directories,
     get_bucket_name_and_prefix,
+    get_ssl_context,
     get_timestamp,
     merge_mappings,
     path_to_uri,
@@ -91,6 +93,16 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(actual_path, expected_path)
         with self.assertRaises(ValueError):
             uri_to_path("not_a_uri")
+
+    def test_ssl_context(self):
+
+        ssl_ctx = get_ssl_context(False)
+        self.assertEqual(ssl_ctx.verify_mode, ssl.CERT_NONE)
+        self.assertEqual(ssl_ctx.check_hostname, False)
+
+        ssl_ctx = get_ssl_context(True)
+        self.assertEqual(ssl_ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ssl_ctx.check_hostname, True)
 
     def test_path_to_uri(self):
         if sys.platform == "win32":

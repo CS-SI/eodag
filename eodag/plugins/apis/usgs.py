@@ -314,6 +314,7 @@ class UsgsApi(Download, Api):
         req_url = req_urls[0]
         progress_callback.reset()
         logger.debug(f"Downloading {req_url}")
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         @self._download_retry(product, wait, timeout)
         def download_request(
@@ -328,6 +329,7 @@ class UsgsApi(Download, Api):
                     stream=True,
                     headers=USER_AGENT,
                     timeout=wait * 60,
+                    verify=ssl_verify,
                 ) as stream:
                     try:
                         stream.raise_for_status()
