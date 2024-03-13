@@ -108,3 +108,4 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
 from usgs.api import USGSAuthExpiredError, USGSError
+from usgs.api import TMPFILE as USGS_TMPFILE

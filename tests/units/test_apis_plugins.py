@@ -37,6 +37,7 @@ from tests.context import (
     DEFAULT_MISSION_START_DATE,
     ONLINE_STATUS,
     USER_AGENT,
+    USGS_TMPFILE,
     AuthenticationError,
     EODataAccessGateway,
     EOProduct,
@@ -424,6 +425,21 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         self.api_plugin.authenticate()
         self.assertEqual(mock_api_login.call_count, 2)
         self.assertEqual(mock_api_logout.call_count, 1)
+        mock_api_login.reset_mock()
+        mock_api_logout.reset_mock()
+
+        # with AUTH_REVOKED error
+        mock_api_login.side_effect = [
+            USGSError(
+                "AUTH_REVOKED: API key has been revoked, please logout and re-login."
+            ),
+            None,
+        ]
+        with mock.patch("os.remove", autospec=True) as mock_os_remove:
+            self.api_plugin.authenticate()
+            self.assertEqual(mock_api_login.call_count, 2)
+            self.assertEqual(mock_api_logout.call_count, 0)
+            mock_os_remove.assert_called_once_with(USGS_TMPFILE)
         mock_api_login.reset_mock()
         mock_api_logout.reset_mock()
 
