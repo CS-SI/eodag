@@ -143,7 +143,9 @@ class BuildPostSearchResult(PostJsonSearch):
 
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
-        result = dict(result, **unpaginated_query_params)
+        result = dict(
+            result, **unpaginated_query_params, qs=sorted_unpaginated_query_params
+        )
 
         # update result with search args if not None (and not auth)
         kwargs.pop("auth", None)

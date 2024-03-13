@@ -7233,7 +7233,8 @@
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       productType: $.productType
-      orderLink: https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id
+      qs: '{$.qs#to_geojson}'
+      orderLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id?{{"verb": "retrieve", "request": {qs}}}'
       expver:
         - expver
         - $.expver
