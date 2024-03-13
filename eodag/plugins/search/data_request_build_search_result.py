@@ -1,17 +1,26 @@
 import logging
 import re
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote_plus
 
 import geojson
 import requests
 from requests import Session
+from requests.auth import AuthBase
 
+from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import format_query_params
+from eodag.config import PluginConfig
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
-from eodag.utils import USER_AGENT, MisconfiguredError
+from eodag.utils import (
+    DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_PAGE,
+    USER_AGENT,
+    MisconfiguredError,
+)
 from eodag.utils.exceptions import NotAvailableError
 
 logger = logging.getLogger("eodag.search.data_request_build_search_result")
@@ -23,64 +32,75 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
     needs to be built (polytope)
     """
 
-    def __init__(self, provider, config):
+    def __init__(self, provider: str, config: PluginConfig) -> None:
         # init self.config.metadata_mapping using Search Base plugin
         Search.__init__(self, provider, config)
         self.request_params = {}
         self.request_url = ""
 
-    def do_search(self, *args, **kwargs):
+    def do_search(self, *_: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
-        if "id" in kwargs:
-            product_type = kwargs.pop("productType", None)
-            keywords = {
-                k: v for k, v in kwargs.items() if k != "auth" and v is not None
-            }
-            self.product_type_def_params = self.get_product_type_def_params(
-                product_type, **kwargs
+        if "id" not in kwargs:
+            return [{}]
+
+        if not isinstance(self.auth, AuthBase):
+            raise MisconfiguredError(
+                f"{self.__class__.__name__} requires an auth plugin of type AuthBase."
+                f"Got {type(self.auth)} instead."
             )
 
-            # Add to the query, the queryable parameters set in the provider product type definition
-            keywords.update(
-                {
-                    k: v
-                    for k, v in self.product_type_def_params.items()
-                    if k not in keywords.keys()
-                    and k in self.config.metadata_mapping.keys()
-                    and isinstance(self.config.metadata_mapping[k], list)
-                }
+        product_type = kwargs.pop("productType", None)
+        keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
+        self.product_type_def_params = self.get_product_type_def_params(
+            product_type, **kwargs
+        )
+
+        # Add to the query, the queryable parameters set in the provider product type definition
+        keywords.update(
+            {
+                k: v
+                for k, v in self.product_type_def_params.items()
+                if k not in keywords.keys()
+                and k in self.config.metadata_mapping.keys()
+                and isinstance(self.config.metadata_mapping[k], list)
+            }
+        )
+        _dc_qs = kwargs.get("_dc_qs", None)
+        if _dc_qs is not None:
+            _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
+            self.request_params = _dc_qp
+        else:
+            self.request_params = format_query_params(
+                product_type, self.config, **keywords
             )
-            _dc_qs = kwargs.get("_dc_qs", None)
-            if _dc_qs is not None:
-                _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
-                self.request_params = _dc_qp
-            else:
-                self.request_params = format_query_params(
-                    product_type, self.config, **keywords
-                )
-            collection = self._map_product_type(product_type)
-            if not collection:
-                raise MisconfiguredError
-            request_url = self.config.data_request_url.format(collection=collection)
-            self.request_url = request_url
-            request_body = {"verb": "retrieve", "request": self.request_params}
-            request_header = USER_AGENT
-            s = Session()
-            request = requests.Request(
-                method="POST",
-                url=request_url,
-                headers=request_header,
-                json=request_body,
-            )
-            prep = request.prepare()
-            self.auth(prep)
-            s.send(prep)
+        collection = self._map_product_type(product_type)
+        if not collection:
+            raise MisconfiguredError
+        request_url = self.config.data_request_url.format(collection=collection)
+        self.request_url = request_url
+        request_body = {"verb": "retrieve", "request": self.request_params}
+        request_header = USER_AGENT
+        s = Session()
+        request = requests.Request(
+            method="POST",
+            url=request_url,
+            headers=request_header,
+            json=request_body,
+        )
+        prep = request.prepare()
+        self.auth(prep)
+        s.send(prep)
 
         return [{}]
 
     def query(
-        self, product_type=None, items_per_page=None, page=None, count=True, **kwargs
-    ):
+        self,
+        product_type: Optional[str] = None,
+        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
+        page: int = DEFAULT_PAGE,
+        count: bool = True,
+        **kwargs: Any,
+    ) -> Tuple[List[EOProduct], Optional[int]]:
         """query results"""
         if "id" in kwargs:
             dates_str = re.search("[0-9]{8}_[0-9]{8}", kwargs["id"]).group()
@@ -106,8 +126,16 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
             self, items_per_page=items_per_page, page=page, count=count, **kwargs
         )
 
-    def normalize_results(self, results, **kwargs):
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
         """create a formatted result"""
+        if not isinstance(self.auth, AuthBase):
+            raise MisconfiguredError(
+                f"{self.__class__.__name__} requires an auth plugin of type AuthBase."
+                f"Got {type(self.auth)} instead."
+            )
+
         products = BuildPostSearchResult.normalize_results(self, results, **kwargs)
         if "id" in kwargs:
             request_header = USER_AGENT
@@ -146,12 +174,12 @@ class DataRequestBuildSearchResult(BuildPostSearchResult):
                 p.location = p.remote_location = p.properties["downloadLink"]
         return products
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear search context"""
         self.request_params = {}
         self.request_url = ""
 
-    def _map_product_type(self, product_type):
+    def _map_product_type(self, product_type: str) -> Dict[str, Any]:
         """Map the eodag product type to the provider product type"""
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products.get(product_type, {}).get("productType", None)
