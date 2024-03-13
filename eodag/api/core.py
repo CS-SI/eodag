@@ -1499,6 +1499,12 @@ class EODataAccessGateway:
                 )
         return SearchResult([]), 0
 
+    def _fetch_external_product_type(self, provider: str, product_type: str):
+        plugins = self._plugins_manager.get_search_plugins(provider=provider)
+        plugin = next(plugins)
+        product_type_config = plugin.discover_product_types(q=product_type)
+        self.update_product_types_list({provider: product_type_config})
+
     def _prepare_search(
         self,
         start: Optional[str] = None,
@@ -1612,7 +1618,16 @@ class EODataAccessGateway:
             logger.debug(
                 f"Fetching external product types sources to find {product_type} product type"
             )
-            self.fetch_product_types_list()
+            if provider:
+                # Try to get specific product type from external provider
+                self._fetch_external_product_type(provider, product_type)
+            if (
+                not provider
+                or product_type
+                not in self._plugins_manager.product_type_to_provider_config_map.keys()
+            ):
+                # no provider or still not found -> fetch all external product types
+                self.fetch_product_types_list()
 
         preferred_provider = self.get_preferred_provider()[0]
 

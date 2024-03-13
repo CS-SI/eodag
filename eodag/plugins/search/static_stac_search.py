@@ -73,7 +73,7 @@ class StaticStacSearch(StacSearch):
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
         self.config.__dict__.setdefault("ssl_verify", True)
 
-    def discover_product_types(self) -> Dict[str, Any]:
+    def discover_product_types(self, **kwargs: Any) -> Dict[str, Any]:
         """Fetch product types is disabled for `StaticStacSearch`
 
         :returns: empty dict
