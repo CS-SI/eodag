@@ -6839,6 +6839,7 @@
       size:
         - size
         - '$.properties.productInformation.size'
+      type: '$.null'
   products:
     # S3 SRAL
     S3_SRA:
