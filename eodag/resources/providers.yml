@@ -6212,11 +6212,11 @@
       collection: '{collection}'
 ---
 !provider
-  name: polytope
+  name: de_dt_lumi
   priority: 0
   roles:
     - host
-  description: Polytope API
+  description: Destination Earth Digital Twin Outputs from Lumi
   url: https://polytope.ecmwf.int/openapi
   search: !plugin
     type: DataRequestBuildSearchResult
@@ -6232,57 +6232,69 @@
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      productType: '$.productType'
-      downloadLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id'
+      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
+      productType: $.productType
+      orderLink: https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id
       expver:
         - expver
-        - '$.expver'
+        - $.expver
       class:
         - class
-        - '$.class'
+        - $.class
       stream:
         - stream
-        - '$.stream'
+        - $.stream
       time:
         - time
-        - '$.time'
+        - $.time
       domain:
         - domain
-        - '$.domain'
+        - $.domain
       type:
         - type
-        - '$.type'
+        - $.type
       levtype:
         - levtype
-        - '$.levtype'
+        - $.levtype
       anoffset:
         - anoffset
-        - '$.anoffset'
+        - $.anoffset
       step:
         - step
-        - '$.step'
+        - $.step
       param:
         - param
-        - '$.param'
+        - $.param
+      dataset:
+        - dataset
+        - $.dataset
+      storageStatus: OFFLINE
   products:
-    POLYTOPE_TEST:
+    DT_EXTREMES:
       productType: destination-earth
-      class: rd
-      expver: i4vo
-      stream: lwda
-      time: 0000
-      domain: g
+      expver: i7yv
+      stream: oper
       type: fc
       levtype: sfc
-      anoffset: 9
-      step: 3
+      step: 0
+      param: 31
+    DT_CLIMATE_ADAPTATION:
+      productType: destination-earth
+      dataset: climate-dt
+      class: d1
+      expver: 17yv
+      stream: oper
+      type: fc
+      levtype: sfc
+      step: 0
       param: 31
   download: !plugin
     type: HTTPDownload
     base_uri: https://polytope.apps.lumi.ewctest.link/api/v1/
     flatten_top_dirs: true
     auth_error_code: 401
+    order_enabled: True
+    order_method: POST
 
   auth: !plugin
     type: HTTPHeaderAuth

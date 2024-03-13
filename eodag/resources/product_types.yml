@@ -4007,10 +4007,10 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
 
-# test product type for polytope, should be replaced later
-POLYTOPE_TEST:
+# DE DT Outputs-----------------------------------------------------------------------
+DT_EXTREMES:
   abstract: |
-    polytope test product
+    The Digital Twin on Weather-Induced and Geophysical Extremes provides capabilities for the assessment and prediction of environmental extremes in support of risk assessment and management.
   instrument:
   platform: NEMSAUTO
   platformSerialIdentifier: NEMSAUTO
@@ -4018,7 +4018,19 @@ POLYTOPE_TEST:
   keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: polytope test product
+  title: Weather and Geophysical Extremes Digital Twin (DT)
+  missionStartDate: "2020-07-01T00:00:00Z"
+DT_CLIMATE_ADAPTATION:
+  abstract: |
+    The Digital Twin on Climate Change Adaptation support the analysis and testing of scenarios. This in turn will support sustainable development and climate adaptation and mitigation policy-making at multi-decadal timescales, at regional and national levels.
+  instrument:
+  platform: NEMSAUTO
+  platformSerialIdentifier: NEMSAUTO
+  processingLevel:
+  keywords: meteoblue,NEMS,NEMSAUTO,CLOUD,COVER,TOTAL,TCDC,DAILY,MEAN
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Climate Change Adaptation Digital Twin (DT)
   missionStartDate: "2020-07-01T00:00:00Z"
 
 # GENERIC----------------------------------------------------------------------
