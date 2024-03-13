@@ -585,6 +585,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=False,
         )
+        del plugin.config.ssl_verify
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
@@ -1007,7 +1008,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=False,
+            verify=True,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
@@ -1030,7 +1031,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
-            verify=False,
+            verify=True,
         )
         # orderLink with query query args
         mock_request.reset_mock()
@@ -1043,7 +1044,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             json={"foo": ["bar"]},
-            verify=False,
+            verify=True,
         )
 
     def test_plugins_download_http_order_status(self):
