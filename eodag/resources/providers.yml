@@ -6840,6 +6840,11 @@
         - size
         - '$.properties.productInformation.size'
       type: '$.null'
+
+      # set duplicate metadata due to metadata discovery to null
+      acquisitionInformation: '$.null'
+      productInformation: '$.null'
+      extraInformation: '$.null'
   products:
     # S3 SRAL
     S3_SRA:
