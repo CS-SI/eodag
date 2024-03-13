@@ -513,7 +513,9 @@ def list_collection_queryables(
     additional_params = dict(request.query_params)
     provider = additional_params.pop("provider", None)
 
-    queryables = get_queryables(request, collection_id, provider, **additional_params)
+    queryables = get_queryables(
+        request, collection=collection_id, provider=provider, **additional_params
+    )
 
     return jsonable_encoder(queryables)
 
@@ -733,7 +735,7 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     logger.debug(f"URL: {request.url}")
     additional_params = dict(request.query_params.items())
     additional_params.pop("provider", None)
-    queryables = get_queryables(request, None, provider, **additional_params)
+    queryables = get_queryables(request, provider=provider, **additional_params)
 
     return jsonable_encoder(queryables)
 

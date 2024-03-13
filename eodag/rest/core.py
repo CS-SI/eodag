@@ -494,7 +494,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
 
 def get_queryables(
     request: Request,
-    collection_id: Optional[str] = None,
+    collection: Optional[str] = None,
     provider: Optional[str] = None,
     **kwargs: Any,
 ) -> StacQueryables:
@@ -510,17 +510,10 @@ def get_queryables(
     :returns: A set containing the STAC standardized queryable properties for a collection.
     :rtype Dict[str, StacQueryableProperty]: set
     """
-    if not collection_id and "collections" in kwargs:
-        collection_ids = kwargs.pop("collections").split(",")
-        collection_id = collection_ids[0]
-
-    if collection_id and "productType" in kwargs:
+    if collection and "productType" in kwargs:
         kwargs.pop("productType")
     elif "productType" in kwargs:
-        collection_id = kwargs.pop("productType")
-
-    if "ids" in kwargs:
-        kwargs["id"] = kwargs.pop("ids")
+        collection = kwargs.pop("productType")
 
     if "datetime" in kwargs:
         dates = get_datetime(kwargs)
@@ -528,12 +521,18 @@ def get_queryables(
         kwargs["end"] = dates[1]
 
     python_queryables = eodag_api.list_queryables(
-        provider=provider, productType=collection_id, **kwargs
+        provider=provider, productType=collection, **kwargs
     )
     python_queryables.pop("start")
     python_queryables.pop("end")
 
-    stac_queryables = deepcopy(StacQueryables.default_properties)
+    # productType and id are already default in stac collection and id
+    python_queryables.pop("productType", None)
+    python_queryables.pop("id", None)
+
+    stac_queryables: Dict[str, StacQueryableProperty] = deepcopy(
+        StacQueryables.default_properties
+    )
     for param, queryable in python_queryables.items():
         stac_param = EODAGSearch.to_stac(param)
         # only keep "datetime" queryable for dates
@@ -547,12 +546,12 @@ def get_queryables(
             stac_param
         ] = StacQueryableProperty.from_python_field_definition(stac_param, queryable)
 
-    if collection_id:
-        stac_queryables.pop("collections")
+    if collection:
+        stac_queryables.pop("collection")
 
     return StacQueryables(
         q_id=request.state.url,
-        additional_properties=bool(not collection_id),
+        additional_properties=bool(not collection),
         properties=stac_queryables,
     )
 

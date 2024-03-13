@@ -1194,7 +1194,7 @@ class RequestTestCase(unittest.TestCase):
         )
         self.assertListEqual(
             list(res_no_provider["properties"].keys()),
-            ["ids", "geometry", "datetime"],
+            ["id", "geometry", "datetime"],
         )
         self.assertIn("geometry", res_no_provider["properties"])
         self.assertNotIn("s1:processing_level", res_no_provider["properties"])
@@ -1255,9 +1255,9 @@ class RequestTestCase(unittest.TestCase):
         )
         self.assertEqual(10, len(res["properties"]))
         self.assertIn("year", res["properties"])
-        self.assertIn("ids", res["properties"])
+        self.assertIn("id", res["properties"])
         self.assertIn("geometry", res["properties"])
-        self.assertNotIn("collections", res["properties"])
+        self.assertNotIn("collection", res["properties"])
 
     def test_cql_post_search(self):
         self._request_valid(
