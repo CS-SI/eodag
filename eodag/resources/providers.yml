@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ---
-!provider
+!provider # usgs
   name: usgs
   priority: 0
   description: U.S geological survey catalog for Landsat products
@@ -83,7 +83,7 @@
       dataset: '{productType}'
 
 ---
-!provider
+!provider # aws_eos
   name: aws_eos
   priority: 0
   description: EOS search for Amazon public datasets
@@ -537,7 +537,7 @@
     type: AwsAuth
 
 ---
-!provider
+!provider # theia
   name: theia
   priority: 0
   description: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
@@ -714,7 +714,7 @@
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
 
 ---
-!provider
+!provider # peps
   name: peps
   priority: 1
   description: |
@@ -867,7 +867,7 @@
     type: GenericAuth
     auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
 ---
-!provider
+!provider # creodias
   name: creodias
   priority: 0
   description: CloudFerro DIAS
@@ -1228,7 +1228,7 @@
       productType: '{productType}'
       collection: '{collection}'
 ---
-!provider
+!provider # onda
   name: onda
   priority: 0
   description: Serco DIAS
@@ -1534,7 +1534,7 @@
     type: GenericAuth
 
 ---
-!provider
+!provider # astraea_eod
   name: astraea_eod
   priority: 0
   roles:
@@ -1661,7 +1661,7 @@
     type: AwsAuth
 
 ---
-!provider
+!provider # usgs_satapi_aws
   name: usgs_satapi_aws
   priority: 0
   roles:
@@ -1720,7 +1720,7 @@
     type: AwsAuth
 
 ---
-!provider
+!provider # earth_search
   name: earth_search
   priority: 0
   roles:
@@ -1821,7 +1821,7 @@
     type: AwsAuth
 
 ---
-!provider
+!provider # earth_search_cog
   name: earth_search_cog
   priority: 0
   roles:
@@ -1873,7 +1873,7 @@
     type: HTTPDownload
     base_uri: 'https://sentinel-cogs.s3.us-west-2.amazonaws.com'
 ---
-!provider
+!provider # earth_search_gcs
   name: earth_search_gcs
   priority: 0
   roles:
@@ -1939,7 +1939,7 @@
   auth: !plugin
     type: AwsAuth
 ---
-!provider
+!provider # ecmwf
   name: ecmwf
   priority: 0
   description: ECMWF archive products
@@ -2162,7 +2162,7 @@
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---
-!provider
+!provider # cop_ads
   name: cop_ads
   priority: 0
   description: Copernicus Atmosphere Data Store
@@ -2568,7 +2568,7 @@
       format: grib
       time: '00:00'
 ---
-!provider
+!provider # cop_cds
   name: cop_cds
   priority: 0
   description: Copernicus Climate Data Store
@@ -3148,7 +3148,7 @@
       time: '00:00'
       format: netcdf
 ---
-!provider
+!provider # sara
   name: sara
   priority: 0
   description: Sentinel Australasia Regional Access
@@ -3427,7 +3427,7 @@
     type: GenericAuth
     method: basic
 ---
-!provider
+!provider # meteoblue
   name: meteoblue
   priority: 0
   roles:
@@ -3512,7 +3512,7 @@
     type: HttpQueryStringAuth
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
 ---
-!provider
+!provider # cop_dataspace
   name: cop_dataspace
   priority: 0
   description: Copernicus Data Space Ecosystem
@@ -3816,7 +3816,7 @@
       productType: '{productType}'
       collection: '{collection}'
 ---
-!provider
+!provider # planetary_computer
   name: planetary_computer
   priority: 0
   roles:
@@ -3869,7 +3869,7 @@
     headers:
       Ocp-Apim-Subscription-Key: "{apikey}"
 ---
-!provider
+!provider # hydroweb_next
   name: hydroweb_next
   priority: 0
   roles:
@@ -3915,7 +3915,7 @@
     headers:
       X-API-Key: "{apikey}"
 ---
-!provider
+!provider # wekeo
   name: wekeo
   priority: 0
   roles:
@@ -6854,7 +6854,7 @@
         outputs_extension: .tar
 
 ---
-!provider
+!provider # creodias_s3
   name: creodias_s3
   priority: 0
   description: CloudFerro DIAS data through S3 protocol
