@@ -1914,6 +1914,7 @@
     S2_MSI_L1C:
       productType: sentinel-s2-l1c
       metadata_mapping:
+        id: '$.properties."sentinel:product_id"'
         title: '$.properties."sentinel:product_id"'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'

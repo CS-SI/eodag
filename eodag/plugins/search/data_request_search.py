@@ -108,7 +108,7 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
-        self.download_info: Dict[str, Any] = {}
+
         self.data_request_id = None
 
     def discover_product_types(self) -> Optional[Dict[str, Any]]:
@@ -386,15 +386,6 @@ class DataRequestSearch(Search):
             p.properties["orderLink"] = p.properties["orderLink"].replace(
                 "requestJobId", str(data_request_id)
             )
-            if self.config.products[product_type].get("storeDownloadUrl", False):
-                # store download information to retrieve it later in case search by id
-                # is not possible
-                self.download_info[p.properties["id"]] = {
-                    "requestJobId": data_request_id,
-                    "orderLink": p.properties["orderLink"],
-                    "downloadLink": p.properties["downloadLink"],
-                    "provider": self.provider,
-                }
         return products, total_items_nb
 
     def _check_uses_custom_filters(self, product_type: str) -> bool:

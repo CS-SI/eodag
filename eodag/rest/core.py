@@ -15,12 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import collections
 import datetime
 import logging
 import os
 import re
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Deque, Dict, List, Optional, cast
 
+import boto3
 import dateutil
 from fastapi import Request
 from fastapi.responses import StreamingResponse
@@ -46,7 +48,12 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import StreamResponse, _deprecated, dict_items_recursive_apply
+from eodag.utils import (
+    DEFAULT_DEQUE_MAX_LEN,
+    StreamResponse,
+    _deprecated,
+    dict_items_recursive_apply,
+)
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -65,6 +72,33 @@ crunchers = {
     "filterLatestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
     "filterOverlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
+
+
+class CacheRecord:
+    """cache record"""
+
+    provider: str
+    product_type: str
+    results: SearchResult
+
+
+max_len = int(
+    os.getenv("EODAG_SEARCH_RESULTS_CACHE_MAXLEN", str(DEFAULT_DEQUE_MAX_LEN))
+)
+cached_search_results: Deque[CacheRecord] = collections.deque(maxlen=max_len)
+use_redis = False
+if os.getenv("REDIS_HOST", None):
+    use_redis = True
+
+if use_redis:
+    import pickle
+
+    import redis
+
+    # more config parameters could be added depending on redis used
+    REDIS_HOST = os.getenv("REDIS_HOST")
+    REDIS_PORT = os.getenv("REDIS_PORT", 6379)
+    redis_instance = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
 
 
 @_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
@@ -98,6 +132,34 @@ def format_product_types(product_types: List[Dict[str, Any]]) -> str:
     for pt in product_types:
         result.append(f'* *__{pt["ID"]}__*: {pt["abstract"]}')
     return "\n".join(sorted(result))
+
+
+def _add_to_cache(product_type: str, provider: Optional[str], products: SearchResult):
+    if len(products) == 0:
+        return
+    if use_redis:
+        for product in products:
+            auth = getattr(product, "downloader_auth", None)
+            if auth and getattr(auth, "s3_client", None):
+                auth.s3_client = None  # cannot be pickled
+            try:
+                # remove register_downloader method type because it causes problems at cache retrieval
+                delattr(product, "register_downloader")
+            except AttributeError:
+                logger.debug("no register downloader to remove")
+            pickled_product = pickle.dumps(product)
+            if not provider:
+                provider = product.provider
+            cache_key = f"{product_type}_{provider}_{product.properties['id']}"
+            redis_instance.set(cache_key, pickled_product)
+    else:
+        cache_record = CacheRecord()
+        if not provider:
+            provider = products[0].provider
+        cache_record.provider = provider
+        cache_record.product_type = product_type
+        cache_record.results = products
+        cached_search_results.append(cache_record)
 
 
 def search_stac_items(
@@ -183,6 +245,8 @@ def search_stac_items(
         search_results = SearchResult([])
         total = 0
 
+    _add_to_cache(eodag_args.productType, eodag_args.provider, search_results)
+
     for record in search_results:
         record.product_type = eodag_api.get_alias_from_product_type(record.product_type)
 
@@ -207,6 +271,73 @@ def search_stac_items(
     return items
 
 
+def _find_best_provider(providers: List[str], product_type) -> str:
+    if len(providers) == 1:
+        return providers[0]
+    plugins = eodag_api._plugins_manager.get_search_plugins(product_type)
+    for plugin in plugins:
+        if plugin.provider in providers:
+            return plugin.provider
+
+
+def _recreate_s3_client(product: EOProduct):
+    auth = getattr(product, "auth", None)
+    if auth and hasattr(auth, "s3_client"):
+        base_uri = getattr(product, "downloader").config.base_uri
+        auth_dict = auth.authenticate()
+        auth.s3_client = boto3.client(
+            "s3",
+            endpoint_url=base_uri,
+            **auth_dict,
+        )
+
+
+def _retrieve_from_cache(
+    provider: Optional[str], product_type: str, item_id: str
+) -> Optional[EOProduct]:
+    if use_redis:
+        if provider:
+            cache_key = f"{product_type}_{provider}_{item_id}"
+            if redis_instance.exists(cache_key):
+                logger.debug("product %s retrieved from redis cache", item_id)
+                product = pickle.loads(redis_instance.get(cache_key))
+                _recreate_s3_client(product)
+                return product
+            else:
+                return None
+        else:
+            cache_key_pattern = f"{product_type}_*_{item_id}"
+            keys = redis_instance.scan_iter(cache_key_pattern)
+            providers = [
+                key.decode().replace(f"{product_type}_", "").replace(f"_{item_id}", "")
+                for key in keys
+            ]
+            provider = _find_best_provider(providers, product_type)
+            cache_key = f"{product_type}_{provider}_{item_id}"
+            logger.debug(
+                "product %s of provider %s retrieved from redis cache",
+                item_id,
+                provider,
+            )
+            product = pickle.loads(redis_instance.get(cache_key))
+            _recreate_s3_client(product)
+            return product
+    else:
+        if not provider:
+            providers = [result.provider for result in cached_search_results]
+            provider = _find_best_provider(providers, product_type)
+        for stored_record in reversed(cached_search_results):
+            if (
+                stored_record.provider == provider
+                and product_type == stored_record.product_type
+            ):
+                for p in stored_record.results:
+                    if p.properties["id"] == item_id:
+                        logger.debug("product %s retrieved from cache", item_id)
+                        return p
+        return None
+
+
 def download_stac_item(
     catalogs: List[str],
     item_id: str,
@@ -229,16 +360,19 @@ def download_stac_item(
     """
     product_type = catalogs[0]
 
-    search_results, _ = eodag_api.search(
-        id=item_id, productType=product_type, provider=provider, **kwargs
-    )
-    if len(search_results) > 0:
-        product = cast(EOProduct, search_results[0])
-    else:
-        raise NotAvailableError(
-            f"Could not find {item_id} item in {product_type} collection"
-            + (f" for provider {provider}" if provider else "")
+    product = _retrieve_from_cache(provider, product_type, item_id)
+    if not product:
+        logger.debug("product %s not found in cache, executing search by id", item_id)
+        search_results, _ = eodag_api.search(
+            id=item_id, productType=product_type, provider=provider, **kwargs
         )
+        if len(search_results) > 0:
+            product = cast(EOProduct, search_results[0])
+        else:
+            raise NotAvailableError(
+                f"Could not find {item_id} item in {product_type} collection"
+                + (f" for provider {provider}" if provider else "")
+            )
 
     try:
         download_stream = cast(
