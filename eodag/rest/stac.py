@@ -36,6 +36,7 @@ from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
+    ONLINE_STATUS,
     format_metadata,
     get_metadata_path,
 )
@@ -335,10 +336,11 @@ class StacItem(StacCommon):
         assets: Dict[str, Any] = {}
 
         # update download link with up-to-date query-args
-        assets["downloadLink"] = {
-            "title": "Download link",
+        assets["data"] = {
+            "title": "data",
             "href": downloadlink_href,
             "type": "application/zip",
+            "storage:tier": product.properties.get("storageStatus", ONLINE_STATUS),
         }
 
         # move origin asset urls to alternate links and replace with eodag-server ones

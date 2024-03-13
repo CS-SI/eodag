@@ -149,7 +149,9 @@ provider:
 items:
   type: FeatureCollection
   stac_version: "{stac_version}"
-  stac_extensions: []
+  stac_extensions: [
+    "https://stac-extensions.github.io/storage/v1.0.0/schema.json"
+  ]
   features:
     - "{item}"
   links:
