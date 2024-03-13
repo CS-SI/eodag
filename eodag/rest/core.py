@@ -36,7 +36,7 @@ from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
-from eodag.rest.types.stac_queryables import StacQueryableProperty
+from eodag.rest.types.stac_queryables import StacQueryableProperty, StacQueryables
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils import (
     Cruncher,
@@ -46,7 +46,12 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import StreamResponse, _deprecated, dict_items_recursive_apply
+from eodag.utils import (
+    StreamResponse,
+    _deprecated,
+    deepcopy,
+    dict_items_recursive_apply,
+)
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -487,9 +492,12 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     )
 
 
-def fetch_collection_queryable_properties(
-    collection_id: Optional[str] = None, provider: Optional[str] = None, **kwargs: Any
-) -> Dict[str, StacQueryableProperty]:
+def get_queryables(
+    request: Request,
+    collection_id: Optional[str] = None,
+    provider: Optional[str] = None,
+    **kwargs: Any,
+) -> StacQueryables:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
@@ -525,14 +533,28 @@ def fetch_collection_queryable_properties(
     python_queryables.pop("start")
     python_queryables.pop("end")
 
-    stac_queryables: Dict[str, StacQueryableProperty] = dict()
+    stac_queryables = deepcopy(StacQueryables.default_properties)
     for param, queryable in python_queryables.items():
         stac_param = EODAGSearch.to_stac(param)
+        # only keep "datetime" queryable for dates
+        if stac_param in stac_queryables or stac_param in (
+            "start_datetime",
+            "end_datetime",
+        ):
+            continue
+
         stac_queryables[
             stac_param
         ] = StacQueryableProperty.from_python_field_definition(stac_param, queryable)
 
-    return stac_queryables
+    if collection_id:
+        stac_queryables.pop("collections")
+
+    return StacQueryables(
+        q_id=request.state.url,
+        additional_properties=bool(not collection_id),
+        properties=stac_queryables,
+    )
 
 
 @_deprecated(
