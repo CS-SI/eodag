@@ -34,6 +34,7 @@ from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.plugins.download.base import Download
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryableProperty
@@ -46,7 +47,7 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import StreamResponse, _deprecated, dict_items_recursive_apply
+from eodag.utils import _deprecated, dict_items_recursive_apply
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -194,9 +195,9 @@ def search_stac_items(
         root=request.state.url_root,
     ).get_stac_items(
         search_results=search_results,
-        total=total,
+        total=total or 0,
         next_link=get_next_link(
-            request, search_request, total, eodag_args.items_per_page
+            request, search_request, total or 0, eodag_args.items_per_page
         ),
         catalog=dict(
             catalog.get_stac_catalog(),
@@ -240,12 +241,15 @@ def download_stac_item(
             + (f" for provider {provider}" if provider else "")
         )
 
+    if not product.downloader_auth:
+        raise ValueError(
+            f"Auth plugin is missing with provider {product.provider}"
+            f" and downloader {type(product.downloader)}"
+        )
+
     try:
-        download_stream = cast(
-            StreamResponse,
-            product.downloader._stream_download_dict(
-                product, auth=product.downloader_auth.authenticate(), asset=asset
-            ),
+        download_stream = cast(Download, product.downloader)._stream_download_dict(
+            product, auth=product.downloader_auth.authenticate(), asset=str(asset)
         )
     except NotImplementedError:
         logger.warning(
@@ -253,7 +257,7 @@ def download_stac_item(
             product.downloader,
         )
         download_stream = file_to_stream(
-            eodag_api.download(product, extract=False, asset=asset)
+            eodag_api.download(product, extract=False, asset=str(asset))
         )
 
     return StreamingResponse(
