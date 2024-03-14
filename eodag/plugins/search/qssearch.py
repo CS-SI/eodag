@@ -269,13 +269,17 @@ class QueryStringSearch(Search):
                     "generic_product_type_parsable_metadata"
                 ]
             )
-            self.config.discover_product_types[
+            if (
                 "single_product_type_parsable_metadata"
-            ] = mtd_cfg_as_conversion_and_querypath(
+                in self.config.discover_product_types
+            ):
                 self.config.discover_product_types[
                     "single_product_type_parsable_metadata"
-                ]
-            )
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_product_types[
+                        "single_product_type_parsable_metadata"
+                    ]
+                )
 
         # parse jsonpath on init: queryables discovery
         if (
@@ -386,7 +390,9 @@ class QueryStringSearch(Search):
                         for match in self.config.discover_product_types[
                             "results_entry"
                         ].find(resp_as_json)
-                    ][0]
+                    ]
+                    if result and isinstance(result[0], list):
+                        result = result[0]
 
                     for product_type_result in result:
                         # providers_config extraction

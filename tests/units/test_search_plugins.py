@@ -448,6 +448,37 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # restore configuration
         search_plugin.config.discover_product_types["results_entry"] = results_entry
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_with_query_param(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must return a well formatted dict"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "wekeo_cmems"
+        search_plugin = self.get_search_plugin(provider=provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "foo_collection",
+                        "metadata": {"title": "The FOO collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "foo_collection",
+                "metadata": {"title": "The FOO collection"},
+            },
+        ]
+        search_plugin.discover_product_types()
+        mock__request.assert_called_with(
+            url="https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+        )
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
