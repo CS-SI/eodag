@@ -54,6 +54,7 @@ from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
     dict_items_recursive_apply,
+    format_string,
     get_geometry_from_various,
     get_timestamp,
     items_recursive_apply,
@@ -924,7 +925,7 @@ def properties_from_json(
     # Resolve templates
     for metadata, template in templates.items():
         try:
-            properties[metadata] = template.format(**properties)
+            properties[metadata] = format_string(metadata, template, **properties)
         except ValueError:
             logger.warning(
                 f"Could not parse {metadata} ({template}) using product properties"
