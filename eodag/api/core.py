@@ -698,13 +698,13 @@ class EODataAccessGateway:
                 # providers not skipped here should be user-modified
                 # or not in ext_product_types_conf (if eodag system conf != eodag conf used for ext_product_types_conf)
 
-            # discover product types for user configured provider
-            provider_ext_product_types_conf = (
-                self.discover_product_types(provider=provider) or {}
-            )
-
-            # update eodag product types list with new conf
-            self.update_product_types_list(provider_ext_product_types_conf)
+            if not already_fetched:
+                # discover product types for user configured provider
+                provider_ext_product_types_conf = (
+                    self.discover_product_types(provider=provider) or {}
+                )
+                # update eodag product types list with new conf
+                self.update_product_types_list(provider_ext_product_types_conf)
 
     def discover_product_types(
         self, provider: Optional[str] = None

@@ -715,17 +715,25 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return bbox
 
         @staticmethod
-        def convert_split_corine_id(product_id: str) -> str:
-            if "clc" in product_id:
-                year = product_id.split("_")[1][3:]
-                product_type = "Corine Land Cover " + year
+        def convert_dates_from_cmems_id(product_id: str):
+            date_format_1 = "[0-9]{10}"
+            date_format_2 = "[0-9]{8}"
+            dates = re.findall(date_format_1, product_id)
+            if dates:
+                date = dates[0]
             else:
-                years = [1990, 2000, 2006, 2012, 2018]
-                end_year = product_id[1:5]
-                i = years.index(int(end_year))
-                start_year = str(years[i - 1])
-                product_type = "Corine Land Change " + start_year + " " + end_year
-            return product_type
+                dates = re.findall(date_format_2, product_id)
+                date = dates[0]
+            if len(date) == 10:
+                date_time = datetime.strptime(dates[0], "%Y%m%d%H")
+            else:
+                date_time = datetime.strptime(dates[0], "%Y%m%d")
+            return {
+                "min_date": date_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "max_date": (date_time + timedelta(days=1)).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+            }
 
         @staticmethod
         def convert_to_datetime_dict(

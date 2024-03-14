@@ -172,7 +172,6 @@ def search_stac_items(
 
     elif time_interval_overlap(eodag_args, catalog):
         criteria = {**catalog.search_args, **eodag_args.model_dump(exclude_none=True)}
-
         search_results, total = eodag_api.search(**criteria)
         if search_request.crunch:
             search_results = crunch_products(

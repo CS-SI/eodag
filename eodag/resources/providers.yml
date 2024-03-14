@@ -5890,7 +5890,9 @@
       productType:
         - '{{"dataset_id": "{productType}"}}'
         - '$.null'
-      id: '$.id'
+      id:
+        - '{{"min_date": {id#dates_from_cmems_id}["min_date"], "max_date": {id#dates_from_cmems_id}["max_date"]}}'
+        - '{$.id#remove_extension}'
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
@@ -5906,7 +5908,7 @@
       downloadLink: '$.properties.location'
       title: '$.id'
       storageStatus: 'OFFLINE'
-      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "{productType}"}}'
+      orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'

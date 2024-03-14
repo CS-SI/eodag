@@ -573,6 +573,26 @@ class TestMetadataFormatter(unittest.TestCase):
             str([]),
         )
 
+    def test_convert_dates_from_cmems_id(self):
+        to_format = "{product_id#dates_from_cmems_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format, product_id="mfwamglocep_2021121102_R20211212_12H.nc"
+            ),
+            str(
+                {"min_date": "2021-12-11T02:00:00Z", "max_date": "2021-12-12T02:00:00Z"}
+            ),
+        )
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                product_id="glo12_rg_1d-m_20220601-20220601_3D-uovo_hcst_R20220615.nc",
+            ),
+            str(
+                {"min_date": "2022-06-01T00:00:00Z", "max_date": "2022-06-02T00:00:00Z"}
+            ),
+        )
+
 
 class TestMetadataMappingFunctions(unittest.TestCase):
     def test_get_provider_queryable_key(self):

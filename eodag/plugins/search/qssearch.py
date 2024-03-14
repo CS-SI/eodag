@@ -497,6 +497,13 @@ class QueryStringSearch(Search):
     def _get_product_type_metadata_from_single_collection_endpoint(
         self, product_type: str
     ) -> Dict[str, Any]:
+        """
+        retrieves additional product type information from an endpoint returning data for a single collection
+        :param product_type: product type
+        :type product_type: str
+        :return: product types and their metadata
+        :rtype: Dict[str, Any]
+        """
         single_collection_url = self.config.discover_product_types[
             "single_collection_fetch_url"
         ].format(productType=product_type)
@@ -1249,6 +1256,14 @@ class PostJsonSearch(QueryStringSearch):
                 decoded_link = unquote(product.properties["downloadLink"])
                 if decoded_link[0] == "{":  # not a url but a dict
                     product.properties["_dc_qs"] = product.properties["downloadLink"]
+            # workaround to add product type to wekeo cmems order links
+            if (
+                "orderLink" in product.properties
+                and "productType" in product.properties["orderLink"]
+            ):
+                product.properties["orderLink"] = product.properties[
+                    "orderLink"
+                ].replace("productType", product.product_type)
         return results
 
     def collect_search_urls(
