@@ -947,6 +947,8 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             mock_request.return_value, timeout=60, context=ssl_ctx
         )
 
+        del self.onda_search_plugin.config.ssl_verify
+
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -1471,6 +1473,8 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             verify=False,
         )
+
+        del self.search_plugin.config.ssl_verify
 
     def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
         """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""
