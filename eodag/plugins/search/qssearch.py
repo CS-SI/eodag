@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Iterable
 from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
@@ -28,6 +27,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Sequence,
     Set,
     Tuple,
     TypedDict,
@@ -873,7 +873,7 @@ class QueryStringSearch(Search):
                 )
                 result = (
                     [etree.tostring(element_or_tree=entry) for entry in results_xpath]
-                    if isinstance(results_xpath, Iterable)
+                    if isinstance(results_xpath, Sequence)
                     else []
                 )
 
@@ -893,7 +893,7 @@ class QueryStringSearch(Search):
                         )
                         total_nb_results = (
                             total_nb_results_xpath
-                            if isinstance(total_nb_results_xpath, Iterable)
+                            if isinstance(total_nb_results_xpath, Sequence)
                             else []
                         )[0]
                         _total_items_nb = int(total_nb_results)
