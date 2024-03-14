@@ -1882,6 +1882,7 @@ class EODataAccessGateway:
                     pattern = re.compile(r"[^\w,]+")
                     try:
                         guesses = self.guess_product_type(
+                            intersect=False,
                             **{
                                 k: pattern.sub("", str(v).upper())
                                 for k, v in eo_product.properties.items()
@@ -1895,7 +1896,7 @@ class EODataAccessGateway:
                                     "keywords",
                                 ]
                                 and v is not None
-                            }
+                            },
                         )
                     except NoMatchingProductType:
                         pass
