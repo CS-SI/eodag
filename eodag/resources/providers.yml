@@ -5417,6 +5417,18 @@
       metadata_mapping:
         id: '$.id'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DTED__2023_1"}}'
+    CLMS_GLO_NDVI_333M:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
+    CLMS_GLO_NDVI_1KM_LTS:
+      productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
+      metadata_mapping:
+        id: '$.id'
+        <<: *clms_dates
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
     CLMS_CORINE:
       productType: EO:CLMS:DAT:CORINE
       providerProductType: Corine Land Cover 2018
