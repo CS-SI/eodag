@@ -48,6 +48,7 @@ import geojson
 import orjson
 import requests
 import yaml
+from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import create_model
 from pydantic.fields import FieldInfo
@@ -93,6 +94,7 @@ from eodag.utils.constraints import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
+    PluginImplementationError,
     RequestError,
     TimeOutError,
     ValidationError,
@@ -910,55 +912,60 @@ class QueryStringSearch(Search):
                 resp_as_json = response.json()
                 if next_page_url_key_path:
                     path_parsed = next_page_url_key_path
-                    try:
-                        self.next_page_url = path_parsed.find(resp_as_json)[0].value
+                    found_paths = path_parsed.find(resp_as_json)
+                    if found_paths and not isinstance(found_paths, int):
+                        self.next_page_url = found_paths[0].value
                         logger.debug(
                             "Next page URL collected and set for the next search",
                         )
-                    except IndexError:
+                    else:
                         logger.debug("Next page URL could not be collected")
                 if next_page_query_obj_key_path:
                     path_parsed = next_page_query_obj_key_path
-                    try:
-                        self.next_page_query_obj = path_parsed.find(resp_as_json)[
-                            0
-                        ].value
+                    found_paths = path_parsed.find(resp_as_json)
+                    if found_paths and not isinstance(found_paths, int):
+                        self.next_page_query_obj = found_paths[0].value
                         logger.debug(
                             "Next page Query-object collected and set for the next search",
                         )
-                    except IndexError:
+                    else:
                         logger.debug("Next page Query-object could not be collected")
                 if next_page_merge_key_path:
                     path_parsed = next_page_merge_key_path
-                    try:
-                        self.next_page_merge = path_parsed.find(resp_as_json)[0].value
+                    found_paths = path_parsed.find(resp_as_json)
+                    if found_paths and not isinstance(found_paths, int):
+                        self.next_page_merge = found_paths[0].value
                         logger.debug(
                             "Next page merge collected and set for the next search",
                         )
-                    except IndexError:
+                    else:
                         logger.debug("Next page merge could not be collected")
 
                 results_entry = string_to_jsonpath(
                     self.config.results_entry, force=True
                 )
-                try:
-                    result = results_entry.find(resp_as_json)[0].value
-                except Exception:
+                found_entry_paths = results_entry.find(resp_as_json)
+                if found_entry_paths and not isinstance(found_entry_paths, int):
+                    result = found_entry_paths[0].value
+                else:
                     result = []
                 if not isinstance(result, list):
                     result = [result]
 
                 if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
-                    try:
-                        _total_items_nb = total_items_nb_key_path_parsed.find(
-                            resp_as_json
-                        )[0].value
+                    found_total_items_nb_paths = total_items_nb_key_path_parsed.find(
+                        resp_as_json
+                    )
+                    if found_total_items_nb_paths and not isinstance(
+                        found_total_items_nb_paths, int
+                    ):
+                        _total_items_nb = found_total_items_nb_paths[0].value
                         if getattr(self.config, "merge_responses", False):
                             total_items_nb = _total_items_nb or 0
                         else:
                             total_items_nb += _total_items_nb or 0
-                    except IndexError:
+                    else:
                         logger.debug(
                             "Could not extract total_items_nb from search results"
                         )
@@ -1036,7 +1043,17 @@ class QueryStringSearch(Search):
             count_results = response.json()
             if isinstance(count_results, dict):
                 path_parsed = self.config.pagination["total_items_nb_key_path"]
-                total_results = path_parsed.find(count_results)[0].value
+                if not isinstance(path_parsed, JSONPath):
+                    raise PluginImplementationError(
+                        "total_items_nb_key_path must be parsed to JSONPath on plugin init"
+                    )
+                found_paths = path_parsed.find(count_results)
+                if found_paths and not isinstance(found_paths, int):
+                    total_results = found_paths[0].value
+                else:
+                    raise MisconfiguredError(
+                        "Could not get results count from response using total_items_nb_key_path"
+                    )
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
         return total_results
