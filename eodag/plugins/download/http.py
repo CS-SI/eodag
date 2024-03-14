@@ -176,7 +176,7 @@ class HTTPDownload(Download):
             except JSONDecodeError:
                 if parts.query:
                     query_dict = parse_qs(parts.query)
-            order_url = parts._replace(query=None).geturl()
+            order_url = parts._replace(query="").geturl()
             if query_dict:
                 order_kwargs["json"] = query_dict
         else:
@@ -331,7 +331,7 @@ class HTTPDownload(Download):
         if status_request_method == "POST":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderStatusLink"]))
-            status_url = parts._replace(query=None).geturl()
+            status_url = parts._replace(query="").geturl()
             query_dict = parse_qs(parts.query)
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
@@ -957,7 +957,7 @@ class HTTPDownload(Download):
             query_dict = parse_qs(parts.query)
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
-            req_url = parts._replace(query=None).geturl()
+            req_url = parts._replace(query="").geturl()
             req_kwargs: Dict[str, Any] = {"json": query_dict} if query_dict else {}
         else:
             req_url = url
