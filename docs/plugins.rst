@@ -70,6 +70,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | wekeo              | DataRequestSearch     | TokenAuth                | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
+| eumetsat_ds        | QueryStringSearch     | TokenAuth                | HTTPDownload   |
++--------------------+-----------------------+--------------------------+----------------+
 
 .. _creating_plugins:
 
