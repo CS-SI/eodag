@@ -521,6 +521,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         mock_requests_session.assert_not_called()
         # re-enable product download
@@ -550,8 +551,41 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         mock_requests_session.assert_not_called()
+
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_ignore_assets_without_ssl(
+        self, mock_requests_get, mock_requests_head
+    ):
+        """HTTPDownload.download() must ignore assets if configured to"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = (
+            self.product.remote_location
+        ) = "http://somewhere/download_from_location"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/download_asset"}})
+        mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
+            b"some content"
+        )
+        # download asset if ssl_verify = False
+        plugin.config.ssl_verify = False
+
+        plugin.download(self.product, outputs_prefix=self.output_dir)
+        mock_requests_get.assert_called_once_with(
+            self.product.assets["foo"]["href"],
+            stream=True,
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=False,
+        )
+        del plugin.config.ssl_verify
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
@@ -596,6 +630,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         # Check if the HEAD request has been called once for size & filename request
         mock_requests_head.assert_called_once_with(
@@ -973,6 +1008,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
@@ -995,6 +1031,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth=auth,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         # orderLink with query query args
         mock_request.reset_mock()
@@ -1007,6 +1044,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             json={"foo": ["bar"]},
+            verify=True,
         )
 
     def test_plugins_download_http_order_status(self):
@@ -1431,6 +1469,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             self.product.properties["tileInfo"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         self.assertEqual(mock_get_authenticated_objects.call_count, 2)
         mock_get_authenticated_objects.assert_any_call(
@@ -1511,6 +1550,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             self.product.properties["tileInfo"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "example", "", {}

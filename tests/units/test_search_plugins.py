@@ -17,6 +17,7 @@
 # limitations under the License.
 import json
 import re
+import ssl
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -907,6 +908,47 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # products count non extracted from search results as count endpoint is specified
         self.assertFalse(hasattr(self.onda_search_plugin, "total_items_nb"))
 
+    @mock.patch("eodag.plugins.search.qssearch.get_ssl_context", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.Request", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.cast", autospec=True)
+    def test_plugins_search_odatav4search_with_ssl_context(
+        self, mock_cast, mock_urlopen, mock_request, mock_get_ssl_context
+    ):
+        """A query with a ODataV4Search (here onda) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        self.onda_search_plugin.config.ssl_verify = False
+        mock_cast.return_value.json.return_value = 2
+
+        ssl_ctx = ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = ssl.CERT_NONE
+
+        mock_request.return_value = mock.Mock()
+
+        # Mocking return value of get_ssl_context
+        mock_get_ssl_context.return_value = ssl_ctx
+
+        self.onda_search_plugin.query(
+            page=1,
+            items_per_page=2,
+            auth=self.onda_auth_plugin,
+            # custom query argument that must be mapped using discovery_metata.search_param
+            foo="bar",
+            **self.search_criteria_s2_msi_l1c,
+        )
+
+        mock_get_ssl_context.assert_called_with(False)
+
+        # # Asserting that get_ssl_context has been called
+        self.assertEqual(mock_get_ssl_context.call_count, 2)
+
+        # Asserting that urlopen has been called with the correct arguments
+        mock_urlopen.assert_called_with(
+            mock_request.return_value, timeout=60, context=ssl_ctx
+        )
+
+        del self.onda_search_plugin.config.ssl_verify
+
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -959,7 +1001,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
             products[1].properties["uid"],
         )
         mock_requests_get.assert_called_with(
-            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            metadata_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT, verify=True
         )
         # we check that two requests have been called, one per product
         self.assertEqual(mock_requests_get.call_count, 2)
@@ -1319,6 +1361,7 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             auth=self.search_plugin.auth,
+            verify=True,
         )
         self.assertEqual(estimate, 1)
         self.assertIsInstance(products[0], EOProduct)
@@ -1363,6 +1406,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
             headers=getattr(self.search_plugin.auth, "headers", ""),
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         keywords = {
             "format": "GeoTiff100mt",
@@ -1385,6 +1429,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             },
             headers=getattr(self.search_plugin.auth, "headers", ""),
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
@@ -1395,6 +1440,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             self.search_plugin.config.status_url + "123",
             headers=getattr(self.search_plugin.auth, "headers", ""),
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         assert successful
         mock_requests_get.return_value = MockResponse(
@@ -1412,7 +1458,23 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             ),
             headers=getattr(self.search_plugin.auth, "headers", ""),
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_get_result_data_ssl_verify_false(self, mock_requests_get):
+        self.search_plugin.config.ssl_verify = False
+        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
+        mock_requests_get.assert_called_with(
+            self.search_plugin.config.result_url.format(
+                jobId="123", items_per_page=5, page=0
+            ),
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
+            verify=False,
+        )
+
+        del self.search_plugin.config.ssl_verify
 
     def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
         """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""

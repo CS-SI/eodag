@@ -281,6 +281,7 @@ class PluginConfig(yaml.YAMLObject):
     max_connections: int  # StaticStacSearch
     timeout: float  # StaticStacSearch
     s3_bucket: str  # CreodiasS3Search
+    ssl_verify: bool
 
     # download -------------------------------------------------------------------------
     base_uri: str

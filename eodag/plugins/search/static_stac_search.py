@@ -71,6 +71,7 @@ class StaticStacSearch(StacSearch):
         super(StaticStacSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault("max_connections", 100)
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
+        self.config.__dict__.setdefault("ssl_verify", True)
 
     def discover_product_types(self) -> Dict[str, Any]:
         """Fetch product types is disabled for `StaticStacSearch`
@@ -95,6 +96,7 @@ class StaticStacSearch(StacSearch):
             recursive=True,
             max_connections=self.config.max_connections,
             timeout=self.config.timeout,
+            ssl_verify=self.config.ssl_verify,
         )
         nb_features = len(features)
         feature_collection = geojson.FeatureCollection(features)

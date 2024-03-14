@@ -33,6 +33,7 @@ import mimetypes
 import os
 import re
 import shutil
+import ssl
 import string
 import sys
 import types
@@ -1437,3 +1438,22 @@ def guess_file_type(file: str) -> Optional[str]:
     mimetypes.add_type("text/xml", ".xsd")
     mime_type, _ = mimetypes.guess_type(file, False)
     return mime_type
+
+
+def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
+
+    """
+    Returns an SSL context based on ssl_verify argument.
+    :param ssl_verify: ssl_verify parameter
+    :type ssl_verify: bool
+    :returns: An SSL context object.
+    :rtype: ssl.SSLContext
+    """
+    ctx = ssl.create_default_context()
+    if not ssl_verify:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    else:
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
+    return ctx

@@ -88,6 +88,7 @@ from eodag.utils import (
     cached_parse,
     sanitize,
     parse_header,
+    get_ssl_context,
 )
 from eodag.utils.exceptions import (
     AddressNotFound,
