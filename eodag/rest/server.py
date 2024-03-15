@@ -49,8 +49,8 @@ from eodag.config import load_stac_api_config
 from eodag.rest.core import (
     download_stac_item,
     eodag_api_init,
-    fetch_collection_queryable_properties,
     get_detailled_collections_list,
+    get_queryables,
     get_stac_api_version,
     get_stac_catalogs,
     get_stac_collection_by_id,
@@ -60,7 +60,6 @@ from eodag.rest.core import (
     search_stac_items,
 )
 from eodag.rest.types.eodag_search import EODAGSearch
-from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
 from eodag.rest.utils import format_pydantic_error, str2json, str2list
 from eodag.utils import parse_header, update_nested_dict
@@ -511,17 +510,12 @@ def list_collection_queryables(
     :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
-    kwargs = dict(request.query_params)
-    provider = kwargs.pop("provider", None)
+    additional_params = dict(request.query_params)
+    provider = additional_params.pop("provider", None)
 
-    queryables = StacQueryables(q_id=request.state.url, additional_properties=False)
-
-    collection_queryables = fetch_collection_queryable_properties(
-        collection_id, provider, **kwargs
+    queryables = get_queryables(
+        request, collection=collection_id, provider=provider, **additional_params
     )
-    for key, collection_queryable in collection_queryables.items():
-        queryables[key] = collection_queryable
-    queryables.properties.pop("collections")
 
     return jsonable_encoder(queryables)
 
@@ -739,14 +733,9 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
-    query_params = request.query_params.items()
-    additional_params = dict(query_params)
+    additional_params = dict(request.query_params.items())
     additional_params.pop("provider", None)
-    queryables = StacQueryables(q_id=request.state.url)
-    if provider:
-        queryables.properties.update(
-            fetch_collection_queryable_properties(None, provider, **additional_params)
-        )
+    queryables = get_queryables(request, provider=provider, **additional_params)
 
     return jsonable_encoder(queryables)
 

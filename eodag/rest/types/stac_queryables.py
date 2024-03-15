@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -87,48 +87,28 @@ class StacQueryables(BaseModel):
     description: str = Field(
         default="Queryable names for the EODAG STAC API Item Search filter."
     )
-    properties: Dict[str, StacQueryableProperty] = Field(
-        default={
-            "ids": StacQueryableProperty(
-                description="ID",
-                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/id",
-            ),
-            "collections": StacQueryableProperty(
-                description="Collection",
-                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/collection",
-            ),
-            "geometry": StacQueryableProperty(
-                description="Geometry",
-                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
-            ),
-            "datetime": StacQueryableProperty(
-                description="Datetime - use parameters year, month, day, time instead if available",
-                ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
-            ),
-        }
-    )
+    default_properties: ClassVar[Dict[str, StacQueryableProperty]] = {
+        "id": StacQueryableProperty(
+            description="ID",
+            ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/id",
+        ),
+        "collection": StacQueryableProperty(
+            description="Collection",
+            ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/collection",
+        ),
+        "geometry": StacQueryableProperty(
+            description="Geometry",
+            ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
+        ),
+        "datetime": StacQueryableProperty(
+            description="Datetime - use parameters year, month, day, time instead if available",
+            ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
+        ),
+    }
+    properties: Dict[str, StacQueryableProperty] = Field()
     additional_properties: bool = Field(
         default=True, serialization_alias="additionalProperties"
     )
 
-    def get_properties(self) -> Dict[str, StacQueryableProperty]:
-        """Get the queryable properties.
-
-        :returns: A dictionary containing queryable properties.
-        :rtype: typing.Dict[str, StacQueryableProperty]
-        """
-        properties = {}
-        for key, property in self.properties.items():
-            property = StacQueryableProperty(
-                description=property.description, type=property.type
-            )
-            properties[key] = property
-        return properties
-
     def __contains__(self, name: str) -> bool:
         return name in self.properties
-
-    def __setitem__(self, name: str, qprop: StacQueryableProperty) -> None:
-        # only keep "datetime" queryable for dates
-        if name not in ("start_datetime", "end_datetime"):
-            self.properties[name] = qprop
