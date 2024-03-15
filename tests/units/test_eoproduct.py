@@ -22,7 +22,6 @@ import os
 import pathlib
 import shutil
 import tempfile
-import urllib.parse
 import zipfile
 
 import geojson
@@ -499,9 +498,7 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertEqual(
             downloadable_product.properties["otherProperty"],
-            urllib.parse.quote(
-                f"{downloadable_product.downloader.config.outputs_prefix}/also/resolved"
-            ),
+            f"{downloadable_product.downloader.config.outputs_prefix}/also/resolved",
         )
 
     def test_eoproduct_register_downloader_resolve_ignored(self):
