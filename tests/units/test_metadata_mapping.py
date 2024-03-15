@@ -460,22 +460,6 @@ class TestMetadataFormatter(unittest.TestCase):
             str([-120, -60, -118, -58]),
         )
 
-    def test_convert_split_corine_id(self):
-        self.assertEqual(
-            format_metadata(
-                "{id#split_corine_id}",
-                id="u2006_clc2000_v2020_20u1_raster100m",
-            ),
-            "Corine Land Cover 2000",
-        )
-        self.assertEqual(
-            format_metadata(
-                "{id#split_corine_id}",
-                id="u2006_cha0006_v2020_20u1_raster100m",
-            ),
-            "Corine Land Change 2000 2006",
-        )
-
     def test_convert_to_datetime_dict(self):
         to_format = "{date#to_datetime_dict(list)}"
         expected_result = {

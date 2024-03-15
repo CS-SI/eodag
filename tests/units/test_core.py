@@ -401,6 +401,7 @@ class TestCore(TestCoreBase):
         "planetary_computer",
         "hydroweb_next",
         "wekeo",
+        "wekeo_cmems",
         "creodias_s3",
     ]
 
@@ -1306,6 +1307,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
             },
             "wekeo": None,
+            "wekeo_cmems": None,
             "creodias_s3": {
                 "sortables": [
                     "startTimeFromAscendingNode",

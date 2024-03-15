@@ -474,9 +474,10 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         ]
         search_plugin.discover_product_types()
         mock__request.assert_called_with(
-            url="https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
+            verify=True,
         )
 
     @mock.patch(
@@ -1426,6 +1427,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         with open(wekeo_old_config_file, "r") as file:
             wekeo_old_config_dict = yaml.safe_load(file)
         override_config_from_mapping(providers_config, wekeo_old_config_dict)
+        self.plugins_manager = PluginManager(providers_config)
         provider = "wekeo_old"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
         self.auth_plugin = self.get_auth_plugin(provider)

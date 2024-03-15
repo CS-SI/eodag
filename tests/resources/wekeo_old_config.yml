@@ -12,6 +12,7 @@ wekeo_old:
     results_entry: content
     two_passes_id_search: true
     dates_required: true
+    ssl_verify: true
     pagination:
       start_page: 0
       max_items_per_page: 20
@@ -44,6 +45,7 @@ wekeo_old:
     token_type: json
     token_key: access_token
     request_method: GET
+    ssl_verify: true
     headers:
       Authorization: Bearer $token
   products:
