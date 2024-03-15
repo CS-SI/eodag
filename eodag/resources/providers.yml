@@ -5892,7 +5892,7 @@
         - '$.null'
       id:
         - '{{"min_date": {id#dates_from_cmems_id}["min_date"], "max_date": {id#dates_from_cmems_id}["max_date"]}}'
-        - '{$.id#remove_extension}'
+        - '$.id'
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
