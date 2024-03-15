@@ -202,7 +202,9 @@ class PluginManager:
             configs = [c for c in configs if provider == c.name]
 
         if not configs:
-            raise UnsupportedProvider
+            raise UnsupportedProvider(
+                f"This provider is not recognised by eodag: {provider}"
+            )
 
         for config in sorted(configs, key=attrgetter("priority"), reverse=True):
             yield get_plugin()
