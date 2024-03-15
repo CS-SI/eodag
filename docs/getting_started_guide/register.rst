@@ -145,6 +145,8 @@ to each provider supported by ``eodag``:
     * Copernicus_Land_Monitoring_Service_Data_Policy
     * Copernicus_Sentinel_License
     * Copernicus_ECMWF_License
-    * Copernicus_Marine_Service_Product_License
     * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
     * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
+
+
+* ``wekeo_cmems``: The registration procedure is the same as for ``wekeo``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
