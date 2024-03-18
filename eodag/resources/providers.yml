@@ -3963,7 +3963,7 @@
       X-API-Key: "{apikey}"
 
 ---
-!provider
+!provider  # wekeo
   name: wekeo
   priority: 0
   roles:
@@ -5847,7 +5847,7 @@
       response_code: 202
 
 ---
-!provider
+!provider  # wekeo_cmems
   name: wekeo_cmems
   priority: 0
   roles:

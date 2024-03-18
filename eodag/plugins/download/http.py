@@ -309,7 +309,8 @@ class HTTPDownload(Download):
                     and order_status_error_dict.items() <= status_dict.items()
                 ):
                     # order_status_error_dict is a subset of status_dict : error
-                    logger.warning(status_message)
+                    logger.error(status_message)
+                    raise DownloadError(status_message)
                 else:
                     logger.debug(status_message)
                 # check if succeeds and need search again
