@@ -3186,6 +3186,7 @@
   description: Sentinel Australasia Regional Access
   roles:
     - host
+  url: https://www.copernicus.gov.au/
   search: !plugin
     type: QueryStringSearch
     # The endpoint is based off of the collection. There is a generic endpoint,
