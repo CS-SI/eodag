@@ -139,7 +139,7 @@ to each provider supported by ``eodag``:
 
       curl --request PUT --header 'accept: application/json' --header 'Authorization: Bearer <access_token>' https://gateway.prod.wekeo2.eu/hda-broker/api/v1/termsaccepted/<licence_name>
 
-   The licence name depends on which data you want to retrieve. To use all datasets available in wekeo, the following licences have to be accepted:
+    The licence name depends on which data you want to retrieve. To use all datasets available in wekeo, the following licences have to be accepted:
 
     * EUMETSAT_Copernicus_Data_Licence
     * Copernicus_Land_Monitoring_Service_Data_Policy
@@ -147,6 +147,5 @@ to each provider supported by ``eodag``:
     * Copernicus_ECMWF_License
     * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
     * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
-
 
 * ``wekeo_cmems``: The registration procedure is the same as for ``wekeo``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
