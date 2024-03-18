@@ -25,16 +25,21 @@ from typing import TYPE_CHECKING
 import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
+from pydantic import create_model
+from pydantic.fields import FieldInfo
+from typing_extensions import Annotated, get_args
 
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.rest.stac import DEFAULT_MISSION_START_DATE
+from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
+    deepcopy,
     get_geometry_from_various,
     path_to_uri,
     sanitize,
@@ -274,3 +279,33 @@ class EcmwfApi(Api, BuildPostSearchResult):
     def clear(self) -> None:
         """Clear search context"""
         pass
+
+    def discover_queryables(
+        self, **kwargs: Any
+    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
+        """Get queryables list for ecmwf using metadata mapping
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :type kwargs: Any
+        :returns: fetched queryable parameters dict
+        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
+        """
+        metadata_mapping: Dict[str, Any] = deepcopy(
+            getattr(self.config, "metadata_mapping", {})
+        )
+        queryables = []
+        for key, mapping in metadata_mapping.items():
+            if isinstance(mapping, list):
+                queryables.append(key)
+
+        field_definitions = dict()
+        for queryable in queryables:
+            default = kwargs.get(queryable, None)
+            annotated_def = json_field_definition_to_python(
+                {}, default_value=default, required=True
+            )
+            field_definitions[queryable] = get_args(annotated_def)
+
+        python_queryables = create_model("m", **field_definitions).model_fields
+        return dict(**model_fields_to_annotated(python_queryables))

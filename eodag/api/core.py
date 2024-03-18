@@ -75,7 +75,6 @@ from eodag.utils.exceptions import (
     EodagError,
     MisconfiguredError,
     NoMatchingProductType,
-    NotAvailableError,
     PluginImplementationError,
     RequestError,
     UnsupportedProductType,
@@ -1619,8 +1618,8 @@ class EODataAccessGateway:
         for i, p in enumerate(providers):
             try:
                 self.list_queryables(p, **kwargs)
-            except NotAvailableError:
-                if i == len(providers) - 1:
+            except ValidationError:
+                if i == len(providers) - 1 and len(to_remove) == len(providers):
                     raise
                 else:
                     to_remove.append(p)
@@ -2186,7 +2185,10 @@ class EODataAccessGateway:
             pt["ID"]
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
-        product_type = kwargs.get("productType")
+        user_kwargs = deepcopy(kwargs)
+        product_type = kwargs.get("productType", None)
+        if product_type is not None and product_type not in available_product_types:
+            self.fetch_product_types_list()
 
         if product_type:
             try:
@@ -2224,9 +2226,8 @@ class EODataAccessGateway:
             if key in kwargs:
                 queryable.default = kwargs[key]
 
-
         queryables.update(model_fields_to_annotated(common_queryables))
-        for key in kwargs:
+        for key in user_kwargs:
             if key in [
                 "startTimeFromAscendingNode",
                 "completionTimeFromAscendingNode",
