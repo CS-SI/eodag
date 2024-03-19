@@ -39,6 +39,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "sphinx_copybutton",
+    "sphinx_autodoc_typehints",
 ]
 
 # Notebook integration parameters
@@ -63,6 +64,10 @@ copybutton_prompt_is_regexp = True
 # Scan all found documents for autosummary directives, and to generate stub
 # pages for each
 autosummary_generate = True
+
+always_document_param_types = True
+
+typehints_defaults = "comma"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
