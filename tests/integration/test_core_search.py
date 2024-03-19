@@ -22,6 +22,7 @@ import unittest
 
 from requests.exceptions import RequestException
 
+from eodag.utils.exceptions import UnsupportedProductType
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     EODataAccessGateway,
@@ -80,13 +81,18 @@ class TestCoreSearch(unittest.TestCase):
         self.dag.set_preferred_provider("peps")
         self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
         self.assertRaises(
-            RequestError, self.dag.search, productType="foo", raise_errors=True
+            UnsupportedProductType,
+            self.dag.search,
+            productType="foo",
+            raise_errors=True,
         )
         # search iterator
-        self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
-        )
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.search_iter_page(productType="foo")
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
@@ -100,7 +106,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     def test_core_search_errors_stacsearch(
-        self, mock_query, mock_fetch_product_types_list, mock_post
+        self,
+        mock_query,
+        mock_fetch_product_types_list,
+        mock_post,
+        mock_qssearch_request,
     ):
         mock_query.return_value = ([], 0)
         # StacSearch / astraea_eod
@@ -155,13 +165,19 @@ class TestCoreSearch(unittest.TestCase):
         self.dag.set_preferred_provider("onda")
         self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
         self.assertRaises(
-            RequestError, self.dag.search, productType="foo", raise_errors=True
+            UnsupportedProductType,
+            self.dag.search,
+            productType="foo",
+            raise_errors=True,
         )
         # search iterator
-        self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
-        )
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.search_iter_page(productType="foo")
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request",
+        autospec=True,
+    )
     @mock.patch(
         "eodag.plugins.apis.usgs.api.scene_search", autospec=True, side_effect=USGSError
     )
@@ -170,18 +186,24 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_core_search_errors_usgs(
-        self, mock_fetch_product_types_list, mock_login, mock_scene_search
+        self,
+        mock_fetch_product_types_list,
+        mock_login,
+        mock_scene_search,
+        mock_qssearch_get,
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
         self.assertRaises(NoMatchingProductType, self.dag.search, raise_errors=True)
         self.assertRaises(
-            RequestError, self.dag.search, raise_errors=True, productType="foo"
+            UnsupportedProductType,
+            self.dag.search,
+            raise_errors=True,
+            productType="foo",
         )
         # search iterator
-        self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
-        )
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.search_iter_page(productType="foo")
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",

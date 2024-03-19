@@ -2187,8 +2187,6 @@ class EODataAccessGateway:
         ]
         user_kwargs = deepcopy(kwargs)
         product_type = kwargs.get("productType", None)
-        if product_type is not None and product_type not in available_product_types:
-            self.fetch_product_types_list()
 
         if product_type:
             try:

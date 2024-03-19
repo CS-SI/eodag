@@ -894,6 +894,9 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert path_to_uri(expected_path) == eoproduct.location
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
@@ -905,6 +908,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         mock_cds_download,
         mock_cds_authenticate,
         mock_fetch_product_types_list,
+        mock_qssearch_request,
     ):
         """CdsApi.download_all must call download on each product"""
         mock_cds_authenticate.return_value = {
