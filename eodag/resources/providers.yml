@@ -5824,7 +5824,7 @@
     token_key: access_token
     refresh_token_key: refresh_token
     headers:
-      Authorization: Bearer $token
+      Authorization: "Bearer {token}"
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
@@ -5933,7 +5933,7 @@
     token_key: access_token
     refresh_token_key: refresh_token
     headers:
-      Authorization: Bearer $token
+      Authorization: "Bearer {token}"
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
@@ -5956,7 +5956,7 @@
       response_code: 202
 
 ---
-!provider
+!provider # creodias_s3
   name: creodias_s3
   priority: 0
   description: CloudFerro DIAS data through S3 protocol

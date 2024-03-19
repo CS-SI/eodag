@@ -56,9 +56,9 @@ class TokenAuth(Authentication):
             self.config.auth_uri = self.config.auth_uri.format(
                 **self.config.credentials
             )
-            # format headers if needed
+            # format headers if needed (and accepts {token} to be formatted later)
             self.config.headers = {
-                header: value.format(**self.config.credentials)
+                header: value.format(**{"token": "{token}", **self.config.credentials})
                 for header, value in getattr(self.config, "headers", {}).items()
             }
         except KeyError as e:
@@ -94,26 +94,15 @@ class TokenAuth(Authentication):
                 token = response.json()[self.config.token_key]
             else:
                 token = response.text
-            headers = self._get_headers(token)
             self.token = token
             if getattr(self.config, "refresh_token_key", None):
                 self.refresh_token = response.json()[self.config.refresh_token_key]
+            if not hasattr(self.config, "headers"):
+                raise MisconfiguredError(f"Missing headers configuration for {self}")
             # Return auth class set with obtained token
-            return RequestsTokenAuth(token, "header", headers=headers)
-
-    def _get_headers(self, token: str) -> Dict[str, str]:
-        headers = self.config.headers
-        if "Authorization" in headers and "$" in headers["Authorization"]:
-            headers["Authorization"] = headers["Authorization"].replace("$token", token)
-        if (
-            self.token
-            and token != self.token
-            and self.token in headers["Authorization"]
-        ):
-            headers["Authorization"] = headers["Authorization"].replace(
-                self.token, token
+            return RequestsTokenAuth(
+                token, "header", headers=getattr(self.config, "headers", {})
             )
-        return headers
 
     def _token_request(
         self, session: requests.Session, req_kwargs: Dict[str, Any]
@@ -187,5 +176,7 @@ class RequestsTokenAuth(AuthBase):
                 )
             )
         elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
+            request.headers["Authorization"] = request.headers.get(
+                "Authorization", "Bearer {token}"
+            ).format(token=self.token)
         return request
