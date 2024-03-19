@@ -762,6 +762,7 @@ class StacCollection(StacCommon):
             for collec in collections["collections"]
         ]
 
+        collections = format_dict_items(collections, **format_args)
         self.update_data(collections)
         return self.as_dict()
 
