@@ -5845,6 +5845,19 @@
       status: Error
     order_status_in_progress:
       response_code: 202
+    products:
+      GLOFAS_FORECAST:
+        outputs_extension: .grib
+      GLOFAS_REFORECAST:
+        outputs_extension: .grib
+      GLOFAS_HISTORICAL:
+        outputs_extension: .grib
+      GLOFAS_SEASONAL:
+        outputs_extension: .grib
+      GLOFAS_SEASONAL_REFORECAST:
+        outputs_extension: .grib
+      FIRE_HISTORICAL:
+        outputs_extension: .grib
 
 ---
 !provider  # wekeo_cmems
