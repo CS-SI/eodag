@@ -92,6 +92,7 @@ class EODAGSearch(BaseModel):
     publicationDate: Optional[str] = Field(None, alias="published")
     creationDate: Optional[str] = Field(None, alias="created")
     modificationDate: Optional[str] = Field(None, alias="updated")
+    # TODO: collision in serialization of platform -> platform, platformSerialIdentifier
     platformSerialIdentifier: Optional[str] = Field(None, alias="platform")
     instrument: Optional[str] = Field(None, alias="instruments")
     platform: Optional[str] = Field(None, alias="constellation")

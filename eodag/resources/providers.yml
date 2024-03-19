@@ -7219,22 +7219,19 @@
   url: https://polytope.ecmwf.int/openapi
   search: !plugin
     type: DataRequestBuildSearchResult
-    api_endpoint: https://polytope.apps.lumi.ewctest.link/api/v1/
-    data_request_url: https://polytope.apps.lumi.ewctest.link/api/v1/requests/{collection}
-    results_entry: message
-    request_params_entry: user_request
-    need_auth: true
-    pagination:
-      max_items_per_page: 1000
+    api_endpoint: https://polytope.apps.lumi.ewctest.link/api/v1 # useless keep it for compatibility with PostJsonSearch
+    pagination: {} # useless keep it for compatibility with PostJsonSearch
     metadata_mapping:
+      productType: destination-earth
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
-      productType: $.productType
       qs: '$.qs'
-      orderLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+      orderLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+      orderStatusLink: http://polytope.apps.lumi.ewctest.link/api/v1/requests/{orderId}
+      # https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id?
       expver:
         - expver
         - $.expver
@@ -7271,15 +7268,16 @@
       storageStatus: OFFLINE
   products:
     DT_EXTREMES:
-      productType: destination-earth
+      class: rd
+      domain: g
       expver: i7yv
-      stream: oper
-      type: fc
       levtype: sfc
       step: 0
-      param: 31
+      stream: oper
+      time: 0000
+      type: fc
+      param: 34
     DT_CLIMATE_ADAPTATION:
-      productType: destination-earth
       dataset: climate-dt
       class: d1
       expver: 17yv
@@ -7295,6 +7293,27 @@
     auth_error_code: 401
     order_enabled: True
     order_method: POST
+    order_on_response:
+      metadata_mapping:
+        orderStatusLink: $.headers.Location
+        orderId: '{$.headers.Location#slice_str(55,-1,1)}'
+    order_status:
+      request:
+        method: GET
+        headers:
+      metadata_mapping:
+        status: $.json.status
+        message: $.json.message
+        # percent: $.percentCompleted
+      success:
+        http_code: 303
+      error:
+        status: failed
+      on_success:
+        result_type: json
+        metadata_mapping:
+          location: '$.headers.Location'
+          downloadLink: '{location}'
 
   auth: !plugin
     type: HTTPHeaderAuth

@@ -270,6 +270,17 @@ async def handle_resource_not_found(
     request: Request, error: Exception
 ) -> ORJSONResponse:
     """Not found [404] errors handle"""
+    detail = f"{type(error).__name__}: {str(error)}"
+
+    if hasattr(error, "status"):
+        if order_id := getattr(error, "order_id"):
+            detail += f". Order ID: {order_id}"
+        return ORJSONResponse(
+            status_code=202,
+            media_type="application/json",
+            content={"description": detail},
+        )
+
     return await default_exception_handler(
         request,
         HTTPException(

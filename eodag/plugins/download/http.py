@@ -157,12 +157,13 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
-        order_method = getattr(self.config, "order_method", "GET").lower()
+        logger.info("order %s", product.properties["title"])
+        order_method = getattr(self.config, "order_method", "GET").upper()
         OrderKwargs = TypedDict(
             "OrderKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
         )
         order_kwargs: OrderKwargs = {}
-        if order_method == "post":
+        if order_method == "POST":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderLink"]))
             query_dict = parse_qs(parts.query)
@@ -175,19 +176,21 @@ class HTTPDownload(Download):
             order_url = product.properties["orderLink"]
             order_kwargs = {}
 
+        headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
         with requests.request(
             method=order_method,
             url=order_url,
             auth=auth,
             timeout=HTTP_REQ_TIMEOUT,
-            headers=dict(getattr(self.config, "order_headers", {}), **USER_AGENT),
+            headers=headers,
             **order_kwargs,
         ) as response:
+            logger.debug(f"{order_method} {order_url} {headers} {order_kwargs}")
             try:
                 response.raise_for_status()
                 ordered_message = response.text
                 logger.debug(ordered_message)
-                logger.info("%s was ordered", product.properties["title"])
+                product.properties["orderStatus"] = "Ordered"
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except RequestException as e:
@@ -204,28 +207,29 @@ class HTTPDownload(Download):
         order_metadata_mapping = getattr(self.config, "order_on_response", {}).get(
             "metadata_mapping", {}
         )
-        if order_metadata_mapping:
-            logger.debug("Parsing order response to update product metada-mapping")
-            order_metadata_mapping_jsonpath = mtd_cfg_as_conversion_and_querypath(
-                order_metadata_mapping,
-            )
-            properties_update = properties_from_json(
-                response.json(),
-                order_metadata_mapping_jsonpath,
-            )
-            product.properties.update(properties_update)
-            if "downloadLink" in properties_update:
-                product.remote_location = product.location = product.properties[
-                    "downloadLink"
-                ]
-                logger.debug(f"Product location updated to {product.location}")
+        if not order_metadata_mapping:
+            return None
+
+        logger.debug("Parsing order response to update product metada-mapping")
+        on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
+            order_metadata_mapping,
+        )
+        properties_update = properties_from_json(
+            {"json": response.json(), "headers": {**response.headers}},
+            on_response_mm_jsonpath,
+        )
+        product.properties.update(properties_update)
+        if "downloadLink" in properties_update:
+            product.remote_location = product.location = product.properties[
+                "downloadLink"
+            ]
+            logger.debug(f"Product location updated to {product.location}")
 
     def orderDownloadStatus(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
-        **kwargs: Unpack[DownloadConf],
-    ) -> None:
+    ) -> Optional[str]:
         """Send product order status request.
 
         It will be executed before each download retry.
@@ -248,152 +252,196 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
-        status_method = getattr(self.config, "order_status_method", "GET").lower()
-        StatusKwargs = TypedDict(
-            "StatusKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
-        )
-        status_kwargs: StatusKwargs = {}
-        if status_method == "post":
+
+        status_config = getattr(self.config, "order_status", {})
+        order_status_success: Dict[str, Any] = status_config.get("success", {})
+        success_code: Optional[int] = order_status_success.get("http_code")
+
+        def _request(
+            url: str,
+            method: str = "GET",
+            headers: Optional[Dict[str, Any]] = None,
+            json: Optional[Any] = None,
+            timeout: int = HTTP_REQ_TIMEOUT,
+        ) -> Response:
+            """Send request and handle allow redirects"""
+
+            logger.debug(f"{method} {url} {headers} {json}")
+            try:
+                response = requests.request(
+                    method=method,
+                    url=url,
+                    auth=auth,
+                    timeout=timeout,
+                    headers={**(headers or {}), **USER_AGENT},
+                    allow_redirects=False,  # Redirection is manually handled
+                    json=json,
+                )
+                response.raise_for_status()  # Raise an exception if status code indicates an error
+
+                # Handle redirection (if needed)
+                if (
+                    300 <= response.status_code < 400
+                    and response.status_code != success_code
+                ):
+                    # cf: https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
+                    if response.status_code == 303:
+                        method = "GET"
+                    if new_url := response.headers.get("Location"):
+                        return _request(new_url, method, headers, json, timeout)
+                return response
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=timeout) from exc
+
+        status_request: Dict[str, Any] = status_config.get("request", {})
+        status_request_method = str(status_request.get("method", "GET")).upper()
+
+        if status_request_method == "POST":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderStatusLink"]))
+            status_url = parts._replace(query=None).geturl()
             query_dict = parse_qs(parts.query)
             if not query_dict and parts.query:
-                query_dict = geojson.loads(parts.query)
-            status_url = parts._replace(query=None).geturl()
-            status_kwargs = {"json": query_dict} if query_dict else {}
+                query_dict: Any = geojson.loads(parts.query)
+            json_data = query_dict if query_dict else None
         else:
             status_url = product.properties["orderStatusLink"]
-            status_kwargs = {}
+            json_data = None
 
-        with requests.request(
-            method=status_method,
-            url=status_url,
-            auth=auth,
-            timeout=HTTP_REQ_TIMEOUT,
-            headers=dict(
-                getattr(self.config, "order_status_headers", {}), **USER_AGENT
-            ),
-            **status_kwargs,
-        ) as response:
+        try:
+            response = _request(
+                status_url,
+                status_request_method,
+                status_request.get("headers"),
+                json_data,
+            )
+            json_response = response.json()
+            if not isinstance(json_response, dict):
+                raise RequestException("response content is not a dict")
+            status_dict: Dict[str, Any] = json_response
+        except RequestException as e:
+            logger.warning(
+                "%s order status could not be checked, request returned %s",
+                product.properties["title"],
+                e,
+            )
+            return None
+
+        if status_mm := status_config.get("metadata_mapping"):
+            logger.debug("Parsing order status response")
+            status_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
+                status_mm,
+            )
+            status_dict = properties_from_json(
+                {"json": response.json(), "headers": {**response.headers}},
+                status_mm_jsonpath,
+            )
+
+        # display progress percentage
+        if "percent" in status_dict:
+            status_percent = str(status_dict["percent"])
+            if status_percent.isdigit():
+                status_percent += "%"
+            logger.info(f"{product.properties['title']} order status: {status_percent}")
+
+        status_message = status_dict.get("message")
+
+        if status_value := status_dict.get("status"):
+            product.properties["orderStatus"] = status_value
+
+        # handle status error
+        errors: Dict[str, Any] = status_config.get("error", {})
+        if errors.items() <= status_dict.items():
+            raise DownloadError(status_message)
+        else:
+            logger.warning(status_message)
+
+        # if not success
+        if not (order_status_success.items() <= status_dict.items()) and (
+            success_code and success_code != response.status_code
+        ):
+            e = NotAvailableError(status_message)
+            setattr(e, "order_id", product.properties.get("orderId"))
+            setattr(e, "status", status_value)
+            raise e
+
+        product.properties["storageStatus"] = ONLINE_STATUS
+
+        # need search on success ?
+        config_on_success: Dict[str, Any] = status_config.get("on_success", {})
+        if config_on_success.get("need_search"):
+            logger.debug(f"Search for new location: {product.properties['searchLink']}")
             try:
-                response.raise_for_status()
-                status_message = response.text
-                status_dict = response.json()
-                # display progress percentage
-                order_status_percent_key = getattr(
-                    self.config, "order_status_percent", None
-                )
-                if order_status_percent_key and order_status_percent_key in status_dict:
-                    order_status_value = str(status_dict[order_status_percent_key])
-                    if order_status_value.isdigit():
-                        order_status_value += "%"
-                    logger.info(
-                        f"{product.properties['title']} order status: {order_status_value}"
-                    )
-                # display error if any
-                order_status_error_dict = getattr(self.config, "order_status_error", {})
-                if (
-                    order_status_error_dict
-                    and order_status_error_dict.items() <= status_dict.items()
-                ):
-                    # order_status_error_dict is a subset of status_dict : error
-                    logger.warning(status_message)
-                else:
-                    logger.debug(status_message)
-                # check if succeeds and need search again
-                order_status_success_dict = getattr(
-                    self.config, "order_status_success", {}
-                )
-                if (
-                    "status" in status_dict
-                    and status_dict["status"] == order_status_success_dict["status"]
-                    and "message" in status_dict
-                    and status_dict["message"] == order_status_success_dict["message"]
-                ):
-                    product.properties["storageStatus"] = ONLINE_STATUS
-                if (
-                    order_status_success_dict
-                    and order_status_success_dict.items() <= status_dict.items()
-                    and getattr(self.config, "order_status_on_success", {}).get(
-                        "need_search"
-                    )
-                ):
-                    logger.debug(
-                        f"Search for new location: {product.properties['searchLink']}"
-                    )
-                    # search again
-                    response = requests.get(
-                        product.properties["searchLink"],
-                        timeout=HTTP_REQ_TIMEOUT,
-                        headers=USER_AGENT,
-                    )
-                    response.raise_for_status()
-                    if (
-                        self.config.order_status_on_success.get("result_type", "json")
-                        == "xml"
-                    ):
-                        root_node = etree.fromstring(response.content)
-                        namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
-                        results = [
-                            etree.tostring(entry)
-                            for entry in root_node.xpath(
-                                self.config.order_status_on_success["results_entry"],
-                                namespaces=namespaces,
-                            )
-                        ]
-                        if isinstance(results, list) and len(results) != 1:
-                            raise DownloadError(
-                                "Could not get a single result after order success for "
-                                f"{product.properties['searchLink']} request. "
-                                f"Please search and download {product} again"
-                            )
-                            return
-                        try:
-                            assert isinstance(
-                                results, list
-                            ), "results must be in a list"
-                            # single result
-                            result = results[0]
-                            # parse result
-                            new_search_metadata_mapping = (
-                                self.config.order_status_on_success["metadata_mapping"]
-                            )
-                            order_metadata_mapping_jsonpath: Dict[str, Any] = {}
-                            order_metadata_mapping_jsonpath = (
-                                mtd_cfg_as_conversion_and_querypath(
-                                    new_search_metadata_mapping,
-                                    order_metadata_mapping_jsonpath,
-                                )
-                            )
-                            properties_update = properties_from_xml(
-                                result,
-                                order_metadata_mapping_jsonpath,
-                            )
-                        except Exception as e:
-                            logger.debug(e)
-                            raise DownloadError(
-                                f"Could not parse result after order success for {product.properties['searchLink']} "
-                                f"request. Please search and download {product} again"
-                            )
-                        # update product
-                        product.properties.update(properties_update)
-                        product.location = product.remote_location = product.properties[
-                            "downloadLink"
-                        ]
-                    else:
-                        logger.warning(
-                            "JSON response parsing is not implemented yet for new searches "
-                            f"after order success. Please search and download {product} again"
-                        )
-
-            except requests.exceptions.Timeout as exc:
-                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+                response = _request(product.properties["searchLink"])
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
                     product.properties["title"],
                     e,
                 )
+                return None
+
+        result_type = config_on_success.get("result_type", "json")
+        result_entry = config_on_success.get("results_entry")
+        on_success_mm_jsonpath: Dict[str, Any] = {}
+        try:
+            on_success_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
+                config_on_success["metadata_mapping"],
+                on_success_mm_jsonpath,
+            )
+
+            if result_type == "xml":
+                if not result_entry:
+                    raise MisconfiguredError(
+                        '"result_entry" is required with "result_type" "xml"'
+                        'in "order_status.on_success"'
+                    )
+                root_node = etree.fromstring(response.content)
+                namespaces = {k or "ns": v for k, v in root_node.nsmap.items()}
+                results = [
+                    etree.tostring(entry)
+                    for entry in root_node.xpath(
+                        result_entry,
+                        namespaces=namespaces,
+                    )
+                ]
+                if len(results) != 1:
+                    raise DownloadError(
+                        "Could not get a single result after order success for "
+                        f"{product.properties['searchLink']} request. "
+                        f"Please search and download {product} again"
+                    )
+                assert isinstance(results, list), "results must be in a list"
+                # single result
+                result = results[0]
+                properties_update = properties_from_xml(
+                    result,
+                    on_success_mm_jsonpath,
+                )
+            else:
+                if result_entry:
+                    raise NotImplementedError(
+                        'raise_entry in config_on_success is not yet supported for result_type "json"'
+                    )
+                properties_update = properties_from_json(
+                    {"json": response.json(), "headers": {**response.headers}},
+                    on_success_mm_jsonpath,
+                )
+        except Exception as e:
+            if isinstance(e, DownloadError):
+                raise
+            logger.debug(e)
+            raise DownloadError(
+                f"Could not parse result after order success for {product.properties['searchLink']}"
+                f" request. Please search and download {product} again"
+            ) from e
+
+        # update product
+        product.properties.update(properties_update)
+        if "downloadLink" in properties_update:
+            product.location = product.remote_location = product.properties[
+                "downloadLink"
+            ]
 
     def download(
         self,
@@ -643,7 +691,7 @@ class HTTPDownload(Download):
         except StopIteration:
             # product is empty file
             logger.warning("product %s is empty", product.properties["id"])
-            return {"content": chain(iter([]))}
+            return StreamResponse(content=chain(iter([])))
 
         return StreamResponse(
             content=chain(iter([first_chunk]), chunks),
@@ -721,8 +769,8 @@ class HTTPDownload(Download):
         ordered_message = ""
         if (
             "orderLink" in product.properties
-            and "storageStatus" in product.properties
-            and product.properties["storageStatus"] == OFFLINE_STATUS
+            and product.properties.get("storageStatus") == OFFLINE_STATUS
+            and not product.properties.get("orderStatus")
         ):
             self.orderDownload(product=product, auth=auth)
 
