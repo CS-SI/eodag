@@ -762,6 +762,7 @@ class StacCollection(StacCommon):
             for collec in collections["collections"]
         ]
 
+        collections["stac_version"] = self.stac_config["stac_version"]
         self.update_data(collections)
         return self.as_dict()
 
