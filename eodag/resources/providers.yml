@@ -4057,8 +4057,6 @@
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
     need_auth: true
     auth_error_code: 401
-    licence_error_code: 404
-    licence_error_message: "Terms Accepted"
     results_entry: 'features'
     two_passes_id_search: true
     pagination:
@@ -5872,8 +5870,6 @@
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
     need_auth: true
     auth_error_code: 401
-    licence_error_code: 404
-    licence_error_message: "Terms Accepted"
     results_entry: 'features'
     two_passes_id_search: true
     pagination:

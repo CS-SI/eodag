@@ -426,16 +426,10 @@ class TestCore(TestCoreBase):
     def test_supported_product_types_in_unit_test(self):
         """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
         for product_type in self.dag.list_product_types(fetch_providers=False):
-            if "__" in product_type["ID"]:
-                self.assertTrue(
-                    product_type["ID"].split("__")[0]
-                    in self.SUPPORTED_PRODUCT_TYPES.keys()
-                )
-            else:
-                assert (
-                    product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-                    or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-                )
+            assert (
+                product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+            )
 
     def test_list_product_types_ok(self):
         """Core api must correctly return the list of supported product types"""
@@ -465,12 +459,7 @@ class TestCore(TestCoreBase):
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
                 self.assertListProductTypesRightStructure(product_type)
-                if "__" in product_type["ID"]:
-                    self.assertIn(
-                        provider,
-                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"].split("__")[0]],
-                    )
-                elif product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
+                if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
                         provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
                     )
@@ -906,15 +895,10 @@ class TestCore(TestCoreBase):
         self.assertIn("platformSerialIdentifier", structure)
         self.assertIn("processingLevel", structure)
         self.assertIn("sensorType", structure)
-        if "__" in structure["ID"]:
-            self.assertTrue(
-                structure["ID"].split("__")[0] in self.SUPPORTED_PRODUCT_TYPES
-            )
-        else:
-            self.assertTrue(
-                structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
-                or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
-            )
+        self.assertTrue(
+            structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
+            or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
+        )
 
     @mock.patch("eodag.api.core.open_dir", autospec=True)
     @mock.patch("eodag.api.core.exists_in", autospec=True, return_value=True)
