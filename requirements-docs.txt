@@ -1,5 +1,4 @@
 nbconvert>6.3.0      # Requirement for nbsphinx, and updated to avoid XSS vunerabilities
 -r requirements-tutorials.txt
 -e .[docs]
-sphinx==3.4.3
 sphinx_autodoc_typehints==1.12.0
