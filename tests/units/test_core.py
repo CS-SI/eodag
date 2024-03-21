@@ -35,6 +35,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -1986,16 +1987,12 @@ class TestCoreSearch(TestCoreBase):
             self.dag.set_preferred_provider(prev_fav_provider)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
-    )
-    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_unknown_product_type(
-        self, mock_fetch_product_types_list, mock_qssearch_request
-    ):
+    def test__prepare_search_unknown_product_type(self, mock_fetch_product_types_list):
         """_prepare_search must fetch product types if product_type is unknown"""
-        self.dag._prepare_search(product_type="foo")
+        with self.assertRaises(UnsupportedProductType):
+            self.dag._prepare_search(productType="foo")
         mock_fetch_product_types_list.assert_called_once_with(self.dag)
 
     @mock.patch(
@@ -2741,6 +2738,43 @@ class TestCoreSearch(TestCoreBase):
         with self.assertRaises(UnsupportedProductType):
             self.dag.search_all(productType="foo")
         mock_fetch_product_types_list.assert_called_with(self.dag)
+
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_search_parameter_validation(
+        self, mock_qssearch_request, mock_fetch_product_types, mock_constraints
+    ):
+        search_params = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "start": "2021-07-03T17:42:24Z",
+            "end": "2023-07-20T17:42:24Z",
+            "processingLevel": "LEVEL2",
+        }
+        # should go well
+        self.dag.search(**search_params)
+        # add invalid param
+        search_params["bla"] = "bla"
+        with self.assertRaisesRegex(ValidationError, r".*not queryable"):
+            self.dag.search(**search_params)
+        # invalid parameter value
+        search_params = {
+            "provider": "cop_cds",
+            "productType": "ERA5_SL",
+            "year": ["1999"],
+            "month": ["10"],
+            "day": ["01"],
+        }
+        mock_constraints.return_value.json.return_value = [
+            {"year": ["2020", "2021"], "month": ["10"], "day": ["01"]}
+        ]
+        with self.assertRaisesRegex(ValidationError, r".*combination of values"):
+            self.dag.search(**search_params)
 
 
 class TestCoreDownload(TestCoreBase):

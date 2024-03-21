@@ -1619,10 +1619,10 @@ class EODataAccessGateway:
             try:
                 self.list_queryables(p, **kwargs)
             except ValidationError:
+                to_remove.append(p)
                 if i == len(providers) - 1 and len(to_remove) == len(providers):
                     raise
-                else:
-                    to_remove.append(p)
+
         providers = [p for p in providers if p not in to_remove]
         if provider not in providers:
             logger.warning(
@@ -2231,6 +2231,7 @@ class EODataAccessGateway:
                 "completionTimeFromAscendingNode",
                 "productType",
                 "geometry",
+                "sortBy",
             ]:
                 continue
             elif key not in queryables.keys():

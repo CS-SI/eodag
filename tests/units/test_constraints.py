@@ -82,3 +82,32 @@ class TestConstraints(unittest.TestCase):
         self.assertSetEqual({"C", "B"}, queryable["enum"])
         queryable = queryables.get("year")
         self.assertSetEqual({"2000", "2001"}, queryable["enum"])
+
+    def test_get_constraint_queryables_with_additional_params_dates(self):
+        constraints = [{"date": ["2003-01-01/2020-12-31"], "variable": ["a", "b"]}]
+        plugins = self.plugins_manager.get_search_plugins(
+            "CAMS_GREENHOUSE_EGG4", "cop_ads"
+        )
+        plugin = next(plugins)
+
+        # filter on one parameter
+        queryables = get_constraint_queryables_with_additional_params(
+            constraints,
+            {
+                "variable": "a",
+                "completionTimeFromAscendingNode": "2019-07-03T17:42:24Z",
+            },
+            plugin,
+            "CAMS_GREENHOUSE_EGG4",
+        )
+        self.assertEqual(2, len(queryables))
+        with self.assertRaises(ValidationError):
+            get_constraint_queryables_with_additional_params(
+                constraints,
+                {
+                    "variable": "a",
+                    "completionTimeFromAscendingNode": "2021-07-03T17:42:24Z",
+                },
+                plugin,
+                "CAMS_GREENHOUSE_EGG4",
+            )
