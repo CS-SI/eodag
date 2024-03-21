@@ -63,6 +63,7 @@ from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
 from eodag.rest.utils import format_pydantic_error, str2json, str2list
+from eodag.rest.utils.redis import connect_to_redis
 from eodag.utils import parse_header, update_nested_dict
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -126,6 +127,7 @@ router = APIRouter()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """API init and tear-down"""
+    connect_to_redis(app)
     eodag_api_init()
     yield
 
@@ -867,6 +869,18 @@ async def post_search(request: Request) -> ORJSONResponse:
     return ORJSONResponse(
         content=response, status_code=200, media_type="application/json"
     )
+
+
+@router.get("/download/status/{order_id}", tags=["Download"])
+def get_status(request: Request, order_id: str) -> ORJSONResponse:
+    """Download GET data order status"""
+    pass
+
+
+@router.get("/download/data/{data_id}", tags=["Download"])
+def get_data(request: Request, data_id: str) -> ORJSONResponse:
+    """Download GET retrieve data"""
+    pass
 
 
 app.include_router(router)

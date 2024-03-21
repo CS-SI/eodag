@@ -25,16 +25,19 @@ import dateutil
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
+from requests.auth import AuthBase
 
 import eodag
 from eodag import EOProduct
-from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
+from eodag.api.product.metadata_mapping import ONLINE_STATUS, OSEO_METADATA_MAPPING
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.base import Download
+from eodag.plugins.download.http import HTTPDownload
+from eodag.rest.constants import CACHE_KEY_DOWNLOAD_DATA, CACHE_KEY_DOWNLOAD_ORDER
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryableProperty
@@ -46,6 +49,7 @@ from eodag.rest.utils import (
     get_datetime,
     get_next_link,
 )
+from eodag.rest.utils.redis import cached_result
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
 from eodag.utils import _deprecated, dict_items_recursive_apply
 from eodag.utils.exceptions import (
@@ -149,9 +153,13 @@ def search_stac_items(
     catalog_url = re.sub("/items.*", "", request.state.url)
 
     catalog = StacCatalog(
-        url=catalog_url
-        if catalogs
-        else catalog_url.replace("/search", f"/collections/{eodag_args.productType}"),
+        url=(
+            catalog_url
+            if catalogs
+            else catalog_url.replace(
+                "/search", f"/collections/{eodag_args.productType}"
+            )
+        ),
         stac_config=stac_config,
         root=request.state.url_root,
         provider=eodag_args.provider,
@@ -416,15 +424,19 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
 
     search_date_min = cast(
         datetime.datetime,
-        dateutil.parser.parse(eodag_args.start)  # type: ignore
-        if eodag_args.start
-        else datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+        (
+            dateutil.parser.parse(eodag_args.start)  # type: ignore
+            if eodag_args.start
+            else datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+        ),
     )
     search_date_max = cast(
         datetime.datetime,
-        dateutil.parser.parse(eodag_args.end)  # type: ignore
-        if eodag_args.end
-        else datetime.datetime.now(tz=datetime.timezone.utc),
+        (
+            dateutil.parser.parse(eodag_args.end)  # type: ignore
+            if eodag_args.end
+            else datetime.datetime.now(tz=datetime.timezone.utc)
+        ),
     )
 
     catalog_date_min = rfc3339_str_to_datetime(catalog.search_args["start"])
@@ -585,3 +597,88 @@ def eodag_api_init() -> None:
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))
+
+
+def post_download_order():
+    """
+    TODO: get product properly
+    TODO: store product with a random generated order ID in cache
+    order:sha(1)
+    product_dict to redis with the key
+    save_order()  # send to cache or local storage ? use orjson.dump
+
+    product = EOProduct()
+
+    product_dict = product.as_dict()
+    """
+
+    pass
+
+
+async def get_download_status(request: Request, order_id: str):
+    # get product from order
+    f"order:{order_id}"
+
+    # This function should never be ran
+    async def _missing_order() -> None:
+        raise NotAvailableError(f"Order ID {order_id} not found")
+
+    product_dict = await cached_result(
+        _missing_order, f"{CACHE_KEY_DOWNLOAD_ORDER}:{order_id}", request
+    )
+
+    product = EOProduct.from_geojson(product_dict)
+
+    if product.properties.get("orderStatusLink"):
+        if not isinstance(product.downloader, HTTPDownload):
+            # TODO: raise proper error here
+            raise
+        if not isinstance(product.downloader_auth, (AuthBase, type(None))):
+            # TODO: raise proper error here
+            raise
+        product.downloader.orderDownloadStatus(product, product.downloader_auth)
+    else:
+        # TODO: try requesting
+        pass
+
+    if product.properties["storageStatus"] == ONLINE_STATUS:
+        pass
+        # delete existing key and set new data:sha(1)
+        # return status with message + location in a 302 response
+
+    # return status with message in a 200 response
+
+
+async def get_download_data(request: Request, data_id: str) -> StreamingResponse:
+
+    # This function should never be ran
+    async def _missing_order() -> None:
+        raise NotAvailableError(f"Data ID {data_id} not found")
+
+    product_dict = await cached_result(
+        _missing_order, f"{CACHE_KEY_DOWNLOAD_DATA}:{data_id}", request
+    )
+    product = EOProduct.from_geojson(product_dict)
+
+    if not product.downloader_auth:
+        raise ValueError(
+            f"Auth plugin is missing with provider {product.provider}"
+            f" and downloader {type(product.downloader)}"
+        )
+
+    try:
+        download_stream = cast(Download, product.downloader)._stream_download_dict(
+            product, auth=product.downloader_auth.authenticate()
+        )
+    except NotImplementedError:
+        logger.warning(
+            "Download streaming not supported for %s: downloading locally then delete",
+            product.downloader,
+        )
+        download_stream = file_to_stream(eodag_api.download(product, extract=False))
+
+    return StreamingResponse(
+        content=download_stream.content,
+        headers=download_stream.headers,
+        media_type=download_stream.media_type,
+    )
