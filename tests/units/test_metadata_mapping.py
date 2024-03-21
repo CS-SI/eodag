@@ -365,36 +365,6 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
-    def test_convert_get_processing_level_from_s1_id(self):
-        to_format = "{id#get_processing_level_from_s1_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
-            ),
-            "LEVEL1",
-        )
-
-    def test_convert_get_sensor_mode_from_s1_id(self):
-        to_format = "{id#get_sensor_mode_from_s1_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
-            ),
-            "IW",
-        )
-
-    def test_convert_get_processing_level_from_s2_id(self):
-        to_format = "{id#get_processing_level_from_s2_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S2A_MSIL1C_20160602T065342_N0202_R077_T39KVU_20160602T065342",
-            ),
-            "S2MSIL1C",
-        )
-
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
@@ -427,16 +397,6 @@ class TestMetadataFormatter(unittest.TestCase):
                 id="S5P_RPRO_L2__NP_BD7_20180531T223852_20180601T002220_03271_01_010002_20190528T184222",
             ),
             str(expected),
-        )
-
-    def test_convert_get_processing_level_from_s5p_id(self):
-        to_format = "{id#get_processing_level_from_s5p_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S5P_RPRO_L2__NP_BD7_20180531T223852_20180601T002220_03271_01_010002_20190528T184222",
-            ),
-            "L2",
         )
 
     def test_convert_split_cop_dem_id(self):

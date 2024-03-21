@@ -4026,10 +4026,10 @@
   anchor_s1_sar: &s1_sar_params
     processingLevel:
       - '{{"processingLevel": "{processingLevel}"}}'
-      - '{$.id#get_processing_level_from_s1_id}'
+      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_([0-4]+).*/, LEVEL\\4)`'
     sensorMode:
       - '{{"sensorMode": "{sensorMode}"}}'
-      - '{$.id#get_sensor_mode_from_s1_id}'
+      - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, \\2)`'
     swath:
       - '{{"swath": "{swath}"}}'
       - '$.null'
@@ -4216,7 +4216,7 @@
       metadata_mapping:
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s2_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, S2\\2)`'
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
@@ -4227,7 +4227,7 @@
       metadata_mapping:
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s2_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, S2\\2)`'
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
@@ -4238,7 +4238,7 @@
       metadata_mapping:
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s2_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_.*/, S2\\2)`'
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
@@ -4306,7 +4306,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
     S3_ERR:
@@ -4318,7 +4319,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
@@ -4330,7 +4332,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
@@ -4342,7 +4345,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
@@ -4354,7 +4358,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
@@ -4366,7 +4371,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
@@ -4378,7 +4384,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
 
@@ -4392,7 +4399,8 @@
         <<: *eo_eum_dates
         platform:
           - '{{"sat": "{platform}"}}'
-          - '{$.id#get_platform_from_s3_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
+        platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
@@ -4409,7 +4417,7 @@
       metadata_mapping:
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s5p_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_.*/, \\3)`'
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
@@ -4420,7 +4428,7 @@
       metadata_mapping:
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
-          - '{$.id#get_processing_level_from_s5p_id}'
+          - '$.id.`sub(/^[^_]([^_]+)_([^_]+)_([^_]+)_.*/, \\3)`'
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
@@ -5390,7 +5398,7 @@
           - '$.null'
         platformSerialIdentifier:
           - '{{"platformSerialIdentifier": "{platformSerialIdentifier}"}}'
-          - '{$.id#get_platform_from_eea_id}'
+          - '$.id.`sub(/^[^_]+_[^_]+_([^_]+)_.*/, \\1)`'
         tileIdentifier:
           - '{{"tileId": "{tileIdentifier}"}}'
           - '$.null'

@@ -1369,8 +1369,6 @@ class PostJsonSearch(QueryStringSearch):
         except (requests.RequestException, URLError) as err:
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
-            licence_error_code = getattr(self.config, "licence_error_code", None)
-            licence_error_message = getattr(self.config, "licence_error_message", None)
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
             if (
@@ -1398,7 +1396,7 @@ class PostJsonSearch(QueryStringSearch):
             error_text = str(err)
             if getattr(err, "response", None):
                 error_text = err.response.text
-            raise RequestError(error_text)
+            raise RequestError(error_text) from err
         return response
 
 

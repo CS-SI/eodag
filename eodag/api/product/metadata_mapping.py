@@ -631,23 +631,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s1_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            level = "LEVEL" + parts[3][0]
-            return level
-
-        @staticmethod
-        def convert_get_sensor_mode_from_s1_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            return parts[1]
-
-        @staticmethod
-        def convert_get_processing_level_from_s2_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            processing_level = "S2" + parts[1]
-            return processing_level
-
-        @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> Dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
@@ -663,16 +646,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]
             return params
-
-        @staticmethod
-        def convert_get_platform_from_s3_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            return "Sentinel-" + parts[0][1:]
-
-        @staticmethod
-        def convert_get_platform_from_eea_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            return parts[2]
 
         @staticmethod
         def convert_split_id_into_s5p_params(product_id: str) -> Dict[str, str]:
@@ -691,12 +664,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             )
             params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
             return params
-
-        @staticmethod
-        def convert_get_processing_level_from_s5p_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            processing_level = parts[2].replace("_", "")
-            return processing_level
 
         @staticmethod
         def convert_split_cop_dem_id(product_id: str) -> List[int]:

@@ -67,10 +67,10 @@ wekeo_old:
           - '$.null'
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
-          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+          - '$.null'
         sensorMode:
           - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
-          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+          - '$.null'
         swath:
           - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
           - '$.null'
@@ -107,10 +107,10 @@ wekeo_old:
           - '$.null'
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
-          - '{$.productInfo.product#get_processing_level_from_s1_id}'
+          - '$.null'
         sensorMode:
           - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
-          - '{$.productInfo.product#get_sensor_mode_from_s1_id}'
+          - '$.null'
         swath:
           - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
           - '$.null'
@@ -138,7 +138,7 @@ wekeo_old:
           - '{$.productInfo.product#remove_extension}'
         processingLevel:
           - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
-          - '{$.productInfo.product#get_processing_level_from_s2_id}'
+          - '$.null'
         cloudCover:
           - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
           - '$.extraInformation.cloudCover'
