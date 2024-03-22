@@ -103,14 +103,12 @@ class UsgsApi(Api):
                 api.logout()
                 continue
             except USGSError as e:
-                if str(e).startswith("AUTH_REVOKED"):
-                    # If error code is "AUTH_REVOKED" then api.logout() fails to logout
-                    # Manually removing file with API key
+                if i == 0:
+                    # `.usgs` API file key might be obsolete
+                    # Remove it and try again
                     os.remove(api.TMPFILE)
                     continue
-                raise AuthenticationError(
-                    "Please check your USGS credentials."
-                ) from None
+                raise AuthenticationError("Please check your USGS credentials.") from e
 
     def query(
         self,
