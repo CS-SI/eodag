@@ -33,7 +33,6 @@ from pydantic.fields import FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
-from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
@@ -52,6 +51,7 @@ from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
+from eodag.types.whoosh import EODAGQueryParser
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -903,79 +903,87 @@ class EODataAccessGateway:
 
     def guess_product_type(
         self,
-        free_text_filter: Optional[str] = None,
+        free_text: Optional[str] = None,
         intersect: bool = False,
+        instrument: Optional[str] = None,
+        platform: Optional[str] = None,
+        platformSerialIdentifier: Optional[str] = None,
+        processingLevel: Optional[str] = None,
+        sensorType: Optional[str] = None,
+        keywords: Optional[str] = None,
+        md5: Optional[str] = None,
+        abstract: Optional[str] = None,
+        title: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
-        """Find eodag product types ids that best match a set of search params
+        """
+        Find EODAG product type IDs that best match a set of search parameters.
 
         See https://whoosh.readthedocs.io/en/latest/querylang.html#the-default-query-language
-        for syntax.
+          for syntax.
 
-        :param free_text_filter: whoosh compatible free text search filter used to search
-                                 `title`, `abstract` and `keywords`
-        :type free_text_filter: Optional[str]
-        :param intersect: join results for each parameter using INTERSECT instead of UNION
+        :param free_text: Whoosh-compatible free text search filter used to search
+                        `title`, `abstract`, and `keywords`.
+        :type free_text: Optional[str]
+        :param intersect: Join results for each parameter using INTERSECT instead of UNION.
         :type intersect: bool
-        :param kwargs: A set of search parameters as keywords arguments
-        :returns: The best match for the given parameters
-        :rtype: list[str]
+        :param instrument: Instrument parameter.
+        :type instrument: Optional[str]
+        :param platform: Platform parameter.
+        :type platform: Optional[str]
+        :param platformSerialIdentifier: Platform serial identifier parameter.
+        :type platformSerialIdentifier: Optional[str]
+        :param processingLevel: Processing level parameter.
+        :type processingLevel: Optional[str]
+        :param sensorType: Sensor type parameter.
+        :type sensorType: Optional[str]
+        :param keywords: Keywords parameter.
+        :type keywords: Optional[str]
+        :param md5: MD5 hash parameter.
+        :type md5: Optional[str]
+        :param abstract: Abstract parameter.
+        :type abstract: Optional[str]
+        :param title: Title parameter.
+        :type title: Optional[str]
+        :returns: The best match for the given parameters.
+        :rtype: List[str]
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
         """
-        if kwargs.get("productType", None):
-            return [kwargs["productType"]]
-        free_text_search_params = (
-            ["title", "abstract", "keywords"] if free_text_filter else []
-        )
-        supported_params = {
-            param
-            for param in (
-                "instrument",
-                "platform",
-                "platformSerialIdentifier",
-                "processingLevel",
-                "sensorType",
-                "keywords",
-                "md5",
-                "abstract",
-                "title",
-            )
-            if kwargs.get(param, None) is not None
-        }
+        if productType := kwargs.get("productType"):
+            return [productType]
+
         if not self._product_types_index:
             raise EodagError("Missing product types index")
+
+        filters = {
+            "instrument": instrument,
+            "platform": platform,
+            "platformSerialIdentifier": platformSerialIdentifier,
+            "processingLevel": processingLevel,
+            "sensorType": sensorType,
+            "keywords": keywords,
+            "md5": md5,
+            "abstract": abstract,
+            "title": title,
+        }
+        joint = " AND " if intersect else " OR "
+        filters_text = joint.join(
+            [f"{k}:({v})" for k, v in filters.items() if v is not None]
+        )
+
+        text = f"({free_text})" if free_text else ""
+        if free_text and filters_text:
+            text += joint
+        if filters_text:
+            text += f"({filters_text})"
+
         with self._product_types_index.searcher() as searcher:
-            results = None
-            # Using `upgrade_and_extend`, for each search key, do a guess and
-            # then upgrade the result (i.e. when merging results,
-            # if a hit appears in both results, its position is raised
-            # to the top). This way, the top most result will be the hit that best
-            # matches the given queries. Put another way, this best guess is the one
-            # that crosses the highest number of search params from the given queries
-
-            # Always use UNION to join free_text_search results
-            for search_key in free_text_search_params:
-                query = QueryParser(search_key, self._product_types_index.schema).parse(
-                    free_text_filter
-                )
-                if results is None:
-                    results = searcher.search(query, limit=None)
-                else:
-                    results.upgrade_and_extend(searcher.search(query, limit=None))
-
-            # join results from kwargs using UNION or INTERSECT
-            for search_key in supported_params:
-                query = QueryParser(search_key, self._product_types_index.schema).parse(
-                    kwargs[search_key]
-                )
-                if results is None:
-                    results = searcher.search(query, limit=None)
-                elif intersect:
-                    results.filter(searcher.search(query, limit=None))
-                else:
-                    results.upgrade_and_extend(searcher.search(query, limit=None))
+            p = EODAGQueryParser(list(filters.keys()), self._product_types_index.schema)
+            query = p.parse(text)
+            results = searcher.search(query, limit=None)
 
             guesses: List[str] = [r["ID"] for r in results or []]
+
         if guesses:
             return guesses
         raise NoMatchingProductType()
