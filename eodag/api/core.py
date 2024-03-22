@@ -558,7 +558,7 @@ class EODataAccessGateway:
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
                 config = self.product_types_config[product_type_id]
-                config["_id"] = product_type_id 
+                config["_id"] = product_type_id
                 if "alias" in config:
                     product_type_id = config["alias"]
                 product_type = {"ID": product_type_id, **config}
