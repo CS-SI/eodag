@@ -517,6 +517,10 @@ class TestCore(TestCoreBase):
         self.assertListEqual(product_types_ids, ["foobar"])
 
         # Free text search: Using OR term match
+        filter = "FOOBAR,BAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+
         filter = "FOOBAR BAR"
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
