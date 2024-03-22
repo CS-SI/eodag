@@ -1817,7 +1817,9 @@
     S2_MSI_L1C:
       productType: sentinel-2-l1c
       metadata_mapping:
-        id: '{$.properties."s2:product_uri"#remove_extension}'
+        id:
+          - id
+          - '{$.properties."s2:product_uri"#remove_extension}'
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
@@ -1837,10 +1839,12 @@
         tileIdentifier:
           - '{{"query":{{"mgrs:utm_zone":{{"eq":"{tileIdentifier#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{tileIdentifier#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{tileIdentifier#slice_str(3,5,1)}"}}}}}}'
           - '{utmZone}{latitudeBand}{gridSquare}'
-    S2_MSI_L2A:
+    S2_MSI_L2A_JP2:
       productType: sentinel-2-l2a
       metadata_mapping:
-        id: '{$.properties."s2:product_uri"#remove_extension}'
+        id:
+          - id
+          - '{$.properties."s2:product_uri"#remove_extension}'
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
