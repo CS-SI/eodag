@@ -367,7 +367,7 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
             mock_core_get_ext_product_types_conf.return_value = json.loads(
                 external_json
             )
-            self.rest_utils.eodag_api.fetch_external_product_types_metadata()
+            self.rest_utils.eodag_api._fetch_external_product_types_metadata()
             mock_core_get_ext_product_types_conf.assert_called_once_with(
                 ext_stac_collection_path
             )

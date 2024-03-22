@@ -221,7 +221,7 @@ class EODataAccessGateway:
         self.set_locations_conf(locations_conf_path)
         self.search_errors: Set = set()
 
-        self.fetch_external_product_types_metadata()
+        self._fetch_external_product_types_metadata()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -576,7 +576,7 @@ class EODataAccessGateway:
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
 
-    def load_external_product_type_metadata(
+    def _load_external_product_type_metadata(
         self, product_type_id: str, product_type_conf: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Loads external enhanced metadata for a given product type.
@@ -630,11 +630,11 @@ class EODataAccessGateway:
                 enhanced_product_type_conf[ext_cfg_k] = ",".join(merged_values)
         return enhanced_product_type_conf
 
-    def fetch_external_product_types_metadata(self) -> None:
+    def _fetch_external_product_types_metadata(self) -> None:
         """Fetch external product types metadata and update if needed"""
         # load external product type metadata
         for product_type_id, product_type_conf in self.product_types_config.items():
-            enhanced_product_type = self.load_external_product_type_metadata(
+            enhanced_product_type = self._load_external_product_type_metadata(
                 product_type_id,
                 product_type_conf,
             )

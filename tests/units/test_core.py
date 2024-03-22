@@ -1094,7 +1094,7 @@ class TestCore(TestCoreBase):
         product_type_conf = deepcopy(self.dag.product_types_config["S2_MSI_L1C"])
         ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
         product_type_conf["stacCollection"] = ext_stac_collection_path
-        enhanced_product_type = self.dag.load_external_product_type_metadata(
+        enhanced_product_type = self.dag._load_external_product_type_metadata(
             "S2_MSI_L1C",
             product_type_conf,
         )
@@ -1108,7 +1108,7 @@ class TestCore(TestCoreBase):
         )
         # Don't override existings keys
         self.assertEqual(enhanced_product_type["title"], "SENTINEL2 Level-1C")
-        # The parameter passed `load_external_product_type_metadata` is not modified
+        # The parameter passed `_load_external_product_type_metadata` is not modified
         del product_type_conf["stacCollection"]
         self.assertDictEqual(
             product_type_conf,
@@ -1147,7 +1147,7 @@ class TestCore(TestCoreBase):
         product_type_conf = self.dag.product_types_config["S2_MSI_L1C"]
         ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
         product_type_conf["stacCollection"] = ext_stac_collection_path
-        self.dag.fetch_external_product_types_metadata()
+        self.dag._fetch_external_product_types_metadata()
         mock_get_ext_product_types_conf.assert_called_with(ext_stac_collection_path)
         enhanced_product_type = self.dag.product_types_config["S2_MSI_L1C"]
         # Fields not supported by EODAG
