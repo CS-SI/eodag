@@ -835,7 +835,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.api_endpoint
         del self.api_plugin.config.credentials
 
-    @mock.patch("eodag.utils.constraints.requests.get")
+    @mock.patch("eodag.plugins.apis.cds.fetch_constraints")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     @mock.patch(
@@ -865,7 +865,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             "content-disposition": ""
         }
         mock_head.return_value.headers = {"content-disposition": ""}
-        mock_constraints.return_value.json.return_value = [
+        mock_constraints.return_value = [
             {
                 "dataset": ["cams-global-ghg-reanalysis-egg4"],
                 "step": [0, 1],
