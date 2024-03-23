@@ -164,7 +164,7 @@ def eodag_openapi() -> Dict[str, Any]:
         openapi_schema["components"] = stac_api_config["components"]
     openapi_schema["tags"] = stac_api_config["tags"]
 
-    detailled_collections_list = get_detailled_collections_list(fetch_providers=False)
+    detailled_collections_list = get_detailled_collections_list()
 
     openapi_schema["info"]["description"] = (
         root_catalog["description"]
