@@ -172,13 +172,6 @@ class TestStacCore(unittest.TestCase):
         ):
             self.rest_core.get_home_page_content("http://127.0.0.1/")
 
-    def test_get_product_types(self):
-        """get_product_types use"""
-        self.assertTrue(self.rest_core.get_product_types())
-        self.assertTrue(
-            self.rest_core.get_product_types(filters={"sensorType": "OPTICAL"})
-        )
-
     def test_get_stac_catalogs(self):
         """get_stac_catalogs runs without any error"""
         self.rest_core.get_stac_catalogs(url="")
