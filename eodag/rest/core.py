@@ -389,42 +389,6 @@ def get_detailled_collections_list(
         provider=provider, fetch_providers=fetch_providers
     )
 
-
-def get_product_types(
-    provider: Optional[str] = None, filters: Optional[Dict[str, Any]] = None
-) -> List[Dict[str, Any]]:
-    """Returns a list of supported product types
-
-    :param provider: (optional) Provider name
-    :type provider: str
-    :param filters: (optional) Additional filters for product types search
-    :type filters: dict
-    :returns: A list of corresponding product types
-    :rtype: list
-    """
-    if filters is None:
-        filters = {}
-    try:
-        guessed_product_types = eodag_api.guess_product_type(
-            instrument=filters.get("instrument"),
-            platform=filters.get("platform"),
-            platformSerialIdentifier=filters.get("platformSerialIdentifier"),
-            sensorType=filters.get("sensorType"),
-            processingLevel=filters.get("processingLevel"),
-        )
-    except NoMatchingProductType:
-        guessed_product_types = []
-    if guessed_product_types:
-        product_types = [
-            pt
-            for pt in eodag_api.list_product_types(provider=provider)
-            if pt["ID"] in guessed_product_types
-        ]
-    else:
-        product_types = eodag_api.list_product_types(provider=provider)
-    return product_types
-
-
 @cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
 def get_stac_collections(
     url: str,
