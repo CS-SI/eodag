@@ -24,6 +24,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
+from eodag.rest.types.collections_search import CollectionsSearchRequest
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
@@ -201,7 +202,9 @@ class TestStacCore(unittest.TestCase):
 
     def test_get_stac_collections(self):
         """get_stac_collections runs without any error"""
-        self.rest_core.get_stac_collections(url="", root="", arguments={})
+        self.rest_core.get_stac_collections(
+            url="", root="", filters=CollectionsSearchRequest()
+        )
 
     def test_get_stac_conformance(self):
         """get_stac_conformance runs without any error"""
