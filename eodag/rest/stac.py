@@ -372,9 +372,9 @@ class StacItem(StacCommon):
                     if url_parts.scheme
                     else f"{url_parts.netloc}{url_parts.path}"
                 )
-                product_item["links"][0][
-                    "href"
-                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                product_item["links"][0]["href"] = (
+                    f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                )
 
             item_list.append(product_item)
 
@@ -415,9 +415,9 @@ class StacItem(StacCommon):
                 # use server-mode assets download links
                 asset_value["href"] = without_arg_url
                 if query_dict:
-                    assets[asset_key][
-                        "href"
-                    ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
+                    assets[asset_key]["href"] += (
+                        f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
+                    )
                 else:
                     assets[asset_key]["href"] += f"/{asset_key}"
                 if asset_type := asset_value.get("type", None):
@@ -801,51 +801,6 @@ class StacCollection(StacCommon):
 
         return product_type_collection
 
-    def __get_product_types(
-        self, filters: Optional[Dict[str, Any]] = None
-    ) -> List[Dict[str, Any]]:
-        """Returns a list of supported product types
-
-        :param filters: (optional) Additional filters for product types search
-        :type filters: dict
-        :returns: List of corresponding product types
-        :rtype: list
-        """
-        if filters is None:
-            filters = {}
-        free_text_filter = filters.pop("q", None)
-
-        # product types matching filters
-        try:
-            guessed_product_types = (
-                self.eodag_api.guess_product_type(**filters) if filters else []
-            )
-        except NoMatchingProductType:
-            guessed_product_types = []
-
-        # product types matching free text filter
-        if free_text_filter and not guessed_product_types:
-            whooshable_filter = " OR ".join(
-                [f"({x})" for x in free_text_filter.split(",")]
-            )
-            try:
-                guessed_product_types = self.eodag_api.guess_product_type(
-                    whooshable_filter
-                )
-            except NoMatchingProductType:
-                guessed_product_types = []
-
-        # list product types with all metadata using guessed ids
-        if guessed_product_types:
-            product_types = [
-                pt
-                for pt in self.eodag_api.list_product_types(provider=self.provider)
-                if pt["ID"] in guessed_product_types
-            ]
-        else:
-            product_types = self.eodag_api.list_product_types(provider=self.provider)
-        return product_types
-
     def __get_collection_list(
         self, filters: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
@@ -858,7 +813,18 @@ class StacCollection(StacCommon):
         """
         collection_model = deepcopy(self.stac_config["collection"])
 
-        product_types = self.__get_product_types(filters)
+        # product types matching filters
+        try:
+            guessed_product_types = self.eodag_api.guess_product_type(**filters or {})
+        except NoMatchingProductType:
+            guessed_product_types = []
+
+        # list product types with all metadata using guessed ids
+        product_types = [
+            pt
+            for pt in self.eodag_api.list_product_types(provider=self.provider)
+            if not guessed_product_types or pt["ID"] in guessed_product_types
+        ]
 
         collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
@@ -869,9 +835,7 @@ class StacCollection(StacCommon):
 
         return collection_list
 
-    def get_collections(
-        self, filters: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def get_collections(self, filters: Dict[str, Any]) -> Dict[str, Any]:
         """Build STAC collections
 
         :param filters: (optional) Additional filters for collections search

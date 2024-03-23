@@ -1826,5 +1826,5 @@ class RequestTestCase(unittest.TestCase):
         url = "/collections?q=TERM1,TERM2"
         r = self.app.get(url)
         list_pt.assert_called_once_with(provider=None)
-        guess_pt.assert_called_once_with("(TERM1) OR (TERM2)")
+        guess_pt.assert_called_once_with(free_text="TERM1,TERM2")
         self.assertEqual(200, r.status_code)

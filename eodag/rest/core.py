@@ -26,6 +26,10 @@ from unittest.mock import Mock
 
 import dateutil
 from fastapi.responses import ORJSONResponse, StreamingResponse
+from functools import lru_cache
+
+from cachetools import TTLCache, cached
+from fastapi import Request
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
 
@@ -43,14 +47,19 @@ from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.rest.constants import CACHE_TTL
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
+from eodag.rest.types.collections_search import CollectionsSearchRequest
 from eodag.rest.types.eodag_search import EODAGSearch
-from eodag.rest.types.stac_queryables import StacQueryableProperty, StacQueryables
+from eodag.rest.types.queryables import (
+    QueryablesGetParams,
+    StacQueryableProperty,
+    StacQueryables,
+)
 from eodag.rest.utils import (
     Cruncher,
     file_to_stream,
     format_pydantic_error,
-    get_datetime,
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
@@ -361,6 +370,7 @@ def _order_and_update(
         raise NotAvailableError("Product is not available yet")
 
 
+@cached(cache=TTLCache(maxsize=128, ttl=CACHE_TTL))  # type: ignore
 def get_detailled_collections_list(
     provider: Optional[str] = None, fetch_providers: bool = True
 ) -> List[Dict[str, Any]]:
@@ -415,8 +425,12 @@ def get_product_types(
     return product_types
 
 
+@cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
 def get_stac_collections(
-    url: str, root: str, arguments: Dict[str, Any], provider: Optional[str] = None
+    url: str,
+    root: str,
+    filters: CollectionsSearchRequest,
+    provider: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build STAC collections
 
@@ -437,13 +451,14 @@ def get_stac_collections(
         provider=provider,
         eodag_api=eodag_api,
         root=root,
-    ).get_collections(arguments)
+    ).get_collections(filters.model_dump(exclude_none=True, by_alias=True))
 
 
+@cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
 def get_stac_catalogs(
     url: str,
     root: str = "/",
-    catalogs: Optional[List[str]] = None,
+    catalogs: Optional[Tuple[str, ...]] = None,
     provider: Optional[str] = None,
     fetch_providers: bool = True,
 ) -> Dict[str, Any]:
@@ -469,11 +484,12 @@ def get_stac_catalogs(
         root=root,
         provider=provider,
         eodag_api=eodag_api,
-        catalogs=catalogs or [],
+        catalogs=list(catalogs) if catalogs else None,
         fetch_providers=fetch_providers,
     ).get_stac_catalog()
 
 
+@cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
 def get_stac_collection_by_id(
     url: str, root: str, collection_id: str, provider: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -542,6 +558,7 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
     return False
 
 
+@lru_cache(maxsize=1)
 def get_stac_conformance() -> Dict[str, str]:
     """Build STAC conformance
 
@@ -560,6 +577,7 @@ def get_stac_api_version() -> str:
     return stac_config["stac_api_version"]
 
 
+@lru_cache(maxsize=1)
 def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     """Build STAC OGC / OpenSearch Extension for EO
 
@@ -589,36 +607,21 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     )
 
 
+@cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
 def get_queryables(
-    request: Request,
-    collection: Optional[str] = None,
+    url: str,
+    params: QueryablesGetParams,
     provider: Optional[str] = None,
-    **kwargs: Any,
 ) -> StacQueryables:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
     :type collection_id: str
-    :param provider: (optional) The provider.
-    :type provider: str
-    :param kwargs: additional filters for queryables (`productType` or other search
-                   arguments)
-    :type kwargs: Any
     :returns: A set containing the STAC standardized queryable properties for a collection.
     :rtype Dict[str, StacQueryableProperty]: set
     """
-    if collection and "productType" in kwargs:
-        kwargs.pop("productType")
-    elif "productType" in kwargs:
-        collection = kwargs.pop("productType")
-
-    if "datetime" in kwargs:
-        dates = get_datetime(kwargs)
-        kwargs["start"] = dates[0]
-        kwargs["end"] = dates[1]
-
     python_queryables = eodag_api.list_queryables(
-        provider=provider, productType=collection, **kwargs
+        provider=provider, **params.model_dump(exclude_none=True, by_alias=True)
     )
     python_queryables.pop("start")
     python_queryables.pop("end")
@@ -643,12 +646,12 @@ def get_queryables(
             stac_param
         ] = StacQueryableProperty.from_python_field_definition(stac_param, queryable)
 
-    if collection:
+    if params.collection:
         stac_queryables.pop("collection")
 
     return StacQueryables(
-        q_id=request.state.url,
-        additional_properties=bool(not collection),
+        q_id=url,
+        additional_properties=bool(not params.collection),
         properties=stac_queryables,
     )
 
