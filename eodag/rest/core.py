@@ -72,7 +72,6 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
-    NoMatchingProductType,
     NotAvailableError,
     ValidationError,
 )
@@ -377,8 +376,8 @@ def get_detailled_collections_list() -> List[Dict[str, Any]]:
     :returns: List of config dicts
     :rtype: list
     """
-    return eodag_api.list_product_types(fetch_providers=False
-    )
+    return eodag_api.list_product_types(fetch_providers=False)
+
 
 @cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
 def get_stac_collections(
@@ -597,9 +596,9 @@ def get_queryables(
         ):
             continue
 
-        stac_queryables[
-            stac_param
-        ] = StacQueryableProperty.from_python_field_definition(stac_param, queryable)
+        stac_queryables[stac_param] = (
+            StacQueryableProperty.from_python_field_definition(stac_param, queryable)
+        )
 
     if params.collection:
         stac_queryables.pop("collection")
