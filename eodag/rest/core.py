@@ -363,24 +363,15 @@ def _order_and_update(
     if product.properties.get("storageStatus") != ONLINE_STATUS:
         raise NotAvailableError("Product is not available yet")
 
-
-@cached(cache=TTLCache(maxsize=128, ttl=CACHE_TTL))  # type: ignore
-def get_detailled_collections_list(
-    provider: Optional[str] = None, fetch_providers: bool = True
-) -> List[Dict[str, Any]]:
-    """Returns detailled collections / product_types list for a given provider as a list of
+@cached(cache=TTLCache(maxsize=1, ttl=CACHE_TTL))  # type: ignore
+def get_detailled_collections_list() -> List[Dict[str, Any]]:
+    """Returns detailled collections / product_types list as a list of
     config dicts
 
-    :param provider: (optional) Chosen provider
-    :type provider: str
-    :param fetch_providers: (optional) Whether to fetch providers for new product
-                            types or not
-    :type fetch_providers: bool
     :returns: List of config dicts
     :rtype: list
     """
-    return eodag_api.list_product_types(
-        provider=provider, fetch_providers=fetch_providers
+    return eodag_api.list_product_types(fetch_providers=False
     )
 
 @cached(cache=TTLCache(maxsize=1024, ttl=CACHE_TTL))  # type: ignore
