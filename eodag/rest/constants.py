@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2023, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2024, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -15,4 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-CACHE_TTL = 600  # 10 min
+# default cache ttl
+DEFAULT_TTL = 600  # 10 min
+
+DEFAULT_LOCAL_MAXSIZE = 1024
+
+CACHE_KEY_COLLECTIONS = "collections"
+CACHE_KEY_COLLECTION = "collection"
+CACHE_KEY_SEARCH = "search"
+CACHE_KEY_QUERYABLES = "queryables"
+CACHE_KEY_CATALOGS = "catalogs"
