@@ -246,13 +246,14 @@ class StacItem(StacCommon):
 
             product_dict = deepcopy(product.__dict__)
 
-            product_item = jsonpath_parse_dict_items(
+            product_item: Dict[str, Any] = jsonpath_parse_dict_items(
                 item_model,
                 {
                     "product": product_dict,
                     "providers": [provider_dict],
                 },
             )
+
             # parse download link
             downloadlink_href = (
                 f"{catalog['url']}/items/{product.properties['title']}/download"
@@ -301,10 +302,13 @@ class StacItem(StacCommon):
             format_args = deepcopy(self.stac_config)
             format_args["catalog"] = catalog
             format_args["item"] = product_item
-            product_item: Dict[str, Any] = format_dict_items(
-                product_item, **format_args
-            )
+            product_item = format_dict_items(product_item, **format_args)
             product_item["bbox"] = [float(i) for i in product_item["bbox"]]
+
+            # transform shapely geometry to geojson
+            product_item["geometry"] = geojson.loads(
+                geojson.dumps(product_item["geometry"])
+            )
 
             # remove empty properties
             product_item = self.__filter_item_properties_values(product_item)
@@ -434,7 +438,7 @@ class StacItem(StacCommon):
         items["features"] = self.__get_item_list(search_results, catalog)
 
         self.update_data(items)
-        return geojson.loads(geojson.dumps(self.data))  # type: ignore
+        return self.data
 
     def __filter_item_model_properties(
         self, item_model: Dict[str, Any], product_type: str
@@ -625,7 +629,14 @@ class StacCollection(StacCommon):
             root=root,
         )
 
-    def __get_collection_list(self, filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def get_collection_list(
+        self,
+        collection: Optional[str] = None,
+        q: Optional[str] = None,
+        platform: Optional[str] = None,
+        instrument: Optional[str] = None,
+        constellation: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """Build STAC collections list
 
         :param filters: (optional) Additional filters for collections search
@@ -636,11 +647,19 @@ class StacCollection(StacCommon):
         collection_model = deepcopy(self.stac_config["collection"])
         provider_model = deepcopy(self.stac_config["provider"])
 
-        # product types matching filters
-        try:
-            guessed_product_types = self.eodag_api.guess_product_type(**filters)
-        except NoMatchingProductType:
-            guessed_product_types = []
+        if collection:
+            guessed_product_types = [collection]
+        else:
+            # product types matching filters
+            try:
+                guessed_product_types = self.eodag_api.guess_product_type(
+                    free_text_filter=q,
+                    platformSerialIdentifier=platform,
+                    instrument=instrument,
+                    platform=constellation,
+                )
+            except NoMatchingProductType:
+                guessed_product_types = []
 
         # list product types with all metadata using guessed ids
         product_types = [
@@ -652,7 +671,7 @@ class StacCollection(StacCommon):
         collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
             if self.provider:
-                providers = [self.provider]
+                providers = [self.eodag_api.providers_config[self.provider].__dict__]
             else:
                 providers = sorted(
                     [
@@ -682,9 +701,14 @@ class StacCollection(StacCommon):
             )
             # parse f-strings
             format_args = deepcopy(self.stac_config)
+            url = (
+                f"{self.url}/{product_type['ID']}"
+                if not self.url.endswith(product_type["ID"])
+                else self.url
+            )
             format_args["collection"] = dict(
                 product_type_collection,
-                **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
+                **{"url": url, "root": self.root},
             )
             product_type_collection = format_dict_items(
                 product_type_collection, **format_args
@@ -693,58 +717,6 @@ class StacCollection(StacCommon):
             collection_list.append(product_type_collection)
 
         return collection_list
-
-    def get_collections(self, filters: Dict[str, Any]) -> Dict[str, Any]:
-        """Build STAC collections
-
-        :param filters: (optional) Additional filters for collections search
-        :type filters: dict
-        :returns: Collections dictionnary
-        :rtype: dict
-        """
-        collections = deepcopy(self.stac_config["collections"])
-        collections["collections"] = self.__get_collection_list(filters)
-
-        # # parse f-strings
-        format_args = deepcopy(self.stac_config)
-        format_args["collections"].update({"url": self.url, "root": self.root})
-
-        collections["links"] = [
-            format_dict_items(link, **format_args) for link in collections["links"]
-        ]
-
-        collections["links"] += [
-            {
-                "rel": "child",
-                "title": collec["id"],
-                "href": [
-                    link["href"] for link in collec["links"] if link["rel"] == "self"
-                ][0],
-            }
-            for collec in collections["collections"]
-        ]
-
-        collections = format_dict_items(collections, **format_args)
-        self.update_data(collections)
-        return self.as_dict()
-
-    def get_collection_by_id(self, collection_id: str) -> Dict[str, Any]:
-        """Build STAC collection by its id
-
-        :param collection_id: Product type as collection ID
-        :type collection_id: str
-        :returns: Collection dictionary
-        :rtype: dict
-        """
-        collection_list = self.__get_collection_list(
-            filters={"productType": collection_id}
-        )
-
-        if not collection_list:
-            raise NotAvailableError(f"Collection {collection_id} does not exist.")
-
-        self.update_data(collection_list[0])
-        return self.as_dict()
 
 
 class StacCatalog(StacCommon):
@@ -849,19 +821,22 @@ class StacCatalog(StacCommon):
         :param product_type: Product type
         :type product_type: str
         """
-        collection = StacCollection(
+        collections = StacCollection(
             url=self.url,
             stac_config=self.stac_config,
             provider=self.provider,
             eodag_api=self.eodag_api,
             root=self.root,
-        ).get_collection_by_id(product_type)
+        ).get_collection_list(collection=product_type)
+
+        if not collections:
+            raise NotAvailableError(f"Collection {product_type} does not exist.")
 
         cat_model = deepcopy(self.stac_config["catalogs"]["product_type"]["model"])
         # parse f-strings
         format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
-        format_args["collection"] = collection
+        format_args["collection"] = collections[0]
         try:
             parsed_dict: Dict[str, Any] = format_dict_items(cat_model, **format_args)
         except Exception:
@@ -1392,11 +1367,3 @@ class StacCatalog(StacCommon):
                     )
 
         return self
-
-    def get_stac_catalog(self) -> Dict[str, Any]:
-        """Get nested STAC catalog as data dict
-
-        :returns: Catalog dictionnary
-        :rtype: dict
-        """
-        return self.as_dict()

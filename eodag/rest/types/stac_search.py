@@ -20,12 +20,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
 
+import geojson
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     PositiveInt,
     StringConstraints,
+    field_serializer,
     field_validator,
     model_validator,
 )
@@ -119,6 +121,15 @@ class SearchPostRequest(BaseModel):
     )
     sortby: Optional[List[Sortby]] = None
     crunch: Optional[str] = None
+
+    @field_serializer("intersects")
+    def serialize_intersects(
+        self, intersects: Optional[Geometry]
+    ) -> Optional[Dict[str, Any]]:
+        """Serialize intersects from shapely to a proper dict"""
+        if intersects:
+            return geojson.loads(geojson.dumps(intersects))  # type: ignore
+        return None
 
     @model_validator(mode="after")
     def check_filter_lang(self) -> Self:
