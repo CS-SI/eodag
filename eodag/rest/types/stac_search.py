@@ -106,15 +106,15 @@ class SearchPostRequest(BaseModel):
     intersects: Optional[Geometry] = None
     datetime: Optional[str] = None
     limit: Optional[PositiveInt] = Field(  # type: ignore
-        None, description="Maximum number of items per page."
+        default=None, description="Maximum number of items per page."
     )
     page: Optional[PositiveInt] = Field(  # type: ignore
-        None, description="Page number, must be a positive integer."
+        default=None, description="Page number, must be a positive integer."
     )
     query: Optional[Dict[str, Any]] = None
     filter: Optional[Dict[str, Any]] = None
     filter_lang: Optional[str] = Field(
-        None,
+        default=None,
         alias="filter-lang",
         description="The language used for filtering.",
         validate_default=True,
