@@ -341,7 +341,9 @@ class UsgsApi(Api):
                             error_message = str(e)
                         raise NotAvailableError(error_message)
                     else:
-                        stream_size = int(stream.headers.get("content-length", 0))
+                        stream_size = (
+                            int(stream.headers.get("content-length", 0)) or None
+                        )
                         progress_callback.reset(total=stream_size)
                         with open(fs_path, "wb") as fhandle:
                             for chunk in stream.iter_content(chunk_size=64 * 1024):

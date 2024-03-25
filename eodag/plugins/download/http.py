@@ -799,7 +799,7 @@ class HTTPDownload(Download):
                     if self.stream.status_code == status_running:
                         product.properties["storageStatus"] = "ORDERED"
                         self._process_exception(None, product, ordered_message)
-                stream_size = self._check_stream_size(product)
+                stream_size = self._check_stream_size(product) or None
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
@@ -831,7 +831,7 @@ class HTTPDownload(Download):
             self.config, "dl_url_params", {}
         )
 
-        total_size = self._get_asset_sizes(assets_values, auth, params)
+        total_size = self._get_asset_sizes(assets_values, auth, params) or None
 
         progress_callback.reset(total=total_size)
 
