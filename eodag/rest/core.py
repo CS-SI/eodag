@@ -45,7 +45,7 @@ from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.rest.cache import cached_result
+from eodag.rest.cache import local_cached, redis_cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
     CACHE_KEY_COLLECTIONS,
@@ -253,7 +253,7 @@ async def search_stac_items(
 
     hashed_search = hash(search_request.model_dump_json())
     cache_key = f"{CACHE_KEY_SEARCH}:{hashed_search}"
-    return await cached_result(_fetch, cache_key, request)
+    return await redis_cached(_fetch, cache_key, request)
 
 
 def download_stac_item(
@@ -455,7 +455,7 @@ async def all_collections(
 
     hashed_collections = hash(f"{provider}:{q}:{platform}:{instrument}:{constellation}")
     cache_key = f"{CACHE_KEY_COLLECTIONS}:{hashed_collections}"
-    return await cached_result(_fetch, cache_key, request)
+    return await local_cached(_fetch, cache_key, request)
 
 
 async def get_collection(
@@ -491,7 +491,7 @@ async def get_collection(
         return collection_list[0]
 
     cache_key = f"{CACHE_KEY_COLLECTION}:{provider}:{collection_id}"
-    return await cached_result(_fetch, cache_key, request)
+    return await local_cached(_fetch, cache_key, request)
 
 
 async def get_stac_catalogs(
@@ -525,7 +525,7 @@ async def get_stac_catalogs(
         ).data
 
     hashed_catalogs = hash(":".join(catalogs) if catalogs else None)
-    return await cached_result(
+    return await local_cached(
         _fetch, f"{CACHE_KEY_COLLECTION}:{provider}:{hashed_catalogs}", request
     )
 
@@ -674,7 +674,7 @@ async def get_queryables(
         ).model_dump(mode="json", by_alias=True)
 
     hashed_queryables = hash(params.model_dump_json())
-    return await cached_result(
+    return await local_cached(
         _fetch, f"{CACHE_KEY_QUERYABLES}:{provider}:{hashed_queryables}", request
     )
 
