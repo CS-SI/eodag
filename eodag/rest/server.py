@@ -446,19 +446,14 @@ def stac_collections_item_download_asset(
     include_in_schema=False,
 )
 async def stac_collections_item(
-    collection_id: str, item_id: str, request: Request
+    collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection item by id"""
     logger.debug("URL: %s", request.url)
 
-    base_args: Dict[str, Any] = dict(request.query_params)
-    base_args["ids"] = [item_id]
-    base_args["collections"] = [collection_id]
-    base_args["limit"] = 1
-
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    search_request = SearchPostRequest.model_validate(clean)
+    search_request = SearchPostRequest(
+        provider=provider, ids=[item_id], collections=[collection_id], limit=1
+    )
 
     item_collection = await search_stac_items(request, search_request)
 
@@ -653,19 +648,15 @@ def stac_catalogs_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
+async def stac_catalogs_item(
+    catalogs: str, item_id: str, request: Request, provider: Optional[str] = None
+):
     """Fetch catalog's single features."""
     logger.debug("URL: %s", request.url)
 
     list_catalog = catalogs.strip("/").split("/")
 
-    base_args: Dict[str, Any] = dict(request.query_params)
-    base_args["ids"] = [item_id]
-    base_args["limit"] = 1
-
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    search_request = SearchPostRequest.model_validate(clean)
+    search_request = SearchPostRequest(provider=provider, ids=[item_id], limit=1)
 
     item_collection = await search_stac_items(
         request, search_request, catalogs=list_catalog
@@ -733,12 +724,17 @@ async def stac_catalogs_items(
     tags=["Capabilities"],
     include_in_schema=False,
 )
-async def stac_catalogs(catalogs: str, request: Request) -> ORJSONResponse:
+async def stac_catalogs(
+    catalogs: str, request: Request, provider: Optional[str] = None
+) -> ORJSONResponse:
     """Describe the given catalog and list available sub-catalogs"""
     logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    if not catalogs:
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
 
     list_catalog = catalogs.strip("/").split("/")
     response = await get_stac_catalogs(
