@@ -18,7 +18,7 @@
 # default cache ttl
 DEFAULT_TTL = 600  # 10 min
 
-DEFAULT_LOCAL_MAXSIZE = 1024
+DEFAULT_MAXSIZE = 2048  # local cache maxsize
 
 CACHE_KEY_COLLECTIONS = "collections"
 CACHE_KEY_COLLECTION = "collection"
