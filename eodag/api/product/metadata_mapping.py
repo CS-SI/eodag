@@ -465,6 +465,15 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return georss
 
         @staticmethod
+        def convert_to_longitude_latitude(
+            input_geom_unformatted: Any,
+        ) -> Dict[str, float]:
+            bounds = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
+            lon = (bounds[0] + bounds[2]) / 2
+            lat = (bounds[1] + bounds[3]) / 2
+            return {"lon": lon, "lat": lat}
+
+        @staticmethod
         def convert_csv_list(values_list: Any) -> Any:
             if isinstance(values_list, list):
                 return ",".join([str(x) for x in values_list])
@@ -622,23 +631,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s1_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            level = "LEVEL" + parts[3][0]
-            return level
-
-        @staticmethod
-        def convert_get_sensor_mode_from_s1_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            return parts[1]
-
-        @staticmethod
-        def convert_get_processing_level_from_s2_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            processing_level = "S2" + parts[1]
-            return processing_level
-
-        @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> Dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
@@ -674,12 +666,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s5p_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            processing_level = parts[2].replace("_", "")
-            return processing_level
-
-        @staticmethod
         def convert_split_cop_dem_id(product_id: str) -> List[int]:
             parts = product_id.split("_")
             lattitude = parts[3]
@@ -696,17 +682,25 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return bbox
 
         @staticmethod
-        def convert_split_corine_id(product_id: str) -> str:
-            if "clc" in product_id:
-                year = product_id.split("_")[1][3:]
-                product_type = "Corine Land Cover " + year
+        def convert_dates_from_cmems_id(product_id: str):
+            date_format_1 = "[0-9]{10}"
+            date_format_2 = "[0-9]{8}"
+            dates = re.findall(date_format_1, product_id)
+            if dates:
+                date = dates[0]
             else:
-                years = [1990, 2000, 2006, 2012, 2018]
-                end_year = product_id[1:5]
-                i = years.index(int(end_year))
-                start_year = str(years[i - 1])
-                product_type = "Corine Land Change " + start_year + " " + end_year
-            return product_type
+                dates = re.findall(date_format_2, product_id)
+                date = dates[0]
+            if len(date) == 10:
+                date_time = datetime.strptime(dates[0], "%Y%m%d%H")
+            else:
+                date_time = datetime.strptime(dates[0], "%Y%m%d")
+            return {
+                "min_date": date_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "max_date": (date_time + timedelta(days=1)).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+            }
 
         @staticmethod
         def convert_to_datetime_dict(
@@ -828,6 +822,22 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 "startDate": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
+
+        @staticmethod
+        def convert_get_hydrological_year(date: str):
+            utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
+            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object_second_year = date_object + timedelta(days=365)
+            return [
+                f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
+            ]
+
+        @staticmethod
+        def convert_get_variables_from_path(path: str):
+            if "?" not in path:
+                return []
+            variables = path.split("?")[1]
+            return variables.split(",")
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):

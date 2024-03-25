@@ -365,36 +365,6 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
-    def test_convert_get_processing_level_from_s1_id(self):
-        to_format = "{id#get_processing_level_from_s1_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
-            ),
-            "LEVEL1",
-        )
-
-    def test_convert_get_sensor_mode_from_s1_id(self):
-        to_format = "{id#get_sensor_mode_from_s1_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S1A_IW_GRDH_1SDV_20141126T230844_20141126T230904_003459_0040CE_E073_COG",
-            ),
-            "IW",
-        )
-
-    def test_convert_get_processing_level_from_s2_id(self):
-        to_format = "{id#get_processing_level_from_s2_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S2A_MSIL1C_20160602T065342_N0202_R077_T39KVU_20160602T065342",
-            ),
-            "S2MSIL1C",
-        )
-
     def test_convert_split_id_into_s3_params(self):
         to_format = "{id#split_id_into_s3_params}"
         expected = {
@@ -429,16 +399,6 @@ class TestMetadataFormatter(unittest.TestCase):
             str(expected),
         )
 
-    def test_convert_get_processing_level_from_s5p_id(self):
-        to_format = "{id#get_processing_level_from_s5p_id}"
-        self.assertEqual(
-            format_metadata(
-                to_format,
-                id="S5P_RPRO_L2__NP_BD7_20180531T223852_20180601T002220_03271_01_010002_20190528T184222",
-            ),
-            "L2",
-        )
-
     def test_convert_split_cop_dem_id(self):
         to_format = "{id#split_cop_dem_id}"
         self.assertEqual(
@@ -458,22 +418,6 @@ class TestMetadataFormatter(unittest.TestCase):
                 )
             ),
             str([-120, -60, -118, -58]),
-        )
-
-    def test_convert_split_corine_id(self):
-        self.assertEqual(
-            format_metadata(
-                "{id#split_corine_id}",
-                id="u2006_clc2000_v2020_20u1_raster100m",
-            ),
-            "Corine Land Cover 2000",
-        )
-        self.assertEqual(
-            format_metadata(
-                "{id#split_corine_id}",
-                id="u2006_cha0006_v2020_20u1_raster100m",
-            ),
-            "Corine Land Change 2000 2006",
         )
 
     def test_convert_to_datetime_dict(self):
@@ -536,6 +480,60 @@ class TestMetadataFormatter(unittest.TestCase):
             format_metadata(to_format, text="20231019_20231020"),
             str(
                 {"startDate": "2023-10-19T00:00:00Z", "endDate": "2023-10-20T00:00:00Z"}
+            ),
+        )
+
+    def test_convert_get_hydrological_year(self):
+        to_format = "{date#get_hydrological_year}"
+        self.assertEqual(
+            format_metadata(to_format, date="2010-01-11T17:42:24Z"), str(["2010_11"])
+        )
+
+    def test_convert_to_longitude_latitude(self):
+        to_format = "{input_geom_unformatted#to_longitude_latitude}"
+        geometry = (
+            """POLYGON ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42))"""
+        )
+
+        self.assertEqual(
+            format_metadata(to_format, input_geom_unformatted=geometry),
+            str({"lon": 1.455, "lat": 43.59}),
+        )
+        geometry = """POINT (1.23 43.42)"""
+
+        self.assertEqual(
+            format_metadata(to_format, input_geom_unformatted=geometry),
+            str({"lon": 1.23, "lat": 43.42}),
+        )
+
+    def test_convert_get_variables_from_path(self):
+        to_format = "{path#get_variables_from_path}"
+        self.assertEqual(
+            format_metadata(to_format, path="productA.nc?depth,latitude"),
+            str(["depth", "latitude"]),
+        )
+        self.assertEqual(
+            format_metadata(to_format, path="productA.nc"),
+            str([]),
+        )
+
+    def test_convert_dates_from_cmems_id(self):
+        to_format = "{product_id#dates_from_cmems_id}"
+        self.assertEqual(
+            format_metadata(
+                to_format, product_id="mfwamglocep_2021121102_R20211212_12H.nc"
+            ),
+            str(
+                {"min_date": "2021-12-11T02:00:00Z", "max_date": "2021-12-12T02:00:00Z"}
+            ),
+        )
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                product_id="glo12_rg_1d-m_20220601-20220601_3D-uovo_hcst_R20220615.nc",
+            ),
+            str(
+                {"min_date": "2022-06-01T00:00:00Z", "max_date": "2022-06-02T00:00:00Z"}
             ),
         )
 

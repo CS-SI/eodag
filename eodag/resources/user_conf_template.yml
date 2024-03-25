@@ -200,6 +200,16 @@ wekeo:
             username:
             password:
 
+wekeo_cmems:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+    download:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
+
 creodias_s3:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration

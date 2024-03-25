@@ -107,7 +107,7 @@ class Search(PluginTopic):
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
-    def discover_product_types(self) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf"""
         return None
 

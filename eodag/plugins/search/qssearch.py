@@ -33,8 +33,10 @@ from typing import (
     cast,
 )
 from urllib.error import URLError
+from urllib.parse import parse_qsl, unquote, unquote_plus, urlparse, urlunparse
 from urllib.request import Request, urlopen
 
+import geojson
 import orjson
 import requests
 import yaml
@@ -266,6 +268,17 @@ class QueryStringSearch(Search):
                     "generic_product_type_parsable_metadata"
                 ]
             )
+            if (
+                "single_product_type_parsable_metadata"
+                in self.config.discover_product_types
+            ):
+                self.config.discover_product_types[
+                    "single_product_type_parsable_metadata"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.discover_product_types[
+                        "single_product_type_parsable_metadata"
+                    ]
+                )
 
         # parse jsonpath on init: queryables discovery
         if (
@@ -331,7 +344,7 @@ class QueryStringSearch(Search):
         self.next_page_query_obj = None
         self.next_page_merge = None
 
-    def discover_product_types(self) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf
 
         :returns: configuration dict containing fetched product types information
@@ -344,6 +357,14 @@ class QueryStringSearch(Search):
                     **self.config.__dict__
                 ),
             )
+            if kwargs:
+                url_parse = urlparse(fetch_url)
+                query = url_parse.query
+                url_dict = dict(parse_qsl(query))
+                url_dict.update(kwargs)
+                url_new_query = urlencode(url_dict)
+                url_parse = url_parse._replace(query=url_new_query)
+                fetch_url = urlunparse(url_parse)
             response = QueryStringSearch._request(
                 self,
                 fetch_url,
@@ -369,6 +390,8 @@ class QueryStringSearch(Search):
                             "results_entry"
                         ].find(resp_as_json)
                     ]
+                    if result and isinstance(result[0], list):
+                        result = result[0]
 
                     for product_type_result in result:
                         # providers_config extraction
@@ -405,6 +428,17 @@ class QueryStringSearch(Search):
                                 "generic_product_type_parsable_metadata"
                             ],
                         )
+
+                        if (
+                            "single_product_type_parsable_metadata"
+                            in self.config.discover_product_types
+                        ):
+                            collection_data = self._get_product_type_metadata_from_single_collection_endpoint(
+                                generic_product_type_id
+                            )
+                            conf_update_dict["product_types_config"][
+                                generic_product_type_id
+                            ].update(collection_data)
 
                         # update keywords
                         keywords_fields = [
@@ -458,6 +492,34 @@ class QueryStringSearch(Search):
             lambda k, v: v if v != NOT_AVAILABLE else None,
         )
         return conf_update_dict
+
+    def _get_product_type_metadata_from_single_collection_endpoint(
+        self, product_type: str
+    ) -> Dict[str, Any]:
+        """
+        retrieves additional product type information from an endpoint returning data for a single collection
+        :param product_type: product type
+        :type product_type: str
+        :return: product types and their metadata
+        :rtype: Dict[str, Any]
+        """
+        single_collection_url = self.config.discover_product_types[
+            "single_collection_fetch_url"
+        ].format(productType=product_type)
+        resp = QueryStringSearch._request(
+            self,
+            single_collection_url,
+            info_message="Fetching data for product type product type: {}".format(
+                product_type
+            ),
+            exception_message="Skipping error while fetching product types for "
+            "{} {} instance:".format(self.provider, self.__class__.__name__),
+        )
+        product_data = resp.json()
+        return properties_from_json(
+            product_data,
+            self.config.discover_product_types["single_product_type_parsable_metadata"],
+        )
 
     def query(
         self,
@@ -1078,30 +1140,37 @@ class PostJsonSearch(QueryStringSearch):
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
         provider_product_type = self.map_product_type(product_type)
-        keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
-
-        if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
-            keywords["productType"] = provider_product_type
-        elif product_type:
-            keywords["productType"] = product_type
-
-        # provider product type specific conf
-        self.product_type_def_params = self.get_product_type_def_params(
-            product_type, **kwargs
-        )
-
-        # Add to the query, the queryable parameters set in the provider product type definition
-        keywords.update(
-            {
-                k: v
-                for k, v in self.product_type_def_params.items()
-                if k not in keywords.keys()
-                and k in self.config.metadata_mapping.keys()
-                and isinstance(self.config.metadata_mapping[k], list)
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            qp = geojson.loads(qs)
+        else:
+            keywords = {
+                k: v for k, v in kwargs.items() if k != "auth" and v is not None
             }
-        )
 
-        qp, _ = self.build_query_string(product_type, **keywords)
+            if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
+                keywords["productType"] = provider_product_type
+            elif product_type:
+                keywords["productType"] = product_type
+
+            # provider product type specific conf
+            self.product_type_def_params = self.get_product_type_def_params(
+                product_type, **kwargs
+            )
+
+            # Add to the query, the queryable parameters set in the provider product type definition
+            keywords.update(
+                {
+                    k: v
+                    for k, v in self.product_type_def_params.items()
+                    if k not in keywords.keys()
+                    and k in self.config.metadata_mapping.keys()
+                    and isinstance(self.config.metadata_mapping[k], list)
+                }
+            )
+
+            qp, _ = self.build_query_string(product_type, **keywords)
 
         for query_param, query_value in qp.items():
             if (
@@ -1176,6 +1245,26 @@ class PostJsonSearch(QueryStringSearch):
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
+    def normalize_results(
+        self, results: List[Dict[str, Any]], **kwargs: Any
+    ) -> List[EOProduct]:
+        """Build EOProducts from provider results"""
+        results = super(PostJsonSearch, self).normalize_results(results, **kwargs)
+        for product in results:
+            if "downloadLink" in product.properties:
+                decoded_link = unquote(product.properties["downloadLink"])
+                if decoded_link[0] == "{":  # not a url but a dict
+                    product.properties["_dc_qs"] = product.properties["downloadLink"]
+            # workaround to add product type to wekeo cmems order links
+            if (
+                "orderLink" in product.properties
+                and "productType" in product.properties["orderLink"]
+            ):
+                product.properties["orderLink"] = product.properties[
+                    "orderLink"
+                ].replace("productType", product.product_type)
+        return results
+
     def collect_search_urls(
         self,
         page: Optional[int] = None,
@@ -1220,7 +1309,9 @@ class PostJsonSearch(QueryStringSearch):
                             total_results = _total_results or 0
                         else:
                             total_results += _total_results or 0
-                if isinstance(self.config.pagination["next_page_query_obj"], str):
+                if "next_page_query_obj" in self.config.pagination and isinstance(
+                    self.config.pagination["next_page_query_obj"], str
+                ):
                     # next_page_query_obj needs to be parsed
                     next_page_query_obj = self.config.pagination[
                         "next_page_query_obj"
@@ -1302,7 +1393,10 @@ class PostJsonSearch(QueryStringSearch):
                 )
             if "response" in locals():
                 logger.debug(response.content)
-            raise RequestError(str(err))
+            error_text = str(err)
+            if getattr(err, "response", None):
+                error_text = err.response.text
+            raise RequestError(error_text) from err
         return response
 
 
@@ -1322,7 +1416,6 @@ class StacSearch(PostJsonSearch):
         self, results: List[Dict[str, Any]], **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
-
         products = super(StacSearch, self).normalize_results(results, **kwargs)
 
         # move assets from properties to product's attr

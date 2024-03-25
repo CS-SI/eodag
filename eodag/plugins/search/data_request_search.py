@@ -111,7 +111,7 @@ class DataRequestSearch(Search):
         self.download_info: Dict[str, Any] = {}
         self.data_request_id = None
 
-    def discover_product_types(self) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types is disabled for `DataRequestSearch`
 
         :returns: empty dict

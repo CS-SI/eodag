@@ -392,6 +392,7 @@ class EODataAccessGateway:
         stac_provider_config = load_stac_provider_config()
         for provider in conf_update.keys():
             provider_config_init(self.providers_config[provider], stac_provider_config)
+            setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
 
@@ -525,6 +526,7 @@ class EODataAccessGateway:
                 for product_type_id in provider_supported_products:
                     if product_type_id == GENERIC_PRODUCT_TYPE:
                         continue
+
                     config = self.product_types_config[product_type_id]
                     config["_id"] = product_type_id
                     if "alias" in config:
@@ -678,13 +680,13 @@ class EODataAccessGateway:
                 # providers not skipped here should be user-modified
                 # or not in ext_product_types_conf (if eodag system conf != eodag conf used for ext_product_types_conf)
 
-            # discover product types for user configured provider
-            provider_ext_product_types_conf = (
-                self.discover_product_types(provider=provider) or {}
-            )
-
-            # update eodag product types list with new conf
-            self.update_product_types_list(provider_ext_product_types_conf)
+            if not already_fetched:
+                # discover product types for user configured provider
+                provider_ext_product_types_conf = (
+                    self.discover_product_types(provider=provider) or {}
+                )
+                # update eodag product types list with new conf
+                self.update_product_types_list(provider_ext_product_types_conf)
 
     def discover_product_types(
         self, provider: Optional[str] = None
@@ -1479,6 +1481,12 @@ class EODataAccessGateway:
                 )
         return SearchResult([]), 0
 
+    def _fetch_external_product_type(self, provider: str, product_type: str):
+        plugins = self._plugins_manager.get_search_plugins(provider=provider)
+        plugin = next(plugins)
+        product_type_config = plugin.discover_product_types(q=product_type)
+        self.update_product_types_list({provider: product_type_config})
+
     def _prepare_search(
         self,
         start: Optional[str] = None,
@@ -1592,7 +1600,16 @@ class EODataAccessGateway:
             logger.debug(
                 f"Fetching external product types sources to find {product_type} product type"
             )
-            self.fetch_product_types_list()
+            if provider:
+                # Try to get specific product type from external provider
+                self._fetch_external_product_type(provider, product_type)
+            if (
+                not provider
+                or product_type
+                not in self._plugins_manager.product_type_to_provider_config_map.keys()
+            ):
+                # no provider or still not found -> fetch all external product types
+                self.fetch_product_types_list()
 
         preferred_provider = self.get_preferred_provider()[0]
 

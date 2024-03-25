@@ -31,6 +31,7 @@ import responses
 import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
+from eodag.utils.exceptions import DownloadError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -1068,15 +1069,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 json={"progress_percentage": 50, "that": "failed"},
             )
 
-            with self.assertLogs(level="INFO") as cm:
+            with self.assertRaises(DownloadError):
                 plugin.orderDownloadStatus(self.product, auth=auth)
-                self.assertEqual(
-                    [
-                        f"INFO:eodag.download.http:{self.product.properties['title']} order status: 50%",
-                        'WARNING:eodag.download.http:{"progress_percentage": 50, "that": "failed"}',
-                    ],
-                    cm.output,
-                )
+
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
             )

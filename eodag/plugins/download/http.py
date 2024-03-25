@@ -284,6 +284,13 @@ class HTTPDownload(Download):
                 response.raise_for_status()
                 status_message = response.text
                 status_dict = response.json()
+                order_status_results_entry = getattr(
+                    self.config, "order_status_results_entry", None
+                )
+                if order_status_results_entry:
+                    status_dict = status_dict[order_status_results_entry]
+                if isinstance(status_dict, list):
+                    status_dict = status_dict[0]
                 # display progress percentage
                 order_status_percent_key = getattr(
                     self.config, "order_status_percent", None
@@ -302,7 +309,8 @@ class HTTPDownload(Download):
                     and order_status_error_dict.items() <= status_dict.items()
                 ):
                     # order_status_error_dict is a subset of status_dict : error
-                    logger.warning(status_message)
+                    logger.error(status_message)
+                    raise DownloadError(status_message)
                 else:
                     logger.debug(status_message)
                 # check if succeeds and need search again
@@ -312,8 +320,14 @@ class HTTPDownload(Download):
                 if (
                     "status" in status_dict
                     and status_dict["status"] == order_status_success_dict["status"]
-                    and "message" in status_dict
-                    and status_dict["message"] == order_status_success_dict["message"]
+                    and (
+                        "message" not in order_status_success_dict
+                        or (
+                            "message" in status_dict
+                            and status_dict["message"]
+                            == order_status_success_dict["message"]
+                        )
+                    )
                 ):
                     product.properties["storageStatus"] = ONLINE_STATUS
                 if (
@@ -652,14 +666,14 @@ class HTTPDownload(Download):
         )
 
     def _process_exception(
-        self, e: RequestException, product: EOProduct, ordered_message: str
+        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
     ) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
             auth_errors = [auth_errors]
-        response_text = e.response.text.strip() if e.response else ""
-        if e.response and e.response.status_code in auth_errors:
+        response_text = e.response.text.strip() if e and e.response else ""
+        if e and e.response and e.response.status_code in auth_errors:
             raise AuthenticationError(
                 "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                 % (
@@ -675,6 +689,7 @@ class HTTPDownload(Download):
                 if ordered_message and not response_text
                 else response_text
             )
+
             raise NotAvailableError(
                 "%s(initially %s) requested, returned: %s"
                 % (
@@ -686,11 +701,14 @@ class HTTPDownload(Download):
         else:
             import traceback as tb
 
-            logger.error(
-                "Error while getting resource :\n%s\n%s",
-                tb.format_exc(),
-                response_text,
-            )
+            if e:
+                logger.error(
+                    "Error while getting resource :\n%s\n%s",
+                    tb.format_exc(),
+                    response_text,
+                )
+            else:
+                logger.error("Error while getting resource :\n%s", tb.format_exc())
 
     def _stream_download(
         self,
@@ -766,7 +784,6 @@ class HTTPDownload(Download):
         ) as self.stream:
             try:
                 self.stream.raise_for_status()
-
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(
                     exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
@@ -774,6 +791,14 @@ class HTTPDownload(Download):
             except RequestException as e:
                 self._process_exception(e, product, ordered_message)
             else:
+                if getattr(self.config, "order_status_in_progress", None):
+                    # order still in progress but no error
+                    status_running = getattr(self.config, "order_status_in_progress")[
+                        "response_code"
+                    ]
+                    if self.stream.status_code == status_running:
+                        product.properties["storageStatus"] = "ORDERED"
+                        self._process_exception(None, product, ordered_message)
                 stream_size = self._check_stream_size(product)
                 product.headers = self.stream.headers
                 progress_callback.reset(total=stream_size)

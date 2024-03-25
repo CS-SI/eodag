@@ -93,9 +93,15 @@ class TestSearchStacStatic(unittest.TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_load_child(self, mock_fetch_product_types_list):
+    def test_search_stac_static_load_child(
+        self, mock_fetch_product_types_list, mock_discover_produc_types
+    ):
         """load_stac_items from child catalog must provide items"""
         with pytest.warns(
             DeprecationWarning,
@@ -111,10 +117,14 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(items[0].product_type, "S2_MSI_L1C")
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_search_stac_static_load_root_not_recursive(
-        self, mock_fetch_product_types_list
+        self, mock_fetch_product_types_list, mock_discover_product_types
     ):
         """load_stac_items from root must provide an empty list when no recursive"""
         with pytest.warns(
@@ -157,7 +167,13 @@ class TestSearchStacStatic(unittest.TestCase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_load_item(self, mock_fetch_product_types_list):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    def test_search_stac_static_load_item(
+        self, mock_fetch_product_types_list, mock_discover_product_types
+    ):
         """load_stac_items from a single item must provide it"""
         with pytest.warns(
             DeprecationWarning,
@@ -171,10 +187,14 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(item[0].product_type, "S2_MSI_L1C")
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_search_stac_static_load_item_updated_provider(
-        self, mock_fetch_product_types_list
+        self, mock_fetch_product_types_list, mock_discover_product_types
     ):
         """load_stac_items from a single item using updated provider"""
         with pytest.warns(

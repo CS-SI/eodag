@@ -1243,7 +1243,9 @@ def cached_parse(str_to_parse: str) -> JSONPath:
 
 @functools.lru_cache()
 def _mutable_cached_yaml_load(config_path: str) -> Any:
-    with open(os.path.abspath(os.path.realpath(config_path)), "r") as fh:
+    with open(
+        os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
+    ) as fh:
         return yaml.load(fh, Loader=yaml.SafeLoader)
 
 

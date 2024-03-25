@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
+import os
 import re
 import ssl
 import unittest
@@ -150,6 +151,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
                     headers:
                         Cookie: "seeedtoken={apikey}"
         """
+
         mundi_config_dict = yaml.safe_load(mundi_config_yaml)
         override_config_from_mapping(providers_config, mundi_config_dict)
         self.plugins_manager = PluginManager(providers_config)
@@ -445,6 +447,38 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         )
         # restore configuration
         search_plugin.config.discover_product_types["results_entry"] = results_entry
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_with_query_param(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must return a well formatted dict"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "wekeo_cmems"
+        search_plugin = self.get_search_plugin(provider=provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "dataset_id": "foo_collection",
+                        "metadata": {"title": "The FOO collection"},
+                    }
+                ]
+            },
+            {
+                "dataset_id": "foo_collection",
+                "metadata": {"title": "The FOO collection"},
+            },
+        ]
+        search_plugin.discover_product_types()
+        mock__request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+            verify=True,
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -1386,7 +1420,15 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
     )
     def setUp(self, mock_requests_get):
         super(TestSearchPluginDataRequestSearch, self).setUp()
-        provider = "wekeo"
+        providers_config = self.plugins_manager.providers_config
+        wekeo_old_config_file = os.path.join(
+            TEST_RESOURCES_PATH, "wekeo_old_config.yml"
+        )
+        with open(wekeo_old_config_file, "r") as file:
+            wekeo_old_config_dict = yaml.safe_load(file)
+        override_config_from_mapping(providers_config, wekeo_old_config_dict)
+        self.plugins_manager = PluginManager(providers_config)
+        provider = "wekeo_old"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
         self.auth_plugin = self.get_auth_plugin(provider)
         self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
