@@ -1065,7 +1065,7 @@ class TestCore(TestCoreBase):
         )
 
     @mock.patch(
-        "eodag.api.core.get_ext_product_types_conf",
+        "eodag.api.core.get_ext_stac_collection",
         autospec=True,
         return_value=json.loads(
             """{
@@ -1089,7 +1089,7 @@ class TestCore(TestCoreBase):
             }"""
         ),
     )
-    def test_load_external_product_type_metadata(self, mock_get_ext_product_types_conf):
+    def test_load_external_product_type_metadata(self, mock_get_ext_stac_collection):
         """Load the supported EODAG metadata from an external STAC collection"""
         product_type_conf = deepcopy(self.dag.product_types_config["S2_MSI_L1C"])
         ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
@@ -1098,7 +1098,7 @@ class TestCore(TestCoreBase):
             "S2_MSI_L1C",
             product_type_conf,
         )
-        mock_get_ext_product_types_conf.assert_called_with(ext_stac_collection_path)
+        mock_get_ext_stac_collection.assert_called_with(ext_stac_collection_path)
         # Fields not supported by EODAG
         self.assertNotIn("new_field", enhanced_product_type)
         # Merge lists
@@ -1116,7 +1116,7 @@ class TestCore(TestCoreBase):
         )
 
     @mock.patch(
-        "eodag.api.core.get_ext_product_types_conf",
+        "eodag.api.core.get_ext_stac_collection",
         autospec=True,
         return_value=json.loads(
             """{
@@ -1140,15 +1140,13 @@ class TestCore(TestCoreBase):
             }"""
         ),
     )
-    def test_fetch_external_product_types_metadata(
-        self, mock_get_ext_product_types_conf
-    ):
+    def test_fetch_external_product_types_metadata(self, mock_get_ext_stac_collection):
         """Updates product types config with metadata from external STAC collections"""
         product_type_conf = self.dag.product_types_config["S2_MSI_L1C"]
         ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
         product_type_conf["stacCollection"] = ext_stac_collection_path
         self.dag._fetch_external_product_types_metadata()
-        mock_get_ext_product_types_conf.assert_called_with(ext_stac_collection_path)
+        mock_get_ext_stac_collection.assert_called_with(ext_stac_collection_path)
         enhanced_product_type = self.dag.product_types_config["S2_MSI_L1C"]
         # Fields not supported by EODAG
         self.assertNotIn("new_field", enhanced_product_type)
