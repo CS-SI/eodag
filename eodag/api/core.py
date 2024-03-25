@@ -55,6 +55,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.rest.stac import get_ext_stac_collection
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.types.whoosh import EODAGQueryParser
@@ -608,7 +609,7 @@ class EODataAccessGateway:
             "generic_product_type_parsable_metadata"
         ]
         parsable_metadata = mtd_cfg_as_conversion_and_querypath(parsable_metadata)
-        external_stac_collection = get_ext_product_types_conf(
+        external_stac_collection = get_ext_stac_collection(
             external_stac_collection_path
         )
         # Loading external enhanced product types metadata

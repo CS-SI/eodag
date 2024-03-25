@@ -27,6 +27,8 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil.parser
 import geojson
+import orjson
+import requests
 import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
@@ -39,9 +41,10 @@ from eodag.api.product.metadata_mapping import (
     format_metadata,
     get_metadata_path,
 )
-from eodag.config import get_ext_product_types_conf
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
+    HTTP_REQ_TIMEOUT,
+    USER_AGENT,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -49,6 +52,7 @@ from eodag.utils import (
     jsonpath_parse_dict_items,
     string_to_jsonpath,
     update_nested_dict,
+    uri_to_path,
     urljoin,
 )
 from eodag.utils.exceptions import (
@@ -66,6 +70,44 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.rest.stac")
 
 STAC_CATALOGS_PREFIX = "catalogs"
+
+
+def get_ext_stac_collection(stac_uri: str) -> Dict[str, Any]:
+    """Read external STAC collection
+
+    :param stac_uri: URI to local or remote collection
+    :type stac_uri: str
+    :returns: The external STAC collection
+    :rtype: dict
+    """
+    logger.info("Fetching external STAC collection from %s", stac_uri)
+    if stac_uri.lower().startswith("http"):
+        # read from remote
+        try:
+            response = requests.get(
+                stac_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.debug(e)
+            logger.warning(
+                "Could not read remote external STAC collection from %s", stac_uri
+            )
+            return {}
+    elif stac_uri.lower().startswith("file"):
+        stac_uri = uri_to_path(stac_uri)
+
+    # read from local
+    try:
+        with open(stac_uri, "rb") as f:
+            return orjson.loads(f.read())
+    except (orjson.JSONDecodeError, FileNotFoundError) as e:
+        logger.debug(e)
+        logger.warning(
+            "Could not read local external STAC collection from %s", stac_uri
+        )
+        return {}
 
 
 class StacCommon:
@@ -627,7 +669,7 @@ class StacCollection(StacCommon):
             if not ext_stac_collection_path:
                 continue
             logger.info(f"Fetching external STAC collection for {product_type['ID']}")
-            ext_stac_collection = get_ext_product_types_conf(ext_stac_collection_path)
+            ext_stac_collection = get_ext_stac_collection(ext_stac_collection_path)
             cls.ext_stac_collections[product_type["ID"]] = ext_stac_collection
 
     def __init__(
