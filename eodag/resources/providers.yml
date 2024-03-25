@@ -5214,17 +5214,6 @@
       providerProductType: reanalysis
       variable:
         - fire_danger_index
-        - build_up_index
-        - drought_code
-        - duff_moisture_code
-        - fine_fuel_moisture_code
-        - fire_daily_severity_rating
-        - fire_weather_index
-        - initial_fire_spread_index
-        - keetch_byram_drought_index
-        - burning_index
-        - energy_release_component
-        - ignition_component
       version:
         - "4_1"
       format:
@@ -5339,11 +5328,6 @@
         - htessel_lisflood
       leadtime_hour:
         - "24"
-        - "48"
-        - "72"
-        - "96"
-        - "120"
-        - "144"
       format: grib
       metadata_mapping:
         id: '$.id'
@@ -5386,10 +5370,6 @@
         - "1"
       leadtime_hour:
         - "0"
-        - "6"
-        - "12"
-        - "18"
-        - "24"
       version:
         - operational
       origin: ecmwf
@@ -5452,9 +5432,6 @@
         - "1"
       leadtime_hour:
         - "6"
-        - "12"
-        - "18"
-        - "24"
       variable: volumetric_soil_moisture
       model_level: soil_levels
       format: grib.zip
@@ -5481,13 +5458,6 @@
         - operational
       leadtime_hour:
         - "24"
-        - "48"
-        - "72"
-        - "96"
-        - "120"
-        - "144"
-        - "168"
-        - "192"
       variable: volumetric_soil_moisture
       model_level: soil_levels
       soil_level:
@@ -5513,13 +5483,6 @@
         - "version_5_0"
       leadtime_hour:
         - "24"
-        - "48"
-        - "72"
-        - "96"
-        - "120"
-        - "144"
-        - "168"
-        - "192"
       variable: volumetric_soil_moisture
       model_level: soil_levels
       soil_level:
