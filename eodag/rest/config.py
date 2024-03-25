@@ -23,7 +23,7 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from eodag.rest.constants import DEFAULT_LOCAL_MAXSIZE, DEFAULT_TTL
+from eodag.rest.constants import DEFAULT_MAXSIZE, DEFAULT_TTL
 
 
 class Settings(BaseSettings):
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # local cache config
     cache_ttl: int = Field(default=DEFAULT_TTL)
-    cache_maxsize: int = Field(default=DEFAULT_LOCAL_MAXSIZE)
+    local_cache_maxsize: int = Field(default=DEFAULT_MAXSIZE)
 
     redis_hostname: Optional[str] = Field(default=None)
     redis_password: Optional[str] = Field(default=None)

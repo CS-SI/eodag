@@ -19,7 +19,7 @@ import logging
 from typing import Any, Callable, Coroutine, Dict, TypeVar
 
 import orjson
-from cachetools import TTLCache
+from cachetools import LRUCache
 from fastapi import FastAPI, Request
 from redis.asyncio import Redis
 
@@ -44,20 +44,7 @@ def init_cache(app: FastAPI) -> None:
         )
         app.state.redis = r
     else:
-        app.state.cache = TTLCache(
-            maxsize=settings.cache_maxsize, ttl=settings.cache_ttl
-        )
-
-
-async def cached_result(
-    fn: Callable[[], Coroutine[Any, Any, T]], cache_key: str, request: Request
-) -> T:
-    """Either get the result from Redis or local cache, based on settings."""
-    settings = Settings.from_environment()
-    if settings.redis_hostname:
-        return await redis_cached(fn, cache_key, request)
-    else:
-        return await local_cached(fn, cache_key, request)
+        app.state.cache = LRUCache(maxsize=settings.local_cache_maxsize)
 
 
 async def redis_cached(
@@ -68,9 +55,9 @@ async def redis_cached(
 
     host = request.url.hostname
     host_cache_key = f"{cache_key}:{host}"
-    r: Redis[Any] = request.app.state.redis
 
     try:
+        r: Redis[Any] = request.app.state.redis
         cached: Any = await r.get(host_cache_key)
         if cached:
             logger.debug("Cache result hit")
