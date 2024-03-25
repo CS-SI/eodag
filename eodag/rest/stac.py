@@ -189,16 +189,6 @@ class StacCommon:
         }
         return format_dict_items(extension_model, **format_args)
 
-    def as_dict(self) -> Dict[str, Any]:
-        """Returns object data as dictionnary
-
-        :returns: STAC data dictionnary
-        :rtype: dict
-        """
-        return geojson.loads(geojson.dumps(self.data))  # type: ignore
-
-    __geo_interface__ = property(as_dict)
-
     def get_provider_dict(self, provider: str) -> Dict[str, Any]:
         """Generate STAC provider dict"""
         provider_config = next(
@@ -375,9 +365,9 @@ class StacItem(StacCommon):
                     if url_parts.scheme
                     else f"{url_parts.netloc}{url_parts.path}"
                 )
-                product_item["links"][0]["href"] = (
-                    f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
-                )
+                product_item["links"][0][
+                    "href"
+                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
 
             item_list.append(product_item)
 
@@ -418,9 +408,9 @@ class StacItem(StacCommon):
                 # use server-mode assets download links
                 asset_value["href"] = without_arg_url
                 if query_dict:
-                    assets[asset_key]["href"] += (
-                        f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
-                    )
+                    assets[asset_key][
+                        "href"
+                    ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
                 else:
                     assets[asset_key]["href"] += f"/{asset_key}"
                 if asset_type := asset_value.get("type", None):
@@ -634,9 +624,10 @@ class StacItem(StacCommon):
         )
         # parse f-strings
         format_args = deepcopy(self.stac_config)
-        format_args["catalog"] = dict(
-            catalog.as_dict(), **{"url": catalog.url, "root": catalog.root}
-        )
+        format_args["catalog"] = {
+            **catalog.data,
+            **{"url": catalog.url, "root": catalog.root},
+        }
         format_args["item"] = product_item
         product_item = format_dict_items(product_item, **format_args)
         product_item["bbox"] = [float(i) for i in product_item["bbox"]]
@@ -645,7 +636,7 @@ class StacItem(StacCommon):
         product_item = self.__filter_item_properties_values(product_item)
 
         self.update_data(product_item)
-        return self.as_dict()
+        return self.data
 
 
 class StacCollection(StacCommon):
