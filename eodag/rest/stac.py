@@ -156,16 +156,6 @@ class StacCommon:
         }
         return format_dict_items(extension_model, **format_args)
 
-    def as_dict(self) -> Dict[str, Any]:
-        """Returns object data as dictionnary
-
-        :returns: STAC data dictionnary
-        :rtype: dict
-        """
-        return geojson.loads(geojson.dumps(self.data))  # type: ignore
-
-    __geo_interface__ = property(as_dict)
-
 
 class StacItem(StacCommon):
     """Stac item object
@@ -584,9 +574,10 @@ class StacItem(StacCommon):
         )
         # parse f-strings
         format_args = deepcopy(self.stac_config)
-        format_args["catalog"] = dict(
-            catalog.as_dict(), **{"url": catalog.url, "root": catalog.root}
-        )
+        format_args["catalog"] = {
+            **catalog.data,
+            **{"url": catalog.url, "root": catalog.root},
+        }
         format_args["item"] = product_item
         product_item = format_dict_items(product_item, **format_args)
         product_item["bbox"] = [float(i) for i in product_item["bbox"]]
@@ -595,7 +586,7 @@ class StacItem(StacCommon):
         product_item = self.__filter_item_properties_values(product_item)
 
         self.update_data(product_item)
-        return self.as_dict()
+        return self.data
 
 
 class StacCollection(StacCommon):

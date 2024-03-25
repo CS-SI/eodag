@@ -223,10 +223,10 @@ async def search_stac_items(
             next_link=get_next_link(
                 request, search_request, total or 0, eodag_args.items_per_page
             ),
-            catalog=dict(
-                catalog.as_dict(),
+            catalog={
+                **catalog.data,
                 **{"url": catalog.url, "root": catalog.root},
-            ),
+            },
         )
         return items
 
@@ -381,7 +381,6 @@ async def get_collection(
     """
 
     async def _fetch() -> Dict[str, Any]:
-
         stac_collection = StacCollection(
             url=request.state.url,
             stac_config=stac_config,
@@ -433,7 +432,7 @@ async def get_stac_catalogs(
             eodag_api=eodag_api,
             catalogs=list(catalogs) if catalogs else None,
             fetch_providers=fetch_providers,
-        ).as_dict()
+        ).data
 
     hashed_catalogs = hash(":".join(catalogs) if catalogs else None)
     return await cached_result(
@@ -609,7 +608,7 @@ def crunch_products(
             f'Unknown crunch name. Use one of: {", ".join(crunchers.keys())}'
         )
 
-    cruncher_config: Dict[str, Any] = dict()
+    cruncher_config: Dict[str, Any] = {}
     for config_param in cruncher.config_params:
         config_param_value = kwargs.get(config_param)
         if not config_param_value:
