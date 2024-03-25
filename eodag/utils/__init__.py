@@ -78,6 +78,8 @@ from urllib.parse import (  # noqa; noqa
 )
 from urllib.request import url2pathname
 
+import requests
+
 if sys.version_info >= (3, 9):
     from typing import Annotated, get_args, get_origin  # noqa
 else:
@@ -1472,3 +1474,41 @@ def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
         ctx.check_hostname = True
         ctx.verify_mode = ssl.CERT_REQUIRED
     return ctx
+
+
+def get_ext_stac_collection(stac_uri: str) -> Dict[str, Any]:
+    """Read external STAC collection
+
+    :param stac_uri: URI to local or remote collection
+    :type stac_uri: str
+    :returns: The external STAC collection
+    :rtype: dict
+    """
+    logger.info("Fetching external STAC collection from %s", stac_uri)
+    if stac_uri.lower().startswith("http"):
+        # read from remote
+        try:
+            response = requests.get(
+                stac_uri, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            logger.debug(e)
+            logger.warning(
+                "Could not read remote external STAC collection from %s", stac_uri
+            )
+            return {}
+    elif stac_uri.lower().startswith("file"):
+        stac_uri = uri_to_path(stac_uri)
+
+    # read from local
+    try:
+        with open(stac_uri, "rb") as f:
+            return orjson.loads(f.read())
+    except (orjson.JSONDecodeError, FileNotFoundError) as e:
+        logger.debug(e)
+        logger.warning(
+            "Could not read local external STAC collection from %s", stac_uri
+        )
+        return {}

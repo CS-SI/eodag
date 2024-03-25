@@ -55,7 +55,6 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.rest.stac import get_ext_stac_collection
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.types.whoosh import EODAGQueryParser
@@ -71,6 +70,7 @@ from eodag.utils import (
     _deprecated,
     copy_deepcopy,
     deepcopy,
+    get_ext_stac_collection,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
