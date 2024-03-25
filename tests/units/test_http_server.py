@@ -1827,7 +1827,7 @@ class RequestTestCase(unittest.TestCase):
 
         url = "/collections?q=TERM1,TERM2"
         r = self.app.get(url)
-        list_pt.assert_called_once_with(provider=None)
+        list_pt.assert_called_once_with(provider=None, fetch_providers=False)
         guess_pt.assert_called_once_with(
             free_text_filter="TERM1,TERM2",
             platformSerialIdentifier=None,

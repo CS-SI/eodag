@@ -498,7 +498,6 @@ async def get_stac_catalogs(
     url: str,
     catalogs: Optional[Tuple[str, ...]] = None,
     provider: Optional[str] = None,
-    fetch_providers: bool = True,
 ) -> Dict[str, Any]:
     """Build STAC catalog
 
@@ -510,9 +509,6 @@ async def get_stac_catalogs(
     :type catalogs: list
     :param provider: (optional) Chosen provider
     :type provider: str
-    :param fetch_providers: (optional) Whether to fetch providers for new product
-                            types or not
-    :type fetch_providers: bool
     :returns: Catalog dictionary
     :rtype: dict
     """
@@ -525,7 +521,6 @@ async def get_stac_catalogs(
             provider=provider,
             eodag_api=eodag_api,
             catalogs=list(catalogs) if catalogs else None,
-            fetch_providers=fetch_providers,
         ).data
 
     hashed_catalogs = hash(":".join(catalogs) if catalogs else None)

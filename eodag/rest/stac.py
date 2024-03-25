@@ -822,7 +822,9 @@ class StacCollection(StacCommon):
         # list product types with all metadata using guessed ids
         product_types = [
             pt
-            for pt in self.eodag_api.list_product_types(provider=self.provider)
+            for pt in self.eodag_api.list_product_types(
+                provider=self.provider, fetch_providers=False
+            )
             if not guessed_product_types or pt["ID"] in guessed_product_types
         ]
 
@@ -851,9 +853,6 @@ class StacCatalog(StacCommon):
     :type root: str
     :param catalogs: (optional) Catalogs list
     :type catalogs: list
-    :param fetch_providers: (optional) Whether to fetch providers for new product
-                            types or not
-    :type fetch_providers: bool
     """
 
     def __init__(
@@ -864,7 +863,6 @@ class StacCatalog(StacCommon):
         eodag_api: EODataAccessGateway,
         root: str = "/",
         catalogs: Optional[List[str]] = None,
-        fetch_providers: bool = True,
     ) -> None:
         super(StacCatalog, self).__init__(
             url=url,
@@ -891,7 +889,7 @@ class StacCatalog(StacCommon):
             self.data["links"] += self.children
 
         # build catalog
-        self.__build_stac_catalog(catalogs, fetch_providers=fetch_providers)
+        self.__build_stac_catalog(catalogs)
 
     def __update_data_from_catalog_config(self, catalog_config: Dict[str, Any]) -> bool:
         """Updates configuration and data using given input catalog config
@@ -1320,16 +1318,11 @@ class StacCatalog(StacCommon):
 
         return locations_config
 
-    def __build_stac_catalog(
-        self, catalogs: Optional[List[str]] = None, fetch_providers: bool = True
-    ) -> StacCatalog:
+    def __build_stac_catalog(self, catalogs: Optional[List[str]] = None) -> StacCatalog:
         """Build nested catalog from catalag list
 
         :param catalogs: (optional) Catalogs list
         :type catalogs: list
-        :param fetch_providers: (optional) Whether to fetch providers for new product
-                                types or not
-        :type fetch_providers: bool
         :returns: This catalog obj
         :rtype: :class:`eodag.stac.StacCatalog`
         """
@@ -1355,7 +1348,7 @@ class StacCatalog(StacCommon):
             product_types_list = [
                 pt
                 for pt in self.eodag_api.list_product_types(
-                    provider=self.provider, fetch_providers=fetch_providers
+                    provider=self.provider, fetch_providers=False
                 )
             ]
             self.set_children(

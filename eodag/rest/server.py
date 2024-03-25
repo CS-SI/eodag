@@ -148,9 +148,7 @@ async def eodag_openapi(request: Request) -> Dict[str, Any]:
     if app.openapi_schema:
         return app.openapi_schema
 
-    root_catalog = await get_stac_catalogs(
-        request=request, url="", fetch_providers=False
-    )
+    root_catalog = await get_stac_catalogs(request=request, url="")
     stac_api_version = get_stac_api_version()
 
     openapi_schema = get_openapi(
