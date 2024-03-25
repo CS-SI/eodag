@@ -47,8 +47,10 @@ https://github.com/annotated-types/annotated-types
 https://github.com/pypa/setuptools
 https://github.com/pydantic/pydantic
 https://github.com/pydantic/pydantic-core
+https://github.com/pydantic/pydantic-settings
 https://github.com/geopython/pygeofilter
-
+https://github.com/tkem/cachetools
+https://github.com/redis/redis-py
 
 ================================================================
 The BSD-2-Clause Licence
