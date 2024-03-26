@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 import requests
 from requests import RequestException
 from requests.auth import AuthBase
-from shapely import geometry, wkb, wkt
+from shapely import geometry
 from shapely.errors import ShapelyError
 
 try:
@@ -149,36 +149,11 @@ class EOProduct:
             product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
         else:
             product_geometry = properties["geometry"]
-        # Let's try 'latmin lonmin latmax lonmax'
-        if isinstance(product_geometry, str):
-            bbox_pattern = re.compile(
-                r"^(-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*)$"
-            )
-            found_bbox = bbox_pattern.match(product_geometry)
-            if found_bbox:
-                coords = found_bbox.groups()
-                if len(coords) == 4:
-                    product_geometry = geometry.box(
-                        float(coords[1]),
-                        float(coords[0]),
-                        float(coords[3]),
-                        float(coords[2]),
-                    )
-        # Best effort to understand provider specific geometry (the default is to
-        # assume an object implementing the Geo Interface: see
-        # https://gist.github.com/2217756)
-        if isinstance(product_geometry, str):
-            try:
-                product_geometry = wkt.loads(product_geometry)
-            except (ShapelyError, GEOSException):
-                try:
-                    product_geometry = wkb.loads(product_geometry)
-                # Also catching TypeError because product_geometry can be a
-                # string and not a bytes string
-                except (ShapelyError, GEOSException, TypeError):
-                    # Giv up!
-                    raise
-        self.geometry = self.search_intersection = geometry.shape(product_geometry)
+
+        self.geometry = self.search_intersection = get_geometry_from_various(
+            geometry=product_geometry
+        )
+
         self.search_kwargs = kwargs
         if self.search_kwargs.get("geometry") is not None:
             searched_geom = get_geometry_from_various(
