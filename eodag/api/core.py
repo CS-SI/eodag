@@ -923,7 +923,7 @@ class EODataAccessGateway:
           for syntax.
 
         :param free_text: Whoosh-compatible free text search filter used to search
-                        `title`, `abstract`, and `keywords`.
+                        accross all the following parameters
         :type free_text: Optional[str]
         :param intersect: Join results for each parameter using INTERSECT instead of UNION.
         :type intersect: bool
