@@ -37,7 +37,9 @@ class Settings(BaseSettings):
     redis_password: Optional[str] = Field(default=None)
     redis_port: int = 6379
     redis_ssl: bool = True
-    redis_ttl: int = Field(default=DEFAULT_TTL)
+
+    redis_ttl_search: Optional[int] = Field(default=DEFAULT_TTL)
+    redis_ttl_item: Optional[int] = Field(default=DEFAULT_TTL)
 
     debug: bool = False
 
