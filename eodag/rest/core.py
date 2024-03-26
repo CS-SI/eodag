@@ -20,6 +20,7 @@ import logging
 import os
 import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import dateutil
 from cachetools.func import lru_cache
@@ -287,29 +288,32 @@ async def download_stac_item(
             assets={},
         )
         for k, v in item["assets"].items():
-            alternate = v.get("alternate")
+            origin = v.get("alternate", {}).get("origin")
+            if k == "downloadLink" and origin:
+                qp = parse_qs(urlparse(str(v["href"])).query)
+                if "_dc_qs" in qp:
+                    _dc_qs = unquote_plus(unquote_plus(qp["_dc_qs"][0]))
+                    parts = origin["href"].split("?")
+                    origin["href"] = f"{parts[0]}?{_dc_qs}"
+                    product.location = product.remote_location = origin["href"]
             product.assets[k] = {
                 "product": product,
-                "href": alternate["origin"]["href"] if alternate else v["href"],
+                "href": origin["href"] if origin else v["href"],
                 "title": v["title"],
             }
-        if download_link := product.assets.get("downloadLink"):
-            product.location = product.remote_location = download_link["href"]
 
         downloader = eodag_api._plugins_manager.get_download_plugin(product)
         auth = eodag_api._plugins_manager.get_auth_plugin(product.provider)
-        if not auth:
-            auth = downloader
     except Exception as e:
         logger.error(f"Error building EOProduct: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Error trying to download {item_id} in collection {collection}",
-        )
+        ) from e
 
     try:
         download_stream = downloader._stream_download_dict(
-            product, auth=auth.authenticate(), asset=asset
+            product, auth=auth.authenticate() if auth else None, asset=asset
         )
     except NotImplementedError:
         logger.warning(

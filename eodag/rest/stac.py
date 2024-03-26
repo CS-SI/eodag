@@ -23,7 +23,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import dateutil.parser
 import geojson
@@ -248,7 +248,7 @@ class StacItem(StacCommon):
             downloadlink_href = (
                 f"{catalog['url']}/items/{product.properties['title']}/download"
             )
-            _dc_qs = product.properties.get("_dc_qs", None)
+            _dc_qs = product.properties.get("_dc_qs")
             url_parts = urlparse(downloadlink_href)
             query_dict = parse_qs(url_parts.query)
             without_arg_url = (
@@ -257,11 +257,10 @@ class StacItem(StacCommon):
                 else f"{url_parts.netloc}{url_parts.path}"
             )
             # add provider to query-args
-            if self.provider:
-                query_dict.update(provider=[self.provider])
+            query_dict.update(provider=[product.provider])
             # add datacube query-string to query-args
             if _dc_qs:
-                query_dict.update(_dc_qs=_dc_qs)
+                query_dict.update(_dc_qs=[_dc_qs])
             if query_dict:
                 downloadlink_href = (
                     f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
@@ -269,7 +268,7 @@ class StacItem(StacCommon):
 
             # generate STAC assets
             product_item["assets"] = self._get_assets(
-                product, downloadlink_href, without_arg_url, query_dict
+                product, downloadlink_href, without_arg_url, query_dict, _dc_qs
             )
 
             # apply conversion if needed
@@ -325,14 +324,29 @@ class StacItem(StacCommon):
         downloadlink_href: str,
         without_arg_url: str,
         query_dict: Optional[Dict[str, Any]] = None,
+        _dc_qs: Optional[str] = None,
     ) -> Dict[str, Any]:
         assets: Dict[str, Any] = {}
+
+        if _dc_qs:
+            parsed = urlparse(product.remote_location)
+            fragments = parsed.fragment.split("?")
+            parsed = parsed._replace(fragment=f"{fragments[0]}?_dc_qs={_dc_qs}")
+            origin_href = urlunparse(parsed)
+        else:
+            origin_href = product.remote_location
 
         # update download link with up-to-date query-args
         assets["downloadLink"] = {
             "title": "Download link",
             "href": downloadlink_href,
             "type": "application/zip",
+            "alternate": {
+                "origin": {
+                    "title": "Origin asset link",
+                    "href": origin_href,
+                }
+            },
         }
 
         # move origin asset urls to alternate links and replace with eodag-server ones
