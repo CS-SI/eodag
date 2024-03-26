@@ -27,7 +27,7 @@ from unittest.mock import Mock
 import dateutil
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from cachetools.func import lru_cache
-from fastapi import Request
+from fastapi import HTTPException, Request
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
 
@@ -45,7 +45,7 @@ from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.rest.cache import cached_item_collection, local_cached
+from eodag.rest.cache import cached_item_collection, get_cached, local_cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
     CACHE_KEY_COLLECTIONS,
@@ -257,7 +257,7 @@ async def search_stac_items(
     return await cached_item_collection(_fetch, cache_key, request)
 
 
-def download_stac_item(
+async def download_stac_item(
     request: Request,
     catalogs: List[str],
     item_id: str,
@@ -278,19 +278,54 @@ def download_stac_item(
     :returns: a stream of the downloaded data (zip file)
     :rtype: Response
     """
-    product_type = catalogs[0]
+    collection = catalogs[0]
 
-    search_results, _ = eodag_api.search(
-        id=item_id, productType=product_type, provider=provider, **kwargs
-    )
+    cache_key = f"{provider}:{collection}:{item_id}"
+    cached: Optional[Dict[str, Any]] = await get_cached(request, cache_key)
 
-    if len(search_results) > 0:
-        product = cast(EOProduct, search_results[0])
-
+    if cached:
+        item = cached
     else:
-        raise NotAvailableError(
-            f"Could not find {item_id} item in {product_type} collection"
-            + (f" for provider {provider}" if provider else "")
+        search_request = SearchPostRequest(
+            provider=provider, ids=[item_id], collections=[collection], limit=1
+        )
+        item_collection = await search_stac_items(request, search_request)
+        if not item_collection["features"]:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Item {item_id} in Collection {collection} does not exist.",
+            )
+        item = item_collection["features"][0]
+
+    try:
+        product = EOProduct(
+            provider=provider,
+            properties={
+                "title": item["id"],
+                "geometry": (-180, -90, 180, 90),
+                "storageStatus": item["properties"].get("storage:tier", ONLINE_STATUS),
+            },
+            assets={},
+        )
+        for k, v in item["assets"].items():
+            alternate = v.get("alternate")
+            product.assets[k] = {
+                "product": product,
+                "href": alternate["origin"]["href"] if alternate else v["href"],
+                "title": v["title"],
+            }
+        if download_link := product.assets.get("downloadLink"):
+            product.location = product.remote_location = download_link["href"]
+
+        downloader = eodag_api._plugins_manager.get_download_plugin(product)
+        auth = eodag_api._plugins_manager.get_auth_plugin(product.provider)
+        if not auth:
+            auth = downloader
+    except Exception as e:
+        logger.error(f"Error building EOProduct: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error trying to download {item_id} in collection {collection}",
         )
     auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 

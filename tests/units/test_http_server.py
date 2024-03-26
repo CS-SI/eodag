@@ -1109,16 +1109,10 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.authentication.base.Authentication.authenticate",
+        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.plugins.download.base.Download._stream_download_dict",
-        autospec=True,
-    )
-    def test_download_item_from_catalog_stream(
-        self, mock_download: Mock, mock_auth: Mock
-    ):
+    def test_download_item_from_catalog_stream(self, mock_download: Mock):
         """Download through eodag server catalog should return a valid response"""
 
         expected_file = "somewhere.zip"
@@ -1129,10 +1123,9 @@ class RequestTestCase(unittest.TestCase):
                 "content-disposition": f"attachment; filename={expected_file}",
             },
         )
-        mock_auth.return_value = {}
 
         response = self._request_valid_raw(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
+            f"catalogs/{self.tested_product_type}/items/foo/download?provider=peps"
         )
         mock_download.assert_called_once()
 
@@ -1165,7 +1158,9 @@ class RequestTestCase(unittest.TestCase):
         mock_download.return_value = expected_file
         mock_stream_download.side_effect = NotImplementedError()
 
-        self._request_valid_raw("collections/some-collection/items/foo/download")
+        self._request_valid_raw(
+            f"collections/{self.tested_product_type}/items/foo/download?provider=peps"
+        )
         mock_download.assert_called_once()
         # downloaded file should have been immediatly deleted from the server
         assert not os.path.exists(
