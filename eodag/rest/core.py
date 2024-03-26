@@ -23,6 +23,7 @@ import os
 import re
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
+from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import dateutil
 from fastapi.responses import ORJSONResponse, StreamingResponse
@@ -308,32 +309,35 @@ async def download_stac_item(
             assets={},
         )
         for k, v in item["assets"].items():
-            alternate = v.get("alternate")
+            origin = v.get("alternate", {}).get("origin")
+            if k == "downloadLink" and origin:
+                qp = parse_qs(urlparse(str(v["href"])).query)
+                if "_dc_qs" in qp:
+                    _dc_qs = unquote_plus(unquote_plus(qp["_dc_qs"][0]))
+                    parts = origin["href"].split("?")
+                    origin["href"] = f"{parts[0]}?{_dc_qs}"
+                    product.location = product.remote_location = origin["href"]
             product.assets[k] = {
                 "product": product,
-                "href": alternate["origin"]["href"] if alternate else v["href"],
+                "href": origin["href"] if origin else v["href"],
                 "title": v["title"],
             }
-        if download_link := product.assets.get("downloadLink"):
-            product.location = product.remote_location = download_link["href"]
 
         downloader = eodag_api._plugins_manager.get_download_plugin(product)
-        auth = eodag_api._plugins_manager.get_auth_plugin(product.provider)
-        if not auth:
-            auth = downloader
+        downloader_auth = eodag_api._plugins_manager.get_auth_plugin(product.provider)
     except Exception as e:
         logger.error(f"Error building EOProduct: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Error trying to download {item_id} in collection {collection}",
         )
-    auth = product.downloader_auth.authenticate() if product.downloader_auth else None
+    auth = downloader_auth.authenticate() if downloader_auth else None
 
     try:
         if product.properties.get("orderLink"):
             _order_and_update(product, auth, kwargs)
 
-        download_stream = product.downloader._stream_download_dict(
+        download_stream = downloader._stream_download_dict(
             product,
             auth=auth,
             asset=asset,
@@ -377,7 +381,7 @@ async def download_stac_item(
 
 def _order_and_update(
     product: EOProduct,
-    auth: Union[AuthBase, Dict[str, str]],
+    auth: Union[AuthBase, Dict[str, str], None],
     query_args: Dict[str, Any],
 ) -> None:
     """Order product if needed and update given kwargs with order-status-dict"""
