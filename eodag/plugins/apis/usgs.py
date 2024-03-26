@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import tarfile
 import zipfile
@@ -101,10 +102,13 @@ class UsgsApi(Api):
             except USGSAuthExpiredError:
                 api.logout()
                 continue
-            except USGSError:
-                raise AuthenticationError(
-                    "Please check your USGS credentials."
-                ) from None
+            except USGSError as e:
+                if i == 0:
+                    # `.usgs` API file key might be obsolete
+                    # Remove it and try again
+                    os.remove(api.TMPFILE)
+                    continue
+                raise AuthenticationError("Please check your USGS credentials.") from e
 
     def query(
         self,

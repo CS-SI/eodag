@@ -37,6 +37,7 @@ from tests.context import (
     DEFAULT_MISSION_START_DATE,
     ONLINE_STATUS,
     USER_AGENT,
+    USGS_TMPFILE,
     AuthenticationError,
     EODataAccessGateway,
     EOProduct,
@@ -427,12 +428,26 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
         mock_api_login.reset_mock()
         mock_api_logout.reset_mock()
 
+        # with obsolete `.usgs` API file (USGSError)
+        mock_api_login.side_effect = [
+            USGSError("USGS error"),
+            None,
+        ]
+        with mock.patch("os.remove", autospec=True) as mock_os_remove:
+            self.api_plugin.authenticate()
+            self.assertEqual(mock_api_login.call_count, 2)
+            self.assertEqual(mock_api_logout.call_count, 0)
+            mock_os_remove.assert_called_once_with(USGS_TMPFILE)
+        mock_api_login.reset_mock()
+        mock_api_logout.reset_mock()
+
         # with invalid credentials / USGSError
         mock_api_login.side_effect = USGSError()
-        with self.assertRaises(AuthenticationError):
-            self.api_plugin.authenticate()
-            self.assertEqual(mock_api_login.call_count, 1)
-            mock_api_logout.assert_not_called()
+        with mock.patch("os.remove", autospec=True) as mock_os_remove:
+            with self.assertRaises(AuthenticationError):
+                self.api_plugin.authenticate()
+                self.assertEqual(mock_api_login.call_count, 2)
+                mock_api_logout.assert_not_called()
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)
