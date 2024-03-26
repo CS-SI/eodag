@@ -315,11 +315,11 @@ async def download_stac_item(
                     _dc_qs = unquote_plus(unquote_plus(qp["_dc_qs"][0]))
                     parts = origin["href"].split("?")
                     origin["href"] = f"{parts[0]}?{_dc_qs}"
-                    product.location = product.remote_location = origin["href"]
+                product.location = product.remote_location = origin["href"]
             product.assets[k] = {
                 "product": product,
                 "href": origin["href"] if origin else v["href"],
-                "title": v["title"],
+                "title": v.get("title"),
             }
 
         downloader = eodag_api._plugins_manager.get_download_plugin(product)
