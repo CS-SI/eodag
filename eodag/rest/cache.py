@@ -133,10 +133,12 @@ async def cached_item_collection(
             collection = features[0]["collection"]
             for i, item in enumerate(features):
                 i_key = f'{provider}:{collection}:{item["id"]}:{host}'
-                await r.set(i_key, orjson.dumps(item), settings.redis_ttl, nx=True)
+                await r.set(i_key, orjson.dumps(item), settings.redis_ttl_item, nx=True)
                 features[i] = i_key
             await r.set(
-                host_cache_key, orjson.dumps(cached_item_collection), settings.redis_ttl
+                host_cache_key,
+                orjson.dumps(cached_item_collection),
+                settings.redis_ttl_search,
             )
             te = time.perf_counter()
             logger.debug(f"Perf: cache set: {te - ts:0.4f}")
