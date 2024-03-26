@@ -45,7 +45,7 @@ from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.rest.cache import local_cached, redis_cached
+from eodag.rest.cache import cached_item_collection, local_cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
     CACHE_KEY_COLLECTIONS,
@@ -253,7 +253,8 @@ async def search_stac_items(
 
     hashed_search = hash(search_request.model_dump_json())
     cache_key = f"{CACHE_KEY_SEARCH}:{hashed_search}"
-    return await redis_cached(_fetch, cache_key, request)
+
+    return await cached_item_collection(_fetch, cache_key, request)
 
 
 def download_stac_item(
