@@ -17,7 +17,7 @@
 # limitations under the License.
 import logging
 import time
-from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar
+from typing import Any, Callable, Coroutine, Dict, TypeVar
 
 import orjson
 from cachetools import LRUCache
@@ -94,7 +94,7 @@ async def cached_item_collection(
 
     try:
         ts = time.perf_counter()
-        r: Redis[Any] = request.app.state.redis
+        r: Redis = request.app.state.redis
         cached: Any = await r.get(host_cache_key)
         if cached:
             logger.debug("Cache result hit")
@@ -133,7 +133,7 @@ async def cached_item_collection(
             collection = features[0]["collection"]
             for i, item in enumerate(features):
                 i_key = f'{provider}:{collection}:{item["id"]}:{host}'
-                await r.set(i_key, orjson.dumps(item), settings.redis_ttl)
+                await r.set(i_key, orjson.dumps(item), settings.redis_ttl, nx=True)
                 features[i] = i_key
             await r.set(
                 host_cache_key, orjson.dumps(cached_item_collection), settings.redis_ttl
@@ -148,19 +148,17 @@ async def cached_item_collection(
     return item_collection
 
 
-async def cached_item(
-    request: Request, provider: str, collection: str, item: str
-) -> Optional[Dict[str, Any]]:
+async def get_cached(request: Request, cache_key: str) -> Any:
     """
     Extract cached item from redis
     """
     settings = Settings.from_environment()
 
     host = request.url.hostname
-    host_cache_key = f"{provider}:{collection}:{item}:{host}"
+    host_cache_key = f"{cache_key}:{host}"
 
     try:
-        r: Redis[Any] = request.app.state.redis
+        r: Redis = request.app.state.redis
         cached: Any = await r.get(host_cache_key)
         if cached:
             logger.debug("Cache result hit")

@@ -394,7 +394,7 @@ def stac_extension_oseo(request: Request) -> ORJSONResponse:
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download(
+async def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC collection item download"""
@@ -403,7 +403,7 @@ def stac_collections_item_download(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    return download_stac_item(
+    return await download_stac_item(
         request=request,
         catalogs=[collection_id],
         item_id=item_id,
@@ -418,8 +418,8 @@ def stac_collections_item_download(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download_asset(
-    collection_id: str, item_id: str, asset_filter: str, request: Request
+async def stac_collections_item_download_asset(
+    collection_id: str, item_id: str, asset: str, request: Request
 ):
     """STAC collection item asset download"""
     logger.debug("URL: %s", request.url)
@@ -427,13 +427,12 @@ def stac_collections_item_download_asset(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    return download_stac_item(
+    return await download_stac_item(
         request=request,
         catalogs=[collection_id],
         item_id=item_id,
         provider=provider,
-        asset=asset_filter,
-        **arguments,
+        asset=asset,
     )
 
 
@@ -593,7 +592,7 @@ async def collections(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item_download(
+async def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC Catalog item download"""
@@ -604,7 +603,7 @@ def stac_catalogs_item_download(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item(
+    return await download_stac_item(
         request=request,
         catalogs=list_catalog,
         item_id=item_id,
@@ -619,7 +618,7 @@ def stac_catalogs_item_download(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item_download_asset(
+async def stac_catalogs_item_download_asset(
     catalogs: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC Catalog item asset download"""
@@ -630,8 +629,8 @@ def stac_catalogs_item_download_asset(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item(
-        request=request,
+    return await download_stac_item(
+        request,
         catalogs=list_catalog,
         item_id=item_id,
         provider=provider,
