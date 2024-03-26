@@ -337,7 +337,7 @@ class AwsDownload(Download):
             product,
         )
 
-        total_size = sum([p.size for p in unique_product_chunks])
+        total_size = sum([p.size for p in unique_product_chunks]) or None
 
         # download
         progress_callback.reset(total=total_size)

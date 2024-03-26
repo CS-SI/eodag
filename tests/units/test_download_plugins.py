@@ -922,6 +922,23 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             plugin.download(self.product, outputs_prefix=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=4 + 4)
 
+        # unknown size
+        mock_requests_get.return_value.__enter__.return_value.headers.pop(
+            "content-disposition"
+        )
+        mock_progress_callback_reset.reset_mock()
+        self.product.location = "http://somewhere"
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "foo": {"href": "http://somewhere/a"},
+                "bar": {"href": "http://somewhere/b"},
+            }
+        )
+        with TemporaryDirectory() as temp_dir:
+            plugin.download(self.product, outputs_prefix=temp_dir)
+        mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=None)
+
     def test_plugins_download_http_one_local_asset(
         self,
     ):
