@@ -80,8 +80,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from requests import Response
 
-    from eodag.api.product import EOProduct
-    from eodag.api.product._assets import Asset
+    from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf

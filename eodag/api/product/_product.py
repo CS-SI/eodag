@@ -31,7 +31,12 @@ from requests.auth import AuthBase
 from shapely import geometry, wkb, wkt
 from shapely.errors import ShapelyError
 
-from eodag.api.product._assets import AssetsDict
+try:
+    # import from eodag-cube if installed
+    from eodag_cube.api.product import AssetsDict  # type: ignore # noqa
+except ImportError:
+    from eodag.api.product._assets import AssetsDict  # type: ignore # noqa
+
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
 from eodag.utils import (

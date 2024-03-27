@@ -30,7 +30,7 @@ from pydantic import create_model
 from pydantic.fields import FieldInfo
 from typing_extensions import get_args
 
-from eodag.api.product._assets import Asset
+from eodag.api.product import Asset  # type: ignore
 from eodag.api.product.metadata_mapping import (
     get_queryable_from_provider,
     mtd_cfg_as_conversion_and_querypath,
