@@ -236,7 +236,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            ["peps", "cop_dataspace", "creodias", "onda", "sara", "wekeo"],
         )
 
         products, count = self.dag.search(productType="S1_SAR_SLC")
@@ -264,7 +264,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            ["peps", "cop_dataspace", "creodias", "onda", "sara", "wekeo"],
         )
 
         self.assertRaises(
@@ -291,7 +291,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            ["peps", "cop_dataspace", "creodias", "onda", "sara", "wekeo"],
         )
 
         # peps comes 1st by priority
@@ -338,7 +338,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            ["peps", "cop_dataspace", "creodias", "onda", "sara", "wekeo"],
         )
 
         # onda comes 3rd by priority
@@ -373,7 +373,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            ["peps", "cop_dataspace", "creodias", "onda", "sara", "wekeo"],
         )
 
         mock_query.side_effect = [
@@ -400,7 +400,7 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            ["peps", "cop_dataspace", "creodias", "onda", "sara", "wekeo"],
         )
 
         mock_query.return_value = ([], 0)
