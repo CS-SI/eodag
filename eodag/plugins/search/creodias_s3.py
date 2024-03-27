@@ -23,8 +23,7 @@ import boto3
 import botocore
 from botocore.exceptions import BotoCoreError
 
-from eodag import EOProduct
-from eodag.api.product._assets import AssetsDict
+from eodag.api.product import AssetsDict, EOProduct  # type: ignore
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import QueryStringSearch

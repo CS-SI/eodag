@@ -15,8 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# type: ignore
 """EODAG product package"""
 try:
-    from eodag_cube.api.product import EOProduct  # noqa
+    # import from eodag-cube if installed
+    from eodag_cube.api.product import Asset, AssetsDict, EOProduct  # noqa
 except ImportError:
+    from ._assets import Asset, AssetsDict  # noqa
     from ._product import EOProduct  # noqa

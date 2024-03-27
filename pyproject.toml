@@ -23,6 +23,7 @@ module = [
     "stream_zip",
     "jsonpath_ng",
     "jsonpath_ng.*",
+    "rasterio",
     "usgs",
     "usgs.*",
     "whoosh",
