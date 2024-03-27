@@ -1394,7 +1394,7 @@ class PostJsonSearch(QueryStringSearch):
             if "response" in locals():
                 logger.debug(response.content)
             error_text = str(err)
-            if getattr(err, "response", None):
+            if getattr(err, "response", None) is not None:
                 error_text = err.response.text
             raise RequestError(error_text) from err
         return response
