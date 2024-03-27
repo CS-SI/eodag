@@ -63,6 +63,7 @@ class EODAGQueryParser(QueryParser):
                 plugins.OperatorsPlugin(),
                 plugins.BoostPlugin(),
                 plugins.EveryPlugin(),
+                plugins.RangePlugin(),
                 plugins.PlusMinusPlugin(),
                 plugins.MultifieldPlugin(filters, fieldboosts=None),
             ],
