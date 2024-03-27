@@ -36,7 +36,6 @@ from typing import (
 
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse, StreamingResponse
@@ -46,20 +45,22 @@ from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
+from eodag.rest.cache import init_cache
 from eodag.rest.core import (
+    all_collections,
     download_stac_item,
     eodag_api_init,
+    get_collection,
     get_detailled_collections_list,
     get_queryables,
     get_stac_api_version,
     get_stac_catalogs,
-    get_stac_collection_by_id,
-    get_stac_collections,
     get_stac_conformance,
     get_stac_extension_oseo,
     search_stac_items,
 )
 from eodag.rest.types.eodag_search import EODAGSearch
+from eodag.rest.types.queryables import QueryablesGetParams
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
 from eodag.rest.utils import format_pydantic_error, str2json, str2list
 from eodag.utils import parse_header, update_nested_dict
@@ -126,6 +127,7 @@ router = APIRouter()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """API init and tear-down"""
     eodag_api_init()
+    init_cache(app)
     yield
 
 
@@ -136,13 +138,13 @@ stac_api_config = load_stac_api_config()
 
 
 @router.get("/api", tags=["Capabilities"], include_in_schema=False)
-def eodag_openapi() -> Dict[str, Any]:
+async def eodag_openapi(request: Request) -> Dict[str, Any]:
     """Customized openapi"""
     logger.debug("URL: /api")
     if app.openapi_schema:
         return app.openapi_schema
 
-    root_catalog = get_stac_catalogs(url="", fetch_providers=False)
+    root_catalog = await get_stac_catalogs(request=request, url="")
     stac_api_version = get_stac_api_version()
 
     openapi_schema = get_openapi(
@@ -159,7 +161,7 @@ def eodag_openapi() -> Dict[str, Any]:
         openapi_schema["components"] = stac_api_config["components"]
     openapi_schema["tags"] = stac_api_config["tags"]
 
-    detailled_collections_list = get_detailled_collections_list(fetch_providers=False)
+    detailled_collections_list = get_detailled_collections_list()
 
     openapi_schema["info"]["description"] = (
         root_catalog["description"]
@@ -347,35 +349,35 @@ async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
 
 
 @router.get("/", tags=["Capabilities"])
-def catalogs_root(request: Request) -> Any:
+async def catalogs_root(request: Request) -> ORJSONResponse:
     """STAC catalogs root"""
     logger.debug("URL: %s", request.url)
 
-    response = get_stac_catalogs(
+    response = await get_stac_catalogs(
+        request=request,
         url=request.state.url,
-        root=request.state.url_root,
         provider=request.query_params.get("provider", None),
     )
 
-    return jsonable_encoder(response)
+    return ORJSONResponse(response)
 
 
 @router.get("/conformance", tags=["Capabilities"])
-def conformance() -> Any:
+def conformance() -> ORJSONResponse:
     """STAC conformance"""
     logger.debug("URL: /conformance")
     response = get_stac_conformance()
 
-    return jsonable_encoder(response)
+    return ORJSONResponse(response)
 
 
 @router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
-def stac_extension_oseo(request: Request) -> Any:
+def stac_extension_oseo(request: Request) -> ORJSONResponse:
     """STAC OGC / OpenSearch extension for EO"""
     logger.debug("URL: %s", request.url)
     response = get_stac_extension_oseo(url=request.state.url)
 
-    return jsonable_encoder(response)
+    return ORJSONResponse(response)
 
 
 @router.get(
@@ -383,40 +385,34 @@ def stac_extension_oseo(request: Request) -> Any:
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download(
-    collection_id: str, item_id: str, request: Request
+async def stac_collections_item_download(
+    collection_id: str, item_id: str, request: Request, provider: str
 ) -> StreamingResponse:
     """STAC collection item download"""
     logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    return download_stac_item(
-        catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
+    return await download_stac_item(
+        request, catalogs=[collection_id], item_id=item_id, provider=provider
     )
 
 
 @router.get(
-    "/collections/{collection_id}/items/{item_id}/download/{asset_filter}",
+    "/collections/{collection_id}/items/{item_id}/download/{asset}",
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item_download_asset(
-    collection_id: str, item_id: str, asset_filter: str, request: Request
+async def stac_collections_item_download_asset(
+    collection_id: str, item_id: str, asset: str, request: Request, provider: str
 ):
     """STAC collection item asset download"""
     logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    return download_stac_item(
+    return await download_stac_item(
+        request=request,
         catalogs=[collection_id],
         item_id=item_id,
         provider=provider,
-        asset=asset_filter,
-        **arguments,
+        asset=asset,
     )
 
 
@@ -425,28 +421,25 @@ def stac_collections_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_item(collection_id: str, item_id: str, request: Request) -> Any:
+async def stac_collections_item(
+    collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
+) -> ORJSONResponse:
     """STAC collection item by id"""
     logger.debug("URL: %s", request.url)
 
-    base_args: Dict[str, Any] = dict(request.query_params)
-    base_args["ids"] = [item_id]
-    base_args["collections"] = [collection_id]
-    base_args["limit"] = 1
+    search_request = SearchPostRequest(
+        provider=provider, ids=[item_id], collections=[collection_id], limit=1
+    )
 
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    search_request = SearchPostRequest.model_validate(clean)
-
-    item_collection = search_stac_items(request, search_request)
+    item_collection = await search_stac_items(request, search_request)
 
     if not item_collection["features"]:
         raise HTTPException(
-            status_code=400,
+            status_code=404,
             detail=f"Item {item_id} in Collection {collection_id} does not exist.",
         )
 
-    return jsonable_encoder(item_collection["features"][0])
+    return ORJSONResponse(item_collection["features"][0])
 
 
 @router.get(
@@ -454,7 +447,7 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_collections_items(
+async def stac_collections_items(
     collection_id: str,
     request: Request,
     provider: Optional[str] = None,
@@ -470,7 +463,7 @@ def stac_collections_items(
 ) -> ORJSONResponse:
     """Fetch collection's features"""
 
-    return get_search(
+    return await get_search(
         request=request,
         provider=provider,
         collections=collection_id,
@@ -492,10 +485,10 @@ def stac_collections_items(
     include_in_schema=False,
     response_model_exclude_none=True,
 )
-def list_collection_queryables(
+async def list_collection_queryables(
     request: Request,
     collection_id: str,
-) -> Any:
+) -> ORJSONResponse:
     """Returns the list of queryable properties for a specific collection.
 
     This endpoint provides a list of properties that can be used as filters when querying
@@ -513,11 +506,13 @@ def list_collection_queryables(
     additional_params = dict(request.query_params)
     provider = additional_params.pop("provider", None)
 
-    queryables = get_queryables(
-        request, collection=collection_id, provider=provider, **additional_params
+    queryables = await get_queryables(
+        request,
+        QueryablesGetParams(collection=collection_id, **additional_params),
+        provider=provider,
     )
 
-    return jsonable_encoder(queryables)
+    return ORJSONResponse(queryables)
 
 
 @router.get(
@@ -525,29 +520,30 @@ def list_collection_queryables(
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def collection_by_id(collection_id: str, request: Request) -> Any:
+async def collection_by_id(
+    collection_id: str, request: Request, provider: Optional[str] = None
+) -> ORJSONResponse:
     """STAC collection by id"""
     logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    response = get_stac_collection_by_id(
-        url=request.state.url_root + "/collections",
-        root=request.state.url_root,
+    response = await get_collection(
+        request=request,
         collection_id=collection_id,
         provider=provider,
     )
 
-    return jsonable_encoder(response)
+    return ORJSONResponse(response)
 
 
-@router.get(
-    "/collections",
-    tags=["Capabilities"],
-    include_in_schema=False,
-)
-def collections(request: Request) -> Any:
+@router.get("/collections", tags=["Capabilities"], include_in_schema=False)
+async def collections(
+    request: Request,
+    provider: Optional[str] = None,
+    q: Optional[str] = None,
+    platform: Optional[str] = None,
+    instrument: Optional[str] = None,
+    constellation: Optional[str] = None,
+) -> ORJSONResponse:
     """STAC collections
 
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType,
@@ -555,17 +551,10 @@ def collections(request: Request) -> Any:
     """
     logger.debug("URL: %s", request.url)
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    response = get_stac_collections(
-        url=request.state.url,
-        root=request.state.url_root,
-        arguments=arguments,
-        provider=provider,
+    collections = await all_collections(
+        request, provider, q, platform, instrument, constellation
     )
-
-    return jsonable_encoder(response)
+    return ORJSONResponse(collections)
 
 
 @router.get(
@@ -573,7 +562,7 @@ def collections(request: Request) -> Any:
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item_download(
+async def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StreamingResponse:
     """STAC Catalog item download"""
@@ -584,8 +573,8 @@ def stac_catalogs_item_download(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item(
-        catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
+    return await download_stac_item(
+        request, catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
     )
 
 
@@ -594,7 +583,7 @@ def stac_catalogs_item_download(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item_download_asset(
+async def stac_catalogs_item_download_asset(
     catalogs: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC Catalog item asset download"""
@@ -605,7 +594,8 @@ def stac_catalogs_item_download_asset(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return download_stac_item(
+    return await download_stac_item(
+        request,
         catalogs=list_catalog,
         item_id=item_id,
         provider=provider,
@@ -619,29 +609,27 @@ def stac_catalogs_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
+async def stac_catalogs_item(
+    catalogs: str, item_id: str, request: Request, provider: Optional[str] = None
+):
     """Fetch catalog's single features."""
     logger.debug("URL: %s", request.url)
 
     list_catalog = catalogs.strip("/").split("/")
 
-    base_args: Dict[str, Any] = dict(request.query_params)
-    base_args["ids"] = [item_id]
-    base_args["limit"] = 1
+    search_request = SearchPostRequest(provider=provider, ids=[item_id], limit=1)
 
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    search_request = SearchPostRequest.model_validate(clean)
-
-    item_collection = search_stac_items(request, search_request, catalogs=list_catalog)
+    item_collection = await search_stac_items(
+        request, search_request, catalogs=list_catalog
+    )
 
     if not item_collection["features"]:
         raise HTTPException(
-            status_code=400,
+            status_code=404,
             detail=f"Item {item_id} in Catalog {catalogs} does not exist.",
         )
 
-    return jsonable_encoder(item_collection["features"][0])
+    return ORJSONResponse(item_collection["features"][0])
 
 
 @router.get(
@@ -649,7 +637,7 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     tags=["Data"],
     include_in_schema=False,
 )
-def stac_catalogs_items(
+async def stac_catalogs_items(
     catalogs: str,
     request: Request,
     provider: Optional[str] = None,
@@ -682,12 +670,12 @@ def stac_catalogs_items(
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
-    response = search_stac_items(
+    response = await search_stac_items(
         request=request,
         search_request=search_request,
         catalogs=list_catalog,
     )
-    return jsonable_encoder(response)
+    return ORJSONResponse(response)
 
 
 @router.get(
@@ -695,23 +683,26 @@ def stac_catalogs_items(
     tags=["Capabilities"],
     include_in_schema=False,
 )
-def stac_catalogs(catalogs: str, request: Request) -> Any:
+async def stac_catalogs(
+    catalogs: str, request: Request, provider: Optional[str] = None
+) -> ORJSONResponse:
     """Describe the given catalog and list available sub-catalogs"""
     logger.debug("URL: %s", request.url)
-    url = request.state.url
-    url_root = request.state.url_root
 
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
+    if not catalogs:
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
 
     list_catalog = catalogs.strip("/").split("/")
-    response = get_stac_catalogs(
-        url=url,
-        root=url_root,
-        catalogs=list_catalog,
+    response = await get_stac_catalogs(
+        request=request,
+        url=request.state.url,
+        catalogs=tuple(list_catalog),
         provider=provider,
     )
-    return jsonable_encoder(response)
+    return ORJSONResponse(response)
 
 
 @router.get(
@@ -720,7 +711,7 @@ def stac_catalogs(catalogs: str, request: Request) -> Any:
     response_model_exclude_none=True,
     include_in_schema=False,
 )
-def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
+async def list_queryables(request: Request) -> ORJSONResponse:
     """Returns the list of terms available for use when writing filter expressions.
 
     This endpoint provides a list of terms that can be used as filters when querying
@@ -734,10 +725,12 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     """
     logger.debug(f"URL: {request.url}")
     additional_params = dict(request.query_params.items())
-    additional_params.pop("provider", None)
-    queryables = get_queryables(request, provider=provider, **additional_params)
+    provider = additional_params.pop("provider", None)
+    queryables = await get_queryables(
+        request, QueryablesGetParams(**additional_params), provider=provider
+    )
 
-    return jsonable_encoder(queryables)
+    return ORJSONResponse(queryables)
 
 
 @router.get(
@@ -745,7 +738,7 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     tags=["STAC"],
     include_in_schema=False,
 )
-def get_search(
+async def get_search(
     request: Request,
     provider: Optional[str] = None,
     collections: Optional[str] = None,
@@ -801,13 +794,11 @@ def get_search(
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
-    response = search_stac_items(
+    response = await search_stac_items(
         request=request,
         search_request=search_request,
     )
-    return ORJSONResponse(
-        content=response, status_code=200, media_type="application/json"
-    )
+    return ORJSONResponse(content=response, media_type="application/json")
 
 
 @router.post(
@@ -838,13 +829,11 @@ async def post_search(request: Request) -> ORJSONResponse:
 
     logger.debug("Body: %s", search_request.model_dump(exclude_none=True))
 
-    response = search_stac_items(
+    response = await search_stac_items(
         request=request,
         search_request=search_request,
     )
-    return ORJSONResponse(
-        content=response, status_code=200, media_type="application/json"
-    )
+    return ORJSONResponse(content=response, media_type="application/json")
 
 
 app.include_router(router)
