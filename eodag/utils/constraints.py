@@ -17,6 +17,8 @@
 # limitations under the License.
 import copy
 import logging
+import re
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 
 import requests
@@ -76,7 +78,11 @@ def get_constraint_queryables_with_additional_params(
             if provider_key and provider_key in constraint:
                 eodag_provider_key_mapping[provider_key] = param
                 params_available[param] = True
-                if value in constraint[provider_key]:
+                if (
+                    value in constraint[provider_key]
+                    or "date" in provider_key
+                    and _check_date(value, constraint[provider_key][0])
+                ):
                     params_matched[param] = True
                 values_available[param].update(constraint[provider_key])
         # match with default values of params
@@ -156,6 +162,29 @@ def get_constraint_queryables_with_additional_params(
             )
 
     return queryables
+
+
+def _check_date(datetime_value, constraint_value):
+    try:
+        date = datetime.strptime(datetime_value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        try:
+            date = datetime.strptime(datetime_value, "%Y-%m-%d")
+        except ValueError:
+            return False
+    constraint_dates_str = re.findall(
+        "[0-9]{4}-[0-1][0-9]-[0-3][0-9]", constraint_value
+    )
+    constraint_dates = []
+    for c_date in constraint_dates_str:
+        constraint_dates.append(datetime.strptime(c_date, "%Y-%m-%d"))
+    if len(constraint_dates) == 0:
+        return False
+    if len(constraint_dates) == 1 and date == constraint_dates[0]:
+        return True
+    if len(constraint_dates) > 1 and constraint_dates[0] <= date <= constraint_dates[1]:
+        return True
+    return False
 
 
 def fetch_constraints(
