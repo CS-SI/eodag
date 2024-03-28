@@ -87,7 +87,9 @@ class TokenAuth(Authentication):
         s = requests.Session()
         try:
             # First get the token
-            response = self._token_request(session=s, req_kwargs=req_kwargs, req_data=req_data, req_auth=req_auth)
+            response = self._token_request(
+                session=s, req_kwargs=req_kwargs, req_data=req_data, req_auth=req_auth
+            )
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
@@ -127,7 +129,11 @@ class TokenAuth(Authentication):
             )
 
     def _token_request(
-        self, session: requests.Session, req_kwargs: Dict[str, Any], req_data: Dict[str, str], req_auth: Optional[Tuple[str, str]]
+        self,
+        session: requests.Session,
+        req_kwargs: Dict[str, Any],
+        req_data: Dict[str, str],
+        req_auth: Optional[Tuple[str, str]],
     ) -> requests.Response:
         retries = Retry(
             total=3,
