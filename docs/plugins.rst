@@ -68,7 +68,9 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | hydroweb_next      | StacSearch            | HTTPHeaderAuth           | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
-| wekeo              | DataRequestSearch     | TokenAuth                | HTTPDownload   |
+| wekeo              | PostJsonSearch        | TokenAuth                | HTTPDownload   |
++--------------------+-----------------------+--------------------------+----------------+
+| wekeo_cmems        | PostJsonSearch        | TokenAuth                | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 
 .. _creating_plugins:
