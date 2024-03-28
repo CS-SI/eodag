@@ -192,14 +192,13 @@ hydroweb_next:
         outputs_prefix:
 wekeo:
     priority: # Lower value means lower priority (Default: 0)
-    search:
+    search:   # Search parameters configuration
     download:
         outputs_prefix:
     auth:
         credentials:
             username:
             password:
-
 wekeo_cmems:
     priority: # Lower value means lower priority (Default: 0)
     search:
@@ -209,7 +208,6 @@ wekeo_cmems:
         credentials:
             username:
             password:
-
 creodias_s3:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -219,3 +217,13 @@ creodias_s3:
         credentials:
           aws_access_key_id:
           aws_secret_access_key:
+eumetsat_ds:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+        outputs_prefix:
+    auth:
+        credentials:
+            consumer_key:
+            consumer_secret:
+    download:
+        outputs_prefix:
