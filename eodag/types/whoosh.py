@@ -17,6 +17,7 @@
 # limitations under the License.
 from typing import List
 
+from whoosh.fields import Schema
 from whoosh.matching import NullMatcher
 from whoosh.qparser import OrGroup, QueryParser, plugins
 from whoosh.query.positional import Phrase
@@ -49,8 +50,16 @@ class EODAGQueryParser(QueryParser):
     def __init__(
         self,
         filters: List[str],
-        schema,
+        schema: Schema,
     ):
+        """
+        EODAG QueryParser initialization
+
+        :param filters: list of fieldnames to filter on
+        :type filters: List[str]
+        :param schema: Whoosh Schema
+        :type schma: :class:whoosh.fields.Schema
+        """
         super().__init__(
             None,
             schema=schema,

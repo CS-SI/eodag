@@ -33,6 +33,7 @@ from pydantic.fields import FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
+from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
@@ -249,12 +250,14 @@ class EODataAccessGateway:
             if self._product_types_index is None:
                 logger.debug("Opening product types index in %s", index_dir)
                 self._product_types_index = open_dir(index_dir)
-            try:
-                self.guess_product_type(md5=self.product_types_config_md5)
-            except NoMatchingProductType:
-                create_index = True
-            finally:
-                if create_index:
+
+            with self._product_types_index.searcher() as searcher:
+                p = QueryParser("md5", self._product_types_index.schema, plugins=[])
+                query = p.parse(self.product_types_config_md5)
+                results = searcher.search(query, limit=1)
+
+                if not results:
+                    create_index = True
                     shutil.rmtree(index_dir)
                     logger.debug(
                         "Out-of-date product types index removed from %s", index_dir
@@ -911,7 +914,6 @@ class EODataAccessGateway:
         processingLevel: Optional[str] = None,
         sensorType: Optional[str] = None,
         keywords: Optional[str] = None,
-        md5: Optional[str] = None,
         abstract: Optional[str] = None,
         title: Optional[str] = None,
         **kwargs: Any,
@@ -939,8 +941,6 @@ class EODataAccessGateway:
         :type sensorType: Optional[str]
         :param keywords: Keywords parameter.
         :type keywords: Optional[str]
-        :param md5: MD5 hash parameter.
-        :type md5: Optional[str]
         :param abstract: Abstract parameter.
         :type abstract: Optional[str]
         :param title: Title parameter.
@@ -962,7 +962,6 @@ class EODataAccessGateway:
             "processingLevel": processingLevel,
             "sensorType": sensorType,
             "keywords": keywords,
-            "md5": md5,
             "abstract": abstract,
             "title": title,
         }
