@@ -406,8 +406,32 @@ class TestCore(TestCoreBase):
         "creodias_s3",
     ]
 
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
     def setUp(self):
         super(TestCore, self).setUp()
+        # Mock home and eodag conf directory to tmp dir
+        self.tmp_home_dir = TemporaryDirectory()
+        self.expanduser_mock = mock.patch(
+            "os.path.expanduser", autospec=True, return_value=self.tmp_home_dir.name
+        )
+        self.expanduser_mock.start()
+
+        # create eodag conf dir in tmp home dir
+        eodag_conf_dir = os.path.join(self.tmp_home_dir.name, ".config", "eodag")
+        os.makedirs(eodag_conf_dir, exist_ok=False)
+        # use empty config file with fake credentials in order to have full
+        # list for tests and prevent providers to be pruned
+        write_eodag_conf_with_fake_credentials(
+            os.path.join(eodag_conf_dir, "eodag.yml")
+        )
+
         self.dag = EODataAccessGateway()
         self.conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
         # mock os.environ to empty env
@@ -416,6 +440,14 @@ class TestCore(TestCoreBase):
 
     def tearDown(self):
         super(TestCore, self).tearDown()
+        # stop Mock and remove tmp config dir
+        self.expanduser_mock.stop()
+        self.tmp_home_dir.cleanup()
+        # reset logging
+        logger = logging.getLogger("eodag")
+        logger.handlers = []
+        logger.level = 0
+
         # stop os.environ
         self.mock_os_environ.stop()
 
