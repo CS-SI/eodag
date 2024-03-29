@@ -39,7 +39,8 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `cop_dataspace <https://dataspace.copernicus.eu/>`_,
       `planetary_computer <https://planetarycomputer.microsoft.com/>`_,
       `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
-      `wekeo <https://www.wekeo.eu/>`_
+      `wekeo <https://www.wekeo.eu/>`_,
+      `wekeo_cmems <https://www.wekeo.eu>`_
 
 EODAG has the following primary features:
 
