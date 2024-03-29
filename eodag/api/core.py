@@ -236,7 +236,6 @@ class EODataAccessGateway:
             if "unsupported pickle protocol" in str(ve):
                 logger.debug("Need to recreate whoosh .index: '%s'", ve)
                 create_index = True
-                shutil.rmtree(index_dir)
             # Unexpected error
             else:
                 logger.error(
@@ -258,7 +257,6 @@ class EODataAccessGateway:
 
                 if not results:
                     create_index = True
-                    shutil.rmtree(index_dir)
                     logger.debug(
                         "Out-of-date product types index removed from %s", index_dir
                     )
