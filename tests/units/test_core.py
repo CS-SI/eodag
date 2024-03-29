@@ -497,14 +497,12 @@ class TestCore(TestCoreBase):
             ext_product_types_conf = json.load(f)
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        # Free text search: match in the abstract
+        # Search any filter contains filter value
         filter = "ABSTRACTFOO"
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(product_types_ids, ["foo"])
-        filter = "(ABSTRACTFOO)"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foo"])
-        filter = " FOO  THIS  IS "
+        # Search the exact phrase. Search is case insensitive
+        filter = '"THIS IS FOO. fooandbar"'
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(product_types_ids, ["foo"])
 
@@ -513,27 +511,51 @@ class TestCore(TestCoreBase):
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(product_types_ids, ["bar"])
 
-        # Free text search: match in the title
-        filter = "COLLECTION FOOBAR"
+        # Free text search: match the phrase in title
+        filter = '"FOOBAR COLLECTION"'
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(product_types_ids, ["foobar"])
 
-        # Free text search: multiple terms
-        filter = "(This is FOOBAR) OR (This is BAR)"
+        # Free text search: Using OR term match
+        filter = "FOOBAR,BAR"
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
 
-        # Free text search: multiple terms joined with param search (UNION)
-        filter = "(This is FOOBAR) OR (This is BAR)"
+        filter = "FOOBAR BAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+
+        filter = "FOOBAR OR BAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+
+        # Free text search: using OR term match with additional filter UNION
+        filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(filter, title="FOO*")
         self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar"])
 
+        # Free text search: Using AND term match
+        filter = "suspendisse AND FOO"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["foo"])
+
+        # Free text search: Parentheses can be used to group terms
+        filter = "(FOOBAR OR BAR) AND titleFOOBAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["foobar"])
+
         # Free text search: multiple terms joined with param search (INTERSECT)
-        filter = "(This is FOOBAR) OR (This is BAR)"
+        filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(
             filter, intersect=True, title="titleFOO*"
         )
         self.assertListEqual(sorted(product_types_ids), ["foobar"])
+
+        # Free text search: Indicate included and excluded terms using +/-
+        # This will search for items that INCLUDES "abstractfoo" EXCLUDES "bar" OR CONTAIN "foo"
+        filter = "foo +abstractfoo -bar"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["foo"])
 
     def test_update_product_types_list(self):
         """Core api.update_product_types_list must update eodag product types list"""
