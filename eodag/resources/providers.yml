@@ -3510,7 +3510,7 @@
       timeIntervalsAlignment:
         - '{{"timeIntervalsAlignment": {timeIntervalsAlignment#to_geojson} }}'
         - '$.timeIntervalsAlignment'
-      orderLink: '{downloadLink#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
+      orderLink: '{$.downloadLink#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
   products:
     NEMSGLOBAL_TCDC:
       queries: [{'domain':'NEMSGLOBAL','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]

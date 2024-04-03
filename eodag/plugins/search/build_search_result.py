@@ -24,7 +24,7 @@ from urllib.parse import quote_plus, unquote_plus
 
 import geojson
 import orjson
-from jsonpath_ng import Fields
+from jsonpath_ng import Child, Fields, Root
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_json
@@ -171,8 +171,10 @@ class BuildPostSearchResult(PostJsonSearch):
         parsed_properties["_dc_qs"] = quote_plus(qs)
 
         # parse metadata needing downloadLink
+        dl_path = Fields("downloadLink")
+        dl_path_from_root = Child(Root(), dl_path)
         for param, mapping in self.config.metadata_mapping.items():
-            if Fields("downloadLink") in mapping:
+            if dl_path in mapping or dl_path_from_root in mapping:
                 parsed_properties.update(
                     properties_from_json(parsed_properties, {param: mapping})
                 )
