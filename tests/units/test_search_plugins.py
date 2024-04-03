@@ -1372,6 +1372,8 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
     def setUp(self, mock_requests_get):
         super(TestSearchPluginBuildPostSearchResult, self).setUp()
+        # enable long diffs in test reports
+        self.maxDiff = None
         # One of the providers that has a BuildPostSearchResult Search plugin
         provider = "meteoblue"
         self.search_plugin = self.get_search_plugin(provider=provider)
@@ -1385,8 +1387,10 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
     ):
         """A query with a BuildPostSearchResult must return a single result"""
 
+        # custom query for meteoblue
+        custom_query = {"queries": {"foo": "bar"}}
         products, estimate = self.search_plugin.query(
-            auth=self.auth_plugin,
+            auth=self.auth_plugin, **custom_query
         )
 
         mock_requests_post.assert_called_with(
@@ -1399,6 +1403,26 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
         )
         self.assertEqual(estimate, 1)
         self.assertIsInstance(products[0], EOProduct)
+        endpoint = "https://my.meteoblue.com/dataset/query"
+        default_geom = {
+            "coordinates": [
+                [[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]
+            ],
+            "type": "Polygon",
+        }
+        # check downloadLink
+        self.assertEqual(
+            products[0].properties["downloadLink"],
+            f"{endpoint}?" + json.dumps({"geometry": default_geom, **custom_query}),
+        )
+        # check orderLink
+        self.assertEqual(
+            products[0].properties["orderLink"],
+            f"{endpoint}?"
+            + json.dumps(
+                {"geometry": default_geom, "runOnJobQueue": True, **custom_query}
+            ),
+        )
 
 
 class MockResponse:
