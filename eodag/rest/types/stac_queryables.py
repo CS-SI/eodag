@@ -44,6 +44,8 @@ class StacQueryableProperty(BaseModel):
     type: Optional[Union[str, List[str]]] = None
     enum: Optional[List[Any]] = None
     value: Optional[Any] = None
+    min: Optional[Union[int, List[Union[int, None]]]] = None
+    max: Optional[Union[int, List[Union[int, None]]]] = None
 
     @classmethod
     def from_python_field_definition(
