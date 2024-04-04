@@ -101,7 +101,7 @@ def python_type_to_json(
     >>> python_type_to_json(int)
     'integer'
     >>> python_type_to_json(Union[float, str])
-    ['number', 'string']
+    [{'type': 'number'}, {'type': 'string'}]
 
     :param python_type: the python type
     :returns: the json type
