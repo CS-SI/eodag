@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import geojson
@@ -118,7 +118,7 @@ class EcmwfApi(Api, BuildPostSearchResult):
         if "completionTimeFromAscendingNode" not in kwargs:
             kwargs["completionTimeFromAscendingNode"] = getattr(
                 self.config, "product_type_config", {}
-            ).get("missionEndDate", None) or datetime.utcnow().isoformat(
+            ).get("missionEndDate", None) or datetime.now(timezone.utc).isoformat(
                 timespec="seconds"
             )
 

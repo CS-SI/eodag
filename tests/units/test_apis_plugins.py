@@ -19,7 +19,7 @@ import ast
 import json
 import os
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from tempfile import TemporaryDirectory
 from unittest import mock
 
@@ -148,7 +148,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            datetime.utcnow().isoformat(),
+            datetime.now(timezone.utc).isoformat(),
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
