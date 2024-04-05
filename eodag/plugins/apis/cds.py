@@ -513,6 +513,7 @@ class CdsApi(Api, HTTPDownload, BuildPostSearchResult):
                         non_empty_kwargs.pop(constraint_param)
                     else:
                         not_queryables.add(constraint_param)
+
                 if not_queryables:
                     raise ValidationError(
                         f"parameter(s) {str(not_queryables)} not queryable"

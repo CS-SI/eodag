@@ -259,6 +259,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         del self.api_plugin.config.credentials
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
@@ -270,6 +273,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
         mock_fetch_product_types_list,
+        mock_qssearch_request,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
 
@@ -356,6 +360,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
@@ -365,6 +372,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_fetch_product_types_list,
+        mock_qssearch_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
 
@@ -842,6 +850,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert auth_dict["url"] == self.api_plugin.config.api_endpoint
         del self.api_plugin.config.credentials
 
+    @mock.patch("eodag.plugins.apis.cds.fetch_constraints")
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     @mock.patch(
@@ -856,6 +865,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         mock_fetch_product_types_list,
         mock_get,
         mock_head,
+        mock_constraints,
     ):
         """CdsApi.download must call the authenticate function and cdsapi Client retrieve"""
         mock_cds_authenticate.return_value = {
@@ -863,7 +873,6 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             "url": "http://foo.bar.baz",
         }
         mock_client_api.return_value.location = "http://somewhere/something"
-
         mock_get.return_value.__enter__.return_value.iter_content.return_value = (
             io.BytesIO(b"some content")
         )
@@ -871,6 +880,17 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
             "content-disposition": ""
         }
         mock_head.return_value.headers = {"content-disposition": ""}
+        mock_constraints.return_value = [
+            {
+                "dataset": ["cams-global-ghg-reanalysis-egg4"],
+                "step": [0, 1],
+                "variable": ["carbon_dioxide"],
+                "pressure_level": ["10"],
+                "model_level": ["1"],
+                "time": ["00:00"],
+                "format": ["grib"],
+            }
+        ]
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("cop_ads")
@@ -878,6 +898,7 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
 
         # public dataset request
         results, _ = dag.search(
+            productType="CAMS_GREENHOUSE_EGG4",
             **self.query_dates,
             **self.custom_query_params,
         )
@@ -900,6 +921,10 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         assert path == expected_path
         assert path_to_uri(expected_path) == eoproduct.location
 
+    @mock.patch("eodag.utils.constraints.requests.get")
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
@@ -912,12 +937,26 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
         mock_cds_download,
         mock_cds_authenticate,
         mock_fetch_product_types_list,
+        mock_qssearch_request,
+        mock_constraints,
     ):
         """CdsApi.download_all must call download on each product"""
         mock_cds_authenticate.return_value = {
             "key": "foo:bar",
             "url": "http://foo.bar.baz",
         }
+        mock_constraints.return_value.json.return_value = [
+            {
+                "dataset": ["cams-global-ghg-reanalysis-egg4"],
+                "step": [0, 1],
+                "variable": ["carbon_dioxide"],
+                "pressure_level": ["10"],
+                "model_level": ["1"],
+                "time": ["00:00"],
+                "format": ["grib"],
+                "accuracy": ["bar", "baz"],
+            }
+        ]
 
         dag = EODataAccessGateway()
         dag.set_preferred_provider("cop_ads")
@@ -926,12 +965,14 @@ class TestApisPluginCdsApi(BaseApisPluginTest):
 
         # public dataset request
         results, _ = dag.search(
+            productType="CAMS_GREENHOUSE_EGG4",
             **self.query_dates,
             **self.custom_query_params,
             accuracy="bar",
         )
         eoproducts.extend(results)
         results, _ = dag.search(
+            productType="CAMS_GREENHOUSE_EGG4",
             **self.query_dates,
             **self.custom_query_params,
             accuracy="baz",

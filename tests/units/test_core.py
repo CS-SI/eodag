@@ -35,6 +35,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -1166,6 +1167,8 @@ class TestCore(TestCoreBase):
                 provider="cop_cds", product_type="ERA5_SL"
             )
         )
+        queryables = {"month": ["02"], "format": ["zip"]}
+        mock_discover_queryables.return_value = queryables
         # default values should be added to params
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
@@ -1730,9 +1733,14 @@ class TestCoreSearch(TestCoreBase):
         self.assertGreater(len(guesses), 10)
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_no_parameters(self, mock_fetch_product_types_list):
+    def test__prepare_search_no_parameters(
+        self, mock_fetch_product_types_list, mock_qssearch_request
+    ):
         """_prepare_search must create some kwargs even when no parameter has been provided"""
         _, prepared_search = self.dag._prepare_search()
         expected = {
@@ -1743,9 +1751,14 @@ class TestCoreSearch(TestCoreBase):
         self.assertSetEqual(expected, set(prepared_search))
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_dates(self, mock_fetch_product_types_list):
+    def test__prepare_search_dates(
+        self, mock_fetch_product_types_list, mock_qssearch_request
+    ):
         """_prepare_search must handle start & end dates"""
         base = {
             "start": "2020-01-01",
@@ -1758,9 +1771,14 @@ class TestCoreSearch(TestCoreBase):
         )
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_geom(self, mock_fetch_product_types_list):
+    def test__prepare_search_geom(
+        self, mock_fetch_product_types_list, mock_qssearch_request
+    ):
         """_prepare_search must handle geom, box and bbox"""
         # The default way to provide a geom is through the 'geom' argument.
         base = {"geom": (0, 50, 2, 52)}
@@ -1787,9 +1805,14 @@ class TestCoreSearch(TestCoreBase):
         self.assertIsInstance(prepared_search["geometry"], Polygon)
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_locations(self, mock_fetch_product_types_list):
+    def test__prepare_search_locations(
+        self, mock_fetch_product_types_list, mock_qssearch_request
+    ):
         """_prepare_search must handle a location search"""
         # When locations where introduced they could be passed
         # as regular kwargs. The new and recommended way to provide
@@ -1804,13 +1827,19 @@ class TestCoreSearch(TestCoreBase):
         self.assertIn("geometry", prepared_search)
         self.assertNotIn("country", prepared_search)
 
-    def test__prepare_search_product_type_provided(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_product_type_provided(self, mock_fetch_product_types):
         """_prepare_search must handle when a product type is given"""
         base = {"productType": "S2_MSI_L1C"}
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["productType"], base["productType"])
 
-    def test__prepare_search_product_type_guess_it(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_product_type_guess_it(self, mock_fetch_product_types):
         """_prepare_search must guess a product type when required to"""
         # Uses guess_product_type to find the product matching
         # the best the given params.
@@ -1822,7 +1851,10 @@ class TestCoreSearch(TestCoreBase):
         _, prepared_search = self.dag._prepare_search(**base)
         self.assertEqual(prepared_search["productType"], "S2_MSI_L1C")
 
-    def test__prepare_search_remove_guess_kwargs(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_remove_guess_kwargs(self, mock_fetch_product_types):
         """_prepare_search must remove the guess kwargs"""
         # Uses guess_product_type to find the product matching
         # the best the given params.
@@ -1841,7 +1873,10 @@ class TestCoreSearch(TestCoreBase):
         expected = {"id": "dummy-id"}
         self.assertDictEqual(expected, prepared_search)
 
-    def test__prepare_search_preserve_additional_kwargs(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_preserve_additional_kwargs(self, mock_fetch_product_types):
         """_prepare_search must preserve additional kwargs"""
         base = {
             "productType": "S2_MSI_L1C",
@@ -1851,7 +1886,12 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(prepared_search["productType"], base["productType"])
         self.assertEqual(prepared_search["cloudCover"], base["cloudCover"])
 
-    def test__prepare_search_search_plugin_has_known_product_properties(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_search_plugin_has_known_product_properties(
+        self, mock_fetch_product_types
+    ):
         """_prepare_search must attach the product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
@@ -1876,17 +1916,11 @@ class TestCoreSearch(TestCoreBase):
     ):
         """_prepare_search must be able to attach the generic product properties to the search plugin"""
         prev_fav_provider = self.dag.get_preferred_provider()[0]
-        try:
-            self.dag.set_preferred_provider("peps")
-            base = {"productType": "product_unknown_to_eodag"}
+        self.dag.set_preferred_provider("peps")
+        base = {"productType": "product_unknown_to_eodag"}
+        with self.assertRaises(UnsupportedProductType):
             search_plugins, _ = self.dag._prepare_search(**base)
-            # product_type_config is still created if the product is not known to eodag
-            # however it contains no data.
-            self.assertIsNone(
-                search_plugins[0].config.product_type_config["title"],
-            )
-        finally:
-            self.dag.set_preferred_provider(prev_fav_provider)
+        self.dag.set_preferred_provider(prev_fav_provider)
 
     def test__prepare_search_peps_plugins_product_available(self):
         """_prepare_search must return the search plugins when productType is defined"""
@@ -1899,7 +1933,12 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
 
-    def test__prepare_search_peps_plugins_product_available_with_alias(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_peps_plugins_product_available_with_alias(
+        self, mock_fetch_product_types
+    ):
         """_prepare_search must return the search plugins when productType is defined and alias is used"""
         products = self.dag.product_types_config
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
@@ -1919,7 +1958,12 @@ class TestCoreSearch(TestCoreBase):
         self.assertListEqual(search_plugins, [])
         self.assertNotIn("auth", prepared_search)
 
-    def test__prepare_search_peps_plugins_product_not_available(self):
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test__prepare_search_peps_plugins_product_not_available(
+        self, mock_fetch_product_types
+    ):
         """_prepare_search can use another search plugin than the preferred one"""
         # Document a special behaviour whereby the search and auth plugins don't
         # correspond to the preferred one. This occurs whenever the searched product
@@ -1940,7 +1984,8 @@ class TestCoreSearch(TestCoreBase):
     )
     def test__prepare_search_unknown_product_type(self, mock_fetch_product_types_list):
         """_prepare_search must fetch product types if product_type is unknown"""
-        self.dag._prepare_search(product_type="foo")
+        with self.assertRaises(UnsupportedProductType):
+            self.dag._prepare_search(productType="foo")
         mock_fetch_product_types_list.assert_called_once_with(self.dag)
 
     @mock.patch(
@@ -2679,18 +2724,50 @@ class TestCoreSearch(TestCoreBase):
         dag.search_all(productType="S2_MSI_L1C")
 
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.search_iter_page_plugin", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
+    def test_search_all_unknown_product_type(self, mock_fetch_product_types_list):
+        """search_all must fetch product types if product_type is unknown"""
+        with self.assertRaises(UnsupportedProductType):
+            self.dag.search_all(productType="foo")
+        mock_fetch_product_types_list.assert_called_with(self.dag)
+
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_all_unknown_product_type(
-        self, mock_fetch_product_types_list, mock_search_iter_page_plugin
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_search_parameter_validation(
+        self, mock_qssearch_request, mock_fetch_product_types, mock_constraints
     ):
-        """search_all must fetch product types if product_type is unknown"""
-        self.dag.search_all(productType="foo")
-        mock_fetch_product_types_list.assert_called_with(self.dag)
-        mock_search_iter_page_plugin.assert_called_once()
+        search_params = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "start": "2021-07-03T17:42:24Z",
+            "end": "2023-07-20T17:42:24Z",
+            "processingLevel": "LEVEL2",
+        }
+        # should go well
+        self.dag.search(**search_params)
+        # add invalid param
+        search_params["bla"] = "bla"
+        with self.assertRaisesRegex(ValidationError, r".*not queryable"):
+            self.dag.search(**search_params)
+        # invalid parameter value
+        search_params = {
+            "provider": "cop_cds",
+            "productType": "ERA5_SL",
+            "year": ["1999"],
+            "month": ["10"],
+            "day": ["01"],
+        }
+        mock_constraints.return_value.json.return_value = [
+            {"year": ["2020", "2021"], "month": ["10"], "day": ["01"]}
+        ]
+        with self.assertRaisesRegex(ValidationError, r".*combination of values"):
+            self.dag.search(**search_params)
 
 
 class TestCoreDownload(TestCoreBase):
