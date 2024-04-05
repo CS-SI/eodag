@@ -281,6 +281,7 @@ class PluginConfig(yaml.YAMLObject):
     max_connections: int  # StaticStacSearch
     timeout: float  # StaticStacSearch
     s3_bucket: str  # CreodiasS3Search
+    end_date_excluded: bool  # BuildSearchResult
     ssl_verify: bool
 
     # download -------------------------------------------------------------------------
@@ -293,6 +294,8 @@ class PluginConfig(yaml.YAMLObject):
     order_headers: Dict[str, str]  # HTTPDownload
     order_status_on_success: PluginConfig.OrderStatusOnSuccess
     bucket_path_level: int  # S3RestDownload
+    requester_pays: bool  # AwsDownload
+    flatten_top_dirs: bool
 
     # auth -----------------------------------------------------------------------------
     credentials: Dict[str, str]
