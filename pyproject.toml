@@ -16,7 +16,6 @@ module = [
     "geojson",
     "IPython.display",
     "owslib.*",
-    "requests_ftp",
     "shapefile",
     "shapely",
     "shapely.*",
