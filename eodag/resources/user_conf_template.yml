@@ -133,15 +133,21 @@ ecmwf:
             password:
 cop_ads:
     priority: # Lower value means lower priority (Default: 0)
-    api:
+    search:   # Search parameters configuration
+    download:
+        extract:
         outputs_prefix:
+    auth:
         credentials:
             username:
             password:
 cop_cds:
     priority: # Lower value means lower priority (Default: 0)
-    api:
+    search:   # Search parameters configuration
+    download:
+        extract:
         outputs_prefix:
+    auth:
         credentials:
             username:
             password:
