@@ -1159,7 +1159,10 @@ class TestCore(TestCoreBase):
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.BuildSearchResult.discover_queryables",
+        autospec=True,
+    )
     def test_list_queryables_with_constraints(self, mock_discover_queryables: Mock):
         plugin = next(
             self.dag._plugins_manager.get_search_plugins(

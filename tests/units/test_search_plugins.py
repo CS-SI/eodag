@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import ast
 import json
 import os
 import re
@@ -36,6 +37,7 @@ from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
+    NOT_AVAILABLE,
     TEST_RESOURCES_PATH,
     USER_AGENT,
     AuthenticationError,
@@ -1743,3 +1745,179 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 stubber.activate()
                 setattr(auth_plugin, "s3_client", client)
                 product.register_downloader(download_plugin, auth_plugin)
+
+
+class TestSearchPluginBuildSearchResult(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestSearchPluginBuildSearchResult, cls).setUpClass()
+        providers_config = load_default_config()
+        cls.plugins_manager = PluginManager(providers_config)
+
+    def setUp(self):
+        self.provider = "cop_ads"
+        self.search_plugin = self.get_search_plugin(provider=self.provider)
+        self.query_dates = {
+            "startTimeFromAscendingNode": "2020-01-01",
+            "completionTimeFromAscendingNode": "2020-01-02",
+        }
+        self.product_type = "CAMS_EAC4"
+        self.product_dataset = "cams-global-reanalysis-eac4"
+        self.product_type_params = {
+            "dataset": self.product_dataset,
+            "format": "grib",
+            "variable": "2m_dewpoint_temperature",
+            "time": "00:00",
+        }
+        self.custom_query_params = {
+            "dataset": "cams-global-ghg-reanalysis-egg4",
+            "step": 0,
+            "variable": "carbon_dioxide",
+            "pressure_level": "10",
+            "model_level": "1",
+            "time": "00:00",
+            "format": "grib",
+        }
+
+    def get_search_plugin(self, product_type=None, provider=None):
+        return next(
+            self.plugins_manager.get_search_plugins(
+                product_type=product_type, provider=provider
+            )
+        )
+
+    def test_plugins_search_buildsearchresult_dates_missing(self):
+        """BuildSearchResult.query must use default dates if missing"""
+        # given start & stop
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-01"
+        )
+
+        # missing start & stop
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+        )
+        eoproduct = results[0]
+        self.assertIn(
+            eoproduct.properties["startTimeFromAscendingNode"],
+            DEFAULT_MISSION_START_DATE,
+        )
+        self.assertIn(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2015-01-01",
+        )
+
+        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
+        self.search_plugin.config.product_type_config = {
+            "productType": self.product_type,
+            "missionStartDate": "1985-10-26",
+            "missionEndDate": "2015-10-21",
+        }
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-26"
+        )
+
+    def test_plugins_search_buildsearchresult_without_producttype(self):
+        """
+        BuildSearchResult.query must build a EOProduct from input parameters without product type.
+        For test only, result cannot be downloaded.
+        """
+        results, count = self.search_plugin.query(
+            dataset=self.product_dataset,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        assert count == 1
+        eoproduct = results[0]
+        assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
+        assert eoproduct.properties["startTimeFromAscendingNode"] == "2020-01-01"
+        assert eoproduct.properties["completionTimeFromAscendingNode"] == "2020-01-01"
+        assert eoproduct.properties["title"] == eoproduct.properties["id"]
+        assert eoproduct.properties["title"].startswith(
+            f"{self.product_dataset.upper()}"
+        )
+        assert eoproduct.properties["orderLink"].startswith("http")
+        assert NOT_AVAILABLE in eoproduct.location
+
+    def test_plugins_search_buildsearchresult_with_producttype(self):
+        """BuildSearchResult.query must build a EOProduct from input parameters with predefined product type"""
+        results, _ = self.search_plugin.query(
+            **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
+        )
+        eoproduct = results[0]
+        assert eoproduct.properties["title"].startswith(self.product_type)
+        assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
+        # check if product_type_params is a subset of eoproduct.properties
+        assert self.product_type_params.items() <= eoproduct.properties.items()
+
+        # product type default settings can be overwritten using search kwargs
+        results, _ = self.search_plugin.query(
+            **self.query_dates,
+            productType=self.product_type,
+            variable="temperature",
+        )
+        eoproduct = results[0]
+        assert eoproduct.properties["variable"] == "temperature"
+
+    def test_plugins_search_buildsearchresult_with_custom_producttype(self):
+        """BuildSearchResult.query must build a EOProduct from input parameters with custom product type"""
+        results, _ = self.search_plugin.query(
+            **self.query_dates,
+            **self.custom_query_params,
+        )
+        eoproduct = results[0]
+        assert eoproduct.properties["title"].startswith(
+            self.custom_query_params["dataset"].upper()
+        )
+        # check if custom_query_params is a subset of eoproduct.properties
+        for param in self.custom_query_params:
+            try:
+                # for numeric values
+                assert eoproduct.properties[param] == ast.literal_eval(
+                    self.custom_query_params[param]
+                )
+            except Exception:
+                assert eoproduct.properties[param] == self.custom_query_params[param]
+
+    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    def test_plugins_search_buildsearchresult_discover_queryables(
+        self, mock_requests_constraints
+    ):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        mock_requests_constraints.return_value = MockResponse(
+            constraints, status_code=200
+        )
+        queryables = self.search_plugin.discover_queryables(
+            productType="CAMS_EU_AIR_QUALITY_RE"
+        )
+        self.assertEqual(11, len(queryables))
+        self.assertIn("variable", queryables)
+        self.assertNotIn("metadata_mapping", queryables)
+        # with additional param
+        queryables = self.search_plugin.discover_queryables(
+            productType="CAMS_EU_AIR_QUALITY_RE",
+            variable="a",
+        )
+        self.assertEqual(11, len(queryables))
+        queryable = queryables.get("variable")
+        self.assertEqual("a", queryable.__metadata__[0].get_default())
+        queryable = queryables.get("month")
+        self.assertTrue(queryable.__metadata__[0].is_required())
