@@ -2199,27 +2199,77 @@
   roles:
     - host
   url: https://ads.atmosphere.copernicus.eu/
-  api: !plugin
-    type: CdsApi
-    api_endpoint: https://ads.atmosphere.copernicus.eu/api/v2
-    extract: false
-    flatten_top_dirs: True
-    constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
+  auth: !plugin
+    type: GenericAuth
+    method: basic
     ssl_verify: true
+  download: !plugin
+    type: HTTPDownload
+    base_uri: https://ads.atmosphere.copernicus.eu/api/v2
+    ssl_verify: true
+    extract: false
+    auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
+    order_status_error:
+      state: failed
+    order_status_success:
+      state: completed
     order_on_response:
       metadata_mapping:
         order_id: '$.request_id'
         orderStatusLink: 'https://ads.atmosphere.copernicus.eu/api/v2/tasks/{order_id}'
+        downloadLink: '$.location'
     order_status_method: 'GET'
+    products:
+      CAMS_GAC_FORECAST:
+        outputs_extension: .grib
+      CAMS_GFE_GFAS:
+        outputs_extension: .grib
+      CAMS_EU_AIR_QUALITY_FORECAST:
+        outputs_extension: .grib
+      CAMS_EU_AIR_QUALITY_RE:
+        outputs_extension: .zip
+        extract: true
+      CAMS_GRF:
+        outputs_extension: .zip
+        extract: true
+      CAMS_GRF_AUX:
+        outputs_extension: .zip
+        extract: true
+      CAMS_SOLAR_RADIATION:
+        outputs_extension: .csv
+      CAMS_GREENHOUSE_EGG4_MONTHLY:
+        outputs_extension: .grib
+      CAMS_GREENHOUSE_EGG4:
+        outputs_extension: .grib
+      CAMS_GREENHOUSE_INVERSION:
+        outputs_extension: .grib
+      CAMS_GLOBAL_EMISSIONS:
+        outputs_extension: .zip
+        extract: true
+      CAMS_EAC4:
+        outputs_extension: .grib
+      CAMS_EAC4_MONTHLY:
+        outputs_extension: .grib
+  search: !plugin
+    type: BuildSearchResult
+    ssl_verify: true
+    end_date_excluded: false
+    remove_from_query:
+      - dataset
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+    constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
       completionTimeFromAscendingNode:
-        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
+        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      _date: '{startTimeFromAscendingNode}/{completionTimeFromAscendingNode}'
       id: '$.id'
       # The geographic extent of the product
       geometry:
@@ -2227,7 +2277,8 @@
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
-      downloadLink: 'https://ads.atmosphere.copernicus.eu/cdsapp#!/dataset/{dataset}'
+      downloadLink: '$.null'
+      orderLink: 'https://ads.atmosphere.copernicus.eu/api/v2/resources/{dataset}'
       # Copernicus ADS specific parameters
       accuracy:
         - accuracy
@@ -2505,10 +2556,14 @@
       model: ensemble
       level: '0'
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_GRF:
       dataset: cams-global-radiative-forcings
       format: zip
@@ -2519,10 +2574,14 @@
       level: surface
       version: '2'
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_GRF_AUX:
       dataset: cams-global-radiative-forcing-auxilliary-variables
       band: short_wave
@@ -2533,10 +2592,14 @@
       aerosol_type: marine
       level: surface
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       sky_type: clear
@@ -2553,10 +2616,14 @@
       variable: snow_albedo
       api_product_type: monthly_mean
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_GREENHOUSE_EGG4:
       dataset: cams-global-ghg-reanalysis-egg4
       format: grib
@@ -2570,10 +2637,14 @@
       input_observations: surface
       time_aggregation: instantaneous
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_GLOBAL_EMISSIONS:
       dataset: cams-global-emission-inventories
       version: latest
@@ -2581,10 +2652,14 @@
       variable: acids
       source: anthropogenic
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
       format: grib
@@ -2596,14 +2671,16 @@
       variable: 2m_dewpoint_temperature
       api_product_type: monthly_mean
       metadata_mapping:
-        completionTimeFromAscendingNode: '{$.completionTimeFromAscendingNode#to_iso_date}'
-        _date:
-          - '{{"_date": {{"year": {_date#interval_to_datetime_dict}["year"], "month": {_date#interval_to_datetime_dict}["month"], "day": {_date#interval_to_datetime_dict}["day"]}} }}'
-          - '{$._date}'
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
-      format: grib
-      time: '00:00'
 ---
 !provider # MARK: cop_cds
   name: cop_cds
