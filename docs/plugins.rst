@@ -56,9 +56,9 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+--------------------------+----------------+
 | ecmwf              | EcmwfApi              | EcmwfApi                 | EcmwfApi       |
 +--------------------+-----------------------+--------------------------+----------------+
-| cop_ads            | CdsApi                | CdsApi                   | CdsApi         |
+| cop_ads            | BuildSearchResult     | GenericAuth              | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
-| cop_cds            | CdsApi                | CdsApi                   | CdsApi         |
+| cop_cds            | BuildSearchResult     | GenericAuth              | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+
 | meteoblue          | BuildPostSearchResult | HttpQueryStringAuth      | HTTPDownload   |
 +--------------------+-----------------------+--------------------------+----------------+

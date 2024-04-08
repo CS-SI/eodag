@@ -4,7 +4,7 @@ Release history
 2.12.1 (2024-03-05)
 +++++++++++++++++++
 
-* :class:`~eodag.plugins.apis.cds.CdsApi` queryables fix (:pull:`1048`)
+* `CdsApi` queryables fix (:pull:`1048`)
 
 2.12.0 (2024-02-19)
 +++++++++++++++++++
@@ -22,10 +22,10 @@ Release history
 * New product types added for `cop_ads` and `cop_cds` (:pull:`898`)
 * Adds missing `tileIdentifier` and `quicklook` for `creodias`, `creodias_s3` and `cop_dataspace` (:pull:`957`)
   (:pull:`1014`)
-* HTTP download with :class:`~eodag.plugins.apis.cds.CdsApi` (:pull:`946`)
+* HTTP download with `CdsApi` (:pull:`946`)
 * Download streaming available for :class:`~eodag.plugins.download.aws.AwsDownload` plugin (:pull:`997`)
 * Lists STAC alternate assets in server mode (:pull:`961`)
-* `_dc_qs` used in server-mode to store :class:`~eodag.plugins.apis.cds.CdsApi` search criteria (:pull:`958`)(:pull:`1000`)
+* `_dc_qs` used in server-mode to store `CdsApi` search criteria (:pull:`958`)(:pull:`1000`)
 * New eodag exception :class:`~eodag.utils.exceptions.TimeOutError` (:pull:`982`)
 * Cast loaded environment variables type using config type-hints (:pull:`987`)
 * Type hints fixes (:pull:`880`)(:pull:`983`)
@@ -106,7 +106,7 @@ Release history
   (:pull:`659`)
 * Fetch product types optimization (:pull:`683`)
 * Fixes external product types update for unknown provider (:pull:`682`)
-* Default dates and refactor for `:class:`~eodag.plugins.apis.cds.CdsApi` and `:class:`~eodag.plugins.apis.cds.EcmwfApi` (:pull:`672`)(:pull:`678`)(:pull:`679`)
+* Default dates and refactor for `CdsApi` and :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` (:pull:`672`)(:pull:`678`)(:pull:`679`)
 * `peps` `storageStatus` update (:pull:`677`)
 * Customized and faster `deepcopy` (:pull:`664`)
 * Various minor fixes and improvements (:pull:`665`)(:pull:`666`)(:pull:`667`)(:pull:`668`)(:pull:`669`)(:pull:`670`)
@@ -198,7 +198,7 @@ Release history
   (:pull:`480`)(:pull:`467`)(:pull:`470`)(:pull:`471`)(:pull:`472`)(:pull:`473`)(:pull:`481`)(:pull:`486`)(:pull:`493`)
   (:pull:`491`)(:pull:`500`)
 * New providers `cop_ads <https://ads.atmosphere.copernicus.eu>`_ and `cop_cds <https://cds.climate.copernicus.eu>`_
-  for Copernicus Atmosphere and Climate Data Stores using :class:`~eodag.plugins.apis.cds.CdsApi` plugin, developed in
+  for Copernicus Atmosphere and Climate Data Stores using `CdsApi` plugin, developed in
   the context of DOMINO-X (:pull:`504`)(:pull:`513`)
 * :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin fixed and updated (:pull:`489`)(:pull:`508`)
 * Cache usage for ``jsonpath.parse()`` (:pull:`502`)
