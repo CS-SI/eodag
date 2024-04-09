@@ -172,6 +172,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     self.__zip_buffer = io.BytesIO(fh.read())
                 cl = self.__zip_buffer.getbuffer().nbytes
                 self.headers = {"content-length": cl}
+                self.url = "http://foo.bar"
 
             def __enter__(self):
                 return self

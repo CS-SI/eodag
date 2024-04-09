@@ -25,7 +25,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional, Union
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import geojson
 import httpx
@@ -437,7 +437,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("NotAvailableError", response_content["description"])
 
     @mock.patch(
-        "eodag.rest.utils.eodag_api.search",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
         return_value=(
             SearchResult.from_geojson(
@@ -512,10 +512,18 @@ class RequestTestCase(unittest.TestCase):
         ),
     )
     def _request_accepted(self, url, mock_search):
+        mock_search.return_value[0][0].downloader = MagicMock()
+        mock_search.return_value[0][0].downloader_auth = MagicMock()
+        mock_search.return_value[0][
+            0
+        ].downloader._stream_download_dict.side_effect = NotAvailableError(
+            "Product offline. Try again later."
+        )
         response = self.app.get(url, follow_redirects=True)
         response_content = json.loads(response.content.decode("utf-8"))
         self.assertEqual(202, response.status_code)
         self.assertIn("description", response_content)
+        self.assertIn("location", response_content)
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -1129,6 +1137,10 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
@@ -1137,7 +1149,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     def test_download_item_from_collection_no_stream(
-        self, mock_download: Mock, mock_stream_download: Mock
+        self, mock_download: Mock, mock_stream_download: Mock, mock_auth: Mock
     ):
         """Download through eodag server catalog should return a valid response"""
         # download should be performed locally then deleted if streaming is not available
@@ -1159,7 +1171,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._stream_download",
+        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
         autospec=True,
         side_effect=NotAvailableError("Product offline. Try again later."),
     )
@@ -1169,7 +1181,6 @@ class RequestTestCase(unittest.TestCase):
         self._request_accepted(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
-        mock_download.assert_called_once()
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
