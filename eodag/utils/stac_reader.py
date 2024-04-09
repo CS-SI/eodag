@@ -182,5 +182,5 @@ def _fetch_stac_items_from_catalog(
             for future in concurrent.futures.as_completed(future_to_href):
                 item = future.result()
                 if item:
-                    items.append(future.result())
+                    items.append(item)
     return items

@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import geojson
 
+from eodag.api.product.metadata_mapping import get_metadata_path_value
 from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
@@ -64,6 +65,18 @@ class StaticStacSearch(StacSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
+        # there is no pagination with static search, then we keep only its mandatory attribute
+        config.pagination = {"total_items_nb_key_path": "$.null"}
+        # prevent search parameters from being queried when they are known in the configuration or not
+        for param, mapping in config.metadata_mapping.items():
+            # only keep one queryable to allow the mock search request
+            if param != "productType":
+                config.metadata_mapping[param] = get_metadata_path_value(mapping)
+        config.discover_metadata["auto_discovery"] = False
+        # there is no endpoint for fetching queryables with a static search
+        config.discover_queryables["fetch_url"] = None
+        config.discover_queryables["product_type_fetch_url"] = None
+
         super(StaticStacSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault("max_connections", 100)
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
@@ -84,8 +97,24 @@ class StaticStacSearch(StacSearch):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
 
+        product_type = kwargs.get("productType", product_type)
+        # provider product type specific conf
+        self.product_type_def_params = (
+            self.get_product_type_def_params(product_type, **kwargs)
+            if product_type is not None
+            else {}
+        )
+
+        for collection in self.get_collections(**kwargs):
+            # skip empty collection if one is required in api_endpoint
+            if "{collection}" in self.config.api_endpoint and not collection:
+                continue
+            search_endpoint = self.config.api_endpoint.rstrip("/").format(
+                collection=collection
+            )
+
         features = fetch_stac_items(
-            self.config.api_endpoint,
+            search_endpoint,
             recursive=True,
             max_connections=self.config.max_connections,
             timeout=self.config.timeout,
@@ -119,9 +148,10 @@ class StaticStacSearch(StacSearch):
             )
 
         # Filter by geometry
-        if "geometry" in kwargs.keys():
+        geometry = kwargs.pop("geometry", None)
+        if geometry:
             search_result = search_result.crunch(
-                FilterOverlap({"intersects": True}), geometry=kwargs.pop("geometry")
+                FilterOverlap({"intersects": True}), geometry=geometry
             )
         # Filter by cloudCover
         if "cloudCover" in kwargs.keys():
