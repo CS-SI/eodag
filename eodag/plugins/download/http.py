@@ -130,7 +130,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> None:
+    ) -> Optional[Dict[str, Any]]:
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is OFFLINE
@@ -156,6 +156,8 @@ class HTTPDownload(Download):
         :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
+        :returns: the returned json status response
+        :rtype: dict
         """
         product.properties["storageStatus"] = STAGING_STATUS
 
@@ -205,15 +207,20 @@ class HTTPDownload(Download):
                 )
                 self._check_auth_exception(e)
 
-            self.order_response_process(response, product)
+            return self.order_response_process(response, product)
+        return None
 
-    def order_response_process(self, response: Response, product: EOProduct) -> None:
+    def order_response_process(
+        self, response: Response, product: EOProduct
+    ) -> Optional[Dict[str, Any]]:
         """Process order response
 
         :param response: The order response
         :type response: :class:`~requests.Response`
         :param product: The orderd EO product
         :type product: :class:`~eodag.api.product._product.EOProduct`
+        :returns: the returned json status response
+        :rtype: dict
         """
         order_metadata_mapping = getattr(self.config, "order_on_response", {}).get(
             "metadata_mapping", {}
@@ -223,8 +230,11 @@ class HTTPDownload(Download):
             order_metadata_mapping_jsonpath = mtd_cfg_as_conversion_and_querypath(
                 order_metadata_mapping,
             )
+
+            json_response = response.json()
+
             properties_update = properties_from_json(
-                response.json(),
+                json_response,
                 order_metadata_mapping_jsonpath,
             )
             properties_update = {
@@ -235,7 +245,11 @@ class HTTPDownload(Download):
                 product.remote_location = product.location = product.properties[
                     "downloadLink"
                 ]
+                product.properties["storageStatus"] = ONLINE_STATUS
                 logger.debug(f"Product location updated to {product.location}")
+
+            return json_response
+        return None
 
     def orderDownloadStatus(
         self,

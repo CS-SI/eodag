@@ -20,15 +20,23 @@ import logging
 import os
 import re
 from typing import Any, Callable, Dict, List, Optional, cast
+from unittest.mock import Mock
 
 import dateutil
 from fastapi import Request
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
+from requests.models import Response as RequestsResponse
+from starlette.responses import Response
 
 import eodag
 from eodag import EOProduct
-from eodag.api.product.metadata_mapping import OSEO_METADATA_MAPPING
+from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
+    ONLINE_STATUS,
+    OSEO_METADATA_MAPPING,
+    STAGING_STATUS,
+)
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
@@ -51,6 +59,7 @@ from eodag.utils import (
     _deprecated,
     deepcopy,
     dict_items_recursive_apply,
+    urlencode,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -212,12 +221,13 @@ def search_stac_items(
 
 
 def download_stac_item(
+    request: Request,
     catalogs: List[str],
     item_id: str,
     provider: Optional[str] = None,
     asset: Optional[str] = None,
     **kwargs: Any,
-) -> StreamingResponse:
+) -> Response:
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
@@ -229,7 +239,7 @@ def download_stac_item(
     :param kwargs: additional download parameters
     :type kwargs: Any
     :returns: a stream of the downloaded data (zip file)
-    :rtype: StreamingResponse
+    :rtype: Response
     """
     product_type = catalogs[0]
 
@@ -244,12 +254,42 @@ def download_stac_item(
             + (f" for provider {provider}" if provider else "")
         )
 
+    if product.properties.get("storageStatus") != ONLINE_STATUS and hasattr(
+        product.downloader, "order_response_process"
+    ):
+        # update product (including orderStatusLink) if product was previously ordered
+        logger.debug("Use given download query arguments to parse order link")
+        response = Mock(spec=RequestsResponse)
+        response.status_code = 200
+        response.json.return_value = kwargs
+        product.downloader.order_response_process(response, product)
+
+    auth = product.downloader_auth.authenticate()
+
+    if (
+        product.properties.get("storageStatus") != ONLINE_STATUS
+        and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
+        and hasattr(product.downloader, "orderDownload")
+    ):
+        # first order
+        logger.debug("Order product")
+        order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
+        kwargs.update(order_status_dict or {})
     try:
+        if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
+            product.downloader, "orderDownloadStatus"
+        ):
+            # check order status if needed
+            logger.debug("Checking product order status")
+            product.downloader.orderDownloadStatus(product=product, auth=auth)
+            if product.properties.get("storageStatus") != ONLINE_STATUS:
+                raise NotAvailableError("Product is not available yet")
+
         download_stream = cast(
             StreamResponse,
             product.downloader._stream_download_dict(
                 product,
-                auth=product.downloader_auth.authenticate(),
+                auth=auth,
                 asset=asset,
                 wait=-1,
                 timeout=-1,
@@ -263,17 +303,24 @@ def download_stac_item(
         download_stream = file_to_stream(
             eodag_api.download(product, extract=False, asset=asset)
         )
-    except NotAvailableError as e:
-        return ORJSONResponse(
-            status_code=202,
-            content={"description": str(e)},
-        )
+    except NotAvailableError:
+        if product.properties.get("storageStatus") != ONLINE_STATUS:
+            download_link = f"{request.state.url}?{urlencode(dict(kwargs, **{'provider': provider}), doseq=True)}"
+            return ORJSONResponse(
+                status_code=202,
+                headers={"Location": download_link},
+                content={
+                    "description": "Product is not available yet, please try again using given updated location",
+                    "location": download_link,
+                },
+            )
+        else:
+            raise
 
     return StreamingResponse(
         content=download_stream.content,
         headers=download_stream.headers,
         media_type=download_stream.media_type,
-        status_code=getattr(download_stream, "status_code", 200),
     )
 
 
