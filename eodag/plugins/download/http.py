@@ -582,6 +582,19 @@ class HTTPDownload(Download):
             )
         return stream_size
 
+    def _check_product_filename(self, product: EOProduct) -> str:
+        filename = None
+        asset_content_disposition = self.stream.headers.get("content-disposition", None)
+        if asset_content_disposition:
+            filename = cast(
+                Optional[str],
+                parse_header(asset_content_disposition).get_param("filename", None),
+            )
+        if not filename:
+            # default filename extracted from path
+            filename = os.path.basename(self.stream.url)
+        return filename
+
     def _stream_download_dict(
         self,
         product: EOProduct,
@@ -823,7 +836,11 @@ class HTTPDownload(Download):
                         product.properties["storageStatus"] = "ORDERED"
                         self._process_exception(None, product, ordered_message)
                 stream_size = self._check_stream_size(product) or None
+                filename = self._check_product_filename(product) or None
                 product.headers = self.stream.headers
+                product.headers[
+                    "content-disposition"
+                ] = f"attachment; filename={filename}"
                 progress_callback.reset(total=stream_size)
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
