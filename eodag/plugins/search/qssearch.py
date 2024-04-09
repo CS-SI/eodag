@@ -1144,6 +1144,11 @@ class PostJsonSearch(QueryStringSearch):
         if _dc_qs is not None:
             qs = unquote_plus(unquote_plus(_dc_qs))
             qp = geojson.loads(qs)
+
+            # provider product type specific conf
+            self.product_type_def_params = self.get_product_type_def_params(
+                product_type, **kwargs
+            )
         else:
             keywords = {
                 k: v for k, v in kwargs.items() if k != "auth" and v is not None
