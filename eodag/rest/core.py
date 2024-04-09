@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, cast
 
 import dateutil
 from fastapi import Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
 
 import eodag
@@ -263,9 +263,11 @@ def download_stac_item(
         download_stream = file_to_stream(
             eodag_api.download(product, extract=False, asset=asset)
         )
-    except NotAvailableError:
-        download_stream.content = (i for i in range(0))
-        download_stream.status_code = 202
+    except NotAvailableError as e:
+        return ORJSONResponse(
+            status_code=202,
+            content={"description": str(e)},
+        )
 
     return StreamingResponse(
         content=download_stream.content,

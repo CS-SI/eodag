@@ -513,8 +513,9 @@ class RequestTestCase(unittest.TestCase):
     )
     def _request_accepted(self, url, mock_search):
         response = self.app.get(url, follow_redirects=True)
+        response_content = json.loads(response.content.decode("utf-8"))
         self.assertEqual(202, response.status_code)
-        self.assertEqual(response.content, b"")
+        self.assertIn("description", response_content)
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -1160,7 +1161,7 @@ class RequestTestCase(unittest.TestCase):
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download",
         autospec=True,
-        side_effect=NotAvailableError(),
+        side_effect=NotAvailableError("Product offline. Try again later."),
     )
     def test_download_offline_item_from_catalog(self, mock_download, mock_auth):
         """Download an offline item through eodag server catalog should return a
