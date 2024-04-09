@@ -47,8 +47,10 @@ from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
+    STAGING_STATUS,
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
     properties_from_xml,
@@ -155,6 +157,8 @@ class HTTPDownload(Download):
         :param kwargs: download additional kwargs
         :type kwargs: Union[str, bool, dict]
         """
+        product.properties["storageStatus"] = STAGING_STATUS
+
         order_method = getattr(self.config, "order_method", "GET").lower()
         ssl_verify = getattr(self.config, "ssl_verify", True)
         OrderKwargs = TypedDict(
@@ -199,7 +203,18 @@ class HTTPDownload(Download):
                     product.properties["title"],
                     error_message,
                 )
+                self._check_auth_exception(e)
 
+            self.order_response_process(response, product)
+
+    def order_response_process(self, response: Response, product: EOProduct) -> None:
+        """Process order response
+
+        :param response: The order response
+        :type response: :class:`~requests.Response`
+        :param product: The orderd EO product
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        """
         order_metadata_mapping = getattr(self.config, "order_on_response", {}).get(
             "metadata_mapping", {}
         )
@@ -212,6 +227,9 @@ class HTTPDownload(Download):
                 response.json(),
                 order_metadata_mapping_jsonpath,
             )
+            properties_update = {
+                k: v for k, v in properties_update.items() if v != NOT_AVAILABLE
+            }
             product.properties.update(properties_update)
             if "downloadLink" in properties_update:
                 product.remote_location = product.location = product.properties[
@@ -316,16 +334,8 @@ class HTTPDownload(Download):
                     self.config, "order_status_success", {}
                 )
                 if (
-                    "status" in status_dict
-                    and status_dict["status"] == order_status_success_dict["status"]
-                    and (
-                        "message" not in order_status_success_dict
-                        or (
-                            "message" in status_dict
-                            and status_dict["message"]
-                            == order_status_success_dict["message"]
-                        )
-                    )
+                    order_status_success_dict
+                    and order_status_success_dict.items() <= status_dict.items()
                 ):
                     product.properties["storageStatus"] = ONLINE_STATUS
                 if (
@@ -412,6 +422,8 @@ class HTTPDownload(Download):
                     product.properties["title"],
                     e,
                 )
+
+            self.order_response_process(response, product)
 
     def download(
         self,
@@ -663,15 +675,19 @@ class HTTPDownload(Download):
             headers=product.headers,
         )
 
-    def _process_exception(
-        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
-    ) -> None:
+    def _check_auth_exception(self, e: Optional[RequestException]) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
             auth_errors = [auth_errors]
-        response_text = e.response.text.strip() if e and e.response else ""
-        if e and e.response and e.response.status_code in auth_errors:
+        response_text = (
+            e.response.text.strip() if e is not None and e.response is not None else ""
+        )
+        if (
+            e is not None
+            and e.response is not None
+            and e.response.status_code in auth_errors
+        ):
             raise AuthenticationError(
                 "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                 % (
@@ -680,8 +696,16 @@ class HTTPDownload(Download):
                     self.provider,
                 )
             )
+
+    def _process_exception(
+        self, e: Optional[RequestException], product: EOProduct, ordered_message: str
+    ) -> None:
+        self._check_auth_exception(e)
+        response_text = (
+            e.response.text.strip() if e is not None and e.response is not None else ""
+        )
         # product not available
-        elif product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
+        if product.properties.get("storageStatus", ONLINE_STATUS) != ONLINE_STATUS:
             msg = (
                 ordered_message
                 if ordered_message and not response_text
@@ -766,6 +790,9 @@ class HTTPDownload(Download):
         else:
             req_url = url
             req_kwargs = {}
+
+        if req_url.startswith(NOT_AVAILABLE):
+            raise NotAvailableError("Download link is not available")
 
         s = requests.Session()
         with s.request(
@@ -1046,7 +1073,7 @@ class HTTPDownload(Download):
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
             auth_errors = [auth_errors]
-        if e.response and e.response.status_code in auth_errors:
+        if e.response is not None and e.response.status_code in auth_errors:
             raise AuthenticationError(
                 "HTTP Error %s returned, %s\nPlease check your credentials for %s"
                 % (

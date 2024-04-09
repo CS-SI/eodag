@@ -16,12 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import ast
-import io
-import json
-import logging
 import os
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from tempfile import TemporaryDirectory
 from unittest import mock
 
@@ -30,8 +27,6 @@ import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
-from eodag.utils import MockResponse
-from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
@@ -49,7 +44,6 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     path_to_uri,
-    setup_logging,
     urlsplit,
 )
 
@@ -150,7 +144,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            datetime.utcnow().isoformat(),
+            datetime.now(timezone.utc).isoformat(),
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -658,314 +652,3 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 )
 
         run()
-
-
-class TestApisPluginCdsApi(BaseApisPluginTest):
-    def setUp(self):
-        self.provider = "cop_ads"
-        self.api_plugin = self.get_search_plugin(provider=self.provider)
-        self.query_dates = {
-            "startTimeFromAscendingNode": "2020-01-01",
-            "completionTimeFromAscendingNode": "2020-01-02",
-        }
-        self.product_type = "CAMS_EAC4"
-        self.product_dataset = "cams-global-reanalysis-eac4"
-        self.product_type_params = {
-            "dataset": self.product_dataset,
-            "format": "grib",
-            "variable": "2m_dewpoint_temperature",
-            "time": "00:00",
-        }
-        self.custom_query_params = {
-            "dataset": "cams-global-ghg-reanalysis-egg4",
-            "step": 0,
-            "variable": "carbon_dioxide",
-            "pressure_level": "10",
-            "model_level": "1",
-            "time": "00:00",
-            "format": "grib",
-        }
-
-    def test_plugins_apis_cds_logging(self):
-        """CdsApi must init client with logging level"""
-
-        # auth dict needed for client init
-        auth_dict = {"key": "foo:some-key", "url": "https://bar"}
-
-        # 0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG
-        setup_logging(0)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.WARNING)
-
-        setup_logging(1)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.WARNING)
-
-        setup_logging(2)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.INFO)
-
-        setup_logging(3)
-        client = self.api_plugin._get_cds_client(**auth_dict)
-        self.assertEqual(client.logger.level, logging.DEBUG)
-
-        logger = logging.getLogger("eodag")
-        logger.handlers = []
-        logger.level = 0
-
-    def test_plugins_apis_cds_query_dates_missing(self):
-        """CdsApi.query must use default dates if missing"""
-        # given start & stop
-        results, _ = self.api_plugin.query(
-            productType=self.product_type,
-            startTimeFromAscendingNode="2020-01-01",
-            completionTimeFromAscendingNode="2020-01-02",
-        )
-        eoproduct = results[0]
-        self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
-        )
-        self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
-        )
-
-        # missing start & stop
-        results, _ = self.api_plugin.query(
-            productType=self.product_type,
-        )
-        eoproduct = results[0]
-        self.assertIn(
-            eoproduct.properties["startTimeFromAscendingNode"],
-            DEFAULT_MISSION_START_DATE,
-        )
-        self.assertIn(
-            eoproduct.properties["completionTimeFromAscendingNode"],
-            "2015-01-02T00:00:00Z",
-        )
-
-        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
-        self.api_plugin.config.product_type_config = {
-            "productType": self.product_type,
-            "missionStartDate": "1985-10-26",
-            "missionEndDate": "2015-10-21",
-        }
-        results, _ = self.api_plugin.query(
-            productType=self.product_type,
-        )
-        eoproduct = results[0]
-        self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
-        )
-        self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
-        )
-
-    def test_plugins_apis_cds_query_without_producttype(self):
-        """
-        CdsApi.query must build a EOProduct from input parameters without product type.
-        For test only, result cannot be downloaded.
-        """
-        results, count = self.api_plugin.query(
-            dataset=self.product_dataset,
-            **self.query_dates,
-        )
-        assert count == 1
-        eoproduct = results[0]
-        assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
-        assert (
-            eoproduct.properties["startTimeFromAscendingNode"]
-            == self.query_dates["startTimeFromAscendingNode"]
-        )
-        assert (
-            eoproduct.properties["completionTimeFromAscendingNode"]
-            == self.query_dates["completionTimeFromAscendingNode"]
-        )
-        assert eoproduct.properties["title"] == eoproduct.properties["id"]
-        assert eoproduct.properties["title"].startswith(
-            f"{self.product_dataset.upper()}"
-        )
-        assert eoproduct.location.startswith("http")
-
-    def test_plugins_apis_cds_query_with_producttype(self):
-        """CdsApi.query must build a EOProduct from input parameters with predefined product type"""
-        results, _ = self.api_plugin.query(
-            **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
-        )
-        eoproduct = results[0]
-        assert eoproduct.properties["title"].startswith(self.product_type)
-        assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
-        # check if product_type_params is a subset of eoproduct.properties
-        assert self.product_type_params.items() <= eoproduct.properties.items()
-
-        # product type default settings can be overwritten using search kwargs
-        results, _ = self.api_plugin.query(
-            **self.query_dates,
-            productType=self.product_type,
-            variable="temperature",
-        )
-        eoproduct = results[0]
-        assert eoproduct.properties["variable"] == "temperature"
-
-    def test_plugins_apis_cds_query_with_custom_producttype(self):
-        """CdsApi.query must build a EOProduct from input parameters with custom product type"""
-        results, _ = self.api_plugin.query(
-            **self.query_dates,
-            **self.custom_query_params,
-        )
-        eoproduct = results[0]
-        assert eoproduct.properties["title"].startswith(
-            self.custom_query_params["dataset"].upper()
-        )
-        # check if custom_query_params is a subset of eoproduct.properties
-        for param in self.custom_query_params:
-            try:
-                # for numeric values
-                assert eoproduct.properties[param] == ast.literal_eval(
-                    self.custom_query_params[param]
-                )
-            except Exception:
-                assert eoproduct.properties[param] == self.custom_query_params[param]
-
-    @mock.patch("cdsapi.api.Client.status", autospec=True)
-    def test_plugins_apis_cds_authenticate(self, mock_client_status):
-        """CdsApi.authenticate must return a credentials dict"""
-        # auth using eodag credentials
-        credentials = {
-            "username": "foo",
-            "password": "bar",
-            "api_endpoint": "http://foo.bar.baz",
-        }
-        self.api_plugin.config.credentials = credentials
-        auth_dict = self.api_plugin.authenticate()
-        assert credentials["username"] in auth_dict["key"]
-        assert credentials["password"] in auth_dict["key"]
-        assert auth_dict["url"] == self.api_plugin.config.api_endpoint
-        del self.api_plugin.config.credentials
-
-    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
-    @mock.patch("cdsapi.api.Client._api", autospec=True)
-    def test_plugins_apis_cds_download(
-        self,
-        mock_client_api,
-        mock_cds_authenticate,
-        mock_fetch_product_types_list,
-        mock_get,
-        mock_head,
-    ):
-        """CdsApi.download must call the authenticate function and cdsapi Client retrieve"""
-        mock_cds_authenticate.return_value = {
-            "key": "foo:bar",
-            "url": "http://foo.bar.baz",
-        }
-        mock_client_api.return_value.location = "http://somewhere/something"
-
-        mock_get.return_value.__enter__.return_value.iter_content.return_value = (
-            io.BytesIO(b"some content")
-        )
-        mock_get.return_value.__enter__.return_value.headers = {
-            "content-disposition": ""
-        }
-        mock_head.return_value.headers = {"content-disposition": ""}
-
-        dag = EODataAccessGateway()
-        dag.set_preferred_provider("cop_ads")
-        output_data_path = os.path.join(os.path.expanduser("~"), "data")
-
-        # public dataset request
-        results, _ = dag.search(
-            **self.query_dates,
-            **self.custom_query_params,
-        )
-        eoproduct = results[0]
-
-        query_str = "".join(urlsplit(eoproduct.location).fragment.split("?", 1)[1:])
-        expected_download_request = geojson.loads(query_str)
-        expected_dataset_name = expected_download_request.pop("dataset")
-        expected_url = f"{mock_cds_authenticate.return_value['url']}/resources/{expected_dataset_name}"
-        expected_path = os.path.join(output_data_path, eoproduct.properties["title"])
-
-        path = eoproduct.download(outputs_prefix=output_data_path)
-        mock_client_api.assert_called_once_with(
-            mock.ANY,  # instance
-            expected_url,
-            expected_download_request,
-            "POST",
-        )
-
-        assert path == expected_path
-        assert path_to_uri(expected_path) == eoproduct.location
-
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.authenticate", autospec=True)
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.download", autospec=True)
-    @mock.patch("cdsapi.api.Client.retrieve", autospec=True)
-    def test_plugins_apis_cds_download_all(
-        self,
-        mock_client_retrieve,
-        mock_cds_download,
-        mock_cds_authenticate,
-        mock_fetch_product_types_list,
-    ):
-        """CdsApi.download_all must call download on each product"""
-        mock_cds_authenticate.return_value = {
-            "key": "foo:bar",
-            "url": "http://foo.bar.baz",
-        }
-
-        dag = EODataAccessGateway()
-        dag.set_preferred_provider("cop_ads")
-
-        eoproducts = SearchResult([])
-
-        # public dataset request
-        results, _ = dag.search(
-            **self.query_dates,
-            **self.custom_query_params,
-            accuracy="bar",
-        )
-        eoproducts.extend(results)
-        results, _ = dag.search(
-            **self.query_dates,
-            **self.custom_query_params,
-            accuracy="baz",
-        )
-        eoproducts.extend(results)
-        assert len(eoproducts) == 2
-
-        paths = dag.download_all(
-            eoproducts, outputs_prefix=os.path.join(os.path.expanduser("~"), "data")
-        )
-        assert mock_cds_download.call_count == len(eoproducts)
-        assert len(paths) == len(eoproducts)
-
-    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
-    def test_plugins_apis_cds_discover_queryables(self, mock_requests_constraints):
-        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
-        with open(constraints_path) as f:
-            constraints = json.load(f)
-        mock_requests_constraints.return_value = MockResponse(
-            constraints, status_code=200
-        )
-        queryables = self.api_plugin.discover_queryables(
-            productType="CAMS_EU_AIR_QUALITY_RE"
-        )
-        self.assertEqual(11, len(queryables))
-        self.assertIn("variable", queryables)
-        self.assertNotIn("metadata_mapping", queryables)
-        # with additional param
-        queryables = self.api_plugin.discover_queryables(
-            productType="CAMS_EU_AIR_QUALITY_RE",
-            variable="a",
-        )
-        self.assertEqual(11, len(queryables))
-        queryable = queryables.get("variable")
-        self.assertEqual("a", queryable.__metadata__[0].get_default())
-        queryable = queryables.get("month")
-        self.assertTrue(queryable.__metadata__[0].is_required())

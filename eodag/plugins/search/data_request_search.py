@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 import requests
@@ -199,7 +199,7 @@ class DataRequestSearch(Search):
             if not keywords.get("completionTimeFromAscendingNode", None):
                 keywords["completionTimeFromAscendingNode"] = getattr(
                     self.config, "product_type_config", {}
-                ).get("missionEndDate", datetime.utcnow().isoformat())
+                ).get("missionEndDate", datetime.now(timezone.utc).isoformat())
 
         # ask for data_request_id if not set (it must exist when iterating over pages)
         if not self.data_request_id:

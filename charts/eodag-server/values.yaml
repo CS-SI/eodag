@@ -481,7 +481,7 @@ config:
   #       credentials:
   #           username:
   #           password:
-  # cop_cds:
+  # usgs:
   #     priority: # Lower value means lower priority (Default: 0)
   #     api:
   #         outputs_prefix:

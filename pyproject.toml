@@ -7,7 +7,6 @@ fallback_version = "2.12.2.dev0"
 
 [[tool.mypy.overrides]]
 module = [
-    "cdsapi",
     "click",
     "click.*",
     "ecmwfapi",
