@@ -1433,6 +1433,7 @@ class StreamResponse:
     content: Iterator[bytes]
     headers: Optional[Mapping[str, str]] = None
     media_type: Optional[str] = None
+    status_code: Optional[int] = None
 
 
 def guess_file_type(file: str) -> Optional[str]:

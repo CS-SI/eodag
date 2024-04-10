@@ -25,7 +25,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional, Union
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import geojson
 import httpx
@@ -36,11 +36,15 @@ from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import TimeOutError
+from eodag.utils.exceptions import NotAvailableError, TimeOutError
 from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,
+    NOT_AVAILABLE,
+    OFFLINE_STATUS,
+    ONLINE_STATUS,
+    STAGING_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
@@ -435,6 +439,13 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(404, response.status_code)
         self.assertIn("description", response_content)
         self.assertIn("NotAvailableError", response_content["description"])
+
+    def _request_accepted(self, url: str):
+        response = self.app.get(url, follow_redirects=True)
+        response_content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(202, response.status_code)
+        self.assertIn("description", response_content)
+        self.assertIn("location", response_content)
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -1048,6 +1059,10 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response_filename, expected_file)
 
     @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
@@ -1056,7 +1071,7 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     def test_download_item_from_collection_no_stream(
-        self, mock_download: Mock, mock_stream_download: Mock
+        self, mock_download: Mock, mock_stream_download: Mock, mock_auth: Mock
     ):
         """Download through eodag server catalog should return a valid response"""
         # download should be performed locally then deleted if streaming is not available
@@ -1072,6 +1087,71 @@ class RequestTestCase(unittest.TestCase):
         assert not os.path.exists(
             expected_file
         ), f"File {expected_file} should have been deleted"
+
+    @mock.patch(
+        "eodag.rest.core.eodag_api.search",
+        autospec=True,
+    )
+    def test_download_offline_item_from_catalog(self, mock_search):
+        """Download an offline item through eodag server catalog should return a
+        response with HTTP Status 202"""
+        # mock_search_result returns 2 search results, only keep one
+        two_results = self.mock_search_result()
+        product = two_results[0][0]
+        mock_search.return_value = (
+            [
+                product,
+            ],
+            1,
+        )
+        product.downloader_auth = MagicMock()
+        product.downloader.orderDownload = MagicMock()
+        product.downloader.orderDownloadStatus = MagicMock()
+        product.downloader.order_response_process = MagicMock()
+        product.downloader._stream_download_dict = MagicMock(
+            side_effect=NotAvailableError("Product offline. Try again later.")
+        )
+        product.properties["orderStatusLink"] = f"{NOT_AVAILABLE}?foo=bar"
+
+        # ONLINE product with error
+        product.properties["storageStatus"] = ONLINE_STATUS
+        # status 404 and no order try
+        self._request_not_found(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        product.downloader.orderDownload.assert_not_called()
+        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_response_process.assert_not_called()
+        product.downloader._stream_download_dict.assert_called_once()
+        product.downloader._stream_download_dict.reset_mock()
+
+        # OFFLINE product with error
+        product.properties["storageStatus"] = OFFLINE_STATUS
+        # status 202 and order once and no status check
+        self._request_accepted(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        product.downloader.orderDownload.assert_called_once()
+        product.downloader.orderDownload.reset_mock()
+        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_response_process.assert_called()
+        product.downloader.order_response_process.reset_mock()
+        product.downloader._stream_download_dict.assert_called_once()
+        product.downloader._stream_download_dict.reset_mock()
+
+        # STAGING product and available orderStatusLink
+        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["orderStatusLink"] = "http://somewhere?foo=bar"
+        # status 202 and no order but status checked and no download try
+        self._request_accepted(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        product.downloader.orderDownload.assert_not_called()
+        product.downloader.orderDownloadStatus.assert_called_once()
+        product.downloader.orderDownloadStatus.reset_mock()
+        product.downloader.order_response_process.assert_called()
+        product.downloader.order_response_process.reset_mock()
+        product.downloader._stream_download_dict.assert_not_called()
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""

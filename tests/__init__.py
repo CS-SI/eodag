@@ -335,6 +335,7 @@ class EODagTestCase(unittest.TestCase):
                     response.__zip_buffer = io.BytesIO(fh.read())
                 cl = response.__zip_buffer.getbuffer().nbytes
                 response.headers = {"content-length": cl}
+                response.url = "http://foo.bar"
 
             def __enter__(response):
                 return response

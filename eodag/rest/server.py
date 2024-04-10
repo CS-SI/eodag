@@ -39,7 +39,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
-from fastapi.responses import ORJSONResponse, StreamingResponse
+from fastapi.responses import ORJSONResponse
 from pydantic import ValidationError as pydanticValidationError
 from pygeofilter.backends.cql2_json import to_cql2
 from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
@@ -79,6 +79,8 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
     from requests import Response
+
+from starlette.responses import Response as StarletteResponse
 
 logger = logging.getLogger("eodag.rest.server")
 ERRORS_WITH_500_STATUS_CODE = {
@@ -385,7 +387,7 @@ def stac_extension_oseo(request: Request) -> Any:
 )
 def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
-) -> StreamingResponse:
+) -> StarletteResponse:
     """STAC collection item download"""
     logger.debug("URL: %s", request.url)
 
@@ -393,7 +395,11 @@ def stac_collections_item_download(
     provider = arguments.pop("provider", None)
 
     return download_stac_item(
-        catalogs=[collection_id], item_id=item_id, provider=provider, **arguments
+        request=request,
+        catalogs=[collection_id],
+        item_id=item_id,
+        provider=provider,
+        **arguments,
     )
 
 
@@ -412,6 +418,7 @@ def stac_collections_item_download_asset(
     provider = arguments.pop("provider", None)
 
     return download_stac_item(
+        request=request,
         catalogs=[collection_id],
         item_id=item_id,
         provider=provider,
@@ -575,7 +582,7 @@ def collections(request: Request) -> Any:
 )
 def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
-) -> StreamingResponse:
+) -> StarletteResponse:
     """STAC Catalog item download"""
     logger.debug("URL: %s", request.url)
 
@@ -585,7 +592,11 @@ def stac_catalogs_item_download(
     list_catalog = catalogs.strip("/").split("/")
 
     return download_stac_item(
-        catalogs=list_catalog, item_id=item_id, provider=provider, **arguments
+        request=request,
+        catalogs=list_catalog,
+        item_id=item_id,
+        provider=provider,
+        **arguments,
     )
 
 
@@ -606,6 +617,7 @@ def stac_catalogs_item_download_asset(
     list_catalog = catalogs.strip("/").split("/")
 
     return download_stac_item(
+        request=request,
         catalogs=list_catalog,
         item_id=item_id,
         provider=provider,

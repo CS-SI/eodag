@@ -172,6 +172,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     self.__zip_buffer = io.BytesIO(fh.read())
                 cl = self.__zip_buffer.getbuffer().nbytes
                 self.headers = {"content-length": cl}
+                self.url = "http://foo.bar"
 
             def __enter__(self):
                 return self
@@ -1008,12 +1009,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # empty product download directory should have been removed
         self.assertFalse(Path(os.path.join(self.output_dir, "dummy_product")).exists())
 
-    def test_plugins_download_http_order_download_cds(
+    def test_plugins_download_http_order_download_cop_ads(
         self,
     ):
         """HTTPDownload.download must order the product if needed"""
 
-        self.product.provider = "cop_cds"
+        self.product.provider = "cop_ads"
         self.product.product_type = "CAMS_EAC4"
         product_dataset = "cams-global-reanalysis-eac4"
 
@@ -1075,6 +1076,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
             # expected values
             expected_remote_location = "http://somewhere/download/dummy_request_id"
+            expected_order_status_link = f"{endpoint}/tasks/dummy_request_id"
             expected_path = os.path.join(
                 output_data_path, self.product.properties["title"]
             )
@@ -1085,6 +1087,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 timeout=0.2 / 60,
             )
             self.assertEqual(self.product.remote_location, expected_remote_location)
+            self.assertEqual(
+                self.product.properties["downloadLink"], expected_remote_location
+            )
+            self.assertEqual(
+                self.product.properties["orderStatusLink"], expected_order_status_link
+            )
             self.assertEqual(path, expected_path)
             self.assertEqual(self.product.location, path_to_uri(expected_path))
 

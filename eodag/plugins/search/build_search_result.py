@@ -175,8 +175,9 @@ class BuildPostSearchResult(PostJsonSearch):
 
         query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
 
-        # update result with search args if not None (and not auth)
+        # update result with product_type_def_params and search args if not None (and not auth)
         kwargs.pop("auth", None)
+        result.update(self.product_type_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
         # parse porperties
