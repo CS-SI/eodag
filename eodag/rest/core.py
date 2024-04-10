@@ -15,19 +15,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 import datetime
 import logging
 import os
 import re
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
 
 import dateutil
-from fastapi import Request
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
-from starlette.responses import Response
 
 import eodag
 from eodag import EOProduct
@@ -45,7 +45,6 @@ from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_queryables import StacQueryableProperty, StacQueryables
-from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils import (
     Cruncher,
     file_to_stream,
@@ -67,6 +66,16 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     ValidationError,
 )
+
+if TYPE_CHECKING:
+    from typing import Any, Callable, Dict, List, Optional, Union
+
+    from fastapi import Request
+    from requests.auth import AuthBase
+    from starlette.responses import Response
+
+    from eodag.rest.types.stac_search import SearchPostRequest
+
 
 eodag_api = eodag.EODataAccessGateway()
 
@@ -253,37 +262,10 @@ def download_stac_item(
             f"Could not find {item_id} item in {product_type} collection"
             + (f" for provider {provider}" if provider else "")
         )
-
-    if product.properties.get("storageStatus") != ONLINE_STATUS and hasattr(
-        product.downloader, "order_response_process"
-    ):
-        # update product (including orderStatusLink) if product was previously ordered
-        logger.debug("Use given download query arguments to parse order link")
-        response = Mock(spec=RequestsResponse)
-        response.status_code = 200
-        response.json.return_value = kwargs
-        product.downloader.order_response_process(response, product)
-
     auth = product.downloader_auth.authenticate()
 
-    if (
-        product.properties.get("storageStatus") != ONLINE_STATUS
-        and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
-        and hasattr(product.downloader, "orderDownload")
-    ):
-        # first order
-        logger.debug("Order product")
-        order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
-        kwargs.update(order_status_dict or {})
     try:
-        if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
-            product.downloader, "orderDownloadStatus"
-        ):
-            # check order status if needed
-            logger.debug("Checking product order status")
-            product.downloader.orderDownloadStatus(product=product, auth=auth)
-            if product.properties.get("storageStatus") != ONLINE_STATUS:
-                raise NotAvailableError("Product is not available yet")
+        _order_and_update(product, auth, **kwargs)
 
         download_stream = cast(
             StreamResponse,
@@ -322,6 +304,40 @@ def download_stac_item(
         headers=download_stream.headers,
         media_type=download_stream.media_type,
     )
+
+
+def _order_and_update(
+    product: EOProduct, auth: Union[AuthBase, Dict[str, str]], **kwargs: Any
+) -> None:
+    """Order product if needed and update given kwargs with order-status-dict"""
+    if product.properties.get("storageStatus") != ONLINE_STATUS and hasattr(
+        product.downloader, "order_response_process"
+    ):
+        # update product (including orderStatusLink) if product was previously ordered
+        logger.debug("Use given download query arguments to parse order link")
+        response = Mock(spec=RequestsResponse)
+        response.status_code = 200
+        response.json.return_value = kwargs
+        product.downloader.order_response_process(response, product)
+
+    if (
+        product.properties.get("storageStatus") != ONLINE_STATUS
+        and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
+        and hasattr(product.downloader, "orderDownload")
+    ):
+        # first order
+        logger.debug("Order product")
+        order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
+        kwargs.update(order_status_dict or {})
+
+    if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
+        product.downloader, "orderDownloadStatus"
+    ):
+        # check order status if needed
+        logger.debug("Checking product order status")
+        product.downloader.orderDownloadStatus(product=product, auth=auth)
+        if product.properties.get("storageStatus") != ONLINE_STATUS:
+            raise NotAvailableError("Product is not available yet")
 
 
 def get_detailled_collections_list(
