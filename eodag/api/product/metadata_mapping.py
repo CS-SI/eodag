@@ -85,7 +85,7 @@ COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
 
 
 def get_metadata_path(
-    map_value: Union[str, List[str]]
+    map_value: Union[str, List[str]],
 ) -> Tuple[Union[List[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
@@ -556,8 +556,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
-            cmin, cmax, cstep = [x.strip() for x in args.split(",")]
-            return string[int(cmin) : int(cmax) : int(cstep)]
+            cmin, cmax, cstep = [
+                int(x.strip()) if x.strip().isdigit() else None for x in args.split(",")
+            ]
+            return string[cmin:cmax:cstep]
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:

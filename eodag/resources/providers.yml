@@ -2195,17 +2195,22 @@
     extract: false
     auth_error_code: 401
     order_enabled: true
-    order_method: 'POST'
-    order_status_error:
-      state: failed
-    order_status_success:
-      state: completed
+    order_method: POST
     order_on_response:
       metadata_mapping:
-        order_id: '$.request_id'
-        orderStatusLink: 'https://ads.atmosphere.copernicus.eu/api/v2/tasks/{order_id}'
-        downloadLink: '$.location'
-    order_status_method: 'GET'
+        orderId: $.json.request_id
+        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/v2/tasks/{orderId}
+    order_status:
+      metadata_mapping:
+        status: $.json.state
+        message: $.json.message
+        downloadLink: $.json.location
+      request:
+        method: GET
+      error:
+        status: failed
+      success:
+        status: completed
     products:
       CAMS_GAC_FORECAST:
         outputs_extension: .grib
@@ -2263,7 +2268,7 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: '$.null'
-      orderLink: 'https://ads.atmosphere.copernicus.eu/api/v2/resources/{dataset}'
+      orderLink: 'https://ads.atmosphere.copernicus.eu/api/v2/resources/{dataset}?{qs#to_geojson}'
       # Copernicus ADS specific parameters
       accuracy:
         - accuracy
@@ -2685,17 +2690,23 @@
     extract: false
     auth_error_code: 401
     order_enabled: true
-    order_method: 'POST'
-    order_status_error:
-      state: failed
-    order_status_success:
-      state: completed
+    order_method: POST
     order_on_response:
       metadata_mapping:
-        order_id: '$.request_id'
-        orderStatusLink: 'https://cds.climate.copernicus.eu/api/v2/tasks/{order_id}'
-        downloadLink: '$.location'
-    order_status_method: 'GET'
+        orderId: $.json.request_id
+        orderStatusLink: https://cds.climate.copernicus.eu/api/v2/tasks/{orderId}
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.state
+        message: $.json.message
+        downloadLink: $.json.location
+        error_message: $.json.error.reason
+      error:
+        status: failed
+      success:
+        status: completed
     products:
       ERA5_SL:
         outputs_extension: .grib
@@ -2791,7 +2802,8 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: '$.null'
-      orderLink: 'https://cds.climate.copernicus.eu/api/v2/resources/{dataset}'
+      qs: $.qs
+      orderLink: 'https://cds.climate.copernicus.eu/api/v2/resources/{dataset}?{qs#to_geojson}'
       # Copernicus CDS specific parameters
       accuracy:
         - accuracy
@@ -3744,21 +3756,27 @@
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://my.meteoblue.com/dataset/query'
+    ssl_verify: true
     method: POST
     extract: False
     order_enabled: true
-    order_method: 'POST'
-    ssl_verify: true
+    order_method: POST
     order_on_response:
       metadata_mapping:
-        order_id: '$.id'
-        downloadLink: 'http://queueresults.meteoblue.com/{order_id}'
-        downloadMethod: '{$.null#replace_str("Not Available","GET")}'
+        orderId: '$.id'
         orderStatusLink: 'http://my.meteoblue.com/queue/status/{order_id}'
-    order_status_method: 'GET'
-    order_status_percent: percentCompleted
-    order_status_error:
-      status: error
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        percent: $.json.percentCompleted
+      error:
+        status: error
+      on_success:
+        metadata_mapping:
+          orderId: '$.id'
+          downloadLink: 'http://queueresults.meteoblue.com/{order_id}'
+          downloadMethod: '{$.null#replace_str("Not Available","GET")}'
     outputs_extension: .nc
   auth: !plugin
     type: HttpQueryStringAuth
@@ -5746,15 +5764,20 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        order_id: '$.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={order_id}'
-        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{order_id}'
-    order_status_method: 'GET'
-    order_status_results_entry: 'features'
-    order_status_success:
-      status: Done
-    order_status_error:
-      status: Error
+        orderId: '$.json.download_id'
+        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+    order_status:
+      request:
+        method: GET
+      error:
+        status: Error
+      success:
+        status: Done
+      on_success:
+        results_entry: features
+        metadata_mapping:
+          orderId: '$.json.download_id'
+          downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
     order_status_in_progress:
       response_code: 202
     products:
@@ -5854,9 +5877,9 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        order_id: '$.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={order_id}'
-        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{order_id}'
+        orderId: '$.download_id'
+        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
     order_status_method: 'GET'
     order_status_results_entry: 'features'
     order_status_success:
@@ -6219,22 +6242,24 @@
   description: Destination Earth Digital Twin Outputs from Lumi
   url: https://polytope.ecmwf.int/openapi
   search: !plugin
-    type: DataRequestBuildSearchResult
-    api_endpoint: https://polytope.apps.lumi.ewctest.link/api/v1/
-    data_request_url: https://polytope.apps.lumi.ewctest.link/api/v1/requests/{collection}
-    results_entry: message
-    request_params_entry: user_request
-    need_auth: true
-    pagination:
-      max_items_per_page: 1000
+    type: BuildSearchResult
+    ssl_verify: true
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+    constraints_file_url:
+
     metadata_mapping:
+      productType: destination-earth
+      storageStatus: OFFLINE
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
-      productType: $.productType
-      orderLink: https://polytope.apps.lumi.ewctest.link/api/v1/downloads/request_id
+      qs: $.qs
+      orderLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+      downloadLink: $.null
       expver:
         - expver
         - $.expver
@@ -6268,34 +6293,63 @@
       dataset:
         - dataset
         - $.dataset
-      storageStatus: OFFLINE
   products:
     DT_EXTREMES:
-      productType: destination-earth
+      class: rd
       expver: i7yv
       stream: oper
       type: fc
       levtype: sfc
       step: 0
-      param: 31
+      param: 34
+      time: 0000
     DT_CLIMATE_ADAPTATION:
-      productType: destination-earth
-      dataset: climate-dt
+      activity: ScenarioMIP
       class: d1
-      expver: 17yv
-      stream: oper
+      dataset: climate-dt
+      experiment: SSP3-7.0
+      expver: "0001"
+      generation: 1
+      model: IFS-NEMO
+      param: 134/165/166
+      realization: 1
+      resolution: high
+      stream: clte
       type: fc
       levtype: sfc
-      step: 0
-      param: 31
+      time: 0000/0001/0002
   download: !plugin
     type: HTTPDownload
     base_uri: https://polytope.apps.lumi.ewctest.link/api/v1/
+    ssl_verify: true
     flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: True
     order_method: POST
-
+    order_on_response:
+      metadata_mapping:
+        orderId: '{$.headers.Location#slice_str(55,,1)}'
+        orderStatusLink: http://polytope.apps.lumi.ewctest.link/api/v1/requests/{orderId}
+    order_status:
+      request:
+        method: GET
+        headers:
+      metadata_mapping:
+        status: $.json.status
+        message: $.json.message
+        error_message: $.null
+        downloadLink: $.headers.Location
+      success:
+        http_code: 303
+      error:
+        status: failed
+      on_success:
+        result_type: json
+    products:
+      DT_EXTREMES:
+        outputs_extension: .grib
+      DT_CLIMATE_ADAPTATION:
+        outputs_extension: .grib
   auth: !plugin
     type: HTTPHeaderAuth
     headers:

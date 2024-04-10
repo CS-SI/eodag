@@ -53,13 +53,7 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import (
-    StreamResponse,
-    _deprecated,
-    deepcopy,
-    dict_items_recursive_apply,
-    urlencode,
-)
+from eodag.utils import _deprecated, deepcopy, dict_items_recursive_apply, urlencode
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -171,9 +165,13 @@ def search_stac_items(
     catalog_url = re.sub("/items.*", "", request.state.url)
 
     catalog = StacCatalog(
-        url=catalog_url
-        if catalogs
-        else catalog_url.replace("/search", f"/collections/{eodag_args.productType}"),
+        url=(
+            catalog_url
+            if catalogs
+            else catalog_url.replace(
+                "/search", f"/collections/{eodag_args.productType}"
+            )
+        ),
         stac_config=stac_config,
         root=request.state.url_root,
         provider=eodag_args.provider,
@@ -257,6 +255,7 @@ def download_stac_item(
     )
     if len(search_results) > 0:
         product = cast(EOProduct, search_results[0])
+
     else:
         raise NotAvailableError(
             f"Could not find {item_id} item in {product_type} collection"
@@ -267,15 +266,12 @@ def download_stac_item(
     try:
         _order_and_update(product, auth, kwargs)
 
-        download_stream = cast(
-            StreamResponse,
-            product.downloader._stream_download_dict(
-                product,
-                auth=auth,
-                asset=asset,
-                wait=-1,
-                timeout=-1,
-            ),
+        download_stream = product.downloader._stream_download_dict(
+            product,
+            auth=auth,
+            asset=asset,
+            wait=-1,
+            timeout=-1,
         )
     except NotImplementedError:
         logger.warning(
@@ -287,12 +283,17 @@ def download_stac_item(
         )
     except NotAvailableError:
         if product.properties.get("storageStatus") != ONLINE_STATUS:
-            download_link = f"{request.state.url}?{urlencode(dict(kwargs, **{'provider': provider}), doseq=True)}"
+            order_id = product.properties.get("orderId")
+            qs = urlencode(
+                {**kwargs, **{"provider": provider, "orderId": order_id}}, doseq=True
+            )
+            download_link = f"{request.state.url}?{qs}"
             return ORJSONResponse(
                 status_code=202,
                 headers={"Location": download_link},
                 content={
                     "description": "Product is not available yet, please try again using given updated location",
+                    "status": product.properties.get("orderStatus"),
                     "location": download_link,
                 },
             )
@@ -320,11 +321,31 @@ def _order_and_update(
         response = Mock(spec=RequestsResponse)
         response.status_code = 200
         response.json.return_value = query_args
+        response.headers = {}
         product.downloader.order_response_process(response, product)
+
+    if order_id := query_args.get("orderId"):
+        product.properties["orderId"] = order_id
 
     if (
         product.properties.get("storageStatus") != ONLINE_STATUS
-        and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
+        and product.downloader
+        and order_id
+    ):
+        # product already previously ordered
+        on_response_mm = getattr(
+            product.downloader.config, "order_on_response", {}
+        ).get("metadata_mapping", {})
+        product.properties["storageStatus"] = STAGING_STATUS
+        if statuslink_mm := on_response_mm.get("orderStatusLink"):
+            product.properties["orderStatusLink"] = statuslink_mm.format(
+                **{"orderId": order_id}
+            )
+
+    order_id = product.properties.get("orderId")
+    if (
+        product.properties.get("storageStatus") != ONLINE_STATUS
+        and (not order_id or order_id == NOT_AVAILABLE)
         and hasattr(product.downloader, "orderDownload")
     ):
         # first order
@@ -338,8 +359,9 @@ def _order_and_update(
         # check order status if needed
         logger.debug("Checking product order status")
         product.downloader.orderDownloadStatus(product=product, auth=auth)
-        if product.properties.get("storageStatus") != ONLINE_STATUS:
-            raise NotAvailableError("Product is not available yet")
+
+    if product.properties.get("storageStatus") != ONLINE_STATUS:
+        raise NotAvailableError("Product is not available yet")
 
 
 def get_detailled_collections_list(
@@ -491,15 +513,19 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
 
     search_date_min = cast(
         datetime.datetime,
-        dateutil.parser.parse(eodag_args.start)  # type: ignore
-        if eodag_args.start
-        else datetime.datetime.min.replace(tzinfo=datetime.timezone.utc),
+        (
+            dateutil.parser.parse(eodag_args.start)  # type: ignore
+            if eodag_args.start
+            else datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+        ),
     )
     search_date_max = cast(
         datetime.datetime,
-        dateutil.parser.parse(eodag_args.end)  # type: ignore
-        if eodag_args.end
-        else datetime.datetime.now(tz=datetime.timezone.utc),
+        (
+            dateutil.parser.parse(eodag_args.end)  # type: ignore
+            if eodag_args.end
+            else datetime.datetime.now(tz=datetime.timezone.utc)
+        ),
     )
 
     catalog_date_min = rfc3339_str_to_datetime(catalog.search_args["start"])

@@ -240,12 +240,34 @@ class PluginConfig(yaml.YAMLObject):
         sort_order_mapping: Dict[Literal["ascending", "descending"], str]
         max_sort_params: Annotated[int, Gt(0)]
 
+    class OrderOnResponse(TypedDict):
+        """Configuration for order on-response during download"""
+
+        metadata_mapping: Dict[str, Union[str, List[str]]]
+
+    class OrderStatusSuccess(TypedDict):
+        """
+        Configuration for order status success during download
+
+        Order status response matching the following parameters are considered success
+        At least one is required
+        """
+
+        status: Annotated[str, "Variable in the order status response json body"]
+        message: Annotated[str, "Variable in the order status response json body"]
+        http_code: Annotated[int, "HTTP code of the order status response"]
+
     class OrderStatusOnSuccess(TypedDict):
-        """Configuration for order on-success during download"""
+        """Configuration for order status on-success during download"""
 
         need_search: bool
         result_type: str
         results_entry: str
+        metadata_mapping: Dict[str, Union[str, List[str]]]
+
+    class OrderStatusOnError(TypedDict):
+        """Configuration for order status on-success during download"""
+
         metadata_mapping: Dict[str, Union[str, List[str]]]
 
     name: str
@@ -292,7 +314,13 @@ class PluginConfig(yaml.YAMLObject):
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
+    order_on_response: PluginConfig.OrderOnResponse
+    order_status_method: str
+    order_status_percent: str
+    order_status_success: PluginConfig.OrderStatusSuccess
     order_status_on_success: PluginConfig.OrderStatusOnSuccess
+    order_status_error: Dict[str, Any]
+    order_status_on_error: PluginConfig.OrderStatusOnError
     bucket_path_level: int  # S3RestDownload
     requester_pays: bool  # AwsDownload
     flatten_top_dirs: bool
