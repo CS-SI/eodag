@@ -41,6 +41,10 @@ from tests import mock
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,
+    NOT_AVAILABLE,
+    OFFLINE_STATUS,
+    ONLINE_STATUS,
+    STAGING_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
@@ -436,89 +440,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("NotAvailableError", response_content["description"])
 
-    @mock.patch(
-        "eodag.rest.core.eodag_api.search",
-        autospec=True,
-        return_value=(
-            SearchResult.from_geojson(
-                {
-                    "features": [
-                        {
-                            "properties": {
-                                "snowCover": None,
-                                "resolution": None,
-                                "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
-                                ".035Z",
-                                "keyword": {},
-                                "productType": "OCN",
-                                "downloadLink": (
-                                    "https://peps.cnes.fr/resto/collections/S1/"
-                                    "578f1768-e66e-5b86-9363-b19f8931cc7b/download"
-                                ),
-                                "eodag_provider": "peps",
-                                "eodag_product_type": "S1_SAR_OCN",
-                                "platformSerialIdentifier": "S1A",
-                                "cloudCover": 0,
-                                "title": "S1A_WV_OCN__2SSV_20180215T235323_"
-                                "20180216T001213_020624_023501_0FD3",
-                                "orbitNumber": 20624,
-                                "instrument": "SAR-C SAR",
-                                "abstract": None,
-                                "eodag_search_intersection": {
-                                    "coordinates": [
-                                        [
-                                            [89.590721, 2.614019],
-                                            [89.771805, 2.575546],
-                                            [89.809341, 2.756323],
-                                            [89.628258, 2.794767],
-                                            [89.590721, 2.614019],
-                                        ]
-                                    ],
-                                    "type": "Polygon",
-                                },
-                                "organisationName": None,
-                                "startTimeFromAscendingNode": "2018-02-15T23:53:22"
-                                ".871Z",
-                                "platform": None,
-                                "sensorType": None,
-                                "processingLevel": None,
-                                "orbitType": None,
-                                "topicCategory": None,
-                                "orbitDirection": None,
-                                "parentIdentifier": None,
-                                "sensorMode": None,
-                                "quicklook": None,
-                            },
-                            "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
-                            "type": "Feature",
-                            "geometry": {
-                                "coordinates": [
-                                    [
-                                        [89.590721, 2.614019],
-                                        [89.771805, 2.575546],
-                                        [89.809341, 2.756323],
-                                        [89.628258, 2.794767],
-                                        [89.590721, 2.614019],
-                                    ]
-                                ],
-                                "type": "Polygon",
-                            },
-                        },
-                    ],
-                    "type": "FeatureCollection",
-                }
-            ),
-            1,
-        ),
-    )
-    def _request_accepted(self, url, mock_search):
-        mock_search.return_value[0][0].downloader = MagicMock()
-        mock_search.return_value[0][0].downloader_auth = MagicMock()
-        mock_search.return_value[0][
-            0
-        ].downloader._stream_download_dict.side_effect = NotAvailableError(
-            "Product offline. Try again later."
-        )
+    def _request_accepted(self, url: str):
         response = self.app.get(url, follow_redirects=True)
         response_content = json.loads(response.content.decode("utf-8"))
         self.assertEqual(202, response.status_code)
@@ -1167,20 +1089,69 @@ class RequestTestCase(unittest.TestCase):
         ), f"File {expected_file} should have been deleted"
 
     @mock.patch(
-        "eodag.plugins.authentication.generic.GenericAuth.authenticate",
+        "eodag.rest.core.eodag_api.search",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
-        autospec=True,
-        side_effect=NotAvailableError("Product offline. Try again later."),
-    )
-    def test_download_offline_item_from_catalog(self, mock_download, mock_auth):
+    def test_download_offline_item_from_catalog(self, mock_search):
         """Download an offline item through eodag server catalog should return a
         response with HTTP Status 202"""
+        # mock_search_result returns 2 search results, only keep one
+        two_results = self.mock_search_result()
+        product = two_results[0][0]
+        mock_search.return_value = (
+            [
+                product,
+            ],
+            1,
+        )
+        product.downloader_auth = MagicMock()
+        product.downloader.orderDownload = MagicMock()
+        product.downloader.orderDownloadStatus = MagicMock()
+        product.downloader.order_response_process = MagicMock()
+        product.downloader._stream_download_dict = MagicMock(
+            side_effect=NotAvailableError("Product offline. Try again later.")
+        )
+        product.properties["orderStatusLink"] = f"{NOT_AVAILABLE}?foo=bar"
+
+        # ONLINE product with error
+        product.properties["storageStatus"] = ONLINE_STATUS
+        # status 404 and no order try
+        self._request_not_found(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        product.downloader.orderDownload.assert_not_called()
+        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_response_process.assert_not_called()
+        product.downloader._stream_download_dict.assert_called_once()
+        product.downloader._stream_download_dict.reset_mock()
+
+        # OFFLINE product with error
+        product.properties["storageStatus"] = OFFLINE_STATUS
+        # status 202 and order once and no status check
         self._request_accepted(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
+        product.downloader.orderDownload.assert_called_once()
+        product.downloader.orderDownload.reset_mock()
+        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_response_process.assert_called()
+        product.downloader.order_response_process.reset_mock()
+        product.downloader._stream_download_dict.assert_called_once()
+        product.downloader._stream_download_dict.reset_mock()
+
+        # STAGING product and available orderStatusLink
+        product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["orderStatusLink"] = "http://somewhere?foo=bar"
+        # status 202 and no order but status checked and no download try
+        self._request_accepted(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        product.downloader.orderDownload.assert_not_called()
+        product.downloader.orderDownloadStatus.assert_called_once()
+        product.downloader.orderDownloadStatus.reset_mock()
+        product.downloader.order_response_process.assert_called()
+        product.downloader.order_response_process.reset_mock()
+        product.downloader._stream_download_dict.assert_not_called()
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""

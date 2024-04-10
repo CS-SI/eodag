@@ -33,6 +33,7 @@ from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,
     ONLINE_STATUS,
+    STAGING_STATUS,
     properties_from_json,
     NOT_AVAILABLE,
 )
