@@ -1112,7 +1112,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin.orderDownload(self.product, auth=auth)
 
         mock_request.assert_called_once_with(
-            method="get",
+            method="GET",
             url=self.product.properties["orderLink"],
             auth=auth,
             headers=USER_AGENT,
@@ -1135,7 +1135,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["orderLink"] = "http://somewhere/order"
         plugin.orderDownload(self.product, auth=auth)
         mock_request.assert_called_once_with(
-            method="post",
+            method="POST",
             url=self.product.properties["orderLink"],
             auth=auth,
             headers=USER_AGENT,
@@ -1147,7 +1147,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
         plugin.orderDownload(self.product, auth=auth)
         mock_request.assert_called_once_with(
-            method="post",
+            method="POST",
             url="http://somewhere/order",
             auth=auth,
             headers=USER_AGENT,
