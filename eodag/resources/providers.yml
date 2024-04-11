@@ -2701,12 +2701,14 @@
       metadata_mapping:
         status: $.json.state
         message: $.json.message
-        downloadLink: $.json.location
         error_message: $.json.error.reason
       error:
         status: failed
       success:
         status: completed
+      on_success:
+        metadata_mapping:
+          downloadLink: $.location
     products:
       ERA5_SL:
         outputs_extension: .grib

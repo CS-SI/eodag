@@ -447,12 +447,23 @@ class HTTPDownload(Download):
             else:
                 if result_entry:
                     raise NotImplementedError(
-                        'raise_entry in config_on_success is not yet supported for result_type "json"'
+                        'result_entry in config.on_success is not yet supported for result_type "json"'
                     )
-                properties_update = properties_from_json(
-                    {"json": response.json(), "headers": {**response.headers}},
-                    status_mm_jsonpath,
-                )
+                on_success_mm = config_on_success.get("metadata_mapping", {})
+                if on_success_mm:
+                    on_success_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
+                        on_success_mm,
+                    )
+                    logger.debug(
+                        "Parsing on-success metadata-mapping using order status response"
+                    )
+
+                    properties_update = properties_from_json(
+                        response.json(),
+                        on_success_mm_jsonpath,
+                    )
+                else:
+                    properties_update = {}
         except Exception as e:
             if isinstance(e, DownloadError):
                 raise
