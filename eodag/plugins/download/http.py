@@ -639,18 +639,20 @@ class HTTPDownload(Download):
         if not filename:
             # default filename extracted from path
             filename = str(os.path.basename(self.stream.url))
-            if content_type := getattr(product, "headers", {}).get("Content-Type"):
-                ext = guess_extension(content_type)
-                if ext:
-                    filename += ext
-            else:
-                outputs_extension: Optional[str] = (
-                    getattr(self.config, "products", {})
-                    .get(product.product_type, {})
-                    .get("outputs_extension")
-                )
-                if outputs_extension:
-                    filename += outputs_extension
+            filename_extension = os.path.splitext(filename)[1]
+            if not filename_extension:
+                if content_type := getattr(product, "headers", {}).get("Content-Type"):
+                    ext = guess_extension(content_type)
+                    if ext:
+                        filename += ext
+                else:
+                    outputs_extension: Optional[str] = (
+                        getattr(self.config, "products", {})
+                        .get(product.product_type, {})
+                        .get("outputs_extension")
+                    )
+                    if outputs_extension:
+                        filename += outputs_extension
 
         return filename
 
