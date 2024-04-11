@@ -446,6 +446,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(202, response.status_code)
         self.assertIn("description", response_content)
         self.assertIn("location", response_content)
+        return response_content
 
     def test_request_params(self):
         self._request_not_valid(f"search?collections={self.tested_product_type}&bbox=1")
@@ -1105,7 +1106,7 @@ class RequestTestCase(unittest.TestCase):
             1,
         )
         product.downloader_auth = MagicMock()
-        product.downloader.orderDownload = MagicMock()
+        product.downloader.orderDownload = MagicMock(return_value={"status": "foo"})
         product.downloader.orderDownloadStatus = MagicMock()
         product.downloader.order_response_process = MagicMock()
         product.downloader._stream_download_dict = MagicMock(
@@ -1128,7 +1129,7 @@ class RequestTestCase(unittest.TestCase):
         # OFFLINE product with error
         product.properties["storageStatus"] = OFFLINE_STATUS
         # status 202 and order once and no status check
-        self._request_accepted(
+        resp_json = self._request_accepted(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
         product.downloader.orderDownload.assert_called_once()
@@ -1138,6 +1139,7 @@ class RequestTestCase(unittest.TestCase):
         product.downloader.order_response_process.reset_mock()
         product.downloader._stream_download_dict.assert_called_once()
         product.downloader._stream_download_dict.reset_mock()
+        self.assertIn("status=foo", resp_json["location"])
 
         # STAGING product and available orderStatusLink
         product.properties["storageStatus"] = STAGING_STATUS

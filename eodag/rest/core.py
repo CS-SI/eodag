@@ -265,7 +265,7 @@ def download_stac_item(
     auth = product.downloader_auth.authenticate()
 
     try:
-        _order_and_update(product, auth, **kwargs)
+        _order_and_update(product, auth, kwargs)
 
         download_stream = cast(
             StreamResponse,
@@ -307,7 +307,9 @@ def download_stac_item(
 
 
 def _order_and_update(
-    product: EOProduct, auth: Union[AuthBase, Dict[str, str]], **kwargs: Any
+    product: EOProduct,
+    auth: Union[AuthBase, Dict[str, str]],
+    query_args: Dict[str, Any],
 ) -> None:
     """Order product if needed and update given kwargs with order-status-dict"""
     if product.properties.get("storageStatus") != ONLINE_STATUS and hasattr(
@@ -317,7 +319,7 @@ def _order_and_update(
         logger.debug("Use given download query arguments to parse order link")
         response = Mock(spec=RequestsResponse)
         response.status_code = 200
-        response.json.return_value = kwargs
+        response.json.return_value = query_args
         product.downloader.order_response_process(response, product)
 
     if (
@@ -328,7 +330,7 @@ def _order_and_update(
         # first order
         logger.debug("Order product")
         order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
-        kwargs.update(order_status_dict or {})
+        query_args.update(order_status_dict or {})
 
     if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
         product.downloader, "orderDownloadStatus"
