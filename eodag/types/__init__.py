@@ -100,7 +100,9 @@ def json_field_definition_to_python(
     ...         'title': 'Foo parameter'
     ...     }
     ... )
-    >>> str(result).replace('_extensions', '') # python3.8 compatibility
+    >>> res_repr = str(result).replace('_extensions', '') # python3.8 compatibility
+    >>> res_repr = res_repr.replace(', default=None', '') # pydantic >= 2.7.0 compatibility
+    >>> res_repr
     "typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')]"
 
     :param json_field_definition: the json field definition
@@ -205,7 +207,9 @@ def model_fields_to_annotated(
     >>> from pydantic import create_model
     >>> some_model = create_model("some_model", foo=(str, None))
     >>> fields_definitions = model_fields_to_annotated(some_model.model_fields)
-    >>> str(fields_definitions).replace('_extensions', '') # python3.8 compatibility
+    >>> fd_repr = str(fields_definitions).replace('_extensions', '') # python3.8 compatibility
+    >>> fd_repr = fd_repr.replace(', default=None', '') # pydantic >= 2.7.0 compatibility
+    >>> fd_repr
     "{'foo': typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)]}"
 
     :param model_fields: BaseModel.model_fields to convert
