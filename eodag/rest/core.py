@@ -262,7 +262,7 @@ def download_stac_item(
             f"Could not find {item_id} item in {product_type} collection"
             + (f" for provider {provider}" if provider else "")
         )
-    auth = product.downloader_auth.authenticate()
+    auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 
     try:
         _order_and_update(product, auth, kwargs)
