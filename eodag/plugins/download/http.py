@@ -253,8 +253,7 @@ class HTTPDownload(Download):
             ]
             logger.debug(f"Product location updated to {product.location}")
 
-            return json_response
-        return None
+        return json_response
 
     def orderDownloadStatus(
         self,
@@ -353,12 +352,13 @@ class HTTPDownload(Download):
                 raise RequestException("response content is not a dict")
             status_dict: Dict[str, Any] = json_response
         except RequestException as e:
-            logger.warning(
-                "%s order status could not be checked, request returned %s",
-                product.properties["title"],
-                e,
-            )
-            return None
+            raise DownloadError(
+                "%s order status could not be checked, request returned %s"
+                % (
+                    product.properties["title"],
+                    e,
+                )
+            ) from e
 
         status_mm = status_config.get("metadata_mapping", {})
         status_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
@@ -457,9 +457,8 @@ class HTTPDownload(Download):
                     logger.debug(
                         "Parsing on-success metadata-mapping using order status response"
                     )
-
                     properties_update = properties_from_json(
-                        response.json(),
+                        {"json": response.json(), "headers": {**response.headers}},
                         on_success_mm_jsonpath,
                     )
                 else:
@@ -479,7 +478,7 @@ class HTTPDownload(Download):
             product.location = product.remote_location = product.properties[
                 "downloadLink"
             ]
-
+        else:
             self.order_response_process(response, product)
 
     def download(
@@ -857,7 +856,10 @@ class HTTPDownload(Download):
         ):
             self.orderDownload(product=product, auth=auth)
 
-        if product.properties.get("orderStatusLink", None):
+        if (
+            product.properties.get("orderStatusLink", None)
+            and product.properties.get("storageStatus") != ONLINE_STATUS
+        ):
             self.orderDownloadStatus(product=product, auth=auth)
 
         params = kwargs.pop("dl_url_params", None) or getattr(

@@ -2201,16 +2201,19 @@
         orderId: $.json.request_id
         orderStatusLink: https://ads.atmosphere.copernicus.eu/api/v2/tasks/{orderId}
     order_status:
+      request:
+        method: GET
       metadata_mapping:
         status: $.json.state
         message: $.json.message
-        downloadLink: $.json.location
-      request:
-        method: GET
+        error_message: $.json.error.reason
       error:
         status: failed
       success:
         status: completed
+      on_success:
+        metadata_mapping:
+          downloadLink: $.json.location
     products:
       CAMS_GAC_FORECAST:
         outputs_extension: .grib
@@ -2708,7 +2711,7 @@
         status: completed
       on_success:
         metadata_mapping:
-          downloadLink: $.location
+          downloadLink: $.json.location
     products:
       ERA5_SL:
         outputs_extension: .grib
@@ -3765,8 +3768,8 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: '$.id'
-        orderStatusLink: 'http://my.meteoblue.com/queue/status/{order_id}'
+        orderId: '$.json.id'
+        orderStatusLink: 'http://my.meteoblue.com/queue/status/{orderId}'
     order_status:
       request:
         method: GET
@@ -3776,8 +3779,8 @@
         status: error
       on_success:
         metadata_mapping:
-          orderId: '$.id'
-          downloadLink: 'http://queueresults.meteoblue.com/{order_id}'
+          orderId: '$.json.id'
+          downloadLink: 'http://queueresults.meteoblue.com/{orderId}'
           downloadMethod: '{$.null#replace_str("Not Available","GET")}'
     outputs_extension: .nc
   auth: !plugin
@@ -6331,7 +6334,9 @@
     order_on_response:
       metadata_mapping:
         orderId: '{$.headers.Location#slice_str(55,,1)}'
-        orderStatusLink: http://polytope.apps.lumi.ewctest.link/api/v1/requests/{orderId}
+        _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
+        combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
+        orderStatusLink: "http://polytope.apps.lumi.ewctest.link/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
@@ -6347,6 +6352,8 @@
         status: failed
       on_success:
         result_type: json
+        metadata_mapping:
+          downloadLink: $.headers.Location
     products:
       DT_EXTREMES:
         outputs_extension: .grib

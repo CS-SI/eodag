@@ -33,6 +33,7 @@ import eodag
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
+    OFFLINE_STATUS,
     ONLINE_STATUS,
     OSEO_METADATA_MAPPING,
     STAGING_STATUS,
@@ -264,7 +265,8 @@ def download_stac_item(
     auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 
     try:
-        _order_and_update(product, auth, kwargs)
+        if product.properties.get("orderLink"):
+            _order_and_update(product, auth, kwargs)
 
         download_stream = product.downloader._stream_download_dict(
             product,
@@ -324,34 +326,22 @@ def _order_and_update(
         response.headers = {}
         product.downloader.order_response_process(response, product)
 
-    if order_id := query_args.get("orderId"):
-        product.properties["orderId"] = order_id
-
     if (
         product.properties.get("storageStatus") != ONLINE_STATUS
-        and product.downloader
-        and order_id
-    ):
-        # product already previously ordered
-        on_response_mm = getattr(
-            product.downloader.config, "order_on_response", {}
-        ).get("metadata_mapping", {})
-        product.properties["storageStatus"] = STAGING_STATUS
-        if statuslink_mm := on_response_mm.get("orderStatusLink"):
-            product.properties["orderStatusLink"] = statuslink_mm.format(
-                **{"orderId": order_id}
-            )
-
-    order_id = product.properties.get("orderId")
-    if (
-        product.properties.get("storageStatus") != ONLINE_STATUS
-        and (not order_id or order_id == NOT_AVAILABLE)
+        and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
         and hasattr(product.downloader, "orderDownload")
     ):
         # first order
         logger.debug("Order product")
         order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
         query_args.update(order_status_dict or {})
+
+    if (
+        product.properties.get("storageStatus") == OFFLINE_STATUS
+        and product.properties.get("orderStatusLink")
+        and NOT_AVAILABLE not in product.properties.get("orderStatusLink", "")
+    ):
+        product.properties["storageStatus"] = STAGING_STATUS
 
     if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
         product.downloader, "orderDownloadStatus"
