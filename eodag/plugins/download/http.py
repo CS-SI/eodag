@@ -70,6 +70,7 @@ from eodag.utils import (
     parse_header,
     path_to_uri,
     sanitize,
+    string_to_jsonpath,
     uri_to_path,
 )
 from eodag.utils.exceptions import (
@@ -445,9 +446,13 @@ class HTTPDownload(Download):
                 )
             else:
                 if result_entry:
+                    entry_jsonpath = string_to_jsonpath(result_entry, force=True)
+                    json_response = entry_jsonpath.find(response.json())
                     raise NotImplementedError(
                         'result_entry in config.on_success is not yet supported for result_type "json"'
                     )
+                else:
+                    json_response = response.json()
                 on_success_mm = config_on_success.get("metadata_mapping", {})
                 if on_success_mm:
                     on_success_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
@@ -457,7 +462,7 @@ class HTTPDownload(Download):
                         "Parsing on-success metadata-mapping using order status response"
                     )
                     properties_update = properties_from_json(
-                        {"json": response.json(), "headers": {**response.headers}},
+                        {"json": json_response, "headers": {**response.headers}},
                         on_success_mm_jsonpath,
                     )
                 else:
