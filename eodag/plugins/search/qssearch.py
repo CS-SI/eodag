@@ -33,7 +33,14 @@ from typing import (
     cast,
 )
 from urllib.error import URLError
-from urllib.parse import parse_qsl, unquote, unquote_plus, urlparse, urlunparse
+from urllib.parse import (
+    parse_qsl,
+    quote_plus,
+    unquote,
+    unquote_plus,
+    urlparse,
+    urlunparse,
+)
 from urllib.request import Request, urlopen
 
 import geojson
@@ -1226,12 +1233,25 @@ class PostJsonSearch(QueryStringSearch):
         self, results: List[Dict[str, Any]], **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
-        results = super(PostJsonSearch, self).normalize_results(results, **kwargs)
-        for product in results:
+        normalized = super().normalize_results(results, **kwargs)
+        for product in normalized:
             if "downloadLink" in product.properties:
                 decoded_link = unquote(product.properties["downloadLink"])
                 if decoded_link[0] == "{":  # not a url but a dict
-                    product.properties["_dc_qs"] = product.properties["downloadLink"]
+                    default_values = deepcopy(
+                        self.config.products.get(product.product_type, {})
+                    )
+                    default_values.pop("metadata_mapping", None)
+                    searched_values = orjson.loads(decoded_link)
+                    _dc_qs = orjson.dumps(
+                        format_query_params(
+                            product.product_type,
+                            self.config,
+                            **{**default_values, **searched_values},
+                        )
+                    )
+                    product.properties["_dc_qs"] = quote_plus(_dc_qs)
+
             # workaround to add product type to wekeo cmems order links
             if (
                 "orderLink" in product.properties
@@ -1240,7 +1260,7 @@ class PostJsonSearch(QueryStringSearch):
                 product.properties["orderLink"] = product.properties[
                     "orderLink"
                 ].replace("productType", product.product_type)
-        return results
+        return normalized
 
     def collect_search_urls(
         self,
