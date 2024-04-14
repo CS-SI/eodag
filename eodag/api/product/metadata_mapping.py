@@ -557,7 +557,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
             cmin, cmax, cstep = [
-                int(x.strip()) if x.strip().isdigit() else None for x in args.split(",")
+                int(x.strip()) if x.strip().lstrip("-").isdigit() else None
+                for x in args.split(",")
             ]
             return string[cmin:cmax:cstep]
 

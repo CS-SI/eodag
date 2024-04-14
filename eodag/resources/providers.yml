@@ -6261,7 +6261,7 @@
   roles:
     - host
   description: Destination Earth Digital Twin Outputs from Lumi
-  url: https://polytope.ecmwf.int/openapi
+  url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
   search: !plugin
     type: BuildSearchResult
     ssl_verify: true
@@ -6279,7 +6279,7 @@
         - '{$.completionTimeFromAscendingNode#to_iso_date}'
       geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       qs: $.qs
-      orderLink: 'https://polytope.apps.lumi.ewctest.link/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
+      orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
       downloadLink: $.null
       expver:
         - expver
@@ -6341,7 +6341,7 @@
       time: 0000/0001/0002
   download: !plugin
     type: HTTPDownload
-    base_uri: https://polytope.apps.lumi.ewctest.link/api/v1/
+    base_uri: https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/
     ssl_verify: true
     flatten_top_dirs: true
     auth_error_code: 401
@@ -6349,10 +6349,10 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: '{$.headers.Location#slice_str(55,,1)}'
+        orderId: '{$.headers.Location#slice_str(-36,,1)}'
         _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
         combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
-        orderStatusLink: "http://polytope.apps.lumi.ewctest.link/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
+        orderStatusLink: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
