@@ -183,37 +183,36 @@ class HTTPDownload(Download):
             order_kwargs = {}
 
         headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
-        with requests.request(
-            method=order_method,
-            url=order_url,
-            auth=auth,
-            timeout=HTTP_REQ_TIMEOUT,
-            headers=headers,
-            verify=ssl_verify,
-            **order_kwargs,
-        ) as response:
-            logger.debug(f"{order_method} {order_url} {headers} {order_kwargs}")
-            try:
-                response.raise_for_status()
-                ordered_message = response.text
-                logger.debug(ordered_message)
-                product.properties["storageStatus"] = STAGING_STATUS
-            except requests.exceptions.Timeout as exc:
-                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-            except RequestException as e:
-                if e.response and hasattr(e.response, "content"):
-                    error_message = f"{e.response.content.decode('utf-8')} - {e}"
-                else:
-                    error_message = str(e)
-                logger.warning(
-                    "%s could not be ordered, request returned %s",
-                    product.properties["title"],
-                    error_message,
-                )
-                self._check_auth_exception(e)
-
-            return self.order_response_process(response, product)
-        return None
+        try:
+            with requests.request(
+                method=order_method,
+                url=order_url,
+                auth=auth,
+                timeout=HTTP_REQ_TIMEOUT,
+                headers=headers,
+                verify=ssl_verify,
+                **order_kwargs,
+            ) as response:
+                logger.debug(f"{order_method} {order_url} {headers} {order_kwargs}")
+                try:
+                    response.raise_for_status()
+                    ordered_message = response.text
+                    logger.debug(ordered_message)
+                    product.properties["storageStatus"] = STAGING_STATUS
+                except RequestException as e:
+                    if e.response and hasattr(e.response, "content"):
+                        error_message = f"{e.response.content.decode('utf-8')} - {e}"
+                    else:
+                        error_message = str(e)
+                    logger.warning(
+                        "%s could not be ordered, request returned %s",
+                        product.properties["title"],
+                        error_message,
+                    )
+                    self._check_auth_exception(e)
+                return self.order_response_process(response, product)
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
 
     def order_response_process(
         self, response: Response, product: EOProduct
