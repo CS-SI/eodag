@@ -108,37 +108,42 @@ class TokenAuth(Authentication):
         self, session: requests.Session, req_kwargs: Dict[str, Any]
     ) -> requests.Response:
         retries = Retry(
-            total=3, backoff_factor=2, status_forcelist=[401, 429, 500, 502, 503, 504]
+            total=3,
+            backoff_factor=2,
+            status_forcelist=[401, 429, 500, 502, 503, 504],
         )
         if self.refresh_token:
             logger.debug("fetching access token with refresh token")
             session.mount(self.config.refresh_uri, HTTPAdapter(max_retries=retries))
-            req_data = {"refresh_token": self.refresh_token}
-            return session.post(
-                self.config.refresh_uri,
-                data=req_data,
-                timeout=HTTP_REQ_TIMEOUT,
-                **req_kwargs,
-            )
+            try:
+                response = session.post(
+                    self.config.refresh_uri,
+                    data={"refresh_token": self.refresh_token},
+                    timeout=HTTP_REQ_TIMEOUT,
+                    **req_kwargs,
+                )
+                response.raise_for_status()
+                return response
+            except requests.exceptions.HTTPError as e:
+                logger.debug(getattr(e.response, "text", "").strip())
+
+        logger.debug("fetching access token from %s", self.config.auth_uri)
+        # append headers to req if some are specified in config
+        session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
+        method = getattr(self.config, "request_method", "POST")
+        if method == "POST":
+            req_kwargs["data"] = self.config.credentials
         else:
-            logger.debug("fetching access token from %s", self.config.auth_uri)
-            # append headers to req if some are specified in config
-            session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
-            if getattr(self.config, "request_method", "POST") == "POST":
-                return session.post(
-                    self.config.auth_uri,
-                    data=self.config.credentials,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    **req_kwargs,
-                )
-            else:
-                cred = self.config.credentials
-                return session.get(
-                    self.config.auth_uri,
-                    auth=(cred["username"], cred["password"]),
-                    timeout=HTTP_REQ_TIMEOUT,
-                    **req_kwargs,
-                )
+            req_kwargs["auth"] = (
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            )
+        return session.request(
+            method=method,
+            url=self.config.auth_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            **req_kwargs,
+        )
 
 
 class RequestsTokenAuth(AuthBase):
