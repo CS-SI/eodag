@@ -1464,8 +1464,6 @@ class EODataAccessGateway:
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
         )
-        # datacube query string
-        _dc_qs = kwargs.pop("_dc_qs", None)
 
         results = SearchResult([])
 
