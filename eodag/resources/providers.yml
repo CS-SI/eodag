@@ -2271,6 +2271,7 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: '$.null'
+      qs: $.qs
       orderLink: 'https://ads.atmosphere.copernicus.eu/api/v2/resources/{dataset}?{qs#to_geojson}'
       # Copernicus ADS specific parameters
       accuracy:
@@ -4300,7 +4301,8 @@
       - '$.id'
   search: !plugin
     type: PostJsonSearch
-    api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
+    api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
+    timeout: 60
     need_auth: true
     auth_error_code: 401
     results_entry: 'features'
@@ -4319,6 +4321,7 @@
       geometry:
         - '{{"bbox": {geometry#to_bounds}}}'
         - '$.geometry'
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       id:
         - '{{"productIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
@@ -4433,6 +4436,16 @@
       soil_level:
         - '{{"soil_level": {soil_level}}}'
         - '$.null'
+      year:
+        - '{{"year": {year}}}'
+        - '$.null'
+      month:
+        - '{{"month": {month}}}'
+        - '$.null'
+      day:
+        - '{{"day": {day}}}'
+        - '$.null'
+
   products:
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -4681,6 +4694,8 @@
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+
+
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
       variable:
@@ -5774,16 +5789,17 @@
     order_status:
       request:
         method: GET
+      metadata_mapping:
+        status: $.json.features[0].status
+        message: $.json.features[0].message
       error:
         status: Error
       success:
         status: Done
       on_success:
-        results_entry: features
         metadata_mapping:
-          orderId: '$.json.download_id'
-          downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
-    order_status_in_progress:
+          download_id: $.json.features[0]._id
+          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
       response_code: 202
     products:
       GLOFAS_FORECAST:
