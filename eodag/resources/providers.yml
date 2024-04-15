@@ -6589,6 +6589,7 @@
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
 ---
+
 !provider # MARK: dedl
   name: dedl
   priority: 0
