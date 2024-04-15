@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 import geojson
 
@@ -30,7 +30,7 @@ from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import StacSearch
 from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
-from eodag.utils.stac_reader import fetch_stac_items
+from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -82,13 +82,45 @@ class StaticStacSearch(StacSearch):
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
         self.config.__dict__.setdefault("ssl_verify", True)
 
-    def discover_product_types(self, **kwargs: Any) -> Dict[str, Any]:
-        """Fetch product types is disabled for `StaticStacSearch`
+    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
+        """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
 
-        :returns: empty dict
-        :rtype: dict
+        :returns: configuration dict containing fetched product types information
+        :rtype: Optional[Dict[str, Any]]
         """
-        return {}
+
+        fetch_url = cast(
+            str,
+            self.config.discover_product_types["fetch_url"].format(
+                **self.config.__dict__
+            ),
+        )
+
+        collections = fetch_stac_collections(
+            fetch_url,
+            max_connections=self.config.max_connections,
+            timeout=int(self.config.timeout),
+            ssl_verify=self.config.ssl_verify,
+        )
+        collections_mock_response = {"collections": collections}
+
+        # save StaticStacSearch._request and mock it to make return loaded static results
+        stacapi_request = self._request
+        self._request = (
+            lambda url, info_message=None, exception_message=None: MockResponse(
+                collections_mock_response, 200
+            )
+        )
+
+        # discover_product_types on mock StacSearch
+        conf_update_dict = super(StaticStacSearch, self).discover_product_types(
+            **kwargs
+        )
+
+        # restore plugin._request
+        self._request = stacapi_request
+
+        return conf_update_dict
 
     def query(
         self,
@@ -117,7 +149,7 @@ class StaticStacSearch(StacSearch):
             search_endpoint,
             recursive=True,
             max_connections=self.config.max_connections,
-            timeout=self.config.timeout,
+            timeout=int(self.config.timeout),
             ssl_verify=self.config.ssl_verify,
         )
         nb_features = len(features)
@@ -131,7 +163,7 @@ class StaticStacSearch(StacSearch):
             )
         )
 
-        # query on mocked StacSearch
+        # query on mock StacSearch
         eo_products, _ = super(StaticStacSearch, self).query(
             PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
         )

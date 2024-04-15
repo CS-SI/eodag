@@ -27,6 +27,7 @@ from urllib.request import urlopen
 import concurrent.futures
 import orjson
 import pystac
+from pystac.stac_object import STACObjectType
 
 from eodag.utils import HTTP_REQ_TIMEOUT, get_ssl_context
 from eodag.utils.exceptions import STACOpenerError
@@ -116,7 +117,7 @@ def fetch_stac_items(
     :param max_connections: (optional) Maximum number of connections for HTTP requests
     :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
-    :type timeout: float
+    :type timeout: int
     :param ssl_verify: (optional) SSL Verification for HTTP request
     :type ssl_verify: bool
     :returns: The items found in `stac_path`
@@ -148,6 +149,8 @@ def _fetch_stac_items_from_catalog(
     _text_opener: Callable[[str, bool], Any],
 ) -> List[Any]:
     """Fetch items from a STAC catalog"""
+    items: List[Dict[Any, Any]] = []
+
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
     extensions: Optional[Union[List[str], str]] = getattr(cat, "stac_extensions", None)
@@ -157,8 +160,7 @@ def _fetch_stac_items_from_catalog(
             items = [feature for feature in cat.to_dict()["features"]]
             return items
 
-    # Making the links absolutes allow for both relative and absolute links
-    # to be handled.
+    # Making the links absolutes allow for both relative and absolute links to be handled.
     if not recursive:
         hrefs: List[Optional[str]] = [
             link.get_absolute_href() for link in cat.get_item_links()
@@ -170,7 +172,6 @@ def _fetch_stac_items_from_catalog(
                 link.get_absolute_href() for link in parent_catalog.get_item_links()
             ]
 
-    items: List[Dict[Any, Any]] = []
     if hrefs:
         logger.debug("Fetching %s items", len(hrefs))
         with concurrent.futures.ThreadPoolExecutor(
@@ -184,3 +185,63 @@ def _fetch_stac_items_from_catalog(
                 if item:
                     items.append(item)
     return items
+
+
+def fetch_stac_collections(
+    stac_path: str,
+    max_connections: int = 100,
+    timeout: int = HTTP_REQ_TIMEOUT,
+    ssl_verify: bool = True,
+) -> List[Dict[str, Any]]:
+    """Fetch STAC collection(s) from a catalog.
+
+    :param stac_path: A STAC object filepath
+    :type stac_path: str
+    :param max_connections: (optional) Maximum number of connections for HTTP requests
+    :type max_connections: int
+    :param timeout: (optional) Timeout in seconds for each internal HTTP request
+    :type timeout: int
+    :param ssl_verify: (optional) SSL Verification for HTTP request
+    :type ssl_verify: bool
+    :returns: The collection(s) found in `stac_path`
+    :rtype: :class:`list`
+    """
+
+    # URI opener used by PySTAC internally, instantiated here to retrieve the timeout.
+    _text_opener = _TextOpener(timeout, ssl_verify)
+    pystac.StacIO.read_text = _text_opener
+
+    stac_obj = pystac.read_file(stac_path)
+    if isinstance(stac_obj, pystac.Catalog):
+        return _fetch_stac_collections_from_catalog(
+            stac_obj, max_connections, _text_opener
+        )
+    else:
+        raise STACOpenerError(f"{stac_path} must be a STAC catalog")
+
+
+def _fetch_stac_collections_from_catalog(
+    cat: pystac.Catalog,
+    max_connections: int,
+    _text_opener: Callable[[str, bool], Any],
+) -> List[Any]:
+    """Fetch collections from a STAC catalog"""
+    collections: List[Dict[Any, Any]] = []
+
+    # Making the links absolutes allow for both relative and absolute links to be handled.
+    hrefs: List[Optional[str]] = [
+        link.get_absolute_href() for link in cat.get_child_links()
+    ]
+
+    if hrefs:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_connections
+        ) as executor:
+            future_to_href = (
+                executor.submit(_text_opener, str(href), True) for href in hrefs
+            )
+            for future in concurrent.futures.as_completed(future_to_href):
+                collection = future.result()
+                if collection and collection["type"] == STACObjectType.COLLECTION:
+                    collections.append(collection)
+    return collections

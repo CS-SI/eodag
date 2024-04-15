@@ -31,6 +31,7 @@ from typing import (
     Set,
     Tuple,
     TypedDict,
+    Union,
     cast,
 )
 from urllib.error import URLError
@@ -75,6 +76,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     Annotated,
+    MockResponse,
     _deprecated,
     deepcopy,
     dict_items_recursive_apply,
@@ -399,8 +401,10 @@ class QueryStringSearch(Search):
             prep.exception_message = (
                 "Skipping error while fetching product types for " "{} {} instance:"
             ).format(self.provider, self.__class__.__name__)
-
-            response = QueryStringSearch._request(self, prep)
+            if self.__class__.__name__ == "StaticStacSearch":
+                self._request(prep)
+            else:
+                response = QueryStringSearch._request(self, prep)
         except (RequestError, KeyError, AttributeError):
             return None
         else:
