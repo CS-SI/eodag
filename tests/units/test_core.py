@@ -1394,6 +1394,7 @@ class TestCore(TestCoreBase):
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
         mock_discover_queryables.reset_mock()
+
         # unset default values
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
         defaults = {
