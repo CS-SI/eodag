@@ -1480,6 +1480,10 @@ class EODataAccessGateway:
                     for result in results:
                         if result.properties["id"] == uid.split(".")[0]:
                             return SearchResult([results[0]]), 1
+                # try using crunch to get unique result
+                if len(filtered := results.filter_property(id=uid)) == 1:
+                    return filtered, 1
+
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
