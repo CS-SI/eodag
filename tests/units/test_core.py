@@ -1998,6 +1998,19 @@ class TestCoreSearch(TestCoreBase):
             self.assertEqual(found, (SearchResult([]), 0))
             self.assertIn("Several products found for this id", str(cm.output))
 
+        mock__do_search.reset_mock()
+        # return 1 result if more than 1 product is found but only 1 has the matching id
+        m = mock.MagicMock()
+        p2 = EOProduct(
+            "peps", {"id": "foo", "geometry": {"type": "Point", "coordinates": [1, 1]}}
+        )
+        m.__len__.return_value = 2
+        m.__iter__.return_value = [p, p2]
+        mock__do_search.return_value = (m, 2)
+        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        self.assertEqual(found[1], 1)
+        self.assertEqual(len(found[0]), 1)
+
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
         """_do_search must create a count query by default"""
