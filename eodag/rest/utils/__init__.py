@@ -138,6 +138,9 @@ def get_next_link(
 ) -> Optional[Dict[str, Any]]:
     """Generate next link URL and body"""
     body = search_request.model_dump(exclude_none=True)
+    if "bbox" in body:
+        # bbox is tuple
+        body["bbox"] = list(body["bbox"])
 
     params = dict(request.query_params)
 
