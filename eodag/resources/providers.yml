@@ -4193,7 +4193,7 @@
       X-API-Key: "{apikey}"
 
 ---
-!provider  # wekeo
+!provider  # MARK: wekeo
   name: wekeo
   priority: 0
   roles:
@@ -4291,6 +4291,7 @@
     two_passes_id_search: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
     query_params_key: 'search'
     discover_product_types:
       fetch_url: null
@@ -5793,6 +5794,7 @@
     two_passes_id_search: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
     query_params_key: 'search'
     discover_product_types:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
