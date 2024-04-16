@@ -1064,14 +1064,11 @@ class EODataAccessGateway:
         )
 
         if search_kwargs.get("id"):
-            # adds minimal pagination to be able to check only 1 product is returned
-            search_kwargs.update(
-                page=1,
-                items_per_page=2,
-                raise_errors=raise_errors,
-            )
             return self._search_by_id(
-                search_kwargs.pop("id"), provider=provider, **search_kwargs
+                search_kwargs.pop("id"),
+                provider=provider,
+                raise_errors=raise_errors,
+                **search_kwargs,
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
         search_kwargs.pop("_dc_qs", None)
@@ -1454,16 +1451,51 @@ class EODataAccessGateway:
         # datacube query string
         _dc_qs = kwargs.pop("_dc_qs", None)
 
+        results = SearchResult([])
+
         for plugin in search_plugins:
             logger.info(
                 "Searching product with id '%s' on provider: %s", uid, plugin.provider
             )
             logger.debug("Using plugin class for search: %s", plugin.__class__.__name__)
             plugin.clear()
+
+            # adds maximal pagination to be able to do a search-all + crunch if more
+            # than one result are returned
+            items_per_page = plugin.config.pagination.get(
+                "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+            )
+            kwargs.update(items_per_page=items_per_page)
             if isinstance(plugin, BuildPostSearchResult):
-                results, _ = self._do_search(plugin, id=uid, _dc_qs=_dc_qs, **kwargs)
+                kwargs.update(
+                    items_per_page=items_per_page,
+                    _dc_qs=_dc_qs,
+                )
             else:
-                results, _ = self._do_search(plugin, id=uid, **kwargs)
+                kwargs.update(
+                    items_per_page=items_per_page,
+                )
+
+            try:
+                # if more than one results are found, try getting them all and then filter using crunch
+                for page_results in self.search_iter_page_plugin(
+                    search_plugin=plugin,
+                    id=uid,
+                    **kwargs,
+                ):
+                    results.data.extend(page_results.data)
+            except Exception:
+                if kwargs.get("raise_errors"):
+                    raise
+                continue
+
+            # try using crunch to get unique result
+            if (
+                len(results) > 1
+                and len(filtered := results.filter_property(id=uid)) == 1
+            ):
+                results = filtered
+
             if len(results) == 1:
                 if not results[0].product_type:
                     # guess product type from properties
@@ -1473,17 +1505,6 @@ class EODataAccessGateway:
                     results[0].driver = results[0].get_driver()
                 return results, 1
             elif len(results) > 1:
-                if getattr(plugin.config, "two_passes_id_search", False):
-                    # check if id of one product exactly matches id that was searched for
-                    # required if provider does not offer search by id and therefore other
-                    # parameters which might not given an exact result are used
-                    for result in results:
-                        if result.properties["id"] == uid.split(".")[0]:
-                            return SearchResult([results[0]]), 1
-                # try using crunch to get unique result
-                if len(filtered := results.filter_property(id=uid)) == 1:
-                    return filtered, 1
-
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,

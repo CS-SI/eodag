@@ -1949,7 +1949,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
         autospec=True,
-        return_value=([mock.Mock()], 1),
+        return_value=(SearchResult([mock.Mock()]), 1),
     )
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     @mock.patch(
@@ -1961,6 +1961,21 @@ class TestCoreSearch(TestCoreBase):
         self, mock_get_search_plugins, mock_get_auth_plugin, mock__do_search
     ):
         """_search_by_id must filter search plugins using given kwargs, clear plugin and perform search"""
+        # max_items_per_page plugin conf
+        mock_config = mock.Mock()
+        type(mock_config).pagination = mock.PropertyMock(
+            return_value={"max_items_per_page": 100}
+        )
+        type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
+            return_value=mock_config
+        )
+        type(
+            mock_get_search_plugins.return_value[0]
+        ).next_page_query_obj = mock.PropertyMock(return_value={})
+        # mocked search result id
+        type(mock__do_search.return_value[0][0]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
+        )
 
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
 
@@ -1981,18 +1996,22 @@ class TestCoreSearch(TestCoreBase):
             mock_get_search_plugins.return_value[0],
             id="foo",
             productType="bar",
+            count=False,
+            raise_errors=True,
+            page=1,
+            items_per_page=100,
         )
         self.assertEqual(found, mock__do_search.return_value)
 
         mock__do_search.reset_mock()
         # return None if more than 1 product is found
-        m = mock.MagicMock()
-        p = EOProduct(
-            "peps", {"id": "a", "geometry": {"type": "Point", "coordinates": [1, 1]}}
+        mock__do_search.return_value = (SearchResult([mock.Mock(), mock.Mock()]), 2)
+        type(mock__do_search.return_value[0][0]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
         )
-        m.__len__.return_value = 2
-        m.__iter__.return_value = [p, p]
-        mock__do_search.return_value = (m, 2)
+        type(mock__do_search.return_value[0][1]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
+        )
         with self.assertLogs(level="INFO") as cm:
             found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
             self.assertEqual(found, (SearchResult([]), 0))
@@ -2000,13 +2019,13 @@ class TestCoreSearch(TestCoreBase):
 
         mock__do_search.reset_mock()
         # return 1 result if more than 1 product is found but only 1 has the matching id
-        m = mock.MagicMock()
-        p2 = EOProduct(
-            "peps", {"id": "foo", "geometry": {"type": "Point", "coordinates": [1, 1]}}
+        mock__do_search.return_value = (SearchResult([mock.Mock(), mock.Mock()]), 2)
+        type(mock__do_search.return_value[0][0]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
         )
-        m.__len__.return_value = 2
-        m.__iter__.return_value = [p, p2]
-        mock__do_search.return_value = (m, 2)
+        type(mock__do_search.return_value[0][1]).properties = mock.PropertyMock(
+            return_value={"id": "foooooo"}
+        )
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
         self.assertEqual(found[1], 1)
         self.assertEqual(len(found[0]), 1)
