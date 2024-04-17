@@ -1096,7 +1096,8 @@ class EODataAccessGateway:
             elif len(search_results) > 0:
                 return search_results, total_results
 
-        logger.error("No result could be obtained from any available provider")
+        if i > 1:
+            logger.error("No result could be obtained from any available provider")
         return SearchResult([]), 0
 
     def search_iter_page(
