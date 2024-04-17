@@ -4282,6 +4282,14 @@
     cycleNumber:
       - '{{"cycle": "{cycleNumber}"}}'
       - '$.null'
+  andchor_id_from_date: &id_from_date
+    id:
+      - |
+        {{
+          "start": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}",
+          "end": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}"
+        }}
+      - '$.id'
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
@@ -4292,6 +4300,7 @@
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
+      max_items_per_page: 200
     query_params_key: 'search'
     discover_product_types:
       fetch_url: null
@@ -5375,13 +5384,13 @@
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF"}}'
     CLMS_GLO_NDVI_1KM_LTS:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
     CLMS_CORINE:
@@ -5398,7 +5407,7 @@
     CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
@@ -5407,7 +5416,7 @@
     CLMS_GLO_DMP_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_DMP_300M_V1_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
@@ -5416,7 +5425,7 @@
     CLMS_GLO_GDMP_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_GDMP_300M_V1_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
@@ -5425,7 +5434,7 @@
     CLMS_GLO_FAPAR_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_FAPAR_300M_V1_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
@@ -5434,7 +5443,7 @@
     CLMS_GLO_LAI_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF
       metadata_mapping:
-        id: '$.id'
+        <<: *id_from_date
         <<: *clms_dates
         productGroupId:
           - '{{"productGroupId": "{productGroupId}"}}'
