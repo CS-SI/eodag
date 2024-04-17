@@ -383,7 +383,9 @@ class HTTPDownload(Download):
         # handle status error
         errors: Dict[str, Any] = status_config.get("error", {})
         if errors.items() <= status_dict.items():
-            raise DownloadError(status_dict.get("error_message", status_message))
+            raise DownloadError(
+                f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
+            )
 
         success_status: Dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
