@@ -285,10 +285,11 @@ def download_stac_item(
         )
     except NotAvailableError:
         if product.properties.get("storageStatus") != ONLINE_STATUS:
-            order_id = product.properties.get("orderId")
-            qs = urlencode(
-                {**kwargs, **{"provider": provider, "orderId": order_id}}, doseq=True
+            kwargs["orderId"] = kwargs.get("orderId") or product.properties.get(
+                "orderId"
             )
+            kwargs["provider"] = provider
+            qs = urlencode(kwargs, doseq=True)
             download_link = f"{request.state.url}?{qs}"
             return ORJSONResponse(
                 status_code=202,
