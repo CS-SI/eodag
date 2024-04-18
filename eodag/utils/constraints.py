@@ -17,7 +17,11 @@
 # limitations under the License.
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
+import os
+from typing import Any, Dict, List, Set, Union
+
+import requests
+from requests.auth import AuthBase
 
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
@@ -25,9 +29,6 @@ from eodag.plugins.search.base import Search
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import RequestError, ValidationError
 from eodag.utils.requests import fetch_json
-
-if TYPE_CHECKING:
-    from requests.auth import AuthBase
 
 logger = logging.getLogger("eodag.constraints")
 
@@ -75,7 +76,12 @@ def get_constraint_queryables_with_additional_params(
             if provider_key and provider_key in constraint:
                 eodag_provider_key_mapping[provider_key] = param
                 params_available[param] = True
-                if value in constraint[provider_key]:
+                if (
+                    isinstance(value, list)
+                    and all([v in constraint[provider_key] for v in value])
+                    or not isinstance(value, list)
+                    and value in constraint[provider_key]
+                ):
                     params_matched[param] = True
                 elif isinstance(value, str):
                     # for Copernicus providers, values can be multiple and represented with a string
@@ -194,6 +200,8 @@ def fetch_constraints(
         and config["constraints_entry"] in constraints_data
     ):
         constraints = constraints_data[config["constraints_entry"]]
+    elif config.get("stop_without_constraints_entry_key", False):
+        return []
     else:
         constraints = constraints_data
     return constraints

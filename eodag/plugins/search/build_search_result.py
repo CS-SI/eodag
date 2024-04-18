@@ -456,7 +456,7 @@ class BuildSearchResult(BuildPostSearchResult):
     def discover_queryables(
         self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf
+        """Fetch queryables list from provider using its constraints file
 
         :param kwargs: additional filters for queryables (`productType` and other search
                        arguments)
