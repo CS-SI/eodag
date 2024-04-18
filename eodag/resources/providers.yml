@@ -4705,7 +4705,7 @@
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
       variable:
-        - 10m_u_component_of_wind
+        - land_sea_mask
       leadtime_hour:
         - "0"
       origin: ecmwf
