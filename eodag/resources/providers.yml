@@ -3776,6 +3776,7 @@
         method: GET
       metadata_mapping:
         percent: $.json.percentCompleted
+        status: $.json.status
       error:
         status: error
       on_success:
@@ -5796,11 +5797,12 @@
         status: Error
       success:
         status: Done
+      ordered:
+        http_code: 202
       on_success:
         metadata_mapping:
           download_id: $.json.features[0]._id
           downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
-      response_code: 202
     products:
       GLOFAS_FORECAST:
         outputs_extension: .grib
@@ -5910,11 +5912,12 @@
         status: Error
       success:
         status: Done
+      ordered:
+        http_code: 202
       on_success:
         metadata_mapping:
           download_id: $.json.features[0]._id
           downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
-      response_code: 202
 
 ---
 !provider # MARK: creodias_s3
@@ -6384,7 +6387,6 @@
         status: $.json.status
         message: $.json.message
         error_message: $.null
-        downloadLink: $.headers.Location
       success:
         http_code: 303
       error:

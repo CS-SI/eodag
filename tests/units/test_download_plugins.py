@@ -1159,8 +1159,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_status(self):
         """HTTPDownload.orderDownloadStatus() must request status using orderStatusLink"""
         plugin = self.get_download_plugin(self.product)
-        plugin.config.order_status_percent = "progress_percentage"
-        plugin.config.order_status_error = {"that": "failed"}
+        plugin.config.order_status = {
+            "metadata_mapping": {
+                "percent": "$.json.progress_percentage",
+                "that": "$.json.that",
+            },
+            "error": {"that": "failed"},
+        }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
 
         auth_plugin = self.get_auth_plugin(self.product.provider)
@@ -1190,13 +1195,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_status_search_again(self):
         """HTTPDownload.orderDownloadStatus() must search again after success if needed"""
         plugin = self.get_download_plugin(self.product)
-        plugin.config.order_status_success = {"status": "great-success"}
-        plugin.config.order_status_on_success = {
-            "need_search": True,
-            "result_type": "xml",
-            "results_entry": "//entry",
-            "metadata_mapping": {
-                "downloadLink": "foo/text()",
+        plugin.config.order_status = {
+            "metadata_mapping": {"status": "$.json.status"},
+            "success": {"status": "great-success"},
+            "on_success": {
+                "need_search": True,
+                "result_type": "xml",
+                "results_entry": "//entry",
+                "metadata_mapping": {
+                    "downloadLink": "foo/text()",
+                },
             },
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"

@@ -111,9 +111,8 @@ class HTTPDownload(Download):
         * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status_method`` (str) - (optional) status HTTP request method, GET (default) or POST
-        * ``config.order_status_percent`` (str) - (optional) progress percentage key in obtained status response
-        * ``config.order_status_error`` (dict) - (optional) key/value identifying an error status
+        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
+
 
     :type config: :class:`~eodag.config.PluginConfig`
 
@@ -265,11 +264,7 @@ class HTTPDownload(Download):
         It will be executed before each download retry.
         Product order status request can be configured using the following download plugin parameters:
 
-            - **order_status_method**: (optional) HTTP request method, GET (default) or POST
-
-            - **order_status_percent**: (optional) progress percentage key in obtained response
-
-            - **order_status_error**: (optional) key/value identifying an error status
+            - **order_status**: :class:`~eodag.config.PluginConfig.OrderStatus`
 
         Product properties used for order status:
 
@@ -361,8 +356,12 @@ class HTTPDownload(Download):
             ) from e
 
         status_mm = status_config.get("metadata_mapping", {})
-        status_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
-            status_mm,
+        status_mm_jsonpath = (
+            mtd_cfg_as_conversion_and_querypath(
+                status_mm,
+            )
+            if status_mm
+            else {}
         )
         logger.debug("Parsing order status response")
         status_dict = properties_from_json(
@@ -382,7 +381,7 @@ class HTTPDownload(Download):
 
         # handle status error
         errors: Dict[str, Any] = status_config.get("error", {})
-        if errors.items() <= status_dict.items():
+        if errors and errors.items() <= status_dict.items():
             raise DownloadError(
                 f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
             )
@@ -417,6 +416,14 @@ class HTTPDownload(Download):
 
         result_type = config_on_success.get("result_type", "json")
         result_entry = config_on_success.get("results_entry")
+        on_success_mm = config_on_success.get("metadata_mapping", {})
+        on_success_mm_querypath = (
+            mtd_cfg_as_conversion_and_querypath(
+                on_success_mm,
+            )
+            if on_success_mm
+            else {}
+        )
         try:
             if result_type == "xml":
                 if not result_entry:
@@ -442,10 +449,13 @@ class HTTPDownload(Download):
                 assert isinstance(results, list), "results must be in a list"
                 # single result
                 result = results[0]
-                properties_update = properties_from_xml(
-                    result,
-                    status_mm_jsonpath,
-                )
+                if on_success_mm_querypath:
+                    properties_update = properties_from_xml(
+                        result,
+                        on_success_mm_querypath,
+                    )
+                else:
+                    properties_update = {}
             else:
                 if result_entry:
                     entry_jsonpath = string_to_jsonpath(result_entry, force=True)
@@ -455,17 +465,13 @@ class HTTPDownload(Download):
                     )
                 else:
                     json_response = response.json()
-                on_success_mm = config_on_success.get("metadata_mapping", {})
-                if on_success_mm:
-                    on_success_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
-                        on_success_mm,
-                    )
+                if on_success_mm_querypath:
                     logger.debug(
                         "Parsing on-success metadata-mapping using order status response"
                     )
                     properties_update = properties_from_json(
                         {"json": json_response, "headers": {**response.headers}},
-                        on_success_mm_jsonpath,
+                        on_success_mm_querypath,
                     )
                 else:
                     properties_update = {}
@@ -912,14 +918,19 @@ class HTTPDownload(Download):
             except RequestException as e:
                 self._process_exception(e, product, ordered_message)
             else:
-                if getattr(self.config, "order_status_in_progress", None):
-                    # order still in progress but no error
-                    status_running = getattr(self.config, "order_status_in_progress")[
-                        "response_code"
-                    ]
-                    if self.stream.status_code == status_running:
-                        product.properties["storageStatus"] = "ORDERED"
-                        self._process_exception(None, product, ordered_message)
+                # check if product was ordered
+
+                if getattr(
+                    self.stream, "status_code", None
+                ) is not None and self.stream.status_code == getattr(
+                    self.config, "order_status", {}
+                ).get(
+                    "ordered", {}
+                ).get(
+                    "http_code"
+                ):
+                    product.properties["storageStatus"] = "ORDERED"
+                    self._process_exception(None, product, ordered_message)
                 stream_size = self._check_stream_size(product) or None
 
                 product.headers = self.stream.headers

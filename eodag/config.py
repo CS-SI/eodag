@@ -45,6 +45,7 @@ from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from pkg_resources import resource_filename
 from requests.auth import AuthBase
+from typing_extensions import Doc
 
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
@@ -247,28 +248,54 @@ class PluginConfig(yaml.YAMLObject):
 
     class OrderStatusSuccess(TypedDict):
         """
-        Configuration for order status success during download
+        Configuration to identify order status success during download
 
         Order status response matching the following parameters are considered success
         At least one is required
         """
 
-        status: Annotated[str, "Variable in the order status response json body"]
-        message: Annotated[str, "Variable in the order status response json body"]
-        http_code: Annotated[int, "HTTP code of the order status response"]
+        status: Annotated[str, Doc("Variable in the order status response json body")]
+        message: Annotated[str, Doc("Variable in the order status response json body")]
+        http_code: Annotated[int, Doc("HTTP code of the order status response")]
+
+    class OrderStatusOrdered(TypedDict):
+        """
+        Configuration to identify order status ordered during download
+        """
+
+        http_code: Annotated[int, Doc("HTTP code of the order status response")]
+
+    class OrderStatusRequest(TypedDict):
+        """
+        Order status request configuration
+        """
+
+        method: Annotated[str, Doc("Request HTTP method")]
+        headers: Annotated[Dict[str, Any], Doc("Request hearders")]
 
     class OrderStatusOnSuccess(TypedDict):
         """Configuration for order status on-success during download"""
 
-        need_search: bool
+        need_search: Annotated[bool, Doc("If a new search is needed on success")]
         result_type: str
         results_entry: str
         metadata_mapping: Dict[str, Union[str, List[str]]]
 
-    class OrderStatusOnError(TypedDict):
-        """Configuration for order status on-success during download"""
+    class OrderStatus(TypedDict):
+        """Configuration for order status during download"""
 
-        metadata_mapping: Dict[str, Union[str, List[str]]]
+        request: PluginConfig.OrderStatusRequest
+        metadata_mapping: Annotated[
+            Dict[str, Union[str, List[str]]],
+            Doc("Metadata-mapping used to parse order status response"),
+        ]
+        success: PluginConfig.OrderStatusSuccess
+        error: Annotated[
+            Dict[str, Any],
+            Doc("Part of the order status response that tells there is an error"),
+        ]
+        ordered: PluginConfig.OrderStatusOrdered
+        on_success: PluginConfig.OrderStatusOnSuccess
 
     name: str
     type: str
@@ -315,12 +342,7 @@ class PluginConfig(yaml.YAMLObject):
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
     order_on_response: PluginConfig.OrderOnResponse
-    order_status_method: str
-    order_status_percent: str
-    order_status_success: PluginConfig.OrderStatusSuccess
-    order_status_on_success: PluginConfig.OrderStatusOnSuccess
-    order_status_error: Dict[str, Any]
-    order_status_on_error: PluginConfig.OrderStatusOnError
+    order_status: PluginConfig.OrderStatus
     bucket_path_level: int  # S3RestDownload
     requester_pays: bool  # AwsDownload
     flatten_top_dirs: bool
