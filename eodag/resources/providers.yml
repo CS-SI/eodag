@@ -6256,7 +6256,7 @@
       collection: '{collection}'
 ---
 !provider
-  name: de_dt_lumi
+  name: dedt_lumi
   priority: 0
   roles:
     - host
@@ -6269,7 +6269,6 @@
       fetch_url: null
       product_type_fetch_url: null
     constraints_file_url:
-
     metadata_mapping:
       productType: destination-earth
       storageStatus: OFFLINE
@@ -6281,39 +6280,57 @@
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
       downloadLink: $.null
-      expver:
-        - expver
-        - $.expver
+      activity:
+        - activity
+        - $.activity
+      anoffset:
+        - anoffset
+        - $.anoffset
       class:
         - class
         - $.class
+      dataset:
+        - dataset
+        - $.dataset
+      domain:
+        - domain
+        - $.domain
+      experiment:
+        - experiment
+        - $.experiment
+      expver:
+        - expver
+        - $.expver
+      generation:
+        - generation
+        - $.generation
+      levtype:
+        - levtype
+        - $.levtype
+      model:
+        - model
+        - $.model
+      param:
+        - param
+        - $.param
+      realization:
+        - realization
+        - $.realization
+      resolution:
+        - resolution
+        - $.resolution
+      step:
+        - step
+        - $.step
       stream:
         - stream
         - $.stream
       time:
         - time
         - $.time
-      domain:
-        - domain
-        - $.domain
       type:
         - type
         - $.type
-      levtype:
-        - levtype
-        - $.levtype
-      anoffset:
-        - anoffset
-        - $.anoffset
-      step:
-        - step
-        - $.step
-      param:
-        - param
-        - $.param
-      dataset:
-        - dataset
-        - $.dataset
   products:
     DT_EXTREMES:
       class: rd
