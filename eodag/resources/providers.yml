@@ -5898,16 +5898,22 @@
     order_method: 'POST'
     order_on_response:
       metadata_mapping:
-        orderId: '$.download_id'
+        orderId: '$.json.download_id'
         orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
-    order_status_method: 'GET'
-    order_status_results_entry: 'features'
-    order_status_success:
-      status: Done
-    order_status_error:
-      status: Error
-    order_status_in_progress:
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.features[0].status
+        message: $.json.features[0].message
+      error:
+        status: Error
+      success:
+        status: Done
+      on_success:
+        metadata_mapping:
+          download_id: $.json.features[0]._id
+          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
       response_code: 202
 
 ---
