@@ -34,7 +34,7 @@
             "assets": {},
             "properties": {
                 "eodag_product_type": "DT_EXTREMES",
-                "eodag_provider": "de_dt_lumi",
+                "eodag_provider": "dedt_lumi",
                 "eodag_search_intersection": {
                     "type": "Polygon",
                     "coordinates": [

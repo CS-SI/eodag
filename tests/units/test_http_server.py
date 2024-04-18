@@ -343,19 +343,9 @@ class RequestTestCase(unittest.TestCase):
                 list,
                 "expected_search_kwargs must be a list if search_call_count > 1",
             )
-            if isinstance(expected_search_kwargs, dict):
-                expected_search_kwargs["server_mode"] = True
-            elif isinstance(expected_search_kwargs, list):
-                for row in expected_search_kwargs:
-                    row["server_mode"] = True
             for single_search_kwargs in expected_search_kwargs:
                 mock_search.assert_any_call(**single_search_kwargs)
         elif expected_search_kwargs is not None:
-            if isinstance(expected_search_kwargs, dict):
-                expected_search_kwargs["server_mode"] = True
-            elif isinstance(expected_search_kwargs, list):
-                for row in expected_search_kwargs:
-                    row["server_mode"] = True
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
         self.assertEqual(200, response.status_code, response.text)
@@ -976,14 +966,14 @@ class RequestTestCase(unittest.TestCase):
         """Search through eodag server and check that specified provider appears in downloadLink"""
         # with provider (get)
         response = self._request_valid(
-            f"search?collections={self.tested_product_type}&provider=onda"
+            f"search?collections={self.tested_product_type}&provider=peps"
         )
         response_items = [f for f in response["features"]]
         self.assertTrue(
             all(
                 [
                     i["assets"]["downloadLink"]["href"].endswith(
-                        "download?provider=onda"
+                        "download?provider=peps"
                     )
                     for i in response_items
                 ]
@@ -993,14 +983,14 @@ class RequestTestCase(unittest.TestCase):
         response = self._request_valid(
             "search",
             method="POST",
-            post_data={"collections": [self.tested_product_type], "provider": "onda"},
+            post_data={"collections": [self.tested_product_type], "provider": "peps"},
         )
         response_items = [f for f in response["features"]]
         self.assertTrue(
             all(
                 [
                     i["assets"]["downloadLink"]["href"].endswith(
-                        "download?provider=onda"
+                        "download?provider=peps"
                     )
                     for i in response_items
                 ]
@@ -1012,7 +1002,9 @@ class RequestTestCase(unittest.TestCase):
         self.assertTrue(
             all(
                 [
-                    i["assets"]["downloadLink"]["href"].endswith("download")
+                    i["assets"]["downloadLink"]["href"].endswith(
+                        "download?provider=peps"
+                    )
                     for i in response_items
                 ]
             )
@@ -1169,6 +1161,7 @@ class RequestTestCase(unittest.TestCase):
         product.downloader._stream_download_dict = MagicMock(
             side_effect=NotAvailableError("Product offline. Try again later.")
         )
+        product.properties["orderLink"] = "http://somewhere?order=foo"
         product.properties["orderStatusLink"] = f"{NOT_AVAILABLE}?foo=bar"
 
         # ONLINE product with error
@@ -1194,12 +1187,25 @@ class RequestTestCase(unittest.TestCase):
         product.downloader.orderDownloadStatus.assert_not_called()
         product.downloader.order_response_process.assert_called()
         product.downloader.order_response_process.reset_mock()
+        product.downloader._stream_download_dict.assert_not_called()
+        self.assertIn("status=foo", resp_json["location"])
+
+        # OFFLINE product with error and no orderLink
+        product.properties["storageStatus"] = OFFLINE_STATUS
+        order_link = product.properties.pop("orderLink")
+        # status 202 and no order try
+        resp_json = self._request_accepted(
+            f"catalogs/{self.tested_product_type}/items/foo/download"
+        )
+        product.downloader.orderDownload.assert_not_called()
+        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_response_process.assert_not_called()
         product.downloader._stream_download_dict.assert_called_once()
         product.downloader._stream_download_dict.reset_mock()
-        self.assertIn("status=foo", resp_json["location"])
 
         # STAGING product and available orderStatusLink
         product.properties["storageStatus"] = STAGING_STATUS
+        product.properties["orderLink"] = order_link
         product.properties["orderStatusLink"] = "http://somewhere?foo=bar"
         # status 202 and no order but status checked and no download try
         self._request_accepted(
