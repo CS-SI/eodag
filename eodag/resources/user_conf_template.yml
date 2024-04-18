@@ -225,7 +225,7 @@ creodias_s3:
         credentials:
           aws_access_key_id:
           aws_secret_access_key:
-polytope:
+de_dt_lumi:
     priority: # Lower value means lower priority (Default: 0)
     search:
     download:
