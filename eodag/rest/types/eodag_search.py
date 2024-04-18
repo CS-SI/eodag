@@ -30,7 +30,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic.alias_generators import to_camel
+from pydantic.alias_generators import to_camel, to_snake
 from pydantic_core import InitErrorDetails, PydanticCustomError
 from pygeofilter.parsers.cql2_json import parse as parse_json
 from shapely.geometry import (
@@ -148,9 +148,9 @@ class EODAGSearch(BaseModel):
                 keys_to_update[key] = key[len("oseo:") :]
 
         for old_key, new_key in keys_to_update.items():
-            self.__pydantic_extra__[to_camel(new_key)] = self.__pydantic_extra__.pop(
-                old_key
-            )
+            self.__pydantic_extra__[
+                to_camel(to_snake(new_key))
+            ] = self.__pydantic_extra__.pop(old_key)
 
         return self
 
@@ -326,8 +326,8 @@ class EODAGSearch(BaseModel):
         return [
             (
                 special_fields.get(
-                    to_camel(cls.to_eodag(param["field"])),
-                    to_camel(cls.to_eodag(param["field"])),
+                    to_camel(to_snake(cls.to_eodag(param["field"]))),
+                    to_camel(to_snake(cls.to_eodag(param["field"]))),
                 ),
                 param["direction"],
             )

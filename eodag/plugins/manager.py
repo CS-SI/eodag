@@ -202,7 +202,7 @@ class PluginManager:
             configs = [c for c in configs if provider == c.name]
 
         if not configs:
-            raise UnsupportedProvider
+            raise UnsupportedProvider(f"{provider} is not (yet) supported")
 
         for config in sorted(configs, key=attrgetter("priority"), reverse=True):
             yield get_plugin()
