@@ -95,7 +95,7 @@ class EODAGSearch(BaseModel):
     platformSerialIdentifier: Optional[str] = Field(None, alias="platform")
     instrument: Optional[str] = Field(None, alias="instruments")
     platform: Optional[str] = Field(None, alias="constellation")
-    resolution: Optional[int] = Field(None, alias="gsd")
+    resolution: Optional[Union[int, str]] = Field(None, alias="gsd")
     cloudCover: Optional[int] = Field(None, alias="eo:cloud_cover")
     snowCover: Optional[int] = Field(None, alias="eo:snow_cover")
     processingLevel: Optional[str] = Field(None, alias="processing:level")
