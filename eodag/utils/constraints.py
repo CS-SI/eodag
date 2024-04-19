@@ -17,14 +17,16 @@
 # limitations under the License.
 import copy
 import logging
+import os
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 
 import requests
+from requests_file import FileAdapter
 
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, path_to_uri
 from eodag.utils.exceptions import TimeOutError, ValidationError
 
 if TYPE_CHECKING:
@@ -171,18 +173,22 @@ def fetch_constraints(
     :rtype: List[Dict[Any, Any]]
     """
     try:
+        session = requests.Session()
+        if not constraints_url.lower().startswith("http"):
+            constraints_url = path_to_uri(os.path.abspath(constraints_url))
+            session.mount("file://", FileAdapter())
         headers = USER_AGENT
         logger.debug("fetching constraints from %s", constraints_url)
         if hasattr(plugin, "auth"):
             auth = plugin.auth if isinstance(plugin.auth, AuthBase) else None
-            res = requests.get(
+            res = session.get(
                 constraints_url,
                 headers=headers,
                 auth=auth,
                 timeout=HTTP_REQ_TIMEOUT,
             )
         else:
-            res = requests.get(
+            res = session.get(
                 constraints_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
         res.raise_for_status()

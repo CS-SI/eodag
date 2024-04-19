@@ -1895,14 +1895,14 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
-    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    @mock.patch("eodag.utils.constraints.requests.Session.get", autospec=True)
     def test_plugins_search_buildsearchresult_discover_queryables(
-        self, mock_requests_constraints
+        self, mock_requests_session_constraints
     ):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        mock_requests_constraints.return_value = MockResponse(
+        mock_requests_session_constraints.return_value = MockResponse(
             constraints, status_code=200
         )
         queryables = self.search_plugin.discover_queryables(
