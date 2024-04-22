@@ -21,13 +21,13 @@ import os
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 
 import requests
-from requests_file import FileAdapter
 
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, path_to_uri
 from eodag.utils.exceptions import TimeOutError, ValidationError
+from eodag.utils.requests import LocalFileAdapter
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -176,7 +176,7 @@ def fetch_constraints(
         session = requests.Session()
         if not constraints_url.lower().startswith("http"):
             constraints_url = path_to_uri(os.path.abspath(constraints_url))
-            session.mount("file://", FileAdapter())
+            session.mount("file://", LocalFileAdapter())
         headers = USER_AGENT
         logger.debug("fetching constraints from %s", constraints_url)
         if hasattr(plugin, "auth"):
