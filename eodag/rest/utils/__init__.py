@@ -149,13 +149,12 @@ def get_next_link(
     if items_per_page * page >= total_results:
         return None
 
-    url: str
+    url = str(request.state.url)
     if request.method == "POST":
         body["page"] = page + 1
-        url = str(request.url)
     else:
         params["page"] = str(page + 1)
-        url = f"{request.state.url}?{urlencode(params)}"
+        url += f"?{urlencode(params)}"
 
     next: Dict[str, Any] = {
         "rel": "next",
