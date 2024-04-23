@@ -1002,34 +1002,6 @@ class QueryStringSearch(Search):
         return response
 
 
-class AwsSearch(QueryStringSearch):
-    """A specialisation of RestoSearch that modifies the way the EOProducts are built
-    from the search results"""
-
-    def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
-    ) -> List[EOProduct]:
-        """Transform metadata from provider representation to eodag representation"""
-        normalized: List[EOProduct] = []
-        logger.debug("Adapting plugin results to eodag product representation")
-        for result in results:
-            ref = result["properties"]["title"].split("_")[5]
-            year = result["properties"]["completionDate"][0:4]
-            month = str(int(result["properties"]["completionDate"][5:7]))
-            day = str(int(result["properties"]["completionDate"][8:10]))
-
-            properties = QueryStringSearch.extract_properties[self.config.result_type](
-                result, self.get_metadata_mapping(kwargs.get("productType"))
-            )
-
-            properties["downloadLink"] = (
-                "s3://tiles/{ref[1]}{ref[2]}/{ref[3]}/{ref[4]}{ref[5]}/{year}/"
-                "{month}/{day}/0/"
-            ).format(**locals())
-            normalized.append(EOProduct(self.provider, properties, **kwargs))
-        return normalized
-
-
 class ODataV4Search(QueryStringSearch):
     """A specialisation of a QueryStringSearch that does a two step search to retrieve
     all products metadata"""
