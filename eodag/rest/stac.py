@@ -36,9 +36,13 @@ from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
+    NOT_AVAILABLE,
     format_metadata,
     get_metadata_path,
+    mtd_cfg_as_conversion_and_querypath,
+    properties_from_json,
 )
+from eodag.config import load_stac_provider_config
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -49,6 +53,7 @@ from eodag.utils import (
     get_ext_stac_collection,
     guess_file_type,
     jsonpath_parse_dict_items,
+    obj_md5sum,
     string_to_jsonpath,
     update_nested_dict,
     urljoin,
@@ -631,6 +636,91 @@ class StacCollection(StacCommon):
             logger.info(f"Fetching external STAC collection for {product_type['ID']}")
             ext_stac_collection = get_ext_stac_collection(ext_stac_collection_path)
             cls.ext_stac_collections[product_type["ID"]] = ext_stac_collection
+
+    @classmethod
+    def _load_external_product_type_metadata(
+        cls,
+        product_type_id: str,
+        product_type_conf: Dict[str, Any],
+        parsable_metadata: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Loads external enhanced metadata for a given product type.
+
+        The existing product type configuration is merged with the one from the external file and
+        the result is returned.
+
+        Existing keys are not updated. Lists are merged also for existing keys.
+        Only the keys defined in `search.discover_product_types.generic_product_type_parsable_metadata`
+        from `eodag/resources/stac_provider.yml` are loaded into the configuration.
+
+        :param product_type_id: Product type ID to update with the external metadata.
+        :type product_type_id: str
+        :param product_type_conf: Product type configuration to update with the external
+            metadata.
+        :type product_type_conf: Dict[str, Any]
+        :param parsable_metadata: Parsable metadata.
+        :type parsable_metadata: Dict[str, Any]
+        :returns: The enhanced product type dictionary, None if no external metadata is available
+        :rtype: Optional[Dict[str, Any]]
+        """
+        external_stac_collection_path = product_type_conf.get("stacCollection")
+        if not external_stac_collection_path:
+            return None
+        enhanced_product_type_conf = deepcopy(product_type_conf)
+        logger.info(
+            f"Fetching external enhanced product type metadata for {product_type_id}"
+        )
+        external_stac_collection = get_ext_stac_collection(
+            external_stac_collection_path
+        )
+        # Loading external enhanced product types metadata
+        external_stac_collection_parsed = properties_from_json(
+            external_stac_collection,
+            parsable_metadata,
+        )
+        # Merge `external_stac_collection_parsed` into `enhanced_product_type_conf`
+        for ext_cfg_k, ext_cfg_v in external_stac_collection_parsed.items():
+            old_value = enhanced_product_type_conf.get(ext_cfg_k)
+            if old_value is None:
+                enhanced_product_type_conf[ext_cfg_k] = ext_cfg_v
+            elif ext_cfg_k in ("instrument", "platformSerialIdentifier", "keywords"):
+                merged_values = old_value.split(",")
+                new_values = ext_cfg_v.split(",")
+                for v in new_values:
+                    if v != NOT_AVAILABLE and v not in merged_values:
+                        merged_values.append(v)
+                enhanced_product_type_conf[ext_cfg_k] = ",".join(merged_values)
+        return enhanced_product_type_conf
+
+    @classmethod
+    def fetch_external_product_types_metadata(
+        cls, eodag_api: EODataAccessGateway
+    ) -> None:
+        """Fetch external product types metadata and update EODAG if needed"""
+        stac_provider_config = load_stac_provider_config()
+        parsable_metadata = stac_provider_config["search"]["discover_product_types"][
+            "generic_product_type_parsable_metadata"
+        ]
+        parsable_metadata: Dict[str, Any] = mtd_cfg_as_conversion_and_querypath(
+            parsable_metadata
+        )
+        # load external product type metadata
+        for (
+            product_type_id,
+            product_type_conf,
+        ) in eodag_api.product_types_config.items():
+            enhanced_product_type = cls._load_external_product_type_metadata(
+                product_type_id,
+                product_type_conf,
+                parsable_metadata,
+            )
+            if enhanced_product_type:
+                product_type_conf.update(enhanced_product_type)
+        new_md5 = obj_md5sum(eodag_api.product_types_config.source)
+        if new_md5 != eodag_api.product_types_config_md5:
+            eodag_api.product_types_config_md5 = new_md5
+            # rebuild index after product types list update
+            eodag_api.build_index()
 
     def __init__(
         self,

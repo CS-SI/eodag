@@ -689,6 +689,7 @@ def crunch_products(
 def eodag_api_init() -> None:
     """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
     eodag_api.fetch_product_types_list()
+    StacCollection.fetch_external_product_types_metadata(eodag_api)
     StacCollection.fetch_external_stac_collections(eodag_api)
 
     # pre-build search plugins

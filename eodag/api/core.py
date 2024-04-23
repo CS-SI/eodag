@@ -35,11 +35,7 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag.api.product.metadata_mapping import (
-    NOT_AVAILABLE,
-    mtd_cfg_as_conversion_and_querypath,
-    properties_from_json,
-)
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PluginConfig,
@@ -70,7 +66,6 @@ from eodag.utils import (
     _deprecated,
     copy_deepcopy,
     deepcopy,
-    get_ext_stac_collection,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
@@ -221,8 +216,6 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
         self.search_errors: Set = set()
-
-        self._fetch_external_product_types_metadata()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -576,76 +569,6 @@ class EODataAccessGateway:
             )
         # Return the product_types sorted in lexicographic order of their ID
         return sorted(product_types, key=itemgetter("ID"))
-
-    def _load_external_product_type_metadata(
-        self, product_type_id: str, product_type_conf: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Loads external enhanced metadata for a given product type.
-
-        The existing product type configuration is merged with the one from the external file and
-        the result is returned.
-
-        Existing keys are not updated. Lists are merged also for existing keys.
-        Only the keys defined in `search.discover_product_types.generic_product_type_parsable_metadata`
-        from `eodag/resources/stac_provider.yml` are loaded into the configuration.
-
-        :param product_type_id: Product type ID to update with the external metadata.
-        :type product_type_id: str
-        :param product_type_conf: Product type configuration to update with the external
-            metadata.
-        :type product_type_conf: Dict[str, Any]
-        :returns: The enhanced product type dictionary, None if no external metadata is available
-        :rtype: Optional[Dict[str, Any]]
-        """
-        external_stac_collection_path = product_type_conf.get("stacCollection")
-        if not external_stac_collection_path:
-            return None
-        enhanced_product_type_conf = deepcopy(product_type_conf)
-        logger.info(
-            f"Fetching external enhanced product type metadata for {product_type_id}"
-        )
-        stac_provider_config = load_stac_provider_config()
-        parsable_metadata = stac_provider_config["search"]["discover_product_types"][
-            "generic_product_type_parsable_metadata"
-        ]
-        parsable_metadata = mtd_cfg_as_conversion_and_querypath(parsable_metadata)
-        external_stac_collection = get_ext_stac_collection(
-            external_stac_collection_path
-        )
-        # Loading external enhanced product types metadata
-        external_stac_collection_parsed = properties_from_json(
-            external_stac_collection,
-            parsable_metadata,
-        )
-        # Merge `external_stac_collection_parsed` into `enhanced_product_type_conf`
-        for ext_cfg_k, ext_cfg_v in external_stac_collection_parsed.items():
-            old_value = enhanced_product_type_conf.get(ext_cfg_k)
-            if old_value is None:
-                enhanced_product_type_conf[ext_cfg_k] = ext_cfg_v
-            elif ext_cfg_k in ("instrument", "platformSerialIdentifier", "keywords"):
-                merged_values = old_value.split(",")
-                new_values = ext_cfg_v.split(",")
-                for v in new_values:
-                    if v != NOT_AVAILABLE and v not in merged_values:
-                        merged_values.append(v)
-                enhanced_product_type_conf[ext_cfg_k] = ",".join(merged_values)
-        return enhanced_product_type_conf
-
-    def _fetch_external_product_types_metadata(self) -> None:
-        """Fetch external product types metadata and update if needed"""
-        # load external product type metadata
-        for product_type_id, product_type_conf in self.product_types_config.items():
-            enhanced_product_type = self._load_external_product_type_metadata(
-                product_type_id,
-                product_type_conf,
-            )
-            if enhanced_product_type:
-                product_type_conf.update(enhanced_product_type)
-        new_md5 = obj_md5sum(self.product_types_config.source)
-        if new_md5 != self.product_types_config_md5:
-            self.product_types_config_md5 = new_md5
-            # rebuild index after product types list update
-            self.build_index()
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
