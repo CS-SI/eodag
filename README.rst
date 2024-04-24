@@ -3,31 +3,35 @@
 
 |
 
-.. image:: https://badge.fury.io/py/eodag.svg
+.. |pypi-badge| image:: https://badge.fury.io/py/eodag.svg
     :target: https://badge.fury.io/py/eodag
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/eodag
+.. |conda-badge| image:: https://img.shields.io/conda/vn/conda-forge/eodag
     :target: https://anaconda.org/conda-forge/eodag
 
-.. image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
+.. |rtd-badge| image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
 
-.. image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
+.. |gha-badge| image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
     :target: https://github.com/CS-SI/eodag/actions
 
-.. image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
+.. |ghi-badge| image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
     :target: https://github.com/CS-SI/eodag/issues
 
-.. image:: https://mybinder.org/badge_logo.svg
+.. |binder-badge| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb
+
+|pypi-badge| |conda-badge| |rtd-badge| |gha-badge| |ghi-badge| |binder-badge|
 
 |
 
-.. image:: https://img.shields.io/pypi/l/eodag.svg
+.. |license-badge| image:: https://img.shields.io/pypi/l/eodag.svg
     :target: https://pypi.org/project/eodag/
 
-.. image:: https://img.shields.io/pypi/pyversions/eodag.svg
+.. |versions-badge| image:: https://img.shields.io/pypi/pyversions/eodag.svg
     :target: https://pypi.org/project/eodag/
+
+|license-badge| |versions-badge|
 
 |
 
