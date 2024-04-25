@@ -50,7 +50,6 @@ from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 
 import click
-import uvicorn
 
 from eodag.api.core import EODataAccessGateway
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
@@ -645,6 +644,13 @@ def serve_rest(
 ) -> None:
     """Serve EODAG functionalities through a WEB interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
+    try:
+        import uvicorn
+    except ImportError:
+        raise ImportError(
+            "Feature not available, please install eodag[server] or eodag[all]"
+        )
+
     # Set the settings of the app
     # IMPORTANT: the order of imports counts here (first we override the settings,
     # then we import the app so that the updated settings is taken into account in
