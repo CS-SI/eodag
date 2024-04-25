@@ -1818,7 +1818,7 @@
       productType: sentinel-2-l1c
       metadata_mapping:
         id:
-          - id
+          - '{{"query":{{"s2:product_uri":{{"eq":"{id}.SAFE"}}}}}}'
           - '{$.properties."s2:product_uri"#remove_extension}'
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
@@ -1843,7 +1843,7 @@
       productType: sentinel-2-l2a
       metadata_mapping:
         id:
-          - id
+          - '{{"query":{{"s2:product_uri":{{"eq":"{id}.SAFE"}}}}}}'
           - '{$.properties."s2:product_uri"#remove_extension}'
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
