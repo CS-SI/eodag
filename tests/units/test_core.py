@@ -29,7 +29,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
 
-from pkg_resources import resource_filename
+from pkg_resources import DistributionNotFound, resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -975,6 +975,27 @@ class TestCore(TestCoreBase):
         finally:
             os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
+
+    @mock.patch("eodag.plugins.manager.pkg_resources.iter_entry_points", autospec=True)
+    def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
+        """Providers needing skipped plugin must be pruned on init"""
+        empty_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+
+        def skip_qssearch(topic):
+            ep = mock.MagicMock()
+            if topic == "eodag.plugins.search":
+                ep.name = "QueryStringSearch"
+                ep.load = mock.MagicMock(side_effect=DistributionNotFound())
+            return [ep]
+
+        mock_iter_ep.side_effect = skip_qssearch
+
+        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        self.assertNotIn("peps", dag.available_providers())
+        self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
+        dag._plugins_manager.skipped_plugins = []
 
     def test_prune_providers_list_for_search_without_auth(self):
         """Providers needing auth for search but without auth plugin must be pruned on init"""

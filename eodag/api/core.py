@@ -38,6 +38,7 @@ from whoosh.qparser import QueryParser
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
+    PluginConfig,
     SimpleYamlProxyConfig,
     get_ext_product_types_conf,
     load_default_config,
@@ -403,6 +404,20 @@ class EODataAccessGateway:
         for provider in list(self.providers_config.keys()):
             conf = self.providers_config[provider]
 
+            # remove providers using skipped plugins
+            if [
+                v
+                for v in conf.__dict__.values()
+                if isinstance(v, PluginConfig)
+                and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
+            ]:
+                self.providers_config.pop(provider)
+                logger.debug(
+                    f"{provider}: provider needing unavailable plugin has been removed"
+                )
+                continue
+
+            # check authentication
             if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
                 credentials_exist = any(
                     [

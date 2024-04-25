@@ -75,7 +75,10 @@ class PluginManager:
 
     product_type_to_provider_config_map: Dict[str, List[ProviderConfig]]
 
+    skipped_plugins: List[str]
+
     def __init__(self, providers_config: Dict[str, ProviderConfig]) -> None:
+        self.skipped_plugins = []
         self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular
         # type to be available in the base plugin class's 'plugins' attribute.
@@ -92,6 +95,13 @@ class PluginManager:
             ):
                 try:
                     entry_point.load()
+                except pkg_resources.DistributionNotFound:
+                    logger.debug(
+                        "%s plugin skipped, eodag[%s] or eodag[all] needed",
+                        entry_point.name,
+                        ",".join(entry_point.extras),
+                    )
+                    self.skipped_plugins.append(entry_point.name)
                 except ImportError:
                     import traceback as tb
 
