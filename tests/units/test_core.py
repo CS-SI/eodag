@@ -1231,6 +1231,7 @@ class TestCore(TestCoreBase):
     def test_available_sortables(self):
         """available_sortables must return available sortable(s) and its (their)
         maximum number dict for providers which support the sorting feature"""
+        self.maxDiff = None
         expected_result = {
             "peps": None,
             "usgs": None,
@@ -1342,6 +1343,7 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": None,
             },
+            "dedl": {"max_sort_params": None, "sortables": []},
             "wekeo": None,
             "wekeo_cmems": None,
             "creodias_s3": {
