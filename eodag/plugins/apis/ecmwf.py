@@ -29,11 +29,11 @@ from ecmwfapi.api import APIException, Connection, get_apikey_values
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_MISSION_START_DATE,
     DEFAULT_PAGE,
     get_geometry_from_various,
     path_to_uri,

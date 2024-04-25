@@ -138,6 +138,9 @@ DEFAULT_ITEMS_PER_PAGE = 20
 # (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
+# default product-types start date
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
+
 
 def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
     """Simple decorator to mark functions/methods/classes as deprecated.
