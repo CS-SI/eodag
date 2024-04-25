@@ -911,22 +911,7 @@
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
     discover_product_types:
-      fetch_url: https://finder.creodias.eu/attributes.json
-      result_type: json
-      results_entry: 'collections[?billing=="free"]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
-        collection: '$.id'
-      generic_product_type_parsable_metadata:
-        abstract: '$.description'
-        instrument: '{$.summaries.instruments#csv_list}'
-        platform: '{$.summaries.constellation#csv_list}'
-        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-        processingLevel: '$.summaries."processing:level"'
-        keywords: '{$.keywords#csv_list}'
-        license: '$.license'
-        title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+      fetch_url: null
     metadata_mapping:
       uid: '$.id'
       productType:
@@ -5918,22 +5903,7 @@
       search_param: '{metadata}={{{metadata}}}'
       metadata_path: '$.properties.*'
     discover_product_types:
-      fetch_url: https://finder.creodias.eu/attributes.json
-      result_type: json
-      results_entry: 'collections[?billing=="free"]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
-        collection: '$.id'
-      generic_product_type_parsable_metadata:
-        abstract: '$.description'
-        instrument: '{$.summaries.instruments#csv_list}'
-        platform: '{$.summaries.constellation#csv_list}'
-        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-        processingLevel: '$.summaries."processing:level"'
-        keywords: '{$.keywords#csv_list}'
-        license: '$.license'
-        title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+      fetch_url: null
     metadata_mapping:
       uid: '$.id'
       productType:
