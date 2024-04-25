@@ -40,6 +40,7 @@ from eodag.api.product.metadata_mapping import (
     get_metadata_path,
 )
 from eodag.utils import (
+    DEFAULT_MISSION_START_DATE,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -63,7 +64,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.rest.stac")
 
-DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
 STAC_CATALOGS_PREFIX = "catalogs"
 
 

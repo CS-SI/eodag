@@ -41,11 +41,11 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.qssearch import PostJsonSearch
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_MISSION_START_DATE,
     DEFAULT_PAGE,
     Annotated,
     deepcopy,
