@@ -6417,6 +6417,7 @@
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/search
     need_auth: true
+    timeout: 60
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       geometry:
