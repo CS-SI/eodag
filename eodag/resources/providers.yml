@@ -6420,6 +6420,7 @@
     timeout: 60
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+      quicklook: '{thumbnail}'
     discover_product_types:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
       result_type: json
