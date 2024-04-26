@@ -340,6 +340,8 @@ class StacItem(StacCommon):
             "href": downloadlink_href,
             "type": "application/zip",
         }
+        if "storageStatus" in product.properties:
+            assets["downloadLink"]["storage:tier"] = product.properties["storageStatus"]
 
         # move origin asset urls to alternate links and replace with eodag-server ones
         if product.assets:

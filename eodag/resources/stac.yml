@@ -211,6 +211,7 @@ item:
     version: '$.product.properties.productVersion'
     view:sun_elevation: '$.product.properties.illuminationElevationAngle'
     view:sun_azimuth: '$.product.properties.illuminationAzimuthAngle'
+    order:status: '{$.product.properties.storageStatus#get_group_name((?P<succeeded>ONLINE)|(?P<shipping>STAGING)|(?P<orderable>OFFLINE))}'
   links:
     - rel: self
       title: "{item[id]}"
@@ -236,10 +237,12 @@ metadata_ignore:
 # extensions mapping {prefix: schema_url,}
 stac_extensions:
   eo: 'https://stac-extensions.github.io/eo/v1.0.0/schema.json'
+  order: 'https://stac-extensions.github.io/order/v1.1.0/schema.json'
   published: 'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json'
   processing: 'https://stac-extensions.github.io/processing/v1.0.0/schema.json'
   sar: 'https://stac-extensions.github.io/sar/v1.0.0/schema.json'
   sat: 'https://stac-extensions.github.io/sat/v1.0.0/schema.json'
+  storage: 'https://stac-extensions.github.io/storage/v1.0.0/schema.json'
   sci: 'https://stac-extensions.github.io/scientific/v1.0.0/schema.json'
   version: 'https://stac-extensions.github.io/version/v1.0.0/schema.json'
   view: 'https://stac-extensions.github.io/view/v1.0.0/schema.json'

@@ -220,6 +220,7 @@ class RequestTestCase(unittest.TestCase):
                             "parentIdentifier": None,
                             "sensorMode": None,
                             "quicklook": None,
+                            "storageStatus": ONLINE_STATUS,
                         },
                         "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                         "type": "Feature",
@@ -280,6 +281,7 @@ class RequestTestCase(unittest.TestCase):
                             "parentIdentifier": None,
                             "sensorMode": None,
                             "quicklook": None,
+                            "storageStatus": OFFLINE_STATUS,
                         },
                         "id": "578f1768-e66e-5b86-9363-b19f8931cc7c",
                         "type": "Feature",
@@ -479,6 +481,51 @@ class RequestTestCase(unittest.TestCase):
                 raise_errors=False,
             ),
         )
+
+    def test_items_response(self):
+        """Returned items properties must be mapped as expected"""
+        resp_json = self._request_valid(
+            f"search?collections={self.tested_product_type}",
+        )
+        res = resp_json.features
+        self.assertEqual(len(res), 2)
+        first_props = res[0]["properties"]
+        self.assertCountEqual(
+            res[0].keys(),
+            [
+                "type",
+                "stac_version",
+                "stac_extensions",
+                "bbox",
+                "collection",
+                "links",
+                "assets",
+                "id",
+                "geometry",
+                "properties",
+            ],
+        )
+        self.assertEqual(len(first_props["providers"]), 1)
+        self.assertCountEqual(
+            first_props["providers"][0].keys(),
+            ["name", "description", "roles", "url", "priority"],
+        )
+        self.assertEqual(first_props["providers"][0]["name"], "peps")
+        self.assertEqual(first_props["providers"][0]["roles"], ["host"])
+        self.assertEqual(first_props["providers"][0]["url"], "https://peps.cnes.fr")
+        self.assertEqual(first_props["datetime"], "2018-02-15T23:53:22.871Z")
+        self.assertEqual(first_props["start_datetime"], "2018-02-15T23:53:22.871Z")
+        self.assertEqual(first_props["end_datetime"], "2018-02-16T00:12:14.035Z")
+        self.assertEqual(first_props["license"], "proprietary")
+        self.assertEqual(first_props["platform"], "S1A")
+        self.assertEqual(first_props["instruments"], ["SAR-C SAR"])
+        self.assertEqual(first_props["eo:cloud_cover"], 0)
+        self.assertEqual(first_props["sat:absolute_orbit"], 20624)
+        self.assertEqual(first_props["sar:product_type"], "OCN")
+        self.assertEqual(first_props["order:status"], "succeeded")
+        self.assertEqual(res[0]["assets"]["downloadLink"]["storage:tier"], "ONLINE")
+        self.assertEqual(res[1]["assets"]["downloadLink"]["storage:tier"], "OFFLINE")
+        self.assertEqual(res[1]["properties"]["order:status"], "orderable")
 
     def test_not_found(self):
         """A request to eodag server with a not supported product type must return a 404 HTTP error code"""
