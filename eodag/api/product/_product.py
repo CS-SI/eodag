@@ -360,10 +360,15 @@ class EOProduct:
             else self.downloader_auth
         )
 
-        # resolve remote location if needed with downloader configuration
-        self.remote_location = urllib.parse.unquote(self.remote_location) % vars(
-            self.downloader.config
-        )
+        self.remote_location = urllib.parse.unquote(self.remote_location)
+        try:
+            # resolve remote location if needed with downloader configuration
+            self.remote_location = self.remote_location % vars(self.downloader.config)
+        except ValueError as e:
+            logger.debug(
+                f"Could not resolve product.remote_location ({self.remote_location})"
+                f" in download: {str(e)}"
+            )
         if not self.location.startswith("file"):
             self.location = urllib.parse.unquote(self.location)
 
