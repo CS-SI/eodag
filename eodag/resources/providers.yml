@@ -6648,7 +6648,7 @@
     LANDSAT_C2L2:
       productType: EO.NASA.DAT.LANDSAT.C2_L2
     # Danube HIS data
-    STAT.ICPDR.DAT.DANUBEHIS:
+    # STAT.ICPDR.DAT.DANUBEHIS:
     # DT Output
     DT_EXTREMES:
       productType: EO.ECMWF.DAT.DT_EXTREMES
