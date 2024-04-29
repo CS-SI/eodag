@@ -6269,7 +6269,7 @@
   priority: 0
   roles:
     - host
-  description: Destination Earth Digital Twin Outputs from Lumi
+  description: Destination Earth Digital Twin Outputs from LUMI through Polytope API
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
   search: !plugin
     type: BuildSearchResult
