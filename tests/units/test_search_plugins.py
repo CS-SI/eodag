@@ -1442,7 +1442,7 @@ class MockResponse:
 
 class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.get", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
     def setUp(self, mock_requests_get):
         super(TestSearchPluginDataRequestSearch, self).setUp()

@@ -85,7 +85,7 @@ COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
 
 
 def get_metadata_path(
-    map_value: Union[str, List[str]]
+    map_value: Union[str, List[str]],
 ) -> Tuple[Union[List[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
@@ -306,6 +306,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             time_delta_args = ast.literal_eval(time_delta_args_str)
             dt += timedelta(*time_delta_args)
             return dt.isoformat()[:10]
+
+        @staticmethod
+        def convert_to_non_separated_date(datetime_string):
+            iso_date = MetadataFormatter.convert_to_iso_date(datetime_string)
+            return iso_date.replace("-", "")
 
         @staticmethod
         def convert_to_rounded_wkt(value: BaseGeometry) -> str:
@@ -551,8 +556,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
-            cmin, cmax, cstep = [x.strip() for x in args.split(",")]
-            return string[int(cmin) : int(cmax) : int(cstep)]
+            cmin, cmax, cstep = [
+                int(x.strip()) if x.strip().lstrip("-").isdigit() else None
+                for x in args.split(",")
+            ]
+            return string[cmin:cmax:cstep]
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:

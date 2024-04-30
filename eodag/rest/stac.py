@@ -266,8 +266,7 @@ class StacItem(StacCommon):
                 else f"{url_parts.netloc}{url_parts.path}"
             )
             # add provider to query-args
-            if self.provider:
-                query_dict.update(provider=[self.provider])
+            query_dict.update(provider=[product.provider])
             # add datacube query-string to query-args
             if _dc_qs:
                 query_dict.update(_dc_qs=_dc_qs)
