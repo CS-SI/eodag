@@ -194,7 +194,7 @@ latex_documents = [
         master_doc,
         "eodag.tex",
         "eodag Documentation",
-        "CS GROUP - France (CSSI)",
+        "CS GROUP - France",
         "manual",
     )
 ]
