@@ -137,7 +137,9 @@ app = FastAPI(lifespan=lifespan, title="EODAG", docs_url="/api.html")
 stac_api_config = load_stac_api_config()
 
 
-@router.get("/api", tags=["Capabilities"], include_in_schema=False)
+@router.api_route(
+    methods=["GET", "HEAD"], path="/api", tags=["Capabilities"], include_in_schema=False
+)
 def eodag_openapi() -> Dict[str, Any]:
     """Customized openapi"""
     logger.debug("URL: /api")
@@ -348,7 +350,7 @@ async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
     )
 
 
-@router.get("/", tags=["Capabilities"])
+@router.api_route(methods=["GET", "HEAD"], path="/", tags=["Capabilities"])
 def catalogs_root(request: Request) -> Any:
     """STAC catalogs root"""
     logger.debug("URL: %s", request.url)
@@ -362,7 +364,7 @@ def catalogs_root(request: Request) -> Any:
     return jsonable_encoder(response)
 
 
-@router.get("/conformance", tags=["Capabilities"])
+@router.api_route(methods=["GET", "HEAD"], path="/conformance", tags=["Capabilities"])
 def conformance() -> Any:
     """STAC conformance"""
     logger.debug("URL: /conformance")
@@ -371,7 +373,11 @@ def conformance() -> Any:
     return jsonable_encoder(response)
 
 
-@router.get("/extensions/oseo/json-schema/schema.json", include_in_schema=False)
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/extensions/oseo/json-schema/schema.json",
+    include_in_schema=False,
+)
 def stac_extension_oseo(request: Request) -> Any:
     """STAC OGC / OpenSearch extension for EO"""
     logger.debug("URL: %s", request.url)
@@ -380,8 +386,9 @@ def stac_extension_oseo(request: Request) -> Any:
     return jsonable_encoder(response)
 
 
-@router.get(
-    "/collections/{collection_id}/items/{item_id}/download",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections/{collection_id}/items/{item_id}/download",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -403,8 +410,9 @@ def stac_collections_item_download(
     )
 
 
-@router.get(
-    "/collections/{collection_id}/items/{item_id}/download/{asset_filter}",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections/{collection_id}/items/{item_id}/download/{asset_filter}",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -427,8 +435,9 @@ def stac_collections_item_download_asset(
     )
 
 
-@router.get(
-    "/collections/{collection_id}/items/{item_id}",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections/{collection_id}/items/{item_id}",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -456,8 +465,9 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
     return jsonable_encoder(item_collection["features"][0])
 
 
-@router.get(
-    "/collections/{collection_id}/items",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections/{collection_id}/items",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -493,8 +503,9 @@ def stac_collections_items(
     )
 
 
-@router.get(
-    "/collections/{collection_id}/queryables",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections/{collection_id}/queryables",
     tags=["Capabilities"],
     include_in_schema=False,
     response_model_exclude_none=True,
@@ -527,8 +538,9 @@ def list_collection_queryables(
     return jsonable_encoder(queryables)
 
 
-@router.get(
-    "/collections/{collection_id}",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections/{collection_id}",
     tags=["Capabilities"],
     include_in_schema=False,
 )
@@ -549,8 +561,9 @@ def collection_by_id(collection_id: str, request: Request) -> Any:
     return jsonable_encoder(response)
 
 
-@router.get(
-    "/collections",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/collections",
     tags=["Capabilities"],
     include_in_schema=False,
 )
@@ -575,8 +588,9 @@ def collections(request: Request) -> Any:
     return jsonable_encoder(response)
 
 
-@router.get(
-    "/catalogs/{catalogs:path}/items/{item_id}/download",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/catalogs/{catalogs:path}/items/{item_id}/download",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -600,8 +614,9 @@ def stac_catalogs_item_download(
     )
 
 
-@router.get(
-    "/catalogs/{catalogs:path}/items/{item_id}/download/{asset_filter}",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/catalogs/{catalogs:path}/items/{item_id}/download/{asset_filter}",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -626,8 +641,9 @@ def stac_catalogs_item_download_asset(
     )
 
 
-@router.get(
-    "/catalogs/{catalogs:path}/items/{item_id}",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/catalogs/{catalogs:path}/items/{item_id}",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -656,8 +672,9 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     return jsonable_encoder(item_collection["features"][0])
 
 
-@router.get(
-    "/catalogs/{catalogs:path}/items",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/catalogs/{catalogs:path}/items",
     tags=["Data"],
     include_in_schema=False,
 )
@@ -702,8 +719,9 @@ def stac_catalogs_items(
     return jsonable_encoder(response)
 
 
-@router.get(
-    "/catalogs/{catalogs:path}",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/catalogs/{catalogs:path}",
     tags=["Capabilities"],
     include_in_schema=False,
 )
@@ -726,8 +744,9 @@ def stac_catalogs(catalogs: str, request: Request) -> Any:
     return jsonable_encoder(response)
 
 
-@router.get(
-    "/queryables",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/queryables",
     tags=["Capabilities"],
     response_model_exclude_none=True,
     include_in_schema=False,
@@ -752,8 +771,9 @@ def list_queryables(request: Request, provider: Optional[str] = None) -> Any:
     return jsonable_encoder(queryables)
 
 
-@router.get(
-    "/search",
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path="/search",
     tags=["STAC"],
     include_in_schema=False,
 )
@@ -822,8 +842,9 @@ def get_search(
     )
 
 
-@router.post(
-    "/search",
+@router.api_route(
+    methods=["POST", "HEAD"],
+    path="/search",
     tags=["STAC"],
     include_in_schema=False,
 )
