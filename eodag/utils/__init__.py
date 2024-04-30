@@ -20,6 +20,7 @@
 Everything that does not fit into one of the specialised categories of utilities in
 this package should go here
 """
+
 from __future__ import annotations
 
 import ast
@@ -835,7 +836,7 @@ def list_items_recursive_apply(
 
 
 def items_recursive_sort(
-    input_obj: Union[List[Any], Dict[Any, Any]]
+    input_obj: Union[List[Any], Dict[Any, Any]],
 ) -> Union[List[Any], Dict[Any, Any]]:
     """Recursive sort dict items contained in input object (dict or list)
 
@@ -1307,8 +1308,9 @@ def get_bucket_name_and_prefix(
         prefix = path
     elif bucket_path_level is not None:
         parts = path.split("/")
-        bucket, prefix = parts[bucket_path_level], "/".join(
-            parts[(bucket_path_level + 1) :]
+        bucket, prefix = (
+            parts[bucket_path_level],
+            "/".join(parts[(bucket_path_level + 1) :]),
         )
 
     return bucket, prefix
@@ -1442,12 +1444,19 @@ class StreamResponse:
 def guess_file_type(file: str) -> Optional[str]:
     """guess the mime type of a file or URL based on its extension"""
     mimetypes.add_type("text/xml", ".xsd")
+    mimetypes.add_type("application/x-grib", ".grib")
     mime_type, _ = mimetypes.guess_type(file, False)
     return mime_type
 
 
-def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
+def guess_extension(type: str) -> Optional[str]:
+    """guess extension from mime type"""
+    mimetypes.add_type("text/xml", ".xsd")
+    mimetypes.add_type("application/x-grib", ".grib")
+    return mimetypes.guess_extension(type, strict=False)
 
+
+def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     """
     Returns an SSL context based on ssl_verify argument.
     :param ssl_verify: ssl_verify parameter

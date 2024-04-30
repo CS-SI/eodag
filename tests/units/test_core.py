@@ -124,6 +124,8 @@ class TestCore(TestCoreBase):
         "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3", "wekeo"],
         "COP_DEM_GLO90_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "wekeo"],
+        "DT_CLIMATE_ADAPTATION": ["dedt_lumi"],
+        "DT_EXTREMES": ["dedt_lumi"],
         "EEA_DAILY_VI": ["wekeo"],
         "EFAS_FORECAST": ["cop_cds", "wekeo"],
         "EFAS_HISTORICAL": ["cop_cds", "wekeo"],
@@ -404,6 +406,7 @@ class TestCore(TestCoreBase):
         "wekeo",
         "wekeo_cmems",
         "creodias_s3",
+        "dedt_lumi",
     ]
 
     def setUp(self):
@@ -1301,6 +1304,7 @@ class TestCore(TestCoreBase):
             "ecmwf": None,
             "cop_ads": None,
             "cop_cds": None,
+            "dedt_lumi": None,
             "sara": {
                 "sortables": [
                     "startTimeFromAscendingNode",

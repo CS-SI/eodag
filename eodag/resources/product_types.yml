@@ -4007,6 +4007,32 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
 
+# DE DT Outputs-----------------------------------------------------------------------
+DT_EXTREMES:
+  abstract: |
+    The Digital Twin on Weather-Induced and Geophysical Extremes provides capabilities for the assessment and prediction of environmental extremes in support of risk assessment and management.
+  instrument:
+  platform: Digital Twin
+  platformSerialIdentifier: DT
+  processingLevel:
+  keywords: DT,DE,Destination-Earth,Digital-Twin,Weather,Geophysical,Extremes
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Weather and Geophysical Extremes Digital Twin (DT)
+  missionStartDate: "2020-01-01T00:00:00Z"
+DT_CLIMATE_ADAPTATION:
+  abstract: |
+    The Digital Twin on Climate Change Adaptation support the analysis and testing of scenarios. This in turn will support sustainable development and climate adaptation and mitigation policy-making at multi-decadal timescales, at regional and national levels.
+  instrument:
+  platform: Digital Twin
+  platformSerialIdentifier: DT
+  processingLevel:
+  keywords: DT,DE,Destination-Earth,Digital-Twin,Climate,Change,Adaptation
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Climate Change Adaptation Digital Twin (DT)
+  missionStartDate: "2020-01-01T00:00:00Z"
+
 # GENERIC----------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

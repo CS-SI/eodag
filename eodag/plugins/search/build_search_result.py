@@ -165,7 +165,11 @@ class BuildPostSearchResult(PostJsonSearch):
             )
 
         # use all available query_params to parse properties
-        result = dict(result, **sorted_unpaginated_query_params)
+        result = dict(
+            result,
+            **sorted_unpaginated_query_params,
+            qs=sorted_unpaginated_query_params,
+        )
 
         # remove unwanted query params
         for param in getattr(self.config, "remove_from_query", []):
@@ -192,9 +196,12 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s" % (
+        product_id = "%s_%s_%s_%s" % (
             id_prefix,
             parsed_properties["startTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            parsed_properties["completionTimeFromAscendingNode"]
             .split("T")[0]
             .replace("-", ""),
             query_hash,
@@ -203,9 +210,8 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # update downloadLink and orderLink
         parsed_properties["_dc_qs"] = quote_plus(qs)
-        parsed_properties["downloadLink"] += f"?{qs}"
-        if "orderLink" in parsed_properties:
-            parsed_properties["orderLink"] += f"?{qs}"
+        if parsed_properties["downloadLink"] != "Not Available":
+            parsed_properties["downloadLink"] += f"?{qs}"
 
         # parse metadata needing downloadLink
         dl_path = Fields("downloadLink")
@@ -382,7 +388,12 @@ class BuildSearchResult(BuildPostSearchResult):
         if _dc_qs is not None:
             # if available, update search params using datacube query-string
             _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
-            if "/" in _dc_qp.get("date", ""):
+            if "/to/" in _dc_qp.get("date", ""):
+                (
+                    params["startTimeFromAscendingNode"],
+                    params["completionTimeFromAscendingNode"],
+                ) = _dc_qp["date"].split("/to/")
+            elif "/" in _dc_qp.get("date", ""):
                 (
                     params["startTimeFromAscendingNode"],
                     params["completionTimeFromAscendingNode"],
@@ -505,7 +516,7 @@ class BuildSearchResult(BuildPostSearchResult):
             )
             # query params that are not in constraints but might be default queryables
             if len(constraint_params) == 1 and "not_available" in constraint_params:
-                not_queryables = set()
+                not_queryables: Set[str] = set()
                 for constraint_param in constraint_params["not_available"]["enum"]:
                     param = CommonQueryables.get_queryable_from_alias(constraint_param)
                     if param in dict(
@@ -516,7 +527,7 @@ class BuildSearchResult(BuildPostSearchResult):
                         not_queryables.add(constraint_param)
                 if not_queryables:
                     raise ValidationError(
-                        f"parameter(s) {str(not_queryables)} not queryable"
+                        f"parameter(s) {not_queryables} not queryable"
                     )
                 else:
                     # get constraints again without common queryables
@@ -526,7 +537,7 @@ class BuildSearchResult(BuildPostSearchResult):
                         )
                     )
 
-        field_definitions = dict()
+        field_definitions: Dict[str, Any] = {}
         for json_param, json_mtd in constraint_params.items():
             param = (
                 get_queryable_from_provider(json_param, self.config.metadata_mapping)
@@ -539,4 +550,4 @@ class BuildSearchResult(BuildPostSearchResult):
             field_definitions[param] = get_args(annotated_def)
 
         python_queryables = create_model("m", **field_definitions).model_fields
-        return dict(default_queryables, **model_fields_to_annotated(python_queryables))
+        return {**default_queryables, **model_fields_to_annotated(python_queryables)}

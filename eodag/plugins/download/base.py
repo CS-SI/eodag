@@ -668,7 +668,6 @@ class Download(PluginTopic):
                                     f" {self.provider}, {e}"
                                 )
                             not_available_info = str(e)
-                            pass
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
                         wait_seconds = (
@@ -679,7 +678,7 @@ class Download(PluginTopic):
                             f"[Retry #{retry_count}] Waited {wait_seconds}s, trying again to download ordered product"
                             f" (retry every {wait}' for {timeout}')"
                         )
-                        logger.debug(not_available_info)
+                        logger.info(not_available_info)
                         # Retry-After info from Response header
                         if hasattr(self, "stream"):
                             retry_server_info = self.stream.headers.get(
@@ -689,7 +688,7 @@ class Download(PluginTopic):
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
-                        logger.info(retry_info)
+                        logger.debug(retry_info)
                         nb_info.display_html(retry_info)
                         product.next_try = datetime_now
                     elif datetime_now < product.next_try and datetime_now < stop_time:
@@ -701,7 +700,7 @@ class Download(PluginTopic):
                             f"[Retry #{retry_count}] Waiting {wait_seconds}s until next download try"
                             f" for ordered product (retry every {wait}' for {timeout}')"
                         )
-                        logger.debug(not_available_info)
+                        logger.info(not_available_info)
                         # Retry-After info from Response header
                         if hasattr(self, "stream"):
                             retry_server_info = self.stream.headers.get(
@@ -711,7 +710,7 @@ class Download(PluginTopic):
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
-                        logger.info(retry_info)
+                        logger.debug(retry_info)
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:

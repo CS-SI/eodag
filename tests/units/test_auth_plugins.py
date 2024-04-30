@@ -130,7 +130,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         auth_plugin.validate_config_credentials()
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
     def test_plugins_auth_tokenauth_text_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using text token"""
@@ -148,7 +148,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
-        assert args[1] == auth_plugin.config.auth_uri
+        assert kwargs["url"] == auth_plugin.config.auth_uri
         assert kwargs["data"] == auth_plugin.config.credentials
         assert kwargs["headers"] == dict(auth_plugin.config.headers, **USER_AGENT)
 
@@ -159,7 +159,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         assert req.headers["foo"] == "bar"
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
     def test_plugins_auth_tokenauth_json_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token"""
