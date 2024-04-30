@@ -17,6 +17,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from datetime import datetime
 from importlib.metadata import metadata
 from typing import Dict
 
@@ -79,7 +80,7 @@ master_doc = "index"
 # General information about the project.
 project = metadata("eodag")["Name"]
 author = metadata("eodag")["Author"]
-copyright = "2018-2022, CS GROUP - France, https://www.csgroup.eu"
+copyright = f"2018-{datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
