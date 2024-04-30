@@ -79,7 +79,7 @@ class S3RestDownload(Download):
         * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-         * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
+        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
 
     :type config: :class:`~eodag.config.PluginConfig`
     """
