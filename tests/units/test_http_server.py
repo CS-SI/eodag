@@ -406,7 +406,9 @@ class RequestTestCase(unittest.TestCase):
             self.assertIn(link["rel"], known_rel)
             # must start with app base-url
             assert link["href"].startswith(str(self.app.base_url))
-            # must be valid
+            # HEAD must be valid
+            self._request_valid_raw(link["href"], method="HEAD")
+            # GET must be valid
             self._request_valid_raw(link["href"])
 
             if link["rel"] in required_links_rel:
