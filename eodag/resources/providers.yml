@@ -6442,12 +6442,12 @@
         - !!python/tuple [startTimeFromAscendingNode, ASC]
       sort_param_mapping:
         id: id
-        startTimeFromAscendingNode: properties.datetime
-        creationDate: properties.created
-        modificationDate: properties.updated
-        platformSerialIdentifier: properties.platform
-        resolution: properties.gsd
-        cloudCover: properties.eo:cloud_cover
+        startTimeFromAscendingNode: datetime
+        creationDate: created
+        modificationDate: updated
+        platformSerialIdentifier: platform
+        resolution: gsd
+        cloudCover: eo:cloud_cover
   download: !plugin
     type: HTTPDownload
     base_uri: https://hda.data.destination-earth.eu/stac
