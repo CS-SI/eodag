@@ -1352,6 +1352,7 @@ class PostJsonSearch(QueryStringSearch):
             if info_message:
                 logger.info(info_message)
             logger.debug("Query parameters: %s" % self.query_params)
+            logger.debug("Query kwargs: %s" % kwargs)
             response = requests.post(
                 url,
                 json=self.query_params,

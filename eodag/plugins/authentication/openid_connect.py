@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 import re
 import string
 from random import SystemRandom
@@ -39,6 +40,9 @@ if TYPE_CHECKING:
     from requests import PreparedRequest, Response
 
     from eodag.config import PluginConfig
+
+
+logger = logging.getLogger("eodag.auth.openid_connect")
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -343,4 +347,5 @@ class CodeAuthorizedAuth(AuthBase):
 
         elif self.where == "header":
             request.headers["Authorization"] = "Bearer {}".format(self.token)
+        logger.debug(f"PreparedRequest: {request.__dict__}")
         return request
