@@ -6427,7 +6427,7 @@
       results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
-        collection: '$.id'
+        productType: '$.id'
       generic_product_type_parsable_metadata:
         abstract: '$.description'
         keywords: '{$.keywords#csv_list}'
