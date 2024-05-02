@@ -177,12 +177,13 @@ class S3RestDownload(Download):
             logger.debug("Retrieving product content from %s", nodes_list_url)
 
             ssl_verify = getattr(self.config, "ssl_verify", True)
+            timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
             bucket_contents = requests.get(
                 nodes_list_url,
                 auth=auth,
                 headers=USER_AGENT,
-                timeout=HTTP_REQ_TIMEOUT,
+                timeout=timeout,
                 verify=ssl_verify,
             )
             try:

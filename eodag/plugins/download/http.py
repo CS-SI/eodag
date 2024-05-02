@@ -165,6 +165,7 @@ class HTTPDownload(Download):
 
         order_method = getattr(self.config, "order_method", "GET").upper()
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         OrderKwargs = TypedDict(
             "OrderKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
         )
@@ -188,7 +189,7 @@ class HTTPDownload(Download):
                 method=order_method,
                 url=order_url,
                 auth=auth,
-                timeout=HTTP_REQ_TIMEOUT,
+                timeout=timeout,
                 headers=headers,
                 verify=ssl_verify,
                 **order_kwargs,
@@ -212,7 +213,7 @@ class HTTPDownload(Download):
                     self._check_auth_exception(e)
                 return self.order_response_process(response, product)
         except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+            raise TimeOutError(exc, timeout=timeout) from exc
 
     def order_response_process(
         self, response: Response, product: EOProduct
@@ -281,6 +282,8 @@ class HTTPDownload(Download):
         status_config = getattr(self.config, "order_status", {})
         success_code: Optional[int] = status_config.get("success", {}).get("http_code")
 
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+
         def _request(
             url: str,
             method: str = "GET",
@@ -341,6 +344,7 @@ class HTTPDownload(Download):
                 status_request_method,
                 status_request.get("headers"),
                 json_data,
+                timeout,
             )
             json_response = response.json()
             if not isinstance(json_response, dict):
@@ -405,7 +409,7 @@ class HTTPDownload(Download):
         if config_on_success.get("need_search"):
             logger.debug(f"Search for new location: {product.properties['searchLink']}")
             try:
-                response = _request(product.properties["searchLink"])
+                response = _request(product.properties["searchLink"], timeout=timeout)
             except RequestException as e:
                 logger.warning(
                     "%s order status could not be checked, request returned %s",
@@ -1215,6 +1219,7 @@ class HTTPDownload(Download):
     ) -> int:
         total_size = 0
 
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
         # loop for assets size & filename
         for asset in assets_values:
@@ -1224,7 +1229,7 @@ class HTTPDownload(Download):
                     asset["href"],
                     auth=auth,
                     headers=USER_AGENT,
-                    timeout=HTTP_REQ_TIMEOUT,
+                    timeout=timeout,
                 ).headers
 
                 if not getattr(asset, "size", 0):
