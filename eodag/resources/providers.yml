@@ -6413,6 +6413,11 @@
     - host
   description: DEDL STAC
   url: https://hda.data.destination-earth.eu/stac/
+  # anchors to avoid duplications
+  anchor_orderable_mm: &orderable_mm
+    orderLink: '$.assets.downloadLink.href'
+    downloadLink: '$.null'
+    assets: '$.null'
   search: !plugin
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/search
@@ -6421,6 +6426,7 @@
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       quicklook: '{thumbnail}'
+      storageStatus: '{$.properties."order:status"#get_group_name((?P<ONLINE>succeeded)|(?P<STAGING>shipping)|(?P<OFFLINE>orderable))}'
     discover_product_types:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
       result_type: json
@@ -6438,8 +6444,6 @@
       next_page_url_key_path: null
       max_items_per_page: 100
     sort:
-      sort_by_default:
-        - !!python/tuple [startTimeFromAscendingNode, ASC]
       sort_param_mapping:
         id: id
         startTimeFromAscendingNode: datetime
@@ -6452,6 +6456,25 @@
     type: HTTPDownload
     base_uri: https://hda.data.destination-earth.eu/stac
     auth_error_code: 403
+    timeout: 20
+    ssl_verify: true
+    flatten_top_dirs: true
+    order_enabled: True
+    order_method: GET
+    order_on_response:
+      metadata_mapping:
+        orderStatusLink: $.json.location
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.status
+        message: $.json.description
+      success:
+        http_code: 200
+      on_success:
+        metadata_mapping:
+          downloadLink: '{orderStatusLink}'
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: https://identity.data.destination-earth.eu/auth
@@ -6652,8 +6675,14 @@
     # DT Output
     DT_EXTREMES:
       productType: EO.ECMWF.DAT.DT_EXTREMES
+      metadata_mapping:
+        storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
+        <<: *orderable_mm
     DT_CLIMATE_ADAPTATION:
       productType: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
+      metadata_mapping:
+        storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
+        <<: *orderable_mm
     # Global Surface Water
     # EO.GSW.DAT.CHANGE:
     # EO.GSW.DAT.EXTENT:

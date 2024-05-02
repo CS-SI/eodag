@@ -1201,7 +1201,7 @@ def mtd_cfg_as_conversion_and_querypath(
             else:
                 parsed_path = path
 
-            if len(dest_dict[metadata]) == 2:
+            if isinstance(dest_dict[metadata], list) and len(dest_dict[metadata]) == 2:
                 dest_dict[metadata][1] = (conversion, parsed_path)
             else:
                 dest_dict[metadata] = (conversion, parsed_path)

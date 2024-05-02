@@ -347,5 +347,11 @@ class CodeAuthorizedAuth(AuthBase):
 
         elif self.where == "header":
             request.headers["Authorization"] = "Bearer {}".format(self.token)
-        logger.debug(f"PreparedRequest: {request.__dict__}")
+        logger.debug(
+            re.sub(
+                r"'Bearer [^']+'",
+                r"'Bearer ***'",
+                f"PreparedRequest: {request.__dict__}",
+            )
+        )
         return request

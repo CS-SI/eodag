@@ -332,63 +332,106 @@ class HTTPDownload(Download):
             status_url = parts._replace(query=None).geturl()
             query_dict = parse_qs(parts.query)
             if not query_dict and parts.query:
-                query_dict: Any = geojson.loads(parts.query)
+                query_dict = geojson.loads(parts.query)
             json_data = query_dict if query_dict else None
         else:
             status_url = product.properties["orderStatusLink"]
             json_data = None
 
-        try:
-            response = _request(
-                status_url,
-                status_request_method,
-                status_request.get("headers"),
-                json_data,
-                timeout,
-            )
+        # check header for success before full status request
+        skip_parsing_status_response = False
+        status_dict: Dict[str, Any] = {}
+        config_on_success: Dict[str, Any] = status_config.get("on_success", {})
+        on_success_mm = config_on_success.get("metadata_mapping", {})
+
+        status_response_content_needed = (
+            False
+            if not any([v.startswith("$.json.") for v in on_success_mm.values()])
+            else True
+        )
+
+        if success_code:
+            try:
+                response = _request(
+                    status_url,
+                    "HEAD",
+                    status_request.get("headers"),
+                    json_data,
+                    timeout,
+                )
+                if (
+                    response.status_code == success_code
+                    and not status_response_content_needed
+                ):
+                    # success and no need to get status response content
+                    skip_parsing_status_response = True
+            except RequestException as e:
+                logger.debug(e)
+
+        if not skip_parsing_status_response:
+            # status request
+            try:
+                response = _request(
+                    status_url,
+                    status_request_method,
+                    status_request.get("headers"),
+                    json_data,
+                    timeout,
+                )
+                if (
+                    response.status_code == success_code
+                    and not status_response_content_needed
+                ):
+                    # success and no need to get status response content
+                    skip_parsing_status_response = True
+            except RequestException as e:
+                raise DownloadError(
+                    "%s order status could not be checked, request returned %s"
+                    % (
+                        product.properties["title"],
+                        e,
+                    )
+                ) from e
+
+        if not skip_parsing_status_response:
+            # status request
             json_response = response.json()
             if not isinstance(json_response, dict):
                 raise RequestException("response content is not a dict")
-            status_dict: Dict[str, Any] = json_response
-        except RequestException as e:
-            raise DownloadError(
-                "%s order status could not be checked, request returned %s"
-                % (
-                    product.properties["title"],
-                    e,
+            status_dict = json_response
+
+            status_mm = status_config.get("metadata_mapping", {})
+            status_mm_jsonpath = (
+                mtd_cfg_as_conversion_and_querypath(
+                    status_mm,
                 )
-            ) from e
-
-        status_mm = status_config.get("metadata_mapping", {})
-        status_mm_jsonpath = (
-            mtd_cfg_as_conversion_and_querypath(
-                status_mm,
+                if status_mm
+                else {}
             )
-            if status_mm
-            else {}
-        )
-        logger.debug("Parsing order status response")
-        status_dict = properties_from_json(
-            {"json": response.json(), "headers": {**response.headers}},
-            status_mm_jsonpath,
-        )
-
-        # display progress percentage
-        if "percent" in status_dict:
-            status_percent = str(status_dict["percent"])
-            if status_percent.isdigit():
-                status_percent += "%"
-            logger.info(f"{product.properties['title']} order status: {status_percent}")
-
-        status_message = status_dict.get("message")
-        product.properties["orderStatus"] = status_dict.get("status")
-
-        # handle status error
-        errors: Dict[str, Any] = status_config.get("error", {})
-        if errors and errors.items() <= status_dict.items():
-            raise DownloadError(
-                f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
+            logger.debug("Parsing order status response")
+            status_dict = properties_from_json(
+                {"json": response.json(), "headers": {**response.headers}},
+                status_mm_jsonpath,
             )
+
+            # display progress percentage
+            if "percent" in status_dict:
+                status_percent = str(status_dict["percent"])
+                if status_percent.isdigit():
+                    status_percent += "%"
+                logger.info(
+                    f"{product.properties['title']} order status: {status_percent}"
+                )
+
+            status_message = status_dict.get("message")
+            product.properties["orderStatus"] = status_dict.get("status")
+
+            # handle status error
+            errors: Dict[str, Any] = status_config.get("error", {})
+            if errors and errors.items() <= status_dict.items():
+                raise DownloadError(
+                    f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
+                )
 
         success_status: Dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
@@ -400,7 +443,6 @@ class HTTPDownload(Download):
 
         product.properties["storageStatus"] = ONLINE_STATUS
 
-        config_on_success: Dict[str, Any] = status_config.get("on_success", {})
         if not config_on_success:
             # Nothing left to do
             return None
@@ -420,10 +462,13 @@ class HTTPDownload(Download):
 
         result_type = config_on_success.get("result_type", "json")
         result_entry = config_on_success.get("results_entry")
-        on_success_mm = config_on_success.get("metadata_mapping", {})
+
         on_success_mm_querypath = (
+            # append product.properties as input for on success response parsing
             mtd_cfg_as_conversion_and_querypath(
-                on_success_mm,
+                dict(
+                    {k: str(v) for k, v in product.properties.items()}, **on_success_mm
+                ),
             )
             if on_success_mm
             else {}
@@ -461,14 +506,17 @@ class HTTPDownload(Download):
                 else:
                     properties_update = {}
             else:
+                json_response = (
+                    response.json()
+                    if "application/json" in response.headers.get("Content-Type", "")
+                    else {}
+                )
                 if result_entry:
                     entry_jsonpath = string_to_jsonpath(result_entry, force=True)
-                    json_response = entry_jsonpath.find(response.json())
+                    json_response = entry_jsonpath.find(json_response)
                     raise NotImplementedError(
                         'result_entry in config.on_success is not yet supported for result_type "json"'
                     )
-                else:
-                    json_response = response.json()
                 if on_success_mm_querypath:
                     logger.debug(
                         "Parsing on-success metadata-mapping using order status response"
@@ -477,6 +525,10 @@ class HTTPDownload(Download):
                         {"json": json_response, "headers": {**response.headers}},
                         on_success_mm_querypath,
                     )
+                    # only keep properties to update (remove product.properties added for parsing)
+                    properties_update = {
+                        k: v for k, v in properties_update.items() if k in on_success_mm
+                    }
                 else:
                     properties_update = {}
         except Exception as e:
@@ -484,8 +536,7 @@ class HTTPDownload(Download):
                 raise
             logger.debug(e)
             raise DownloadError(
-                f"Could not parse result after order success for {product.properties['searchLink']}"
-                f" request. Please search and download {product} again"
+                f"Could not parse result after order success. Please search and download {product} again"
             ) from e
 
         # update product
