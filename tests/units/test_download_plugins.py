@@ -1105,20 +1105,29 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["orderLink"] = "http://somewhere/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
-        auth = auth_plugin.authenticate()
+        # customized timeout
+        timeout_backup = getattr(plugin.config, "timeout", None)
+        plugin.config.timeout = 10
+        try:
+            auth_plugin = self.get_auth_plugin(self.product.provider)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+            auth = auth_plugin.authenticate()
 
-        plugin.orderDownload(self.product, auth=auth)
+            plugin.orderDownload(self.product, auth=auth)
 
-        mock_request.assert_called_once_with(
-            method="GET",
-            url=self.product.properties["orderLink"],
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
+            mock_request.assert_called_once_with(
+                method="GET",
+                url=self.product.properties["orderLink"],
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=10,
+                verify=True,
+            )
+        finally:
+            if timeout_backup:
+                plugin.config.timeout = timeout_backup
+            else:
+                del plugin.config.timeout
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):

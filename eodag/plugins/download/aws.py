@@ -440,6 +440,7 @@ class AwsDownload(Download):
             product.product_type, {}
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
         if build_safe and "fetch_metadata" in product_conf.keys():
             fetch_format = product_conf["fetch_metadata"]["fetch_format"]
@@ -452,11 +453,11 @@ class AwsDownload(Download):
                 resp = requests.get(
                     fetch_url,
                     headers=USER_AGENT,
-                    timeout=HTTP_REQ_TIMEOUT,
+                    timeout=timeout,
                     verify=ssl_verify,
                 )
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+                raise TimeOutError(exc, timeout=timeout) from exc
             update_metadata = mtd_cfg_as_conversion_and_querypath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()
