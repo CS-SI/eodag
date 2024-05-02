@@ -6475,6 +6475,11 @@
       on_success:
         metadata_mapping:
           downloadLink: '{orderStatusLink}'
+    products:
+      DT_EXTREMES:
+        outputs_extension: .grib
+      DT_CLIMATE_ADAPTATION:
+        outputs_extension: .grib
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: https://identity.data.destination-earth.eu/auth
