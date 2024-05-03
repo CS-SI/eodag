@@ -154,6 +154,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
+        if not exchange_url.startswith(self.config.redirect_uri):
+            raise AuthenticationError(
+                f"Could not authenticate user with provider {self.provider}.",
+                "Please verify your credentials",
+            )
         if self.config.user_consent_needed:
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
