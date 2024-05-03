@@ -570,10 +570,15 @@ class HTTPDownload(Download):
             **kwargs: Unpack[DownloadConf],
         ) -> None:
             chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+            is_empty = True
 
             with open(fs_path, "wb") as fhandle:
                 for chunk in chunks:
+                    is_empty = False
                     fhandle.write(chunk)
+
+            if is_empty:
+                raise DownloadError(f"product {product.properties['id']} is empty")
 
         download_request(product, auth, progress_callback, wait, timeout, **kwargs)
 
@@ -772,8 +777,8 @@ class HTTPDownload(Download):
             first_chunk = next(chunks)
         except StopIteration:
             # product is empty file
-            logger.warning("product %s is empty", product.properties["id"])
-            return StreamResponse(content=chain(iter([])))
+            logger.error("product %s is empty", product.properties["id"])
+            raise NotAvailableError(f"product {product.properties['id']} is empty")
 
         return StreamResponse(
             content=chain(iter([first_chunk]), chunks),
