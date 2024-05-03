@@ -29,49 +29,51 @@ EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch*, *
 
 The providers are implemented with a triplet of *Search/Authentication/Download* plugins or with an *Api* plugin:
 
-+--------------------+-----------------------+--------------------------+----------------+
-| Provider           | Search                | Authentication           | Download       |
-+====================+=======================+==========================+================+
-| aws_eos            | PostJsonSearch        | AwsAuth                  | AwsDownload    |
-+--------------------+-----------------------+--------------------------+----------------+
-| theia              | QueryStringSearch     | TokenAuth                | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| peps               | QueryStringSearch     | GenericAuth              | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| creodias           | QueryStringSearch     | KeycloakOIDCPasswordAuth | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| onda               | ODataV4Search         | GenericAuth              | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| astraea_eod        | StacSearch            | AwsAuth                  | AwsDownload    |
-+--------------------+-----------------------+--------------------------+----------------+
-| usgs_satapi_aws    | StacSearch            | AwsAuth                  | AwsDownload    |
-+--------------------+-----------------------+--------------------------+----------------+
-| earth_search       | StacSearch            | AwsAuth                  | AwsDownload    |
-+--------------------+-----------------------+--------------------------+----------------+
-| earth_search_cog   | StacSearch            | None                     | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| earth_search_gcs   | StacSearch            | AwsAuth                  | AwsDownload    |
-+--------------------+-----------------------+--------------------------+----------------+
-| usgs               | UsgsApi               | UsgsApi                  | UsgsApi        |
-+--------------------+-----------------------+--------------------------+----------------+
-| ecmwf              | EcmwfApi              | EcmwfApi                 | EcmwfApi       |
-+--------------------+-----------------------+--------------------------+----------------+
-| cop_ads            | BuildSearchResult     | GenericAuth              | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| cop_cds            | BuildSearchResult     | GenericAuth              | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| meteoblue          | BuildPostSearchResult | HttpQueryStringAuth      | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| cop_dataspace      | QueryStringSearch     | KeycloakOIDCPasswordAuth | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| planetary_computer | StacSearch            | SASAuth                  | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| hydroweb_next      | StacSearch            | HTTPHeaderAuth           | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| wekeo              | PostJsonSearch        | TokenAuth                | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
-| wekeo_cmems        | PostJsonSearch        | TokenAuth                | HTTPDownload   |
-+--------------------+-----------------------+--------------------------+----------------+
++--------------------+-----------------------+-------------------------------+----------------+
+| Provider           | Search                | Authentication                | Download       |
++====================+=======================+===============================+================+
+| aws_eos            | PostJsonSearch        | AwsAuth                       | AwsDownload    |
++--------------------+-----------------------+-------------------------------+----------------+
+| theia              | QueryStringSearch     | TokenAuth                     | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| peps               | QueryStringSearch     | GenericAuth                   | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| creodias           | QueryStringSearch     | KeycloakOIDCPasswordAuth      | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| onda               | ODataV4Search         | GenericAuth                   | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| astraea_eod        | StacSearch            | AwsAuth                       | AwsDownload    |
++--------------------+-----------------------+-------------------------------+----------------+
+| usgs_satapi_aws    | StacSearch            | AwsAuth                       | AwsDownload    |
++--------------------+-----------------------+-------------------------------+----------------+
+| earth_search       | StacSearch            | AwsAuth                       | AwsDownload    |
++--------------------+-----------------------+-------------------------------+----------------+
+| earth_search_cog   | StacSearch            | None                          | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| earth_search_gcs   | StacSearch            | AwsAuth                       | AwsDownload    |
++--------------------+-----------------------+-------------------------------+----------------+
+| usgs               | UsgsApi               | UsgsApi                       | UsgsApi        |
++--------------------+-----------------------+-------------------------------+----------------+
+| ecmwf              | EcmwfApi              | EcmwfApi                      | EcmwfApi       |
++--------------------+-----------------------+-------------------------------+----------------+
+| cop_ads            | BuildSearchResult     | GenericAuth                   | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| cop_cds            | BuildSearchResult     | GenericAuth                   | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| meteoblue          | BuildPostSearchResult | HttpQueryStringAuth           | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| cop_dataspace      | QueryStringSearch     | KeycloakOIDCPasswordAuth      | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| planetary_computer | StacSearch            | SASAuth                       | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| hydroweb_next      | StacSearch            | HTTPHeaderAuth                | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| wekeo              | PostJsonSearch        | TokenAuth                     | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| wekeo_cmems        | PostJsonSearch        | TokenAuth                     | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
+| dedt_lumi          | BuildSearchResult     | OIDCAuthorizationCodeFlowAuth | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
 
 .. _creating_plugins:
 
