@@ -6481,13 +6481,23 @@
       DT_CLIMATE_ADAPTATION:
         outputs_extension: .grib
   auth: !plugin
-    type: KeycloakOIDCPasswordAuth
-    auth_base_uri: https://identity.data.destination-earth.eu/auth
-    realm: dedl
+    type: OIDCTokenExchangeAuth
+    subject:
+      authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
+      redirect_uri: https://hda.data.destination-earth.eu/stac
+      token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
+      client_id: dedl-hda
+      user_consent_needed: false
+      token_exchange_post_data_method: data
+      token_key: access_token
+      token_provision: header
+      login_form_xpath: //form[@id='kc-form-login']
+      authentication_uri_source: login-form
+    subject_issuer: desp-oidc
+    token_uri: https://identity.data.destination-earth.eu/auth/realms/dedl/protocol/openid-connect/token
     client_id: hda-public
-    client_secret:
-    token_provision: header
-    auth_error_code: 401
+    audience: hda-public
+    token_key: access_token
   products:
     # Sentinel 1
     S1_SAR_GRD:

@@ -153,7 +153,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         self.session = requests.Session()
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
