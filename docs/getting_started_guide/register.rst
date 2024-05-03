@@ -149,3 +149,5 @@ to each provider supported by ``eodag``:
     * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
 
 * ``wekeo_cmems``: The registration procedure is the same as for ``wekeo``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
+
+* ``dedt_lumi``: Create an account on `DestinE <https://platform.destine.eu/>`__, then use your `username`, `password` in eodag credentials.

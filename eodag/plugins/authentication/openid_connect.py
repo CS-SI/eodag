@@ -154,6 +154,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
+        if not exchange_url.startswith(self.config.redirect_uri):
+            raise AuthenticationError(
+                f"Could not authenticate user with provider {self.provider}.",
+                "Please verify your credentials",
+            )
         if self.config.user_consent_needed:
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
@@ -193,7 +198,14 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         )
 
         login_document = etree.HTML(authorization_response.text)
-        login_form = login_document.xpath(self.config.login_form_xpath)[0]
+        login_forms = login_document.xpath(self.config.login_form_xpath)
+
+        if not login_forms:
+            # we assume user is already logged in
+            return authorization_response
+
+        login_form = login_forms[0]
+
         # Get the form data to pass to the login form from config or from the login form
         login_data = {
             key: self._constant_or_xpath_extracted(value, login_form)
@@ -254,6 +266,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             "client_id": self.config.client_id,
             "code": code,
             "state": state,
+            "grant_type": "authorization_code",
         }
         # If necessary, change the keys of the form data that will be passed to the token exchange POST request
         custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
@@ -270,7 +283,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             token_exchange_data.update(
                 {
                     "auth": (self.config.client_id, self.config.client_secret),
-                    "grant_type": "authorization_code",
                     "client_secret": self.config.client_secret,
                 }
             )
