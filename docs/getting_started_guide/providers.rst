@@ -29,6 +29,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 * `wekeo <https://www.wekeo.eu>`_: WEkEO Copernicus and Sentinel data
 * `wekeo_cmems <https://www.wekeo.eu>`_: Copernicus Marine (CMEMS) data from WEkEO
+* dedt_lumi: DestinE Digital Twin output on Lumi
 
 Providers available through an external plugin:
 
