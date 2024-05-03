@@ -254,6 +254,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             "client_id": self.config.client_id,
             "code": code,
             "state": state,
+            "grant_type": "authorization_code",
         }
         # If necessary, change the keys of the form data that will be passed to the token exchange POST request
         custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
@@ -270,7 +271,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             token_exchange_data.update(
                 {
                     "auth": (self.config.client_id, self.config.client_secret),
-                    "grant_type": "authorization_code",
                     "client_secret": self.config.client_secret,
                 }
             )
