@@ -6664,19 +6664,11 @@
       productType: EO.CLMS.DAT.GLO.NDVI300_V1
     EEA_DAILY_VI:
       productType: EO.CLMS.DAT.SENTINEL-2.HRVPP.VI
-    # Eurostat
-    # STAT.EUSTAT.DAT.GREENHOUSE_GAS_EMISSION_AGRICULTURE:
-    # STAT.EUSTAT.DAT.POP_AGE_GROUP_SEX_NUTS3:
-    # STAT.EUSTAT.DAT.POP_AGE_SEX_NUTS2:
-    # STAT.EUSTAT.DAT.POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
-    # STAT.EUSTAT.DAT.SHARE_ENERGY_FROM_RENEWABLE:
     # Landsat data
     LANDSAT_C2L1:
       productType: EO.NASA.DAT.LANDSAT.C2_L1
     LANDSAT_C2L2:
       productType: EO.NASA.DAT.LANDSAT.C2_L2
-    # Danube HIS data
-    # STAT.ICPDR.DAT.DANUBEHIS:
     # DT Output
     DT_EXTREMES:
       productType: EO.ECMWF.DAT.DT_EXTREMES
@@ -6688,12 +6680,5 @@
       metadata_mapping:
         storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
         <<: *orderable_mm
-    # Global Surface Water
-    # EO.GSW.DAT.CHANGE:
-    # EO.GSW.DAT.EXTENT:
-    # EO.GSW.DAT.OCCURRENCE:
-    # EO.GSW.DAT.RECURRENCE:
-    # EO.GSW.DAT.SEASONALITY:
-    # EO.GSW.DAT.TRANSITIONS:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
