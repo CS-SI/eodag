@@ -198,7 +198,14 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         )
 
         login_document = etree.HTML(authorization_response.text)
-        login_form = login_document.xpath(self.config.login_form_xpath)[0]
+        login_forms = login_document.xpath(self.config.login_form_xpath)
+
+        if not login_forms:
+            # we assume user is already logged in
+            return authorization_response
+
+        login_form = login_forms[0]
+
         # Get the form data to pass to the login form from config or from the login form
         login_data = {
             key: self._constant_or_xpath_extracted(value, login_form)
