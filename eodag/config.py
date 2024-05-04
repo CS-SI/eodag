@@ -320,6 +320,7 @@ class PluginConfig(yaml.YAMLObject):
     metadata_mapping: Dict[str, Union[str, List[str]]]
     free_params: Dict[Any, Any]
     constraints_file_url: str
+    remove_from_queryables: List[str]
     free_text_search_operations: Dict[str, Any]  # ODataV4Search
     metadata_pre_mapping: Dict[str, Any]  # ODataV4Search
     data_request_url: str  # DataRequestSearch
@@ -332,6 +333,7 @@ class PluginConfig(yaml.YAMLObject):
     timeout: float  # StaticStacSearch
     s3_bucket: str  # CreodiasS3Search
     end_date_excluded: bool  # BuildSearchResult
+    remove_from_query: List[str]  # BuildSearchResult
     ssl_verify: bool
 
     # download -------------------------------------------------------------------------

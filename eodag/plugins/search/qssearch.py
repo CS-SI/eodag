@@ -615,7 +615,9 @@ class QueryStringSearch(Search):
         field_definitions = dict()
         for json_param, json_mtd in constraint_params.items():
             param = (
-                get_queryable_from_provider(json_param, self.config.metadata_mapping)
+                get_queryable_from_provider(
+                    json_param, self.get_metadata_mapping(product_type)
+                )
                 or json_param
             )
             default = kwargs.get(param, None)
@@ -1604,7 +1606,7 @@ class StacSearch(PostJsonSearch):
             for json_param, json_mtd in json_queryables.items():
                 param = (
                     get_queryable_from_provider(
-                        json_param, self.config.metadata_mapping
+                        json_param, self.get_metadata_mapping(product_type)
                     )
                     or json_param
                 )
