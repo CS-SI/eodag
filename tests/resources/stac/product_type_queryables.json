@@ -29,8 +29,8 @@
       "type": "string",
       "title": "Platform"
     },
-    "s1:processing_level":{
-      "type":"string"
+    "s1:processing_level": {
+      "type": "string"
     }
   }
 }

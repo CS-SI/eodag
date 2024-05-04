@@ -29,12 +29,14 @@ from unittest.mock import MagicMock, Mock
 
 import geojson
 import httpx
+import responses
 from fastapi.testclient import TestClient
 from shapely.geometry import box
 
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
+from eodag.rest.types.stac_queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import NotAvailableError, TimeOutError
 from tests import mock
@@ -1273,10 +1275,17 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(response["allOf"][0]["$ref"], "#/definitions/oseo")
 
     def test_queryables(self):
-        """Request to /queryables should return a valid response."""
-        resp = self._request_valid("queryables", check_links=False)
+        """Request to /queryables without parameter should return a valid response."""
+        stac_common_queryables = list(StacQueryables.default_properties.keys())
+
+        # neither provider nor product type are specified
+        res_no_product_type_no_provider = self._request_valid(
+            "queryables", check_links=False
+        )
+
+        # the response is in StacQueryables class format
         self.assertListEqual(
-            list(resp.keys()),
+            list(res_no_product_type_no_provider.keys()),
             [
                 "$schema",
                 "$id",
@@ -1286,77 +1295,56 @@ class RequestTestCase(unittest.TestCase):
                 "properties",
                 "additionalProperties",
             ],
+        )
+        self.assertTrue(res_no_product_type_no_provider["additionalProperties"])
+
+        # properties from stac common queryables are added and are the only ones of the response
+        self.assertListEqual(
+            list(res_no_product_type_no_provider["properties"].keys()),
+            stac_common_queryables,
         )
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_queryables_with_provider(self, mock_requests_get: Mock):
-        resp = self._request_valid(
-            "queryables?provider=planetary_computer", check_links=False
+        """Request to /queryables with a valid provider as parameter should return a valid response."""
+        queryables_path = os.path.join(
+            TEST_RESOURCES_PATH, "stac/provider_queryables.json"
         )
-        self.assertListEqual(
-            list(resp.keys()),
-            [
-                "$schema",
-                "$id",
-                "type",
-                "title",
-                "description",
-                "properties",
-                "additionalProperties",
-            ],
-        )
-        mock_requests_get.assert_called_once_with(
-            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
-            timeout=HTTP_REQ_TIMEOUT,
-            headers=USER_AGENT,
-            verify=True,
-        )
-        # TODO: with an unsupported provider
-
-    def test_product_type_queryables(self):
-        """Request to /collections/{collection_id}/queryables should return a valid response."""
-        resp = self._request_valid(
-            f"collections/{self.tested_product_type}/queryables", check_links=False
-        )
-        self.assertListEqual(
-            list(resp.keys()),
-            [
-                "$schema",
-                "$id",
-                "type",
-                "title",
-                "description",
-                "properties",
-                "additionalProperties",
-            ],
-        )
-        # TODO: with an unsupported product type
-
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
-    def test_product_type_queryables_with_provider(self, mock_requests_get: Mock):
-        """Request a collection-specific list of queryables for a given provider."""
-        queryables_path = os.path.join(TEST_RESOURCES_PATH, "stac/queryables.json")
         with open(queryables_path) as f:
             provider_queryables = json.load(f)
         mock_requests_get.return_value = MockResponse(
             provider_queryables, status_code=200
         )
 
-        # no provider specified (only 1 available for the moment) : queryables intersection returned
-        res_no_provider = self._request_valid(
-            "collections/S1_SAR_GRD/queryables",
-            check_links=False,
+        stac_common_queryables = list(StacQueryables.default_properties.keys())
+        provider_stac_queryables_from_queryables_file = [
+            "id",
+            "gsd",
+            "title",
+            "s3:gsd",
+            "datetime",
+            "geometry",
+            "platform",
+            "processing:level",
+            "s1:processing_level",
+            "landsat:processing_level",
+        ]
+
+        # provider is specified without product type
+        res_no_product_type_with_provider = self._request_valid(
+            "queryables?provider=planetary_computer", check_links=False
         )
+
         mock_requests_get.assert_called_once_with(
-            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
-            "sentinel-1-grd/queryables",
+            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
             verify=True,
         )
-        # returned queryables
+
+        # the response is in StacQueryables class format
         self.assertListEqual(
-            list(res_no_provider.keys()),
+            list(res_no_product_type_with_provider.keys()),
             [
                 "$schema",
                 "$id",
@@ -1367,30 +1355,210 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
-        self.assertListEqual(
-            list(res_no_provider["properties"].keys()),
-            ["id", "geometry", "datetime"],
+        self.assertTrue(res_no_product_type_with_provider["additionalProperties"])
+
+        # properties from stac common queryables are added
+        for p in stac_common_queryables:
+            self.assertIn(
+                p, list(res_no_product_type_with_provider["properties"].keys())
+            )
+
+        # properties from provider queryables are added (here the ones of planetary_computer)
+        for provider_stac_queryable in provider_stac_queryables_from_queryables_file:
+            self.assertIn(
+                provider_stac_queryable, res_no_product_type_with_provider["properties"]
+            )
+
+        # properties from eodag general provider metadata mapping may be added (here an example with orbitDirection)
+        stac_od_property = "sat:orbit_state"
+        self.assertNotIn(
+            stac_od_property, provider_stac_queryables_from_queryables_file
         )
-        self.assertIn("geometry", res_no_provider["properties"])
-        self.assertNotIn("s1:processing_level", res_no_provider["properties"])
+        self.assertIn(stac_od_property, res_no_product_type_with_provider["properties"])
 
-        mock_requests_get.reset_mock()
+    def test_queryables_with_provider_error(self):
+        """Request to /queryables with a wrong provider as parameter should return a UnsupportedProvider error."""
+        response = self.app.get(
+            "queryables?provider=not_supported_provider", follow_redirects=True
+        )
+        response_content = json.loads(response.content.decode("utf-8"))
 
-        # provider specified
-        res = self._request_valid(
+        self.assertIn("description", response_content)
+        self.assertIn("UnsupportedProvider", response_content["description"])
+
+        self.assertEqual(400, response.status_code)
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
+    def test_product_type_queryables(self, mock_requests_session_post):
+        """Request to /collections/{collection_id}/queryables should return a valid response."""
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run():
+            queryables_path = os.path.join(
+                TEST_RESOURCES_PATH, "stac/product_type_queryables.json"
+            )
+            with open(queryables_path) as f:
+                provider_queryables = json.load(f)
+            constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+            with open(constraints_path) as f:
+                constraints = json.load(f)
+            wekeo_constraints = {"constraints": constraints}
+
+            planetary_computer_queryables_url = (
+                "https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
+                "sentinel-1-grd/queryables"
+            )
+            norm_planetary_computer_queryables_url = os.path.normpath(
+                planetary_computer_queryables_url
+            ).replace("https:/", "https://")
+            wekeo_constraints_url = (
+                "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
+                "EO:ESA:DAT:SENTINEL-1"
+            )
+
+            stac_common_queryables = list(StacQueryables.default_properties.keys())
+            # when product type is given, "collection" item is not used
+            stac_common_queryables.remove("collection")
+
+            responses.add(
+                responses.GET,
+                planetary_computer_queryables_url,
+                status=200,
+                json=provider_queryables,
+            )
+            responses.add(
+                responses.GET,
+                wekeo_constraints_url,
+                status=200,
+                json=wekeo_constraints,
+            )
+
+            # no provider is specified with the product type (2 providers get a queryables or constraints file
+            # among available providers for S1_SAR_GRD for the moment): queryables intersection returned
+            res_product_type_no_provider = self._request_valid(
+                "collections/S1_SAR_GRD/queryables",
+                check_links=False,
+            )
+            self.assertEqual(len(responses.calls), 2)
+
+            # check the mock call on planetary_computer
+            self.assertEqual(
+                norm_planetary_computer_queryables_url, responses.calls[0].request.url
+            )
+            self.assertIn(("timeout", 5), responses.calls[0].request.req_kwargs.items())
+            self.assertIn(
+                list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
+            )
+            self.assertIn(
+                ("verify", True), responses.calls[0].request.req_kwargs.items()
+            )
+            # check the mock call on wekeo
+            self.assertEqual(wekeo_constraints_url, responses.calls[1].request.url)
+            self.assertIn(("timeout", 5), responses.calls[1].request.req_kwargs.items())
+            self.assertIn(
+                list(USER_AGENT.items())[0], responses.calls[1].request.headers.items()
+            )
+            self.assertIn(
+                ("verify", True), responses.calls[1].request.req_kwargs.items()
+            )
+
+            # the response is in StacQueryables class format
+            self.assertListEqual(
+                list(res_product_type_no_provider.keys()),
+                [
+                    "$schema",
+                    "$id",
+                    "type",
+                    "title",
+                    "description",
+                    "properties",
+                    "additionalProperties",
+                ],
+            )
+            self.assertFalse(res_product_type_no_provider["additionalProperties"])
+
+            # properties from stac common queryables are added and are the only ones of the response
+            self.assertListEqual(
+                list(res_product_type_no_provider["properties"].keys()),
+                stac_common_queryables,
+            )
+            # no property are added from providers queryables because none of them
+            # is shared with all providers for this product type
+            pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
+            pl_s1_sar_grd_wekeo_queryable = "processingLevel"
+            stac_pl_property = "processing:level"
+            self.assertIn(
+                pl_s1_sar_grd_planetary_computer_queryable,
+                provider_queryables["properties"],
+            )
+            for constraint in wekeo_constraints["constraints"]:
+                self.assertNotIn(pl_s1_sar_grd_wekeo_queryable, constraint)
+            self.assertNotIn(
+                stac_pl_property, res_product_type_no_provider["properties"]
+            )
+
+        run()
+
+    def test_product_type_queryables_error(self):
+        """Request to /collections/{collection_id}/queryables with a wrong collection_id
+        should return a UnsupportedProductType error."""
+        response = self.app.get(
+            "collections/not_supported_product_type/queryables", follow_redirects=True
+        )
+        response_content = json.loads(response.content.decode("utf-8"))
+
+        self.assertIn("description", response_content)
+        self.assertIn("UnsupportedProductType", response_content["description"])
+
+        self.assertEqual(400, response.status_code)
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_product_type_queryables_with_provider(self, mock_requests_get):
+        """Request a collection-specific list of queryables for a given provider
+        using a queryables file should return a valid response."""
+        queryables_path = os.path.join(
+            TEST_RESOURCES_PATH, "stac/product_type_queryables.json"
+        )
+        with open(queryables_path) as f:
+            provider_queryables = json.load(f)
+        mock_requests_get.return_value = MockResponse(
+            provider_queryables, status_code=200
+        )
+
+        planetary_computer_queryables_url = (
+            "https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
+            "sentinel-1-grd/queryables"
+        )
+
+        stac_common_queryables = list(StacQueryables.default_properties.keys())
+        # when product type is given, "collection" item is not used
+        stac_common_queryables.remove("collection")
+        provider_stac_queryables_from_queryables_file = [
+            "id",
+            "datetime",
+            "geometry",
+            "platform",
+            "processing:level",
+        ]
+
+        # provider and product type are specified
+        res_product_type_with_provider = self._request_valid(
             "collections/S1_SAR_GRD/queryables?provider=planetary_computer",
             check_links=False,
         )
+
         mock_requests_get.assert_called_once_with(
-            url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
-            "sentinel-1-grd/queryables",
+            url=planetary_computer_queryables_url,
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
             verify=True,
         )
 
+        # the response is in StacQueryables class format
         self.assertListEqual(
-            list(res.keys()),
+            list(res_product_type_with_provider.keys()),
             [
                 "$schema",
                 "$id",
@@ -1401,12 +1569,36 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
+        self.assertFalse(res_product_type_with_provider["additionalProperties"])
 
-        # property added from provider queryables
-        self.assertIn("s1:processing_level", res["properties"])
-        # property updated with info from provider queryables
-        self.assertIn("platform", res["properties"])
-        self.assertEqual("string", res["properties"]["platform"]["type"][0])
+        # properties from stac common queryables are added
+        for p in stac_common_queryables:
+            self.assertIn(p, list(res_product_type_with_provider["properties"].keys()))
+
+        # properties from provider product type queryables are added
+        # (here the ones of S1_SAR_GRD for planetary_computer)
+        for provider_stac_queryable in provider_stac_queryables_from_queryables_file:
+            self.assertIn(
+                provider_stac_queryable, res_product_type_with_provider["properties"]
+            )
+
+        # properties may be updated with info from provider queryables if
+        # info exist (here an example with platformSerialIdentifier)
+        stac_psi_property = "platform"
+        self.assertEqual(
+            "string", provider_queryables["properties"][stac_psi_property]["type"]
+        )
+        self.assertIn(
+            "string",
+            res_product_type_with_provider["properties"][stac_psi_property]["type"],
+        )
+
+        # properties from eodag provider metadata mapping may be added (here an example with orbitDirection)
+        stac_od_property = "sat:orbit_state"
+        self.assertNotIn(
+            stac_od_property, provider_stac_queryables_from_queryables_file
+        )
+        self.assertIn(stac_od_property, res_product_type_with_provider["properties"])
 
     def test_stac_queryables_type(self):
         res = self._request_valid(
@@ -1430,12 +1622,37 @@ class RequestTestCase(unittest.TestCase):
     def test_product_type_queryables_from_constraints(
         self, mock_requests_session_constraints: Mock
     ):
+        """Request a collection-specific list of queryables for a given provider
+        using a constraints file should return a valid response."""
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
         mock_requests_session_constraints.return_value = MockResponse(
             constraints, status_code=200
         )
+
+        stac_common_queryables = list(StacQueryables.default_properties.keys())
+        # when product type is given, "collection" item is not used
+        stac_common_queryables.remove("collection")
+        provider_queryables_from_constraints_file = [
+            "year",
+            "month",
+            "day",
+            "time",
+            "variable",
+            "leadtime_hour",
+            "type",
+            "api_product_type",
+        ]
+        # queryables properties not shared by all constraints must be removed
+        not_shared_properties = ["leadtime_hour", "type"]
+        provider_queryables_from_constraints_file = [
+            properties
+            for properties in provider_queryables_from_constraints_file
+            if properties not in not_shared_properties
+        ]
+        default_provider_stac_properties = ["api_product_type", "time", "format"]
+
         res = self._request_valid(
             "collections/ERA5_SL/queryables?provider=cop_cds",
             check_links=False,
@@ -1449,11 +1666,35 @@ class RequestTestCase(unittest.TestCase):
             auth=None,
             timeout=5,
         )
-        self.assertEqual(10, len(res["properties"]))
-        self.assertIn("year", res["properties"])
-        self.assertIn("id", res["properties"])
-        self.assertIn("geometry", res["properties"])
-        self.assertNotIn("collection", res["properties"])
+
+        # the response is in StacQueryables class format
+        self.assertListEqual(
+            list(res.keys()),
+            [
+                "$schema",
+                "$id",
+                "type",
+                "title",
+                "description",
+                "properties",
+                "additionalProperties",
+            ],
+        )
+        self.assertFalse(res["additionalProperties"])
+
+        # properties from stac common queryables are added
+        for p in stac_common_queryables:
+            self.assertIn(p, list(res["properties"].keys()))
+
+        # properties from provider product type queryables and default properties are added
+        # (here the ones of ERA5_SL for cop_cds)
+        for provider_stac_queryable in list(
+            set(
+                provider_queryables_from_constraints_file
+                + default_provider_stac_properties
+            )
+        ):
+            self.assertIn(provider_stac_queryable, res["properties"])
 
     def test_cql_post_search(self):
         self._request_valid(

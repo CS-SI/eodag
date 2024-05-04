@@ -1278,15 +1278,34 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.validate_config_credentials",
+        autospec=True,
     )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+    )
     def test_list_queryables(
-        self, mock_discover_queryables: Mock, mock_fetch_product_types_list: Mock
+        self,
+        mock_stacsearch_discover_queryables: Mock,
+        mock_qssearch_discover_queryables: Mock,
+        mock_fetch_product_types_list: Mock,
+        mock_validate_config_credentials: Mock,
+        mock_requests_session_post: Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
+        mock_stacsearch_discover_queryables.return_value = {}
+        mock_qssearch_discover_queryables.return_value = {}
+
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
 
@@ -1320,6 +1339,24 @@ class TestCore(TestCoreBase):
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
+
+        # when a product type is specified but not the provider, the intersection of the queryables of all providers
+        # having the product type in its config is returned, using queryables of the provider with the highest priority
+        queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
+        self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
+        self.assertLess(len(queryables_none_s1grd), len(queryables_peps_none))
+        self.assertLessEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
+        self.assertLess(len(queryables_none_s1grd), len(expected_longer_result))
+        # check that peps gets the highest priority
+        self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
+        for key, queryable in queryables_none_s1grd.items():
+            # compare obj.__repr__
+            if key == "productType":
+                self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
+            else:
+                self.assertEqual(str(expected_longer_result[key]), str(queryable))
+            # queryables intersection comes from peps's queryables
+            self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.BuildSearchResult.discover_queryables",
