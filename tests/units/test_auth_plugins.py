@@ -25,6 +25,7 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
+from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -646,3 +647,120 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             self.assertEqual(auth.key, "totoken")
             self.assertEqual(auth.token, "new-token")
             self.assertEqual(auth.where, "qs")
+
+
+class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
+    @classmethod
+    def setUpClass(cls):
+        super(TestAuthPluginOIDCAuthorizationCodeFlowAuth, cls).setUpClass()
+        override_config_from_mapping(
+            cls.providers_config,
+            {
+                "provider_token_provision_invalid": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "token_provision": "invalid",
+                    },
+                },
+                "provider_token_qs_key_missing": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "token_provision": "qs",
+                    },
+                },
+                "provider_ok": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "redirect_uri": "http://provider.bar/",
+                        "user_consent_needed": False,
+                        "token_provision": "header",
+                    },
+                },
+            },
+        )
+        cls.plugins_manager = PluginManager(cls.providers_config)
+
+    def test_plugins_auth_codeflowauth_validate_credentials(self):
+        """OIDCAuthorizationCodeFlowAuth.validate_credentials must raise an error if credentials are not valid"""
+        # `token_provision` not valid
+        auth_plugin = self.get_auth_plugin("provider_token_provision_invalid")
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+        # `token_provision=="qs` but `token_qs_key` is missing
+        auth_plugin = self.get_auth_plugin("provider_token_qs_key_missing")
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+        # Missing credentials
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+
+    def test_plugins_auth_codeflowauth_validate_credentials_ok(self):
+        """OIDCAuthorizationCodeFlowAuth.validate_credentials must be ok on non-empty credentials"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+
+        auth_plugin.config.credentials = {"foo": "bar"}
+        auth_plugin.validate_config_credentials()
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+        return_value=mock.Mock(url="http://foo.bar"),
+    )
+    def test_plugins_auth_codeflowauth_authenticate_no_redirect(
+        self,
+        mock_authenticate_user,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate must raise and error if the provider doesn't redirect"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        self.assertRaises(
+            AuthenticationError,
+            auth_plugin.authenticate,
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_authenticate_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object"""
+        state = "1234567890123456789012"
+        exchange_url = "http://provider.bar/"
+        token = "token123"
+        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value = token
+
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth = auth_plugin.authenticate()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        self.assertIsInstance(auth, CodeAuthorizedAuth)
+        self.assertEqual(auth.token, token)
+        self.assertEqual(auth.where, "header")
+        self.assertIsNone(auth.key)
