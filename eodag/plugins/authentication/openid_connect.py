@@ -136,6 +136,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
+        self.session = requests.Session()
+
+    def validate_config_credentials(self) -> None:
+        """Validate configured credentials"""
+        super(OIDCAuthorizationCodeFlowAuth, self).validate_config_credentials()
         if getattr(self.config, "token_provision", None) not in ("qs", "header"):
             raise MisconfiguredError(
                 'Provider config parameter "token_provision" must be one of "qs" or "header"'
@@ -147,7 +152,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 'Provider config parameter "token_provision" with value "qs" must have '
                 '"token_qs_key" config parameter as well'
             )
-        self.session = requests.Session()
 
     def authenticate(self) -> AuthBase:
         """Authenticate"""
