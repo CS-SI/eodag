@@ -226,11 +226,12 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             # the value of its action attribute to this xpath
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
-            )[0]
-            if not auth_uri:
+            )
+            if not auth_uri or not auth_uri[0]:
                 raise RequestError(
                     f"Could not get auth_uri from {self.config.login_form_xpath}"
                 )
+            auth_uri = auth_uri[0]
         else:
             auth_uri = getattr(self.config, "authentication_uri", None)
             if not auth_uri:
