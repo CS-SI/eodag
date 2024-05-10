@@ -677,6 +677,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                         "type": "OIDCAuthorizationCodeFlowAuth",
                         "authorization_uri": "http://auth.foo/authorization",
                         "redirect_uri": "http://provider.bar/redirect",
+                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": False,
                         "token_provision": "header",
@@ -690,8 +691,11 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                         "type": "OIDCAuthorizationCodeFlowAuth",
                         "authorization_uri": "http://auth.foo/authorization",
                         "redirect_uri": "http://provider.bar/redirect",
+                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": False,
+                        "token_exchange_post_data_method": "data",
+                        "token_key": "access_token",
                         "token_provision": "header",
                         "login_form_xpath": "//form[@id='form-login']",
                         "authentication_uri_source": "login-form",
@@ -713,7 +717,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             MisconfiguredError,
             auth_plugin.validate_config_credentials,
         )
-        # `token_provision=="qs` but `token_qs_key` is missing
+        # `token_provision=="qs"` but `token_qs_key` is missing
         auth_plugin = self.get_auth_plugin("provider_token_qs_key_missing")
         self.assertRaises(
             MisconfiguredError,
@@ -742,7 +746,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self,
         mock_authenticate_user,
     ):
-        """OIDCAuthorizationCodeFlowAuth.authenticate must raise and error if the provider doesn't redirect"""
+        """OIDCAuthorizationCodeFlowAuth.authenticate must raise and error if the provider doesn't redirect
+        to the given URI"""
         auth_plugin = self.get_auth_plugin("provider_ok")
         self.assertRaises(
             AuthenticationError,
@@ -827,7 +832,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin = self.get_auth_plugin("provider_ok")
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        # mock token post request response
+        # Mock get request to the authorization URI (no action attribute in the form)
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.text = """
             <html>
@@ -848,7 +853,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             state,
         )
 
-        # First and only request: get the sign-in URI
+        # First and only request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
             "http://auth.foo/authorization",
@@ -877,7 +882,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin = self.get_auth_plugin("provider_authentication_uri_missing")
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        # mock token post request response
+        # Mock get request to the authorization URI (no action attribute in the form)
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.text = """
             <html>
@@ -898,7 +903,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             state,
         )
 
-        # First and only request: get the sign-in URI
+        # First and only request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
             "http://auth.foo/authorization",
@@ -930,7 +935,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin = self.get_auth_plugin("provider_ok")
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        # mock token post request response
+        # Mock get request to the authorization URI
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.text = """
             <html>
@@ -949,7 +954,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         state = "1234567890123456789012"
         auth_response = auth_plugin.authenticate_user(state)
 
-        # First request: get the sign-in URI
+        # First request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
             "http://auth.foo/authorization",
@@ -975,5 +980,62 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
         )
-        # authenticate_user returns the autenthication response
+        # authenticate_user returns the authentication response
         self.assertEqual(mock_requests_post.return_value, auth_response)
+
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_state_mismatch(
+        self,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must raise an error if the returned state is
+        mismatched"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        state = "1234567890123456789012"
+        authorized_url = "http://provider.bar/redirect?state=mismatch"
+        self.assertRaises(
+            AuthenticationError,
+            auth_plugin.exchange_code_for_token,
+            authorized_url,
+            state,
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_ok(
+        self,
+        mock_requests_post,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must post to the token_uri the authorization code
+        and the state"""
+
+        mock_requests_post.return_value = mock.Mock()
+        access_token = "token_12345"
+        mock_requests_post.return_value.json.return_value = {
+            "access_token": access_token
+        }
+        state = "1234567890123456789012"
+        auth_code = "code_abcde"
+        authorized_url = f"http://provider.bar/redirect?state={state}&code={auth_code}"
+
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        returned_access_token = auth_plugin.exchange_code_for_token(
+            authorized_url, state
+        )
+        self.assertEqual(returned_access_token, access_token)
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            "http://auth.foo/token",
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            data={
+                "redirect_uri": "http://provider.bar/redirect",
+                "client_id": "provider-bar-id",
+                "code": auth_code,
+                "state": state,
+                "grant_type": "authorization_code",
+            },
+        )
