@@ -773,14 +773,14 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_compute_state,
     ):
         """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
         state = "1234567890123456789012"
-        exchange_url = "http://provider.bar/redirect"
+        exchange_url = auth_plugin.config.redirect_uri
         token = "token123"
         mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
         mock_compute_state.return_value = state
         mock_exchange_code_for_token.return_value = token
 
-        auth_plugin = self.get_auth_plugin("provider_ok")
         auth = auth_plugin.authenticate()
 
         mock_authenticate_user.assert_called_once_with(auth_plugin, state)
@@ -856,13 +856,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # First and only request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            "http://auth.foo/authorization",
+            auth_plugin.config.authorization_uri,
             params={
-                "client_id": "provider-bar-id",
+                "client_id": auth_plugin.config.client_id,
                 "response_type": auth_plugin.RESPONSE_TYPE,
                 "scope": auth_plugin.SCOPE,
                 "state": state,
-                "redirect_uri": "http://provider.bar/redirect",
+                "redirect_uri": auth_plugin.config.redirect_uri,
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -906,13 +906,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # First and only request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            "http://auth.foo/authorization",
+            auth_plugin.config.authorization_uri,
             params={
-                "client_id": "provider-bar-id",
+                "client_id": auth_plugin.config.client_id,
                 "response_type": auth_plugin.RESPONSE_TYPE,
                 "scope": auth_plugin.SCOPE,
                 "state": state,
-                "redirect_uri": "http://provider.bar/redirect",
+                "redirect_uri": auth_plugin.config.redirect_uri,
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -957,13 +957,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # First request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            "http://auth.foo/authorization",
+            auth_plugin.config.authorization_uri,
             params={
-                "client_id": "provider-bar-id",
+                "client_id": auth_plugin.config.client_id,
                 "response_type": auth_plugin.RESPONSE_TYPE,
                 "scope": auth_plugin.SCOPE,
                 "state": state,
-                "redirect_uri": "http://provider.bar/redirect",
+                "redirect_uri": auth_plugin.config.redirect_uri,
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -992,7 +992,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.config.credentials = {"foo": "bar"}
 
         state = "1234567890123456789012"
-        authorized_url = "http://provider.bar/redirect?state=mismatch"
+        authorized_url = f"{auth_plugin.config.redirect_uri}?state=mismatch"
         self.assertRaises(
             AuthenticationError,
             auth_plugin.exchange_code_for_token,
@@ -1009,7 +1009,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
     ):
         """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must post to the token_uri the authorization code
         and the state"""
-
+        auth_plugin = self.get_auth_plugin("provider_ok")
         mock_requests_post.return_value = mock.Mock()
         access_token = "token_12345"
         mock_requests_post.return_value.json.return_value = {
@@ -1017,9 +1017,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         }
         state = "1234567890123456789012"
         auth_code = "code_abcde"
-        authorized_url = f"http://provider.bar/redirect?state={state}&code={auth_code}"
-
-        auth_plugin = self.get_auth_plugin("provider_ok")
+        authorized_url = (
+            f"{auth_plugin.config.redirect_uri}?state={state}&code={auth_code}"
+        )
         auth_plugin.config.credentials = {"foo": "bar"}
 
         returned_access_token = auth_plugin.exchange_code_for_token(
@@ -1028,12 +1028,12 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertEqual(returned_access_token, access_token)
         mock_requests_post.assert_called_once_with(
             mock.ANY,
-            "http://auth.foo/token",
+            auth_plugin.config.token_uri,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             data={
-                "redirect_uri": "http://provider.bar/redirect",
-                "client_id": "provider-bar-id",
+                "redirect_uri": auth_plugin.config.redirect_uri,
+                "client_id": auth_plugin.config.client_id,
                 "code": auth_code,
                 "state": state,
                 "grant_type": "authorization_code",
