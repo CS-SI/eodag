@@ -6401,10 +6401,17 @@
       DT_CLIMATE_ADAPTATION:
         outputs_extension: .grib
   auth: !plugin
-    type: HTTPHeaderAuth
-    headers:
-      Authorization: "EmailKey {username}:{password}"
-
+    type: OIDCAuthorizationCodeFlowAuth
+    authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
+    redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
+    token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
+    client_id: polytope-api-public
+    user_consent_needed: false
+    token_exchange_post_data_method: data
+    token_key: access_token
+    token_provision: header
+    login_form_xpath: //form[@id='kc-form-login']
+    authentication_uri_source: login-form
 ---
 !provider # MARK: dedl
   name: dedl
