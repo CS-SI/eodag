@@ -6978,7 +6978,6 @@
       completionTimeFromAscendingNode:
         - dtend
         - '{$.properties.date#replace_str(r".*\/","")}'
-
       # Custom parameters (not defined in the base document referenced above)
       id:
         - id

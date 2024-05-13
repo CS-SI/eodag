@@ -401,7 +401,7 @@ class QueryStringSearch(Search):
             prep.exception_message = (
                 "Skipping error while fetching product types for " "{} {} instance:"
             ).format(self.provider, self.__class__.__name__)
-            if self.__class__.__name__ == "StaticStacSearch":
+            if self.__class__.__name__ == "StaticStacSearch" or self.__class__.__name__ == "CopMarineSearch":
                 self._request(prep)
             else:
                 response = QueryStringSearch._request(self, prep)
@@ -413,7 +413,6 @@ class QueryStringSearch(Search):
                     "providers_config": {},
                     "product_types_config": {},
                 }
-
                 if self.config.discover_product_types["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json

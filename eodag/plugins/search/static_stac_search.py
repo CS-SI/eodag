@@ -89,14 +89,12 @@ class StaticStacSearch(StacSearch):
         :returns: configuration dict containing fetched product types information
         :rtype: Optional[Dict[str, Any]]
         """
-
         fetch_url = cast(
             str,
             self.config.discover_product_types["fetch_url"].format(
                 **self.config.__dict__
             ),
         )
-
         collections = fetch_stac_collections(
             fetch_url,
             max_connections=self.config.max_connections,
@@ -104,9 +102,11 @@ class StaticStacSearch(StacSearch):
             ssl_verify=self.config.ssl_verify,
         )
         dataset_collections = []
-        if getattr(self.config, "item_discovery", False):
+        if "item_discovery" in self.config.discover_product_types:
             for collection in collections:
                 for link in collection["links"]:
+                    if kwargs and "q" in kwargs and kwargs["q"] not in link["title"]:
+                        continue
                     if link["rel"] == "item":
                         dataset_coll = deepcopy(collection)
                         dataset_coll["title"] = link["title"]
@@ -125,7 +125,6 @@ class StaticStacSearch(StacSearch):
                 collections_mock_response, 200
             )
         )
-
         # discover_product_types on mock StacSearch
         conf_update_dict = super(StaticStacSearch, self).discover_product_types(
             **kwargs
