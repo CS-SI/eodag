@@ -701,7 +701,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                         "authentication_uri_source": "login-form",
                         "additional_login_form_data": {
                             "const_key": "const_value",
-                            # FIXME "xpath_key": 'xpath(//input[@name="input_name"]/@value)'
+                            "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
                         },
                     },
                 },
@@ -975,7 +975,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             data={
                 "foo": "bar",
                 "const_key": "const_value",
-                # FIXME "xpath_name": "hidden value",
+                "xpath_key": "hidden value",
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
