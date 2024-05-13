@@ -309,7 +309,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         if not match:
             return value
         value_from_xpath = form_element.xpath(
-            self.CONFIG_XPATH_REGEX.match(value).groupdict("xpath_value")
+            self.CONFIG_XPATH_REGEX.match(value).groupdict("xpath_value")["xpath_value"]
         )
         if len(value_from_xpath) == 1:
             return value_from_xpath[0]
