@@ -118,6 +118,10 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         # same rules as with user_consent_form_data
         additional_login_form_data:
 
+        # (optional) Key/value pairs of patterns/messages. If exchange_url contains the given pattern, the associated
+        message will be sent in an AuthenticationError
+        exchange_url_error_pattern:
+
         # (optional) The OIDC provider's client secret of the eodag provider
         client_secret:
 
@@ -158,6 +162,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
+        for err_pattern, err_message in getattr(
+            self.config, "exchange_url_error_pattern", {}
+        ).items():
+            if err_pattern in exchange_url:
+                raise AuthenticationError(err_message)
         if not exchange_url.startswith(self.config.redirect_uri):
             raise AuthenticationError(
                 f"Could not authenticate user with provider {self.provider}.",

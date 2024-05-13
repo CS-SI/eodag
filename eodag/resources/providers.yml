@@ -6495,6 +6495,8 @@
       token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
       client_id: dedl-hda
       user_consent_needed: false
+      exchange_url_error_pattern:
+        TERMS_AND_CONDITIONS: Terms and conditions are not accepted
       token_exchange_post_data_method: data
       token_key: access_token
       token_provision: header
