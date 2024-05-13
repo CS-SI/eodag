@@ -6434,6 +6434,8 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       quicklook: '{thumbnail}'
       storageStatus: '{$.properties."order:status"#get_group_name((?P<ONLINE>succeeded)|(?P<STAGING>shipping)|(?P<OFFLINE>orderable))}'
+      downloadLink: '$.assets.downloadLink.href'
+      assets: '$.null'
     discover_product_types:
       fetch_url: 'https://hda.data.destination-earth.eu/stac/collections'
       result_type: json
@@ -6465,6 +6467,7 @@
     auth_error_code: 403
     timeout: 20
     ssl_verify: true
+    extract: true
     flatten_top_dirs: true
     order_enabled: True
     order_method: GET
