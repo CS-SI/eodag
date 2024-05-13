@@ -685,6 +685,81 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                         "authentication_uri_source": "config",
                     },
                 },
+                "provider_user_consent": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "authorization_uri": "http://auth.foo/authorization",
+                        "redirect_uri": "http://provider.bar/redirect",
+                        "token_uri": "http://auth.foo/token",
+                        "client_id": "provider-bar-id",
+                        "user_consent_needed": True,
+                        "user_consent_form_xpath": "//form[@id='form-user-consent']",
+                        "user_consent_form_data": {
+                            "const_key": "const_value",
+                            "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
+                        },
+                        "token_exchange_post_data_method": "data",
+                        "token_key": "access_token",
+                        "token_provision": "header",
+                        "login_form_xpath": "//form[@id='form-login']",
+                        "authentication_uri_source": "login-form",
+                    },
+                },
+                "provider_client_sercret": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "authorization_uri": "http://auth.foo/authorization",
+                        "redirect_uri": "http://provider.bar/redirect",
+                        "token_uri": "http://auth.foo/token",
+                        "client_id": "provider-bar-id",
+                        "client_secret": "this-is-the-secret",
+                        "user_consent_needed": False,
+                        "token_exchange_post_data_method": "data",
+                        "token_key": "access_token",
+                        "token_provision": "header",
+                        "login_form_xpath": "//form[@id='form-login']",
+                        "authentication_uri_source": "login-form",
+                    },
+                },
+                "provider_token_qs_key": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "authorization_uri": "http://auth.foo/authorization",
+                        "redirect_uri": "http://provider.bar/redirect",
+                        "token_uri": "http://auth.foo/token",
+                        "client_id": "provider-bar-id",
+                        "user_consent_needed": False,
+                        "token_exchange_post_data_method": "data",
+                        "token_key": "access_token",
+                        "token_provision": "qs",
+                        "token_qs_key": "totoken",
+                        "login_form_xpath": "//form[@id='form-login']",
+                        "authentication_uri_source": "login-form",
+                    },
+                },
+                "provider_token_exchange_params": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "OIDCAuthorizationCodeFlowAuth",
+                        "authorization_uri": "http://auth.foo/authorization",
+                        "redirect_uri": "http://provider.bar/redirect",
+                        "token_uri": "http://auth.foo/token",
+                        "client_id": "provider-bar-id",
+                        "user_consent_needed": False,
+                        "token_exchange_post_data_method": "data",
+                        "token_exchange_params": {
+                            "redirect_uri": "new_redirect_uri",
+                            "client_id": "new_client_id",
+                        },
+                        "token_key": "access_token",
+                        "token_provision": "header",
+                        "login_form_xpath": "//form[@id='form-login']",
+                        "authentication_uri_source": "login-form",
+                    },
+                },
                 "provider_ok": {
                     "products": {"foo_product": {}},
                     "auth": {
@@ -793,6 +868,126 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertIsNone(auth.key)
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.grant_user_consent",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_authenticate_user_consent_needed_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+        mock_grant_user_consent,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate must call `grant_user_consent` if `user_consent_needed==True`"""
+        auth_plugin = self.get_auth_plugin("provider_user_consent")
+        state = "1234567890123456789012"
+        exchange_url = auth_plugin.config.redirect_uri
+        token = "token123"
+        mock_authenticate_user.return_value = mock.Mock(
+            url=auth_plugin.config.redirect_uri + "/user_consent"
+        )
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value = token
+        mock_grant_user_consent.return_value = mock.Mock(url=exchange_url)
+
+        auth = auth_plugin.authenticate()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_grant_user_consent.assert_called_once_with(
+            auth_plugin,
+            mock_authenticate_user.return_value,
+        )
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        self.assertIsInstance(auth, CodeAuthorizedAuth)
+        self.assertEqual(auth.token, token)
+        self.assertEqual(auth.where, "header")
+        self.assertIsNone(auth.key)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_authenticate_token_qs_key_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object with a `key`
+        if `token_provision=="qs"`"""
+        auth_plugin = self.get_auth_plugin("provider_token_qs_key")
+        state = "1234567890123456789012"
+        exchange_url = auth_plugin.config.redirect_uri
+        token = "token123"
+        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value = token
+
+        auth = auth_plugin.authenticate()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        self.assertIsInstance(auth, CodeAuthorizedAuth)
+        self.assertEqual(auth.token, token)
+        self.assertEqual(auth.where, "qs")
+        self.assertEqual(auth.key, auth_plugin.config.token_qs_key)
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
+    def test_plugins_auth_codeflowauth_grant_user_consent(
+        self,
+        mock_requests_post,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.grant_user_consent must read the data from the config or from the consent
+        form"""
+        auth_plugin = self.get_auth_plugin("provider_user_consent")
+        authentication_response = mock.Mock()
+        authentication_response.text = """
+            <html>
+                <head></head>
+                <body>
+                    <form id="form-user-consent" method="post">
+                        <input name="input_name" value="additional value" />
+                    </form>
+                </body>
+            </html>
+        """
+
+        auth_plugin.grant_user_consent(authentication_response)
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            auth_plugin.config.authorization_uri,
+            data={"const_key": "const_value", "xpath_key": "additional value"},
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+        )
+
+    @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.Session.get",
         autospec=True,
     )
@@ -836,7 +1031,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.text = """
             <html>
-                <head><title>No forms</title></head>
+                <head></head>
                 <body>
                     <form id="form-login" method="post">
                         <input name="username" type="text" />
@@ -886,7 +1081,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.text = """
             <html>
-                <head><title>No forms</title></head>
+                <head></head>
                 <body>
                     <form id="form-login" method="post">
                         <input name="username" type="text" />
@@ -939,13 +1134,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_requests_get.return_value = mock.Mock()
         mock_requests_get.return_value.text = """
             <html>
-                <head><title>No forms</title></head>
+                <head></head>
                 <body>
                     <form id="form-login" method="post" action="http://auth.foo/authentication">
                         <input name="username" type="text" />
                         <input name="password" type="password" />
                         <input name="login" type="submit" value="Sign In" />
-                        <input name="input_name" type="hidden" value="hidden value" />
+                        <input name="input_name" type="hidden" value="additional value" />
                     </form>
                 </body>
             </html>
@@ -975,7 +1170,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             data={
                 "foo": "bar",
                 "const_key": "const_value",
-                "xpath_key": "hidden value",
+                "xpath_key": "additional value",
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -1007,7 +1202,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self,
         mock_requests_post,
     ):
-        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must post to the token_uri the authorization code
+        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must post to the `token_uri` the authorization code
         and the state"""
         auth_plugin = self.get_auth_plugin("provider_ok")
         mock_requests_post.return_value = mock.Mock()
@@ -1034,6 +1229,95 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             data={
                 "redirect_uri": auth_plugin.config.redirect_uri,
                 "client_id": auth_plugin.config.client_id,
+                "code": auth_code,
+                "state": state,
+                "grant_type": "authorization_code",
+            },
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_client_secret_ok(
+        self,
+        mock_requests_post,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must authenticated with a BASIC Auth if the
+        `client_secret` is known"""
+        auth_plugin = self.get_auth_plugin("provider_client_sercret")
+        mock_requests_post.return_value = mock.Mock()
+        access_token = "token_12345"
+        mock_requests_post.return_value.json.return_value = {
+            "access_token": access_token
+        }
+        state = "1234567890123456789012"
+        auth_code = "code_abcde"
+        authorized_url = (
+            f"{auth_plugin.config.redirect_uri}?state={state}&code={auth_code}"
+        )
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        returned_access_token = auth_plugin.exchange_code_for_token(
+            authorized_url, state
+        )
+        self.assertEqual(returned_access_token, access_token)
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            auth_plugin.config.token_uri,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            data={
+                "redirect_uri": auth_plugin.config.redirect_uri,
+                "client_id": auth_plugin.config.client_id,
+                "auth": (
+                    auth_plugin.config.client_id,
+                    auth_plugin.config.client_secret,
+                ),
+                "client_secret": auth_plugin.config.client_secret,
+                "code": auth_code,
+                "state": state,
+                "grant_type": "authorization_code",
+            },
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+    )
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_exchange_params_ok(
+        self,
+        mock_requests_post,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must update the POST params if necessary"""
+        auth_plugin = self.get_auth_plugin("provider_token_exchange_params")
+
+        mock_requests_post.return_value = mock.Mock()
+        access_token = "token_12345"
+        mock_requests_post.return_value.json.return_value = {
+            "access_token": access_token
+        }
+        state = "1234567890123456789012"
+        auth_code = "code_abcde"
+        authorized_url = (
+            f"{auth_plugin.config.redirect_uri}?state={state}&code={auth_code}"
+        )
+        auth_plugin.config.credentials = {"foo": "bar"}
+
+        returned_access_token = auth_plugin.exchange_code_for_token(
+            authorized_url, state
+        )
+        self.assertEqual(returned_access_token, access_token)
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            auth_plugin.config.token_uri,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            data={
+                auth_plugin.config.token_exchange_params[
+                    "redirect_uri"
+                ]: auth_plugin.config.redirect_uri,
+                auth_plugin.config.token_exchange_params[
+                    "client_id"
+                ]: auth_plugin.config.client_id,
                 "code": auth_code,
                 "state": state,
                 "grant_type": "authorization_code",
