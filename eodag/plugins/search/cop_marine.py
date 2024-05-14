@@ -6,6 +6,7 @@ from urllib.parse import quote_plus, unquote_plus
 
 import copernicusmarine
 import geojson
+from dateutil.parser import isoparse
 
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import format_query_params
@@ -46,11 +47,14 @@ class CopMarineSearch(StaticStacSearch):
         :rtype: Tuple[List[EOProduct], Optional[int]]
         """
         auth = kwargs.pop("auth").authenticate()
-        copernicusmarine.login(username=auth.username, password=auth.password)
+        copernicusmarine.login(
+            username=auth.username, password=auth.password, skip_if_user_logged_in=True
+        )
         product_type = kwargs.get("productType", product_type)
         bbox = None
         if "_dc_qs" in kwargs:
-            query_params = unquote_plus(unquote_plus(kwargs["_dc_qs"]))
+            query_str = unquote_plus(unquote_plus(kwargs["_dc_qs"]))
+            query_params = geojson.loads(query_str)
         else:
             query_params = format_query_params(product_type, self.config, **kwargs)
             query_params["dataset_id"] = product_type
@@ -80,9 +84,10 @@ class CopMarineSearch(StaticStacSearch):
             for v in ds.variables:
                 if v not in ds.coords:
                     new_query_params = copy.deepcopy(query_params)
-                    new_query_params["start_datetime"] = str(t.values)
-                    new_query_params["end_datetime"] = str(t.values)
-                    new_query_params["variables"] = v
+                    record_time = isoparse(str(t.values))
+                    new_query_params["start_datetime"] = record_time.isoformat()
+                    new_query_params["end_datetime"] = record_time.isoformat()
+                    new_query_params["variables"] = [v]
                     qs = geojson.dumps(new_query_params)
                     query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
                     product_id = "%s_%s_%s_%s" % (
@@ -106,5 +111,7 @@ class CopMarineSearch(StaticStacSearch):
                         productType=product_type,
                         properties=properties,
                     )
+                    product.remote_location = quote_plus(qs)
+                    product.location = product.remote_location
                     products.append(product)
         return products, len(products)
