@@ -80,6 +80,13 @@ def get_constraint_queryables_with_additional_params(
                 params_available[param] = True
                 if value in constraint[provider_key]:
                     params_matched[param] = True
+                elif isinstance(value, str):
+                    # for Copernicus providers, values can be multiple and represented with a string
+                    # separated by slashes (example: time = "0000/0100/0200")
+                    values = value.split("/")
+                    params_matched[param] = all(
+                        [v in constraint[provider_key] for v in values]
+                    )
                 values_available[param].update(constraint[provider_key])
         # match with default values of params
         for default_param, default_value in defaults.items():
