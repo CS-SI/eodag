@@ -182,7 +182,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
-        self.assertEqual(args[1], auth_plugin.config.auth_uri)
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertDictEqual(kwargs["data"], {})
         self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
         self.assertDictEqual(
@@ -221,7 +221,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
     def test_plugins_auth_tokenauth_credentials_in_data_authenticate(
         self, mock_requests_post
@@ -242,7 +242,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
-        self.assertEqual(args[1], auth_plugin.config.auth_uri)
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertDictEqual(kwargs["data"], auth_plugin.config.credentials)
         self.assertIsNone(kwargs["auth"])
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
@@ -253,7 +253,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
     def test_plugins_auth_tokenauth_with_data_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object when 'data' request argument is required"""
@@ -271,7 +271,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
-        self.assertEqual(args[1], auth_plugin.config.auth_uri)
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertDictEqual(kwargs["data"], {"grant_type": "client_credentials"})
         self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
@@ -282,7 +282,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.get", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
     def test_plugins_auth_tokenauth_get_method_request_authenticate(
         self, mock_requests_get
@@ -302,7 +302,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check token get request call arguments
         args, kwargs = mock_requests_get.call_args
-        self.assertEqual(args[1], auth_plugin.config.auth_uri)
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
         self.assertDictEqual(kwargs["data"], {})
         self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
         self.assertDictEqual(kwargs["headers"], USER_AGENT)

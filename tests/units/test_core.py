@@ -339,7 +339,14 @@ class TestCore(TestCoreBase):
         ],
         "S3_SLSTR_L1RBT_BC003": ["eumetsat_ds"],
         "S3_SLSTR_L2": ["wekeo"],
-        "S3_SLSTR_L2AOD": ["cop_dataspace", "creodias", "creodias_s3", "dedl", "eumetsat_ds", "sara"],
+        "S3_SLSTR_L2AOD": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
+            "sara",
+        ],
         "S3_SLSTR_L2FRP": [
             "cop_dataspace",
             "creodias",
