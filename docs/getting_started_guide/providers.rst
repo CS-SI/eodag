@@ -30,6 +30,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `wekeo <https://www.wekeo.eu>`_: WEkEO Copernicus and Sentinel data
 * `wekeo_cmems <https://www.wekeo.eu>`_: Copernicus Marine (CMEMS) data from WEkEO
 * `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_: DestinE Digital Twin output on Lumi
+* `dedl <https://hda.data.destination-earth.eu/ui>`_: Destination Earth Data Lake (DEDL)
 
 Providers available through an external plugin:
 

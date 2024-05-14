@@ -370,6 +370,9 @@ class PluginConfig(yaml.YAMLObject):
     signed_url_key: str  # SASAuth
     refresh_uri: str  # TokenAuth
     refresh_token_key: str  # TokenAuth
+    subject: Dict[str, Any]  # TokenExchangeAuth
+    subject_issuer: str  # TokenExchangeAuth
+    audience: str  # TokenExchangeAuth
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper

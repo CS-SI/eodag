@@ -4015,7 +4015,7 @@ DT_EXTREMES:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,Destination-Earth,Digital-Twin,Weather,Geophysical,Extremes
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Weather,Geophysical,Extremes
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Weather and Geophysical Extremes Digital Twin (DT)
@@ -4027,7 +4027,7 @@ DT_CLIMATE_ADAPTATION:
   platform: Digital Twin
   platformSerialIdentifier: DT
   processingLevel:
-  keywords: DT,DE,Destination-Earth,Digital-Twin,Climate,Change,Adaptation
+  keywords: DT,DE,LUMI,Destination-Earth,Digital-Twin,Climate,Change,Adaptation
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Climate Change Adaptation Digital Twin (DT)

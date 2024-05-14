@@ -74,6 +74,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+-------------------------------+----------------+
 | dedt_lumi          | BuildSearchResult     | OIDCAuthorizationCodeFlowAuth | HTTPDownload   |
 +--------------------+-----------------------+-------------------------------+----------------+
+| dedl               | StacSearch            | OIDCTokenExchangeAuth         | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
 
 .. _creating_plugins:
 

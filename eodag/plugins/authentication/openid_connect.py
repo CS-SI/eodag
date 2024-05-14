@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 import re
 import string
 from random import SystemRandom
@@ -39,6 +40,9 @@ if TYPE_CHECKING:
     from requests import PreparedRequest, Response
 
     from eodag.config import PluginConfig
+
+
+logger = logging.getLogger("eodag.auth.openid_connect")
 
 
 class OIDCAuthorizationCodeFlowAuth(Authentication):
@@ -114,6 +118,10 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         # same rules as with user_consent_form_data
         additional_login_form_data:
 
+        # (optional) Key/value pairs of patterns/messages. If exchange_url contains the given pattern, the associated
+        message will be sent in an AuthenticationError
+        exchange_url_error_pattern:
+
         # (optional) The OIDC provider's client secret of the eodag provider
         client_secret:
 
@@ -149,11 +157,16 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         self.session = requests.Session()
 
-    def authenticate(self) -> AuthBase:
+    def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
+        for err_pattern, err_message in getattr(
+            self.config, "exchange_url_error_pattern", {}
+        ).items():
+            if err_pattern in exchange_url:
+                raise AuthenticationError(err_message)
         if not exchange_url.startswith(self.config.redirect_uri):
             raise AuthenticationError(
                 f"Could not authenticate user with provider {self.provider}.",
@@ -343,4 +356,11 @@ class CodeAuthorizedAuth(AuthBase):
 
         elif self.where == "header":
             request.headers["Authorization"] = "Bearer {}".format(self.token)
+        logger.debug(
+            re.sub(
+                r"'Bearer [^']+'",
+                r"'Bearer ***'",
+                f"PreparedRequest: {request.__dict__}",
+            )
+        )
         return request

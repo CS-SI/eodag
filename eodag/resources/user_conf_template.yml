@@ -205,7 +205,6 @@ wekeo:
         credentials:
             username:
             password:
-
 wekeo_cmems:
     priority: # Lower value means lower priority (Default: 0)
     search:
@@ -215,7 +214,6 @@ wekeo_cmems:
         credentials:
             username:
             password:
-
 creodias_s3:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -234,3 +232,12 @@ dedt_lumi:
         credentials:
             username:
             password:
+dedl:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        outputs_prefix:
+    auth:
+      credentials:
+        username:
+        password:

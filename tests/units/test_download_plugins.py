@@ -1038,7 +1038,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 responses.POST,
                 f"{endpoint}/resources/{product_dataset}",
                 status=200,
-                content_type="application/octet-stream",
+                content_type="application/json",
                 body=b'{"state": "queued", "request_id": "dummy_request_id"}',
                 auto_calculate_content_length=True,
             )
@@ -1046,7 +1046,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 responses.GET,
                 f"{endpoint}/tasks/dummy_request_id",
                 status=200,
-                content_type="application/octet-stream",
+                content_type="application/json",
                 body=b'{"state": "running", "request_id": "dummy_request_id"}',
                 auto_calculate_content_length=True,
             )
@@ -1054,7 +1054,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 responses.GET,
                 f"{endpoint}/tasks/dummy_request_id",
                 status=200,
-                content_type="application/octet-stream",
+                content_type="application/json",
                 body=(
                     b'{"state": "completed", '
                     b'"request_id": "dummy_request_id", '
