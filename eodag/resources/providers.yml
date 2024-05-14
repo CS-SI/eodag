@@ -6313,6 +6313,9 @@
       generation:
         - generation
         - $.generation
+      levelist:
+        - levelist
+        - $.levelist
       levtype:
         - levtype
         - $.levtype
@@ -6364,7 +6367,7 @@
       stream: clte
       type: fc
       levtype: sfc
-      time: 0000/0001/0002
+      time: 0000
   download: !plugin
     type: HTTPDownload
     base_uri: https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/
