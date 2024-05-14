@@ -2,7 +2,7 @@ import copy
 import hashlib
 import re
 from typing import Any, List, Optional, Tuple
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, unquote_plus
 
 import copernicusmarine
 import geojson
@@ -45,22 +45,27 @@ class CopMarineSearch(StaticStacSearch):
         :returns: list of products and total number of products
         :rtype: Tuple[List[EOProduct], Optional[int]]
         """
+        auth = kwargs.pop("auth").authenticate()
+        copernicusmarine.login(username=auth.username, password=auth.password)
         product_type = kwargs.get("productType", product_type)
-        query_params = format_query_params(product_type, self.config, **kwargs)
-        query_params["dataset_id"] = product_type
-        version = re.search(r"_\d{6}", product_type)
-        if version:
-            query_params["dataset_version"] = version.group().replace("_", "")
-            query_params["dataset_id"] = query_params["dataset_id"].replace(
-                version.group(), ""
-            )
         bbox = None
-        if "bbox" in query_params:
-            bbox = query_params.pop("bbox")
-            query_params["minimum_longitude"] = bbox[0]
-            query_params["minimum_latitude"] = bbox[1]
-            query_params["maximum_longitude"] = bbox[2]
-            query_params["maximum_latitude"] = bbox[3]
+        if "_dc_qs" in kwargs:
+            query_params = unquote_plus(unquote_plus(kwargs["_dc_qs"]))
+        else:
+            query_params = format_query_params(product_type, self.config, **kwargs)
+            query_params["dataset_id"] = product_type
+            version = re.search(r"_\d{6}", product_type)
+            if version:
+                query_params["dataset_version"] = version.group().replace("_", "")
+                query_params["dataset_id"] = query_params["dataset_id"].replace(
+                    version.group(), ""
+                )
+            if "bbox" in query_params:
+                bbox = query_params.pop("bbox")
+                query_params["minimum_longitude"] = bbox[0]
+                query_params["minimum_latitude"] = bbox[1]
+                query_params["maximum_longitude"] = bbox[2]
+                query_params["maximum_latitude"] = bbox[3]
 
         ds = copernicusmarine.open_dataset(**query_params)
         products = []
@@ -89,6 +94,7 @@ class CopMarineSearch(StaticStacSearch):
 
                     properties = {
                         "id": product_id,
+                        "title": product_id,
                         "startTimeFromAscendingNode": str(t.values),
                         "completionTimeFromAscendingNode": str(t.values),
                         "variable": v,

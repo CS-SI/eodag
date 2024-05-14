@@ -670,7 +670,9 @@ def serve_rest(
 
         if pid == 0:
             os.setsid()
-            uvicorn.run("eodag.rest.server:app", host=bind_host, port=port)
+            uvicorn.run(
+                "eodag.rest.server:app", host=bind_host, port=port, loop="asyncio"
+            )
         else:
             sys.exit(0)
     else:
@@ -693,6 +695,7 @@ def serve_rest(
             port=port,
             reload=debug,
             log_config=logging_config,
+            loop="asyncio",
         )
 
 
