@@ -20,8 +20,9 @@ from __future__ import annotations
 import logging
 import re
 import string
+from datetime import datetime
 from random import SystemRandom
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypedDict
 
 import requests
 from lxml import etree
@@ -140,6 +141,16 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         refresh_token_key:
     """
 
+    class TokenInfo(TypedDict, total=False):
+        """Token infos"""
+
+        refresh_token: str
+        refresh_time: datetime
+        access_token: str
+        token_time: datetime
+        access_token_expiration: float
+        refresh_token_expiration: float
+
     SCOPE = "openid"
     RESPONSE_TYPE = "code"
     CONFIG_XPATH_REGEX = re.compile(r"^xpath\((?P<xpath_value>.+)\)$")
@@ -147,8 +158,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
         self.session = requests.Session()
-        self.token = ""
-        self.refresh_token = ""
+        self.token_info: self.TokenInfo = {}
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -167,52 +177,56 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
-        try:
-            token_response = self.token_request()
-            token_response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except Exception:
-            import traceback as tb
-
-            raise AuthenticationError(
-                "Something went wrong while trying to get authorization token:\n{}".format(
-                    tb.format_exc()
-                )
+        current_time = datetime.now()
+        res = None
+        if (
+            # No info: first time
+            not self.token_info
+            # Refresh token available but expired
+            or (
+                "refresh_token" in self.token_info
+                and self.token_info["refresh_token_expiration"] > 0
+                and (current_time - self.token_info["refresh_time"]).seconds
+                >= self.token_info["refresh_token_expiration"]
             )
+            # Refresh token *not* available and access token expired
+            or (
+                "refresh_token" not in self.token_info
+                and (current_time - self.token_info["token_time"]).seconds
+                >= self.token_info["access_token_expiration"]
+            )
+        ):
+            # Request *new* token on first attempt or if token expired
+            res = self._request_new_token()
+        elif (
+            # Refresh token available and access token expired
+            "refresh_token" in self.token_info
+            and (current_time - self.token_info["token_time"]).seconds
+            >= self.token_info["access_token_expiration"]
+        ):
+            # Use refresh token
+            res = self._get_token_with_refresh_token()
 
-        token_json = token_response.json()
-        self.token = token_json[self.config.token_key]
-        if getattr(self.config, "refresh_token_key", None):
-            self.refresh_token = token_json[self.config.refresh_token_key]
+        # Check if a new access token was requested
+        if res:
+            self.token_info["token_time"] = current_time
+            self.token_info["access_token_expiration"] = res["expires_in"]
+            self.token_info["access_token"] = res["access_token"]
+            if "refresh_token" in res:
+                self.token_info["refresh_time"] = current_time
+                self.token_info["refresh_token_expiration"] = res["refresh_expires_in"]
+                self.token_info["refresh_token"] = res["refresh_token"]
+        else:
+            logger.debug("Using already retrieved access token")
 
         return CodeAuthorizedAuth(
-            self.token,
+            self.token_info["access_token"],
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
 
-    def token_request(self) -> Response:
-        """Request a new token, either by refreshing an existing one or with a new authentication"""
-        if self.refresh_token:
-            # refresh existing token
-            logger.debug("Fetching access token with refresh token")
-            token_data: Dict[str, Any] = {
-                "refresh_token": self.refresh_token,
-                "grant_type": "refresh_token",
-            }
-            token_data = self._prepare_token_post_data(token_data)
-            post_request_kwargs: Any = {
-                self.config.token_exchange_post_data_method: token_data
-            }
-            token_response = self.session.post(
-                self.config.token_uri,
-                timeout=HTTP_REQ_TIMEOUT,
-                **post_request_kwargs,
-            )
-            return token_response
-
-        # new authentication
+    def _request_new_token(self) -> Dict[str, str]:
+        """Fetch the access token with a new authentcation"""
         logger.debug("Fetching access token from %s", self.config.token_uri)
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
@@ -230,8 +244,50 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         if self.config.user_consent_needed:
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
-        token_response = self.exchange_code_for_token(exchange_url, state)
-        return token_response
+        try:
+            token_response = self.exchange_code_for_token(exchange_url, state)
+            token_response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except Exception:
+            import traceback as tb
+
+            raise AuthenticationError(
+                "Something went wrong while trying to get authorization token:\n{}".format(
+                    tb.format_exc()
+                )
+            )
+        return token_response.json()
+
+    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+        """Fetch the access token with the refresh token"""
+        logger.debug(
+            "Fetching access token with refresh token from %s", self.config.token_uri
+        )
+        token_data: Dict[str, Any] = {
+            "refresh_token": self.refresh_token,
+            "grant_type": "refresh_token",
+        }
+        token_data = self._prepare_token_post_data(token_data)
+        post_request_kwargs: Any = {
+            self.config.token_exchange_post_data_method: token_data
+        }
+        try:
+            token_response = self.session.post(
+                self.config.token_uri,
+                timeout=HTTP_REQ_TIMEOUT,
+                **post_request_kwargs,
+            )
+            token_response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except Exception as exc:
+            logger.error(
+                "Could not fetch access token with refresh token, executing new token request, error: %s",
+                getattr(exc.response, "text", ""),
+            )
+            return self._request_new_token()
+        return token_response.json()
 
     def authenticate_user(self, state: str) -> Response:
         """Authenticate user"""
@@ -252,11 +308,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
         login_document = etree.HTML(authorization_response.text)
         login_forms = login_document.xpath(self.config.login_form_xpath)
-
-        if not login_forms:
-            # we assume user is already logged in
-            return authorization_response
-
         login_form = login_forms[0]
 
         # Get the form data to pass to the login form from config or from the login form
@@ -390,7 +441,7 @@ class CodeAuthorizedAuth(AuthBase):
     """CodeAuthorizedAuth custom authentication class to be used with requests module"""
 
     def __init__(self, token: str, where: str, key: Optional[str] = None) -> None:
-        self.token = token
+        self.access_token = token
         self.where = where
         self.key = key
 
@@ -399,13 +450,13 @@ class CodeAuthorizedAuth(AuthBase):
         if self.where == "qs":
             parts = urlparse(request.url)
             query_dict = parse_qs(parts.query)
-            query_dict.update({self.key: self.token})
+            query_dict.update({self.key: self.access_token})
             url_without_args = parts._replace(query=None).geturl()
 
             request.prepare_url(url_without_args, query_dict)
 
         elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
+            request.headers["Authorization"] = "Bearer {}".format(self.access_token)
         logger.debug(
             re.sub(
                 r"'Bearer [^']+'",
