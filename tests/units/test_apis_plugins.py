@@ -99,9 +99,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "origin": "ecmf",
             "grid": "0.5/0.5",
             "param": "59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/"
-            + "228001/228002/228039/228139/228141/228144/228164/228228",
+            + "228002/228039/228139/228141/228144/228164/228228",
             "step": 0,
             "time": "00:00",
+            "target": "output",
         }
         self.custom_query_params = {
             "origin": "ecmf",
