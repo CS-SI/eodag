@@ -309,7 +309,7 @@ class StacItem(StacCommon):
             product_item = self.__filter_item_properties_values(product_item)
 
             # update item link with datacube query-string
-            if _dc_qs:
+            if _dc_qs or self.provider:
                 url_parts = urlparse(str(product_item["links"][0]["href"]))
                 without_arg_url = (
                     f"{url_parts.scheme}://{url_parts.netloc}{url_parts.path}"
