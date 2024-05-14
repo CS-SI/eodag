@@ -247,7 +247,7 @@ eumetsat_ds:
         outputs_prefix:
     auth:
         credentials:
-            consumer_key:
-            consumer_secret:
+            username:
+            password:
     download:
         outputs_prefix:

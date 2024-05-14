@@ -157,4 +157,4 @@ to each provider supported by ``eodag``:
   `DESP OpenID` and then click `Authenticate`. Finally click on `Register` to create a new account.
 
 * ``eumetsat_ds``: create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
-  Then use the consumer key and the consumer secret from `here <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
+  Then use the consumer key as `username` and the consumer secret as `password` from `here <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
