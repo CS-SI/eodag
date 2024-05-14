@@ -41,7 +41,8 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
       `wekeo <https://www.wekeo.eu/>`_,
       `wekeo_cmems <https://www.wekeo.eu>`_,
-      `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_
+      `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_,
+      `dedl <https://hda.data.destination-earth.eu/ui>`_
 
 EODAG has the following primary features:
 
