@@ -1408,6 +1408,24 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("platform", res["properties"])
         self.assertEqual("string", res["properties"]["platform"]["type"][0])
 
+    def test_stac_queryables_type(self):
+        res = self._request_valid(
+            "collections/S2_MSI_L2A/queryables?provider=creodias",
+            check_links=False,
+        )
+        self.assertIn("eo:cloud_cover", res["properties"])
+        cloud_cover = res["properties"]["eo:cloud_cover"]
+        self.assertIn("type", cloud_cover)
+        self.assertListEqual(["integer", "null"], cloud_cover["type"])
+        self.assertIn("min", cloud_cover)
+        self.assertListEqual([0, None], cloud_cover["min"])
+        self.assertIn("max", cloud_cover)
+        self.assertListEqual([100, None], cloud_cover["max"])
+        self.assertIn("processing:level", res["properties"])
+        processing_level = res["properties"]["processing:level"]
+        self.assertListEqual(["string", "null"], processing_level["type"])
+        self.assertIsNone(processing_level["min"])
+
     @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
     def test_product_type_queryables_from_constraints(
         self, mock_requests_constraints: Mock
