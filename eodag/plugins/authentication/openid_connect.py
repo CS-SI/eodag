@@ -136,6 +136,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         # used in the query request
         token_qs_key:
 
+        # (optional) The key pointing to the refresh_token in the json response to the POST request to the token server
+        refresh_token_key:
     """
 
     SCOPE = "openid"
@@ -145,6 +147,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
         self.session = requests.Session()
+        self.token = ""
+        self.refresh_token = ""
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -163,6 +167,53 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
+        try:
+            token_response = self.token_request()
+            token_response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except Exception:
+            import traceback as tb
+
+            raise AuthenticationError(
+                "Something went wrong while trying to get authorization token:\n{}".format(
+                    tb.format_exc()
+                )
+            )
+
+        token_json = token_response.json()
+        self.token = token_json[self.config.token_key]
+        if getattr(self.config, "refresh_token_key", None):
+            self.refresh_token = token_json[self.config.refresh_token_key]
+
+        return CodeAuthorizedAuth(
+            self.token,
+            self.config.token_provision,
+            key=getattr(self.config, "token_qs_key", None),
+        )
+
+    def token_request(self) -> Response:
+        """Request a new token, either by refreshing an existing one or with a new authentication"""
+        if self.refresh_token:
+            # refresh existing token
+            logger.debug("Fetching access token with refresh token")
+            token_data: Dict[str, Any] = {
+                "refresh_token": self.refresh_token,
+                "grant_type": "refresh_token",
+            }
+            token_data = self._prepare_token_post_data(token_data)
+            post_request_kwargs: Any = {
+                self.config.token_exchange_post_data_method: token_data
+            }
+            token_response = self.session.post(
+                self.config.token_uri,
+                timeout=HTTP_REQ_TIMEOUT,
+                **post_request_kwargs,
+            )
+            return token_response
+
+        # new authentication
+        logger.debug("Fetching access token from %s", self.config.token_uri)
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
@@ -179,23 +230,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         if self.config.user_consent_needed:
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
-        try:
-            token = self.exchange_code_for_token(exchange_url, state)
-        except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except Exception:
-            import traceback as tb
-
-            raise AuthenticationError(
-                "Something went wrong while trying to get authorization token:\n{}".format(
-                    tb.format_exc()
-                )
-            )
-        return CodeAuthorizedAuth(
-            token,
-            self.config.token_provision,
-            key=getattr(self.config, "token_qs_key", None),
-        )
+        token_response = self.exchange_code_for_token(exchange_url, state)
+        return token_response
 
     def authenticate_user(self, state: str) -> Response:
         """Authenticate user"""
@@ -271,7 +307,35 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             timeout=HTTP_REQ_TIMEOUT,
         )
 
-    def exchange_code_for_token(self, authorized_url: str, state: str) -> str:
+    def _prepare_token_post_data(self, token_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare the common data to post to the token URI"""
+        token_data.update(
+            {
+                "redirect_uri": self.config.redirect_uri,
+                "client_id": self.config.client_id,
+            }
+        )
+        # If necessary, change the keys of the form data that will be passed to the token exchange POST request
+        custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
+        if custom_token_exchange_params:
+            token_data[custom_token_exchange_params["redirect_uri"]] = token_data.pop(
+                "redirect_uri"
+            )
+            token_data[custom_token_exchange_params["client_id"]] = token_data.pop(
+                "client_id"
+            )
+        # If the client_secret is known, the token exchange request must be authenticated with a BASIC Auth, using the
+        # client_id and client_secret as username and password respectively
+        if getattr(self.config, "client_secret", None):
+            token_data.update(
+                {
+                    "auth": (self.config.client_id, self.config.client_secret),
+                    "client_secret": self.config.client_secret,
+                }
+            )
+        return token_data
+
+    def exchange_code_for_token(self, authorized_url: str, state: str) -> Response:
         """Get exchange code for token"""
         qs = parse_qs(urlparse(authorized_url).query)
         if qs["state"][0] != state:
@@ -280,30 +344,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         code = qs["code"][0]
         token_exchange_data: Dict[str, Any] = {
-            "redirect_uri": self.config.redirect_uri,
-            "client_id": self.config.client_id,
             "code": code,
             "state": state,
             "grant_type": "authorization_code",
         }
-        # If necessary, change the keys of the form data that will be passed to the token exchange POST request
-        custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
-        if custom_token_exchange_params:
-            token_exchange_data[
-                custom_token_exchange_params["redirect_uri"]
-            ] = token_exchange_data.pop("redirect_uri")
-            token_exchange_data[
-                custom_token_exchange_params["client_id"]
-            ] = token_exchange_data.pop("client_id")
-        # If the client_secret is known, the token exchange request must be authenticated with a BASIC Auth, using the
-        # client_id and client_secret as username and password respectively
-        if getattr(self.config, "client_secret", None):
-            token_exchange_data.update(
-                {
-                    "auth": (self.config.client_id, self.config.client_secret),
-                    "client_secret": self.config.client_secret,
-                }
-            )
+        token_exchange_data = self._prepare_token_post_data(token_exchange_data)
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
@@ -313,7 +358,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             timeout=HTTP_REQ_TIMEOUT,
             **post_request_kwargs,
         )
-        return r.json()[self.config.token_key]
+        return r
 
     def _constant_or_xpath_extracted(
         self, value: str, form_element: Any
