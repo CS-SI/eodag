@@ -804,14 +804,14 @@ class RequestTestCase(unittest.TestCase):
         and the provider should be added to the item link
         """
         results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&provider=creodias",
+            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&provider=peps",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-01T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
-                provider="creodias",
+                provider="peps",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=True,
             ),
@@ -823,7 +823,7 @@ class RequestTestCase(unittest.TestCase):
             if link["rel"] == "self":
                 self_link = link
         self.assertIsNotNone(self_link)
-        self.assertIn("?provider=creodias", self_link["href"])
+        self.assertIn("?provider=peps", self_link["href"])
 
     def test_search_item_id_from_catalog(self):
         """Search by id through eodag server /catalog endpoint should return a valid response"""
