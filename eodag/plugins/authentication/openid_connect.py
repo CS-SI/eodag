@@ -144,6 +144,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
+        self.session = requests.Session()
+
+    def validate_config_credentials(self) -> None:
+        """Validate configured credentials"""
+        super(OIDCAuthorizationCodeFlowAuth, self).validate_config_credentials()
         if getattr(self.config, "token_provision", None) not in ("qs", "header"):
             raise MisconfiguredError(
                 'Provider config parameter "token_provision" must be one of "qs" or "header"'
@@ -155,7 +160,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 'Provider config parameter "token_provision" with value "qs" must have '
                 '"token_qs_key" config parameter as well'
             )
-        self.session = requests.Session()
 
     def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
@@ -235,11 +239,12 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             # the value of its action attribute to this xpath
             auth_uri = login_form.xpath(
                 self.config.login_form_xpath.rstrip("/") + "/@action"
-            )[0]
-            if not auth_uri:
+            )
+            if not auth_uri or not auth_uri[0]:
                 raise RequestError(
                     f"Could not get auth_uri from {self.config.login_form_xpath}"
                 )
+            auth_uri = auth_uri[0]
         else:
             auth_uri = getattr(self.config, "authentication_uri", None)
             if not auth_uri:
@@ -317,7 +322,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         if not match:
             return value
         value_from_xpath = form_element.xpath(
-            self.CONFIG_XPATH_REGEX.match(value).groupdict("xpath_value")
+            self.CONFIG_XPATH_REGEX.match(value).groupdict("xpath_value")["xpath_value"]
         )
         if len(value_from_xpath) == 1:
             return value_from_xpath[0]
