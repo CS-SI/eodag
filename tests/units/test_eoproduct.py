@@ -512,23 +512,23 @@ class TestEOProduct(EODagTestCase):
                     properties=dict(
                         self.eoproduct_props,
                         **{
-                            "downloadLink": "%257B/cannot/be/resolved",
-                            "otherProperty": "%/%s/neither/resolved",
+                            "downloadLink": "%(257B/cannot/be/resolved",
+                            "otherProperty": "%(/%s/neither/resolved",
                         },
                     )
                 )
             )
-            self.assertEqual(downloadable_product.location, "%257B/cannot/be/resolved")
+            self.assertEqual(downloadable_product.location, "%(257B/cannot/be/resolved")
             self.assertEqual(
-                downloadable_product.remote_location, "%257B/cannot/be/resolved"
+                downloadable_product.remote_location, "%(257B/cannot/be/resolved"
             )
             self.assertEqual(
                 downloadable_product.properties["downloadLink"],
-                "%257B/cannot/be/resolved",
+                "%(257B/cannot/be/resolved",
             )
             self.assertEqual(
                 downloadable_product.properties["otherProperty"],
-                "%/%s/neither/resolved",
+                "%(/%s/neither/resolved",
             )
 
             needed_logs = [

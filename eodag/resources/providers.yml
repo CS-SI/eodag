@@ -4333,7 +4333,7 @@
       completionTimeFromAscendingNode:
         - '{{"completionDate": "{completionTimeFromAscendingNode}"}}'
         - '$.properties.enddate'
-      downloadLink: '{$.properties.location#replace_str("%","%%")}'
+      downloadLink: '$.properties.location'
       title: '$.id'
       storageStatus: 'OFFLINE'
       processingLevel:
@@ -6814,10 +6814,10 @@
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # The url of the quicklook
-      quicklook: '{$.properties.links.previews[?(@.title="Quicklook")].href#replace_str("%","%%")}'
+      quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: '{$.properties.links.data[?(@.title="Product download")].href#replace_str("%","%%")}'
+      downloadLink: '$.properties.links.data[?(@.title="Product download")].href'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'

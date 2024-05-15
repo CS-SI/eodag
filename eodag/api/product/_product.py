@@ -281,20 +281,21 @@ class EOProduct:
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")
         for location_attr in location_attrs:
-            try:
-                setattr(
-                    self,
-                    location_attr,
-                    getattr(self, location_attr) % vars(self.downloader.config),
-                )
-            except ValueError as e:
-                logger.debug(
-                    f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
-                    f" in register_downloader: {str(e)}"
-                )
+            if "%(" in getattr(self, location_attr):
+                try:
+                    setattr(
+                        self,
+                        location_attr,
+                        getattr(self, location_attr) % vars(self.downloader.config),
+                    )
+                except ValueError as e:
+                    logger.debug(
+                        f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
+                        f" in register_downloader: {str(e)}"
+                    )
 
         for k, v in self.properties.items():
-            if isinstance(v, str):
+            if isinstance(v, str) and "%(" in v:
                 try:
                     self.properties[k] = v % vars(self.downloader.config)
                 except (TypeError, ValueError) as e:
@@ -348,11 +349,6 @@ class EOProduct:
             self.downloader_auth.authenticate()
             if self.downloader_auth is not None
             else self.downloader_auth
-        )
-
-        # resolve remote location if needed with downloader configuration
-        self.remote_location = self.remote_location.replace("%", "%%") % vars(
-            self.downloader.config
         )
 
         progress_callback, close_progress_callback = self._init_progress_bar(
