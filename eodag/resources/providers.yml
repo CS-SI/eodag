@@ -718,7 +718,6 @@
     type: TokenAuth
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
     ssl_verify: true
-    credentials_type: req_data
 
 ---
 !provider # MARK: peps

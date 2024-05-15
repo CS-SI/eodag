@@ -183,8 +183,8 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
-        self.assertDictEqual(kwargs["data"], {})
-        self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
+        self.assertDictEqual(kwargs["data"], {"foo": "bar", "baz": "qux"})
+        self.assertIsNone(kwargs["auth"])
         self.assertDictEqual(
             kwargs["headers"], dict(auth_plugin.config.headers, **USER_AGENT)
         )
@@ -272,8 +272,11 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
-        self.assertDictEqual(kwargs["data"], {"grant_type": "client_credentials"})
-        self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
+        self.assertDictEqual(
+            kwargs["data"],
+            {"grant_type": "client_credentials", "foo": "bar", "baz": "qux"},
+        )
+        self.assertIsNone(kwargs["auth"])
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
 
         # check if token is integrated to the request
@@ -290,7 +293,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         """TokenAuth.authenticate must return a RequestsTokenAuth object with 'GET' method request"""
         auth_plugin = self.get_auth_plugin("provider_text_token_get_method")
 
-        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
+        auth_plugin.config.credentials = {"username": "bar", "password": "qux"}
 
         # mock token get request response
         mock_requests_get.return_value = mock.Mock()
@@ -303,7 +306,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         # check token get request call arguments
         args, kwargs = mock_requests_get.call_args
         self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
-        self.assertDictEqual(kwargs["data"], {})
+        self.assertNotIn("data", kwargs)
         self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
         self.assertDictEqual(kwargs["headers"], USER_AGENT)
 

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
@@ -70,26 +70,10 @@ class TokenAuth(Authentication):
         """Authenticate"""
         self.validate_config_credentials()
 
-        # append data to req if some are specified in config
-        req_data: Dict[str, str] = getattr(self.config, "req_data", {})
-        # append credentials to req auth or req data according to config
-        if getattr(self.config, "credentials_type", "req_auth") == "req_data":
-            req_data = dict(req_data, **self.config.credentials)
-            req_auth: Optional[Tuple[str, str]] = None
-        else:
-            credentials = list(self.config.credentials.values())
-            req_auth = (credentials[0], credentials[1])
-
-        # append headers to req if some are specified in config
-        req_kwargs: Dict[str, Any] = {
-            "headers": dict(self.config.headers, **USER_AGENT)
-        }
         s = requests.Session()
         try:
             # First get the token
-            response = self._token_request(
-                session=s, req_kwargs=req_kwargs, req_data=req_data, req_auth=req_auth
-            )
+            response = self._token_request(session=s)
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
@@ -131,15 +115,18 @@ class TokenAuth(Authentication):
     def _token_request(
         self,
         session: requests.Session,
-        req_kwargs: Dict[str, Any],
-        req_data: Dict[str, str],
-        req_auth: Optional[Tuple[str, str]],
     ) -> requests.Response:
         retries = Retry(
             total=3,
             backoff_factor=2,
             status_forcelist=[401, 429, 500, 502, 503, 504],
         )
+
+        # append headers to req if some are specified in config
+        req_kwargs: Dict[str, Any] = {
+            "headers": dict(self.config.headers, **USER_AGENT)
+        }
+
         if self.refresh_token:
             logger.debug("fetching access token with refresh token")
             session.mount(self.config.refresh_uri, HTTPAdapter(max_retries=retries))
@@ -159,8 +146,26 @@ class TokenAuth(Authentication):
         # append headers to req if some are specified in config
         session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
         method = getattr(self.config, "request_method", "POST")
-        req_kwargs["data"] = req_data
-        req_kwargs["auth"] = req_auth
+
+        # send credentials also as data in POST requests
+        if method == "POST":
+            # append req_data to credentials if specified in config
+            req_kwargs["data"] = dict(
+                getattr(self.config, "req_data", {}), **self.config.credentials
+            )
+
+        # credentials as auth tuple if possible
+        req_kwargs["auth"] = (
+            (
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            )
+            if all(
+                k in ["username", "password"] for k in self.config.credentials.keys()
+            )
+            else None
+        )
+
         return session.request(
             method=method,
             url=self.config.auth_uri,
