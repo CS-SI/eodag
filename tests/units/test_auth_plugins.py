@@ -901,6 +901,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                             "const_key": "const_value",
                             "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
                         },
+                        "exchange_url_error_pattern": {
+                            "TERMS_AND_CONDITIONS": "Terms and conditions are not accepted"
+                        },
                     },
                 },
             },
@@ -1212,6 +1215,26 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             auth_plugin, exchange_url, state
         )
         self.assertEqual(resp, json_response)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+        return_value=mock.Mock(
+            url="http://auth.foo/error?err_code=TERMS_AND_CONDITIONS"
+        ),
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_exchange_url_error_pattern(
+        self,
+        mock_authenticate_user,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must raise an error if the exchange URL matches the
+        patter `exchange_url_error_pattern`"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        with self.assertRaises(AuthenticationError) as context:
+            auth_plugin.request_new_token()
+        self.assertEqual(
+            "Terms and conditions are not accepted", str(context.exception)
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.request_new_token",
