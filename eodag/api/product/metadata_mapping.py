@@ -888,7 +888,7 @@ def properties_from_json(
         else:
             conversion_or_none, path_or_text = value
         if isinstance(path_or_text, str):
-            if re.search(r"({[^{}]+})+", path_or_text):
+            if re.search(r"({[^{}:]+})+", path_or_text):
                 templates[metadata] = path_or_text
             else:
                 properties[metadata] = path_or_text
@@ -922,7 +922,7 @@ def properties_from_json(
                         conversion_or_none = conversion_or_none[0]
 
                     # check if conversion uses variables to format
-                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                    if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
                     properties[metadata] = format_metadata(
@@ -1106,7 +1106,7 @@ def properties_from_xml(
                         conversion_or_none = conversion_or_none[0]
 
                     # check if conversion uses variables to format
-                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                    if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
                     properties[metadata] = [
@@ -1128,7 +1128,7 @@ def properties_from_xml(
             # formatting resolution using previously successfully resolved properties
             # Ignore any transformation specified. If a value is to be passed as is,
             # we don't want to transform it further
-            if re.search(r"({[^{}]+})+", path_or_text):
+            if re.search(r"({[^{}:]+})+", path_or_text):
                 templates[metadata] = path_or_text
             else:
                 properties[metadata] = path_or_text
