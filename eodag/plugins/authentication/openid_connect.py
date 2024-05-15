@@ -148,8 +148,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         refresh_time: datetime
         access_token: str
         token_time: datetime
-        access_token_expiration: float
-        refresh_token_expiration: float
+        access_token_expiration: int
+        refresh_token_expiration: int
 
     SCOPE = "openid"
     RESPONSE_TYPE = "code"
@@ -197,7 +197,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         ):
             # Request *new* token on first attempt or if token expired
-            res = self._request_new_token()
+            res = self.request_new_token()
         elif (
             # Refresh token available and access token expired
             "refresh_token" in self.token_info
@@ -205,7 +205,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             >= self.token_info["access_token_expiration"]
         ):
             # Use refresh token
-            res = self._get_token_with_refresh_token()
+            res = self.get_token_with_refresh_token()
 
         # Check if a new access token was requested
         if res:
@@ -225,7 +225,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             key=getattr(self.config, "token_qs_key", None),
         )
 
-    def _request_new_token(self) -> Dict[str, str]:
+    def request_new_token(self) -> Dict[str, str]:
         """Fetch the access token with a new authentcation"""
         logger.debug("Fetching access token from %s", self.config.token_uri)
         state = self.compute_state()
@@ -259,13 +259,13 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         return token_response.json()
 
-    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+    def get_token_with_refresh_token(self) -> Dict[str, str]:
         """Fetch the access token with the refresh token"""
         logger.debug(
             "Fetching access token with refresh token from %s", self.config.token_uri
         )
         token_data: Dict[str, Any] = {
-            "refresh_token": self.refresh_token,
+            "refresh_token": self.token_info["refresh_token"],
             "grant_type": "refresh_token",
         }
         token_data = self._prepare_token_post_data(token_data)
@@ -286,7 +286,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
                 "Could not fetch access token with refresh token, executing new token request, error: %s",
                 getattr(exc.response, "text", ""),
             )
-            return self._request_new_token()
+            return self.request_new_token()
         return token_response.json()
 
     def authenticate_user(self, state: str) -> Response:
@@ -441,7 +441,7 @@ class CodeAuthorizedAuth(AuthBase):
     """CodeAuthorizedAuth custom authentication class to be used with requests module"""
 
     def __init__(self, token: str, where: str, key: Optional[str] = None) -> None:
-        self.access_token = token
+        self.token = token
         self.where = where
         self.key = key
 
@@ -450,13 +450,13 @@ class CodeAuthorizedAuth(AuthBase):
         if self.where == "qs":
             parts = urlparse(request.url)
             query_dict = parse_qs(parts.query)
-            query_dict.update({self.key: self.access_token})
+            query_dict.update({self.key: self.token})
             url_without_args = parts._replace(query=None).geturl()
 
             request.prepare_url(url_without_args, query_dict)
 
         elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.access_token)
+            request.headers["Authorization"] = "Bearer {}".format(self.token)
         logger.debug(
             re.sub(
                 r"'Bearer [^']+'",
