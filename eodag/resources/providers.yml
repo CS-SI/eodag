@@ -6342,13 +6342,14 @@
         - $.type
   products:
     DT_EXTREMES:
-      class: rd
-      expver: i7yv
+      class: d1
+      dataset: extremes-dt
+      expver: "0001"
       stream: oper
       type: fc
       levtype: sfc
       step: 0
-      param: 34
+      param: 31
       time: 0000
     DT_CLIMATE_ADAPTATION:
       activity: ScenarioMIP
