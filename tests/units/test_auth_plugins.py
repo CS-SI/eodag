@@ -941,64 +941,6 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.validate_config_credentials()
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
-        autospec=True,
-        return_value=mock.Mock(url="http://foo.bar"),
-    )
-    def test_plugins_auth_codeflowauth_request_new_token_no_redirect(
-        self,
-        mock_authenticate_user,
-    ):
-        """OIDCAuthorizationCodeFlowAuth.request_new_token must raise and error if the provider doesn't redirect
-        to `redirect_uri`"""
-        auth_plugin = self.get_auth_plugin("provider_ok")
-        self.assertRaises(
-            AuthenticationError,
-            auth_plugin.request_new_token,
-        )
-
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
-        autospec=True,
-    )
-    def test_plugins_auth_codeflowauth_request_new_token_ok(
-        self,
-        mock_authenticate_user,
-        mock_exchange_code_for_token,
-        mock_compute_state,
-    ):
-        """OIDCAuthorizationCodeFlowAuth.request_new_token must return the JSON response from the auth server"""
-        auth_plugin = self.get_auth_plugin("provider_ok")
-        state = "1234567890123456789012"
-        exchange_url = auth_plugin.config.redirect_uri
-        json_response = {
-            "access_token": "obtained-access-token",
-            "expires_in": "3600",
-            "refresh_expires_in": "0",
-            "refresh_token": "obtained-refresh-token",
-        }
-        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
-        mock_compute_state.return_value = state
-        mock_exchange_code_for_token.return_value.json.return_value = json_response
-
-        resp = auth_plugin.request_new_token()
-
-        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
-        mock_exchange_code_for_token.assert_called_once_with(
-            auth_plugin, exchange_url, state
-        )
-        # Check returned value is the server's JSON response
-        self.assertEqual(resp, json_response)
-
-    @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.get_token_with_refresh_token",
         autospec=True,
     )
@@ -1115,6 +1057,108 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_request_new_token.assert_not_called()
         mock_get_token_with_refresh_token.assert_not_called()
         self.assertEqual(auth.token, auth_plugin.token_info["access_token"])
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_authenticate_token_qs_key_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object with a `key`
+        if `token_provision=="qs"`"""
+        auth_plugin = self.get_auth_plugin("provider_token_qs_key")
+        state = "1234567890123456789012"
+        exchange_url = auth_plugin.config.redirect_uri
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
+
+        auth = auth_plugin.authenticate()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        self.assertIsInstance(auth, CodeAuthorizedAuth)
+        self.assertEqual(auth.token, json_response["access_token"])
+        self.assertEqual(auth.where, "qs")
+        self.assertEqual(auth.key, auth_plugin.config.token_qs_key)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+        return_value=mock.Mock(url="http://foo.bar"),
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_no_redirect(
+        self,
+        mock_authenticate_user,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must raise and error if the provider doesn't redirect
+        to `redirect_uri`"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        self.assertRaises(
+            AuthenticationError,
+            auth_plugin.request_new_token,
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must return the JSON response from the auth server"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        state = "1234567890123456789012"
+        exchange_url = auth_plugin.config.redirect_uri
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value.json.return_value = json_response
+
+        resp = auth_plugin.request_new_token()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        # Check returned value is the server's JSON response
+        self.assertEqual(resp, json_response)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.grant_user_consent",
@@ -1234,50 +1278,6 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
 
         auth_plugin.get_token_with_refresh_token()
         mock_request_new_token.assert_called_once()
-
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
-        autospec=True,
-    )
-    def test_plugins_auth_codeflowauth_authenticate_token_qs_key_ok(
-        self,
-        mock_authenticate_user,
-        mock_exchange_code_for_token,
-        mock_compute_state,
-    ):
-        """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object with a `key`
-        if `token_provision=="qs"`"""
-        auth_plugin = self.get_auth_plugin("provider_token_qs_key")
-        state = "1234567890123456789012"
-        exchange_url = auth_plugin.config.redirect_uri
-        json_response = {
-            "access_token": "obtained-access-token",
-            "expires_in": "3600",
-            "refresh_expires_in": "0",
-            "refresh_token": "obtained-refresh-token",
-        }
-        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
-        mock_compute_state.return_value = state
-        mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
-
-        auth = auth_plugin.authenticate()
-
-        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
-        mock_exchange_code_for_token.assert_called_once_with(
-            auth_plugin, exchange_url, state
-        )
-        self.assertIsInstance(auth, CodeAuthorizedAuth)
-        self.assertEqual(auth.token, json_response["access_token"])
-        self.assertEqual(auth.where, "qs")
-        self.assertEqual(auth.key, auth_plugin.config.token_qs_key)
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.post", autospec=True
