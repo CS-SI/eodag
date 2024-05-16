@@ -289,14 +289,13 @@ def _instrument_download(
     :param downloaded_data_counter: Downloaded data counter.
     :type downloaded_data_counter: Counter
     """
-    # Wrapping server.download_stac_item_by_id_stream
+    # Wrapping server.download_stac_item
 
-    wrapped_server_download_stac_item_by_id_stream = (
-        server.download_stac_item_by_id_stream
-    )
+    wrapped_server_download_stac_item = server.download_stac_item
 
-    @functools.wraps(wrapped_server_download_stac_item_by_id_stream)
-    def wrapper_server_download_stac_item_by_id_stream(
+    @functools.wraps(wrapped_server_download_stac_item)
+    def wrapper_server_download_stac_item(
+        request: Request,
         catalogs: List[str],
         item_id: str,
         provider: Optional[str] = None,
@@ -323,8 +322,8 @@ def _instrument_download(
 
             # Call wrapped function
             try:
-                result = wrapped_server_download_stac_item_by_id_stream(
-                    catalogs, item_id, provider, asset, **kwargs
+                result = wrapped_server_download_stac_item(
+                    request, catalogs, item_id, provider, asset, **kwargs
                 )
             except Exception as exc:
                 exception = exc
@@ -353,12 +352,8 @@ def _instrument_download(
 
         return result
 
-    wrapped_server_download_stac_item_by_id_stream.opentelemetry_instrumentation_eodag_applied = (
-        True
-    )
-    server.download_stac_item_by_id_stream = (
-        wrapper_server_download_stac_item_by_id_stream
-    )
+    wrapped_server_download_stac_item.opentelemetry_instrumentation_eodag_applied = True
+    server.download_stac_item = wrapper_server_download_stac_item
 
     # Wrapping http.HTTPDownload._stream_download_dict
 
@@ -591,7 +586,7 @@ class EODAGInstrumentor(BaseInstrumentor):
         This only works if no other module also patches eodag"""
         patches = [
             (server, "search_stac_items"),
-            (server, "download_stac_item_by_id_stream"),
+            (server, "download_stac_item"),
             (QueryStringSearch, "_request"),
             (Download, "progress_callback_decorator"),
         ]
