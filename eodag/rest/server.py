@@ -84,7 +84,6 @@ from eodag.rest.utils import (
     str2list,
 )
 from eodag.utils import parse_header, update_nested_dict
-from eodag.utils.instrumentation.eodag import EODAGInstrumentor
 
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
@@ -694,6 +693,9 @@ def telemetry_init(fastapi_app: Optional[FastAPI] = None) -> None:
             meter_provider=meter_provider,
         )
     logger.debug("Instrument EODAG app")
+
+    from eodag.utils.instrumentation.eodag import EODAGInstrumentor
+
     EODAGInstrumentor(eodag_api).instrument(
         tracer_provider=tracer_provider,
         meter_provider=meter_provider,
