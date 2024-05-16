@@ -161,7 +161,7 @@ class TokenAuth(Authentication):
                 self.config.credentials["password"],
             )
             if all(
-                k in ["username", "password"] for k in self.config.credentials.keys()
+                k in self.config.credentials.keys() for k in ["username", "password"]
             )
             else None
         )
