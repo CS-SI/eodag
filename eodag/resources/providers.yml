@@ -6711,7 +6711,7 @@
   description: EUMETSAT Data Store
   roles:
     - host
-  url: https://www.eumetsat.int/
+  url: https://data.eumetsat.int
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
