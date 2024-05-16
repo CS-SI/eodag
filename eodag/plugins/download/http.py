@@ -1017,9 +1017,14 @@ class HTTPDownload(Download):
                     product.headers["Content-Type"] = guessed_content_type
 
                 progress_callback.reset(total=stream_size)
+                wrapped_progress_callback = self.progress_callback_decorator(
+                    progress_callback,
+                    provider=self.provider,
+                    product_type=product.product_type,
+                )
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
-                        progress_callback(len(chunk))
+                        wrapped_progress_callback(len(chunk))
                         yield chunk
 
     def _stream_download_assets(
