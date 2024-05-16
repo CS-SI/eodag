@@ -590,7 +590,10 @@ class HTTPDownload(Download):
             return fs_path
 
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and not getattr(self.config, "ignore_assets", False):
+        if len(product.assets) > 0 and (
+            not getattr(self.config, "ignore_assets", False)
+            or kwargs.get("asset", None) is not None
+        ):
             try:
                 fs_path = self._download_assets(
                     product,

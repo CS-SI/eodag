@@ -848,6 +848,63 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             variables = path.split("?")[1]
             return variables.split(",")
 
+        @staticmethod
+        def convert_assets_list_to_dict(
+            assets_list: List[Dict[str, str]], asset_name_key: str = "title"
+        ) -> Dict[str, Dict[str, str]]:
+            """Convert a list of assets to a dictionary where keys represent
+            name of assets and are found among values of asset dictionaries.
+
+            assets_list == [
+                {"href": "foo", "title": "asset1", "name": "foo-name"},
+                {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+                {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+                {"href": "qux", "title": "asset3", "name": "qux-name"},
+            ] and asset_name_key == "title" => {
+                "asset1": {"href": "foo", "title": "asset1", "name": "foo-name"},
+                "path/to/asset1": {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+                "asset2": {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+                "asset3": {"href": "qux", "title": "asset3", "name": "qux-name"},
+            }
+            assets_list == [
+                {"href": "foo", "title": "foo-title", "name": "asset1"},
+                {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+                {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+                {"href": "qux", "title": "qux-title", "name": "asset3"},
+            ] and asset_name_key == "name" => {
+                "asset1": {"href": "foo", "title": "foo-title", "name": "asset1"},
+                "path/to/asset1": {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+                "asset2": {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+                "asset3": {"href": "qux", "title": "qux-title", "name": "asset3"},
+            }
+            """
+            asset_names: List[str] = []
+            assets_dict: Dict[str, Dict[str, str]] = {}
+
+            for asset in assets_list:
+                asset_name = asset[asset_name_key]
+                asset_names.append(asset_name)
+                assets_dict[asset_name] = asset
+
+            # we only keep the equivalent of the path basename in the case where the
+            # asset name has a path pattern and this basename is only found once
+            immutable_asset_indexes: List[int] = []
+            for i, asset_name in enumerate(asset_names):
+                if i in immutable_asset_indexes:
+                    continue
+                change_asset_name = True
+                asset_basename = asset_name.split("/")[-1]
+                j = i + 1
+                while change_asset_name and j < len(asset_names):
+                    asset_tmp_basename = asset_names[j].split("/")[-1]
+                    if asset_basename == asset_tmp_basename:
+                        change_asset_name = False
+                        immutable_asset_indexes.extend([i, j])
+                    j += 1
+                if change_asset_name:
+                    assets_dict[asset_basename] = assets_dict.pop(asset_name)
+            return assets_dict
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
         search_param = re.sub(

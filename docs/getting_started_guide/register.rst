@@ -151,6 +151,10 @@ to each provider supported by ``eodag``:
 * ``wekeo_cmems``: The registration procedure is the same as for ``wekeo``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
 
 * ``dedt_lumi``: Create an account on `DestinE <https://platform.destine.eu/>`__, then use your `username`, `password` in eodag credentials.
+
 * ``dedl``: You need a `DESP OpenID` account in order to authenticate. To create one go
   `here <https://hda.data.destination-earth.eu/ui>`__, then click on `Sign In`, select the identity provider
   `DESP OpenID` and then click `Authenticate`. Finally click on `Register` to create a new account.
+
+* ``eumetsat_ds``: create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
+  Then use the consumer key as `username` and the consumer secret as `password` from `here <https://api.eumetsat.int/api-key/>`__ in eodag credentials.

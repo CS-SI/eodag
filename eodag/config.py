@@ -367,6 +367,7 @@ class PluginConfig(yaml.YAMLObject):
     token_exchange_post_data_method: str  # OIDCAuthorizationCodeFlowAuth
     token_uri: str  # OIDCAuthorizationCodeFlowAuth
     token_key: str  # OIDCAuthorizationCodeFlowAuth
+    req_data: Dict[str, Any]  # TokenAuth
     signed_url_key: str  # SASAuth
     refresh_uri: str  # TokenAuth
     refresh_token_key: str  # TokenAuth

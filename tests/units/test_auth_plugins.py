@@ -95,6 +95,30 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "token_key": "token_is_here",
                     },
                 },
+                "provider_text_token_req_data": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "req_data": {"grant_type": "client_credentials"},
+                    },
+                },
+                "provider_text_token_get_method": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "request_method": "GET",
+                    },
+                },
+                "provider_text_token_auth_error_code": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "auth_error_code": 401,
+                    },
+                },
             },
         )
         cls.plugins_manager = PluginManager(cls.providers_config)
@@ -138,7 +162,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using text token"""
         auth_plugin = self.get_auth_plugin("provider_text_token_header")
 
-        auth_plugin.config.credentials = {"foo": "bar"}
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
 
         # mock token post request response
         mock_requests_post.return_value = mock.Mock()
@@ -146,19 +170,22 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         # check if returned auth object is an instance of requests.AuthBase
         auth = auth_plugin.authenticate()
-        assert isinstance(auth, AuthBase)
+        self.assertTrue(isinstance(auth, AuthBase))
 
         # check token post request call arguments
         args, kwargs = mock_requests_post.call_args
-        assert kwargs["url"] == auth_plugin.config.auth_uri
-        assert kwargs["data"] == auth_plugin.config.credentials
-        assert kwargs["headers"] == dict(auth_plugin.config.headers, **USER_AGENT)
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
+        self.assertDictEqual(kwargs["data"], {"foo": "bar", "baz": "qux"})
+        self.assertIsNone(kwargs["auth"])
+        self.assertDictEqual(
+            kwargs["headers"], dict(auth_plugin.config.headers, **USER_AGENT)
+        )
 
         # check if token is integrated to the request
         req = mock.Mock(headers={})
         auth(req)
-        assert req.headers["Authorization"] == "Bearer this_is_test_token"
-        assert req.headers["foo"] == "bar"
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+        self.assertEqual(req.headers["foo"], "bar")
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
@@ -167,7 +194,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token"""
         auth_plugin = self.get_auth_plugin("provider_json_token_simple_url")
 
-        auth_plugin.config.credentials = {"foo": "bar"}
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
 
         # mock token post request response
         mock_requests_post.return_value = mock.Mock()
@@ -186,21 +213,115 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
     )
-    def test_plugins_auth_tokenauth_request_error(self, mock_requests_post):
-        """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""
-        auth_plugin = self.get_auth_plugin("provider_json_token_simple_url")
+    def test_plugins_auth_tokenauth_with_data_authenticate(self, mock_requests_post):
+        """TokenAuth.authenticate must return a RequestsTokenAuth object when 'data' request argument is required"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_req_data")
 
-        auth_plugin.config.credentials = {"foo": "bar"}
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
 
         # mock token post request response
-        mock_requests_post.side_effect = RequestException
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
 
-        self.assertRaises(
-            AuthenticationError,
-            auth_plugin.authenticate,
+        # check if returned auth object is an instance of requests.AuthBase
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # check token post request call arguments
+        args, kwargs = mock_requests_post.call_args
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
+        self.assertDictEqual(
+            kwargs["data"],
+            {"grant_type": "client_credentials", "foo": "bar", "baz": "qux"},
         )
+        self.assertIsNone(kwargs["auth"])
+        self.assertDictEqual(kwargs["headers"], USER_AGENT)
+
+        # check if token is integrated to the request
+        req = mock.Mock(headers={})
+        auth(req)
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_get_method_request_authenticate(
+        self, mock_requests_get
+    ):
+        """TokenAuth.authenticate must return a RequestsTokenAuth object with 'GET' method request"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_get_method")
+
+        auth_plugin.config.credentials = {"username": "bar", "password": "qux"}
+
+        # mock token get request response
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.text = "this_is_test_token"
+
+        # check if returned auth object is an instance of requests.AuthBase
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # check token get request call arguments
+        args, kwargs = mock_requests_get.call_args
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
+        self.assertNotIn("data", kwargs)
+        self.assertTupleEqual(kwargs["auth"], ("bar", "qux"))
+        self.assertDictEqual(kwargs["headers"], USER_AGENT)
+
+        # check if token is integrated to the request
+        req = mock.Mock(headers={})
+        auth(req)
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+
+    def test_plugins_auth_tokenauth_request_error(self):
+        """TokenAuth.authenticate must raise an AuthenticationError if a request error occurs"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_auth_error_code")
+
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
+
+        with self.assertRaisesRegex(
+            AuthenticationError,
+            "Could no get authentication token: 404 .* test error message",
+        ):
+            # mock token post request response with a different status code from the one in the provider auth config
+            with responses.RequestsMock(
+                assert_all_requests_are_fired=True
+            ) as mock_requests_post:
+                mock_requests_post.add(
+                    responses.POST,
+                    auth_plugin.config.auth_uri,
+                    status=404,
+                    body=b"test error message",
+                )
+                self.assertNotEqual(auth_plugin.config.auth_error_code, 404)
+                auth_plugin.authenticate()
+
+    def test_plugins_auth_tokenauth_wrong_credentials_request_error(self):
+        """TokenAuth.authenticate must raise an AuthenticationError with a
+        specific message if a request error occurs due to wrong credentials"""
+        provider = "provider_text_token_auth_error_code"
+        auth_plugin = self.get_auth_plugin(provider)
+
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
+
+        with self.assertRaisesRegex(
+            AuthenticationError,
+            f"HTTP Error 401 returned, test error message\nPlease check your credentials for {provider}",
+        ):
+            # mock token post request response with the same status code as the one in the provider auth config
+            with responses.RequestsMock(
+                assert_all_requests_are_fired=True
+            ) as mock_requests_post:
+                mock_requests_post.add(
+                    responses.POST,
+                    auth_plugin.config.auth_uri,
+                    status=401,
+                    body=b"test error message",
+                )
+                self.assertEqual(auth_plugin.config.auth_error_code, 401)
+                auth_plugin.authenticate()
 
 
 class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):

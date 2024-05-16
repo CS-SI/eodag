@@ -198,7 +198,7 @@ hydroweb_next:
         outputs_prefix:
 wekeo:
     priority: # Lower value means lower priority (Default: 0)
-    search:
+    search:   # Search parameters configuration
     download:
         outputs_prefix:
     auth:
@@ -241,3 +241,13 @@ dedl:
       credentials:
         username:
         password:
+eumetsat_ds:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
+    download:
+        outputs_prefix:

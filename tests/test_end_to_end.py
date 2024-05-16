@@ -209,6 +209,13 @@ WEKEO_SEARCH_ARGS = [
     "2023-01-01",
     [-180, -90, 180, 90],
 ]
+EUMETSAT_DS_SEARCH_ARGS = [
+    "eumetsat_ds",
+    "S3_OLCI_L2WFR",
+    "2021-03-11",
+    "2021-03-11",
+    [-69.3363, -75.9038, -39.3465, -68.2361],
+]
 
 
 @pytest.mark.enable_socket
@@ -524,6 +531,11 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(*WEKEO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
+
+    def test_end_to_end_search_download_eumetsat_ds(self):
+        product = self.execute_search(*EUMETSAT_DS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
@@ -1084,3 +1096,8 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     )
                 ),
             )
+
+    def test_end_to_end_wrong_credentials_search_eumetsat_ds(self):
+        product = self.execute_search(*EUMETSAT_DS_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)

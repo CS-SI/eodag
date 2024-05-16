@@ -671,6 +671,7 @@ class QueryStringSearch(Search):
                 collection=collection
             )
             if page is not None and items_per_page is not None:
+                page = page - 1 + self.config.pagination.get("start_page", 1)
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
@@ -875,6 +876,8 @@ class QueryStringSearch(Search):
             product.properties = dict(
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
+            # move assets from properties to product's attr
+            product.assets.update(product.properties.pop("assets", {}))
             products.append(product)
         return products
 
@@ -1294,6 +1297,7 @@ class PostJsonSearch(QueryStringSearch):
                     % (",".join(e.args), kwargs["auth"].provider)
                 )
             if page is not None and items_per_page is not None:
+                page = page - 1 + self.config.pagination.get("start_page", 1)
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
@@ -1409,18 +1413,6 @@ class StacSearch(PostJsonSearch):
 
         # restore results_entry overwritten by init
         self.config.results_entry = results_entry
-
-    def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
-    ) -> List[EOProduct]:
-        """Build EOProducts from provider results"""
-        products = super(StacSearch, self).normalize_results(results, **kwargs)
-
-        # move assets from properties to product's attr
-        for product in products:
-            product.assets.update(product.properties.pop("assets", {}))
-
-        return products
 
     def discover_queryables(
         self, **kwargs: Any

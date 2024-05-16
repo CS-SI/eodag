@@ -76,6 +76,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+-------------------------------+----------------+
 | dedl               | StacSearch            | OIDCTokenExchangeAuth         | HTTPDownload   |
 +--------------------+-----------------------+-------------------------------+----------------+
+| eumetsat_ds        | QueryStringSearch     | TokenAuth                     | HTTPDownload   |
++--------------------+-----------------------+-------------------------------+----------------+
 
 .. _creating_plugins:
 

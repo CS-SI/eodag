@@ -22,7 +22,6 @@ import logging
 import os
 import re
 import tempfile
-import urllib.parse
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import requests
@@ -142,7 +141,7 @@ class EOProduct:
             raise MisconfiguredError(
                 f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
             )
-        elif properties["geometry"] == NOT_AVAILABLE:
+        elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
             product_geometry = properties.pop("defaultGeometry")
         else:
             product_geometry = properties["geometry"]
@@ -282,31 +281,23 @@ class EOProduct:
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")
         for location_attr in location_attrs:
-            try:
-                setattr(
-                    self,
-                    location_attr,
-                    urllib.parse.unquote(getattr(self, location_attr))
-                    % vars(self.downloader.config),
-                )
-            except ValueError as e:
-                logger.debug(
-                    f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
-                    f" in register_downloader: {str(e)}"
-                )
+            if "%(" in getattr(self, location_attr):
+                try:
+                    setattr(
+                        self,
+                        location_attr,
+                        getattr(self, location_attr) % vars(self.downloader.config),
+                    )
+                except ValueError as e:
+                    logger.debug(
+                        f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
+                        f" in register_downloader: {str(e)}"
+                    )
 
         for k, v in self.properties.items():
-            if isinstance(v, str):
+            if isinstance(v, str) and "%(" in v:
                 try:
-                    if "%" in v:
-                        parsed = urllib.parse.urlparse(v)
-                        prop = urllib.parse.unquote(parsed.path) % vars(
-                            self.downloader.config
-                        )
-                        parsed = parsed._replace(path=urllib.parse.quote(prop))
-                        self.properties[k] = urllib.parse.urlunparse(parsed)
-                    else:
-                        self.properties[k] = v % vars(self.downloader.config)
+                    self.properties[k] = v % vars(self.downloader.config)
                 except (TypeError, ValueError) as e:
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
@@ -359,18 +350,6 @@ class EOProduct:
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-
-        self.remote_location = urllib.parse.unquote(self.remote_location)
-        try:
-            # resolve remote location if needed with downloader configuration
-            self.remote_location = self.remote_location % vars(self.downloader.config)
-        except ValueError as e:
-            logger.debug(
-                f"Could not resolve product.remote_location ({self.remote_location})"
-                f" in download: {str(e)}"
-            )
-        if not self.location.startswith("file"):
-            self.location = urllib.parse.unquote(self.location)
 
         progress_callback, close_progress_callback = self._init_progress_bar(
             progress_callback
