@@ -695,6 +695,12 @@ def download(ctx: Context, **kwargs: Any) -> None:
     help="The port on which to listen",
 )
 @click.option(
+    "--observability",
+    is_flag=True,
+    show_default=True,
+    help="Enable EODAG adn FastAPI telemetry",
+)
+@click.option(
     "--debug",
     is_flag=True,
     show_default=True,
@@ -713,6 +719,7 @@ def serve_rest(
     daemon: bool,
     world: bool,
     port: int,
+    observability: bool,
     config: str,
     locs: str,
     debug: bool,
@@ -726,6 +733,18 @@ def serve_rest(
         raise ImportError(
             "Feature not available, please install eodag[server] or eodag[all]"
         )
+
+    if observability:
+        try:
+            from eodag.rest.utils import observability as telemetry
+        except ImportError:
+            raise ImportError(
+                "Feature not available, please install eodag[observability] or eodag[all]"
+            )
+        from eodag.rest.core import eodag_api
+        from eodag.rest.server import app as fastapi_app
+
+        telemetry.instrument_server(eodag_api, fastapi_app)
 
     # Set the settings of the app
     # IMPORTANT: the order of imports counts here (first we override the settings,

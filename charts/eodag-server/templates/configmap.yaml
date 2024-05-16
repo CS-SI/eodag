@@ -1,4 +1,4 @@
-{{- if or .Values.productTypes .Values.providers }}
+{{- if or .Values.productTypes .Values.providers .Values.otelCollectorConfig }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,5 +19,9 @@ data:
   {{- if .Values.providers }}
   providers.yml: |-
     {{- .Values.providers | nindent 4 }}
+  {{- end }}
+  {{- if .Values.otelCollectorConfig }}
+  otelcol_config.yml: |-
+    {{- .Values.otelCollectorConfig | nindent 4 }}
   {{- end }}
 {{- end }}
