@@ -95,14 +95,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "token_key": "token_is_here",
                     },
                 },
-                "provider_text_token_credentials_in_data": {
-                    "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "credentials_type": "req_data",
-                    },
-                },
                 "provider_text_token_req_data": {
                     "products": {"foo_product": {}},
                     "auth": {
@@ -219,38 +211,6 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         req = mock.Mock(headers={})
         auth(req)
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
-
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
-    )
-    def test_plugins_auth_tokenauth_credentials_in_data_authenticate(
-        self, mock_requests_post
-    ):
-        """TokenAuth.authenticate must return a RequestsTokenAuth object
-        when credentials are required in 'data' request argument"""
-        auth_plugin = self.get_auth_plugin("provider_text_token_credentials_in_data")
-
-        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
-
-        # mock token post request response
-        mock_requests_post.return_value = mock.Mock()
-        mock_requests_post.return_value.text = "this_is_test_token"
-
-        # check if returned auth object is an instance of requests.AuthBase
-        auth = auth_plugin.authenticate()
-        self.assertTrue(isinstance(auth, AuthBase))
-
-        # check token post request call arguments
-        args, kwargs = mock_requests_post.call_args
-        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
-        self.assertDictEqual(kwargs["data"], auth_plugin.config.credentials)
-        self.assertIsNone(kwargs["auth"])
-        self.assertDictEqual(kwargs["headers"], USER_AGENT)
-
-        # check if token is integrated to the request
-        req = mock.Mock(headers={})
-        auth(req)
-        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
