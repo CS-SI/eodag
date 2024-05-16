@@ -144,6 +144,14 @@ spec:
             - name: EODAG_LOGGING
               value: {{ .Values.logLevel | quote }}
             {{- end }}
+            {{- if .Values.otel.enabled }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .Values.otel.endpoint | quote }}
+            - name: OTEL_EXPORTER_OTLP_TIMEOUT
+              value: {{ .Values.otel.timeout | quote }}
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: {{ .Values.otel.interval | quote }}
+            {{- end }}
           {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
           envFrom:
             {{- if .Values.extraEnvVarsCM }}
@@ -179,11 +187,27 @@ spec:
             {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
             {{- end }}
+        {{- if .Values.otel.collector.enabled }}
+        - name: opentelemetry-collector
+          image: {{ include "otel-collector.image" . }}
+          imagePullPolicy: {{ .Values.otel.collector.image.pullPolicy }}
+          ports:
+            - name: otlp-receiver
+              containerPort: {{ .Values.otel.collector.image.ports.otlpReceiver }}
+              protocol: TCP
+            - name: prom-exporter
+              containerPort: {{ .Values.otel.collector.image.ports.prometheusExporter }}
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: otelcol_config.yml
+        {{- end }}
         {{- if .Values.sidecars }}
         {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
       volumes:
-        {{- if or .Values.productTypes .Values.providers }}
+        {{- if or .Values.productTypes .Values.providers .Values.otel.collector.enabled }}
         - name: config
           configMap:
             name: {{ printf "%s-config" (include "common.names.fullname" .) }}
