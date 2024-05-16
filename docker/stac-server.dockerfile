@@ -53,7 +53,7 @@ COPY README.rst README.rst
 COPY ./eodag /eodag/eodag
 
 # install eodag
-RUN python -m pip install .[all-providers,server]
+RUN python -m pip install .[all-providers,server,observability]
 
 # add python path
 ENV PYTHONPATH="${PYTHONPATH}:/eodag/eodag/resources"
