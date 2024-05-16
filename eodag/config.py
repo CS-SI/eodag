@@ -319,6 +319,7 @@ class PluginConfig(yaml.YAMLObject):
     discover_queryables: Dict[str, Any]
     metadata_mapping: Dict[str, Union[str, List[str]]]
     free_params: Dict[Any, Any]
+    constraints_file_url: str
     free_text_search_operations: Dict[str, Any]  # ODataV4Search
     metadata_pre_mapping: Dict[str, Any]  # ODataV4Search
     data_request_url: str  # DataRequestSearch
