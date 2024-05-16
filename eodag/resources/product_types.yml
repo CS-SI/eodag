@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# CBERS 4 ---------------------------------------------------------------------
+# MARK: CBERS 4 ------------------------------------------------------------------------
 CBERS4_MUX_L2:
   abstract: |
     China-Brazil Earth Resources Satellite, CBERS-4 MUX camera Level-2 product. System corrected images, expect some
@@ -129,7 +129,7 @@ CBERS4_PAN10M_L4:
   missionStartDate: "2014-12-07T00:00:00Z"
   title: CBERS-4 PAN10M Level-4
 
-# Landasat --------------------------------------------------------------------
+# MARK: Landasat -----------------------------------------------------------------------
 # https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
 L57_REFLECTANCE:
   abstract: |
@@ -378,7 +378,7 @@ LANDSAT_ETM_C2L2:
   title: Enhanced Thematic Mapper Plus (ETM+) 15- to 30-meter multispectral Collection-2 Level-2 data from Landsat 7
   missionStartDate: "1999-04-15T00:00:00Z"
 
-# MODIS -----------------------------------------------------------------------
+# MARK: MODIS --------------------------------------------------------------------------
 MODIS_MCD43A4:
   abstract: |
     The MODerate-resolution Imaging Spectroradiometer (MODIS) Reflectance product MCD43A4 provides 500 meter
@@ -397,7 +397,7 @@ MODIS_MCD43A4:
   missionStartDate: "2000-03-05T00:00:00Z"
   title: MODIS MCD43A4
 
-# OSO -------------------------------------------------------------------------
+# MARK: OSO ----------------------------------------------------------------------------
 OSO:
   abstract: |
     An overview of OSO Land Cover data is given on https://www.theia-land.fr/en/ceslist/land-cover-sec/
@@ -413,7 +413,7 @@ OSO:
   missionStartDate: "2016-01-01T00:00:00Z"
   title: OSO Land Cover
 
-# NAIP -----------------------------------------------------------------------
+# MARK: NAIP ---------------------------------------------------------------------------
 NAIP:
   abstract: |
     The National Agriculture Imagery Program (NAIP) acquires aerial imagery during the agricultural growing seasons in
@@ -433,7 +433,7 @@ NAIP:
   missionStartDate: "2003-01-01T00:00:00Z"
   title: National Agriculture Imagery Program
 
-# Pleiades - ------------------------------------------------------------------
+# MARK: Pleiades - ---------------------------------------------------------------------
 PLD_PAN:
   abstract: Pleiades Panchromatic (Pan)
   instrument: PHR
@@ -482,7 +482,7 @@ PLD_PANSHARPENED:
   missionStartDate: "2011-12-17T00:00:00Z"
   title: Pleiades Pansharpened
 
-# Sentinel 1 ------------------------------------------------------------------
+# MARK: Sentinel 1 ---------------------------------------------------------------------
 S1_SAR_OCN:
   abstract: |
     Level-2 OCN products include components for Ocean Swell spectra (OSW) providing continuity with ERS and ASAR WV
@@ -589,7 +589,7 @@ S1_SAR_RAW:
   title: SENTINEL1 SAR Level-0
   missionStartDate: "2014-04-03T00:00:00Z"
 
-# Sentinel 2 ------------------------------------------------------------------
+# MARK: Sentinel 2 ---------------------------------------------------------------------
 S2_MSI_L1C:
   abstract: |
     The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
@@ -756,8 +756,8 @@ S2_MSI_L3A_WASP:
   missionStartDate: "2015-06-23T00:00:00Z"
   title: SENTINEL2 Level-3A
 
-# Sentinel 3 ------------------------------------------------------------------
-# S3 OLCI L1
+# MARK: Sentinel 3 ---------------------------------------------------------------------
+# MARK: S3 OLCI L1
 S3_EFR:
   abstract: |
     OLCI (Ocean and Land Colour Instrument) Full resolution: 300m at nadir. Level 1 products are calibrated
@@ -864,7 +864,7 @@ S3_RAC:
   title: SENTINEL3 RAC
   missionStartDate: "2016-02-16T00:00:00Z"
 
-# S3 OLCI L2
+# MARK: S3 OLCI L2
 S3_OLCI_L2LRR:
   abstract: |
     The OLCI Level-2 Land Reduced Resolution (OL_2_LRR) products contain land and atmospheric geophysical products
@@ -988,7 +988,7 @@ S3_OLCI_L4BALTIC:
   title: SENTINEL3 OLCI Baltic Sea Surface Ocean Colour Plankton
   missionStartDate: "2023-04-10T00:00:00Z"
 
-# S3 SLSTR
+# MARK: S3 SLSTR
 S3_SLSTR_L1RBT:
   abstract: |
     SLSTR Level-1 observation mode products consisting of full resolution,
@@ -1152,7 +1152,7 @@ S3_SLSTR_L2:
   title: SENTINEL3 SLSTR Level-2
   missionStartDate: "2017-07-05T00:00:00Z"
 
-# S3 SRAL
+# MARK: S3 SRAL
 S3_SRA:
   abstract: |
     SRAL Level 1B: Complex echoes (In-phase (I) and Quadrature (Q)) for the Low Resolution Mode (LRM) and/or
@@ -1471,7 +1471,7 @@ S3_LAN_LI:
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
 
-# S3 SYNERGY
+# MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
   abstract: |
@@ -1554,7 +1554,7 @@ S3_SY_VGP:
   title: SENTINEL3 SYNERGY Level-2 VGP
   missionStartDate: "2016-02-16T00:00:00Z"
 
-# Sentinel 5P ------------------------------------------------------------------
+# MARK: Sentinel 5P --------------------------------------------------------------------
 S5P_L1B2_IR_ALL:
   abstract: |
     Solar irradiance spectra for all bands (UV1-6 and SWIR)
@@ -2103,7 +2103,7 @@ S5P_L2_SO2:
   title: Sentinel-5 Precursor Level 2 Sulphur Dioxide
   missionStartDate: "2017-10-13T00:00:00Z"
 
-# Sentinel 6
+# MARK: Sentinel 6
 S6_P4_L1AHR_F06:
   abstract: |
     This is a reprocessed dataset at baseline F06, which is continued by the NRT/NTC data stream from 29/April/2022
@@ -2230,7 +2230,7 @@ S6_AMR_L2_F06:
   title: Sentinel 6 - Climate-quality Advanced Microwave Radiometer Level 2 Products Reprocessed at F06
   missionStartDate: "2020-11-28T00:00:00Z"
 
-# SPOT ------------------------------------------------------------------------
+# MARK: SPOT ---------------------------------------------------------------------------
 SPOT_SWH:
   abstract: |
     The Spot World Heritage (SWH) programme objective is the free availability for non-commercial use of orthorectified
@@ -2272,7 +2272,7 @@ SPOT5_SPIRIT:
   title: Spot 5 SPIRIT
   missionStartDate: "2002-05-04T00:00:00Z"
 
-# VENUS ------------------------------------------------------------------------
+# MARK: VENUS --------------------------------------------------------------------------
 VENUS_L1C:
   abstract: |
     A light description of Venus L1 data is available at http://www.cesbio.ups-tlse.fr/multitemp/?page_id=12984
@@ -2312,7 +2312,7 @@ VENUS_L3A_MAJA:
   title: Venus Level3-A
   missionStartDate: "2017-08-02T00:00:00Z"
 
-# ECMWF -----------------------------------------------------------------------
+# MARK: ECMWF --------------------------------------------------------------------------
 
 TIGGE_CF_SFC:
   abstract: |
@@ -2328,7 +2328,7 @@ TIGGE_CF_SFC:
   title: TIGGE ECMWF Surface Control forecast
   missionStartDate: "2006-10-01T00:00:00Z"
 
-# COPERNICUS ADS ----------------------------------------------------------------------
+# MARK: COPERNICUS ADS -----------------------------------------------------------------
 CAMS_GAC_FORECAST:
   abstract: |
     CAMS produces global forecasts for atmospheric composition twice a day.
@@ -2614,7 +2614,7 @@ CAMS_GLOBAL_EMISSIONS:
   title: CAMS global emission inventories
   missionStartDate: "2000-01-01T00:00:00Z"
 
-# COPERNICUS CDS ----------------------------------------------------------------------
+# MARK: COPERNICUS CDS -----------------------------------------------------------------
 ERA5_SL:
   abstract: |
     ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades.
@@ -3505,7 +3505,7 @@ SIS_HYDRO_MET_PROJ:
   missionStartDate: "1970-01-01T00:00:00Z"
   missionEndDate: "2100-12-31T23:59:00Z"
 
-# CEMS
+# MARK: CEMS
 
 FIRE_HISTORICAL:
   abstract: |
@@ -3844,7 +3844,7 @@ EFAS_SEASONAL_REFORECAST:
   missionStartDate: "1991-01-01T00:00:00Z"
   missionEndDate: "2020-10-01T00:00:00Z"
 
-# COPERNICUS Digital Elevation Model
+# MARK: COPERNICUS Digital Elevation Model
 COP_DEM_GLO30_DGED:
   abstract: |
     Defence Gridded Elevation Data (DGED, 32 Bit floating point) formatted Copernicus DEM GLO-30 data.
@@ -3910,7 +3910,7 @@ COP_DEM_GLO90_DTED:
   title: Copernicus DEM GLO-90 DTED
   missionStartDate: "2010-06-21T00:00:00Z"
 
-# Copernicus Land Monitoring Service
+# MARK: Copernicus Land Monitoring Service
 CLMS_CORINE:
   abstract: |
     The CORINE Land Cover (CLC) inventory was initiated in 1985 (reference year 1990). Updates have been produced in
@@ -4121,7 +4121,7 @@ EEA_DAILY_VI:
 
 
 
-# METEOBLUE --------------------------------------------------------------------------
+# MARK: METEOBLUE ----------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
   abstract: |
     Total cloud cover from NOAAmodel Environment Monitoring System (NEMS) global model.
@@ -4157,10 +4157,12 @@ NEMSAUTO_TCDC:
   title: NEMSAUTO Total Cloud Cover daily mean
   missionStartDate: "1984-01-01T00:00:00Z"
 
-# DE DT Outputs-----------------------------------------------------------------------
+# MARK: DE DT Outputs ------------------------------------------------------------------
 DT_EXTREMES:
   abstract: |
-    The Digital Twin on Weather-Induced and Geophysical Extremes provides capabilities for the assessment and prediction of environmental extremes in support of risk assessment and management.
+    The Digital Twin on Weather-Induced and Geophysical Extremes provides capabilities
+    for the assessment and prediction of environmental extremes in support of risk
+    assessment and management.
   instrument:
   platform: Digital Twin
   platformSerialIdentifier: DT
@@ -4172,7 +4174,10 @@ DT_EXTREMES:
   missionStartDate: "2020-01-01T00:00:00Z"
 DT_CLIMATE_ADAPTATION:
   abstract: |
-    The Digital Twin on Climate Change Adaptation support the analysis and testing of scenarios. This in turn will support sustainable development and climate adaptation and mitigation policy-making at multi-decadal timescales, at regional and national levels.
+    The Digital Twin on Climate Change Adaptation support the analysis and testing of
+    scenarios. This in turn will support sustainable development and climate adaptation
+    and mitigation policy-making at multi-decadal timescales, at regional and national
+    levels.
   instrument:
   platform: Digital Twin
   platformSerialIdentifier: DT
@@ -4183,7 +4188,360 @@ DT_CLIMATE_ADAPTATION:
   title: Climate Change Adaptation Digital Twin (DT)
   missionStartDate: "2020-01-01T00:00:00Z"
 
-# GENERIC----------------------------------------------------------------------
+# MARK: METOP --------------------------------------------------------------------------
+METOP_AMSU_L1:
+  abstract: |
+    The Advanced Microwave Sounding Unit-A (AMSU-A) is a 15-channel microwave radiometer
+    that is used for measuring global atmospheric temperature profiles and will provide
+    information on atmospheric water in all of its phases (with the exception of small
+    ice particles, which are transparent at microwave frequencies). AMSU-A will provide
+    information even in cloudy conditions. AMSU-A measures Earth radiance at frequencies
+    (in GHz) as listed under the instrument channel information.
+  instrument: AMSU-A
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,AMSU-A,SOUNDER,L1,L1B,WATER,ATHMOSPHERE,TEMPERATURE,AMSxxx1B,AMSUL1
+  sensorType: SOUNDER
+  license: proprietary
+  title: AMSU-A Level 1B - Metop - Global
+  missionStartDate: "2008-03-01T00:00:00Z"
+METOP_OSI_104:
+  abstract: |
+    Equivalent neutral 10m winds over the global oceans, with specific sampling to
+    provide as many observations as possible near the coasts. Better than using this
+    archived NRT product, please use the reprocessed ASCAT winds data records
+    (METOP_OSI_150A, METOP_OSI_150B).
+    For Metop-A, t is recommended that the reprocessed ASCAT winds data records
+    (10.15770/EUM_SAF_OSI_0007) are used instead of this archived NRT product for the
+    period before 1 April 2014.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,ASCAT,SCATTEROMETER,L2,WEATHER,OCEAN-SURFACE-WIND,OCEAN,RADAR-BACKSCATTER-NRCS,OSI-104,ASCAT12+,OSI-104-C,OSI-104-B,OASWC12
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Coastal Winds at 12.5 km Swath Grid - Metop
+  missionStartDate: "2013-04-16T00:00:00Z"
+METOP_OSI_150A:
+  abstract: |
+    The ASCAT Wind Product contains stress equivalent 10m winds (speed and direction)
+    over the global oceans. The winds are obtained through the processing of reprocessed
+    scatterometer backscatter data originating from the ASCAT instrument on EUMETSAT's
+    Metop satellite.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,ASCAT,SCATTEROMETER,L2,WEATHER,OCEAN-SURFACE-WIND,OCEAN,RADAR-BACKSCATTER-NRCS,OSI-150-A,OR1ASW025,REPASC25
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT L2 25 km Winds Data Record Release 1 - Metop
+  missionStartDate: "2007-01-01T00:00:00Z"
+  missionEndDate: "2014-04-01T00:00:00Z"
+METOP_OSI_150B:
+  abstract: |
+    The ASCAT Wind Product contains stress equivalent 10m winds (speed and direction)
+    over the global oceans. The winds are obtained through the processing of reprocessed
+    scatterometer backscatter data originating from the ASCAT instrument on EUMETSAT's
+    Metop satellite.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,ASCAT,SCATTEROMETER,L2,WEATHER,OCEAN-SURFACE-WIND,OCEAN,RADAR-BACKSCATTER-NRCS,OSI-150-B,OR1ASWC12,REPASC12+
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT L2 12.5 km Winds Data Record Release 1 - Metop
+  missionStartDate: "2007-01-01T00:00:00Z"
+  missionEndDate: "2014-04-01T00:00:00Z"
+METOP_ASCSZF1B:
+  abstract: |
+    The prime objective of the Advanced SCATterometer (ASCAT) is to measure wind speed
+    and direction over the oceans, and the main operational application is the
+    assimilation of ocean winds in NWP models. Other operational applications, based on
+    the use of measurements of the backscattering coefficient, are sea ice edge
+    detection and monitoring, monitoring sea ice, snow cover, soil moisture and surface
+    parameters. This product consists of geo-located radar backscatter values along the
+    six ASCAT beams. The different beam measurements are not collocated into a regular
+    swath grid and the individual measurements are not spatially averaged. The
+    resolution of each of the 255 backscatter values per each beam varies slightly along
+    the beam, but it is approximately 10km (in the along beam direction) x 25 km (across
+    the beam). This product is usually referred to as 'ASCAT Level 1B Full resolution
+    product'. Note that some of the data are reprocessed. Please refer to the associated
+    product validation reports or product release notes for further information.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,ASCAT,SCATTEROMETER,L1,OCEAN,RADAR-BACKSCATTER-NRCS,ASCSZF1B
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Level 1 Sigma0 Full Resolution - Metop - Global
+  missionStartDate: "2007-05-31T00:00:00Z"
+METOP_ASCSZR1B:
+  abstract: |
+    The prime objective of the Advanced SCATterometer (ASCAT) is to measure wind speed
+    and direction over the oceans, and the main operational application is the
+    assimilation of ocean winds in NWP models. Other operational applications, based on
+    the use of measurements of the backscattering coefficient, are sea ice edge
+    detection and monitoring, monitoring sea ice, snow cover, soil moisture and surface
+    parameters. The product is available from the archive in 2 different spatial
+    resolutions; 25 km and 12.5 km. Note that some of the data are reprocessed. Please
+    refer to the associated product validation reports or product release notes for
+    further information. Near real-time distribution discontinued on 29/09/2015 but the
+    product contents are now available in the corresponding Level 2 product 'ASCAT Soil
+    Moisture at 12.5 km Swath Grid'.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,ASCAT,SCATTEROMETER,L1,LAND,OCEAN,RADAR-BACKSCATTER-NRCS,ASCSZR1B
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Level 1 Sigma0 resampled at 12.5 km Swath Grid - Metop - Global
+  missionStartDate: "2007-03-01T00:00:00Z"
+METOP_ASCSZO1B:
+  abstract: |
+    The prime objective of the Advanced SCATterometer (ASCAT) is to measure wind speed
+    and direction over the oceans, and the main operational application is the
+    assimilation of ocean winds in NWP models. Other operational applications, based on
+    the use of measurements of the backscattering coefficient, are sea ice edge
+    detection and monitoring, monitoring sea ice, snow cover, soil moisture and surface
+    parameters. The product is available from the archive in 2 different spatial
+    resolutions; 25 km and 12.5 km. Note that some of the data are reprocessed. Please
+    refer to the associated product validation reports or product release notes for
+    further information. Near real-time distribution discontinued on 29/09/2015 but the
+    product contents are now available in the corresponding Level 2 product 'ASCAT Soil
+    Moisture at 25 km Swath Grid'.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,ASCAT,SCATTEROMETER,L1,LAND,OCEAN,RADAR-BACKSCATTER-NRCS,ASCSZO1B
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Level 1 Sigma0 resampled at 25 km Swath Grid - Metop - Global
+  missionStartDate: "2007-03-01T00:00:00Z"
+METOP_ASCSZFR02:
+  abstract: |
+    Reprocessed L1B data from the Advanced Scatterometer (ASCAT) on METOP-A, resampled
+    at full resolution (SZF). Normalized radar cross section (NRCS) of the Earth surface
+    together with measurement time, location (latitude and longitude) and geometrical
+    information (incidence and azimuth angles). The prime objective of the Advanced
+    SCATterometer (ASCAT) is to measure wind speed and direction over the oceans, and
+    the main operational application is the assimilation of ocean winds in NWP models.
+    Other operational applications, based on the use of measurements of the
+    backscattering coefficient, are sea ice edge detection and monitoring, monitoring
+    sea ice, snow cover, soil moisture and surface parameters. This product is also
+    available at 12.5 and 25 km Swath Grids. This is a Fundamental Climate Data Record
+    (FCDR).
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,ASCAT,SCATTEROMETER,L1,CLIMATE,FUNDAMENTAL-CLIMATE-DATA-RECORD,ASCSZF1B0200,ASCSZFR02
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Level 1 SZF Climate Data Record Release 2 - Metop
+  missionStartDate: "2007-01-01T00:00:00Z"
+  missionEndDate: "2014-04-01T00:00:00Z"
+METOP_ASCSZOR02:
+  abstract: |
+    Reprocessed L1B data from the Advanced Scatterometer (ASCAT) on METOP-A, resampled
+    at 25 km Swath Grid (SZO). Normalized radar cross section (NRCS) triplets of the
+    Earth surface together with measurement time, location (latitude and longitude) and
+    geometrical information (incidence and azimuth angles). The prime objective of the
+    Advanced SCATterometer (ASCAT) is to measure wind speed and direction over the
+    oceans, and the main operational application is the assimilation of ocean winds in
+    NWP models. Other operational applications, based on the use of measurements of the
+    backscattering coefficient, are sea ice edge detection and monitoring, monitoring
+    sea ice, snow cover, soil moisture and surface parameters. This product is also
+    available at full resolution and at 12.5 km Swath Grid. This is a Fundamental
+    Climate Data Record (FCDR).
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,ASCAT,SCATTEROMETER,L1,CLIMATE,FUNDAMENTAL-CLIMATE-DATA-RECORD,ASCSZOR02,ASCSZO1B0200
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Level 1 SZO Climate Data Record Release 2 - Metop
+  missionStartDate: "2007-01-01T00:00:00Z"
+  missionEndDate: "2014-04-01T00:00:00Z"
+METOP_ASCSZRR02:
+  abstract: |
+    Reprocessed L1B data from the Advanced Scatterometer (ASCAT) on METOP-A, resampled
+    at 12.5 km Swath Grid (SZR). Normalized radar cross section (NRCS) triplets of the
+    Earth surface together with measurement time, location (latitude and longitude) and
+    geometrical information (incidence and azimuth angles). The prime objective of the
+    Advanced SCATterometer (ASCAT) is to measure wind speed and direction over the
+    oceans, and the main operational application is the assimilation of ocean winds in
+    NWP models. Other operational applications, based on the use of measurements of the
+    backscattering coefficient, are sea ice edge detection and monitoring, monitoring
+    sea ice, snow cover, soil moisture and surface parameters. This product is also
+    available at full resolution and at 25 km Swath Grid. This is a Fundamental Climate
+    Data Record (FCDR).
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,ASCAT,SCATTEROMETER,L1,CLIMATE,FUNDAMENTAL-CLIMATE-DATA-RECORD,ASCSZR1B0200,ASCSZRR02
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Level 1 SZR Climate Data Record Release 2 - Metop
+  missionStartDate: "2007-01-01T00:00:00Z"
+  missionEndDate: "2014-04-01T00:00:00Z"
+METOP_SOMO12:
+  abstract: |
+    The Soil Moisture (SM) product is derived from the Advanced SCATterometer (ASCAT)
+    backscatter observations and given in swath orbit geometry (12.5 km sampling). This
+    SM product provides an estimate of the water content of the 0-5 cm topsoil layer,
+    expressed in degree of saturation between 0 and 100 [%]. The algorithm used to
+    derive this parameter is based on a linear relationship of SM and scatterometer
+    backscatter and uses change detection techniques to eliminate the contributions of
+    vegetation, land cover and surface topography, considered invariant from year to
+    year. Seasonal vegetation effects are modelled by exploiting the multi-angle viewing
+    capabilities of ASCAT. The SM processor has been developed by Vienna University of
+    Technology (TU Wien). Note that some of the data are reprocessed. Please refer to
+    the associated product validation reports or product release notes for further
+    information.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,ASCAT,SCATTEROMETER,L2,LAND,SOIL-MOISTURE,SOMO12,ASCSMR02,SSM-ASCAT-C-NRT-O12.5,H101,H16,H104
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Soil Moisture at 12.5 km Swath Grid in NRT - Metop
+  missionStartDate: "2007-06-01T00:00:00Z"
+METOP_SOMO25:
+  abstract: |
+    The Soil Moisture (SM) product is derived from the Advanced SCATterometer (ASCAT)
+    backscatter observations and given in swath orbit geometry (25 km sampling). This SM
+    product provides an estimate of the water content of the 0-5 cm topsoil layer,
+    expressed in degree of saturation between 0 and 100 [%]. The algorithm used to
+    derive this parameter is based on a linear relationship of SM and scatterometer
+    backscatter and uses change detection techniques to eliminate the contributions of
+    vegetation, land cover and surface topography, considered invariant from year to
+    year. Seasonal vegetation effects are modelled by exploiting the multi-angle viewing
+    capabilities of ASCAT. The SM processor has been developed by Vienna University of
+    Technology (TU Wien). Note that some of the data are reprocessed. Please refer to
+    the associated product validation reports or product release notes for further
+    information.
+  instrument: ASCAT
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,ASCAT,SCATTEROMETER,L2,LAND,SOIL-MOISTURE,ASCSMO02,H102,H103,SOMO25,H105,SSM-ASCAT-C-NRT-O25
+  sensorType: SCATTEROMETER
+  license: proprietary
+  title: ASCAT Soil Moisture at 25 km Swath Grid in NRT - Metop
+  missionStartDate: "2007-06-01T00:00:00Z"
+METOP_AVHRRGACR02:
+  abstract: |
+    This is the second release of the reprocessed polar Atmospheric Motion Vectors (AMV)
+    Thematic Climate Data Record (TCDR) from the Advanced Very High Resolution
+    Radiometer (AVHRR) in Global Area Coverage (GAC), from TIROS-N, NOAA-06, 07, 08, 09,
+    10, 11, 12, 14, 15, 16, 17, 18 and 19 and Metop-A and -B. It contains AMVs at all
+    heights below the tropopause, derived from images in the Infrared channel at 10.8
+    microns. Vectors are retrieved by tracking the motion of clouds in two consecutive
+    images. The height assignment of the AMVs is calculated using the Cross-Correlation
+    Contribution (CCC) function to determine the height using the pixels that contribute
+    the most to the vectors. A quality indicator is derived for each vector to assess
+    the reliability of the retrieval. Products are stored in netCDF4 format and cover
+    the period from January 1979 to September 2019.
+    This is a Thematic Climate Data Record (TCDR).
+  instrument: AVHRR
+  platform: METOP,TIROS,NOAA
+  platformSerialIdentifier: METOP,TIROS,NOAA
+  processingLevel: L2
+  keywords: METOP,AVHRR,RADIOMETER,L2,WIND,CLIMATE,ATMOSPHERE,THEMATIC-CLIMATE-DATA-RECORD,AVHGAC020200
+  sensorType: RADIOMETER
+  license: proprietary
+  title: AVHRR GAC Atmospheric Motion Vectors Climate Data Record Release 2 - Multimission - Polar
+  missionStartDate: "1979-01-01T00:00:00Z"
+  missionEndDate: "2019-09-01T00:00:00Z"
+METOP_AVHRRL1:
+  abstract: |
+    The Advanced Very High Resolution Radiometer (AVHRR) operates at 5 different channels simultaneously in the visible
+    and infrared bands, with wavelengths specified in the instrument channels description. Channel 3 switches between 3a
+    and 3b for daytime and nighttime. As a high-resolution imager (about 1.1 km near nadir) its main purpose is to
+    provide cloud and surface information such as cloud coverage, cloud top temperature, surface temperature over land
+    and sea, and vegetation or snow/ice. In addition, AVHRR products serve as input for the level 2 processing of IASI
+    and ATOVS.
+  instrument: AVHRR
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,AVHRR,RADIOMETER,L1,ATMOSPHERE,OCEAN,AVHXXX1B,AVHRRL1
+  sensorType: RADIOMETER
+  license: proprietary
+  title: AVHRR Level 1B - Metop - Global
+  missionStartDate: "2008-03-01T00:00:00Z"
+METOP_LSA_002:
+  abstract: |
+    The EDLST (EPS Daily Land Surface Temperature) provides a composite of day-time and nigh-time retrievals of LST
+    based on clear-sky measurements from the Advanced Very High Resolution Radiometer (AVHRR) on-board EUMETSAT polar
+    system satellites, the Metop series.
+  instrument: AVHRR
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L3
+  keywords: METOP,AVHRR,RADIOMETER,L3,LAND-SURFACE-TEMPERATURE,SURFACE-RADIATION-BUDGET,LAND,EDLST,LSA-002
+  sensorType: RADIOMETER
+  license: proprietary
+  title: Daily Land Surface Temperature - Metop
+  missionStartDate: "2015-01-01T00:00:00Z"
+METOP_GLB_SST_NC:
+  abstract: |
+    Global Metop/AVHRR sub-skin Sea Surface Temperature (GBL SST) is a 12 hourly synthesis on a 0.05° global grid. The
+    product format is compliant with the Data Specification (GDS) version 2 from the Group for High Resolution Sea
+    Surface Temperatures (GHRSST).
+  instrument: AVHRR
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L3
+  keywords: METOP,AVHRR,RADIOMETER,L3,OCEAN,SEA-SURFACE-TEMPERATURE,OSSTGLBN,OSI-201-B,GLB-SST,OSSTGLB
+  sensorType: RADIOMETER
+  license: proprietary
+  title: Global L3C AVHRR Sea Surface Temperature (GHRSST) - Metop
+  missionStartDate: "2016-07-12T00:00:00Z"
+METOP_GOMEL1:
+  abstract: |
+    The Global Ozone Monitoring Experiment-2 (GOME-2) spectrometer measures profiles and total columns of ozone and of
+    other atmospheric constituents that are related to the depletion of ozone in the stratosphere and its production in
+    the troposphere, as well as to natural and anthropogenic sources of pollution.
+  instrument: GOME-2
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,GOME-2,SPECTROMETER,L1,ATMOSPHERE,GOMEL1,GOMXXX1B
+  sensorType: SPECTROMETER
+  license: proprietary
+  title: GOME-2 Level 1B - Metop - Global
+  missionStartDate: "2007-01-01T00:00:00Z"
+METOP_GOMEL1R03:
+  abstract: |
+    This is release 3 of the Global Ozone Monitoring Experiment 2 (GOME-2) Level 1B Fundamental Data Record from Metop-A
+    and -B. GOME-2 is an optical spectrometer. GOME-2 senses the Earth’s backscattered radiance and extra-terrestrial
+    solar irradiance in the ultraviolet and visible part of the spectrum (240 nm – 790 nm) at a high spectral resolution
+    between 0.26 nm and 0.51 nm. There are 4096 spectral points from four detector channels transferred for each
+    individual GOME-2 measurement. This is a Fundamental Data Record (FDR). Disclaimer: GOME2-A channel 3 should be
+    careful to use for the period: April 2007 until March 2009 when doing DOAS retrievals.
+  instrument: GOME-2
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,GOME-2,SPECTROMETER,L1,CLIMATE,FUNDAMENTAL-DATA-RECORD,FDR,CLOUDS,ATMOSPHERE,RADIATION,GOMXXX1B0300
+  sensorType: SPECTROMETER
+  license: proprietary
+  title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
+  missionStartDate: "2007-04-01T00:00:00Z"
+  missionEndDate: "2020-08-01T00:00:00Z"
+
+# MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:
   instrument:

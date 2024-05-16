@@ -6929,6 +6929,41 @@
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
       parentIdentifier: EO:EUM:DAT:0417
+    # METOP
+    METOP_AMSU_L1:
+      parentIdentifier: EO:EUM:DAT:METOP:AMSUL1
+    METOP_OSI_104:
+      parentIdentifier: EO:EUM:DAT:METOP:OSI-104
+    METOP_OSI_150A:
+      parentIdentifier: EO:EUM:DAT:METOP:OSI-150-A
+    METOP_OSI_150B:
+      parentIdentifier: EO:EUM:DAT:METOP:OSI-150-B
+    METOP_ASCSZF1B:
+      parentIdentifier: EO:EUM:DAT:METOP:ASCSZF1B
+    METOP_ASCSZR1B:
+      parentIdentifier: EO:EUM:DAT:METOP:ASCSZR1B
+    METOP_ASCSZO1B:
+      parentIdentifier: EO:EUM:DAT:METOP:ASCSZO1B
+    METOP_ASCSZFR02:
+      parentIdentifier: EO:EUM:CM:METOP:ASCSZFR02
+    METOP_ASCSZOR02:
+      parentIdentifier: EO:EUM:CM:METOP:ASCSZOR02
+    METOP_ASCSZRR02:
+      parentIdentifier: EO:EUM:CM:METOP:ASCSZRR02
+    METOP_SOMO12:
+      parentIdentifier: EO:EUM:DAT:METOP:SOMO12
+    METOP_SOMO25:
+      parentIdentifier: EO:EUM:DAT:METOP:SOMO25
+    METOP_AVHRRGACR02:
+      parentIdentifier: EO:EUM:DAT:0558
+    METOP_LSA_002:
+      parentIdentifier: EO:EUM:DAT:METOP:LSA-002
+    METOP_GLB_SST_NC:
+      parentIdentifier: EO:EUM:DAT:METOP:GLB-SST-NC
+    METOP_GOMEL1:
+      parentIdentifier: EO:EUM:DAT:METOP:GOMEL1
+    METOP_GOMEL1R03:
+      parentIdentifier: EO:EUM:DAT:0533
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
