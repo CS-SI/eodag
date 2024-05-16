@@ -22,6 +22,7 @@ from typing import Any, Tuple
 
 import requests
 
+from eodag.utils import uri_to_path
 from eodag.utils.exceptions import RequestError
 
 
@@ -67,12 +68,14 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
         """
         response = requests.Response()
 
+        path_url = uri_to_path(req.url)
+
         if req.method is None or req.url is None:
             raise RequestError("Method or url of the request is missing")
-        response.status_code, response.reason = self._chkpath(req.method, req.path_url)
+        response.status_code, response.reason = self._chkpath(req.method, path_url)
         if response.status_code == 200 and req.method.lower() != "head":
             try:
-                response.raw = open(req.path_url, "rb")
+                response.raw = open(path_url, "rb")
             except (OSError, IOError) as err:
                 response.status_code = 500
                 response.reason = str(err)
