@@ -42,7 +42,6 @@ from eodag.config import PluginConfig
 from eodag.plugins.download import http
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.qssearch import QueryStringSearch
-from eodag.rest import server
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils import format_pydantic_error
@@ -136,6 +135,7 @@ def _instrument_search(
     :param request_overhead_duration_seconds: EODAG overhead histogram.
     :type request_overhead_duration_seconds: Histogram
     """
+    from eodag.rest import server
 
     # Wrapping server.search_stac_items
 
@@ -289,6 +289,8 @@ def _instrument_download(
     :param downloaded_data_counter: Downloaded data counter.
     :type downloaded_data_counter: Counter
     """
+    from eodag.rest import server
+
     # Wrapping server.download_stac_item
 
     wrapped_server_download_stac_item = server.download_stac_item
@@ -584,6 +586,8 @@ class EODAGInstrumentor(BaseInstrumentor):
         """Uninstrument the library.
 
         This only works if no other module also patches eodag"""
+        from eodag.rest import server
+
         patches = [
             (server, "search_stac_items"),
             (server, "download_stac_item"),
