@@ -1414,6 +1414,30 @@ class StacSearch(PostJsonSearch):
         # restore results_entry overwritten by init
         self.config.results_entry = results_entry
 
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters"""
+        logger.debug("Building the query string that will be used for search")
+
+        # handle opened time intervals
+        if any(
+            k in kwargs
+            for k in ("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
+        ):
+            kwargs.setdefault("startTimeFromAscendingNode", "..")
+            kwargs.setdefault("completionTimeFromAscendingNode", "..")
+
+        query_params = format_query_params(product_type, self.config, **kwargs)
+
+        # Build the final query string, in one go without quoting it
+        # (some providers do not operate well with urlencoded and quoted query strings)
+        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
+        return (
+            query_params,
+            urlencode(query_params, doseq=True, quote_via=quote_via),
+        )
+
     def discover_queryables(
         self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
