@@ -1294,6 +1294,46 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    def test_plugins_search_stacsearch_opened_time_intervals(self, mock_requests_post):
+        """Opened time intervals must be handled by StacSearch plugin"""
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.json.side_effect = [
+            {
+                "features": [
+                    {
+                        "id": "foo",
+                        "geometry": None,
+                    },
+                ],
+            },
+        ] * 4
+        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+
+        search_plugin.query(
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        self.assertEqual(
+            mock_requests_post.call_args.kwargs["json"]["datetime"],
+            "2020-01-01T00:00:00.000Z/2020-01-02T00:00:00.000Z",
+        )
+
+        search_plugin.query(startTimeFromAscendingNode="2020-01-01")
+        self.assertEqual(
+            mock_requests_post.call_args.kwargs["json"]["datetime"],
+            "2020-01-01T00:00:00.000Z/..",
+        )
+
+        search_plugin.query(completionTimeFromAscendingNode="2020-01-02")
+        self.assertEqual(
+            mock_requests_post.call_args.kwargs["json"]["datetime"],
+            "../2020-01-02T00:00:00.000Z",
+        )
+
+        search_plugin.query()
+        self.assertNotIn("datetime", mock_requests_post.call_args.kwargs["json"])
+
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
     def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping(
         self, mock__request
