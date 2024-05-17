@@ -7173,3 +7173,55 @@
     token_type: json
     token_key: access_token
     ssl_verify: true
+
+---
+!provider # MARK: cop_marine
+  name: cop_marine
+  priority: 0
+  description: Copernicus Marine Data Store
+  roles:
+    - host
+  url: https://marine.copernicus.eu/
+  search: !plugin
+    type: CopMarineSearch
+    api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.js'
+    need_auth: false
+    ssl_verify: true
+    timeout: 20
+    results_entry: links
+    discover_product_types:
+      fetch_url: 'https://stac.marine.copernicus.eu/metadata/catalog.stac.json'
+      result_type: json
+      results_entry: '$.collections[*]'
+      generic_product_type_id: '$.id'
+      generic_product_type_parsable_properties:
+        collection: '$.id'
+      generic_product_type_parsable_metadata:
+        instrument: '$.null'
+        platform:  '$.null'
+        platformSerialIdentifier: '$.null'
+        processingLevel: '$.properties.processingLevel'
+        keywords: '$.keywords'
+        license: '$.license'
+        title: '$.title'
+        missionStartDate: '$.extent.temporal.interval[0][0]'
+        abstract: '$.description'
+        providers: '$.providers'
+        doi: '$.sci:doi'
+    discover_metadata:
+      auto_discovery: false
+    discover_queryables:
+      fetch_url: ""
+    metadata_mapping:
+      defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+  download: !plugin
+    type: AwsDownload
+    base_uri: https://s3.waw3-1.cloudferro.com
+    bucket_path_level: 0
+    flatten_top_dirs: True
+  auth: !plugin
+    type: AwsAuth
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+      collection: '{collection}'

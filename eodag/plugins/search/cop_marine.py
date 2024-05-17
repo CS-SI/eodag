@@ -16,7 +16,20 @@ from eodag.api.product import AssetsDict
 from eodag.config import PluginConfig
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+from eodag.utils.exceptions import ValidationError
 from eodag.utils.stac_reader import fetch_stac_collections
+
+
+def _get_date_from_yyyymmdd(date_str: str) -> datetime:
+    year = date_str[:4]
+    month = date_str[4:6]
+    day = date_str[6:]
+    return datetime(
+        int(year),
+        int(month),
+        int(day),
+        tzinfo=timezone("UTC"),
+    )
 
 
 class CopMarineSearch(StaticStacSearch):
@@ -55,6 +68,50 @@ class CopMarineSearch(StaticStacSearch):
                         return collection_data
         return {}
 
+    def _get_product_by_id(
+        self,
+        collection_objects: Dict[str, Any],
+        product_id: str,
+        s3_url: str,
+        product_type: str,
+    ):
+        for obj in collection_objects["Contents"]:
+            if product_id in obj["Key"]:
+                item_dates = re.findall(r"\d{8}", obj["Key"])
+                return self._create_product(
+                    item_dates, product_type, obj["Key"], s3_url
+                )
+        return None
+
+    def _create_product(
+        self, item_dates: List[str], product_type: str, item_key: str, s3_url: str
+    ) -> EOProduct:
+        item_start = _get_date_from_yyyymmdd(item_dates[0])
+        if len(item_dates) > 2:  # start, end and created_at timestamps
+            item_end = _get_date_from_yyyymmdd(item_dates[1])
+        else:  # only date and created_at timestamps
+            item_end = item_start
+        item_id = item_key.split("/")[-1].split(".")[0]
+        download_url = s3_url + "/" + item_key
+        properties = {
+            "startTimeFromAscendingNode": item_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "completionTimeFromAscendingNode": item_end.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "id": item_id,
+            "title": item_id,
+            "geometry": self.config.metadata_mapping["defaultGeometry"],
+            "downloadLink": download_url,
+        }
+        assets = {
+            "native": {
+                "title": "native",
+                "href": download_url,
+                "type": "application/x-netcdf",
+            }
+        }
+        product = EOProduct(self.provider, properties, productType=product_type)
+        product.assets = AssetsDict(product, assets)
+        return product
+
     def query(
         self,
         product_type: Optional[str] = None,
@@ -78,6 +135,10 @@ class CopMarineSearch(StaticStacSearch):
         :rtype: Tuple[List[EOProduct], Optional[int]]
         """
         product_type = kwargs.get("productType", product_type)
+        if not product_type:
+            raise ValidationError(
+                "parameter product type is required for search with cop_marine provider"
+            )
         collection_data = self._get_product_type_info(product_type)
         s3_url = collection_data["assets"]["native"]["href"]
         url_parts = urlsplit(s3_url)
@@ -95,56 +156,40 @@ class CopMarineSearch(StaticStacSearch):
             ),
             endpoint_url=endpoint_url,
         )
+        s3_objects = s3_client.list_objects(Bucket=bucket, Prefix=collection_path)
+        if "Contents" not in s3_objects:
+            return [], 0
+        if "id" in kwargs:
+            product = self._get_product_by_id(
+                s3_objects, kwargs["id"], endpoint_url + "/" + bucket, product_type
+            )
+            if product:
+                return [product], 1
+            else:
+                return [], 0
         if "startTimeFromAscendingNode" in kwargs:
             start_date = isoparse(kwargs["startTimeFromAscendingNode"])
+        elif "start_datetime" in collection_data["properties"]:
+            start_date = isoparse(collection_data["properties"]["start_datetime"])
         else:
             start_date = isoparse(collection_data["properties"]["datetime"])
         if "completionTimeFromAscendingNode" in kwargs:
             end_date = isoparse(kwargs["completionTimeFromAscendingNode"])
+        elif "end_datetime" in collection_data["properties"]:
+            end_date = isoparse(collection_data["properties"]["end_datetime"])
         else:
             end_date = today()
 
         products = []
-        s3_objects = s3_client.list_objects(Bucket=bucket, Prefix=collection_path)
-        if "Contents" not in s3_objects:
-            return [], 0
+
         for obj in s3_objects["Contents"]:
             item_key = obj["Key"]
             item_dates = re.findall(r"\d{8}", item_key)
-            start_year = item_dates[0][:4]
-            start_month = item_dates[0][4:6]
-            start_day = item_dates[0][6:]
-            item_start = datetime(
-                int(start_year),
-                int(start_month),
-                int(start_day),
-                tzinfo=timezone("UTC"),
-            )
+            item_start = _get_date_from_yyyymmdd(item_dates[0])
             if not item_dates or (start_date <= item_start <= end_date):
-                if len(item_dates) > 1:
-                    end_year = item_dates[1][:4]
-                    end_month = item_dates[1][4:6]
-                    end_day = item_dates[1][6:]
-                    item_end = datetime(int(end_year), int(end_month), int(end_day))
-                else:
-                    item_end = item_start
-                id = item_key.split("/")[-1].split(".")[0]
-                properties = {
-                    "start_datetime": item_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "end_datetime": item_end.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "id": id,
-                    "title": id,
-                    "geometry": self.config.metadata_mapping["defaultGeometry"],
-                }
-                assets = {
-                    "native": {
-                        "title": "native",
-                        "href": endpoint_url + "/" + bucket + "/" + item_key,
-                        "type": "application/x-netcdf",
-                    }
-                }
-                product = EOProduct(self.provider, properties, productType=product_type)
-                product.assets = AssetsDict(product, assets)
+                product = self._create_product(
+                    item_dates, product_type, item_key, endpoint_url + "/" + bucket
+                )
                 products.append(product)
 
         return products, len(products)
