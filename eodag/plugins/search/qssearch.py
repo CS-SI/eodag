@@ -632,7 +632,7 @@ class QueryStringSearch(Search):
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        query_params = format_query_params(product_type, self.config, **kwargs)
+        query_params = format_query_params(product_type, self.config, kwargs)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
@@ -1250,7 +1250,7 @@ class PostJsonSearch(QueryStringSearch):
                         format_query_params(
                             product.product_type,
                             self.config,
-                            **{**default_values, **searched_values},
+                            {**default_values, **searched_values},
                         )
                     )
                     product.properties["_dc_qs"] = quote_plus(_dc_qs)

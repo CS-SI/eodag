@@ -1270,13 +1270,13 @@ def mtd_cfg_as_conversion_and_querypath(
 
 
 def format_query_params(
-    product_type: str, config: PluginConfig, **kwargs: Any
+    product_type: str, config: PluginConfig, query_dict: Dict[str, Any]
 ) -> Dict[str, Any]:
     """format the search parameters to query parameters"""
-    if "raise_errors" in kwargs.keys():
-        del kwargs["raise_errors"]
+    if "raise_errors" in query_dict.keys():
+        del query_dict["raise_errors"]
     # . not allowed in eodag_search_key, replaced with %2E
-    kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
+    query_dict = {k.replace(".", "%2E"): v for k, v in query_dict.items()}
 
     product_type_metadata_mapping = dict(
         config.metadata_mapping,
@@ -1286,16 +1286,16 @@ def format_query_params(
     query_params: Dict[str, Any] = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
-    queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
+    queryables = _get_queryables(query_dict, config, product_type_metadata_mapping)
 
     for eodag_search_key, provider_search_key in queryables.items():
-        user_input = kwargs[eodag_search_key]
+        user_input = query_dict[eodag_search_key]
 
         if COMPLEX_QS_REGEX.match(provider_search_key):
             parts = provider_search_key.split("=")
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
-                    provider_search_key, product_type, **kwargs
+                    provider_search_key, product_type, **query_dict
                 )
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_key:
@@ -1314,7 +1314,7 @@ def format_query_params(
             else:
                 provider_search_key, provider_value = parts
                 query_params.setdefault(provider_search_key, []).append(
-                    format_metadata(provider_value, product_type, **kwargs)
+                    format_metadata(provider_value, product_type, **query_dict)
                 )
         else:
             query_params[provider_search_key] = user_input
@@ -1333,7 +1333,7 @@ def format_query_params(
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
     literal_search_params.update(
-        _format_free_text_search(config, product_type_metadata_mapping, **kwargs)
+        _format_free_text_search(config, product_type_metadata_mapping, **query_dict)
     )
     for provider_search_key, provider_value in literal_search_params.items():
         if isinstance(provider_value, list):
