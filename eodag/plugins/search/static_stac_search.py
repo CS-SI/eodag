@@ -29,8 +29,7 @@ from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import StacSearch
-from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse, deepcopy
-
+from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
 if TYPE_CHECKING:
@@ -101,22 +100,9 @@ class StaticStacSearch(StacSearch):
             timeout=int(self.config.timeout),
             ssl_verify=self.config.ssl_verify,
         )
-        dataset_collections = []
-        if "item_discovery" in self.config.discover_product_types:
-            for collection in collections:
-                for link in collection["links"]:
-                    if kwargs and "q" in kwargs and kwargs["q"] not in link["title"]:
-                        continue
-                    if link["rel"] == "item":
-                        dataset_coll = deepcopy(collection)
-                        dataset_coll["title"] = link["title"]
-                        dataset_coll["id"] = link["href"].replace(
-                            "/dataset.stac.json", ""
-                        )
-                        dataset_collections.append(dataset_coll)
-        else:
-            dataset_collections = collections
-        collections_mock_response = {"collections": dataset_collections}
+        if "q" in kwargs:
+            collections = [c for c in collections if c["id"] == kwargs["q"]]
+        collections_mock_response = {"collections": collections}
 
         # save StaticStacSearch._request and mock it to make return loaded static results
         stacapi_request = self._request
