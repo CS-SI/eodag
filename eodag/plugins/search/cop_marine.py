@@ -156,17 +156,9 @@ class CopMarineSearch(StaticStacSearch):
             ),
             endpoint_url=endpoint_url,
         )
-        s3_objects = s3_client.list_objects(Bucket=bucket, Prefix=collection_path)
-        if "Contents" not in s3_objects:
-            return [], 0
-        if "id" in kwargs:
-            product = self._get_product_by_id(
-                s3_objects, kwargs["id"], endpoint_url + "/" + bucket, product_type
-            )
-            if product:
-                return [product], 1
-            else:
-                return [], 0
+
+        stop_search = False
+        products = []
         if "startTimeFromAscendingNode" in kwargs:
             start_date = isoparse(kwargs["startTimeFromAscendingNode"])
         elif "start_datetime" in collection_data["properties"]:
@@ -179,17 +171,51 @@ class CopMarineSearch(StaticStacSearch):
             end_date = isoparse(collection_data["properties"]["end_datetime"])
         else:
             end_date = today()
-
-        products = []
-
-        for obj in s3_objects["Contents"]:
-            item_key = obj["Key"]
-            item_dates = re.findall(r"\d{8}", item_key)
-            item_start = _get_date_from_yyyymmdd(item_dates[0])
-            if not item_dates or (start_date <= item_start <= end_date):
-                product = self._create_product(
-                    item_dates, product_type, item_key, endpoint_url + "/" + bucket
+        current_object = None
+        start_index = items_per_page * (page - 1)
+        num_total = 0
+        while not stop_search:
+            if current_object:
+                s3_objects = s3_client.list_objects(
+                    Bucket=bucket, Prefix=collection_path, Marker=current_object
                 )
-                products.append(product)
+            else:
+                s3_objects = s3_client.list_objects(
+                    Bucket=bucket, Prefix=collection_path
+                )
+            if "Contents" not in s3_objects:
+                if len(products) == 0:
+                    return [], 0
+                else:
+                    break
 
-        return products, len(products)
+            if "id" in kwargs:
+                product = self._get_product_by_id(
+                    s3_objects, kwargs["id"], endpoint_url + "/" + bucket, product_type
+                )
+                if product:
+                    return [product], 1
+                current_object = s3_objects["Contents"][-1]["Key"]
+                continue
+
+            for obj in s3_objects["Contents"]:
+                item_key = obj["Key"]
+                item_dates = re.findall(r"\d{8}", item_key)
+                item_start = _get_date_from_yyyymmdd(item_dates[0])
+                if item_start > end_date:
+                    stop_search = True
+                if not item_dates or (start_date <= item_start <= end_date):
+                    num_total += 1
+                    if num_total < start_index:
+                        continue
+                    if len(products) < items_per_page:
+                        product = self._create_product(
+                            item_dates,
+                            product_type,
+                            item_key,
+                            endpoint_url + "/" + bucket,
+                        )
+                        products.append(product)
+                current_object = item_key
+
+        return products, num_total
