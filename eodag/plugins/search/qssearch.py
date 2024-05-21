@@ -1428,7 +1428,7 @@ class StacSearch(PostJsonSearch):
             kwargs.setdefault("startTimeFromAscendingNode", "..")
             kwargs.setdefault("completionTimeFromAscendingNode", "..")
 
-        query_params = format_query_params(product_type, self.config, **kwargs)
+        query_params = format_query_params(product_type, self.config, kwargs)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
