@@ -324,6 +324,8 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
+        # fail on creodias, then succeeds on onda (count and search)
+        side_effect=[RequestException, mock.DEFAULT, mock.DEFAULT],
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.get",

@@ -122,21 +122,19 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo"],
         "CLMS_GLO_NDVI_333M": ["dedl", "wekeo"],
         "COP_DEM_GLO30_DGED": [
-            "creodias",
             "creodias_s3",
             "dedl",
             "earth_search",
             "wekeo",
         ],
-        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO30_DTED": ["creodias_s3", "dedl", "wekeo"],
         "COP_DEM_GLO90_DGED": [
-            "creodias",
             "creodias_s3",
             "dedl",
             "earth_search",
             "wekeo",
         ],
-        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO90_DTED": ["creodias_s3", "dedl", "wekeo"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "EEA_DAILY_VI": ["dedl", "wekeo"],
@@ -1407,14 +1405,7 @@ class TestCore(TestCoreBase):
         expected_result = {
             "peps": None,
             "usgs": None,
-            "creodias": {
-                "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                ],
-                "max_sort_params": 1,
-            },
+            "creodias": None,
             "aws_eos": None,
             "theia": None,
             "onda": {
@@ -1488,15 +1479,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
             "meteoblue": None,
-            "cop_dataspace": {
-                "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                    "modificationDate",
-                ],
-                "max_sort_params": 1,
-            },
+            "cop_dataspace": None,
             "planetary_computer": {
                 "sortables": [
                     "id",
@@ -1551,15 +1534,6 @@ class TestCore(TestCoreBase):
         # check if sortables are set to None when the provider does not support the sorting feature
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
         self.assertEqual(sortables["peps"], None)
-
-        # check if sortable parameter(s) and its (their) maximum number of a provider are set
-        # to their value when the provider supports the sorting feature and has a maximum number of sortables
-        self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
-        self.assertTrue(
-            self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
-        )
-        if sortables["creodias"]:
-            self.assertIsNotNone(sortables["creodias"]["max_sort_params"])
 
         # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
         # to None when the provider supports the sorting feature and does not have a maximum number of sortables
