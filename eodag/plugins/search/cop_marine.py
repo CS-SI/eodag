@@ -46,7 +46,9 @@ class CopMarineSearch(StaticStacSearch):
         # reset to original metadata mapping from config (changed in super class init)
         self.config.metadata_mapping = original_metadata_mapping
 
-    def _get_product_type_info(self, product_type: str) -> List[Dict[str, Any]]:
+    def _get_product_type_info(
+        self, product_type: str
+    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         fetch_url = cast(
             str,
             self.config.discover_product_types["fetch_url"].format(
@@ -57,8 +59,10 @@ class CopMarineSearch(StaticStacSearch):
         collection_url = (
             fetch_url.replace("catalog.stac.json", product_type) + "/product.stac.json"
         )
-        collection_data = requests.get(collection_url).json()
-        if len(collection_data) == 0:
+        try:
+            collection_data = requests.get(collection_url).json()
+        except requests.RequestException:
+            logger.error("data for product %s could not be fetched", product_type)
             raise UnsupportedProductType(product_type)
 
         datasets = []
@@ -74,7 +78,7 @@ class CopMarineSearch(StaticStacSearch):
             except requests.RequestException:
                 logger.error("data for dataset %s could not be fetched", link["title"])
 
-        return datasets
+        return collection_data, datasets
 
     def _get_product_by_id(
         self,
@@ -82,46 +86,74 @@ class CopMarineSearch(StaticStacSearch):
         product_id: str,
         s3_url: str,
         product_type: str,
-        dataset: str,
+        dataset_data: Dict[str, Any],
+        product_data: Dict[str, Any],
     ):
         for obj in collection_objects["Contents"]:
             if product_id in obj["Key"]:
-                item_dates = re.findall(r"\d{8}", obj["Key"])
                 return self._create_product(
-                    item_dates, product_type, obj["Key"], s3_url, dataset
+                    product_type, obj["Key"], s3_url, dataset_data, product_data
                 )
         return None
 
     def _create_product(
         self,
-        item_dates: List[str],
         product_type: str,
         item_key: str,
         s3_url: str,
-        dataset: str,
+        dataset_data: Dict[str, Any],
+        product_data: Dict[str, Any],
+        use_dataset_dates: bool = False,
     ) -> EOProduct:
-        item_start = _get_date_from_yyyymmdd(item_dates[0])
-        if len(item_dates) > 2:  # start, end and created_at timestamps
-            item_end = _get_date_from_yyyymmdd(item_dates[1])
-        else:  # only date and created_at timestamps
-            item_end = item_start
+
         item_id = item_key.split("/")[-1].split(".")[0]
         download_url = s3_url + "/" + item_key
         properties = {
-            "startTimeFromAscendingNode": item_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "completionTimeFromAscendingNode": item_end.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "id": item_id,
             "title": item_id,
             "geometry": self.config.metadata_mapping["defaultGeometry"],
             "downloadLink": download_url,
-            "dataset": dataset,
+            "dataset": dataset_data["id"],
         }
+        if use_dataset_dates:
+            if "start_datetime" in dataset_data:
+                properties["startTimeFromAscendingNode"] = dataset_data[
+                    "start_datetime"
+                ]
+                properties["completionTimeFromAscendingNode"] = dataset_data[
+                    "end_datetime"
+                ]
+            elif "datetime" in dataset_data:
+                properties["startTimeFromAscendingNode"] = dataset_data["datetime"]
+                properties["completionTimeFromAscendingNode"] = dataset_data["datetime"]
+        else:
+            item_dates = re.findall(r"\d{8}", item_key)
+            if not item_dates:
+                item_dates = re.findall(r"\d{6}", item_key)
+            item_start = _get_date_from_yyyymmdd(item_dates[0])
+            if len(item_dates) > 2:  # start, end and created_at timestamps
+                item_end = _get_date_from_yyyymmdd(item_dates[1])
+            else:  # only date and created_at timestamps
+                item_end = item_start
+            properties["startTimeFromAscendingNode"] = item_start.strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+            properties["completionTimeFromAscendingNode"] = item_end.strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        for key, value in product_data["properties"].items():
+            if key not in ["id", "title", "start_datetime", "end_datetime"]:
+                properties[key] = value
+        for key, value in dataset_data["properties"].items():
+            if key not in ["id", "title", "start_datetime", "end_datetime"]:
+                properties[key] = value
         assets = {
             "native": {
                 "title": "native",
                 "href": download_url,
                 "type": "application/x-netcdf",
-            }
+            },
+            "thumbnail": product_data["assets"]["thumbnail"],
         }
         product = EOProduct(self.provider, properties, productType=product_type)
         product.assets = AssetsDict(product, assets)
@@ -154,7 +186,7 @@ class CopMarineSearch(StaticStacSearch):
             raise ValidationError(
                 "parameter product type is required for search with cop_marine provider"
             )
-        datasets = self._get_product_type_info(product_type)
+        product_data, datasets = self._get_product_type_info(product_type)
         products = []
         start_index = items_per_page * (page - 1)
         num_total = 0
@@ -167,6 +199,17 @@ class CopMarineSearch(StaticStacSearch):
             endpoint_url = url_parts.scheme + "://" + url_parts.hostname
             bucket = path.split("/")[1]
             collection_path = "/".join(path.split("/")[2:])
+            if ".nc" in collection_path:
+                product = self._create_product(
+                    product_type,
+                    collection_path,
+                    endpoint_url + "/" + bucket,
+                    dataset,
+                    product_data,
+                    True,
+                )
+                products.append(product)
+                continue
             s3_session = boto3.Session()
             s3_client = s3_session.client(
                 "s3",
@@ -216,7 +259,8 @@ class CopMarineSearch(StaticStacSearch):
                         kwargs["id"],
                         endpoint_url + "/" + bucket,
                         product_type,
-                        dataset["id"],
+                        dataset,
+                        product_data,
                     )
                     if product:
                         return [product], 1
@@ -238,11 +282,11 @@ class CopMarineSearch(StaticStacSearch):
                             continue
                         if len(products) < items_per_page:
                             product = self._create_product(
-                                item_dates,
                                 product_type,
                                 item_key,
                                 endpoint_url + "/" + bucket,
-                                dataset["id"],
+                                dataset,
+                                product_data,
                             )
                             products.append(product)
                     current_object = item_key
