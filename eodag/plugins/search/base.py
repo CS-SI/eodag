@@ -355,12 +355,7 @@ class Search(PluginTopic):
             pass
 
         metadata_mapping: Dict[str, Any] = deepcopy(
-            getattr(self.config, "metadata_mapping", {})
-        )
-        metadata_mapping.update(
-            getattr(self.config, "products", {})
-            .get(product_type, {})
-            .get("metadata_mapping", {})
+            self.get_metadata_mapping(product_type)
         )
 
         for param in list(metadata_mapping.keys()):
