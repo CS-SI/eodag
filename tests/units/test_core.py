@@ -122,19 +122,17 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo"],
         "CLMS_GLO_NDVI_333M": ["dedl", "wekeo"],
         "COP_DEM_GLO30_DGED": [
-            "creodias_s3",
             "dedl",
             "earth_search",
             "wekeo",
         ],
-        "COP_DEM_GLO30_DTED": ["creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO30_DTED": ["dedl", "wekeo"],
         "COP_DEM_GLO90_DGED": [
-            "creodias_s3",
             "dedl",
             "earth_search",
             "wekeo",
         ],
-        "COP_DEM_GLO90_DTED": ["creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO90_DTED": ["dedl", "wekeo"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "EEA_DAILY_VI": ["dedl", "wekeo"],
@@ -1512,14 +1510,7 @@ class TestCore(TestCoreBase):
             },
             "wekeo": None,
             "wekeo_cmems": None,
-            "creodias_s3": {
-                "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "publicationDate",
-                ],
-                "max_sort_params": 1,
-            },
+            "creodias_s3": None,
             "eumetsat_ds": {
                 "sortables": [
                     "startTimeFromAscendingNode",
