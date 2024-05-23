@@ -34,6 +34,7 @@ from botocore.stub import Stubber
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 
+from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
@@ -592,8 +593,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
+        wekeo_constraints = {"constraints": constraints}
         mock_requests_constraints.return_value = MockResponse(
-            constraints, status_code=200
+            wekeo_constraints, status_code=200
         )
 
         provider_queryables_from_constraints_file = [
@@ -604,15 +606,15 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "variable",
             "leadtime_hour",
             "type",
-            "api_product_type",
+            "providerProductType",
         ]
 
         queryables = search_plugin.discover_queryables(productType="ERA5_SL_MONTHLY")
         self.assertIsNotNone(queryables)
 
         mock_requests_constraints.assert_called_once_with(
-            "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
-            "cams-europe-air-quality-reanalyses/constraints.json",
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
+            "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             headers=USER_AGENT,
             auth=None,
             timeout=5,
@@ -620,6 +622,13 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo)
         for provider_queryable in provider_queryables_from_constraints_file:
+            provider_queryable = (
+                get_queryable_from_provider(
+                    provider_queryable,
+                    search_plugin.get_metadata_mapping("ERA5_SL_MONTHLY"),
+                )
+                or provider_queryable
+            )
             self.assertIn(provider_queryable, queryables)
 
         # default properties in provider config are added and must be default values of the queryables
@@ -657,7 +666,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             variable="a",
         )
         self.assertIsNotNone(queryables)
-        self.assertEqual(11, len(queryables))
+        self.assertEqual(10, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:
@@ -2051,8 +2060,15 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             timeout=5,
         )
 
-        # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_cds)
+        # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
         for provider_queryable in provider_queryables_from_constraints_file:
+            provider_queryable = (
+                get_queryable_from_provider(
+                    provider_queryable,
+                    self.search_plugin.get_metadata_mapping("CAMS_EU_AIR_QUALITY_RE"),
+                )
+                or provider_queryable
+            )
             self.assertIn(provider_queryable, queryables)
 
         # default properties in provider config are added and must be default values of the queryables
@@ -2090,7 +2106,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             variable="a",
         )
         self.assertIsNotNone(queryables)
-        self.assertEqual(11, len(queryables))
+        self.assertEqual(9, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:
