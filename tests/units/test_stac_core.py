@@ -188,7 +188,7 @@ class TestStacCore(unittest.TestCase):
             url="", root="", collection_id="S2_MSI_L1C"
         )
         self.assertIsNotNone(r)
-        self.assertEqual(8, len(r["providers"]))
+        self.assertEqual(9, len(r["providers"]))
         self.assertEqual(1, r["providers"][0]["priority"])
         self.assertEqual("peps", r["providers"][0]["name"])
         self.assertEqual(["host"], r["providers"][0]["roles"])
