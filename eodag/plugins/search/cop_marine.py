@@ -147,13 +147,15 @@ class CopMarineSearch(StaticStacSearch):
         for key, value in dataset_data["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime"]:
                 properties[key] = value
+        properties["thumbnail"] = product_data["assets"]["thumbnail"]["href"]
+        if "omiFigure" in product_data["assets"]:
+            properties["quicklook"] = product_data["assets"]["omiFigure"]["href"]
         assets = {
             "native": {
                 "title": "native",
                 "href": download_url,
                 "type": "application/x-netcdf",
-            },
-            "thumbnail": product_data["assets"]["thumbnail"],
+            }
         }
         product = EOProduct(self.provider, properties, productType=product_type)
         product.assets = AssetsDict(product, assets)
