@@ -1278,13 +1278,6 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
     @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.base.Authentication.validate_config_credentials",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
@@ -1299,8 +1292,6 @@ class TestCore(TestCoreBase):
         mock_stacsearch_discover_queryables: Mock,
         mock_qssearch_discover_queryables: Mock,
         mock_fetch_product_types_list: Mock,
-        mock_validate_config_credentials: Mock,
-        mock_requests_session_post: Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
         mock_stacsearch_discover_queryables.return_value = {}
