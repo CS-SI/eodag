@@ -378,6 +378,7 @@ class Search(PluginTopic):
             )
             if not isinstance(eodag_queryable_field_info, FieldInfo):
                 continue
+            # keep default field info of eodag queryables
             if k in filters and k in queryables:
                 queryable_field_info = (
                     get_args(queryables[k])[1]
