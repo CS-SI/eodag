@@ -219,8 +219,13 @@ class EODAGSearch(BaseModel):
             operator, value = next(iter(cast(Dict[str, Any], conditions).items()))
 
             # Validate the operator
-            if operator not in ("eq", "lte", "in") or (
-                operator == "lte" and prop != "eo:cloud_cover"
+            # only eq, in and lte are allowed
+            # lte is only supported with eo:cloud_cover
+            # eo:cloud_cover only accept lte operator
+            if (
+                operator not in ("eq", "lte", "in")
+                or (operator == "lte" and prop != "eo:cloud_cover")
+                or (prop == "eo:cloud_cover" and operator != "lte")
             ):
                 add_error(
                     f'operator "{operator}" is not supported for property "{prop}"',
