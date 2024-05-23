@@ -6274,7 +6274,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_file_url:
+    constraints_file_url: eodag/resources/constraints/{dataset}.json
     metadata_mapping:
       productType: destination-earth
       storageStatus: OFFLINE
@@ -6342,14 +6342,15 @@
         - $.type
   products:
     DT_EXTREMES:
-      class: rd
-      expver: i7yv
+      class: d1
+      dataset: extremes-dt
+      expver: "0001"
       stream: oper
       type: fc
       levtype: sfc
-      step: 0
-      param: 34
-      time: 0000
+      step: "0"
+      param: "31"
+      time: "0000"
     DT_CLIMATE_ADAPTATION:
       activity: ScenarioMIP
       class: d1
@@ -6364,7 +6365,7 @@
       stream: clte
       type: fc
       levtype: sfc
-      time: 0000
+      time: "0000"
   download: !plugin
     type: HTTPDownload
     base_uri: https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/

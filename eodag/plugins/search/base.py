@@ -369,17 +369,30 @@ class Search(PluginTopic):
             ):
                 del metadata_mapping[param]
 
-        eoadag_queryables = copy_deepcopy(
+        eodag_queryables = copy_deepcopy(
             model_fields_to_annotated(Queryables.model_fields)
         )
-        for k, v in eoadag_queryables.items():
-            field_info = get_args(v)[1] if len(get_args(v)) > 1 else None
-            if not isinstance(field_info, FieldInfo):
+        for k, v in eodag_queryables.items():
+            eodag_queryable_field_info = (
+                get_args(v)[1] if len(get_args(v)) > 1 else None
+            )
+            if not isinstance(eodag_queryable_field_info, FieldInfo):
                 continue
-            if k in filters:
-                field_info.default = filters[k]
-            if field_info.is_required() or (
-                (field_info.alias or k) in metadata_mapping
+            # keep default field info of eodag queryables
+            if k in filters and k in queryables:
+                queryable_field_info = (
+                    get_args(queryables[k])[1]
+                    if len(get_args(queryables[k])) > 1
+                    else None
+                )
+                if not isinstance(queryable_field_info, FieldInfo):
+                    continue
+                queryable_field_info.default = filters[k]
+                continue
+            if k in queryables:
+                continue
+            if eodag_queryable_field_info.is_required() or (
+                (eodag_queryable_field_info.alias or k) in metadata_mapping
             ):
                 queryables[k] = v
 

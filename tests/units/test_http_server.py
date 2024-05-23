@@ -1426,14 +1426,14 @@ class RequestTestCase(unittest.TestCase):
         self.assertListEqual(["string", "null"], processing_level["type"])
         self.assertIsNone(processing_level["min"])
 
-    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    @mock.patch("eodag.utils.constraints.requests.Session.get", autospec=True)
     def test_product_type_queryables_from_constraints(
-        self, mock_requests_constraints: Mock
+        self, mock_requests_session_constraints: Mock
     ):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        mock_requests_constraints.return_value = MockResponse(
+        mock_requests_session_constraints.return_value = MockResponse(
             constraints, status_code=200
         )
         res = self._request_valid(
@@ -1441,7 +1441,8 @@ class RequestTestCase(unittest.TestCase):
             check_links=False,
         )
 
-        mock_requests_constraints.assert_called_once_with(
+        mock_requests_session_constraints.assert_called_once_with(
+            mock.ANY,
             "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
             "reanalysis-era5-single-levels/constraints.json",
             headers=USER_AGENT,

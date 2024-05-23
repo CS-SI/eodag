@@ -17,6 +17,7 @@
 # limitations under the License.
 import copy
 import logging
+import os
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
 
 import requests
@@ -24,8 +25,9 @@ import requests
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, path_to_uri
 from eodag.utils.exceptions import TimeOutError, ValidationError
+from eodag.utils.requests import LocalFileAdapter
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -78,6 +80,13 @@ def get_constraint_queryables_with_additional_params(
                 params_available[param] = True
                 if value in constraint[provider_key]:
                     params_matched[param] = True
+                elif isinstance(value, str):
+                    # for Copernicus providers, values can be multiple and represented with a string
+                    # separated by slashes (example: time = "0000/0100/0200")
+                    values = value.split("/")
+                    params_matched[param] = all(
+                        [v in constraint[provider_key] for v in values]
+                    )
                 values_available[param].update(constraint[provider_key])
         # match with default values of params
         for default_param, default_value in defaults.items():
@@ -171,18 +180,22 @@ def fetch_constraints(
     :rtype: List[Dict[Any, Any]]
     """
     try:
+        session = requests.Session()
+        if not constraints_url.lower().startswith("http"):
+            constraints_url = path_to_uri(os.path.abspath(constraints_url))
+            session.mount("file://", LocalFileAdapter())
         headers = USER_AGENT
         logger.debug("fetching constraints from %s", constraints_url)
         if hasattr(plugin, "auth"):
             auth = plugin.auth if isinstance(plugin.auth, AuthBase) else None
-            res = requests.get(
+            res = session.get(
                 constraints_url,
                 headers=headers,
                 auth=auth,
                 timeout=HTTP_REQ_TIMEOUT,
             )
         else:
-            res = requests.get(
+            res = session.get(
                 constraints_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
         res.raise_for_status()
