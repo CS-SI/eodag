@@ -620,7 +620,9 @@ class QueryStringSearch(Search):
                 )
                 or json_param
             )
-            default = kwargs.get(param, None)
+            default = kwargs.get(param, None) or self.config.products.get(
+                product_type, {}
+            ).get(param, None)
             annotated_def = json_field_definition_to_python(
                 json_mtd, default_value=default, required=True
             )
