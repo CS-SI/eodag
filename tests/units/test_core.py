@@ -1550,6 +1550,15 @@ class TestCore(TestCoreBase):
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
         self.assertEqual(sortables["peps"], None)
 
+        # check if sortable parameter(s) and its (their) maximum number of a provider are set
+        # to their value when the provider supports the sorting feature and has a maximum number of sortables
+        self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
+        self.assertTrue(
+            self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
+        )
+        if sortables["creodias"]:
+            self.assertIsNotNone(sortables["creodias"]["max_sort_params"])
+
         # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
         # to None when the provider supports the sorting feature and does not have a maximum number of sortables
         self.assertTrue(
