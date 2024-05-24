@@ -2283,6 +2283,9 @@
       fetch_url: null
       product_type_fetch_url: null
     constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
+    remove_from_queryables:
+      shared_queryables:
+        - dataset
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2857,6 +2860,9 @@
       fetch_url: null
       product_type_fetch_url: null
     constraints_file_url: http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json
+    remove_from_queryables:
+      shared_queryables:
+        - dataset
     metadata_mapping:
       productType: $.productType
       title: $.id
@@ -6527,6 +6533,20 @@
       fetch_url: null
       product_type_fetch_url: null
     constraints_file_url: eodag/resources/constraints/{dataset}.json
+    remove_from_queryables:
+      shared_queryables:
+        - dataset
+        - class
+        - expver
+        - type
+      DT_EXTREMES:
+        - time
+      DT_CLIMATE_ADAPTATION:
+        - generation
+        - realization
+        - stream
+        - activity
+        - experiment
     metadata_mapping:
       productType: destination-earth
       storageStatus: OFFLINE

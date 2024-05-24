@@ -1699,8 +1699,18 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-
-                default = kwargs.get(param, None)
+                # prevent fixed params from being in queryables python model
+                if param in getattr(self.config, "remove_from_queryables", {}).get(
+                    "shared_queryables", []
+                ):
+                    continue
+                if param in getattr(self.config, "remove_from_queryables", {}).get(
+                    product_type, []
+                ):
+                    continue
+                default = kwargs.get(param, None) or self.config.products.get(
+                    product_type, {}
+                ).get(param, None)
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )

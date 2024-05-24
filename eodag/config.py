@@ -334,7 +334,7 @@ class PluginConfig(yaml.YAMLObject):
     timeout: float  # StaticStacSearch
     s3_bucket: str  # CreodiasS3Search
     end_date_excluded: bool  # BuildSearchResult
-    remove_from_query: List[str]  # BuildSearchResult
+    remove_from_query: Dict[str, List[Any]]  # BuildSearchResult
     ssl_verify: bool
 
     # download -------------------------------------------------------------------------
