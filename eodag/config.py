@@ -129,7 +129,11 @@ class ProviderConfig(yaml.YAMLObject):
     """
 
     name: str
+    group: str
     priority: int = 0  # Set default priority to 0
+    roles: List[str]
+    description: str
+    url: str
     api: PluginConfig
     search: PluginConfig
     products: Dict[str, Any]
@@ -142,7 +146,7 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_tag = "!provider"
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> ProviderConfig:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[ProviderConfig]:
         """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
@@ -437,7 +441,7 @@ def load_config(config_path: str) -> Dict[str, ProviderConfig]:
     :returns: The default provider's configuration
     :rtype: dict
     """
-    logger.debug(f"Loading configuration from {config_path}")
+    logger.debug("Loading configuration from %s", config_path)
     config: Dict[str, ProviderConfig] = {}
     try:
         # Providers configs are stored in this file as separated yaml documents
