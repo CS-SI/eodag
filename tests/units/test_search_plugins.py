@@ -1817,7 +1817,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         super(TestSearchPluginCreodiasS3Search, self).setUp()
         self.provider = "creodias_s3"
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
     def test_plugins_search_creodias_s3_links(self, mock_request):
         # s3 links should be added to products with register_downloader
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
@@ -1829,7 +1831,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         with open(s3_response_file) as f:
             list_objects_response = json.load(f)
         creodias_search_result_file = (
-            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json"
         )
         with open(creodias_search_result_file) as f:
             creodias_search_result = json.load(f)
@@ -1862,30 +1864,21 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         for asset in assets.values():
             self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
 
-    @mock.patch("eodag.plugins.search.qssearch.get_ssl_context", autospec=True)
-    @mock.patch("eodag.plugins.search.qssearch.Request", autospec=True)
-    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
-    def test_plugins_search_creodias_s3_client_error(
-        self, mock_urlopen, mock_request, mock_get_ssl_context
-    ):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_creodias_s3_client_error(self, mock_request):
         # request error should be raised when there is an error when fetching data from the s3
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
         stubber = Stubber(client)
 
         creodias_search_result_file = (
-            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json"
         )
         with open(creodias_search_result_file) as f:
             creodias_search_result = json.load(f)
         mock_request.return_value = MockResponse(creodias_search_result, 200)
-        mock_urlopen.return_value.json.return_value = creodias_search_result
-
-        # Mocking return value of get_ssl_context
-        ssl_ctx = ssl.create_default_context()
-        ssl_ctx.check_hostname = False
-        ssl_ctx.verify_mode = ssl.CERT_NONE
-        mock_get_ssl_context.return_value = ssl_ctx
 
         with self.assertRaises(RequestError):
             res = search_plugin.query("S1_SAR_GRD")
@@ -1900,10 +1893,6 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
                 stubber.activate()
                 setattr(auth_plugin, "s3_client", client)
                 product.register_downloader(download_plugin, auth_plugin)
-                # Asserting that urlopen has been called with the correct arguments
-                mock_urlopen.assert_called_with(
-                    mock_request.return_value, timeout=60, context=ssl_ctx
-                )
 
 
 class TestSearchPluginBuildSearchResult(unittest.TestCase):
