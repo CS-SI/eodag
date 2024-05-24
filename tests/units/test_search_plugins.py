@@ -27,6 +27,7 @@ from unittest import mock
 from unittest.mock import call
 
 import boto3
+import botocore
 import dateutil
 import requests
 import responses
@@ -2393,6 +2394,14 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 },
             ]
         }
+        self.s3 = boto3.client(
+            "s3",
+            config=botocore.config.Config(
+                # Configures to use subdomain/virtual calling format.
+                s3={"addressing_style": "virtual"},
+                signature_version=botocore.UNSIGNED,
+            ),
+        )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_with_dates(self, mock_requests_get):
@@ -2404,11 +2413,10 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         ]
 
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        s3 = boto3.client("s3")
 
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
-            s3_stub.return_value = s3
-            stubber = Stubber(s3)
+            s3_stub.return_value = self.s3
+            stubber = Stubber(self.s3)
             stubber.add_response(
                 "list_objects",
                 self.list_objects_response1,
@@ -2472,11 +2480,10 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         ]
 
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        s3 = boto3.client("s3")
 
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
-            s3_stub.return_value = s3
-            stubber = Stubber(s3)
+            s3_stub.return_value = self.s3
+            stubber = Stubber(self.s3)
             stubber.add_response(
                 "list_objects",
                 self.list_objects_response1,
