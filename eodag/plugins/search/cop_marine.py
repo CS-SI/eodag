@@ -9,9 +9,9 @@ import boto3
 import botocore
 import requests
 from dateutil.parser import isoparse
+from dateutil.tz import tzutc
 from dateutil.utils import today
 from mypy_boto3_s3 import S3Client
-from pytz import timezone
 
 from eodag import EOProduct
 from eodag.api.product import AssetsDict
@@ -34,7 +34,7 @@ def _get_date_from_yyyymmdd(date_str: str) -> datetime:
         int(year),
         int(month),
         int(day),
-        tzinfo=timezone("UTC"),
+        tzinfo=tzutc(),
     )
 
 
