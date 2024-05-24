@@ -645,7 +645,20 @@ class QueryStringSearch(Search):
             field_definitions[param] = get_args(annotated_def)
 
         python_queryables = create_model("m", **field_definitions).model_fields
-        return dict(default_queryables, **model_fields_to_annotated(python_queryables))
+        queryables = {
+            **default_queryables,
+            **model_fields_to_annotated(python_queryables),
+        }
+        # remove fixed params from queryables
+        for param in getattr(self.config, "remove_from_queryables", {}).get(
+            "shared_queryables", []
+        ):
+            queryables.pop(param)
+        for param in getattr(self.config, "remove_from_queryables", {}).get(
+            product_type, []
+        ):
+            queryables.pop(param)
+        return queryables
 
     def query(
         self,
