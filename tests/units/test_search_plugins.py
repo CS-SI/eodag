@@ -585,16 +585,16 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 auth=None,
             )
 
-    @mock.patch("eodag.utils.constraints.requests.get", autospec=True)
+    @mock.patch("eodag.utils.constraints.requests.Session.get", autospec=True)
     def test_plugins_search_querystringsearch_discover_queryables(
-        self, mock_requests_constraints
+        self, mock_requests_session_constraints
     ):
         search_plugin = self.get_search_plugin(provider="wekeo")
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
         wekeo_constraints = {"constraints": constraints}
-        mock_requests_constraints.return_value = MockResponse(
+        mock_requests_session_constraints.return_value = MockResponse(
             wekeo_constraints, status_code=200
         )
 
@@ -612,7 +612,8 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         queryables = search_plugin.discover_queryables(productType="ERA5_SL_MONTHLY")
         self.assertIsNotNone(queryables)
 
-        mock_requests_constraints.assert_called_once_with(
+        mock_requests_session_constraints.assert_called_once_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
             "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             headers=USER_AGENT,
@@ -660,12 +661,25 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 set(variable_constraints), set(queryable.__origin__.__args__)
             )
 
+        # reset mock
+        mock_requests_session_constraints.reset_mock()
+
         # with additional param
         queryables = search_plugin.discover_queryables(
             productType="ERA5_SL_MONTHLY",
             variable="a",
         )
         self.assertIsNotNone(queryables)
+
+        mock_requests_session_constraints.assert_called_once_with(
+            mock.ANY,
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
+            "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
+            headers=USER_AGENT,
+            auth=None,
+            timeout=5,
+        )
+
         self.assertEqual(10, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
@@ -2052,7 +2066,8 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        mock_requests_constraints.assert_called_once_with(
+        mock_requests_session_constraints.assert_called_once_with(
+            mock.ANY,
             "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
             "cams-europe-air-quality-reanalyses/constraints.json",
             headers=USER_AGENT,
@@ -2100,12 +2115,25 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
                 set(variable_constraints), set(queryable.__origin__.__args__)
             )
 
+        # reset mock
+        mock_requests_session_constraints.reset_mock()
+
         # with additional param
         queryables = self.search_plugin.discover_queryables(
             productType="CAMS_EU_AIR_QUALITY_RE",
             variable="a",
         )
         self.assertIsNotNone(queryables)
+
+        mock_requests_session_constraints.assert_called_once_with(
+            mock.ANY,
+            "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
+            "cams-europe-air-quality-reanalyses/constraints.json",
+            headers=USER_AGENT,
+            auth=None,
+            timeout=5,
+        )
+
         self.assertEqual(9, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
@@ -2117,25 +2145,80 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         self,
     ):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
         tmp_search_constraints_file_url = self.search_plugin.config.constraints_file_url
         self.search_plugin.config.constraints_file_url = constraints_path
+
+        provider_queryables_from_constraints_file = [
+            "year",
+            "month",
+            "day",
+            "time",
+            "variable",
+            "leadtime_hour",
+            "type",
+            "api_product_type",
+        ]
 
         queryables = self.search_plugin.discover_queryables(
             productType="CAMS_EU_AIR_QUALITY_RE"
         )
-        self.assertEqual(11, len(queryables))
-        self.assertIn("variable", queryables)
-        self.assertNotIn("metadata_mapping", queryables)
+        self.assertIsNotNone(queryables)
+
+        # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
+        for provider_queryable in provider_queryables_from_constraints_file:
+            provider_queryable = (
+                get_queryable_from_provider(
+                    provider_queryable,
+                    self.search_plugin.get_metadata_mapping("CAMS_EU_AIR_QUALITY_RE"),
+                )
+                or provider_queryable
+            )
+            self.assertIn(provider_queryable, queryables)
+
+        # default properties in provider config are added and must be default values of the queryables
+        for property, default_value in self.search_plugin.config.products[
+            "CAMS_EU_AIR_QUALITY_RE"
+        ].items():
+            queryable = queryables.get(property)
+            if queryable is not None:
+                self.assertEqual(default_value, queryable.__metadata__[0].get_default())
+                # queryables with default values are not required
+                self.assertFalse(queryable.__metadata__[0].is_required())
+
+        # queryables without default values are required
+        queryable = queryables.get("month")
+        if queryable is not None:
+            self.assertEqual(PydanticUndefined, queryable.__metadata__[0].get_default())
+            self.assertTrue(queryable.__metadata__[0].is_required())
+
+        # check that queryable constraints from the constraints file are in queryable info
+        # (here it is a case where all constraints of "variable" queryable can be taken into account)
+        queryable = queryables.get("variable")
+        if queryable is not None:
+            variable_constraints = []
+            for constraint in constraints:
+                if "variable" in constraint:
+                    variable_constraints.extend(constraint["variable"])
+            # remove queryable constraints duplicates to make the assertion works
+            self.assertSetEqual(
+                set(variable_constraints), set(queryable.__origin__.__args__)
+            )
+
         # with additional param
         queryables = self.search_plugin.discover_queryables(
             productType="CAMS_EU_AIR_QUALITY_RE",
             variable="a",
         )
-        self.assertEqual(11, len(queryables))
+        self.assertIsNotNone(queryables)
+
+        self.assertEqual(9, len(queryables))
+        # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
-        self.assertEqual("a", queryable.__metadata__[0].get_default())
-        queryable = queryables.get("month")
-        self.assertTrue(queryable.__metadata__[0].is_required())
+        if queryable is not None:
+            self.assertEqual("a", queryable.__metadata__[0].get_default())
+            self.assertFalse(queryable.__metadata__[0].is_required())
 
         # restore configuration
         self.search_plugin.config.constraints_file_url = tmp_search_constraints_file_url
