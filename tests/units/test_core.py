@@ -534,6 +534,7 @@ class TestCore(TestCoreBase):
         "cop_ads",
         "cop_cds",
         "cop_dataspace",
+        "cop_marine",
         "creodias",
         "creodias_s3",
         "dedl",
@@ -552,7 +553,7 @@ class TestCore(TestCoreBase):
         "usgs",
         "usgs_satapi_aws",
         "wekeo",
-        "wekeo_cmems",
+        "wekeo_cmems"
     ]
 
     def setUp(self):
@@ -1504,6 +1505,7 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
+            "cop_marine": None,
             "hydroweb_next": {
                 "sortables": [
                     "id",
