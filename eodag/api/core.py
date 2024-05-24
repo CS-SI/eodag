@@ -538,7 +538,7 @@ class EODataAccessGateway:
 
         product_types: List[Dict[str, Any]] = []
 
-        providers = (
+        providers_configs = (
             list(self.providers_config.values())
             if not provider
             else [
@@ -548,12 +548,12 @@ class EODataAccessGateway:
             ]
         )
 
-        if provider and not providers:
+        if provider and not providers_configs:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for p in providers:
+        for p in providers_configs:
             for product_type_id in p.products:  # type: ignore
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
@@ -865,7 +865,8 @@ class EODataAccessGateway:
 
         :param product_type: (optional) Only list providers configured for this product_type
         :type product_type: Optional[str]
-        :param by_group: (optional) If set to True, list groups instead of providers
+        :param by_group: (optional) If set to True, list groups when available instead
+                         of providers, mixed with other providers
         :type by_group: bool
         :returns: the sorted list of the available providers or groups
         :rtype: List[str]

@@ -178,10 +178,10 @@ class StacCommon:
         ][0]
         return {
             "name": getattr(provider_config, "group", provider_config.name),
-            "description": provider_config.description,
-            "roles": provider_config.roles,
-            "url": provider_config.url,
-            "priority": provider_config.priority,
+            "description": getattr(provider_config, "description", None),
+            "roles": getattr(provider_config, "roles", None),
+            "url": getattr(provider_config, "url", None),
+            "priority": getattr(provider_config, "priority", None),
         }
 
 

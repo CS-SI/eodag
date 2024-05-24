@@ -2988,16 +2988,16 @@ class TestCoreProviderGroup(TestCoreBase):
     def setUpClass(cls) -> None:
         super().setUpClass()
         cls.dag = EODataAccessGateway()
-        providers = cls.dag.providers_config
+        providers_configs = cls.dag.providers_config
 
-        setattr(providers[cls.group[0]], "group", cls.group_name)
-        setattr(providers[cls.group[1]], "group", cls.group_name)
+        setattr(providers_configs[cls.group[0]], "group", cls.group_name)
+        setattr(providers_configs[cls.group[1]], "group", cls.group_name)
 
     def test_available_providers_by_group(self) -> None:
         """
         The method available_providers returns only one entry for both grouped providers
         """
-        # drop the provider names grouped as they are grouped under "testgroup" name
+        # drop the grouped names from expected providers, as they are grouped under "testgroup" name
         providers = self.dag.available_providers()
         providers.remove(self.group[0])
         providers.remove(self.group[1])
