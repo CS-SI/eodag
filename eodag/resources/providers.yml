@@ -933,8 +933,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -3882,8 +3882,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -6118,8 +6118,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
