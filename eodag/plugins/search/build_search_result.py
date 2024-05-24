@@ -456,7 +456,7 @@ class BuildSearchResult(BuildPostSearchResult):
     def discover_queryables(
         self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf
+        """Fetch queryables list from provider using its constraints file
 
         :param kwargs: additional filters for queryables (`productType` and other search
                        arguments)
@@ -540,10 +540,14 @@ class BuildSearchResult(BuildPostSearchResult):
         field_definitions: Dict[str, Any] = {}
         for json_param, json_mtd in constraint_params.items():
             param = (
-                get_queryable_from_provider(json_param, self.config.metadata_mapping)
+                get_queryable_from_provider(
+                    json_param, self.get_metadata_mapping(product_type)
+                )
                 or json_param
             )
-            default = kwargs.get(param, None)
+            default = kwargs.get(param, None) or self.config.products.get(
+                product_type, {}
+            ).get(param, None)
             annotated_def = json_field_definition_to_python(
                 json_mtd, default_value=default, required=True
             )

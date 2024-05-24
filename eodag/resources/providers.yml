@@ -4316,6 +4316,10 @@
     query_params_key: 'search'
     discover_product_types:
       fetch_url: null
+    constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+    constraints_file_dataset_key: productType
+    constraints_entry: constraints
+    stop_without_constraints_entry_key: true
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'
@@ -4701,7 +4705,7 @@
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
       variable:
-        - 10m_u_component_of_wind
+        - land_sea_mask
       leadtime_hour:
         - "0"
       origin: ecmwf
@@ -5855,6 +5859,10 @@
         missionEndDate: '$.metadata._source.tempextent_end'
         processingLevel: '$.null'
         keywords: '$.metadata._source.keywords'
+    constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+    constraints_file_dataset_key: productType
+    constraints_entry: constraints
+    stop_without_constraints_entry_key: true
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'
