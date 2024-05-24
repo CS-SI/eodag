@@ -2054,7 +2054,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             timeout=5,
         )
 
-        self.assertEqual(11, len(queryables))
+        self.assertEqual(9, len(queryables))
         # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
         for provider_queryable in provider_queryables_from_constraints_file:
             provider_queryable = (
