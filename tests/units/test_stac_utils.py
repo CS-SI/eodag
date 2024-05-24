@@ -265,18 +265,16 @@ class TestStacUtils(unittest.TestCase):
         product_type_conf["stacCollection"] = ext_stac_collection_path
 
         with mock.patch(
-            "eodag.rest.stac.get_ext_stac_collection", autospec=True
-        ) as mock_stac_get_ext_stac_collection:
-            mock_stac_get_ext_stac_collection.return_value = json.loads(external_json)
-
+            "eodag.rest.stac.fetch_json",
+            autospec=True,
+            return_value=json.loads(external_json),
+        ) as mock_fetch_json:
             # Check if the returned STAC collection contains updated data
             StacCollection.fetch_external_stac_collections(self.rest_core.eodag_api)
             stac_coll = self.rest_core.get_stac_collection_by_id(
                 url="", root="", collection_id="S2_MSI_L1C"
             )
-            mock_stac_get_ext_stac_collection.assert_called_with(
-                ext_stac_collection_path
-            )
+            mock_fetch_json.assert_called_with(ext_stac_collection_path)
             # New field
             self.assertIn("new_field", stac_coll)
             # Merge keywords

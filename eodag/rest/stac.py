@@ -42,12 +42,9 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
-    HTTP_REQ_TIMEOUT,
-    USER_AGENT,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
-    get_ext_stac_collection,
     guess_file_type,
     jsonpath_parse_dict_items,
     string_to_jsonpath,
@@ -57,8 +54,11 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
+    RequestError,
+    TimeOutError,
     ValidationError,
 )
+from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
     from eodag.api.core import EODataAccessGateway
@@ -630,7 +630,16 @@ class StacCollection(StacCommon):
             if not ext_stac_collection_path:
                 continue
             logger.info(f"Fetching external STAC collection for {product_type['ID']}")
-            ext_stac_collection = get_ext_stac_collection(ext_stac_collection_path)
+
+            try:
+                ext_stac_collection = fetch_json(ext_stac_collection_path)
+            except (RequestError, TimeOutError) as e:
+                logger.debug(e)
+                logger.warning(
+                    f"Could not read remote external STAC collection from {ext_stac_collection_path}",
+                )
+                ext_stac_collection = {}
+
             cls.ext_stac_collections[product_type["ID"]] = ext_stac_collection
 
     def __init__(
