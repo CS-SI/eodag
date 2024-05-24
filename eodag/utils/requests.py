@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2018, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2024, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -17,13 +17,62 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 import os
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 import requests
 
-from eodag.utils import uri_to_path
-from eodag.utils.exceptions import RequestError
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, path_to_uri, uri_to_path
+from eodag.utils.exceptions import RequestError, TimeOutError
+
+logger = logging.getLogger("eodag.utils.requests")
+
+
+def fetch_json(
+    file_url: str,
+    req_session: Optional[requests.Session] = None,
+    auth: Optional[requests.AuthBase] = None,
+    timeout: float = HTTP_REQ_TIMEOUT,
+) -> Any:
+    """
+    Fetches http/distant or local json file
+
+    :param file_url: url from which the file can be fetched
+    :type file_url: str
+    :param req_session: (optional) requests session
+    :type req_session: requests.Session
+    :param auth: (optional) authenticated object if request needs authentication
+    :type auth: Optional[requests.AuthBase]
+    :param timeout: (optional) authenticated object
+    :type timeout: float
+    :returns: json file content
+    :rtype: Any
+    """
+    if req_session is None:
+        req_session = requests.Session()
+    try:
+        if not file_url.lower().startswith("http"):
+            file_url = path_to_uri(os.path.abspath(file_url))
+            req_session.mount("file://", LocalFileAdapter())
+
+        headers = USER_AGENT
+        logger.debug(f"fetching {file_url}")
+        res = req_session.get(
+            file_url,
+            headers=headers,
+            auth=auth,
+            timeout=timeout,
+        )
+        res.raise_for_status()
+    except requests.exceptions.Timeout as exc:
+        raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+    except requests.exceptions.RequestException as exc:
+        raise RequestError(
+            f"Unable to fetch {file_url}: {str(exc)}",
+        ) from exc
+    else:
+        return res.json()
 
 
 class LocalFileAdapter(requests.adapters.BaseAdapter):

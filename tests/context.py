@@ -91,6 +91,7 @@ from eodag.utils import (
     parse_header,
     get_ssl_context,
 )
+from eodag.utils.requests import fetch_json
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,

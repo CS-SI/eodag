@@ -1935,7 +1935,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
-    @mock.patch("eodag.utils.constraints.requests.Session.get", autospec=True)
+    @mock.patch("eodag.utils.requests.requests.Session.get", autospec=True)
     def test_plugins_search_buildsearchresult_discover_queryables(
         self, mock_requests_session_constraints
     ):

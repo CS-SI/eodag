@@ -17,17 +17,14 @@
 # limitations under the License.
 import copy
 import logging
-import os
 from typing import TYPE_CHECKING, Any, Dict, List, Set, Union
-
-import requests
 
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search.base import Search
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, path_to_uri
-from eodag.utils.exceptions import TimeOutError, ValidationError
-from eodag.utils.requests import LocalFileAdapter
+from eodag.utils import deepcopy
+from eodag.utils.exceptions import RequestError, ValidationError
+from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -179,47 +176,27 @@ def fetch_constraints(
     :returns: list of constraints fetched from the provider
     :rtype: List[Dict[Any, Any]]
     """
+    auth = (
+        plugin.auth
+        if hasattr(plugin, "auth") and isinstance(plugin.auth, AuthBase)
+        else None
+    )
     try:
-        session = requests.Session()
-        if not constraints_url.lower().startswith("http"):
-            constraints_url = path_to_uri(os.path.abspath(constraints_url))
-            session.mount("file://", LocalFileAdapter())
-        headers = USER_AGENT
-        logger.debug("fetching constraints from %s", constraints_url)
-        if hasattr(plugin, "auth"):
-            auth = plugin.auth if isinstance(plugin.auth, AuthBase) else None
-            res = session.get(
-                constraints_url,
-                headers=headers,
-                auth=auth,
-                timeout=HTTP_REQ_TIMEOUT,
-            )
-        else:
-            res = session.get(
-                constraints_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
-            )
-        res.raise_for_status()
-    except requests.exceptions.Timeout as exc:
-        raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-    except requests.exceptions.HTTPError as err:
-        logger.error(
-            "constraints could not be fetched from %s, error: %s",
-            constraints_url,
-            str(err),
-        )
+        constraints_data = fetch_json(constraints_url, auth=auth)
+    except RequestError as err:
+        logger.error(str(err))
         return []
+
+    config = plugin.config.__dict__
+    if (
+        "constraints_entry" in config
+        and config["constraints_entry"]
+        and config["constraints_entry"] in constraints_data
+    ):
+        constraints = constraints_data[config["constraints_entry"]]
     else:
-        constraints_data = res.json()
-        config = plugin.config.__dict__
-        if (
-            "constraints_entry" in config
-            and config["constraints_entry"]
-            and config["constraints_entry"] in constraints_data
-        ):
-            constraints = constraints_data[config["constraints_entry"]]
-        else:
-            constraints = constraints_data
-        return constraints
+        constraints = constraints_data
+    return constraints
 
 
 def _get_other_possible_values_for_values_with_defaults(
