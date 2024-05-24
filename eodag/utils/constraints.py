@@ -17,10 +17,8 @@
 # limitations under the License.
 import copy
 import logging
-import os
 from typing import Any, Dict, List, Set, Union
 
-import requests
 from requests.auth import AuthBase
 
 from eodag.api.product.metadata_mapping import get_provider_queryable_key
