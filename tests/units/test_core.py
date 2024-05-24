@@ -1402,32 +1402,66 @@ class TestCore(TestCoreBase):
         self.maxDiff = None
         expected_result = {
             "peps": None,
-            "usgs": None,
-            "creodias": None,
-            "aws_eos": None,
-            "theia": None,
-            "onda": {
-                "sortables": ["startTimeFromAscendingNode", "uid", "storageStatus"],
-                "max_sort_params": 1,
-            },
             "astraea_eod": {
                 "sortables": ["id", "startTimeFromAscendingNode", "creationDate"],
                 "max_sort_params": None,
             },
-            "usgs_satapi_aws": {
+            "aws_eos": None,
+            "cop_ads": None,
+            "cop_cds": None,
+            "cop_dataspace": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "creodias": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "creodias_s3": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "dedl": {
+                "max_sort_params": None,
                 "sortables": [
                     "id",
                     "startTimeFromAscendingNode",
                     "creationDate",
                     "modificationDate",
                     "platformSerialIdentifier",
-                    "illuminationElevationAngle",
-                    "illuminationAzimuthAngle",
+                    "resolution",
+                    "cloudCover",
+                ],
+            },
+            "dedt_lumi": None,
+            "earth_search": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "creationDate",
+                    "modificationDate",
+                    "platformSerialIdentifier",
+                    "resolution",
                     "cloudCover",
                 ],
                 "max_sort_params": None,
             },
-            "earth_search": {
+            "earth_search_gcs": {
                 "sortables": [
                     "id",
                     "startTimeFromAscendingNode",
@@ -1452,39 +1486,13 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": None,
             },
-            "earth_search_gcs": {
-                "sortables": [
-                    "id",
-                    "startTimeFromAscendingNode",
-                    "creationDate",
-                    "modificationDate",
-                    "platformSerialIdentifier",
-                    "resolution",
-                    "cloudCover",
-                ],
-                "max_sort_params": None,
-            },
             "ecmwf": None,
-            "cop_ads": None,
-            "cop_cds": None,
-            "dedt_lumi": None,
-            "sara": {
+            "eumetsat_ds": {
                 "sortables": [
                     "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
-                    "sensorMode",
+                    "publicationDate",
                 ],
                 "max_sort_params": 1,
-            },
-            "meteoblue": None,
-            "cop_dataspace": None,
-            "planetary_computer": {
-                "sortables": [
-                    "id",
-                    "startTimeFromAscendingNode",
-                    "platformSerialIdentifier",
-                ],
-                "max_sort_params": None,
             },
             "hydroweb_next": {
                 "sortables": [
@@ -1496,28 +1504,44 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": None,
             },
-            "dedl": {
+            "meteoblue": None,
+            "onda": {
+                "sortables": ["startTimeFromAscendingNode", "uid", "storageStatus"],
+                "max_sort_params": 1,
+            },
+            "planetary_computer": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "platformSerialIdentifier",
+                ],
                 "max_sort_params": None,
+            },
+            "sara": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "sensorMode",
+                ],
+                "max_sort_params": 1,
+            },
+            "theia": None,
+            "usgs": None,
+            "usgs_satapi_aws": {
                 "sortables": [
                     "id",
                     "startTimeFromAscendingNode",
                     "creationDate",
                     "modificationDate",
                     "platformSerialIdentifier",
-                    "resolution",
+                    "illuminationElevationAngle",
+                    "illuminationAzimuthAngle",
                     "cloudCover",
                 ],
+                "max_sort_params": None,
             },
             "wekeo": None,
             "wekeo_cmems": None,
-            "creodias_s3": None,
-            "eumetsat_ds": {
-                "sortables": [
-                    "startTimeFromAscendingNode",
-                    "publicationDate",
-                ],
-                "max_sort_params": 1,
-            },
         }
         sortables = self.dag.available_sortables()
         self.assertDictEqual(sortables, expected_result)
@@ -1525,6 +1549,15 @@ class TestCore(TestCoreBase):
         # check if sortables are set to None when the provider does not support the sorting feature
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
         self.assertEqual(sortables["peps"], None)
+
+        # check if sortable parameter(s) and its (their) maximum number of a provider are set
+        # to their value when the provider supports the sorting feature and has a maximum number of sortables
+        self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
+        self.assertTrue(
+            self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
+        )
+        if sortables["creodias"]:
+            self.assertIsNotNone(sortables["creodias"]["max_sort_params"])
 
         # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
         # to None when the provider supports the sorting feature and does not have a maximum number of sortables

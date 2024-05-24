@@ -900,6 +900,19 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_by_tpl: '&$orderby={sort_param} {sort_order}'
+      sort_param_mapping:
+        startTimeFromAscendingNode: ContentDate/Start
+        completionTimeFromAscendingNode: ContentDate/End
+        publicationDate: PublicationDate
+        modificationDate: ModificationDate
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+      max_sort_params: 1
     results_entry: 'value'
     free_text_search_operations:
       $filter:
@@ -3826,6 +3839,19 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_by_tpl: '&$orderby={sort_param} {sort_order}'
+      sort_param_mapping:
+        startTimeFromAscendingNode: ContentDate/Start
+        completionTimeFromAscendingNode: ContentDate/End
+        publicationDate: PublicationDate
+        modificationDate: ModificationDate
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+      max_sort_params: 1
     results_entry: 'value'
     free_text_search_operations:
       $filter:
@@ -6047,6 +6073,19 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_by_tpl: '&$orderby={sort_param} {sort_order}'
+      sort_param_mapping:
+        startTimeFromAscendingNode: ContentDate/Start
+        completionTimeFromAscendingNode: ContentDate/End
+        publicationDate: PublicationDate
+        modificationDate: ModificationDate
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+      max_sort_params: 1
     results_entry: 'value'
     free_text_search_operations:
       $filter:
