@@ -553,7 +553,7 @@ class TestCore(TestCoreBase):
         "usgs",
         "usgs_satapi_aws",
         "wekeo",
-        "wekeo_cmems"
+        "wekeo_cmems",
     ]
 
     def setUp(self):
