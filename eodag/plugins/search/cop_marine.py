@@ -10,6 +10,7 @@ import botocore
 import requests
 from dateutil.parser import isoparse
 from dateutil.utils import today
+from mypy_boto3_s3 import S3Client
 from pytz import timezone
 
 from eodag import EOProduct
@@ -34,6 +35,19 @@ def _get_date_from_yyyymmdd(date_str: str) -> datetime:
         int(month),
         int(day),
         tzinfo=timezone("UTC"),
+    )
+
+
+def _get_s3_client(endpoint_url: str) -> S3Client:
+    s3_session = boto3.Session()
+    return s3_session.client(
+        "s3",
+        config=botocore.config.Config(
+            # Configures to use subdomain/virtual calling format.
+            s3={"addressing_style": "virtual"},
+            signature_version=botocore.UNSIGNED,
+        ),
+        endpoint_url=endpoint_url,
     )
 
 
@@ -192,7 +206,7 @@ class CopMarineSearch(StaticStacSearch):
         products = []
         start_index = items_per_page * (page - 1)
         num_total = 0
-        for dataset in datasets:
+        for i, dataset in enumerate(datasets):
             logger.debug("searching data for dataset %s", dataset["id"])
             # retrieve information about s3 from collection data
             s3_url = dataset["assets"]["native"]["href"]
@@ -212,17 +226,8 @@ class CopMarineSearch(StaticStacSearch):
                 )
                 products.append(product)
                 continue
-            s3_session = boto3.Session()
-            s3_client = s3_session.client(
-                "s3",
-                config=botocore.config.Config(
-                    # Configures to use subdomain/virtual calling format.
-                    s3={"addressing_style": "virtual"},
-                    signature_version=botocore.UNSIGNED,
-                ),
-                endpoint_url=endpoint_url,
-            )
 
+            s3_client = _get_s3_client(endpoint_url)
             stop_search = False
 
             if "startTimeFromAscendingNode" in kwargs:
@@ -250,7 +255,7 @@ class CopMarineSearch(StaticStacSearch):
                         Bucket=bucket, Prefix=collection_path
                     )
                 if "Contents" not in s3_objects:
-                    if len(products) == 0:
+                    if len(products) == 0 and i == len(datasets) - 1:
                         return [], 0
                     else:
                         break

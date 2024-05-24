@@ -24,6 +24,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
+from unittest.mock import call
 
 import boto3
 import dateutil
@@ -35,6 +36,7 @@ from pydantic_core import PydanticUndefined
 from requests import RequestException
 
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
+from eodag.utils import deepcopy
 from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
@@ -2200,3 +2202,307 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
 
         # restore configuration
         self.search_plugin.config.constraints_file_url = tmp_search_constraints_file_url
+
+
+class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginCopMarineSearch, self).setUp()
+        self.provider = "cop_marine"
+        self.product_data = {
+            "id": "PRODUCT_A",
+            "type": "Collection",
+            "stac_version": "1.0.0",
+            "stac_extensions": [
+                "https://stac-extensions.github.io/scientific/v1.0.0/schema.json"
+            ],
+            "title": "Product A",
+            "description": "A nice description",
+            "license": "proprietary",
+            "providers": [
+                {"name": "CLS (France)", "roles": ["producer"]},
+                {
+                    "name": "Copernicus Marine Service",
+                    "roles": ["host", "processor"],
+                    "url": "https://marine.copernicus.eu",
+                },
+            ],
+            "keywords": [
+                "oceanographic-geographical-features",
+                "satellite-observation",
+                "level-3",
+            ],
+            "links": [
+                {
+                    "rel": "root",
+                    "href": "../catalog.stac.json",
+                    "title": "Copernicus Marine Data Store",
+                    "type": "application/json",
+                },
+                {
+                    "rel": "parent",
+                    "href": "../catalog.stac.json",
+                    "title": "Copernicus Marine Data Store",
+                    "type": "application/json",
+                },
+                {
+                    "rel": "item",
+                    "href": "dataset-number-one/dataset.stac.json",
+                    "title": "dataset-number-one",
+                    "type": "application/json",
+                },
+                {
+                    "rel": "item",
+                    "href": "dataset-number-two/dataset.stac.json",
+                    "title": "dataset-number-two",
+                    "type": "application/json",
+                },
+                {
+                    "rel": "license",
+                    "href": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+                    "title": "Copernicus Marine Service Commitments and Licence",
+                    "type": "text/html",
+                },
+            ],
+            "extent": {
+                "temporal": {
+                    "interval": [
+                        ["1970-01-01T00:00:00.000000Z", "1970-01-01T00:00:00.000000Z"]
+                    ]
+                },
+                "spatial": {"bbox": [[0, 0, 0, 0]]},
+            },
+            "assets": {
+                "thumbnail": {
+                    "href": "https://catalogue.marine.copernicus.eu/documents/IMG/WAVE_GLO_PHY_SPC_L3_MY_014_006.png",
+                    "type": "image/png",
+                    "roles": ["thumbnail"],
+                    "title": "GLOBAL OCEAN L3 SPECTRAL PARAMETERS FROM REPROCESSED SATELLITE MEASUREMENTS thumbnail",
+                }
+            },
+            "properties": {
+                "altId": "450bf368-2407-4c2c-8535-f215a4cda963",
+                "creationDate": "2021-04-23",
+                "modifiedDate": "2021-04-23",
+                "contacts": [
+                    {
+                        "name": "Jim Gabriel",
+                        "organisationName": "Heaven Inc",
+                        "responsiblePartyRole": "custodian",
+                        "email": "jim.gabriel@heaven.com",
+                    }
+                ],
+                "projection": "WGS84 / Simple Mercator (EPSG:41001)",
+                "formats": ["NetCDF-4"],
+                "featureTypes": ["Swath", "Trajectory"],
+                "tempResolutions": ["Instantaneous"],
+                "rank": 15015,
+                "areas": [
+                    "Global Ocean",
+                ],
+                "times": ["Past"],
+                "sources": ["Satellite observations"],
+                "colors": ["Blue Ocean"],
+                "directives": [
+                    "Water Framework Directive (WFD)",
+                    "Maritime Spatial Planning (MSP)",
+                ],
+                "crs": "EPSG:3857",
+                "isStaging": False,
+                "admp_updated": "2023-11-07T16:54:54.688320Z",
+            },
+            "sci:doi": "10.48670/moi-00174",
+        }
+        self.dataset1_data = {
+            "id": "dataset-number-one",
+            "type": "Feature",
+            "stac_version": "1.0.0",
+            "stac_extensions": [
+                "https://stac-extensions.github.io/datacube/v2.1.0/schema.json"
+            ],
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]],
+            },
+            "bbox": [0, 0, 0, 0],
+            "properties": {
+                "title": "dataset-number-one",
+                "datetime": "1970-01-01T00:00:00.000000Z",
+            },
+            "links": [
+                {
+                    "rel": "root",
+                    "href": "../../catalog.stac.json",
+                    "title": "Copernicus Marine Data Store",
+                    "type": "application/json",
+                },
+                {
+                    "rel": "parent",
+                    "href": "../product.stac.json",
+                    "title": "PRODUCT A",
+                    "type": "application/json",
+                },
+                {
+                    "rel": "collection",
+                    "href": "../product.stac.json",
+                    "title": "PRODUCT A",
+                    "type": "application/json",
+                },
+            ],
+            "assets": {
+                "native": {
+                    "id": "native",
+                    "href": "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-one",
+                    "type": "application/x-netcdf",
+                    "roles": ["data"],
+                    "title": "Native dataset",
+                    "description": "The original, non-ARCO version of this dataset, as published by the data provider.",
+                }
+            },
+            "collection": "PRODUCT_A",
+        }
+        self.dataset2_data = deepcopy(self.dataset1_data)
+        self.dataset2_data["id"] = "dataset-number-two"
+        self.dataset2_data["properties"]["title"] = "dataset-number-two"
+        self.dataset2_data["assets"]["native"][
+            "href"
+        ] = "https://s3.test.com/bucket1/native/PRODUCT_A/dataset-number-two"
+
+        self.list_objects_response1 = {
+            "Contents": [
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200102_20200103_hdkIFEKFNEDNF_20210101.nc"
+                },
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200104_20200105_hdkIFEKFNEDNF_20210101.nc"
+                },
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDNF_20210101.nc"
+                },
+            ]
+        }
+        self.list_objects_response2 = {
+            "Contents": [
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_20200102_20200103_fizncnqijei_20210101.nc"
+                },
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_20200204_20200205_niznjvnqkrf_20210101.nc"
+                },
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_20200302_20200303_fIZHVCOINine_20210101.nc"
+                },
+            ]
+        }
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_query_with_dates(self, mock_requests_get):
+
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        s3 = boto3.client("s3")
+
+        with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
+            s3_stub.return_value = s3
+            stubber = Stubber(s3)
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response1,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+            )
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response2,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+            )
+            stubber.activate()
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A",
+                startTimeFromAscendingNode="2020-01-01T01:00:00Z",
+                completionTimeFromAscendingNode="2020-02-01T01:00:00Z",
+            )
+            mock_requests_get.assert_has_calls(
+                calls=[
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                    ),
+                    call().json(),
+                ]
+            )
+            self.assertEqual(3, num_total)
+            products_dataset1 = [
+                product
+                for product in result
+                if product.properties["dataset"] == "dataset-number-one"
+            ]
+            products_dataset2 = [
+                product
+                for product in result
+                if product.properties["dataset"] == "dataset-number-two"
+            ]
+            self.assertEqual(2, len(products_dataset1))
+            self.assertEqual(1, len(products_dataset2))
+            self.assertEqual(
+                "2020-01-02T00:00:00Z",
+                products_dataset2[0].properties["startTimeFromAscendingNode"],
+            )
+            self.assertEqual(
+                "2020-01-03T00:00:00Z",
+                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+            )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_query_with_id(self, mock_requests_get):
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        s3 = boto3.client("s3")
+
+        with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
+            s3_stub.return_value = s3
+            stubber = Stubber(s3)
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response1,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDNF_20210101.nc",
+                    "Prefix": "native/PRODUCT_A/dataset-number-one",
+                },
+            )
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response2,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+            )
+            stubber.activate()
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A",
+                id="item_20200204_20200205_niznjvnqkrf_20210101",
+            )
+            self.assertEqual(1, num_total)
+            self.assertEqual(
+                "item_20200204_20200205_niznjvnqkrf_20210101",
+                result[0].properties["id"],
+            )
