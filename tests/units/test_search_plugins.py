@@ -585,7 +585,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 auth=None,
             )
 
-    @mock.patch("eodag.utils.constraints.requests.Session.get", autospec=True)
+    @mock.patch("eodag.utils.requests.requests.Session.get", autospec=True)
     def test_plugins_search_querystringsearch_discover_queryables(
         self, mock_requests_session_constraints
     ):
