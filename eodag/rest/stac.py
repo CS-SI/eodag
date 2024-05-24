@@ -36,6 +36,7 @@ from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
+    NOT_AVAILABLE,
     format_metadata,
     get_metadata_path,
 )
@@ -53,8 +54,11 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
+    RequestError,
+    TimeOutError,
     ValidationError,
 )
+from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
     from eodag.api.core import EODataAccessGateway
@@ -610,6 +614,34 @@ class StacCollection(StacCommon):
     :type root: str
     """
 
+    # External STAC collections
+    ext_stac_collections: Dict[str, Dict[str, Any]] = dict()
+
+    @classmethod
+    def fetch_external_stac_collections(cls, eodag_api: EODataAccessGateway) -> None:
+        """Load external STAC collections
+
+        :param eodag_api: EODAG python API instance
+        :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
+        """
+        list_product_types = eodag_api.list_product_types(fetch_providers=False)
+        for product_type in list_product_types:
+            ext_stac_collection_path = product_type.get("stacCollection")
+            if not ext_stac_collection_path:
+                continue
+            logger.info(f"Fetching external STAC collection for {product_type['ID']}")
+
+            try:
+                ext_stac_collection = fetch_json(ext_stac_collection_path)
+            except (RequestError, TimeOutError) as e:
+                logger.debug(e)
+                logger.warning(
+                    f"Could not read remote external STAC collection from {ext_stac_collection_path}",
+                )
+                ext_stac_collection = {}
+
+            cls.ext_stac_collections[product_type["ID"]] = ext_stac_collection
+
     def __init__(
         self,
         url: str,
@@ -717,6 +749,19 @@ class StacCollection(StacCommon):
                     "providers": providers_models,
                 },
             )
+            # override EODAG's collection with the external collection
+            product_type_id = product_type.get("_id", None) or product_type["ID"]
+            ext_stac_collection = self.ext_stac_collections.get(product_type_id, {})
+            # merge "keywords" list
+            merged_keywords = product_type_collection.get("keywords", [])
+            if "keywords" in ext_stac_collection:
+                new_keywords = ext_stac_collection["keywords"]
+                for v in new_keywords:
+                    if v != NOT_AVAILABLE and v not in merged_keywords:
+                        merged_keywords.append(v)
+            product_type_collection.update(ext_stac_collection)
+            if merged_keywords:
+                product_type_collection["keywords"] = merged_keywords
             # parse f-strings
             format_args = deepcopy(self.stac_config)
             format_args["collection"] = dict(

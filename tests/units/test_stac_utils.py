@@ -27,6 +27,7 @@ from pygeofilter import ast
 from pygeofilter.values import Geometry
 
 import eodag.rest.utils.rfc3339 as rfc3339
+from eodag.rest.stac import StacCollection
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils.exceptions import ValidationError
@@ -53,6 +54,12 @@ class TestStacUtils(unittest.TestCase):
         importlib.reload(rest_utils)
 
         cls.rest_utils = rest_utils
+
+        import eodag.rest.core as rest_core
+
+        importlib.reload(rest_core)
+
+        cls.rest_core = rest_core
 
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
@@ -245,6 +252,42 @@ class TestStacUtils(unittest.TestCase):
         dtstart, dtend = self.rest_utils.get_datetime({"dtstart": start, "dtend": end})
         self.assertEqual(dtstart, start)
         self.assertEqual(dtend, end)
+
+    def test_fetch_external_stac_collections(self):
+        """Load external STAC collections"""
+        external_json = """{
+            "new_field":"New Value",
+            "title":"A different title for Sentinel 2 MSI Level 1C",
+            "keywords":["New Keyword"]
+        }"""
+        product_type_conf = self.rest_core.eodag_api.product_types_config["S2_MSI_L1C"]
+        ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
+        product_type_conf["stacCollection"] = ext_stac_collection_path
+
+        with mock.patch(
+            "eodag.rest.stac.fetch_json",
+            autospec=True,
+            return_value=json.loads(external_json),
+        ) as mock_fetch_json:
+            # Check if the returned STAC collection contains updated data
+            StacCollection.fetch_external_stac_collections(self.rest_core.eodag_api)
+            stac_coll = self.rest_core.get_stac_collection_by_id(
+                url="", root="", collection_id="S2_MSI_L1C"
+            )
+            mock_fetch_json.assert_called_with(ext_stac_collection_path)
+            # New field
+            self.assertIn("new_field", stac_coll)
+            # Merge keywords
+            self.assertListEqual(
+                ["MSI", "SENTINEL2", "S2A,S2B", "L1", "OPTICAL", "New Keyword"],
+                stac_coll["keywords"],
+            )
+            # Override existing fields
+            self.assertEqual(
+                "A different title for Sentinel 2 MSI Level 1C", stac_coll["title"]
+            )
+            # Restore previous state
+            StacCollection.ext_stac_collections.clear()
 
 
 class TestEodagCql2jsonEvaluator(unittest.TestCase):

@@ -288,6 +288,7 @@ class EODataAccessGateway:
                 missionStartDate=fields.ID,
                 missionEndDate=fields.ID,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
+                stacCollection=fields.STORED,
             )
             self._product_types_index = create_in(index_dir, product_types_schema)
             ix_writer = self._product_types_index.writer()
