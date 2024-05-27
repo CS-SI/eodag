@@ -2746,6 +2746,9 @@
         metadata_mapping:
           downloadLink: $.json.location
     products:
+      AG_ERA5:
+        outputs_extension: .zip
+        extract: true
       ERA5_SL:
         outputs_extension: .grib
       ERA5_PL:
@@ -3062,6 +3065,9 @@
       source:
         - source
         - $.source
+      statistic:
+        - statistic
+        - $.statistic
       step:
         - step
         - $.step
@@ -3109,6 +3115,14 @@
         - $.year
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
+    AG_ERA5:
+      dataset: sis-agrometeorological-indicators
+      version: '1_1'
+      variable: cloud_cover
+      statistic: 24_hour_mean
+      format: zip
+      metadata_mapping:
+        <<: *day_month_year
     ERA5_SL:
       dataset: reanalysis-era5-single-levels
       api_product_type: reanalysis
@@ -4447,6 +4461,9 @@
       cdr_type:
         - '{{"cdr_type": "{cdr_type}"}}'
         - '$.null'
+      statistic:
+        - '{{"statistic": {statistic}}}'
+        - '$.null'
   products:
     S1_SAR_GRD:
       productType: EO:ESA:DAT:SENTINEL-1
@@ -5003,6 +5020,26 @@
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS"}}'
+    AG_ERA5:
+      productType: EO:ECMWF:DAT:SIS_AGROMETEOROLOGICAL_INDICATORS
+      variable: cloud_cover
+      version: '1_1'
+      time:
+        - "06_00"
+      format: zip
+      statistic:
+        - 24_hour_mean
+      metadata_mapping:
+        id: '$.id'
+        <<: *day_month_year
+        version:
+          - '{{"version": "{version}"}}'
+          - '$.null'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SIS_AGROMETEOROLOGICAL_INDICATORS"}}'
     ERA5_SL:
       productType: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
       providerProductType:

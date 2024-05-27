@@ -2615,6 +2615,30 @@ CAMS_GLOBAL_EMISSIONS:
   missionStartDate: "2000-01-01T00:00:00Z"
 
 # MARK: COPERNICUS CDS -----------------------------------------------------------------
+AG_ERA5:
+  abstract: |
+    This dataset provides daily surface meteorological data for the period from 1979 to present as input for agriculture
+    and agro-ecological studies. This dataset is based on the hourly ECMWF ERA5 data at surface level and is referred to
+    as AgERA5. Acquisition and pre-processing of the original ERA5 data is a complex and specialized job. By providing
+    the AgERA5 dataset, users are freed from this work and can directly start with meaningful input for their analyses
+    and modelling. To this end, the variables provided in this dataset match the input needs of most agriculture and
+    agro-ecological models.
+    Data were aggregated to daily time steps at the local time zone and corrected towards a finer topography at a 0.1°
+    spatial resolution. The correction to the 0.1° grid was realized by applying grid and variable-specific regression
+    equations to the ERA5 dataset interpolated at 0.1° grid. The equations were trained on ECMWF's operational
+    high-resolution atmospheric model (HRES) at a 0.1° resolution. This way the data is tuned to the finer topography,
+    finer land use pattern and finer land-sea delineation of the ECMWF HRES model.
+    The data was produced on behalf of the Copernicus Climate Change Service.
+  platform: ERA5
+  instrument:
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,climate,land,agriculture,AgERA5,surface
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Agrometeorological indicators from 1979 to present derived from reanalysis
+  missionStartDate: "1979-01-01T00:00:00Z"
+
 ERA5_SL:
   abstract: |
     ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades.
