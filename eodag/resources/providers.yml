@@ -887,7 +887,7 @@
     type: QueryStringSearch
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    timeout: 60
+    timeout: 120
     ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
@@ -2192,6 +2192,7 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://ads.atmosphere.copernicus.eu/api/v2
+    timeout: 30
     ssl_verify: true
     extract: false
     auth_error_code: 401
@@ -2691,6 +2692,7 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://cds.climate.copernicus.eu/api/v2
+    timeout: 30
     ssl_verify: true
     extract: false
     auth_error_code: 401
@@ -3802,7 +3804,7 @@
     type: QueryStringSearch
     api_endpoint: 'http://catalogue.dataspace.copernicus.eu/resto/api/collections/{collection}/search.json'
     need_auth: false
-    timeout: 60
+    timeout: 120
     ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
@@ -5937,7 +5939,7 @@
     api_endpoint: 'http://datahub.creodias.eu/resto/api/collections/{collection}/search.json'
     s3_endpoint: 'https://eodata.cloudferro.com'
     need_auth: true
-    timeout: 60
+    timeout: 120
     ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}&exactCount=1'
