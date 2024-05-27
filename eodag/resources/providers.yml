@@ -2508,7 +2508,7 @@
         - '$.variable'
       version:
         - version
-        - '$.version'
+        - '{$.version#to_geojson}'
       quantity:
         - quantity
         - '$.quantity'
@@ -3073,7 +3073,7 @@
         - $.system
       system_version:
         - system_version
-        - $.system_version
+        - '{$.system_version#to_geojson}'
       target:
         - target
         - $.target
@@ -3103,7 +3103,7 @@
         - $.variable_type
       version:
         - version
-        - $.version
+        - '{$.version#to_geojson}'
       year:
         - year
         - $.year
@@ -3158,7 +3158,7 @@
       dataset: insitu-glaciers-extent
       variable: glacier_area
       api_product_type: gridded
-      version: 6_0
+      version: '6_0'
       format: zip
     FIRE_HISTORICAL:
       dataset: cems-fire-historical-v1
@@ -3166,7 +3166,7 @@
       dataset_type: consolidated_dataset
       api_product_type: reanalysis
       variable: build_up_index
-      system_version: 4_1
+      system_version: '4_1'
       format: grib
     GLOFAS_FORECAST:
       dataset: cems-glofas-forecast
@@ -3264,7 +3264,7 @@
       processing_level: level_2
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
-      version: 4.0
+      version: '4.0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_METHANE:
@@ -3273,7 +3273,7 @@
       processing_level: level_2
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
-      version: 4.0
+      version: '4.0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
@@ -3284,7 +3284,7 @@
       variable:
         - sea_ice_edge
         - sea_ice_type
-      version: '"3_0"'
+      version: '3_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_THICKNESS:
@@ -3293,7 +3293,7 @@
       format: zip
       satellite: envisat
       variable: all
-      version: '"3_0"'
+      version: '3_0'
       metadata_mapping:
         <<: *month_year
     SATELLITE_SEA_ICE_CONCENTRATION:
@@ -4445,7 +4445,7 @@
         - '{{"satellite": {satellite}}}'
         - '$.null'
       cdr_type:
-        - '{{"cdr_type": {cdr_type}}}'
+        - '{{"cdr_type": "{cdr_type}"}}'
         - '$.null'
   products:
     S1_SAR_GRD:
@@ -4741,7 +4741,7 @@
         - sea_ice_type
       region: northern_hemisphere
       cdr_type: cdr
-      version: '"3_0"'
+      version: '3_0'
       format: zip
       metadata_mapping:
         id: '$.id'
@@ -4758,7 +4758,7 @@
       cdr_type:
         - cdr
       variable: all
-      version: '"3_0"'
+      version: '3_0'
       format: zip
       metadata_mapping:
         id: '$.id'
