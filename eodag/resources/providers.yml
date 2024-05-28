@@ -947,22 +947,7 @@
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
     discover_product_types:
-      fetch_url: 'https://datahub.creodias.eu/stac/collections'
-      result_type: json
-      results_entry: '$.collections[*]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
-        collection: '$.id'
-      generic_product_type_parsable_metadata:
-        abstract: '$.description'
-        instrument: '{$.summaries.instruments#csv_list}'
-        platform: '{$.summaries.constellation#csv_list}'
-        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-        processingLevel: '$.summaries."processing:level"'
-        keywords: '{$.keywords#csv_list}'
-        license: '$.license'
-        title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+      fetch_url: null
     per_product_metadata_query: false
     metadata_pre_mapping:
       metadata_path: '$.Attributes'
@@ -6141,22 +6126,7 @@
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
     discover_product_types:
-      fetch_url: 'https://datahub.creodias.eu/stac/collections'
-      result_type: json
-      results_entry: '$.collections[*]'
-      generic_product_type_id: '$.id'
-      generic_product_type_parsable_properties:
-        collection: '$.id'
-      generic_product_type_parsable_metadata:
-        abstract: '$.description'
-        instrument: '{$.summaries.instruments#csv_list}'
-        platform: '{$.summaries.constellation#csv_list}'
-        platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-        processingLevel: '$.summaries."processing:level"'
-        keywords: '{$.keywords#csv_list}'
-        license: '$.license'
-        title: '$.title'
-        missionStartDate: '$.extent.temporal.interval[0][0]'
+      fetch_url: null
     per_product_metadata_query: false
     metadata_pre_mapping:
       metadata_path: '$.Attributes'
