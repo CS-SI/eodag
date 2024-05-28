@@ -29,6 +29,7 @@ import geojson
 import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
+from jsonpath_ng.jsonpath import Child
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -248,6 +249,44 @@ class StacItem(StacCommon):
                         k, item_model["properties"][k]
                     )
 
+        collection_props = [
+            "abstract",
+            "instrument",
+            "platform",
+            "platformSerialIdentifier",
+            "processingLevel",
+            "sensorType",
+            "md5",
+            "license",
+            "title",
+            "missionStartDate",
+            "missionEndDate",
+            "keywords",
+            "stacCollection",
+        ]
+        item_props = [
+            p.right.fields[0]
+            for p in item_model["properties"].values()
+            if isinstance(p, Child)
+        ]
+        ignored_props = (
+            collection_props
+            + item_props
+            + [
+                "_id",
+                "id",
+                "keyword",
+                "quicklook",
+                "thumbnail",
+                "downloadLink",
+                "orderLink",
+                "_dc_qs",
+                "qs",
+                "defaultGeometry",
+                "_date",
+            ]
+        )
+
         item_list: List[Dict[str, Any]] = []
         for product in search_results:
             product_dict = deepcopy(product.__dict__)
@@ -259,6 +298,17 @@ class StacItem(StacCommon):
                     "providers": [self.get_provider_dict(product.provider)],
                 },
             )
+
+            # add additional item props
+            for p in set(product.properties) - set(ignored_props):
+                prefix = getattr(
+                    self.eodag_api.providers_config[product.provider],
+                    "group",
+                    product.provider,
+                )
+                key = p if ":" in p else f"{prefix}:{p}"
+                product_item["properties"][key] = product.properties[p]
+
             # parse download link
             downloadlink_href = (
                 f"{catalog['url']}/items/{product.properties['title']}/download"
