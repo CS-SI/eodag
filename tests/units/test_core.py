@@ -91,6 +91,7 @@ class TestCoreBase(unittest.TestCase):
 
 class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
+        "AG_ERA5": ["cop_cds", "wekeo"],
         "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo"],
         "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "dedl", "wekeo"],
         "CAMS_GFE_GFAS": ["cop_ads", "dedl"],
@@ -483,9 +484,11 @@ class TestCore(TestCoreBase):
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo"],
         "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo"],
         "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_ICE_EDGE_TYPE": ["dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_GLOBAL": ["dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["dedl", "wekeo"],
+        "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo"],
+        "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo"],
         "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo"],
         "SEASONAL_MONTHLY_SL": ["cop_cds", "dedl", "wekeo"],
         "SEASONAL_ORIGINAL_PL": ["cop_cds", "dedl", "wekeo"],
