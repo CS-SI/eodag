@@ -887,7 +887,7 @@
     type: ODataV4Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     need_auth: false
-    timeout: 60
+    timeout: 120
     ssl_verify: true
     dont_quote:
       - '['
@@ -3826,7 +3826,7 @@
     type: ODataV4Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
     need_auth: false
-    timeout: 60
+    timeout: 120
     ssl_verify: true
     dont_quote:
       - '['
@@ -6060,7 +6060,7 @@
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     s3_endpoint: 'https://eodata.cloudferro.com'
     need_auth: false
-    timeout: 60
+    timeout: 120
     ssl_verify: true
     dont_quote:
       - '['
