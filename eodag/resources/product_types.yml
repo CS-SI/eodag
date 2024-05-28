@@ -4638,7 +4638,74 @@ METOP_GOMEL1R03:
   title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
   missionStartDate: "2007-04-01T00:00:00Z"
   missionEndDate: "2020-08-01T00:00:00Z"
-
+METOP_IASTHR011:
+  abstract: |
+    This is the release 1.1 of the climate data record of "all-sky" temperature and humidity profiles and their
+    associated quality parameters. The CDR was processed using the latest operational EUMETSAT algorithms available
+    (V6.5.4, 12/2019). It consists of the outputs of the statistical retrieval module Piece Wise Linear Regression only.
+    This provides a homogeneous CDR throughout the time period.
+    On the 8 August 2023, year 2022 was added to the CDR.
+    This is a Thematic Climate Data Record (TCDR).
+  instrument: IASI
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,IASI,INTERFEROMETER,L2,CLIMATE,TEMPERATURE,ATMOSPHERE,HUMIDITY,LAND-SURFACE-TEMPERATURE,THEMATIC-CLIMATE-DATA-RECORD,SEA-SURFACE-TEMPERATURE,IASTHPW30101
+  sensorType: INTERFEROMETER
+  license: proprietary
+  title: IASI All Sky Temperature and Humidity Profiles - Climate Data Record Release 1.1 - Metop-A and -B
+  missionStartDate: "2007-07-10T00:00:00Z"
+  missionEndDate: "2023-01-01T00:00:00Z"
+METOP_IASSND02:
+  abstract: |
+    The main objective of the Infrared Atmospheric Sounding Interferometer (IASI) is to provide high resolution
+    atmospheric emission spectra to derive temperature and humidity profiles with high spectral and vertical resolution
+    and accuracy. Additionally, it is used for the determination of trace gases such as ozone, as well as land and sea
+    surface temperature, emissivity and cloud properties. This combined product (IASI Atmospheric Temperature Water
+    Vapour and Surface Skin Temperature; IASI Cloud Parameters; IASI Ozone and IASI Trace Gases contains temperature
+    Profiles, Humidity Profiles, Surface Temperature, Surface Emissivity, Fractional Cloud Cover, Cloud Top Temperature,
+    Cloud Top Pressure, Cloud Phase, Total Column Ozone, Columnar ozone amounts in thick layers, Total column N2O, CO,
+    CH4, CO2 - all combined in one product.
+  instrument: IASI
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,IASI,INTERFEROMETER,L2,CLIMATE,TEMPERATURE,ATMOSPHERE,HUMIDITY,IASSND02
+  sensorType: INTERFEROMETER
+  license: proprietary
+  title: IASI Combined Sounding Products - Metop
+  missionStartDate: "2008-02-13T00:00:00Z"
+METOP_IASIL1C_ALL:
+  abstract: |
+    This product covers all spectral samples. The main objective of the Infrared Atmospheric Sounding Interferometer
+    (IASI) is to provide high resolution atmospheric emission spectra to derive temperature and humidity profiles with
+    high spectral and vertical resolution and accuracy. Additionally it is used for the determination of trace gases
+    such as ozone, nitrous oxide, carbon dioxide and methane, as well as land and sea surface temperature, emissivity
+    and cloud properties. The IASI L1c product contains infra-red radiance spectra at 0.5cm-1 resolution. The EUMETCast
+    product has for each sounder pixel 8461 spectral samples covering the range between 645.0 cm-1 and 2760 cm-1.
+  instrument: IASI
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,IASI,INTERFEROMETER,L1,L1C,ATMOSPHERE,IASIL1C-ALL,IASxxx1C
+  sensorType: INTERFEROMETER
+  license: proprietary
+  title: IASI Level 1C - All Spectral Samples - Metop - Global
+  missionStartDate: "2009-03-23T00:00:00Z"
+METOP_MHSL1:
+  abstract: |
+    The Microwave Humidity Sounder (MHS) is a 5 channel instrument used to provide input to the retrieval of surface
+    temperatures, emissivities, and atmospheric humidity. In combination with AMSU-A information it can also be used to
+    process precipitation rates and related cloud properties, as well as to detect sea ice and snow coverage.
+  instrument: MHS
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,MHS,SOUNDER,L1,L1B,ATMOSPHERE,MHSxxx1B,MHSL1
+  sensorType: SOUNDER
+  license: proprietary
+  title: MHS Level 1B - Metop - Global
+  missionStartDate: "2009-03-23T00:00:00Z"
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

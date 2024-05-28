@@ -7031,6 +7031,14 @@
       parentIdentifier: EO:EUM:DAT:METOP:GOMEL1
     METOP_GOMEL1R03:
       parentIdentifier: EO:EUM:DAT:0533
+    METOP_IASTHR011:
+      parentIdentifier: EO:EUM:DAT:0576
+    METOP_IASSND02:
+      parentIdentifier: EO:EUM:DAT:METOP:IASSND02
+    METOP_IASIL1C_ALL:
+      parentIdentifier: EO:EUM:DAT:METOP:IASIL1C-ALL
+    METOP_MHSL1:
+      parentIdentifier: EO:EUM:DAT:METOP:MHSL1
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
