@@ -145,18 +145,12 @@ spec:
               value: {{ .Values.logLevel | quote }}
             {{- end }}
             {{- if .Values.otel.enabled }}
-            {{- if .Values.otel.endpoint }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: {{ .Values.otel.endpoint | quote }}
-            {{- end }}
-            {{- if .Values.otel.timeout }}
             - name: OTEL_EXPORTER_OTLP_TIMEOUT
               value: {{ .Values.otel.timeout | quote }}
-            {{- end }}
-            {{- if .Values.otel.interval }}
             - name: OTEL_METRIC_EXPORT_INTERVAL
               value: {{ .Values.otel.interval | quote }}
-            {{- end }}
             {{- end }}
           {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
           envFrom:
