@@ -714,6 +714,10 @@ class EODataAccessGateway:
         :returns: external product types configuration
         :rtype: dict
         """
+        if provider and provider not in self.providers_config:
+            raise UnsupportedProvider(
+                f"The requested provider is not (yet) supported: {provider}"
+            )
         ext_product_types_conf: Dict[str, Any] = {}
         providers_to_fetch = [
             p

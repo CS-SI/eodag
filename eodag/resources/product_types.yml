@@ -2615,6 +2615,30 @@ CAMS_GLOBAL_EMISSIONS:
   missionStartDate: "2000-01-01T00:00:00Z"
 
 # MARK: COPERNICUS CDS -----------------------------------------------------------------
+AG_ERA5:
+  abstract: |
+    This dataset provides daily surface meteorological data for the period from 1979 to present as input for agriculture
+    and agro-ecological studies. This dataset is based on the hourly ECMWF ERA5 data at surface level and is referred to
+    as AgERA5. Acquisition and pre-processing of the original ERA5 data is a complex and specialized job. By providing
+    the AgERA5 dataset, users are freed from this work and can directly start with meaningful input for their analyses
+    and modelling. To this end, the variables provided in this dataset match the input needs of most agriculture and
+    agro-ecological models.
+    Data were aggregated to daily time steps at the local time zone and corrected towards a finer topography at a 0.1°
+    spatial resolution. The correction to the 0.1° grid was realized by applying grid and variable-specific regression
+    equations to the ERA5 dataset interpolated at 0.1° grid. The equations were trained on ECMWF's operational
+    high-resolution atmospheric model (HRES) at a 0.1° resolution. This way the data is tuned to the finer topography,
+    finer land use pattern and finer land-sea delineation of the ECMWF HRES model.
+    The data was produced on behalf of the Copernicus Climate Change Service.
+  platform: ERA5
+  instrument:
+  platformSerialIdentifier: ERA5
+  processingLevel:
+  keywords: ECMWF,Reanalysis,ERA5,CDS,Atmospheric,climate,land,agriculture,AgERA5,surface
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Agrometeorological indicators from 1979 to present derived from reanalysis
+  missionStartDate: "1979-01-01T00:00:00Z"
+
 ERA5_SL:
   abstract: |
     ERA5 is the fifth generation ECMWF reanalysis for the global climate and weather for the past 8 decades.
@@ -3084,8 +3108,82 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Sea ice edge and type daily gridded data from 1978 to present derived from satellite observations
-  missionStartDate: "1979-01-01T00:00:00Z"
+  missionStartDate: "1978-10-25T00:00:00Z"
   missionEndDate: "2023-05-02-02T23:59:59"
+
+SATELLITE_SEA_ICE_THICKNESS:
+  abstract: |
+    This dataset provides monthly gridded data of sea ice thickness for the Arctic region based on satellite radar altimetry
+    observations. Sea ice is an important component of our climate system and a sensitive indicator of climate change. Its
+    presence or its retreat has a strong impact on air-sea interactions, the Earth’s energy budget as well as marine ecosystems.
+    It is recognized by the Global Climate Observing System as an Essential Climate Variable. Sea ice thickness is one of the
+    parameters commonly used to characterise sea ice, alongside sea ice concentration, sea ice edge, and sea ice type, also
+    available in the Climate Data Store.
+    Satellite radar altimeters provide measurements of the sea ice freeboard, which is the difference between the height of the
+    surface of sea ice and the surface of water in open leads (areas of open water within the sea ice). Because of the buoyancy
+    of ice in water, typically about 90% of the ice thickness remains under water and thus the total ice thickness is about 10
+    times the freeboard. However, snow on top of sea ice changes this ratio and complicates the estimation of the ice thickness,
+    requiring the use of auxiliary information about snow depth and density. The retrieval of ice thickness uses the narrow
+    radar swath at the nadir of the satellite at full resolution of approximately 1-10 km and a point spacing of 300 meters.
+    This Level-2 sea-ice thickness products (not provided here) is then gridded for a period of a month to obtain full coverage
+    of a north polar grid at a resolution of 25 km. The algorithm used was developed as part of the European Space Agency
+    Climate Change Initiative (ESA CCI) on Sea Ice.
+    The data provided here are Level-3 Collated (L3C) products: they contain monthly gridded values from orbit data from a single
+    platform (Envisat or CryoSat-2) without interpolation or any other form of gap filling. The files also contain estimates of
+    the algorithm uncertainty as well as a quality status flag indicating potential issues with the retrieval not captured in the
+    algorithm uncertainty. Sources of uncertainty in the algorithm are related to the auxiliary data and to the use of different
+    radar altimeter concepts in Envisat (pulse-limited) and CryoSat-2 (synthetic aperture radar).
+    This dataset combines a Climate Data Record (CDR), which has sufficient length, consistency, and continuity to be used to
+    assess climate variability and change, and an Interim Climate Data Record (ICDR), which provides regular temporal extensions
+    to the CDR and where consistency with the CDR is expected but not extensively checked. Here, the CDR is based on measurements
+    from the RA-2 altimeter on Envisat (October 2002 to October 2010) and the SIRAL altimeter on CryoSat-2 (November 2010 to April
+    2020). The ICDR is based on observations from CryoSat-2 only (from April 2015 onward) and is updated monthly with a one-month
+    delay behind real time. Users should note that the quality and accuracy of the data record are higher during the CryoSat-2
+    period than during the Envisat period. As a result, care should be taken when combining the two missions to assess long-term
+    changes and trends. More information can be found in the Product User Guide and Product Quality Assessment Report.
+    This dataset is currently limited spatially to the Arctic region and temporally to the winter months of October through April
+    due to unresolved bias originating from melting snow or open melt ponds in the remaining five months. For a similar reason,
+    no sea-ice thickness data with sufficient quality exist for the Southern Hemisphere. The extension of the CDR/ICDR to other
+    periods, regions, and radar altimeter missions is under development in the extension of the ESA CCI Sea Ice project (ESA CCI+).
+    This dataset is produced on behalf of the Copernicus Climate Change Service (C3S).
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,sea,ice
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sea ice thickness monthly gridded data for the Arctic from 2002 to present derived from satellite observations
+  missionStartDate: "2002-10-01T00:00:00Z"
+
+SATELLITE_SEA_ICE_CONCENTRATION:
+  abstract: |
+    This dataset provides daily gridded data of sea ice concentration for both hemispheres derived from satellite passive microwave
+    brightness temperatures. Sea ice is an important component of our climate system and a sensitive indicator of climate change.
+    Its presence or its retreat has a strong impact on air-sea interactions, the Earth’s energy budget as well as marine ecosystems.
+    It is listed as an Essential Climate Variable by the Global Climate Observing System. Sea ice concentration is defined as the
+    fraction of the ocean surface in a pixel or grid cell that is covered with sea ice. It is one of the parameters commonly used to
+    characterise the sea-ice cover. Other sea ice parameters include sea ice thickness, sea ice edge, and sea ice type, also
+    available in the Climate Data Store.
+
+    The dataset consists of two products produced by the European Organisation for the Exploitation of Meteorological Satellites (EUMETSAT) Ocean and Sea Ice Satellite Application Facility (OSI SAF) with research & development from European Space Agency Climate Change Initiative projects (ESA CCI):
+
+    The Global Sea Ice Concentration Climate Data Record based on measurements from the following sensors: Scanning Multichannel Microwave Radiometer (SMMR; 1978–1987), Special Sensor Microwave/Imager (SSM/I; 1987–2006), and Special Sensor Microwave Imager/Sounder (SSMIS; 2005 onward). This product spans the period from October 1978 to present and is updated daily by an Interim Climate Data Record. In the following, it is referred to as the SSMIS product.
+    The Global Sea Ice Concentration Climate Data Record based on measurements from the Advanced Microwave Scanning Radiometer - Earth Observing System (AMSR-E) sensor (2002–2011) and its successor, AMSR2 (2012–2020). This product spans the 2002–2020 period and is not updated. In the following, it is referred to as the AMSR product. Note, that this product was first produced by the European Space Agency Climate Change Initiative Phase 2 project (ESA CCI) and has been transferred to EUMETSAT OSI SAF since version 3.0.
+    Both products are provided on the same polar projection with a grid resolution of 25 km. However, the AMSR product has a true spatial resolution (as resolved by the sensor) of about 15–25 km versus 30–60 km for the SSMIS product. Therefore, the AMSR product provides a much more detailed view of the sea ice cover than the SSMIS product, especially in the marginal ice zone, the transitional zone between open water and the dense sea ice pack. On the other hand, the clear strength of the SSMIS product is its more than 40-year long and consistent record with daily updates.
+
+    The two products share the same algorithm baseline, which is both a continuation of the EUMETSAT OSI SAF approach and a series of innovations contributed by ESA CCI activities. For both products, the underlying algorithm makes use of a combination of the same three temperature channels near 19 GHz and 37 GHz. The data also share a common data format, that allows expert users to revert some of the filtering steps and access the raw output of the SIC algorithms. Both are level-4 products in the sense that gaps are filled by temporal and spatial interpolation. However, gap filling is not applied to fill in days when no input satellite data are available.
+
+    Further details about each product can be found below as well as in the Documentation section.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,sea,ice
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Sea ice concentration daily gridded data from 1978 to present derived from satellite observations
+  missionStartDate: "1978-10-25T00:00:00Z"
 
 SEASONAL_POSTPROCESSED_PL:
   abstract: |
@@ -4540,7 +4638,74 @@ METOP_GOMEL1R03:
   title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
   missionStartDate: "2007-04-01T00:00:00Z"
   missionEndDate: "2020-08-01T00:00:00Z"
-
+METOP_IASTHR011:
+  abstract: |
+    This is the release 1.1 of the climate data record of "all-sky" temperature and humidity profiles and their
+    associated quality parameters. The CDR was processed using the latest operational EUMETSAT algorithms available
+    (V6.5.4, 12/2019). It consists of the outputs of the statistical retrieval module Piece Wise Linear Regression only.
+    This provides a homogeneous CDR throughout the time period.
+    On the 8 August 2023, year 2022 was added to the CDR.
+    This is a Thematic Climate Data Record (TCDR).
+  instrument: IASI
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,IASI,INTERFEROMETER,L2,CLIMATE,TEMPERATURE,ATMOSPHERE,HUMIDITY,LAND-SURFACE-TEMPERATURE,THEMATIC-CLIMATE-DATA-RECORD,SEA-SURFACE-TEMPERATURE,IASTHPW30101
+  sensorType: INTERFEROMETER
+  license: proprietary
+  title: IASI All Sky Temperature and Humidity Profiles - Climate Data Record Release 1.1 - Metop-A and -B
+  missionStartDate: "2007-07-10T00:00:00Z"
+  missionEndDate: "2023-01-01T00:00:00Z"
+METOP_IASSND02:
+  abstract: |
+    The main objective of the Infrared Atmospheric Sounding Interferometer (IASI) is to provide high resolution
+    atmospheric emission spectra to derive temperature and humidity profiles with high spectral and vertical resolution
+    and accuracy. Additionally, it is used for the determination of trace gases such as ozone, as well as land and sea
+    surface temperature, emissivity and cloud properties. This combined product (IASI Atmospheric Temperature Water
+    Vapour and Surface Skin Temperature; IASI Cloud Parameters; IASI Ozone and IASI Trace Gases contains temperature
+    Profiles, Humidity Profiles, Surface Temperature, Surface Emissivity, Fractional Cloud Cover, Cloud Top Temperature,
+    Cloud Top Pressure, Cloud Phase, Total Column Ozone, Columnar ozone amounts in thick layers, Total column N2O, CO,
+    CH4, CO2 - all combined in one product.
+  instrument: IASI
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L2
+  keywords: METOP,IASI,INTERFEROMETER,L2,CLIMATE,TEMPERATURE,ATMOSPHERE,HUMIDITY,IASSND02
+  sensorType: INTERFEROMETER
+  license: proprietary
+  title: IASI Combined Sounding Products - Metop
+  missionStartDate: "2008-02-13T00:00:00Z"
+METOP_IASIL1C_ALL:
+  abstract: |
+    This product covers all spectral samples. The main objective of the Infrared Atmospheric Sounding Interferometer
+    (IASI) is to provide high resolution atmospheric emission spectra to derive temperature and humidity profiles with
+    high spectral and vertical resolution and accuracy. Additionally it is used for the determination of trace gases
+    such as ozone, nitrous oxide, carbon dioxide and methane, as well as land and sea surface temperature, emissivity
+    and cloud properties. The IASI L1c product contains infra-red radiance spectra at 0.5cm-1 resolution. The EUMETCast
+    product has for each sounder pixel 8461 spectral samples covering the range between 645.0 cm-1 and 2760 cm-1.
+  instrument: IASI
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,IASI,INTERFEROMETER,L1,L1C,ATMOSPHERE,IASIL1C-ALL,IASxxx1C
+  sensorType: INTERFEROMETER
+  license: proprietary
+  title: IASI Level 1C - All Spectral Samples - Metop - Global
+  missionStartDate: "2009-03-23T00:00:00Z"
+METOP_MHSL1:
+  abstract: |
+    The Microwave Humidity Sounder (MHS) is a 5 channel instrument used to provide input to the retrieval of surface
+    temperatures, emissivities, and atmospheric humidity. In combination with AMSU-A information it can also be used to
+    process precipitation rates and related cloud properties, as well as to detect sea ice and snow coverage.
+  instrument: MHS
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,MHS,SOUNDER,L1,L1B,ATMOSPHERE,MHSxxx1B,MHSL1
+  sensorType: SOUNDER
+  license: proprietary
+  title: MHS Level 1B - Metop - Global
+  missionStartDate: "2009-03-23T00:00:00Z"
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

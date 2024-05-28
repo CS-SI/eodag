@@ -215,6 +215,10 @@ class PluginManager:
                 c for c in configs if provider in [getattr(c, "group", None), c.name]
             ]
 
+        if not configs and product_type:
+            raise UnsupportedProvider(
+                f"{provider} is not (yet) supported for {product_type}"
+            )
         if not configs:
             raise UnsupportedProvider(f"{provider} is not (yet) supported")
 
