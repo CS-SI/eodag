@@ -107,7 +107,6 @@ class EODAGSearch(BaseModel):
     polarizationChannels: Optional[List[str]] = Field(None, alias="sar:polarizations")
     dopplerFrequency: Optional[str] = Field(None, alias="sar:frequency_band")
     doi: Optional[str] = Field(None, alias="sci:doi")
-    productVersion: Optional[str] = Field(None, alias="version")
     illuminationElevationAngle: Optional[float] = Field(
         None, alias="view:sun_elevation"
     )
