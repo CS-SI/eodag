@@ -237,11 +237,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
+                "peps",
                 "cop_dataspace",
                 "creodias",
                 "creodias_s3",
                 "onda",
-                "peps",
                 "sara",
                 "wekeo",
             ],
@@ -273,11 +273,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
+                "peps",
                 "cop_dataspace",
                 "creodias",
                 "creodias_s3",
                 "onda",
-                "peps",
                 "sara",
                 "wekeo",
             ],
@@ -308,11 +308,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
+                "peps",
                 "cop_dataspace",
                 "creodias",
                 "creodias_s3",
                 "onda",
-                "peps",
                 "sara",
                 "wekeo",
             ],
@@ -365,11 +365,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
+                "peps",
                 "cop_dataspace",
                 "creodias",
                 "creodias_s3",
                 "onda",
-                "peps",
                 "sara",
                 "wekeo",
             ],
@@ -408,11 +408,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
+                "peps",
                 "cop_dataspace",
                 "creodias",
                 "creodias_s3",
                 "onda",
-                "peps",
                 "sara",
                 "wekeo",
             ],
@@ -443,11 +443,11 @@ class TestCoreSearch(unittest.TestCase):
         self.assertListEqual(
             available_providers,
             [
+                "peps",
                 "cop_dataspace",
                 "creodias",
                 "creodias_s3",
                 "onda",
-                "peps",
                 "sara",
                 "wekeo",
             ],
