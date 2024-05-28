@@ -126,7 +126,7 @@ def telemetry_init(fastapi_app: Optional[FastAPI] = None) -> None:
         )
     logger.debug("Instrument EODAG app")
 
-    from eodag.utils.instrumentation.eodag import EODAGInstrumentor
+    from opentelemetry.instrumentation.eodag import EODAGInstrumentor
 
     EODAGInstrumentor(eodag_api).instrument(
         tracer_provider=tracer_provider,
