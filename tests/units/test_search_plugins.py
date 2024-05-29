@@ -1817,7 +1817,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         super(TestSearchPluginCreodiasS3Search, self).setUp()
         self.provider = "creodias_s3"
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
     def test_plugins_search_creodias_s3_links(self, mock_request):
         # s3 links should be added to products with register_downloader
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
@@ -1829,7 +1831,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         with open(s3_response_file) as f:
             list_objects_response = json.load(f)
         creodias_search_result_file = (
-            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json"
         )
         with open(creodias_search_result_file) as f:
             creodias_search_result = json.load(f)
@@ -1862,7 +1864,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         for asset in assets.values():
             self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
     def test_plugins_search_creodias_s3_client_error(self, mock_request):
         # request error should be raised when there is an error when fetching data from the s3
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
@@ -1870,7 +1874,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         stubber = Stubber(client)
 
         creodias_search_result_file = (
-            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.geojson"
+            Path(TEST_RESOURCES_PATH) / "eodag_search_result_creodias.json"
         )
         with open(creodias_search_result_file) as f:
             creodias_search_result = json.load(f)
