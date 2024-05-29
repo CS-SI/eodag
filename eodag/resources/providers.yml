@@ -6069,7 +6069,7 @@
     type: CreodiasS3Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     s3_endpoint: 'https://eodata.cloudferro.com'
-    need_auth: false
+    need_auth: true
     timeout: 120
     ssl_verify: true
     dont_quote:
