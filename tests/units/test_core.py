@@ -122,17 +122,21 @@ class TestCore(TestCoreBase):
         "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo"],
         "CLMS_GLO_NDVI_333M": ["dedl", "wekeo"],
         "COP_DEM_GLO30_DGED": [
+            "creodias",
+            "creodias_s3",
             "dedl",
             "earth_search",
             "wekeo",
         ],
-        "COP_DEM_GLO30_DTED": ["dedl", "wekeo"],
+        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
         "COP_DEM_GLO90_DGED": [
+            "creodias",
+            "creodias_s3",
             "dedl",
             "earth_search",
             "wekeo",
         ],
-        "COP_DEM_GLO90_DTED": ["dedl", "wekeo"],
+        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "EEA_DAILY_VI": ["dedl", "wekeo"],
@@ -606,11 +610,15 @@ class TestCore(TestCoreBase):
                 self.assertListProductTypesRightStructure(product_type)
                 if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
-                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]],
+                        f"missing in supported providers for {product_type['ID']}",
                     )
                 else:
                     self.assertIn(
-                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]]
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]],
+                        f"missing in supported providers for {product_type['_id']}",
                     )
 
     def test_list_product_types_for_unsupported_provider(self):
