@@ -739,8 +739,8 @@ class StacCollection(StacCommon):
                 },
             )
             # override EODAG's collection with the external collection
-            product_type_id = product_type.get("_id", None) or product_type["ID"]
-            ext_stac_collection = self.ext_stac_collections.get(product_type_id, {})
+            ext_stac_collection = self.ext_stac_collections.get(product_type["ID"], {})
+
             # merge "keywords" list
             merged_keywords = product_type_collection.get("keywords", [])
             if "keywords" in ext_stac_collection:
@@ -751,6 +751,7 @@ class StacCollection(StacCommon):
             product_type_collection.update(ext_stac_collection)
             if merged_keywords:
                 product_type_collection["keywords"] = merged_keywords
+
             # parse f-strings
             format_args = deepcopy(self.stac_config)
             format_args["collection"] = {
