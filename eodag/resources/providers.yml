@@ -897,7 +897,7 @@
       - '&'
       - ':'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
     sort:
@@ -1027,6 +1027,8 @@
       collection:
         - null
         - $.null
+      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
   download: !plugin
@@ -3842,7 +3844,7 @@
       - '&'
       - ':'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
     sort:
@@ -3970,6 +3972,8 @@
       collection:
         - null
         - $.null
+      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
   download: !plugin
@@ -6076,7 +6080,7 @@
       - '&'
       - ':'
     pagination:
-      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$count=True'
+      next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
     sort:
@@ -6206,7 +6210,9 @@
       collection:
         - null
         - $.null
-      # Additional metadata provided by the providers but that don't appear in the reference spec
+      quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+      thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
+        # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
   download: !plugin
     type: CreodiasS3Download
