@@ -610,11 +610,15 @@ class TestCore(TestCoreBase):
                 self.assertListProductTypesRightStructure(product_type)
                 if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
-                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]],
+                        f"missing in supported providers for {product_type['ID']}",
                     )
                 else:
                     self.assertIn(
-                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]]
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]],
+                        f"missing in supported providers for {product_type['_id']}",
                     )
 
     def test_list_product_types_for_unsupported_provider(self):

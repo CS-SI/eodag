@@ -143,13 +143,13 @@ class SearchPostRequest(BaseModel):
     def start_date(self) -> Optional[str]:
         """Extract the start date from the datetime string."""
         start = str_to_interval(self.datetime)[0]
-        return start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else None
+        return start.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" if start else None
 
     @property
     def end_date(self) -> Optional[str]:
         """Extract the end date from the datetime string."""
         end = str_to_interval(self.datetime)[1]
-        return end.strftime("%Y-%m-%dT%H:%M:%SZ") if end else None
+        return end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" if end else None
 
     @field_validator("ids", "collections", mode="before")
     @classmethod

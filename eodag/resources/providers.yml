@@ -933,8 +933,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -1018,7 +1018,7 @@
       # The geographic extent of the product
       geometry:
         - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),.-]+).*/, \\1)`#from_ewkt}'
+        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.-]+).*/, \\1)`#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
@@ -3882,8 +3882,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -3965,7 +3965,7 @@
       # The geographic extent of the product
       geometry:
         - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),.-]+).*/, \\1)`#from_ewkt}'
+        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.-]+).*/, \\1)`#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
@@ -6118,8 +6118,8 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
-            - 'ContentDate/Start gt {startTimeFromAscendingNode#to_iso_utc_datetime}'
-            - 'ContentDate/End lt {completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
+            - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
     discover_metadata:
       auto_discovery: true
@@ -6203,7 +6203,7 @@
       # The geographic extent of the product
       geometry:
         - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),.-]+).*/, \\1)`#from_ewkt}'
+        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.-]+).*/, \\1)`#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
