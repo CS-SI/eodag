@@ -2220,6 +2220,7 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://ads.atmosphere.copernicus.eu/api/v2
+    timeout: 30
     ssl_verify: true
     extract: false
     auth_error_code: 401
@@ -2750,6 +2751,7 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://cds.climate.copernicus.eu/api/v2
+    timeout: 30
     ssl_verify: true
     extract: false
     auth_error_code: 401
