@@ -35,7 +35,6 @@ from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
-    NOT_AVAILABLE,
     format_metadata,
     get_metadata_path,
 )
@@ -655,6 +654,80 @@ class StacCollection(StacCommon):
             root=root,
         )
 
+    def __list_product_type_providers(self, product_type: Dict[str, Any]) -> List[str]:
+        """Retrieve a list of providers for a given product type.
+
+        :param product_type: Dictionary containing information about the product type.
+        :type product_type: dict
+        :return: A list of provider names.
+        :rtype: list
+        """
+        if self.provider:
+            return [self.provider]
+
+        return [
+            plugin.provider
+            for plugin in self.eodag_api._plugins_manager.get_search_plugins(
+                product_type=product_type.get("_id", product_type["ID"])
+            )
+        ]
+
+    def __generate_stac_collection(
+        self, collection_model: Any, product_type: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Generate a STAC collection dictionary for a given product type.
+
+        :param collection_model: The base model for the STAC collection.
+        :type collection_model: Any
+        :param product_type: Dictionary containing information about the product type.
+        :type product_type: dict
+        :return: A dictionary representing the STAC collection for the given product type.
+        :rtype: dict
+        """
+        providers = self.__list_product_type_providers(product_type)
+
+        # parse jsonpath
+        product_type_collection = jsonpath_parse_dict_items(
+            collection_model,
+            {
+                "product_type": product_type,
+                "providers": [self.get_provider_dict(p) for p in providers],
+            },
+        )
+        # override EODAG's collection with the external collection
+        ext_stac_collection = self.ext_stac_collections.get(product_type["ID"], {})
+
+        # update links
+        ext_stac_collection.setdefault("links", {})
+        for link in product_type_collection["links"]:
+            ext_stac_collection["links"] = [
+                x for x in ext_stac_collection["links"] if x["rel"] != link["rel"]
+            ]
+            ext_stac_collection["links"].append(link)
+
+        # merge "keywords" lists
+        if "keywords" in ext_stac_collection:
+            ext_stac_collection["keywords"] = list(
+                set(
+                    ext_stac_collection["keywords"]
+                    + product_type_collection["keywords"]
+                )
+            )
+
+        product_type_collection.update(ext_stac_collection)
+
+        # parse f-strings
+        format_args = deepcopy(self.stac_config)
+        format_args["collection"] = {
+            **product_type_collection,
+            **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
+        }
+        product_type_collection = format_dict_items(
+            product_type_collection, **format_args
+        )
+
+        return product_type_collection
+
     def __get_product_types(
         self, filters: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
@@ -716,53 +789,10 @@ class StacCollection(StacCommon):
 
         collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
-            # get available providers for each product_type
-            providers = (
-                [self.provider]
-                if self.provider
-                else [
-                    plugin.provider
-                    for plugin in self.eodag_api._plugins_manager.get_search_plugins(
-                        product_type=(
-                            product_type.get("_id", None) or product_type["ID"]
-                        )
-                    )
-                ]
+            stac_collection = self.__generate_stac_collection(
+                collection_model, product_type
             )
-
-            # parse jsonpath
-            product_type_collection = jsonpath_parse_dict_items(
-                collection_model,
-                {
-                    "product_type": product_type,
-                    "providers": [self.get_provider_dict(p) for p in providers],
-                },
-            )
-            # override EODAG's collection with the external collection
-            ext_stac_collection = self.ext_stac_collections.get(product_type["ID"], {})
-
-            # merge "keywords" list
-            merged_keywords = product_type_collection.get("keywords", [])
-            if "keywords" in ext_stac_collection:
-                new_keywords = ext_stac_collection["keywords"]
-                for v in new_keywords:
-                    if v != NOT_AVAILABLE and v not in merged_keywords:
-                        merged_keywords.append(v)
-            product_type_collection.update(ext_stac_collection)
-            if merged_keywords:
-                product_type_collection["keywords"] = merged_keywords
-
-            # parse f-strings
-            format_args = deepcopy(self.stac_config)
-            format_args["collection"] = {
-                **product_type_collection,
-                **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
-            }
-            product_type_collection = format_dict_items(
-                product_type_collection, **format_args
-            )
-
-            collection_list.append(product_type_collection)
+            collection_list.append(stac_collection)
 
         return collection_list
 
