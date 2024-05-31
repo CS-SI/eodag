@@ -223,6 +223,7 @@ class RequestTestCase(unittest.TestCase):
                             "sensorMode": None,
                             "quicklook": None,
                             "storageStatus": ONLINE_STATUS,
+                            "providerProperty": "foo",
                         },
                         "id": "578f1768-e66e-5b86-9363-b19f8931cc7b",
                         "type": "Feature",
@@ -826,6 +827,9 @@ class RequestTestCase(unittest.TestCase):
                 self_link = link
         self.assertIsNotNone(self_link)
         self.assertIn("?provider=peps", self_link["href"])
+        self.assertEqual(
+            results["features"][0]["properties"]["peps:providerProperty"], "foo"
+        )
 
     def test_search_item_id_from_catalog(self):
         """Search by id through eodag server /catalog endpoint should return a valid response"""

@@ -839,6 +839,8 @@
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
+      links: $.null
+      services: $.null
   products:
     S1_SAR_OCN:
       productType: OCN

@@ -29,6 +29,7 @@ import geojson
 import shapefile
 from dateutil import tz
 from dateutil.relativedelta import relativedelta
+from jsonpath_ng.jsonpath import Child
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
@@ -67,6 +68,36 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.rest.stac")
 
 STAC_CATALOGS_PREFIX = "catalogs"
+
+# fields not to put in item properties
+COLLECTION_PROPERTIES = [
+    "abstract",
+    "instrument",
+    "platform",
+    "platformSerialIdentifier",
+    "processingLevel",
+    "sensorType",
+    "md5",
+    "license",
+    "title",
+    "missionStartDate",
+    "missionEndDate",
+    "keywords",
+    "stacCollection",
+]
+IGNORED_ITEM_PROPERTIES = [
+    "_id",
+    "id",
+    "keyword",
+    "quicklook",
+    "thumbnail",
+    "downloadLink",
+    "orderLink",
+    "_dc_qs",
+    "qs",
+    "defaultGeometry",
+    "_date",
+]
 
 
 class StacCommon:
@@ -248,6 +279,13 @@ class StacItem(StacCommon):
                         k, item_model["properties"][k]
                     )
 
+        item_props = [
+            p.right.fields[0]
+            for p in item_model["properties"].values()
+            if isinstance(p, Child)
+        ]
+        ignored_props = COLLECTION_PROPERTIES + item_props + IGNORED_ITEM_PROPERTIES
+
         item_list: List[Dict[str, Any]] = []
         for product in search_results:
             product_dict = deepcopy(product.__dict__)
@@ -259,6 +297,17 @@ class StacItem(StacCommon):
                     "providers": [self.get_provider_dict(product.provider)],
                 },
             )
+
+            # add additional item props
+            for p in set(product.properties) - set(ignored_props):
+                prefix = getattr(
+                    self.eodag_api.providers_config[product.provider],
+                    "group",
+                    product.provider,
+                )
+                key = p if ":" in p else f"{prefix}:{p}"
+                product_item["properties"][key] = product.properties[p]
+
             # parse download link
             downloadlink_href = (
                 f"{catalog['url']}/items/{product.properties['title']}/download"
@@ -716,7 +765,11 @@ class StacCollection(StacCommon):
                 )
             except TypeError as e:
                 logger.warning(
-                    f"Could not merge keywords from external collection for {product_type}: {str(e)}"
+                    f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
+                )
+                logger.debug(
+                    f"External collection keywords: {str(ext_stac_collection['keywords'])}, ",
+                    f"Product type keywords: {str(product_type_collection['keywords'])}",
                 )
 
         # merge providers
