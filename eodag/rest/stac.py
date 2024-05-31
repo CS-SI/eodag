@@ -765,7 +765,11 @@ class StacCollection(StacCommon):
                 )
             except TypeError as e:
                 logger.warning(
-                    f"Could not merge keywords from external collection for {product_type}: {str(e)}"
+                    f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
+                )
+                logger.debug(
+                    f"External collection keywords: {str(ext_stac_collection['keywords'])}, ",
+                    f"Product type keywords: {str(product_type_collection['keywords'])}",
                 )
 
         # merge providers
