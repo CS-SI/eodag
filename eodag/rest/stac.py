@@ -668,7 +668,7 @@ class StacCollection(StacCommon):
         return [
             plugin.provider
             for plugin in self.eodag_api._plugins_manager.get_search_plugins(
-                product_type=(product_type.get("_id", None) or product_type["ID"])
+                product_type=product_type.get("_id", product_type["ID"])
             )
         ]
 
@@ -697,11 +697,15 @@ class StacCollection(StacCommon):
         # override EODAG's collection with the external collection
         ext_stac_collection = self.ext_stac_collections.get(product_type["ID"], {})
 
-        if "links" in ext_stac_collection:
-            for link in product_type_collection["links"]:
-                if link not in ext_stac_collection["links"]:
-                    ext_stac_collection["links"].append(link)
+        # update links
+        ext_stac_collection.setdefault("links", {})
+        for link in product_type_collection["links"]:
+            ext_stac_collection["links"] = [
+                x for x in ext_stac_collection["links"] if x["rel"] != link["rel"]
+            ]
+            ext_stac_collection["links"].append(link)
 
+        # merge "keywords" lists
         if "keywords" in ext_stac_collection:
             ext_stac_collection["keywords"] = list(
                 set(

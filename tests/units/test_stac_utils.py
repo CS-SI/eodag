@@ -255,10 +255,15 @@ class TestStacUtils(unittest.TestCase):
 
     def test_fetch_external_stac_collections(self):
         """Load external STAC collections"""
+
         external_json = """{
             "new_field":"New Value",
             "title":"A different title for Sentinel 2 MSI Level 1C",
-            "keywords":["New Keyword"]
+            "keywords":["New Keyword"],
+            "links":[
+                {"rel":"self","href":"http://another.self"},
+                {"rel":"license","href":"http://foo.bar"}
+            ]
         }"""
         product_type_conf = self.rest_core.eodag_api.product_types_config["S2_MSI_L1C"]
         ext_stac_collection_path = "/path/to/external/stac/collections/S2_MSI_L1C.json"
@@ -275,14 +280,24 @@ class TestStacUtils(unittest.TestCase):
                 url="", root="", collection_id="S2_MSI_L1C"
             )
             mock_fetch_json.assert_called_with(ext_stac_collection_path)
+
             # New field
             self.assertIn("new_field", stac_coll)
-            # Merge keywords
-            self.assertCountEqual(
-                ["MSI", "SENTINEL2", "S2A,S2B", "L1", "OPTICAL", "New Keyword"],
-                stac_coll["keywords"],
+
+            # links
+            self.assertEqual(len(stac_coll["links"]), 4)
+            links_self = [x for x in stac_coll["links"] if x["rel"] == "self"]
+            self.assertEqual(len(links_self), 1)
+            self.assertNotEqual(links_self[0]["href"], "http://another.self")
+            links_license = [x for x in stac_coll["links"] if x["rel"] == "license"]
+            self.assertEqual(links_license[0]["href"], "http://foo.bar")
+
+            # Merged keywords
+            self.assertListEqual(
+                ["L1", "MSI", "New Keyword", "OPTICAL", "S2A,S2B", "SENTINEL2"],
+                sorted(stac_coll["keywords"]),
             )
-            # Override existing fields
+            # Overriden existing fields
             self.assertEqual(
                 "A different title for Sentinel 2 MSI Level 1C", stac_coll["title"]
             )
