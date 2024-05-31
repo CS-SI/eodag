@@ -3275,7 +3275,7 @@
       system_version: version_5_0
       time: 00:00
       metadata_mapping:
-        <<: *hdate
+        <<: *hday_hmonth_hyear
     EFAS_REFORECAST:
       dataset: efas-reforecast
       system_version: version_5_0
@@ -3285,7 +3285,7 @@
       model_levels: surface_level
       leadtime_hour: 6
       metadata_mapping:
-        <<: *hdate
+        <<: *hday_hmonth_hyear
     EFAS_SEASONAL:
       dataset: efas-seasonal
       system_version: operational
