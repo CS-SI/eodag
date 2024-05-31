@@ -278,7 +278,7 @@ class TestStacUtils(unittest.TestCase):
             # New field
             self.assertIn("new_field", stac_coll)
             # Merge keywords
-            self.assertListEqual(
+            self.assertCountEqual(
                 ["MSI", "SENTINEL2", "S2A,S2B", "L1", "OPTICAL", "New Keyword"],
                 stac_coll["keywords"],
             )

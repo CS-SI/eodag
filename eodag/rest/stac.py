@@ -35,7 +35,6 @@ from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
-    NOT_AVAILABLE,
     format_metadata,
     get_metadata_path,
 )
