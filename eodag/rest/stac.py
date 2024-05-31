@@ -69,6 +69,36 @@ logger = logging.getLogger("eodag.rest.stac")
 
 STAC_CATALOGS_PREFIX = "catalogs"
 
+# fields not to put in item properties
+COLLECTION_PROPERTIES = [
+    "abstract",
+    "instrument",
+    "platform",
+    "platformSerialIdentifier",
+    "processingLevel",
+    "sensorType",
+    "md5",
+    "license",
+    "title",
+    "missionStartDate",
+    "missionEndDate",
+    "keywords",
+    "stacCollection",
+]
+IGNORED_ITEM_PROPERTIES = [
+    "_id",
+    "id",
+    "keyword",
+    "quicklook",
+    "thumbnail",
+    "downloadLink",
+    "orderLink",
+    "_dc_qs",
+    "qs",
+    "defaultGeometry",
+    "_date",
+]
+
 
 class StacCommon:
     """Stac common object
@@ -249,43 +279,12 @@ class StacItem(StacCommon):
                         k, item_model["properties"][k]
                     )
 
-        collection_props = [
-            "abstract",
-            "instrument",
-            "platform",
-            "platformSerialIdentifier",
-            "processingLevel",
-            "sensorType",
-            "md5",
-            "license",
-            "title",
-            "missionStartDate",
-            "missionEndDate",
-            "keywords",
-            "stacCollection",
-        ]
         item_props = [
             p.right.fields[0]
             for p in item_model["properties"].values()
             if isinstance(p, Child)
         ]
-        ignored_props = (
-            collection_props
-            + item_props
-            + [
-                "_id",
-                "id",
-                "keyword",
-                "quicklook",
-                "thumbnail",
-                "downloadLink",
-                "orderLink",
-                "_dc_qs",
-                "qs",
-                "defaultGeometry",
-                "_date",
-            ]
-        )
+        ignored_props = COLLECTION_PROPERTIES + item_props + IGNORED_ITEM_PROPERTIES
 
         item_list: List[Dict[str, Any]] = []
         for product in search_results:
