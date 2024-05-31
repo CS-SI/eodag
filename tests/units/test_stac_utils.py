@@ -260,6 +260,7 @@ class TestStacUtils(unittest.TestCase):
             "new_field":"New Value",
             "title":"A different title for Sentinel 2 MSI Level 1C",
             "keywords":["New Keyword"],
+            "providers":[{"name":"foo_provider","roles":["producer"]}],
             "links":[
                 {"rel":"self","href":"http://another.self"},
                 {"rel":"license","href":"http://foo.bar"}
@@ -291,6 +292,12 @@ class TestStacUtils(unittest.TestCase):
             self.assertNotEqual(links_self[0]["href"], "http://another.self")
             links_license = [x for x in stac_coll["links"] if x["rel"] == "license"]
             self.assertEqual(links_license[0]["href"], "http://foo.bar")
+
+            # Merged providers
+            self.assertIn(
+                {"name": "foo_provider", "roles": ["producer"]}, stac_coll["providers"]
+            )
+            self.assertGreater(len(stac_coll["providers"]), 1)
 
             # Merged keywords
             self.assertListEqual(

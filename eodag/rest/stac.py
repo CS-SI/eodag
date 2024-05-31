@@ -697,7 +697,7 @@ class StacCollection(StacCommon):
         # override EODAG's collection with the external collection
         ext_stac_collection = self.ext_stac_collections.get(product_type["ID"], {})
 
-        # update links
+        # update links (keep eodag links as defaults)
         ext_stac_collection.setdefault("links", {})
         for link in product_type_collection["links"]:
             ext_stac_collection["links"] = [
@@ -707,12 +707,21 @@ class StacCollection(StacCommon):
 
         # merge "keywords" lists
         if "keywords" in ext_stac_collection:
-            ext_stac_collection["keywords"] = list(
-                set(
-                    ext_stac_collection["keywords"]
-                    + product_type_collection["keywords"]
+            try:
+                ext_stac_collection["keywords"] = list(
+                    set(
+                        ext_stac_collection["keywords"]
+                        + product_type_collection["keywords"]
+                    )
                 )
-            )
+            except TypeError as e:
+                logger.warning(
+                    f"Could not merge keywords from external collection for {product_type}: {str(e)}"
+                )
+
+        # merge providers
+        if "providers" in ext_stac_collection:
+            ext_stac_collection["providers"] += product_type_collection["providers"]
 
         product_type_collection.update(ext_stac_collection)
 
