@@ -20,8 +20,9 @@ from __future__ import annotations
 import logging
 import re
 import string
+from datetime import datetime
 from random import SystemRandom
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypedDict
 
 import requests
 from lxml import etree
@@ -45,7 +46,131 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.auth.openid_connect")
 
 
-class OIDCAuthorizationCodeFlowAuth(Authentication):
+class OIDCRefreshTokenBase(Authentication):
+    """OIDC refresh token base class, to be used through specific OIDC flows plugins.
+
+    Common mechanism to handle refresh token from all OIDC auth plugins.
+    """
+
+    class TokenInfo(TypedDict, total=False):
+        """Token infos"""
+
+        refresh_token: str
+        refresh_time: datetime
+        token_time: datetime
+        access_token: str
+        access_token_expiration: float
+        refresh_token_expiration: float
+
+    token_info: TokenInfo = {}
+    # already retrieved token store, to be used if authenticate() fails (OTP use-case)
+    retrieved_token: str = ""
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        super(OIDCRefreshTokenBase, self).__init__(provider, config)
+        self.session = requests.Session()
+
+    def _get_access_token(self) -> str:
+        current_time = datetime.now()
+        if (
+            # No info: first time
+            not self.token_info
+            # Refresh token available but expired
+            or (
+                "refresh_token" in self.token_info
+                and self.token_info["refresh_token_expiration"] > 0
+                and (current_time - self.token_info["token_time"]).seconds
+                >= self.token_info["refresh_token_expiration"]
+            )
+            # Refresh token *not* available and access token expired
+            or (
+                "refresh_token" not in self.token_info
+                and (current_time - self.token_info["token_time"]).seconds
+                >= self.token_info["access_token_expiration"]
+            )
+        ):
+            # Request *new* token on first attempt or if token expired
+            res = self._request_new_token()
+            self.token_info["token_time"] = current_time
+            self.token_info["access_token_expiration"] = float(res["expires_in"])
+            if "refresh_token" in res:
+                self.token_info["refresh_time"] = current_time
+                self.token_info["refresh_token_expiration"] = float(
+                    res["refresh_expires_in"]
+                )
+                self.token_info["refresh_token"] = str(res["refresh_token"])
+            return str(res["access_token"])
+
+        elif (
+            # Refresh token available and access token expired
+            "refresh_token" in self.token_info
+            and (current_time - self.token_info["refresh_time"]).seconds
+            >= self.token_info["access_token_expiration"]
+        ):
+            # Use refresh token
+            res = self._get_token_with_refresh_token()
+            self.token_info["refresh_token"] = res["refresh_token"]
+            self.token_info["refresh_time"] = current_time
+            return res["access_token"]
+
+        logger.debug("Using already retrieved access token")
+        return self.token_info["access_token"]
+
+    def _request_new_token(self) -> Dict[str, str]:
+        """Fetch the access token with a new authentcation"""
+        raise NotImplementedError(
+            "Incomplete OIDC refresh token retrieval mechanism implementation"
+        )
+
+    def _request_new_token_error(self, e: requests.RequestException) -> Dict[str, str]:
+        """Handle RequestException raised by `self._request_new_token()`"""
+        if self.token_info["access_token"]:
+            # try using already retrieved token if authenticate() fails (OTP use-case)
+            if "access_token_expiration" in self.token_info:
+                return {
+                    "access_token": self.token_info["access_token"],
+                    "expires_in": str(self.token_info["access_token_expiration"]),
+                }
+            else:
+                return {
+                    "access_token": self.token_info["access_token"],
+                    "expires_in": "0",
+                }
+        response_text = getattr(e.response, "text", "").strip()
+        # check if error is identified as auth_error in provider conf
+        auth_errors = getattr(self.config, "auth_error_code", [None])
+        if not isinstance(auth_errors, list):
+            auth_errors = [auth_errors]
+        if (
+            e.response
+            and hasattr(e.response, "status_code")
+            and e.response.status_code in auth_errors
+        ):
+            raise AuthenticationError(
+                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
+                % (e.response.status_code, response_text, self.provider)
+            )
+        # other error
+        else:
+            import traceback as tb
+
+            logger.error(
+                f"Provider {self.provider} returned {getattr(e.response, 'status_code', '')}: {response_text}"
+            )
+            raise AuthenticationError(
+                "Something went wrong while trying to get access token:\n{}".format(
+                    tb.format_exc()
+                )
+            )
+
+    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+        """Fetch the access token with the refresh token"""
+        raise NotImplementedError(
+            "Incomplete OIDC refresh token retrieval mechanism implementation"
+        )
+
+
+class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     """Implement the authorization code flow of the OpenIDConnect authorization specification.
 
     The `OpenID Connect <http://openid.net/specs/openid-connect-core-1_0.html>`_ specification
@@ -136,6 +261,8 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
         # used in the query request
         token_qs_key:
 
+        # (optional) The key pointing to the refresh_token in the json response to the POST request to the token server
+        refresh_token_key:
     """
 
     SCOPE = "openid"
@@ -144,7 +271,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCAuthorizationCodeFlowAuth, self).__init__(provider, config)
-        self.session = requests.Session()
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -163,6 +289,17 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
     def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
+        self.token_info["access_token"] = self._get_access_token()
+
+        return CodeAuthorizedAuth(
+            self.token_info["access_token"],
+            self.config.token_provision,
+            key=getattr(self.config, "token_qs_key", None),
+        )
+
+    def _request_new_token(self) -> Dict[str, str]:
+        """Fetch the access token with a new authentcation"""
+        logger.debug("Fetching access token from %s", self.config.token_uri)
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
@@ -180,22 +317,43 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             user_consent_response = self.grant_user_consent(authentication_response)
             exchange_url = user_consent_response.url
         try:
-            token = self.exchange_code_for_token(exchange_url, state)
+            token_response = self.exchange_code_for_token(exchange_url, state)
+            token_response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except Exception:
-            import traceback as tb
+        except requests.RequestException as e:
+            return self._request_new_token_error(e)
+        return token_response.json()
 
-            raise AuthenticationError(
-                "Something went wrong while trying to get authorization token:\n{}".format(
-                    tb.format_exc()
-                )
-            )
-        return CodeAuthorizedAuth(
-            token,
-            self.config.token_provision,
-            key=getattr(self.config, "token_qs_key", None),
+    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+        """Fetch the access token with the refresh token"""
+        logger.debug(
+            "Fetching access token with refresh token from %s", self.config.token_uri
         )
+        token_data: Dict[str, Any] = {
+            "refresh_token": self.token_info["refresh_token"],
+            "grant_type": "refresh_token",
+        }
+        token_data = self._prepare_token_post_data(token_data)
+        post_request_kwargs: Any = {
+            self.config.token_exchange_post_data_method: token_data
+        }
+        try:
+            token_response = self.session.post(
+                self.config.token_uri,
+                timeout=HTTP_REQ_TIMEOUT,
+                **post_request_kwargs,
+            )
+            token_response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        except requests.RequestException as exc:
+            logger.error(
+                "Could not fetch access token with refresh token, executing new token request, error: %s",
+                getattr(exc.response, "text", ""),
+            )
+            return self._request_new_token()
+        return token_response.json()
 
     def authenticate_user(self, state: str) -> Response:
         """Authenticate user"""
@@ -216,11 +374,6 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
 
         login_document = etree.HTML(authorization_response.text)
         login_forms = login_document.xpath(self.config.login_form_xpath)
-
-        if not login_forms:
-            # we assume user is already logged in
-            return authorization_response
-
         login_form = login_forms[0]
 
         # Get the form data to pass to the login form from config or from the login form
@@ -271,7 +424,35 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             timeout=HTTP_REQ_TIMEOUT,
         )
 
-    def exchange_code_for_token(self, authorized_url: str, state: str) -> str:
+    def _prepare_token_post_data(self, token_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Prepare the common data to post to the token URI"""
+        token_data.update(
+            {
+                "redirect_uri": self.config.redirect_uri,
+                "client_id": self.config.client_id,
+            }
+        )
+        # If necessary, change the keys of the form data that will be passed to the token exchange POST request
+        custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
+        if custom_token_exchange_params:
+            token_data[custom_token_exchange_params["redirect_uri"]] = token_data.pop(
+                "redirect_uri"
+            )
+            token_data[custom_token_exchange_params["client_id"]] = token_data.pop(
+                "client_id"
+            )
+        # If the client_secret is known, the token exchange request must be authenticated with a BASIC Auth, using the
+        # client_id and client_secret as username and password respectively
+        if getattr(self.config, "client_secret", None):
+            token_data.update(
+                {
+                    "auth": (self.config.client_id, self.config.client_secret),
+                    "client_secret": self.config.client_secret,
+                }
+            )
+        return token_data
+
+    def exchange_code_for_token(self, authorized_url: str, state: str) -> Response:
         """Get exchange code for token"""
         qs = parse_qs(urlparse(authorized_url).query)
         if qs["state"][0] != state:
@@ -280,30 +461,11 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             )
         code = qs["code"][0]
         token_exchange_data: Dict[str, Any] = {
-            "redirect_uri": self.config.redirect_uri,
-            "client_id": self.config.client_id,
             "code": code,
             "state": state,
             "grant_type": "authorization_code",
         }
-        # If necessary, change the keys of the form data that will be passed to the token exchange POST request
-        custom_token_exchange_params = getattr(self.config, "token_exchange_params", {})
-        if custom_token_exchange_params:
-            token_exchange_data[
-                custom_token_exchange_params["redirect_uri"]
-            ] = token_exchange_data.pop("redirect_uri")
-            token_exchange_data[
-                custom_token_exchange_params["client_id"]
-            ] = token_exchange_data.pop("client_id")
-        # If the client_secret is known, the token exchange request must be authenticated with a BASIC Auth, using the
-        # client_id and client_secret as username and password respectively
-        if getattr(self.config, "client_secret", None):
-            token_exchange_data.update(
-                {
-                    "auth": (self.config.client_id, self.config.client_secret),
-                    "client_secret": self.config.client_secret,
-                }
-            )
+        token_exchange_data = self._prepare_token_post_data(token_exchange_data)
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
@@ -313,7 +475,7 @@ class OIDCAuthorizationCodeFlowAuth(Authentication):
             timeout=HTTP_REQ_TIMEOUT,
             **post_request_kwargs,
         )
-        return r.json()[self.config.token_key]
+        return r
 
     def _constant_or_xpath_extracted(
         self, value: str, form_element: Any

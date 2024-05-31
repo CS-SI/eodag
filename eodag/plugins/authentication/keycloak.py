@@ -18,15 +18,16 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, TypedDict
+from typing import TYPE_CHECKING, Any, Dict
 
 import requests
 
-from eodag.plugins.authentication import Authentication
-from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
+from eodag.plugins.authentication.openid_connect import (
+    CodeAuthorizedAuth,
+    OIDCRefreshTokenBase,
+)
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError
+from eodag.utils.exceptions import MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -37,7 +38,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.auth.keycloak")
 
 
-class KeycloakOIDCPasswordAuth(Authentication):
+class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """Authentication plugin using Keycloak and OpenId Connect.
 
     This plugin request a token and use it through a query-string or a header.
@@ -80,23 +81,9 @@ class KeycloakOIDCPasswordAuth(Authentication):
     GRANT_TYPE = "password"
     TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
-    # already retrieved token store, to be used if authenticate() fails (OTP use-case)
-    retrieved_token: str = ""
-
-    class TokenInfo(TypedDict, total=False):
-        """Token infos"""
-
-        refresh_token: str
-        refresh_time: datetime
-        token_time: datetime
-        access_token_expiration: float
-        refresh_token_expiration: float
-
-    token_info: TokenInfo = {}
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
-        self.session = requests.Session()
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -115,49 +102,12 @@ class KeycloakOIDCPasswordAuth(Authentication):
         """
         self.validate_config_credentials()
         access_token = self._get_access_token()
-        self.retrieved_token = access_token
+        self.token_info["access_token"] = access_token
         return CodeAuthorizedAuth(
-            self.retrieved_token,
+            self.token_info["access_token"],
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
-
-    def _get_access_token(self) -> str:
-        current_time = datetime.now()
-        if (
-            not self.token_info
-            or (
-                "refresh_token" in self.token_info
-                and (current_time - self.token_info["token_time"]).seconds
-                >= self.token_info["refresh_token_expiration"]
-            )
-            or (
-                "refresh_token" not in self.token_info
-                and (current_time - self.token_info["token_time"]).seconds
-                >= self.token_info["access_token_expiration"]
-            )
-        ):
-            # Request new TOKEN on first attempt or if token expired
-            res = self._request_new_token()
-            self.token_info["token_time"] = current_time
-            self.token_info["access_token_expiration"] = res["expires_in"]
-            if "refresh_token" in res:
-                self.token_info["refresh_time"] = current_time
-                self.token_info["refresh_token_expiration"] = res["refresh_expires_in"]
-                self.token_info["refresh_token"] = res["refresh_token"]
-            return res["access_token"]
-        elif (
-            "refresh_token" in self.token_info
-            and (current_time - self.token_info["refresh_time"]).seconds
-            >= self.token_info["access_token_expiration"]
-        ):
-            # Use refresh token
-            res = self._get_token_with_refresh_token()
-            self.token_info["refresh_token"] = res["refresh_token"]
-            self.token_info["refresh_time"] = current_time
-            return res["access_token"]
-        logger.debug("using already retrieved access token")
-        return self.retrieved_token
 
     def _request_new_token(self) -> Dict[str, Any]:
         logger.debug("fetching new access token")
@@ -178,42 +128,10 @@ class KeycloakOIDCPasswordAuth(Authentication):
                 timeout=HTTP_REQ_TIMEOUT,
             )
             response.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            if self.retrieved_token:
-                # try using already retrieved token if authenticate() fails (OTP use-case)
-                if "access_token_expiration" in self.token_info:
-                    return {
-                        "access_token": self.retrieved_token,
-                        "expires_in": self.token_info["access_token_expiration"],
-                    }
-                else:
-                    return {"access_token": self.retrieved_token, "expires_in": 0}
-            response_text = getattr(e.response, "text", "").strip()
-            # check if error is identified as auth_error in provider conf
-            auth_errors = getattr(self.config, "auth_error_code", [None])
-            if not isinstance(auth_errors, list):
-                auth_errors = [auth_errors]
-            if (
-                e.response
-                and hasattr(e.response, "status_code")
-                and e.response.status_code in auth_errors
-            ):
-                raise AuthenticationError(
-                    "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                    % (e.response.status_code, response_text, self.provider)
-                )
-            # other error
-            else:
-                import traceback as tb
-
-                logger.error(
-                    f"Provider {self.provider} returned {getattr(e.response, 'status_code', '')}: {response_text}"
-                )
-                raise AuthenticationError(
-                    "Something went wrong while trying to get access token:\n{}".format(
-                        tb.format_exc()
-                    )
-                )
+            return self._request_new_token_error(e)
         return response.json()
 
     def _get_token_with_refresh_token(self) -> Dict[str, str]:

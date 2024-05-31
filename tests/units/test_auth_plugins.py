@@ -17,6 +17,7 @@
 # limitations under the License.
 
 import unittest
+from datetime import datetime, timedelta
 from unittest import mock
 
 import responses
@@ -26,6 +27,7 @@ from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
+from eodag.utils import MockResponse
 from eodag.utils.exceptions import RequestError
 from tests.context import (
     HTTP_REQ_TIMEOUT,
@@ -608,7 +610,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             self.assertEqual(auth.where, "qs")
 
         # check that token has been stored
-        self.assertEqual(auth_plugin.retrieved_token, "obtained-token")
+        self.assertEqual(auth_plugin.token_info["access_token"], "obtained-token")
 
         # check that stored token is used if new auth request fails
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -737,7 +739,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             self.assertEqual(auth.where, "qs")
 
         # check that token and refresh token have been stored
-        self.assertEqual(auth_plugin.retrieved_token, "obtained-token")
+        self.assertEqual(auth_plugin.token_info["access_token"], "obtained-token")
         assert auth_plugin.token_info
         self.assertEqual("abc", auth_plugin.token_info["refresh_token"])
 
@@ -899,32 +901,48 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                             "const_key": "const_value",
                             "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
                         },
+                        "exchange_url_error_pattern": {
+                            "TERMS_AND_CONDITIONS": "Terms and conditions are not accepted"
+                        },
                     },
                 },
             },
         )
         cls.plugins_manager = PluginManager(cls.providers_config)
 
+    def get_auth_plugin(self, provider):
+        auth_plugin = super(
+            TestAuthPluginOIDCAuthorizationCodeFlowAuth, self
+        ).get_auth_plugin(provider)
+        # reset token info
+        auth_plugin.token_info = {}
+        return auth_plugin
+
     def test_plugins_auth_codeflowauth_validate_credentials(self):
         """OIDCAuthorizationCodeFlowAuth.validate_credentials must raise an error if credentials are not valid"""
         # `token_provision` not valid
         auth_plugin = self.get_auth_plugin("provider_token_provision_invalid")
-        self.assertRaises(
-            MisconfiguredError,
-            auth_plugin.validate_config_credentials,
+        auth_plugin.config.credentials = {"foo": "bar"}
+        with self.assertRaises(MisconfiguredError) as context:
+            auth_plugin.validate_config_credentials()
+        self.assertTrue(
+            '"token_provision" must be one of "qs" or "header"'
+            in str(context.exception)
         )
         # `token_provision=="qs"` but `token_qs_key` is missing
         auth_plugin = self.get_auth_plugin("provider_token_qs_key_missing")
-        self.assertRaises(
-            MisconfiguredError,
-            auth_plugin.validate_config_credentials,
+        auth_plugin.config.credentials = {"foo": "bar"}
+        with self.assertRaises(MisconfiguredError) as context:
+            auth_plugin.validate_config_credentials()
+        self.assertTrue(
+            '"qs" must have "token_qs_key" config parameter as well'
+            in str(context.exception)
         )
         # Missing credentials
         auth_plugin = self.get_auth_plugin("provider_ok")
-        self.assertRaises(
-            MisconfiguredError,
-            auth_plugin.validate_config_credentials,
-        )
+        with self.assertRaises(MisconfiguredError) as context:
+            auth_plugin.validate_config_credentials()
+        self.assertTrue("Missing credentials" in str(context.exception))
 
     def test_plugins_auth_codeflowauth_validate_credentials_ok(self):
         """OIDCAuthorizationCodeFlowAuth.validate_credentials must be ok on non-empty credentials"""
@@ -934,109 +952,122 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.validate_config_credentials()
 
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
-        autospec=True,
-        return_value=mock.Mock(url="http://foo.bar"),
-    )
-    def test_plugins_auth_codeflowauth_authenticate_no_redirect(
-        self,
-        mock_authenticate_user,
-    ):
-        """OIDCAuthorizationCodeFlowAuth.authenticate must raise and error if the provider doesn't redirect
-        to the given URI"""
-        auth_plugin = self.get_auth_plugin("provider_ok")
-        self.assertRaises(
-            AuthenticationError,
-            auth_plugin.authenticate,
-        )
-
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._get_token_with_refresh_token",
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._request_new_token",
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_authenticate_ok(
         self,
-        mock_authenticate_user,
-        mock_exchange_code_for_token,
-        mock_compute_state,
+        mock_request_new_token,
+        mock_get_token_with_refresh_token,
     ):
-        """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object"""
+        """OIDCAuthorizationCodeFlowAuth.authenticate must check if the token is expired, call the correct
+        function to get a new one and update the access token"""
         auth_plugin = self.get_auth_plugin("provider_ok")
-        state = "1234567890123456789012"
-        exchange_url = auth_plugin.config.redirect_uri
-        token = "token123"
-        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
-        mock_compute_state.return_value = state
-        mock_exchange_code_for_token.return_value = token
+        current_time = datetime.now()
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "7200",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_request_new_token.return_value = json_response
+        mock_get_token_with_refresh_token.return_value = json_response
 
+        def _authenticate(
+            called_once: mock.Mock, not_called: mock.Mock, access_token: str
+        ) -> None:
+            auth = auth_plugin.authenticate()
+            called_once.assert_called_once()
+            not_called.assert_not_called()
+            self.assertEqual(auth.token, access_token)
+            called_once.reset_mock()
+            not_called.reset_mock()
+
+        # No info: first time -> new auth
+        _authenticate(
+            mock_request_new_token,
+            mock_get_token_with_refresh_token,
+            json_response["access_token"],
+        )
+        # Check internal `token_info`` stores the new data
+        self.assertEqual(
+            auth_plugin.token_info["refresh_token"],
+            json_response["refresh_token"],
+        )
+        self.assertIsNotNone(auth_plugin.token_info["refresh_time"])
+        self.assertEqual(
+            auth_plugin.token_info["access_token"],
+            json_response["access_token"],
+        )
+        self.assertIsNotNone(auth_plugin.token_info["token_time"])
+        self.assertEqual(
+            auth_plugin.token_info["access_token_expiration"],
+            float(json_response["expires_in"]),
+        )
+        self.assertEqual(
+            auth_plugin.token_info["refresh_token_expiration"],
+            float(json_response["refresh_expires_in"]),
+        )
+
+        # Refresh token available but expired -> new auth
+        auth_plugin.token_info = {
+            "refresh_token": "old-refresh-token",
+            "refresh_time": current_time - timedelta(hours=3),
+            "access_token": "old-access-token",
+            "token_time": current_time - timedelta(hours=3),
+            "access_token_expiration": 3600,
+            "refresh_token_expiration": 7200,
+        }
+        _authenticate(
+            mock_request_new_token,
+            mock_get_token_with_refresh_token,
+            json_response["access_token"],
+        )
+
+        # Refresh token *not* available and access token expired - new auth
+        auth_plugin.token_info = {
+            "access_token": "old-access-token",
+            "token_time": current_time - timedelta(hours=3),
+            "access_token_expiration": 3600,
+        }
+        _authenticate(
+            mock_request_new_token,
+            mock_get_token_with_refresh_token,
+            json_response["access_token"],
+        )
+
+        # Refresh token available and access token expired -> refresh
+        auth_plugin.token_info = {
+            "refresh_token": "old-refresh-token",
+            "refresh_time": current_time - timedelta(seconds=4000),
+            "access_token": "old-access-token",
+            "token_time": current_time - timedelta(seconds=4000),
+            "access_token_expiration": 3600,
+            "refresh_token_expiration": 7200,
+        }
+        _authenticate(
+            mock_get_token_with_refresh_token,
+            mock_request_new_token,
+            json_response["access_token"],
+        )
+
+        # Access token not expired -> use already retrieved token
+        auth_plugin.token_info = {
+            "refresh_token": "old-refresh-token",
+            "refresh_time": current_time - timedelta(seconds=1800),
+            "access_token": "old-access-token",
+            "token_time": current_time - timedelta(seconds=1800),
+            "access_token_expiration": 3600,
+            "refresh_token_expiration": 7200,
+        }
         auth = auth_plugin.authenticate()
-
-        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
-        mock_exchange_code_for_token.assert_called_once_with(
-            auth_plugin, exchange_url, state
-        )
-        self.assertIsInstance(auth, CodeAuthorizedAuth)
-        self.assertEqual(auth.token, token)
-        self.assertEqual(auth.where, "header")
-        self.assertIsNone(auth.key)
-
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.grant_user_consent",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
-        autospec=True,
-    )
-    def test_plugins_auth_codeflowauth_authenticate_user_consent_needed_ok(
-        self,
-        mock_authenticate_user,
-        mock_exchange_code_for_token,
-        mock_compute_state,
-        mock_grant_user_consent,
-    ):
-        """OIDCAuthorizationCodeFlowAuth.authenticate must call `grant_user_consent` if `user_consent_needed==True`"""
-        auth_plugin = self.get_auth_plugin("provider_user_consent")
-        state = "1234567890123456789012"
-        exchange_url = auth_plugin.config.redirect_uri
-        token = "token123"
-        mock_authenticate_user.return_value = mock.Mock(
-            url=auth_plugin.config.redirect_uri + "/user_consent"
-        )
-        mock_compute_state.return_value = state
-        mock_exchange_code_for_token.return_value = token
-        mock_grant_user_consent.return_value = mock.Mock(url=exchange_url)
-
-        auth = auth_plugin.authenticate()
-
-        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
-        mock_grant_user_consent.assert_called_once_with(
-            auth_plugin,
-            mock_authenticate_user.return_value,
-        )
-        mock_exchange_code_for_token.assert_called_once_with(
-            auth_plugin, exchange_url, state
-        )
-        self.assertIsInstance(auth, CodeAuthorizedAuth)
-        self.assertEqual(auth.token, token)
-        self.assertEqual(auth.where, "header")
-        self.assertIsNone(auth.key)
+        mock_request_new_token.assert_not_called()
+        mock_get_token_with_refresh_token.assert_not_called()
+        self.assertEqual(auth.token, auth_plugin.token_info["access_token"])
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
@@ -1061,10 +1092,15 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin = self.get_auth_plugin("provider_token_qs_key")
         state = "1234567890123456789012"
         exchange_url = auth_plugin.config.redirect_uri
-        token = "token123"
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
+        }
         mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
         mock_compute_state.return_value = state
-        mock_exchange_code_for_token.return_value = token
+        mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
 
         auth = auth_plugin.authenticate()
 
@@ -1073,9 +1109,206 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             auth_plugin, exchange_url, state
         )
         self.assertIsInstance(auth, CodeAuthorizedAuth)
-        self.assertEqual(auth.token, token)
+        self.assertEqual(auth.token, json_response["access_token"])
         self.assertEqual(auth.where, "qs")
         self.assertEqual(auth.key, auth_plugin.config.token_qs_key)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+        return_value=mock.Mock(url="http://foo.bar"),
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_no_redirect(
+        self,
+        mock_authenticate_user,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must raise and error if the provider doesn't redirect
+        to `redirect_uri`"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        self.assertRaises(
+            AuthenticationError,
+            auth_plugin._request_new_token,
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must return the JSON response from the auth server"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        state = "1234567890123456789012"
+        exchange_url = auth_plugin.config.redirect_uri
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value.json.return_value = json_response
+
+        resp = auth_plugin._request_new_token()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        # Check returned value is the server's JSON response
+        self.assertEqual(resp, json_response)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.grant_user_consent",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.exchange_code_for_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_user_consent_needed_ok(
+        self,
+        mock_authenticate_user,
+        mock_exchange_code_for_token,
+        mock_compute_state,
+        mock_grant_user_consent,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must call `grant_user_consent`
+        if `user_consent_needed==True`"""
+        auth_plugin = self.get_auth_plugin("provider_user_consent")
+        state = "1234567890123456789012"
+        exchange_url = auth_plugin.config.redirect_uri
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_authenticate_user.return_value = mock.Mock(
+            url=auth_plugin.config.redirect_uri + "/user_consent"
+        )
+        mock_compute_state.return_value = state
+        mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
+        mock_grant_user_consent.return_value = mock.Mock(url=exchange_url)
+
+        resp = auth_plugin._request_new_token()
+
+        mock_authenticate_user.assert_called_once_with(auth_plugin, state)
+        mock_grant_user_consent.assert_called_once_with(
+            auth_plugin,
+            mock_authenticate_user.return_value,
+        )
+        mock_exchange_code_for_token.assert_called_once_with(
+            auth_plugin, exchange_url, state
+        )
+        self.assertEqual(resp, json_response)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+        return_value=mock.Mock(
+            url="http://auth.foo/error?err_code=TERMS_AND_CONDITIONS"
+        ),
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_exchange_url_error_pattern(
+        self,
+        mock_authenticate_user,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must raise an error if the exchange URL matches the
+        patter `exchange_url_error_pattern`"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        with self.assertRaises(AuthenticationError) as context:
+            auth_plugin._request_new_token()
+        self.assertEqual(
+            "Terms and conditions are not accepted", str(context.exception)
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._request_new_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_get_token_with_refresh_token_ok(
+        self,
+        mock_requests_post,
+        mock_request_new_token,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.get_token_with_refresh_token must call the token URI with a token refresh
+        request and return the JSON response"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.token_info = {"refresh_token": "old-refresh-token"}
+        token_data = auth_plugin._prepare_token_post_data(
+            {
+                "refresh_token": auth_plugin.token_info["refresh_token"],
+                "grant_type": "refresh_token",
+            }
+        )
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
+        }
+        mock_requests_post.return_value = MockResponse(json_response, 200)
+
+        resp = auth_plugin._get_token_with_refresh_token()
+        post_request_kwargs = {
+            auth_plugin.config.token_exchange_post_data_method: token_data
+        }
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            auth_plugin.config.token_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            **post_request_kwargs,
+        )
+        mock_request_new_token.assert_not_called()
+        self.assertEqual(resp, json_response)
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._request_new_token",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_get_token_with_refresh_token_http_exception(
+        self,
+        mock_requests_post,
+        mock_request_new_token,
+    ):
+        """OIDCAuthorizationCodeFlowAuth.get_token_with_refresh_token must call `request_new_token()` if the POST
+        request raise and exception other than time out"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+        auth_plugin.token_info = {"refresh_token": "old-refresh-token"}
+        mock_requests_post.return_value = MockResponse({"err": "message"}, 500)
+
+        auth_plugin._get_token_with_refresh_token()
+        mock_request_new_token.assert_called_once()
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.post", autospec=True
@@ -1107,31 +1340,6 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
         )
-
-    @mock.patch(
-        "eodag.plugins.authentication.openid_connect.requests.Session.get",
-        autospec=True,
-    )
-    def test_plugins_auth_codeflowauth_authenticate_user_no_login_forms(
-        self,
-        mock_requests_post,
-    ):
-        """OIDCAuthorizationCodeFlowAuth.authenticate_user must assume user is already logged in if there is
-        no form in the reply"""
-        auth_plugin = self.get_auth_plugin("provider_ok")
-        auth_plugin.config.credentials = {"foo": "bar"}
-
-        # mock token post request response
-        mock_requests_post.return_value = mock.Mock()
-        mock_requests_post.return_value.text = """
-            <html>
-                <head><title>No forms</title></head>
-                <body><p>Hello</p></body>
-            </html>
-        """
-        state = "1234567890123456789012"
-        auth = auth_plugin.authenticate_user(state)
-        self.assertEqual(auth, mock_requests_post.return_value)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.Session.get",
@@ -1327,10 +1535,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         and the state"""
         auth_plugin = self.get_auth_plugin("provider_ok")
         mock_requests_post.return_value = mock.Mock()
-        access_token = "token_12345"
-        mock_requests_post.return_value.json.return_value = {
-            "access_token": access_token
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
         }
+        mock_requests_post.return_value = MockResponse(json_response, 200)
         state = "1234567890123456789012"
         auth_code = "code_abcde"
         authorized_url = (
@@ -1338,10 +1549,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        returned_access_token = auth_plugin.exchange_code_for_token(
-            authorized_url, state
-        )
-        self.assertEqual(returned_access_token, access_token)
+        response = auth_plugin.exchange_code_for_token(authorized_url, state)
+        self.assertEqual(response.json()["access_token"], json_response["access_token"])
         mock_requests_post.assert_called_once_with(
             mock.ANY,
             auth_plugin.config.token_uri,
@@ -1367,10 +1576,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         `client_secret` is known"""
         auth_plugin = self.get_auth_plugin("provider_client_sercret")
         mock_requests_post.return_value = mock.Mock()
-        access_token = "token_12345"
-        mock_requests_post.return_value.json.return_value = {
-            "access_token": access_token
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
         }
+        mock_requests_post.return_value = MockResponse(json_response, 200)
         state = "1234567890123456789012"
         auth_code = "code_abcde"
         authorized_url = (
@@ -1378,10 +1590,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        returned_access_token = auth_plugin.exchange_code_for_token(
-            authorized_url, state
-        )
-        self.assertEqual(returned_access_token, access_token)
+        response = auth_plugin.exchange_code_for_token(authorized_url, state)
+        self.assertEqual(response.json()["access_token"], json_response["access_token"])
         mock_requests_post.assert_called_once_with(
             mock.ANY,
             auth_plugin.config.token_uri,
@@ -1412,10 +1622,13 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin = self.get_auth_plugin("provider_token_exchange_params")
 
         mock_requests_post.return_value = mock.Mock()
-        access_token = "token_12345"
-        mock_requests_post.return_value.json.return_value = {
-            "access_token": access_token
+        json_response = {
+            "access_token": "obtained-access-token",
+            "expires_in": "3600",
+            "refresh_expires_in": "0",
+            "refresh_token": "obtained-refresh-token",
         }
+        mock_requests_post.return_value = MockResponse(json_response, 200)
         state = "1234567890123456789012"
         auth_code = "code_abcde"
         authorized_url = (
@@ -1423,10 +1636,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
         auth_plugin.config.credentials = {"foo": "bar"}
 
-        returned_access_token = auth_plugin.exchange_code_for_token(
-            authorized_url, state
-        )
-        self.assertEqual(returned_access_token, access_token)
+        response = auth_plugin.exchange_code_for_token(authorized_url, state)
+        self.assertEqual(response.json()["access_token"], json_response["access_token"])
         mock_requests_post.assert_called_once_with(
             mock.ANY,
             auth_plugin.config.token_uri,

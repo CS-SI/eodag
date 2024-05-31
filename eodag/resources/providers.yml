@@ -6580,6 +6580,7 @@
     user_consent_needed: false
     token_exchange_post_data_method: data
     token_key: access_token
+    refresh_token_key: refresh_token
     token_provision: header
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
