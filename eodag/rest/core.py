@@ -26,9 +26,9 @@ from unittest.mock import Mock
 from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import dateutil
-from fastapi.responses import ORJSONResponse, StreamingResponse
 from cachetools.func import lru_cache
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
+from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
 
@@ -82,7 +82,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Dict, List, Optional, Union
+    from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
     from fastapi import Request
     from requests.auth import AuthBase
@@ -698,10 +698,10 @@ async def get_queryables(
             ):
                 continue
 
-            stac_queryables[stac_param] = (
-                StacQueryableProperty.from_python_field_definition(
-                    stac_param, queryable
-                )
+            stac_queryables[
+                stac_param
+            ] = StacQueryableProperty.from_python_field_definition(
+                stac_param, queryable
             )
 
         if params.collection:
