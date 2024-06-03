@@ -1109,10 +1109,16 @@ class RequestTestCase(unittest.TestCase):
         )
 
     @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload._stream_download_dict",
+        "eodag.plugins.authentication.base.Authentication.authenticate",
         autospec=True,
     )
-    def test_download_item_from_catalog_stream(self, mock_download: Mock):
+    @mock.patch(
+        "eodag.plugins.download.base.Download._stream_download_dict",
+        autospec=True,
+    )
+    def test_download_item_from_catalog_stream(
+        self, mock_download: Mock, mock_auth: Mock
+    ):
         """Download through eodag server catalog should return a valid response"""
 
         expected_file = "somewhere.zip"
