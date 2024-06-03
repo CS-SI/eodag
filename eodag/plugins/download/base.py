@@ -84,6 +84,8 @@ class Download(PluginTopic):
 
     - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
+    - download data from all pages of the search of results given in parameters
+      if ``exhaust`` is set to True (False by default) with ``download_all``
     - extract products from their archive (if relevant) if ``extract`` is set to True
       (True by default)
     - save a product in an archive/directory (in ``output_dir``) whose name must be
@@ -481,7 +483,7 @@ class Download(PluginTopic):
         if kwargs.pop("exhaust", False):
             logger.info(
                 (
-                    "Searching other products from all pages with the same search request "
+                    "Searching other products from all pages of the same search request "
                     "as the one used for these products to download all of them"
                 )
             )
