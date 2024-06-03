@@ -253,7 +253,7 @@ class TestStacUtils(unittest.TestCase):
         self.assertEqual(dtstart, start)
         self.assertEqual(dtend, end)
 
-    def test_fetch_external_stac_collections(self):
+    async def test_fetch_external_stac_collections(self):
         """Load external STAC collections"""
 
         external_json = """{
@@ -277,8 +277,10 @@ class TestStacUtils(unittest.TestCase):
         ) as mock_fetch_json:
             # Check if the returned STAC collection contains updated data
             StacCollection.fetch_external_stac_collections(self.rest_core.eodag_api)
-            stac_coll = self.rest_core.get_stac_collection_by_id(
-                url="", root="", collection_id="S2_MSI_L1C"
+
+            stac_coll = await self.rest_core.get_collection(
+                request=mock_request(url="http://foo/collections/S2_MSI_L1C"),
+                collection_id="S2_MSI_L1C",
             )
             mock_fetch_json.assert_called_with(ext_stac_collection_path)
 
