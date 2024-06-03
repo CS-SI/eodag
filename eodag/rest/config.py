@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,15 +30,7 @@ class Settings(BaseSettings):
 
     # local cache config
     cache_ttl: int = Field(default=DEFAULT_TTL)
-    local_cache_maxsize: int = Field(default=DEFAULT_MAXSIZE)
-
-    redis_hostname: Optional[str] = Field(default=None)
-    redis_password: Optional[str] = Field(default=None)
-    redis_port: int = 6379
-    redis_ssl: bool = True
-
-    redis_ttl_search: Optional[int] = Field(default=DEFAULT_TTL)
-    redis_ttl_item: Optional[int] = Field(default=DEFAULT_TTL)
+    cache_maxsize: int = Field(default=DEFAULT_MAXSIZE)
 
     debug: bool = False
 

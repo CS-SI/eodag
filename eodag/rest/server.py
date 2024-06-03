@@ -394,7 +394,7 @@ def stac_extension_oseo(request: Request) -> ORJSONResponse:
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_collections_item_download(
+def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC collection item download"""
@@ -403,7 +403,7 @@ async def stac_collections_item_download(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    return await download_stac_item(
+    return download_stac_item(
         request=request,
         catalogs=[collection_id],
         item_id=item_id,
@@ -418,7 +418,7 @@ async def stac_collections_item_download(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_collections_item_download_asset(
+def stac_collections_item_download_asset(
     collection_id: str, item_id: str, asset: str, request: Request
 ):
     """STAC collection item asset download"""
@@ -427,7 +427,7 @@ async def stac_collections_item_download_asset(
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
-    return await download_stac_item(
+    return download_stac_item(
         request=request,
         catalogs=[collection_id],
         item_id=item_id,
@@ -442,7 +442,7 @@ async def stac_collections_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_collections_item(
+def stac_collections_item(
     collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection item by id"""
@@ -452,7 +452,7 @@ async def stac_collections_item(
         provider=provider, ids=[item_id], collections=[collection_id], limit=1
     )
 
-    item_collection = await search_stac_items(request, search_request)
+    item_collection = search_stac_items(request, search_request)
 
     if not item_collection["features"]:
         raise HTTPException(
@@ -469,7 +469,7 @@ async def stac_collections_item(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_collections_items(
+def stac_collections_items(
     collection_id: str,
     request: Request,
     provider: Optional[str] = None,
@@ -485,7 +485,7 @@ async def stac_collections_items(
 ) -> ORJSONResponse:
     """Fetch collection's features"""
 
-    return await get_search(
+    return get_search(
         request=request,
         provider=provider,
         collections=collection_id,
@@ -592,7 +592,7 @@ async def collections(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_catalogs_item_download(
+def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC Catalog item download"""
@@ -603,7 +603,7 @@ async def stac_catalogs_item_download(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return await download_stac_item(
+    return download_stac_item(
         request=request,
         catalogs=list_catalog,
         item_id=item_id,
@@ -618,7 +618,7 @@ async def stac_catalogs_item_download(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_catalogs_item_download_asset(
+def stac_catalogs_item_download_asset(
     catalogs: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC Catalog item asset download"""
@@ -629,7 +629,7 @@ async def stac_catalogs_item_download_asset(
 
     list_catalog = catalogs.strip("/").split("/")
 
-    return await download_stac_item(
+    return download_stac_item(
         request,
         catalogs=list_catalog,
         item_id=item_id,
@@ -645,7 +645,7 @@ async def stac_catalogs_item_download_asset(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_catalogs_item(
+def stac_catalogs_item(
     catalogs: str, item_id: str, request: Request, provider: Optional[str] = None
 ):
     """Fetch catalog's single features."""
@@ -655,9 +655,7 @@ async def stac_catalogs_item(
 
     search_request = SearchPostRequest(provider=provider, ids=[item_id], limit=1)
 
-    item_collection = await search_stac_items(
-        request, search_request, catalogs=list_catalog
-    )
+    item_collection = search_stac_items(request, search_request, catalogs=list_catalog)
 
     if not item_collection["features"]:
         raise HTTPException(
@@ -674,7 +672,7 @@ async def stac_catalogs_item(
     tags=["Data"],
     include_in_schema=False,
 )
-async def stac_catalogs_items(
+def stac_catalogs_items(
     catalogs: str,
     request: Request,
     provider: Optional[str] = None,
@@ -707,7 +705,7 @@ async def stac_catalogs_items(
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
-    response = await search_stac_items(
+    response = search_stac_items(
         request=request,
         search_request=search_request,
         catalogs=list_catalog,
@@ -778,7 +776,7 @@ async def list_queryables(request: Request) -> ORJSONResponse:
     tags=["STAC"],
     include_in_schema=False,
 )
-async def get_search(
+def get_search(
     request: Request,
     provider: Optional[str] = None,
     collections: Optional[str] = None,
@@ -834,7 +832,7 @@ async def get_search(
     except pydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
-    response = await search_stac_items(
+    response = search_stac_items(
         request=request,
         search_request=search_request,
     )
@@ -870,7 +868,7 @@ async def post_search(request: Request) -> ORJSONResponse:
 
     logger.debug("Body: %s", search_request.model_dump(exclude_none=True))
 
-    response = await search_stac_items(
+    response = search_stac_items(
         request=request,
         search_request=search_request,
     )

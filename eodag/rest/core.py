@@ -23,11 +23,9 @@ import os
 import re
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
-from urllib.parse import parse_qs, unquote_plus, urlparse
 
 import dateutil
 from cachetools.func import lru_cache
-from fastapi import HTTPException
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
@@ -46,12 +44,11 @@ from eodag.config import load_stac_config
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
-from eodag.rest.cache import cached_item_collection, get_cached, local_cached
+from eodag.rest.cache import cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
     CACHE_KEY_COLLECTIONS,
     CACHE_KEY_QUERYABLES,
-    CACHE_KEY_SEARCH,
 )
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
@@ -60,6 +57,7 @@ from eodag.rest.types.queryables import (
     StacQueryableProperty,
     StacQueryables,
 )
+from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils import (
     Cruncher,
     file_to_stream,
@@ -87,8 +85,6 @@ if TYPE_CHECKING:
     from fastapi import Request
     from requests.auth import AuthBase
     from starlette.responses import Response
-
-    from eodag.rest.types.stac_search import SearchPostRequest
 
 
 eodag_api = eodag.EODataAccessGateway()
@@ -137,7 +133,7 @@ def format_product_types(product_types: List[Dict[str, Any]]) -> str:
     return "\n".join(sorted(result))
 
 
-async def search_stac_items(
+def search_stac_items(
     request: Request,
     search_request: SearchPostRequest,
     catalogs: Optional[List[str]] = None,
@@ -168,97 +164,89 @@ async def search_stac_items(
     items themselves, total count, and the next link if applicable.
     """
 
-    async def _fetch() -> Dict[str, Any]:
-        stac_args = search_request.model_dump(exclude_none=True)
-        if search_request.start_date:
-            stac_args["start_datetime"] = search_request.start_date
-        if search_request.end_date:
-            stac_args["end_datetime"] = search_request.end_date
-        if search_request.spatial_filter:
-            stac_args["geometry"] = search_request.spatial_filter
-        try:
-            eodag_args = EODAGSearch.model_validate(
-                stac_args, context={"isCatalog": bool(catalogs)}
-            )
-        except pydanticValidationError as e:
-            raise ValidationError(format_pydantic_error(e)) from e
-
-        catalog_url = re.sub("/items.*", "", request.state.url)
-
-        catalog = StacCatalog(
-            url=(
-                catalog_url
-                if catalogs
-                else catalog_url.replace(
-                    "/search", f"/collections/{eodag_args.productType}"
-                )
-            ),
-            stac_config=stac_config,
-            root=request.state.url_root,
-            provider=eodag_args.provider,
-            eodag_api=eodag_api,
-            catalogs=catalogs or [eodag_args.productType],  # type: ignore
+    stac_args = search_request.model_dump(exclude_none=True)
+    if search_request.start_date:
+        stac_args["start_datetime"] = search_request.start_date
+    if search_request.end_date:
+        stac_args["end_datetime"] = search_request.end_date
+    if search_request.spatial_filter:
+        stac_args["geometry"] = search_request.spatial_filter
+    try:
+        eodag_args = EODAGSearch.model_validate(
+            stac_args, context={"isCatalog": bool(catalogs)}
         )
+    except pydanticValidationError as e:
+        raise ValidationError(format_pydantic_error(e)) from e
 
-        # get products by ids
-        if eodag_args.ids:
-            search_results = SearchResult([])
-            for item_id in eodag_args.ids:
-                products, _ = eodag_api.search(
-                    id=item_id,
-                    productType=catalogs[0] if catalogs else eodag_args.productType,
-                    provider=eodag_args.provider,
-                )
-                search_results.extend(products)
-            total = len(search_results)
+    catalog_url = re.sub("/items.*", "", request.state.url)
 
-        elif time_interval_overlap(eodag_args, catalog):
-            criteria = {
-                **catalog.search_args,
-                **eodag_args.model_dump(exclude_none=True),
-            }
-
-            search_results, total = eodag_api.search(**criteria)
-            if search_request.crunch:
-                search_results = crunch_products(
-                    search_results, search_request.crunch, **criteria
-                )
-        else:
-            # return empty results
-            search_results = SearchResult([])
-            total = 0
-
-        for record in search_results:
-            record.product_type = eodag_api.get_alias_from_product_type(
-                record.product_type
+    catalog = StacCatalog(
+        url=(
+            catalog_url
+            if catalogs
+            else catalog_url.replace(
+                "/search", f"/collections/{eodag_args.productType}"
             )
+        ),
+        stac_config=stac_config,
+        root=request.state.url_root,
+        provider=eodag_args.provider,
+        eodag_api=eodag_api,
+        catalogs=catalogs or [eodag_args.productType],  # type: ignore
+    )
 
-        items = StacItem(
-            url=request.state.url,
-            stac_config=stac_config,
-            provider=eodag_args.provider,
-            eodag_api=eodag_api,
-            root=request.state.url_root,
-        ).get_stac_items(
-            search_results=search_results,
-            total=total or 0,
-            next_link=get_next_link(
-                request, search_request, total or 0, eodag_args.items_per_page
-            ),
-            catalog={
-                **catalog.data,
-                **{"url": catalog.url, "root": catalog.root},
-            },
-        )
-        return items
+    # get products by ids
+    if eodag_args.ids:
+        search_results = SearchResult([])
+        for item_id in eodag_args.ids:
+            products, _ = eodag_api.search(
+                id=item_id,
+                productType=catalogs[0] if catalogs else eodag_args.productType,
+                provider=eodag_args.provider,
+            )
+            search_results.extend(products)
+        total = len(search_results)
 
-    hashed_search = hash(search_request.model_dump_json())
-    cache_key = f"{CACHE_KEY_SEARCH}:{hashed_search}"
+    elif time_interval_overlap(eodag_args, catalog):
+        criteria = {
+            **catalog.search_args,
+            **eodag_args.model_dump(exclude_none=True),
+        }
 
-    return await cached_item_collection(_fetch, cache_key, request)
+        search_results, total = eodag_api.search(**criteria)
+        if search_request.crunch:
+            search_results = crunch_products(
+                search_results, search_request.crunch, **criteria
+            )
+    else:
+        # return empty results
+        search_results = SearchResult([])
+        total = 0
+
+    for record in search_results:
+        record.product_type = eodag_api.get_alias_from_product_type(record.product_type)
+
+    items = StacItem(
+        url=request.state.url,
+        stac_config=stac_config,
+        provider=eodag_args.provider,
+        eodag_api=eodag_api,
+        root=request.state.url_root,
+    ).get_stac_items(
+        search_results=search_results,
+        total=total or 0,
+        next_link=get_next_link(
+            request, search_request, total or 0, eodag_args.items_per_page
+        ),
+        catalog={
+            **catalog.data,
+            **{"url": catalog.url, "root": catalog.root},
+        },
+    )
+    return items
 
 
-async def download_stac_item(
+def download_stac_item(
     request: Request,
     catalogs: List[str],
     item_id: str,
@@ -279,65 +267,26 @@ async def download_stac_item(
     :returns: a stream of the downloaded data (zip file)
     :rtype: Response
     """
-    collection = catalogs[0]
+    product_type = catalogs[0]
 
-    cache_key = f"{provider}:{collection}:{item_id}"
-    cached: Optional[Dict[str, Any]] = await get_cached(request, cache_key)
+    search_results, _ = eodag_api.search(
+        id=item_id, productType=product_type, provider=provider, **kwargs
+    )
+    if len(search_results) > 0:
+        product = cast(EOProduct, search_results[0])
 
-    if cached:
-        item = cached
     else:
-        search_request = SearchPostRequest(
-            provider=provider, ids=[item_id], collections=[collection], limit=1
+        raise NotAvailableError(
+            f"Could not find {item_id} item in {product_type} collection"
+            + (f" for provider {provider}" if provider else "")
         )
-        item_collection = await search_stac_items(request, search_request)
-        if not item_collection["features"]:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {item_id} in Collection {collection} does not exist.",
-            )
-        item = item_collection["features"][0]
-
-    try:
-        product = EOProduct(
-            provider=provider,
-            properties={
-                "title": item["id"],
-                "geometry": (-180, -90, 180, 90),
-                "storageStatus": item["properties"].get("storage:tier", ONLINE_STATUS),
-            },
-            assets={},
-        )
-        for k, v in item["assets"].items():
-            origin = v.get("alternate", {}).get("origin")
-            if k == "downloadLink" and origin:
-                qp = parse_qs(urlparse(str(v["href"])).query)
-                if "_dc_qs" in qp:
-                    _dc_qs = unquote_plus(unquote_plus(qp["_dc_qs"][0]))
-                    parts = origin["href"].split("?")
-                    origin["href"] = f"{parts[0]}?{_dc_qs}"
-                product.location = product.remote_location = origin["href"]
-            product.assets[k] = {
-                "product": product,
-                "href": origin["href"] if origin else v["href"],
-                "title": v.get("title"),
-            }
-
-        downloader = eodag_api._plugins_manager.get_download_plugin(product)
-        downloader_auth = eodag_api._plugins_manager.get_auth_plugin(product.provider)
-    except Exception as e:
-        logger.error(f"Error building EOProduct: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error trying to download {item_id} in collection {collection}",
-        )
-    auth = downloader_auth.authenticate() if downloader_auth else None
+    auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 
     try:
         if product.properties.get("orderLink"):
             _order_and_update(product, auth, kwargs)
 
-        download_stream = downloader._stream_download_dict(
+        download_stream = product.downloader._stream_download_dict(
             product,
             auth=auth,
             asset=asset,
@@ -495,7 +444,7 @@ async def all_collections(
 
     hashed_collections = hash(f"{provider}:{q}:{platform}:{instrument}:{constellation}")
     cache_key = f"{CACHE_KEY_COLLECTIONS}:{hashed_collections}"
-    return await local_cached(_fetch, cache_key, request)
+    return await cached(_fetch, cache_key, request)
 
 
 async def get_collection(
@@ -531,7 +480,7 @@ async def get_collection(
         return collection_list[0]
 
     cache_key = f"{CACHE_KEY_COLLECTION}:{provider}:{collection_id}"
-    return await local_cached(_fetch, cache_key, request)
+    return await cached(_fetch, cache_key, request)
 
 
 async def get_stac_catalogs(
@@ -565,7 +514,7 @@ async def get_stac_catalogs(
         ).data
 
     hashed_catalogs = hash(":".join(catalogs) if catalogs else None)
-    return await local_cached(
+    return await cached(
         _fetch, f"{CACHE_KEY_COLLECTION}:{provider}:{hashed_catalogs}", request
     )
 
@@ -714,7 +663,7 @@ async def get_queryables(
         ).model_dump(mode="json", by_alias=True)
 
     hashed_queryables = hash(params.model_dump_json())
-    return await local_cached(
+    return await cached(
         _fetch, f"{CACHE_KEY_QUERYABLES}:{provider}:{hashed_queryables}", request
     )
 

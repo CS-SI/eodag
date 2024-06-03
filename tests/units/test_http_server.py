@@ -36,7 +36,7 @@ from shapely.geometry import box
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
-from eodag.rest.types.stac_queryables import StacQueryables
+from eodag.rest.types.queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import NotAvailableError, TimeOutError
 from tests import mock
