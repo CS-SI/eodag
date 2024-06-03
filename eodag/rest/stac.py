@@ -757,12 +757,14 @@ class StacCollection(StacCommon):
         # merge "keywords" lists
         if "keywords" in ext_stac_collection:
             try:
-                ext_stac_collection["keywords"] = list(
-                    set(
+                ext_stac_collection["keywords"] = [
+                    k
+                    for k in set(
                         ext_stac_collection["keywords"]
                         + product_type_collection["keywords"]
                     )
-                )
+                    if k is not None
+                ]
             except TypeError as e:
                 logger.warning(
                     f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
