@@ -177,8 +177,8 @@ class TestStacCore(unittest.TestCase):
 
         await self.rest_core.get_stac_catalogs(mock_request("/"), url="")
 
-    async def test_get_stac_collection_by_id(self):
-        """get_stac_collection_by_id runs without any error"""
+    async def test_get_stac_collection(self):
+        """get_collection runs without any error"""
         r = await self.rest_core.get_collection(
             mock_request("/"), collection_id="S2_MSI_L1C"
         )
