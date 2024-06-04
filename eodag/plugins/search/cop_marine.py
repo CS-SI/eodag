@@ -1,8 +1,27 @@
+# -*- coding: utf-8 -*-
+# Copyright 2024, CS GROUP - France, https://www.csgroup.eu/
+#
+# This file is part of EODAG project
+#     https://www.github.com/CS-SI/EODAG
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+from __future__ import annotations
+
 import copy
 import logging
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 from urllib.parse import urlsplit
 
 import boto3
@@ -11,7 +30,6 @@ import requests
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
-from mypy_boto3_s3 import S3Client
 
 from eodag import EOProduct
 from eodag.api.product import AssetsDict
@@ -19,6 +37,9 @@ from eodag.config import PluginConfig
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import UnsupportedProductType, ValidationError
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3Client
 
 logger = logging.getLogger("eodag.search.cop_marine")
 
