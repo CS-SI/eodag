@@ -458,7 +458,7 @@ def stac_collections_item(collection_id: str, item_id: str, request: Request) ->
 
     if not item_collection["features"]:
         raise HTTPException(
-            status_code=400,
+            status_code=404,
             detail=f"Item {item_id} in Collection {collection_id} does not exist.",
         )
 
@@ -665,7 +665,7 @@ def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
 
     if not item_collection["features"]:
         raise HTTPException(
-            status_code=400,
+            status_code=404,
             detail=f"Item {item_id} in Catalog {catalogs} does not exist.",
         )
 
