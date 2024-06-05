@@ -87,13 +87,14 @@ class _TextOpener:
                 raise STACOpenerError
 
     def __call__(self, url: str, as_json: bool = False) -> Any:
+        openers = self.openers[:]
         res = None
-        while self.openers:
+        while openers:
             try:
-                res = self.openers[0](url, as_json)
+                res = openers[0](url, as_json)
             except STACOpenerError:
                 # Remove the opener that just failed
-                self.openers.pop(0)
+                openers.pop(0)
             if res is not None:
                 break
         if res is None:
@@ -189,6 +190,7 @@ def _fetch_stac_items_from_catalog(
 
 def fetch_stac_collections(
     stac_path: str,
+    collection: Optional[str] = None,
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
     ssl_verify: bool = True,
@@ -197,6 +199,8 @@ def fetch_stac_collections(
 
     :param stac_path: A STAC object filepath
     :type stac_path: str
+    :param collection: the collection to fetch
+    :type collection: Optional[str]
     :param max_connections: (optional) Maximum number of connections for HTTP requests
     :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
@@ -214,7 +218,7 @@ def fetch_stac_collections(
     stac_obj = pystac.read_file(stac_path)
     if isinstance(stac_obj, pystac.Catalog):
         return _fetch_stac_collections_from_catalog(
-            stac_obj, max_connections, _text_opener
+            stac_obj, collection, max_connections, _text_opener
         )
     else:
         raise STACOpenerError(f"{stac_path} must be a STAC catalog")
@@ -222,6 +226,7 @@ def fetch_stac_collections(
 
 def _fetch_stac_collections_from_catalog(
     cat: pystac.Catalog,
+    collection: Optional[str],
     max_connections: int,
     _text_opener: Callable[[str, bool], Any],
 ) -> List[Any]:
@@ -230,8 +235,12 @@ def _fetch_stac_collections_from_catalog(
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
     hrefs: List[Optional[str]] = [
-        link.get_absolute_href() for link in cat.get_child_links()
+        link.get_absolute_href()
+        for link in cat.get_child_links()
+        if collection is not None and link.title == collection
     ]
+    if len(hrefs) == 0:
+        hrefs = [link.get_absolute_href() for link in cat.get_child_links()]
 
     if hrefs:
         with concurrent.futures.ThreadPoolExecutor(
@@ -241,7 +250,15 @@ def _fetch_stac_collections_from_catalog(
                 executor.submit(_text_opener, str(href), True) for href in hrefs
             )
             for future in concurrent.futures.as_completed(future_to_href):
-                collection = future.result()
-                if collection and collection["type"] == STACObjectType.COLLECTION:
-                    collections.append(collection)
+                fetched_collection = future.result()
+                if (
+                    fetched_collection
+                    and fetched_collection["type"] == STACObjectType.COLLECTION
+                    and (
+                        collection is None
+                        or collection is not None
+                        and fetched_collection.get("id") == collection
+                    )
+                ):
+                    collections.append(fetched_collection)
     return collections

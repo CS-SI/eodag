@@ -99,6 +99,7 @@ class StaticStacSearch(StacSearch):
         )
         collections = fetch_stac_collections(
             fetch_url,
+            collection=kwargs.get("q"),
             max_connections=self.config.max_connections,
             timeout=int(self.config.timeout),
             ssl_verify=self.config.ssl_verify,
