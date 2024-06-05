@@ -266,16 +266,20 @@ class CopMarineSearch(StaticStacSearch):
                 continue
 
             if ".nc" in collection_path:
-                product = self._create_product(
-                    product_type,
-                    collection_path,
-                    endpoint_url + "/" + bucket,
-                    dataset_item,
-                    collection_dict,
-                    True,
-                )
-                products.append(product)
-                continue
+                num_total += 1
+                if num_total < start_index:
+                    continue
+                if len(products) < items_per_page:
+                    product = self._create_product(
+                        product_type,
+                        collection_path,
+                        endpoint_url + "/" + bucket,
+                        dataset_item,
+                        collection_dict,
+                        True,
+                    )
+                    products.append(product)
+                    continue
 
             s3_client = _get_s3_client(endpoint_url)
             stop_search = False
