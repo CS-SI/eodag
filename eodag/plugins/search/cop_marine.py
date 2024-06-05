@@ -227,6 +227,10 @@ class CopMarineSearch(StaticStacSearch):
         :returns: list of products and total number of products
         :rtype: Tuple[List[EOProduct], Optional[int]]
         """
+        # only return 1 page if pagination is disabled
+        if page > 1 and items_per_page <= 0:
+            return [], 0
+
         product_type = kwargs.get("productType", product_type)
         if not product_type:
             raise ValidationError(
@@ -275,7 +279,7 @@ class CopMarineSearch(StaticStacSearch):
                 num_total += 1
                 if num_total < start_index:
                     continue
-                if len(products) < items_per_page:
+                if len(products) < items_per_page or items_per_page < 0:
                     product = self._create_product(
                         product_type,
                         collection_path,
@@ -333,7 +337,7 @@ class CopMarineSearch(StaticStacSearch):
                         num_total += 1
                         if num_total < start_index:
                             continue
-                        if len(products) < items_per_page:
+                        if len(products) < items_per_page or items_per_page < 0:
                             product = self._create_product(
                                 product_type,
                                 item_key,

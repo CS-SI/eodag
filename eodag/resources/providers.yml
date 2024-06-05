@@ -7184,7 +7184,7 @@
   url: https://marine.copernicus.eu/
   search: !plugin
     type: CopMarineSearch
-    api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.js'
+    api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.json'
     need_auth: false
     ssl_verify: true
     timeout: 20

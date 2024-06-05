@@ -65,8 +65,6 @@ class StaticStacSearch(StacSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # there is no pagination with static search, then we keep only its mandatory attribute
-        config.pagination = {"total_items_nb_key_path": "$.null"}
         # prevent search parameters from being queried when they are known in the configuration or not
         for param, mapping in config.metadata_mapping.items():
             # only keep one queryable to allow the mock search request
@@ -81,6 +79,11 @@ class StaticStacSearch(StacSearch):
         self.config.__dict__.setdefault("max_connections", 100)
         self.config.__dict__.setdefault("timeout", HTTP_REQ_TIMEOUT)
         self.config.__dict__.setdefault("ssl_verify", True)
+        self.config.__dict__.setdefault("pagination", {})
+        self.config.__dict__["pagination"].setdefault(
+            "total_items_nb_key_path", "$.null"
+        )
+        self.config.__dict__["pagination"].setdefault("max_items_per_page", -1)
 
     def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
@@ -127,6 +130,10 @@ class StaticStacSearch(StacSearch):
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
+
+        # only return 1 page if pagination is disabled
+        if prep.page and prep.page > 1 and prep.items_per_page is not None and prep.items_per_page <= 0:
+            return [], 0
 
         product_type = kwargs.get("productType", prep.product_type)
         # provider product type specific conf
