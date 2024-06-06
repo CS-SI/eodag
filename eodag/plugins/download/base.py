@@ -24,7 +24,6 @@ import shutil
 import tarfile
 import tempfile
 import zipfile
-from copy import copy
 from datetime import datetime, timedelta
 from time import sleep
 from typing import (
@@ -39,6 +38,7 @@ from typing import (
     Union,
 )
 
+from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -61,7 +61,6 @@ if TYPE_CHECKING:
 
     from eodag.api.core import EODataAccessGateway
     from eodag.api.product import EOProduct
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
@@ -489,10 +488,7 @@ class Download(PluginTopic):
             )
             search_kwargs = products.search_kwargs
             if search_kwargs:
-                other_products = copy(products)
-                other_products.clear()
-                other_products.search_kwargs = None
-                other_products.crunchers = []
+                other_products = SearchResult([])
                 tmp_search_kwargs = deepcopy(search_kwargs)
                 # remove parameters not used in the following search method
                 if tmp_search_kwargs.get("page", False):
