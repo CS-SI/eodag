@@ -717,6 +717,7 @@ class QueryStringSearch(Search):
         provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
         if count and total_items is None and hasattr(self, "total_items_nb"):
             total_items = self.total_items_nb
+            logger.debug(f"total_items got from self.total_items_nb: {total_items}")
         eo_products = self.normalize_results(provider_results, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
@@ -956,8 +957,15 @@ class QueryStringSearch(Search):
             else:
                 results.extend(result)
             if getattr(self, "need_count", False):
+                logger.debug(
+                    f"previous self.total_items_nb: {getattr(self, 'total_items_nb', None)}"
+                )
+                logger.debug(f"found total_items_nb: {total_items_nb}")
                 self.total_items_nb = total_items_nb
                 del self.need_count
+                logger.debug(
+                    f"updated self.total_items_nb: {getattr(self, 'total_items_nb', None)}"
+                )
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results

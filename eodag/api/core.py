@@ -1800,6 +1800,8 @@ class EODataAccessGateway:
 
             res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
 
+            logger.debug(f"core nb_res: {nb_res}")
+
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return
             # At most 1 product, so we don't need such a thing as pagination
@@ -1814,6 +1816,7 @@ class EODataAccessGateway:
                 # maxRecords=1&page=1
                 if not nb_res:
                     nb_res = len(res) * page
+                    logger.debug(f"core nb_res RESET: {nb_res}")
 
                 # Attempt to ensure a little bit more coherence. Some providers return
                 # a fuzzy number of total results, meaning that you have to keep
@@ -1825,7 +1828,10 @@ class EODataAccessGateway:
                 # skipped items is greater than the total number of items returned by
                 # the plugin
                 nb_skipped_items = items_per_page * (page - 1)
+                logger.debug(f"items_per_page, page: {items_per_page}, {page}")
+                logger.debug(f"nb_skipped_items: {nb_skipped_items}")
                 nb_current_items = len(res)
+                logger.debug(f"nb_current_items: {nb_current_items}")
                 if nb_skipped_items > nb_res:
                     if nb_res != 0:
                         nb_res = nb_skipped_items + nb_current_items
@@ -1837,6 +1843,8 @@ class EODataAccessGateway:
                     # these criteria on the provider.
                     else:
                         nb_res = nb_skipped_items
+
+            logger.debug(f"core nb_res after skipped check: {nb_res}")
 
             if not isinstance(res, list):
                 raise PluginImplementationError(
