@@ -1784,20 +1784,6 @@ class EODataAccessGateway:
             # Remove the ID since this is equal to productType.
             search_plugin.config.product_type_config.pop("ID", None)
 
-        logger.debug(
-            f"Using plugin class for search: {search_plugin.__class__.__name__}"
-        )
-        # get auth plugin by preventing possible multiple "auth" key in the return value
-        auth_plugin = kwargs.pop(
-            "auth", self._plugins_manager.get_auth_plugin(search_plugin.provider)
-        )
-
-        # append auth to search plugin if needed
-        if getattr(search_plugin.config, "need_auth", False) and callable(
-            getattr(auth_plugin, "authenticate", None)
-        ):
-            search_plugin.auth = auth_plugin.authenticate()
-
         return search_plugins, kwargs
 
     def _do_search(
