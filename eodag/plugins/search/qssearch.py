@@ -711,6 +711,10 @@ class QueryStringSearch(Search):
         )
         if not count and hasattr(self, "total_items_nb"):
             # do not try to extract total_items from search results if count is False
+            logger.debug(
+                "do not try to extract total_items from search results if count is "
+                f"False: {count}, {getattr(self, 'total_items_nb', None)}"
+            )
             del self.total_items_nb
             del self.need_count
 
@@ -763,6 +767,10 @@ class QueryStringSearch(Search):
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
+            logger.debug(
+                "if count_endpoint is not set, total_results should be extracted from "
+                f"search result: {self.config.pagination}"
+            )
             total_results = None
             self.need_count = True
             self.total_items_nb = None
@@ -1341,6 +1349,10 @@ class PostJsonSearch(QueryStringSearch):
         )
         if not count and getattr(self, "need_count", False):
             # do not try to extract total_items from search results if count is False
+            logger.debug(
+                "do not try to extract total_items from search results if count is "
+                f"False: {count}, {getattr(self, 'need_count', False)}"
+            )
             del self.total_items_nb
             del self.need_count
         provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
@@ -1396,6 +1408,10 @@ class PostJsonSearch(QueryStringSearch):
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
+            logger.debug(
+                "if count_endpoint is not set, total_results should be extracted from "
+                f"search result: {self.config.pagination}"
+            )
             total_results = None
             self.need_count = True
             self.total_items_nb = None
