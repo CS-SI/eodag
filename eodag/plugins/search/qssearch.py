@@ -886,6 +886,13 @@ class QueryStringSearch(Search):
                         )
             else:
                 resp_as_json = response.json()
+                logger.debug(f"@odata.count: {resp_as_json.get('@odata.count')}")
+                try:
+                    logger.debug(
+                        f"items[0].Name: {resp_as_json.get('value', [{'Name': 'N/A'}])[0].get('Name')}"
+                    )
+                except Exception as e:
+                    logger.debug(f"items[0].Name N/A: {str(e)}")
                 if next_page_url_key_path:
                     path_parsed = next_page_url_key_path
                     try:
