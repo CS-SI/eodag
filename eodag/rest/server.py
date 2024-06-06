@@ -353,7 +353,7 @@ async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
 @router.api_route(methods=["GET", "HEAD"], path="/", tags=["Capabilities"])
 def catalogs_root(request: Request) -> Any:
     """STAC catalogs root"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     response = get_stac_catalogs(
         url=request.state.url,
@@ -380,7 +380,7 @@ def conformance() -> Any:
 )
 def stac_extension_oseo(request: Request) -> Any:
     """STAC OGC / OpenSearch extension for EO"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
     response = get_stac_extension_oseo(url=request.state.url)
 
     return jsonable_encoder(response)
@@ -396,7 +396,7 @@ def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC collection item download"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -420,7 +420,7 @@ def stac_collections_item_download_asset(
     collection_id: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC collection item asset download"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -443,7 +443,7 @@ def stac_collections_item_download_asset(
 )
 def stac_collections_item(collection_id: str, item_id: str, request: Request) -> Any:
     """STAC collection item by id"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     base_args: Dict[str, Any] = dict(request.query_params)
     base_args["ids"] = [item_id]
@@ -546,7 +546,7 @@ def list_collection_queryables(
 )
 def collection_by_id(collection_id: str, request: Request) -> Any:
     """STAC collection by id"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -573,7 +573,7 @@ def collections(request: Request) -> Any:
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType,
     processingLevel
     """
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -598,7 +598,7 @@ def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC Catalog item download"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -624,7 +624,7 @@ def stac_catalogs_item_download_asset(
     catalogs: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC Catalog item asset download"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -649,7 +649,7 @@ def stac_catalogs_item_download_asset(
 )
 def stac_catalogs_item(catalogs: str, item_id: str, request: Request):
     """Fetch catalog's single features."""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     list_catalog = catalogs.strip("/").split("/")
 
@@ -690,7 +690,7 @@ def stac_catalogs_items(
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Fetch catalog's features"""
-    logger.debug("URL: %s", request.state.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     base_args = {
         "provider": provider,
@@ -727,7 +727,7 @@ def stac_catalogs_items(
 )
 def stac_catalogs(catalogs: str, request: Request) -> Any:
     """Describe the given catalog and list available sub-catalogs"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
     url = request.state.url
     url_root = request.state.url_root
 
@@ -794,7 +794,7 @@ def get_search(
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
-    logger.debug("URL: %s", request.state.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     query_params = str(request.query_params)
 
@@ -850,7 +850,7 @@ def get_search(
 )
 async def post_search(request: Request) -> ORJSONResponse:
     """STAC post search"""
-    logger.debug("URL: %s", request.url)
+    logger.debug("%s: %s", request.method, request.url)
 
     content_type = request.headers.get("Content-Type")
 
