@@ -369,14 +369,30 @@ class QueryStringSearch(Search):
                     **self.config.__dict__
                 ),
             )
-            if kwargs:
+
+            # get auth if available
+            if "auth" in kwargs:
+                self.auth = kwargs.pop("auth")
+
+            # try updating fetch_url qs using productType
+            fetch_qs_dict = {}
+            if "single_collection_fetch_qs" in self.config.discover_product_types:
+                try:
+                    fetch_qs = self.config.discover_product_types[
+                        "single_collection_fetch_qs"
+                    ].format(**kwargs)
+                    fetch_qs_dict = dict(parse_qsl(fetch_qs))
+                except KeyError:
+                    pass
+            if fetch_qs_dict:
                 url_parse = urlparse(fetch_url)
                 query = url_parse.query
                 url_dict = dict(parse_qsl(query))
-                url_dict.update(kwargs)
+                url_dict.update(fetch_qs_dict)
                 url_new_query = urlencode(url_dict)
                 url_parse = url_parse._replace(query=url_new_query)
                 fetch_url = urlunparse(url_parse)
+
             response = QueryStringSearch._request(
                 self,
                 fetch_url,

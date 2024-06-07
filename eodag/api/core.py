@@ -1559,7 +1559,23 @@ class EODataAccessGateway:
     def _fetch_external_product_type(self, provider: str, product_type: str):
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
         plugin = next(plugins)
-        product_type_config = plugin.discover_product_types(q=product_type)
+
+        kwargs: Dict[str, Any] = {"productType": product_type}
+
+        # append auth if needed
+        if getattr(plugin.config, "need_auth", False):
+            auth_plugin = self._plugins_manager.get_auth_plugin(plugin.provider)
+            if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
+                try:
+                    kwargs["auth"] = auth_plugin.authenticate()
+                except (AuthenticationError, MisconfiguredError) as e:
+                    logger.warning(f"Could not authenticate on {provider}: {str(e)}")
+            else:
+                logger.warning(
+                    f"Could not authenticate on {provider} using {auth_plugin} plugin"
+                )
+
+        product_type_config = plugin.discover_product_types(**kwargs)
         self.update_product_types_list({provider: product_type_config})
 
     def _prepare_search(
