@@ -217,8 +217,8 @@ class EODataAccessGateway:
         self.set_locations_conf(locations_conf_path)
         self.search_errors: Set = set()
 
-        # record searchs done
-        self.search_kwargs_list = []
+        # record search kwargs of input products for download_all() method used with "exhaust" parameter set to True
+        self.search_kwargs_for_exhaust: Optional[dict[str, Any]] = None
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -1279,7 +1279,7 @@ class EODataAccessGateway:
             if iteration > 1 and next_page_query_obj:
                 pagination_config["next_page_query_obj"] = next_page_query_obj
             logger.info("Iterate search over multiple pages: page #%s", iteration)
-            if search_kwargs in self.search_kwargs_list:
+            if search_kwargs == self.search_kwargs_for_exhaust:
                 logger.info(
                     "Search on page #%s skipped since it was already requested",
                     iteration,
@@ -1939,8 +1939,6 @@ class EODataAccessGateway:
                 self.search_errors.add((search_plugin.provider, e))
         normalized_results = SearchResult(results, total_results)
         normalized_results.search_kwargs = kwargs
-        if kwargs not in self.search_kwargs_list:
-            self.search_kwargs_list.append(kwargs)
         return normalized_results
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
