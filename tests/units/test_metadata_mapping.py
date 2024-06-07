@@ -135,6 +135,12 @@ class TestMetadataFormatter(unittest.TestCase):
         geom = wkt.loads(wkt_str)
         self.assertEqual(round(geom.x, 1), 2.9)
         self.assertEqual(round(geom.y, 1), 43.5)
+        self.assertEqual(
+            wkt_str,
+            format_metadata(
+                to_format, fieldname="geography'SRID=3857;POINT (321976 5390999)'"
+            ),
+        )
 
     def test_convert_to_ewkt(self):
         to_format = "{fieldname#to_ewkt}"
