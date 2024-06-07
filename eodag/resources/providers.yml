@@ -6890,6 +6890,9 @@
     type: QueryStringSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
     need_auth: false
+    dont_quote:
+      - '='
+      - '&'
     pagination:
       next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
       start_page: 0
