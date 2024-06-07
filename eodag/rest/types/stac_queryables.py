@@ -19,7 +19,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    Field,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+)
 
 from eodag.types import python_field_definition_to_json
 from eodag.utils import Annotated
@@ -60,6 +66,16 @@ class StacQueryableProperty(BaseModel):
             def_dict["description"] = def_dict.get("title", None) or id
 
         return cls(**def_dict)
+
+    @model_serializer(mode="wrap")
+    def remove_none(
+        self,
+        handler: SerializerFunctionWrapHandler,
+        _: SerializationInfo,
+    ):
+        """Remove none value property fields during serialization"""
+        props: Dict[str, Any] = handler(self)
+        return {k: v for k, v in props.items() if v is not None}
 
 
 class StacQueryables(BaseModel):
