@@ -6979,7 +6979,7 @@
       # Custom parameters (not defined in the base document referenced above)
       id:
         - id
-        - '{$.properties.identifier#remove_extension}'
+        - $.properties.identifier
       utmZone:
         - zone
         - '$.null'
@@ -7112,10 +7112,6 @@
       parentIdentifier: EO:EUM:DAT:METOP:AMSUL1
     METOP_OSI_104:
       parentIdentifier: EO:EUM:DAT:METOP:OSI-104
-      metadata_mapping:
-        id:
-          - id
-          - $.properties.identifier
     METOP_OSI_150A:
       parentIdentifier: EO:EUM:DAT:METOP:OSI-150-A
     METOP_OSI_150B:
