@@ -141,7 +141,6 @@ def instrument_server(
 
 
 def serve_rest(
-    fastapi_app: FastAPI,
     verbose: int,
     daemon: bool,
     world: bool,
@@ -180,7 +179,7 @@ def serve_rest(
 
         if pid == 0:
             os.setsid()
-            uvicorn.run(fastapi_app, host=bind_host, port=port)
+            uvicorn.run("eodag.rest.server:app", host=bind_host, port=port)
         else:
             sys.exit(0)
     else:
@@ -198,7 +197,7 @@ def serve_rest(
                 "propagate": False,
             }
         uvicorn.run(
-            fastapi_app,
+            "eodag.rest.server:app",
             host=bind_host,
             port=port,
             reload=debug,
@@ -212,7 +211,6 @@ if __name__ == "__main__":
 
     instrument_server(eodag_api, fastapi_app)
     serve_rest(
-        fastapi_app,
         verbose=1,
         daemon=False,
         world=False,
