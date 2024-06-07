@@ -479,7 +479,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         search_plugin.discover_product_types()
         mock__request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
-            timeout=HTTP_REQ_TIMEOUT,
+            timeout=60,
             headers=USER_AGENT,
             verify=True,
         )

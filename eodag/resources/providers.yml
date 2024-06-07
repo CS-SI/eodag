@@ -5969,6 +5969,7 @@
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
     need_auth: true
+    timeout: 60
     auth_error_code: 401
     results_entry: 'features'
     two_passes_id_search: true
@@ -5978,6 +5979,7 @@
     query_params_key: 'search'
     discover_product_types:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
+      single_collection_fetch_qs: q={productType}
       single_collection_fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/{productType}
       result_type: json
       results_entry: 'features'
