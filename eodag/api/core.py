@@ -50,6 +50,7 @@ from eodag.config import (
     provider_config_init,
 )
 from eodag.plugins.manager import PluginManager
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
@@ -729,6 +730,7 @@ class EODataAccessGateway:
                 else self.available_providers()
             )
         ]
+        kwargs: Dict[str, Any] = {}
         for provider in providers_to_fetch:
             if hasattr(self.providers_config[provider], "search"):
                 search_plugin_config = self.providers_config[provider].search
@@ -749,7 +751,7 @@ class EODataAccessGateway:
                         getattr(auth_plugin, "authenticate", None)
                     ):
                         try:
-                            search_plugin.auth = auth_plugin.authenticate()
+                            kwargs["auth"] = auth_plugin.authenticate()
                         except (AuthenticationError, MisconfiguredError) as e:
                             logger.warning(
                                 f"Could not authenticate on {provider}: {str(e)}"
@@ -763,9 +765,9 @@ class EODataAccessGateway:
                         ext_product_types_conf[provider] = None
                         continue
 
-                ext_product_types_conf[
-                    provider
-                ] = search_plugin.discover_product_types()
+                ext_product_types_conf[provider] = search_plugin.discover_product_types(
+                    **kwargs
+                )
 
         return ext_product_types_conf
 
@@ -1811,16 +1813,21 @@ class EODataAccessGateway:
         total_results: Optional[int] = 0
 
         try:
+            prep = PreparedSearch(count=count)
             if need_auth and auth_plugin and can_authenticate:
-                search_plugin.auth = auth_plugin.authenticate()
+                prep.auth = auth_plugin.authenticate()
 
-            res, nb_res = search_plugin.query(count=count, auth=auth_plugin, **kwargs)
+            prep.auth_plugin = auth_plugin
+            prep.page = kwargs.pop("page", None)
+            prep.items_per_page = kwargs.pop("items_per_page", None)
+
+            res, nb_res = search_plugin.query(prep, **kwargs)
 
             # Only do the pagination computations when it makes sense. For example,
             # for a search by id, we can reasonably guess that the provider will return
             # At most 1 product, so we don't need such a thing as pagination
-            page = kwargs.get("page")
-            items_per_page = kwargs.get("items_per_page")
+            page = prep.page
+            items_per_page = prep.items_per_page
             if page and items_per_page and count:
                 # Take into account the fact that a provider may not return the count of
                 # products (in that case, fallback to using the length of the results it

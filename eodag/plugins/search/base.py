@@ -29,12 +29,11 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.plugins.base import PluginTopic
+from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     Annotated,
     copy_deepcopy,
@@ -93,17 +92,14 @@ class Search(PluginTopic):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Implementation of how the products must be searched goes here.
 
         This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)
         which will be processed by a Download plugin (2) and the total number of products matching
-        the search criteria. If ``count`` is False, the second element returned must be ``None``.
+        the search criteria. If ``prep.count`` is False, the second element returned must be ``None``.
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
