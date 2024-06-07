@@ -94,8 +94,14 @@ class CopMarineSearch(StaticStacSearch):
             ),
         )
         logger.debug("fetch data for collection %s", product_type)
+        provider_product_type = self.config.products.get(product_type, {}).get(
+            "productType", None
+        )
+        if not provider_product_type:
+            provider_product_type = product_type
         collection_url = (
-            fetch_url.replace("catalog.stac.json", product_type) + "/product.stac.json"
+            fetch_url.replace("catalog.stac.json", provider_product_type)
+            + "/product.stac.json"
         )
         try:
             collection_data = requests.get(collection_url).json()
@@ -106,7 +112,7 @@ class CopMarineSearch(StaticStacSearch):
         datasets = []
         for link in [li for li in collection_data["links"] if li["rel"] == "item"]:
             dataset_url = (
-                fetch_url.replace("catalog.stac.json", product_type)
+                fetch_url.replace("catalog.stac.json", provider_product_type)
                 + "/"
                 + link["href"]
             )
