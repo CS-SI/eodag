@@ -46,6 +46,8 @@ class StacQueryableProperty(BaseModel):
     value: Optional[Any] = None
     min: Optional[Union[int, List[Union[int, None]]]] = None
     max: Optional[Union[int, List[Union[int, None]]]] = None
+    oneOf: Optional[List[Any]] = None
+    items: Optional[Any] = None
 
     @classmethod
     def from_python_field_definition(
@@ -105,6 +107,12 @@ class StacQueryables(BaseModel):
         "datetime": StacQueryableProperty(
             description="Datetime - use parameters year, month, day, time instead if available",
             ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
+        ),
+        "bbox": StacQueryableProperty(
+            description="BBox",
+            type="array",
+            oneOf=[{"minItems": 4, "maxItems": 4}, {"minItems": 6, "maxItems": 6}],
+            items={"type": "number"},
         ),
     }
     properties: Dict[str, StacQueryableProperty] = Field()
