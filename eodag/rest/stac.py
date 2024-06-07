@@ -744,7 +744,9 @@ class StacCollection(StacCommon):
             },
         )
         # override EODAG's collection with the external collection
-        ext_stac_collection = self.ext_stac_collections.get(product_type["ID"], {})
+        ext_stac_collection = deepcopy(
+            self.ext_stac_collections.get(product_type["ID"], {})
+        )
 
         # update links (keep eodag links as defaults)
         ext_stac_collection.setdefault("links", {})
