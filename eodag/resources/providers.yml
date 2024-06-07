@@ -7124,6 +7124,8 @@
       parentIdentifier: EO:EUM:CM:METOP:ASCSZOR02
     METOP_ASCSZRR02:
       parentIdentifier: EO:EUM:CM:METOP:ASCSZRR02
+    METOP_AVHRRL1:
+      parentIdentifier: EO:EUM:DAT:METOP:AVHRRL1
     METOP_SOMO12:
       parentIdentifier: EO:EUM:DAT:METOP:SOMO12
     METOP_SOMO25:

@@ -189,6 +189,7 @@ class TestCore(TestCoreBase):
         "METOP_ASCSZOR02": ["eumetsat_ds"],
         "METOP_ASCSZR1B": ["eumetsat_ds"],
         "METOP_ASCSZRR02": ["eumetsat_ds"],
+        "METOP_AVHRRL1": ["eumetsat_ds"],
         "METOP_AVHRRGACR02": ["eumetsat_ds"],
         "METOP_GLB_SST_NC": ["eumetsat_ds"],
         "METOP_GOMEL1": ["eumetsat_ds"],
