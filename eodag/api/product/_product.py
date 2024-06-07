@@ -37,7 +37,11 @@ except ImportError:
     from eodag.api.product._assets import AssetsDict  # type: ignore # noqa
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
+from eodag.api.product.metadata_mapping import (
+    DEFAULT_GEOMETRY,
+    NOT_AVAILABLE,
+    NOT_MAPPED,
+)
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -142,7 +146,7 @@ class EOProduct:
                 f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
             )
         elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties.pop("defaultGeometry")
+            product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
         else:
             product_geometry = properties["geometry"]
         # Let's try 'latmin lonmin latmax lonmax'

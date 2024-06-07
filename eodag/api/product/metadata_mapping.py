@@ -82,6 +82,7 @@ OFFLINE_STATUS = "OFFLINE"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
+DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 
 def get_metadata_path(
@@ -387,7 +388,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
-            ewkt_regex = re.compile(r"^(?P<proj>[A-Za-z]+=[0-9]+);(?P<wkt>.*)$")
+            ewkt_regex = re.compile(
+                r"^.*(?P<proj>SRID=[0-9]+);(?P<wkt>[A-Z0-9 \(\),\.-]+).*$"
+            )
             ewkt_match = ewkt_regex.match(ewkt_string)
             if ewkt_match:
                 g = ewkt_match.groupdict()

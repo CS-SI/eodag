@@ -1020,7 +1020,7 @@
       # The geographic extent of the product
       geometry:
         - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.-]+).*/, \\1)`#from_ewkt}'
+        - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
@@ -3967,7 +3967,7 @@
       # The geographic extent of the product
       geometry:
         - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.-]+).*/, \\1)`#from_ewkt}'
+        - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
@@ -6205,7 +6205,7 @@
       # The geographic extent of the product
       geometry:
         - null
-        - '{$.Footprint.`sub(/.*(SRID=[0-9]+;[A-Z0-9 \(\),\.-]+).*/, \\1)`#from_ewkt}'
+        - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
