@@ -1620,7 +1620,9 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("processing:level", res["properties"])
         processing_level = res["properties"]["processing:level"]
         self.assertListEqual(["string", "null"], processing_level["type"])
-        self.assertIsNone(processing_level["min"])
+        self.assertNotIn(
+            "min", processing_level
+        )  # none values are left out in serialization
 
     @mock.patch("eodag.utils.requests.requests.Session.get", autospec=True)
     def test_product_type_queryables_from_constraints(

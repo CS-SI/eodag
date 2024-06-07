@@ -19,7 +19,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    Field,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+)
 
 from eodag.types import python_field_definition_to_json
 from eodag.utils import Annotated
@@ -46,6 +52,8 @@ class StacQueryableProperty(BaseModel):
     value: Optional[Any] = None
     min: Optional[Union[int, List[Union[int, None]]]] = None
     max: Optional[Union[int, List[Union[int, None]]]] = None
+    oneOf: Optional[List[Any]] = None
+    items: Optional[Any] = None
 
     @classmethod
     def from_python_field_definition(
@@ -58,6 +66,16 @@ class StacQueryableProperty(BaseModel):
             def_dict["description"] = def_dict.get("title", None) or id
 
         return cls(**def_dict)
+
+    @model_serializer(mode="wrap")
+    def remove_none(
+        self,
+        handler: SerializerFunctionWrapHandler,
+        _: SerializationInfo,
+    ):
+        """Remove none value property fields during serialization"""
+        props: Dict[str, Any] = handler(self)
+        return {k: v for k, v in props.items() if v is not None}
 
 
 class StacQueryables(BaseModel):
@@ -105,6 +123,12 @@ class StacQueryables(BaseModel):
         "datetime": StacQueryableProperty(
             description="Datetime - use parameters year, month, day, time instead if available",
             ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/datetime.json#/properties/datetime",
+        ),
+        "bbox": StacQueryableProperty(
+            description="BBox",
+            type="array",
+            oneOf=[{"minItems": 4, "maxItems": 4}, {"minItems": 6, "maxItems": 6}],
+            items={"type": "number"},
         ),
     }
     properties: Dict[str, StacQueryableProperty] = Field()
