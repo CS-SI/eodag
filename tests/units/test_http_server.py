@@ -1095,7 +1095,7 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_list_product_types_nok(self, list_pt: Mock):
         """A request for product types with a not supported filter must return all product types"""
-        url = "/collections?platform=gibberish"
+        url = "/collections?gibberish=gibberish"
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
@@ -1830,7 +1830,7 @@ class RequestTestCase(unittest.TestCase):
         r = self.app.get(url)
         list_pt.assert_called_once_with(provider=None, fetch_providers=False)
         guess_pt.assert_called_once_with(
-            free_text_filter="TERM1,TERM2",
+            free_text="TERM1,TERM2",
             platformSerialIdentifier=None,
             instrument=None,
             platform=None,
