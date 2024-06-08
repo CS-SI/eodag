@@ -310,7 +310,7 @@ class StacItem(StacCommon):
 
             # parse download link
             downloadlink_href = (
-                f"{catalog['url']}/items/{product.properties['title']}/download"
+                f"{catalog['url']}/items/{product.properties['id']}/download"
             )
             _dc_qs = product.properties.get("_dc_qs", None)
             url_parts = urlparse(downloadlink_href)

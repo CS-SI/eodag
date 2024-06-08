@@ -165,7 +165,7 @@ items:
 item:
   stac_version: "{stac_version}"
   stac_extensions:
-  id: '$.product.properties.title'
+  id: '$.product.properties.id'
   bbox:
     - '{item[geometry].bounds[0]}'
     - '{item[geometry].bounds[1]}'
