@@ -6570,6 +6570,7 @@
         result_type: json
         metadata_mapping:
           downloadLink: $.headers.Location
+    no_auth_download: True
     products:
       DT_EXTREMES:
         outputs_extension: .grib
