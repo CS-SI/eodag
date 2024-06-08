@@ -21,10 +21,10 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SerializationInfo,
     SerializerFunctionWrapHandler,
-    ConfigDict,
     computed_field,
     model_serializer,
 )

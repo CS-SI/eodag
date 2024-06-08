@@ -795,7 +795,12 @@ class StacCollection(StacCommon):
         format_args = deepcopy(self.stac_config)
         format_args["collection"] = {
             **product_type_collection,
-            **{"url": f"{self.url}/{product_type['ID']}", "root": self.root},
+            **{
+                "url": self.url
+                if self.url.endswith(product_type["ID"])
+                else f"{self.url}/{product_type['ID']}",
+                "root": self.root,
+            },
         }
         product_type_collection = format_dict_items(
             product_type_collection, **format_args
