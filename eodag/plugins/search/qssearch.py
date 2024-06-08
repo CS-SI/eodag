@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
-from copy import deepcopy as copy_deepcopy
+from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -845,7 +845,7 @@ class QueryStringSearch(Search):
 
         results: List[Any] = []
         for search_url in prep.search_urls:
-            single_search_prep = copy_deepcopy(prep)
+            single_search_prep = copy_copy(prep)
             single_search_prep.url = search_url
             single_search_prep.info_message = "Sending search request: {}".format(
                 search_url
