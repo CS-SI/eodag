@@ -832,29 +832,28 @@ class StacCollection(StacCommon):
         """
         collection_model = deepcopy(self.stac_config["collection"])
 
+        all_pt = self.eodag_api.list_product_types(
+            provider=self.provider, fetch_providers=False
+        )
+
         if collection:
-            guessed_product_types = [collection]
-        else:
+            product_types = [pt for pt in all_pt if collection == pt["ID"]]
+        elif any((q, platform, instrument, constellation)):
             # product types matching filters
             try:
                 guessed_product_types = self.eodag_api.guess_product_type(
-                    free_text_filter=q,
+                    free_text=q,
                     platformSerialIdentifier=platform,
                     instrument=instrument,
                     platform=constellation,
                 )
             except NoMatchingProductType:
                 guessed_product_types = []
+            product_types = [pt for pt in all_pt if pt["ID"] in guessed_product_types]
+        else:
+            product_types = all_pt
 
         # list product types with all metadata using guessed ids
-        product_types = [
-            pt
-            for pt in self.eodag_api.list_product_types(
-                provider=self.provider, fetch_providers=False
-            )
-            if not guessed_product_types or pt["ID"] in guessed_product_types
-        ]
-
         collection_list: List[Dict[str, Any]] = []
         for product_type in product_types:
             stac_collection = self.__generate_stac_collection(
