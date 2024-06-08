@@ -191,11 +191,11 @@ class StacCommon:
 
     def get_provider_dict(self, provider: str) -> Dict[str, Any]:
         """Generate STAC provider dict"""
-        provider_config = [
+        provider_config = next(
             p
             for p in self.eodag_api.providers_config.values()
             if provider in [p.name, getattr(p, "group", None)]
-        ][0]
+        )
         return {
             "name": getattr(provider_config, "group", provider_config.name),
             "description": getattr(provider_config, "description", None),
@@ -311,7 +311,8 @@ class StacItem(StacCommon):
                 else f"{url_parts.netloc}{url_parts.path}"
             )
             # add provider to query-args
-            query_dict.update(provider=[product.provider])
+            p_config = self.eodag_api.providers_config[product.provider]
+            query_dict.update(provider=[getattr(p_config, "group", p_config.name)])
             # add datacube query-string to query-args
             if _dc_qs:
                 query_dict.update(_dc_qs=[_dc_qs])
@@ -633,7 +634,7 @@ class StacItem(StacCommon):
             item_model,
             {
                 "product": product_dict,
-                "providers": self.get_provider_dict(product.provider),
+                "providers": [self.get_provider_dict(product.provider)],
             },
         )
         # parse f-strings
@@ -744,12 +745,18 @@ class StacCollection(StacCommon):
         """
         providers = self.__list_product_type_providers(product_type)
 
+        providers_dict: Dict[str, Dict[str, Any]] = {}
+        for provider in providers:
+            p_dict = self.get_provider_dict(provider)
+            providers_dict.setdefault(p_dict["name"], p_dict)
+        providers_list = list(providers_dict.values())
+
         # parse jsonpath
         product_type_collection = jsonpath_parse_dict_items(
             collection_model,
             {
                 "product_type": product_type,
-                "providers": [self.get_provider_dict(p) for p in providers],
+                "providers": providers_list,
             },
         )
         # override EODAG's collection with the external collection
