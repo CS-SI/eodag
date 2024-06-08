@@ -168,3 +168,18 @@ class SearchResult(UserList):
         See https://gist.github.com/sgillies/2217756
         """
         return self.as_geojson_object()
+
+
+class RawSearchResult(UserList):
+    """An object representing a collection of raw/unparsed search results obtained from a provider.
+
+    :param results: A list of raw/unparsed search results
+    :type results: List[Any]
+    """
+
+    data: List[Any]
+    query_params: Dict[str, Any]
+    product_type_def_params: Dict[str, Any]
+
+    def __init__(self, results: List[Any]) -> None:
+        super(RawSearchResult, self).__init__(results)

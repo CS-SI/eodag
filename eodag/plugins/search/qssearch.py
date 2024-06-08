@@ -64,6 +64,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
@@ -725,7 +726,12 @@ class QueryStringSearch(Search):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
-        eo_products = self.normalize_results(provider_results, **kwargs)
+
+        raw_search_result = RawSearchResult(provider_results)
+        raw_search_result.query_params = prep.query_params
+        raw_search_result.product_type_def_params = prep.product_type_def_params
+
+        eo_products = self.normalize_results(raw_search_result, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
@@ -971,7 +977,7 @@ class QueryStringSearch(Search):
         return results
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
         normalize_remaining_count = len(results)
@@ -1198,7 +1204,7 @@ class ODataV4Search(QueryStringSearch):
         )
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results
 
@@ -1351,12 +1357,17 @@ class PostJsonSearch(QueryStringSearch):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
-        eo_products = self.normalize_results(provider_results, **kwargs)
+
+        raw_search_result = RawSearchResult(provider_results)
+        raw_search_result.query_params = prep.query_params
+        raw_search_result.product_type_def_params = prep.product_type_def_params
+
+        eo_products = self.normalize_results(raw_search_result, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)

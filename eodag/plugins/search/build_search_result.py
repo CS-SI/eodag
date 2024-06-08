@@ -39,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.qssearch import PostJsonSearch
@@ -119,7 +120,7 @@ class BuildPostSearchResult(PostJsonSearch):
         return [response.json()]
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
@@ -143,15 +144,15 @@ class BuildPostSearchResult(PostJsonSearch):
             # update result with query parameters without pagination (or search-only params)
             if isinstance(
                 self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(self, "query_params_unpaginated"):
-                unpaginated_query_params = self.query_params_unpaginated
+            ) and hasattr(results, "query_params_unpaginated"):
+                unpaginated_query_params = results.query_params_unpaginated
             elif isinstance(self.config.pagination["next_page_query_obj"], str):
                 next_page_query_obj = orjson.loads(
                     self.config.pagination["next_page_query_obj"].format()
                 )
                 unpaginated_query_params = {
                     k: v[0] if (isinstance(v, list) and len(v) == 1) else v
-                    for k, v in self.query_params.items()
+                    for k, v in results.query_params.items()
                     if (k, v) not in next_page_query_obj.items()
                 }
             else:
@@ -179,7 +180,7 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # update result with product_type_def_params and search args if not None (and not auth)
         kwargs.pop("auth", None)
-        result.update(self.product_type_def_params)
+        result.update(results.product_type_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
         # parse porperties
