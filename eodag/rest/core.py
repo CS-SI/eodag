@@ -54,7 +54,13 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import _deprecated, deepcopy, dict_items_recursive_apply, urlencode
+from eodag.utils import (
+    _deprecated,
+    deepcopy,
+    dict_items_recursive_apply,
+    obj_md5sum,
+    urlencode,
+)
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
@@ -690,6 +696,49 @@ def eodag_api_init() -> None:
     """Init EODataAccessGateway server instance, pre-running all time consuming tasks"""
     eodag_api.fetch_product_types_list()
     StacCollection.fetch_external_stac_collections(eodag_api)
+
+    # update eodag product_types config form external stac collections
+    for p, p_f in eodag_api.product_types_config.source.items():
+        for key in (p, p_f.get("alias")):
+            if key is None:
+                continue
+            ext_col = StacCollection.ext_stac_collections.get(key)
+            if not ext_col:
+                continue
+            platform: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+                "platform"
+            )
+            constellation: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+                "constellation"
+            )
+            # Check if platform or constellation are lists and join them into a string if they are
+            if isinstance(platform, list):
+                platform = ",".join(platform)
+            if isinstance(constellation, list):
+                constellation = ",".join(constellation)
+
+            update_fields = {
+                "title": ext_col.get("title"),
+                "abstract": ext_col["description"],
+                "keywords": ext_col.get("keywords"),
+                "instrument": ",".join(
+                    ext_col.get("summaries", {}).get("instruments", [])
+                ),
+                "platform": constellation,
+                "platformSerialIdentifier": platform,
+                "processingLevel": ext_col.get("summaries", {}).get("processing:level"),
+                "license": ext_col["license"],
+                "missionStartDate": ext_col["extent"]["temporal"]["interval"][0][0],
+                "missionEndDate": ext_col["extent"]["temporal"]["interval"][-1][1],
+            }
+            clean = {k: v for k, v in update_fields.items() if v}
+            p_f.update(clean)
+
+    eodag_api.product_types_config_md5 = obj_md5sum(
+        eodag_api.product_types_config.source
+    )
+
+    eodag_api.build_index()
 
     # pre-build search plugins
     for provider in eodag_api.available_providers():
