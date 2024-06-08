@@ -39,14 +39,13 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MISSION_START_DATE,
-    DEFAULT_PAGE,
     Annotated,
     deepcopy,
     dict_items_recursive_sort,
@@ -98,26 +97,25 @@ class BuildPostSearchResult(PostJsonSearch):
 
     def collect_search_urls(
         self,
-        page: Optional[int] = None,
-        items_per_page: Optional[int] = None,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
-        urls, _ = super(BuildPostSearchResult, self).collect_search_urls(
-            page=page, items_per_page=items_per_page, count=count, **kwargs
-        )
+        urls, _ = super(BuildPostSearchResult, self).collect_search_urls(prep, **kwargs)
         return urls, 1
 
-    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> List[Dict[str, Any]]:
         """Perform the actual search request, and return result in a single element."""
-        search_url = self.search_urls[0]
-        response = self._request(
-            search_url,
-            info_message=f"Sending search request: {search_url}",
-            exception_message=f"Skipping error while searching for {self.provider} "
-            f"{self.__class__.__name__} instance:",
+        prep.url = prep.search_urls[0]
+        prep.info_message = f"Sending search request: {prep.url}"
+        prep.exception_message = (
+            f"Skipping error while searching for {self.provider} "
+            f"{self.__class__.__name__} instance:"
         )
+        response = self._request(prep)
+
         return [response.json()]
 
     def normalize_results(
@@ -314,19 +312,14 @@ class BuildSearchResult(BuildPostSearchResult):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
         self._preprocess_search_params(kwargs)
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        return BuildPostSearchResult.query(self, prep, **kwargs)
 
     def clear(self) -> None:
         """Clear search context"""

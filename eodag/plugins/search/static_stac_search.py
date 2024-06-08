@@ -26,13 +26,9 @@ from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import StacSearch
-from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_PAGE,
-    HTTP_REQ_TIMEOUT,
-    MockResponse,
-)
+from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
@@ -83,10 +79,7 @@ class StaticStacSearch(StacSearch):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
@@ -111,7 +104,7 @@ class StaticStacSearch(StacSearch):
 
         # query on mocked StacSearch
         eo_products, _ = super(StaticStacSearch, self).query(
-            items_per_page=nb_features, page=1, count=True, **kwargs
+            PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
         )
         # filter using query params
         search_result = SearchResult(eo_products)

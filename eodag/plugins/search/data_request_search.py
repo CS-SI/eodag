@@ -30,6 +30,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -126,10 +127,7 @@ class DataRequestSearch(Search):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """
