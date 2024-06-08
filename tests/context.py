@@ -64,6 +64,7 @@ from eodag.plugins.download.base import (
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
