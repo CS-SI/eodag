@@ -414,7 +414,7 @@ def stac_collections_item_download(
 
 @router.api_route(
     methods=["GET", "HEAD"],
-    path="/collections/{collection_id}/items/{item_id}/download/{asset_filter}",
+    path="/collections/{collection_id}/items/{item_id}/download/{asset}",
     tags=["Data"],
     include_in_schema=False,
 )
