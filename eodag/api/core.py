@@ -2308,6 +2308,10 @@ class EODataAccessGateway:
         providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
+            if getattr(plugin.config, "need_auth", False) and (
+                auth := self._plugins_manager.get_auth_plugin(plugin.provider)
+            ):
+                plugin.auth = auth.authenticate()
             providers_queryables[plugin.provider] = plugin.list_queryables(
                 filters=kwargs, product_type=product_type
             )
