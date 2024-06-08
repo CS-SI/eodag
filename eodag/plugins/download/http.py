@@ -961,6 +961,9 @@ class HTTPDownload(Download):
         if req_url.startswith(NOT_AVAILABLE):
             raise NotAvailableError("Download link is not available")
 
+        if getattr(self.config, "no_auth_download", False):
+            auth = None
+
         s = requests.Session()
         with s.request(
             req_method,
