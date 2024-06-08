@@ -39,14 +39,14 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.api.search_result import RawSearchResult
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MISSION_START_DATE,
-    DEFAULT_PAGE,
     Annotated,
     deepcopy,
     dict_items_recursive_sort,
@@ -98,30 +98,29 @@ class BuildPostSearchResult(PostJsonSearch):
 
     def collect_search_urls(
         self,
-        page: Optional[int] = None,
-        items_per_page: Optional[int] = None,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
-        urls, _ = super(BuildPostSearchResult, self).collect_search_urls(
-            page=page, items_per_page=items_per_page, count=count, **kwargs
-        )
+        urls, _ = super(BuildPostSearchResult, self).collect_search_urls(prep, **kwargs)
         return urls, 1
 
-    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> List[Dict[str, Any]]:
         """Perform the actual search request, and return result in a single element."""
-        search_url = self.search_urls[0]
-        response = self._request(
-            search_url,
-            info_message=f"Sending search request: {search_url}",
-            exception_message=f"Skipping error while searching for {self.provider} "
-            f"{self.__class__.__name__} instance:",
+        prep.url = prep.search_urls[0]
+        prep.info_message = f"Sending search request: {prep.url}"
+        prep.exception_message = (
+            f"Skipping error while searching for {self.provider} "
+            f"{self.__class__.__name__} instance:"
         )
+        response = self._request(prep)
+
         return [response.json()]
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
@@ -145,15 +144,15 @@ class BuildPostSearchResult(PostJsonSearch):
             # update result with query parameters without pagination (or search-only params)
             if isinstance(
                 self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(self, "query_params_unpaginated"):
-                unpaginated_query_params = self.query_params_unpaginated
+            ) and hasattr(results, "query_params_unpaginated"):
+                unpaginated_query_params = results.query_params_unpaginated
             elif isinstance(self.config.pagination["next_page_query_obj"], str):
                 next_page_query_obj = orjson.loads(
                     self.config.pagination["next_page_query_obj"].format()
                 )
                 unpaginated_query_params = {
                     k: v[0] if (isinstance(v, list) and len(v) == 1) else v
-                    for k, v in self.query_params.items()
+                    for k, v in results.query_params.items()
                     if (k, v) not in next_page_query_obj.items()
                 }
             else:
@@ -181,7 +180,7 @@ class BuildPostSearchResult(PostJsonSearch):
 
         # update result with product_type_def_params and search args if not None (and not auth)
         kwargs.pop("auth", None)
-        result.update(self.product_type_def_params)
+        result.update(results.product_type_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
         # parse porperties
@@ -314,19 +313,14 @@ class BuildSearchResult(BuildPostSearchResult):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
         self._preprocess_search_params(kwargs)
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        return BuildPostSearchResult.query(self, prep, **kwargs)
 
     def clear(self) -> None:
         """Clear search context"""

@@ -17,13 +17,14 @@
 # limitations under the License.
 import logging
 from types import MethodType
-from typing import Any, Dict, List
+from typing import Any, List
 
 import boto3
 import botocore
 from botocore.exceptions import BotoCoreError
 
 from eodag.api.product import AssetsDict, EOProduct  # type: ignore
+from eodag.api.search_result import RawSearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import ODataV4Search
@@ -119,7 +120,7 @@ class CreodiasS3Search(ODataV4Search):
         super(CreodiasS3Search, self).__init__(provider, config)
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
 

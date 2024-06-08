@@ -2679,7 +2679,7 @@ class TestCoreSearch(TestCoreBase):
         # a provider-specific string has been created to sort by
         self.assertIn(
             "sortParam=providerSortParam&sortOrder=desc",
-            mock_qssearch__request.call_args[0][1],
+            mock_qssearch__request.call_args[0][1].url,
         )
 
         # with a POST mode search
@@ -2713,11 +2713,11 @@ class TestCoreSearch(TestCoreBase):
 
         # a provider-specific dictionnary has been created to sort by
         self.assertIn(
-            "sortby", mock_postjsonsearch__request.call_args[0][0].query_params.keys()
+            "sortby", mock_postjsonsearch__request.call_args[0][1].query_params.keys()
         )
         self.assertEqual(
             [{"field": "providerSortParam", "direction": "desc"}],
-            mock_postjsonsearch__request.call_args[0][0].query_params["sortby"],
+            mock_postjsonsearch__request.call_args[0][1].query_params["sortby"],
         )
 
         # TODO: sort by default sorting parameter and sorting order

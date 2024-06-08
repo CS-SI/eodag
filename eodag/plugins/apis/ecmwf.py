@@ -27,14 +27,13 @@ from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
 from eodag.plugins.apis.base import Api
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MISSION_START_DATE,
-    DEFAULT_PAGE,
     get_geometry_from_various,
     path_to_uri,
     sanitize,
@@ -90,10 +89,7 @@ class EcmwfApi(Api, BuildPostSearchResult):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
@@ -126,9 +122,7 @@ class EcmwfApi(Api, BuildPostSearchResult):
         if "geometry" in kwargs:
             kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        return BuildPostSearchResult.query(self, prep, **kwargs)
 
     def authenticate(self) -> Dict[str, Optional[str]]:
         """Check credentials and returns information needed for auth

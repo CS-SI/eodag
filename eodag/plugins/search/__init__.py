@@ -16,3 +16,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG search package"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
+
+if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Union
+
+    from requests.auth import AuthBase
+
+    from eodag.plugins.authentication.base import Authentication
+
+
+@dataclass
+class PreparedSearch:
+    """An object collecting needed information for search."""
+
+    product_type: Optional[str] = None
+    page: Optional[int] = DEFAULT_PAGE
+    items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
+    auth: Optional[Union[AuthBase, Dict[str, str]]] = None
+    auth_plugin: Optional[Authentication] = None
+    count: bool = True
+    url: Optional[str] = None
+    info_message: Optional[str] = None
+    exception_message: Optional[str] = None
+
+    need_count: bool = field(init=False)
+    query_params: Dict[str, Any] = field(init=False)
+    query_string: str = field(init=False)
+    search_urls: List[str] = field(init=False)
+    product_type_def_params: Dict[str, Any] = field(init=False)
+    total_items_nb: int = field(init=False)
+    sort_by_qs: str = field(init=False)

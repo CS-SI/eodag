@@ -38,6 +38,7 @@ from tests.context import (
     EOProduct,
     NotAvailableError,
     PluginManager,
+    PreparedSearch,
     SearchResult,
     USGSAuthExpiredError,
     USGSError,
@@ -525,8 +526,10 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             "startTimeFromAscendingNode": "2020-02-01",
             "completionTimeFromAscendingNode": "2020-02-10",
             "geometry": get_geometry_from_various(geometry=[10, 20, 30, 40]),
-            "items_per_page": 5,
-            "page": 2,
+            "prep": PreparedSearch(
+                items_per_page=5,
+                page=2,
+            ),
         }
         search_results, total_count = self.api_plugin.query(**search_kwargs)
         mock_api_scene_search.assert_called_once_with(

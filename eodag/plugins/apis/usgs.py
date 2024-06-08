@@ -36,6 +36,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
+from eodag.plugins.search import PreparedSearch
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -112,13 +113,16 @@ class UsgsApi(Api):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Search for data on USGS catalogues"""
+        page = prep.page if prep.page is not None else DEFAULT_PAGE
+        items_per_page = (
+            prep.items_per_page
+            if prep.items_per_page is not None
+            else DEFAULT_ITEMS_PER_PAGE
+        )
         product_type = kwargs.get("productType")
         if product_type is None:
             raise NoMatchingProductType(

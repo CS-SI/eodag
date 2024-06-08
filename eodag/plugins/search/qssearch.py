@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Iterable
+from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -63,13 +64,13 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
+from eodag.api.search_result import RawSearchResult
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -201,7 +202,6 @@ class QueryStringSearch(Search):
     :type config: str
     """
 
-    DEFAULT_ITEMS_PER_PAGE = 10
     extract_properties = {"xml": properties_from_xml, "json": properties_from_json}
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -363,7 +363,9 @@ class QueryStringSearch(Search):
         :rtype: (optional) dict
         """
         try:
-            fetch_url = cast(
+            prep = PreparedSearch()
+
+            prep.url = cast(
                 str,
                 self.config.discover_product_types["fetch_url"].format(
                     **self.config.__dict__
@@ -372,7 +374,7 @@ class QueryStringSearch(Search):
 
             # get auth if available
             if "auth" in kwargs:
-                self.auth = kwargs.pop("auth")
+                prep.auth = kwargs.pop("auth")
 
             # try updating fetch_url qs using productType
             fetch_qs_dict = {}
@@ -385,21 +387,20 @@ class QueryStringSearch(Search):
                 except KeyError:
                     pass
             if fetch_qs_dict:
-                url_parse = urlparse(fetch_url)
+                url_parse = urlparse(prep.url)
                 query = url_parse.query
                 url_dict = dict(parse_qsl(query))
                 url_dict.update(fetch_qs_dict)
                 url_new_query = urlencode(url_dict)
                 url_parse = url_parse._replace(query=url_new_query)
-                fetch_url = urlunparse(url_parse)
+                prep.url = urlunparse(url_parse)
 
-            response = QueryStringSearch._request(
-                self,
-                fetch_url,
-                info_message="Fetching product types: {}".format(fetch_url),
-                exception_message="Skipping error while fetching product types for "
-                "{} {} instance:".format(self.provider, self.__class__.__name__),
-            )
+            prep.info_message = "Fetching product types: {}".format(prep.url)
+            prep.exception_message = (
+                "Skipping error while fetching product types for " "{} {} instance:"
+            ).format(self.provider, self.__class__.__name__)
+
+            response = QueryStringSearch._request(self, prep)
         except (RequestError, KeyError, AttributeError):
             return None
         else:
@@ -536,12 +537,14 @@ class QueryStringSearch(Search):
         ].format(productType=product_type)
         resp = QueryStringSearch._request(
             self,
-            single_collection_url,
-            info_message="Fetching data for product type product type: {}".format(
-                product_type
+            PreparedSearch(
+                url=single_collection_url,
+                info_message="Fetching data for product type product type: {}".format(
+                    product_type
+                ),
+                exception_message="Skipping error while fetching product types for "
+                "{} {} instance:".format(self.provider, self.__class__.__name__),
             ),
-            exception_message="Skipping error while fetching product types for "
-            "{} {} instance:".format(self.provider, self.__class__.__name__),
         )
         product_data = resp.json()
         return properties_from_json(
@@ -649,23 +652,16 @@ class QueryStringSearch(Search):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface
 
-        :param items_per_page: (optional) The number of results that must appear in one
-                               single page
-        :type items_per_page: int
-        :param page: (optional) The page number to return
-        :type page: int
-        :param count: (optional) To trigger a count request
-        :type count: bool
+        :param prep: Object collecting needed information for search.
+        :type prep: :class:`~eodag.plugins.search.PreparedSearch`
         """
-        product_type = kwargs.get("productType", product_type)
+        count = prep.count
+        product_type = kwargs.get("productType", prep.product_type)
         if product_type == GENERIC_PRODUCT_TYPE:
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
@@ -673,7 +669,7 @@ class QueryStringSearch(Search):
             return [], 0
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
-        sort_by_qs, _ = (
+        prep.sort_by_qs, _ = (
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
         )
 
@@ -686,25 +682,25 @@ class QueryStringSearch(Search):
         )
 
         # provider product type specific conf
-        self.product_type_def_params = (
+        prep.product_type_def_params = (
             self.get_product_type_def_params(product_type, **kwargs)
             if product_type is not None
             else {}
         )
 
         # if product_type_def_params is set, remove product_type as it may conflict with this conf
-        if self.product_type_def_params:
+        if prep.product_type_def_params:
             keywords.pop("productType", None)
 
         if self.config.metadata_mapping:
             product_type_metadata_mapping = dict(
                 self.config.metadata_mapping,
-                **self.product_type_def_params.get("metadata_mapping", {}),
+                **prep.product_type_def_params.get("metadata_mapping", {}),
             )
             keywords.update(
                 {
                     k: v
-                    for k, v in self.product_type_def_params.items()
+                    for k, v in prep.product_type_def_params.items()
                     if k not in keywords.keys()
                     and k in product_type_metadata_mapping.keys()
                     and isinstance(product_type_metadata_mapping[k], list)
@@ -716,24 +712,26 @@ class QueryStringSearch(Search):
 
         qp, qs = self.build_query_string(product_type, **keywords)
 
-        self.query_params = qp
-        self.query_string = qs
-        self.search_urls, total_items = self.collect_search_urls(
-            page=page,
-            items_per_page=items_per_page,
-            count=count,
-            sort_by_qs=sort_by_qs,
+        prep.query_params = qp
+        prep.query_string = qs
+        prep.search_urls, total_items = self.collect_search_urls(
+            prep,
             **kwargs,
         )
-        if not count and hasattr(self, "total_items_nb"):
+        if not count and hasattr(prep, "total_items_nb"):
             # do not try to extract total_items from search results if count is False
-            del self.total_items_nb
-            del self.need_count
+            del prep.total_items_nb
+            del prep.need_count
 
-        provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
-        if count and total_items is None and hasattr(self, "total_items_nb"):
-            total_items = self.total_items_nb
-        eo_products = self.normalize_results(provider_results, **kwargs)
+        provider_results = self.do_search(prep, **kwargs)
+        if count and total_items is None and hasattr(prep, "total_items_nb"):
+            total_items = prep.total_items_nb
+
+        raw_search_result = RawSearchResult(provider_results)
+        raw_search_result.query_params = prep.query_params
+        raw_search_result.product_type_def_params = prep.product_type_def_params
+
+        eo_products = self.normalize_results(raw_search_result, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
@@ -763,26 +761,28 @@ class QueryStringSearch(Search):
 
     def collect_search_urls(
         self,
-        page: Optional[int] = None,
-        items_per_page: Optional[int] = None,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(page=None, items_per_page=None),
         **kwargs: Any,
     ) -> Tuple[List[str], Optional[int]]:
         """Build paginated urls"""
+        page = prep.page
+        items_per_page = prep.items_per_page
+        count = prep.count
+
         urls = []
         total_results = 0 if count else None
 
         # use only sort_by parameters for search, not for count
         #  and remove potential leading '&'
-        qs_with_sort = (self.query_string + kwargs.get("sort_by_qs", "")).strip("&")
+        qs_with_sort = (prep.query_string + getattr(prep, "sort_by_qs", "")).strip("&")
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
             total_results = None
-            self.need_count = True
-            self.total_items_nb = None
+            prep.need_count = True
+            prep.total_items_nb = None
 
-        for collection in self.get_collections(**kwargs):
+        for collection in self.get_collections(prep, **kwargs):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
                 continue
@@ -796,7 +796,7 @@ class QueryStringSearch(Search):
                         "count_endpoint", ""
                     ).format(collection=collection)
                     if count_endpoint:
-                        count_url = "{}?{}".format(count_endpoint, self.query_string)
+                        count_url = "{}?{}".format(count_endpoint, prep.query_string)
                         _total_results = (
                             self.count_hits(
                                 count_url, result_type=self.config.result_type
@@ -824,18 +824,19 @@ class QueryStringSearch(Search):
         return urls, total_results
 
     def do_search(
-        self, items_per_page: Optional[int] = None, **kwargs: Any
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
     ) -> List[Any]:
         """Perform the actual search request.
 
         If there is a specified number of items per page, return the results as soon
         as this number is reached
 
-        :param items_per_page: (optional) The number of items to return for one page
-        :type items_per_page: int
+        :param prep: Object collecting needed information for search.
+        :type prep: :class:`~eodag.plugins.search.PreparedSearch`
         """
+        items_per_page = prep.items_per_page
         total_items_nb = 0
-        if getattr(self, "need_count", False):
+        if getattr(prep, "need_count", False):
             # extract total_items_nb from search results
             if self.config.result_type == "json":
                 total_items_nb_key_path_parsed = self.config.pagination[
@@ -843,13 +844,17 @@ class QueryStringSearch(Search):
                 ]
 
         results: List[Any] = []
-        for search_url in self.search_urls:
-            response = self._request(
-                search_url,
-                info_message="Sending search request: {}".format(search_url),
-                exception_message="Skipping error while searching for {} {} "
-                "instance:".format(self.provider, self.__class__.__name__),
+        for search_url in prep.search_urls:
+            single_search_prep = copy_copy(prep)
+            single_search_prep.url = search_url
+            single_search_prep.info_message = "Sending search request: {}".format(
+                search_url
             )
+            single_search_prep.exception_message = (
+                "Skipping error while searching for {} {} "
+                "instance:".format(self.provider, self.__class__.__name__)
+            )
+            response = self._request(single_search_prep)
             next_page_url_key_path = self.config.pagination.get(
                 "next_page_url_key_path", None
             )
@@ -876,7 +881,7 @@ class QueryStringSearch(Search):
                         "Setting the next page url from an XML response has not "
                         "been implemented yet"
                     )
-                if getattr(self, "need_count", False):
+                if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
                     try:
                         total_nb_results_xpath = root_node.xpath(
@@ -942,7 +947,7 @@ class QueryStringSearch(Search):
                 if not isinstance(result, list):
                     result = [result]
 
-                if getattr(self, "need_count", False):
+                if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
                     try:
                         _total_items_nb = total_items_nb_key_path_parsed.find(
@@ -964,15 +969,15 @@ class QueryStringSearch(Search):
                 )
             else:
                 results.extend(result)
-            if getattr(self, "need_count", False):
-                self.total_items_nb = total_items_nb
-                del self.need_count
+            if getattr(prep, "need_count", False):
+                prep.total_items_nb = total_items_nb
+                del prep.need_count
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
         normalize_remaining_count = len(results)
@@ -1005,10 +1010,12 @@ class QueryStringSearch(Search):
         # Handle a very annoying special case :'(
         url = count_url.replace("$format=json&", "")
         response = self._request(
-            url,
-            info_message="Sending count request: {}".format(url),
-            exception_message="Skipping error while counting results for {} {} "
-            "instance:".format(self.provider, self.__class__.__name__),
+            PreparedSearch(
+                url=url,
+                info_message="Sending count request: {}".format(url),
+                exception_message="Skipping error while counting results for {} {} "
+                "instance:".format(self.provider, self.__class__.__name__),
+            )
         )
         if result_type == "xml":
             root_node = etree.fromstring(response.content)
@@ -1026,13 +1033,15 @@ class QueryStringSearch(Search):
                 total_results = int(count_results)
         return total_results
 
-    def get_collections(self, **kwargs: Any) -> Tuple[Set[Dict[str, Any]], ...]:
+    def get_collections(
+        self, prep: PreparedSearch, **kwargs: Any
+    ) -> Tuple[Set[Dict[str, Any]], ...]:
         """Get the collection to which the product belongs"""
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
         # /asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         product_type: Optional[str] = kwargs.get("productType")
-        if product_type is None and not self.product_type_def_params:
+        if product_type is None and not prep.product_type_def_params:
             collections: Set[Dict[str, Any]] = set()
             collection: Optional[str] = getattr(self.config, "collection", None)
             if collection is None:
@@ -1055,16 +1064,17 @@ class QueryStringSearch(Search):
         collection: Optional[str] = getattr(self.config, "collection", None)
         if collection is None:
             collection = (
-                self.product_type_def_params.get("collection", None) or product_type
+                prep.product_type_def_params.get("collection", None) or product_type
             )
         return (collection,) if not isinstance(collection, list) else tuple(collection)
 
     def _request(
         self,
-        url: str,
-        info_message: Optional[str] = None,
-        exception_message: Optional[str] = None,
+        prep: PreparedSearch,
     ) -> Response:
+        url = prep.url
+        info_message = prep.info_message
+        exception_message = prep.exception_message
         try:
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
             ssl_verify = getattr(self.config, "ssl_verify", True)
@@ -1074,10 +1084,10 @@ class QueryStringSearch(Search):
             kwargs: Dict[str, Any] = {}
             if (
                 getattr(self.config, "need_auth", False)
-                and hasattr(self, "auth")
-                and callable(self.auth)
+                and hasattr(prep, "auth")
+                and callable(prep.auth)
             ):
-                kwargs["auth"] = self.auth
+                kwargs["auth"] = prep.auth
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
 
@@ -1092,16 +1102,18 @@ class QueryStringSearch(Search):
                 req = requests.Request(
                     method="GET", url=base_url, headers=USER_AGENT, **kwargs
                 )
-                prep = req.prepare()
-                prep.url = base_url + "?" + qry
+                req_prep = req.prepare()
+                req_prep.url = base_url + "?" + qry
                 # send urllib req
                 if info_message:
-                    logger.info(info_message.replace(url, prep.url))
-                urllib_req = Request(prep.url, headers=USER_AGENT)
+                    logger.info(info_message.replace(url, req_prep.url))
+                urllib_req = Request(req_prep.url, headers=USER_AGENT)
                 urllib_response = urlopen(urllib_req, timeout=timeout, context=ssl_ctx)
                 # build Response
                 adapter = HTTPAdapter()
-                response = cast(Response, adapter.build_response(prep, urllib_response))
+                response = cast(
+                    Response, adapter.build_response(req_prep, urllib_response)
+                )
             else:
                 if info_message:
                     logger.info(info_message)
@@ -1148,14 +1160,16 @@ class ODataV4Search(QueryStringSearch):
                 metadata_path
             )
 
-    def do_search(self, *args: Any, **kwargs: Any) -> List[Any]:
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(), **kwargs: Any
+    ) -> List[Any]:
         """A two step search can be performed if the metadata are not given into the search result"""
 
         if getattr(self.config, "per_product_metadata_query", False):
             final_result = []
             ssl_verify = getattr(self.config, "ssl_verify", True)
             # Query the products entity set for basic metadata about the product
-            for entity in super(ODataV4Search, self).do_search(*args, **kwargs):
+            for entity in super(ODataV4Search, self).do_search(prep, **kwargs):
                 metadata_url = self.get_metadata_search_url(entity)
                 try:
                     logger.debug("Sending metadata request: %s", metadata_url)
@@ -1181,7 +1195,7 @@ class ODataV4Search(QueryStringSearch):
                     final_result.append(entity)
             return final_result
         else:
-            return super(ODataV4Search, self).do_search(*args, **kwargs)
+            return super(ODataV4Search, self).do_search(prep, **kwargs)
 
     def get_metadata_search_url(self, entity: Dict[str, Any]) -> str:
         """Build the metadata link for the given entity"""
@@ -1190,7 +1204,7 @@ class ODataV4Search(QueryStringSearch):
         )
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results
 
@@ -1226,14 +1240,12 @@ class PostJsonSearch(QueryStringSearch):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", None)
+        count = prep.count
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
@@ -1247,7 +1259,7 @@ class PostJsonSearch(QueryStringSearch):
             qp = geojson.loads(qs)
 
             # provider product type specific conf
-            self.product_type_def_params = self.get_product_type_def_params(
+            prep.product_type_def_params = self.get_product_type_def_params(
                 product_type, **kwargs
             )
         else:
@@ -1261,7 +1273,7 @@ class PostJsonSearch(QueryStringSearch):
                 keywords["productType"] = product_type
 
             # provider product type specific conf
-            self.product_type_def_params = self.get_product_type_def_params(
+            prep.product_type_def_params = self.get_product_type_def_params(
                 product_type, **kwargs
             )
 
@@ -1269,7 +1281,7 @@ class PostJsonSearch(QueryStringSearch):
             keywords.update(
                 {
                     k: v
-                    for k, v in self.product_type_def_params.items()
+                    for k, v in prep.product_type_def_params.items()
                     if k not in keywords.keys()
                     and k in self.config.metadata_mapping.keys()
                     and isinstance(self.config.metadata_mapping[k], list)
@@ -1311,7 +1323,7 @@ class PostJsonSearch(QueryStringSearch):
 
                 try:
                     eo_products, total_items = super(PostJsonSearch, self).query(
-                        items_per_page=items_per_page, page=page, **kwargs
+                        prep, **kwargs
                     )
                 except Exception:
                     raise
@@ -1328,7 +1340,7 @@ class PostJsonSearch(QueryStringSearch):
         # stop searching right away
         product_type_metadata_mapping = dict(
             self.config.metadata_mapping,
-            **self.product_type_def_params.get("metadata_mapping", {}),
+            **prep.product_type_def_params.get("metadata_mapping", {}),
         )
         if not qp and any(
             k
@@ -1336,23 +1348,26 @@ class PostJsonSearch(QueryStringSearch):
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
             return [], 0
-        self.query_params = dict(qp, **sort_by_qp)
-        self.search_urls, total_items = self.collect_search_urls(
-            page=page, items_per_page=items_per_page, count=count, **kwargs
-        )
-        if not count and getattr(self, "need_count", False):
+        prep.query_params = dict(qp, **sort_by_qp)
+        prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
+        if not count and getattr(prep, "need_count", False):
             # do not try to extract total_items from search results if count is False
-            del self.total_items_nb
-            del self.need_count
-        provider_results = self.do_search(items_per_page=items_per_page, **kwargs)
-        if count and total_items is None and hasattr(self, "total_items_nb"):
-            total_items = self.total_items_nb
-        eo_products = self.normalize_results(provider_results, **kwargs)
+            del prep.total_items_nb
+            del prep.need_count
+        provider_results = self.do_search(prep, **kwargs)
+        if count and total_items is None and hasattr(prep, "total_items_nb"):
+            total_items = prep.total_items_nb
+
+        raw_search_result = RawSearchResult(provider_results)
+        raw_search_result.query_params = prep.query_params
+        raw_search_result.product_type_def_params = prep.product_type_def_params
+
+        eo_products = self.normalize_results(raw_search_result, **kwargs)
         total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)
@@ -1386,34 +1401,35 @@ class PostJsonSearch(QueryStringSearch):
 
     def collect_search_urls(
         self,
-        page: Optional[int] = None,
-        items_per_page: Optional[int] = None,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
+        page = prep.page
+        items_per_page = prep.items_per_page
+        count = prep.count
         urls: List[str] = []
         total_results = 0 if count else None
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
             total_results = None
-            self.need_count = True
-            self.total_items_nb = None
+            prep.need_count = True
+            prep.total_items_nb = None
 
-        if "auth" in kwargs and hasattr(kwargs["auth"], "config"):
-            auth_conf_dict = getattr(kwargs["auth"].config, "credentials", {})
+        if prep.auth_plugin is not None and hasattr(prep.auth_plugin, "config"):
+            auth_conf_dict = getattr(prep.auth_plugin.config, "credentials", {})
         else:
             auth_conf_dict = {}
-        for collection in self.get_collections(**kwargs):
+        for collection in self.get_collections(prep, **kwargs):
             try:
                 search_endpoint: str = self.config.api_endpoint.rstrip("/").format(
                     **dict(collection=collection, **auth_conf_dict)
                 )
             except KeyError as e:
+                provider = prep.auth_plugin.provider if prep.auth_plugin else ""
                 raise MisconfiguredError(
-                    "Missing %s in %s configuration"
-                    % (",".join(e.args), kwargs["auth"].provider)
+                    "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
             if page is not None and items_per_page is not None:
                 page = page - 1 + self.config.pagination.get("start_page", 1)
@@ -1442,7 +1458,7 @@ class PostJsonSearch(QueryStringSearch):
                         skip_base_1=(page - 1) * items_per_page + 1,
                     )
                     update_nested_dict(
-                        self.query_params, orjson.loads(next_page_query_obj)
+                        prep.query_params, orjson.loads(next_page_query_obj)
                     )
 
             urls.append(search_endpoint)
@@ -1450,10 +1466,11 @@ class PostJsonSearch(QueryStringSearch):
 
     def _request(
         self,
-        url: str,
-        info_message: Optional[str] = None,
-        exception_message: Optional[str] = None,
+        prep: PreparedSearch,
     ) -> Response:
+        url = prep.url
+        info_message = prep.info_message
+        exception_message = prep.exception_message
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
@@ -1464,21 +1481,21 @@ class PostJsonSearch(QueryStringSearch):
             kwargs: RequestsKwargs = {}
             if (
                 getattr(self.config, "need_auth", False)
-                and hasattr(self, "auth")
-                and callable(self.auth)
+                and hasattr(prep, "auth")
+                and callable(prep.auth)
             ):
-                kwargs["auth"] = self.auth
+                kwargs["auth"] = prep.auth
 
             # perform the request using the next page arguments if they are defined
             if getattr(self, "next_page_query_obj", None):
-                self.query_params = self.next_page_query_obj
+                prep.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
-            logger.debug("Query parameters: %s" % self.query_params)
+            logger.debug("Query parameters: %s" % prep.query_params)
             logger.debug("Query kwargs: %s" % kwargs)
             response = requests.post(
                 url,
-                json=self.query_params,
+                json=prep.query_params,
                 headers=USER_AGENT,
                 timeout=timeout,
                 verify=ssl_verify,
@@ -1587,10 +1604,12 @@ class StacSearch(PostJsonSearch):
             )
             response = QueryStringSearch._request(
                 self,
-                fetch_url,
-                info_message="Fetching queryables: {}".format(fetch_url),
-                exception_message="Skipping error while fetching queryables for "
-                "{} {} instance:".format(self.provider, self.__class__.__name__),
+                PreparedSearch(
+                    url=fetch_url,
+                    info_message="Fetching queryables: {}".format(fetch_url),
+                    exception_message="Skipping error while fetching queryables for "
+                    "{} {} instance:".format(self.provider, self.__class__.__name__),
+                ),
             )
         except (RequestError, KeyError, AttributeError):
             return None
