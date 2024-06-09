@@ -69,9 +69,9 @@ from eodag.utils import (
     _deprecated,
     deepcopy,
     dict_items_recursive_apply,
+    format_dict_items,
     obj_md5sum,
     urlencode,
-    format_dict_items,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,

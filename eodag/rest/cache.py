@@ -16,13 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Any, Callable, Coroutine, Dict, TypeVar
+from typing import Any, Callable, Coroutine, Dict, TypeVar, cast
 
 import orjson
 from cachetools import LRUCache
 from fastapi import FastAPI, Request
 
 from eodag.rest.config import Settings
+from eodag.utils import urlsplit
 
 logger = logging.getLogger("eodag.rest.utils")
 
@@ -42,10 +43,14 @@ async def cached(
     """Either get the result from local cache or run the function and cache the result."""
     settings = Settings.from_environment()
 
+    host = urlsplit(cast(str, request.state.url_root)).netloc
+
+    host_cache_key = f"{cache_key}:{host}"
+
     try:
         c: Dict[str, Any] = request.app.state.cache
 
-        if cached := c.get(cache_key):
+        if cached := c.get(host_cache_key):
             logger.debug("Cache result hit")
             return orjson.loads(cached)  # type: ignore
     except Exception as e:
@@ -56,7 +61,7 @@ async def cached(
     result = await fn()
 
     try:
-        c[cache_key] = orjson.dumps(result)  # type: ignore
+        c[host_cache_key] = orjson.dumps(result)  # type: ignore
     except Exception as e:
         logger.error(f"Error in cache: {e}")
         if settings.debug:
