@@ -311,7 +311,8 @@ class RequestTestCase(unittest.TestCase):
         for p in search_result:
             p.downloader = Download("peps", config)
             p.downloader_auth = Authentication("peps", config)
-        return (search_result, len(search_result))
+        search_result.estimated_total_results = len(search_result)
+        return search_result
 
     @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
     def _request_valid_raw(
@@ -1215,13 +1216,8 @@ class RequestTestCase(unittest.TestCase):
         response with HTTP Status 202"""
         # mock_search_result returns 2 search results, only keep one
         two_results = self.mock_search_result()
-        product = two_results[0][0]
-        mock_search.return_value = (
-            [
-                product,
-            ],
-            1,
-        )
+        product = two_results[0]
+        mock_search.return_value = SearchResult([product], 1)
         product.downloader_auth = MagicMock()
         product.downloader.orderDownload = MagicMock(return_value={"status": "foo"})
         product.downloader.orderDownloadStatus = MagicMock()

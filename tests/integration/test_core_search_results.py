@@ -259,7 +259,7 @@ class TestCoreSearchResults(EODagTestCase):
 
         mock_query.return_value = (products.data, len(products))
 
-        search_results, count = self.dag.search(productType="S2_MSI_L1C")
+        search_results = self.dag.search(productType="S2_MSI_L1C")
 
         for search_result in search_results:
             self.assertIsInstance(search_result.downloader, PluginTopic)
@@ -279,8 +279,6 @@ class TestCoreSearchResults(EODagTestCase):
             search_results_peps = json.load(f)
 
         mock_query.return_value = search_results_peps["features"]
-        search_results, count = self.dag.search(
-            productType="S2_MSI_L1C", provider="peps"
-        )
+        search_results = self.dag.search(productType="S2_MSI_L1C", provider="peps")
         # use given provider and not preferred provider
         self.assertEqual("peps", search_results[0].provider)

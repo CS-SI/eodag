@@ -85,7 +85,7 @@ class TestCoreProvidersConfig(TestCase):
         )
         self.dag.set_preferred_provider("foo_provider")
 
-        prods, _ = self.dag.search(raise_errors=True)
+        prods = self.dag.search(raise_errors=True)
         self.assertEqual(prods[0].properties["title"], "foo")
 
         # update provider which have metadata_mapping already built as jsonpath by search()
@@ -98,7 +98,7 @@ class TestCoreProvidersConfig(TestCase):
             """
         )
         mock__request.return_value.json.side_effect = mock__request_side_effect
-        prods, _ = self.dag.search(raise_errors=True)
+        prods = self.dag.search(raise_errors=True)
         self.assertEqual(prods[0].properties["title"], "baz")
 
         # update provider with new plugin entry
