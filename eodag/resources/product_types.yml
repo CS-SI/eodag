@@ -5215,6 +5215,179 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
   missionStartDate: "1981-09-01T00:00:00Z"
   missionEndDate: "2022-10-31T00:00:00Z"
 
+MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
+  abstract: |
+    Near-Real-Time mono-mission satellite-based integral parameters derived from the directional wave spectra. Using linear
+    propagation wave model, only wave observations that can be back-propagated to wave converging regions are considered.
+    The dataset parameters includes partition significant wave height, partition peak period and partition peak or principal
+    direction given along swell propagation path in space and time at a 3-hour timestep, from source to land. Validity flags
+    are also included for each parameter and indicates the valid time steps along propagation (eg. no propagation for significant
+    wave height close to the storm source or any integral parameter when reaching the land). The integral parameters at observation
+    point are also available together with a quality flag based on the consistency between each propagated observation and the overall
+    swell field.This product is processed by the WAVE-TAC multi-mission SAR data processing system. It serves in near-real time
+    the main operational oceanography and climate forecasting centers in Europe and worldwide. It processes near-real-time data
+    from the following SAR missions: Sentinel-1A and Sentinel-1B.One file is produced for each mission and is available in two
+    formats: one gathering in one netcdf file all observations related to the same swell field, and for another all observations
+    available in a 3-hour time range, and for both formats, propagated information from source to land.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00178
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,NRT,wave,L3,WAVE-TAC,SAR,spectral,mono-mission
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN L3 SPECTRAL PARAMETERS FROM NRT SATELLITE MEASUREMENTS
+  missionStartDate: "2018-05-28T00:00:00Z"
+
+MO_WAVE_GLO_WAV_L3_SWH_NRT_OBSERVATIONS_014_001:
+  abstract: |
+    Near-Real-Time mono-mission satellite-based along-track significant wave height. Only valid data are included, based on a
+    rigorous editing combining various criteria such as quality flags (surface flag, presence of ice) and thresholds on parameter
+    values. Such thresholds are applied on parameters linked to significant wave height determination from retracking (e.g. SWH,
+    sigma0, range, off nadir angle…). All the missions are homogenized with respect to a reference mission (Jason-3 until April 2022,
+    Sentinel-6A afterwards) and calibrated on in-situ buoy measurements. Finally, an along-track filter is applied to reduce the
+    measurement noise.\n\nAs a support of information to the significant wave height, wind speed measured by the altimeters is also
+    processed and included in the files. Wind speed values are provided by upstream products (L2) for each mission and are based on
+    different algorithms. Only valid data are included and all the missions are homogenized with respect to the reference mission.
+    \n\nThis product is processed by the WAVE-TAC multi-mission altimeter data processing system. It serves in near-real time the
+    main operational oceanography and climate forecasting centers in Europe and worldwide. It processes operational data (OGDR and NRT,
+    produced in near-real-time) from the following altimeter missions: Sentinel-6A, Jason-3, Sentinel-3A, Sentinel-3B, Cryosat-2,
+    SARAL/AltiKa, CFOSAT ; and interim data (IGDR, 1 to 2 days delay) from Hai Yang-2B mission.\n\nOne file containing valid SWH
+    is produced for each mission and for a 3-hour time window. It contains the filtered SWH (VAVH), the unfiltered SWH (VAVH_UNFILTERED)
+    and the wind speed (wind_speed).\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00179
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,NRT,wave,height,L3,wind,speed,WAVE-TAC,mono-mission
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN L3 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
+  missionStartDate: "2021-01-01T00:00:00Z"
+
+MO_WAVE_GLO_WAV_L4_SWH_NRT_OBSERVATIONS_014_003:
+  abstract: |
+    Near-Real-Time gridded multi-mission merged satellite significant wave height. Only valid data are included. This product
+    is processed in Near-Real-Time by the WAVE-TAC multi-mission altimeter data processing system and is based on CMEMS level-3
+    SWH datasets (see the product WAVE_GLO_WAV_L3_SWH_NRT_OBSERVATIONS_014_001).\nIt merges along-track SWH data from the following
+    missions: Jason-3, Sentinel-3A, Sentinel-3B, SARAL/AltiKa, Cryosat-2, CFOSAT and HaiYang-2B. The resulting gridded product has
+    a 2° horizontal resolution and is produced daily. Different SWH fields are produced: VAVH_DAILY fields are daily statistics
+    computed from all available level 3 along-track measurements from 00 UTC until 23:59 UTC ; VAVH_INST field provides an estimate
+    of the instantaneous wave field at 12:00UTC (noon), using all available Level 3 along-track measurements and accounting for
+    their spatial and temporal proximity.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00180
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,NRT,wave,height,L4,gridded,WAVE-TAC,multi-mission
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN L4 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
+  missionStartDate: "2020-01-01T00:00:00Z"
+
+MO_WIND_GLO_PHY_CLIMATE_L4_REP_012_003:
+  abstract: |
+    For the Global Ocean - The product contains monthly Level-4 sea surface wind and stress fields at 0.25 degrees horizontal
+    spatial resolution. The monthly averaged wind and stress fields are based on monthly average ECMWF ERA5 reanalysis fields,
+    corrected for persistent biases using all available Level-3 scatterometer observations from the Metop-A, Metop-B and Metop-C ASCAT,
+    QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT satellite instruments.  The product provides monthly mean stress-equivalent wind and
+    stress variables as well as their standard deviation. The number of observations used to calculate the monthly averages are
+    included in the product.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00181
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,L4,surface,wind,stress,monthly,Scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "1999-08-01T00:00:00Z"
+  missionEndDate: "2024-01-01T00:00:00Z"
+
+MO_WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:
+  abstract: |
+    For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
+    with resolutions corresponding to the L2 swath products:\n\n*0.5 degrees grid for the 50 km scatterometer L2 inputs,
+    \n*0.25 degrees grid based on 25 km scatterometer swath observations,\n*and 0.125 degrees based on 12.5 km scatterometer
+    swath observations, i.e., from the coastal products.\n\nData from ascending and descending passes are gridded separately.
+    \nThe product provides stress-equivalent wind and stress variables as well as their divergence and curl. The NRT L3 products
+    follow the NRT availability of the EUMETSAT OSI SAF L2 products and are available for:\n*The ASCAT scatterometers on Metop-A
+    (discontinued on 15/11/2021), Metop-B and Metop-C at 0.125 and 0.25 degrees;\n*The OSCAT scatterometer on Scatsat-1 at 0.25
+    and 0.5 degrees (discontinued on 28/2/2021); \n*The HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00182
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,L3,surface,wind,daily,gridded,NRT,Scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Daily Gridded Sea Surface Winds from Scatterometer
+  missionStartDate: "2016-01-01T00:00:00Z"
+
+MO_WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:
+  abstract: |
+    For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
+    with resolutions corresponding  to the L2 swath products:\n*0.5 degrees grid for the 50 km scatterometer L2 inputs,
+    \n*0.25 degrees grid based on 25 km scatterometer swath observations,\n*and 0.125 degrees based on 12.5 km scatterometer
+    swath observations, i.e., from the coastal products. Data from ascending and descending passes are gridded separately.
+    \n\nThe product provides stress-equivalent wind and stress variables as well as their divergence and curl. The MY L3 products
+    follow the availability of the reprocessed EUMETSAT OSI SAF L2 products and are available for: The ASCAT scatterometer
+    on MetOp-A and Metop-B at 0.125 and 0.25 degrees; The Seawinds scatterometer on QuikSCAT at 0.25 and 0.5 degrees; The AMI
+    scatterometer on ERS-1 and ERS-2 at 0.25 degrees; The OSCAT scatterometer on Oceansat-2 at 0.25 and 0.5 degrees;
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00183
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,L3,surface,wind,daily,gridded,reprocessed,REP,Scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Daily Gridded Reprocessed L3 Sea Surface Winds from Scatterometer
+  missionStartDate: "1991-08-01T00:00:00Z"
+  missionEndDate: "2023-12-31T00:00:00Z"
+
+MO_WIND_GLO_WIND_L4_NRT_OBSERVATIONS_012_004:
+  abstract: |
+    For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 degrees horizontal spatial
+    resolution. Scatterometer observations for Metop-B and Metop-C ASCAT and their collocated European Centre for Medium-Range
+    Weather Forecasts (ECMWF) operational model variables are used to calculate temporally-averaged difference fields. These fields
+    are used to correct for persistent biases in hourly ECMWF operational model fields. The product provides stress-equivalent wind
+    and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
+    (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00305
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,L4,surface,wind,stress,hourly,NRT,Scatterometer,Metop
+  sensorType:
+  license: proprietary
+  title: Global Ocean Hourly Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "2020-07-01T00:00:00Z"
+
+MO_WIND_GLO_WIND_L4_REP_OBSERVATIONS_012_006:
+  abstract: |
+    For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 and 0.25 degrees horizontal
+    spatial resolution. Scatterometer observations and their collocated European Centre for Medium-Range Weather Forecasts (ECMWF) ERA5
+    reanalysis model variables are used to calculate temporally-averaged difference fields. These fields are used to correct for
+    persistent biases in hourly ECMWF ERA5 model fields. Bias corrections are based on scatterometer observations from Metop-A, Metop-B,
+    Metop-C ASCAT (0.125 degrees), QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT (0.25 degrees). The product provides stress-equivalent wind
+    and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
+    (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00185
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,L4,surface,wind,stress,hourly,REP,reprocessed,Scatterometer,Metop,QuikSCAT,ERS
+  sensorType:
+  license: proprietary
+  title: Global Ocean Hourly Reprocessed Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "1994-06-01T00:00:00Z"
+  missionEndDate: "2024-01-21T23:00:00Z"
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:
