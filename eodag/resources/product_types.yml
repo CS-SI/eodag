@@ -4829,13 +4829,13 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
 MO_INSITU_GLO_UV_NRT_OBSERVATIONS_013_048:
   abstract: |
     This product is entirely dedicated to ocean current data observed in near-real time. Current data from 3 different types
-    of instruments are distributed:\n* The near-surface zonal and meridional velocities calculated along the trajectories of
+    of instruments are distributed:\n The near-surface zonal and meridional velocities calculated along the trajectories of
     the drifting buoys which are part of the DBCP’s Global Drifter Program. These data are delivered together with wind stress
-    components and surface temperature. \n* The near-surface zonal and meridional total velocities, and near-surface radial
+    components and surface temperature. \n The near-surface zonal and meridional total velocities, and near-surface radial
     velocities, measured by High Frequency radars that are part of the European High Frequency radar Network. These data are
     delivered together with standard deviation of near-surface zonal and meridional raw velocities, Geometrical Dilution of
-    Precision (GDOP), quality flags and metadata.\n* The zonal and meridional velocities, at parking depth and in surface,
-    calculated along the trajectories of the floats which are part of the Argo Program.\n\n**DOI (product):**\nhttps://doi.org/10.48670/moi-00041
+    Precision (GDOP), quality flags and metadata.\n The zonal and meridional velocities, at parking depth and in surface,
+    calculated along the trajectories of the floats which are part of the Argo Program.\n\nDOI (product):\nhttps://doi.org/10.48670/moi-00041
   instrument:
   platform:
   platformSerialIdentifier:
@@ -4852,7 +4852,7 @@ MO_INSITU_GLO_TS_OA_NRT_OBSERVATIONS_013_002_a:
     real time database are produced monthly. Objective analysis is based on a statistical estimation method that allows presenting
     a synthesis and a validation of the dataset, providing a support for localized experience (cruises), providing a validation
     source for operational models, observing seasonal cycle and inter-annual variability.
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00037
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00037
   instrument:
   platform:
   platformSerialIdentifier:
@@ -4893,9 +4893,9 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
     sea surface salinity, temperature, sea surface height, chlorophyll a, mixed layer depth and atmospheric CO2 mole fraction.
     Sea-air flux fields are computed from the air-sea gradient of pCO2 and the dependence on wind speed of Wanninkhof (2014).
     Surface ocean pH on total scale, dissolved inorganic carbon, and saturation states are then computed from surface ocean pCO2
-    and reconstructed surface ocean alkalinity using the CO2sys speciation software.\n\n**Product Citation**: Please refer to our
+    and reconstructed surface ocean alkalinity using the CO2sys speciation software.\n\nProduct Citation: Please refer to our
     Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
-    \n\n**DOI (product):**\nhttps://doi.org/10.48670/moi-00047\n\n**References:**\n\n* Chau, T. T. T., Gehlen, M., and
+    \n\nDOI (product):\nhttps://doi.org/10.48670/moi-00047\n\nReferences:\n\n Chau, T. T. T., Gehlen, M., and
     Chevallier, F.: A seamless ensemble-based reconstruction of surface ocean pCO2 and air–sea CO2 fluxes over the global
     coastal and open oceans, Biogeosciences, 19, 1087–1109, https://doi.org/10.5194/bg-19-1087-2022, 2022.\n
   instrument:
@@ -4917,12 +4917,12 @@ MO_MULTIOBS_GLO_BIO_NUTRIENTS_PROFILES_REP_015_009:
     concentration from hYdrological properties and Oxygen using a Neural-network) is based on a neural network trained using
     high-quality nutrient data collected over the last 30 years (GLODAPv2 database, https://www.glodap.info/). The method is
     applied to each Argo float equipped with an oxygen sensor using as input the properties measured by the float (pressure,
-    temperature, salinity, oxygen), and its date and position.\n\n**Product Citation:** Please refer to our Technical FAQ for
-    citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.\n\n**DOI (product):
-    **\nhttps://doi.org/10.48670/moi-00048\n\n**References:**\n\n* Sauzede R., H. C. Bittig, H. Claustre, O. Pasqueron de Fommervault,
+    temperature, salinity, oxygen), and its date and position.\n\nProduct Citation: Please refer to our Technical FAQ for
+    citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.\n\nDOI (product):
+    \nhttps://doi.org/10.48670/moi-00048\n\nReferences:\n\n Sauzede R., H. C. Bittig, H. Claustre, O. Pasqueron de Fommervault,
     J.-P. Gattuso, L. Legendre and K. S. Johnson, 2017: Estimates of Water-Column Nutrient Concentrations and Carbonate System
     Parameters in the Global Ocean: A novel Approach Based on Neural Networks. Front. Mar. Sci. 4:128.
-    doi: 10.3389/fmars.2017.00128.\n* Bittig H. C., T. Steinhoff, H. Claustre, B. Fiedler, N. L. Williams, R. Sauzède,
+    doi: 10.3389/fmars.2017.00128.\n Bittig H. C., T. Steinhoff, H. Claustre, B. Fiedler, N. L. Williams, R. Sauzède,
     A. Körtzinger and J.-P. Gattuso,2018: An Alternative to Static Climatologies: Robust Estimation of Open Ocean CO2 Variables
     and Nutrient Concentrations From T, S, and O2 Data Using Bayesian Neural Networks. Front. Mar. Sci. 5:328. doi: 10.3389/fmars.2018.00328.\n
   instrument:
@@ -4941,12 +4941,12 @@ MO_MULTIOBS_GLO_PHY_NRT_015_003:
     This product is a  L4 REP and NRT global total velocity field at 0m and 15m together wiht its individual components
     (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency and
     at 1/4 degree regular grid. The total velocity fields are obtained by combining CMEMS  satellite Geostrophic surface currents
-    and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5* in NRT). 1 hourly product,
+    and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5 in NRT). 1 hourly product,
     daily and monthly means are available. This product has been initiated in the frame of CNES/CLS projects. Then it has been
     consolidated during the Globcurrent project (funded by the ESA User Element Program).
-    \n\n**Product Citation:**\nPlease refer to our Technical FAQ for citing products:
+    \n\nProduct Citation:\nPlease refer to our Technical FAQ for citing products:
     http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
-    \n\n**DOI (product):** \nhttps://doi.org/10.48670/mds-00327\n\n**References:**\n\n* Rio, M.-H., S. Mulet, and N. Picot:
+    \n\nDOI (product): \nhttps://doi.org/10.48670/mds-00327\n\nReferences:\n\n Rio, M.-H., S. Mulet, and N. Picot:
     Beyond GOCE for the ocean circulation estimate: Synergetic use of altimetry, gravimetry, and in situ data provides new
     insight into geostrophic and Ekman currents, Geophys. Res. Lett., 41, doi:10.1002/2014GL061773, 2014.\n
   instrument:
@@ -4965,18 +4965,18 @@ MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
     at 1/8° of resolution, obtained through a multivariate optimal interpolation algorithm that combines sea surface salinity images
     from multiple satellite sources as NASA’s Soil Moisture Active Passive (SMAP) and ESA’s Soil Moisture Ocean Salinity (SMOS) satellites
     with in situ salinity measurements and satellite SST information. The product was developed by the Consiglio Nazionale delle Ricerche (CNR)
-    and includes 4 datasets:\n* cmems_obs-mob_glo_phy-sss_nrt_multi_P1D, which provides near-real-time (NRT) daily data
-    \n* cmems_obs-mob_glo_phy-sss_nrt_multi_P1M, which provides near-real-time (NRT) monthly data\n* cmems_obs-mob_glo_phy-sss_my_multi_P1D,
-    which provides multi-year reprocessed (REP) daily data \n* cmems_obs-mob_glo_phy-sss_my_multi_P1M, which provides multi-year reprocessed (REP)
-    monthly data  \n\n**Product citation**: \nPlease refer to our Technical FAQ for citing products:
-    http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.\n\n**DOI
-    (product):** \nhttps://doi.org/10.48670/moi-00051\n\n**References:**\n\n* Droghei, R., B. Buongiorno Nardelli, and
+    and includes 4 datasets:\n cmems_obs-mob_glo_phy-sss_nrt_multi_P1D, which provides near-real-time (NRT) daily data
+    \n cmems_obs-mob_glo_phy-sss_nrt_multi_P1M, which provides near-real-time (NRT) monthly data\n cmems_obs-mob_glo_phy-sss_my_multi_P1D,
+    which provides multi-year reprocessed (REP) daily data \n cmems_obs-mob_glo_phy-sss_my_multi_P1M, which provides multi-year reprocessed (REP)
+    monthly data  \n\nProduct citation: \nPlease refer to our Technical FAQ for citing products:
+    http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.\n\nDOI
+    (product): \nhttps://doi.org/10.48670/moi-00051\n\nReferences:\n\n Droghei, R., B. Buongiorno Nardelli, and
     R. Santoleri, 2016: Combining in-situ and satellite observations to retrieve salinity and density at the ocean surface.
-    J. Atmos. Oceanic Technol. doi:10.1175/JTECH-D-15-0194.1.\n* Buongiorno Nardelli, B., R. Droghei, and R. Santoleri,
+    J. Atmos. Oceanic Technol. doi:10.1175/JTECH-D-15-0194.1.\n Buongiorno Nardelli, B., R. Droghei, and R. Santoleri,
     2016: Multi-dimensional interpolation of SMOS sea surface salinity with surface temperature and in situ salinity data.
-    Rem. Sens. Environ., doi:10.1016/j.rse.2015.12.052.\n* Droghei, R., B. Buongiorno Nardelli, and R. Santoleri,
+    Rem. Sens. Environ., doi:10.1016/j.rse.2015.12.052.\n Droghei, R., B. Buongiorno Nardelli, and R. Santoleri,
     2018: A New Global Sea Surface Salinity and Density Dataset From Multivariate Observations (1993–2016), Front. Mar. Sci., 5(March),
-    1–13, doi:10.3389/fmars.2018.00084.\n* Sammartino, Michela, Salvatore Aronica, Rosalia Santoleri, and Bruno Buongiorno Nardelli. (2022).
+    1–13, doi:10.3389/fmars.2018.00084.\n Sammartino, Michela, Salvatore Aronica, Rosalia Santoleri, and Bruno Buongiorno Nardelli. (2022).
     Retrieving Mediterranean Sea Surface Salinity Distribution and Interannual Trends from Multi-Sensor Satellite and In Situ Data,
     Remote Sensing 14, 2502: https://doi.org/10.3390/rs14102502.\n
   instrument:
@@ -4993,13 +4993,13 @@ MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
   abstract: |
     You can find here the Multi Observation Global Ocean ARMOR3D L4 analysis and multi-year reprocessing. It consists of 3D Temperature,
     Salinity, Heights, Geostrophic Currents and Mixed Layer Depth, available on a 1/4 degree regular grid and on 50 depth levels from
-    the surface down to the bottom. The product includes 4 datasets: \n* dataset-armor-3d-nrt-weekly, which delivers near-real-time (NRT)
-    weekly data\n* dataset-armor-3d-nrt-monthly, which delivers near-real-time (NRT) monthly data\n* dataset-armor-3d-rep-weekly, which
-    delivers multi-year reprocessed (REP) weekly data \n* dataset-armor-3d-rep-monthly, which delivers multi-year reprocessed (REP)
-    monthly data\n\n**DOI (product):** \nhttps://doi.org/10.48670/moi-00052\n\n\n**Product Citation**: \nPlease refer to our
+    the surface down to the bottom. The product includes 4 datasets: \n dataset-armor-3d-nrt-weekly, which delivers near-real-time (NRT)
+    weekly data\n dataset-armor-3d-nrt-monthly, which delivers near-real-time (NRT) monthly data\n dataset-armor-3d-rep-weekly, which
+    delivers multi-year reprocessed (REP) weekly data \n dataset-armor-3d-rep-monthly, which delivers multi-year reprocessed (REP)
+    monthly data\n\nDOI (product): \nhttps://doi.org/10.48670/moi-00052\n\n\nProduct Citation: \nPlease refer to our
     Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
-    \n\n**References:**\n\n* Guinehut S., A.-L. Dhomps, G. Larnicol and P.-Y. Le Traon, 2012: High resolution 3D temperature
-    and salinity fields derived from in situ and satellite observations. Ocean Sci., 8(5):845–857.\n* Mulet, S., M.-H. Rio,
+    \n\nReferences:\n\n Guinehut S., A.-L. Dhomps, G. Larnicol and P.-Y. Le Traon, 2012: High resolution 3D temperature
+    and salinity fields derived from in situ and satellite observations. Ocean Sci., 8(5):845–857.\n Mulet, S., M.-H. Rio,
     A. Mignot, S. Guinehut and R. Morrow, 2012: A new estimate of the global 3D geostrophic ocean circulation based on satellite
     data and in-situ measurements. Deep Sea Research Part II : Topical Studies in Oceanography, 77–80(0):70–81.\n
   instrument:
@@ -5019,12 +5019,12 @@ MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
     the surface to 1500 m depth (representative of each Wednesday). The velocities are obtained by solving a diabatic formulation
     of the Omega equation, starting from ARMOR3D data (MULTIOBS_GLO_PHY_REP_015_002 which corresponds to former version of
     MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012) and ERA-Interim surface fluxes.
-    \n\n**DOI (product):** \nhttps://commons.datacite.org/doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007\n\n
-    \n**Product citation**: \nPlease refer to our Technical FAQ for citing products.http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169
-    \n\n**References:**\n\n* DOI (Product): https://doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007
-    \n* Buongiorno Nardelli, B. (2020). CNR global observation-based OMEGA3D quasi-geostrophic vertical and horizontal ocean
+    \n\nDOI (product): \nhttps://commons.datacite.org/doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007\n\n
+    \nProduct citation: \nPlease refer to our Technical FAQ for citing products.http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169
+    \n\nReferences:\n\n DOI (Product): https://doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007
+    \n Buongiorno Nardelli, B. (2020). CNR global observation-based OMEGA3D quasi-geostrophic vertical and horizontal ocean
     currents (1993-2018) (Version 1) [Data set]. Copernicus Monitoring Environment Marine Service (CMEMS).
-    https://doi.org/10.25423/CMCC/MULTIOBS_GLO_PHY_W_REP_015_007\n* Buongiorno Nardelli, B. A Multi-Year Timeseries of Observation-Based
+    https://doi.org/10.25423/CMCC/MULTIOBS_GLO_PHY_W_REP_015_007\n Buongiorno Nardelli, B. A Multi-Year Timeseries of Observation-Based
     3D Horizontal and Vertical Quasi-Geostrophic Global Ocean Currents. Earth Syst. Sci. Data 2020, No. 12, 1711–1723.
     https://doi.org/10.5194/essd-12-1711-2020.\n
   instrument:
@@ -5045,7 +5045,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
     10km resolution in a polar stereographic projection covering the Northern Hemisphere and the Southern Hemisphere. It is
     the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
     resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
-    have a time-span of 2 days.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00134
+    have a time-span of 2 days.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00134
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5060,7 +5060,7 @@ MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
   abstract: |
     DTU Space produces polar covering Near Real Time gridded ice displacement fields obtained by MCC processing of Sentinel-1 SAR,
     Envisat ASAR WSM swath data or RADARSAT ScanSAR Wide mode data . The nominal temporal span between processed swaths is 24hours,
-    the nominal product grid resolution is a 10km.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00135
+    the nominal product grid resolution is a 10km.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00135
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5078,8 +5078,8 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
     is computed from atmospherically corrected PMW brightness temperatures, using a combination of state-of-the-art algorithms and
     dynamic tie points. It includes error bars for each grid cell (uncertainties). This version 3.0 of the CDR (OSI-450-a, 1978-2020)
     and ICDR (OSI-430-a, 2021-present with 16 days latency) was released in November 2022
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00136\n
-    \n**References:**\n\n* [http://osisaf.met.no/docs/osisaf_cdop2_ss2_pum_sea-ice-conc-reproc_v2p2.pdf]\n
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00136\n
+    \nReferences:\n\n [http://osisaf.met.no/docs/osisaf_cdop2_ss2_pum_sea-ice-conc-reproc_v2p2.pdf]\n
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5097,7 +5097,7 @@ MO_SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046:
     Part of the processing is fitted to the Global Ocean. (see QUID document or http://duacs.cls.fr [](http://duacs.cls.fr) pages
     for processing details). The product gives additional variables (i.e. Absolute Dynamic Topography and geostrophic currents
     (absolute and anomalies)). It serves in near-real time applications.\nThis product is processed by the DUACS multimission
-    altimeter data processing system. \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00149
+    altimeter data processing system. \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00149
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5112,7 +5112,7 @@ MO_SEALEVEL_GLO_PHY_MDT_008_063:
   abstract: |
     Mean Dynamic Topography that combines the global CNES-CLS-2022 MDT, the Black Sea CMEMS2020 MDT and the Med Sea CMEMS2020 MDT.
     It  is an estimate of the mean over the 1993-2012 period of the sea surface height above geoid. This is consistent with the
-    reference time period also used in the  DUACS products\n\n**DOI (product):**  \nhttps://doi.org/10.48670/moi-00150
+    reference time period also used in the  DUACS products\n\nDOI (product):  \nhttps://doi.org/10.48670/moi-00150
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5131,7 +5131,7 @@ MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
     orbiting (NOAA-18 & NOAAA-19/AVHRR, METOP-A/AVHRR, ENVISAT/AATSR, AQUA/AMSRE, TRMM/TMI) and geostationary (MSG/SEVIRI, GOES-11)
     satellites . The observations of each sensor are intercalibrated prior to merging using a bias correction based on a multi-sensor
     median reference correcting the large-scale cross-sensor biases.3 more datasets are available that only contain "per sensor type" data:
-    Polar InfraRed (PIR), Polar MicroWave (PMW), Geostationary InfraRed (GIR)\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00164
+    Polar InfraRed (PIR), Polar MicroWave (PMW), Geostationary InfraRed (GIR)\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00164
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5149,12 +5149,12 @@ MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
     microwave radiometers. \n\nThe Operational Sea Surface Temperature and Ice Analysis (OSTIA) system is run by the UK's Met
     Office and delivered by IFREMER PU. OSTIA uses satellite data provided by the GHRSST project together with in-situ observations
     to determine the sea surface temperature.\nA high resolution (1/20° - approx. 6 km) daily analysis of sea surface temperature (SST)
-    is produced for the global ocean and some lakes.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00165\n\n**References:**
-    \n\n* Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.; Waters, J.; While, J.;
+    is produced for the global ocean and some lakes.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00165\n\nReferences:
+    \n\n Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.; Waters, J.; While, J.;
     Worsfold, M. The Current Configuration of the OSTIA System for Operational Production of Foundation Sea Surface Temperature and
-    Ice Concentration Analyses. Remote Sens. 2020, 12, 720. doi: 10.3390/rs12040720\n* Donlon, C.J., Martin, M., Stark, J., Roberts-Jones,
+    Ice Concentration Analyses. Remote Sens. 2020, 12, 720. doi: 10.3390/rs12040720\n Donlon, C.J., Martin, M., Stark, J., Roberts-Jones,
     J., Fiedler, E., and Wimmer, W., 2012, The Operational Sea Surface Temperature and Sea Ice Analysis (OSTIA) system. Remote Sensing
-    of the Environment. doi: 10.1016/j.rse.2010.10.017 2011.\n* John D. Stark, Craig J. Donlon, Matthew J. Martin and Michael E. McCulloch,
+    of the Environment. doi: 10.1016/j.rse.2010.10.017 2011.\n John D. Stark, Craig J. Donlon, Matthew J. Martin and Michael E. McCulloch,
     2007, OSTIA : An operational, high resolution, real time, global sea surface temperature analysis system., Oceans 07 IEEE Aberdeen,
     conference proceedings. Marine challenges: coastline to deep sea. Aberdeen, Scotland.IEEE.\n
   instrument:
@@ -5172,8 +5172,8 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
     The OSTIA (Good et al., 2020) global sea surface temperature reprocessed product provides daily gap-free maps of foundation
     sea surface temperature and ice concentration (referred to as an L4 product) at 0.05deg.x 0.05deg. horizontal grid resolution,
     using in-situ and satellite data. This product provides the foundation Sea Surface Temperature, which is the temperature free
-    of diurnal variability.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00168\n
-    \n**References:**\n\n* Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.;
+    of diurnal variability.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00168\n
+    \nReferences:\n\n Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.;
     Waters, J.; While, J.; Worsfold, M. The Current Configuration of the OSTIA System for Operational Production of Foundation
     Sea Surface Temperature and Ice Concentration Analyses. Remote Sens. 2020, 12, 720, doi:10.3390/rs12040720\n
   instrument:
@@ -5196,13 +5196,13 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
     daily analysis of the daily average sea surface temperature (SST) at 20 cm depth for the global ocean. Only (A)ATSR, SLSTR and AVHRR
     satellite data processed by the ESA SST CCI and C3S projects were used, giving a stable product. It also uses reprocessed sea-ice
     concentration data from the EUMETSAT OSI-SAF (OSI-450 and OSI-430; Lavergne et al., 2019).
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00169\n\n**References:**\n\n* Good, S., Fiedler, E., Mao, C., Martin,
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00169\n\nReferences:\n\n Good, S., Fiedler, E., Mao, C., Martin,
     M.J., Maycock, A., Reid, R., Roberts-Jones, J., Searle, T., Waters, J., While, J., Worsfold, M. The Current Configuration of the
     OSTIA System for Operational Production of Foundation Sea Surface Temperature and Ice Concentration Analyses. Remote Sens.
-    2020, 12, 720, doi:10.3390/rs12040720.\n* Lavergne, T., Sørensen, A. M., Kern, S., Tonboe, R., Notz, D., Aaboe, S., Bell, L., Dybkjær,
+    2020, 12, 720, doi:10.3390/rs12040720.\n Lavergne, T., Sørensen, A. M., Kern, S., Tonboe, R., Notz, D., Aaboe, S., Bell, L., Dybkjær,
     G., Eastwood, S., Gabarro, C., Heygster, G., Killie, M. A., Brandt Kreiner, M., Lavelle, J., Saldo, R., Sandven, S., and Pedersen,
     L. T.: Version 2 of the EUMETSAT OSI SAF and ESA CCI sea-ice concentration climate data records, The Cryosphere, 13, 49-78,
-    doi:10.5194/tc-13-49-2019, 2019.\n* Merchant, C.J., Embury, O., Bulgin, C.E. et al. Satellite-based time-series of sea-surface
+    doi:10.5194/tc-13-49-2019, 2019.\n Merchant, C.J., Embury, O., Bulgin, C.E. et al. Satellite-based time-series of sea-surface
     temperature since 1981 for climate applications. Sci Data 6, 223 (2019) doi:10.1038/s41597-019-0236-x.\n
   instrument:
   platform:
@@ -5229,7 +5229,7 @@ MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
     from the following SAR missions: Sentinel-1A and Sentinel-1B.One file is produced for each mission and is available in two
     formats: one gathering in one netcdf file all observations related to the same swell field, and for another all observations
     available in a 3-hour time range, and for both formats, propagated information from source to land.
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00178
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00178
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5255,7 +5255,7 @@ MO_WAVE_GLO_WAV_L3_SWH_NRT_OBSERVATIONS_014_001:
     produced in near-real-time) from the following altimeter missions: Sentinel-6A, Jason-3, Sentinel-3A, Sentinel-3B, Cryosat-2,
     SARAL/AltiKa, CFOSAT ; and interim data (IGDR, 1 to 2 days delay) from Hai Yang-2B mission.\n\nOne file containing valid SWH
     is produced for each mission and for a 3-hour time window. It contains the filtered SWH (VAVH), the unfiltered SWH (VAVH_UNFILTERED)
-    and the wind speed (wind_speed).\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00179
+    and the wind speed (wind_speed).\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00179
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5275,7 +5275,7 @@ MO_WAVE_GLO_WAV_L4_SWH_NRT_OBSERVATIONS_014_003:
     a 2° horizontal resolution and is produced daily. Different SWH fields are produced: VAVH_DAILY fields are daily statistics
     computed from all available level 3 along-track measurements from 00 UTC until 23:59 UTC ; VAVH_INST field provides an estimate
     of the instantaneous wave field at 12:00UTC (noon), using all available Level 3 along-track measurements and accounting for
-    their spatial and temporal proximity.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00180
+    their spatial and temporal proximity.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00180
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5293,7 +5293,7 @@ MO_WIND_GLO_PHY_CLIMATE_L4_REP_012_003:
     corrected for persistent biases using all available Level-3 scatterometer observations from the Metop-A, Metop-B and Metop-C ASCAT,
     QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT satellite instruments.  The product provides monthly mean stress-equivalent wind and
     stress variables as well as their standard deviation. The number of observations used to calculate the monthly averages are
-    included in the product.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00181
+    included in the product.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00181
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5308,14 +5308,14 @@ MO_WIND_GLO_PHY_CLIMATE_L4_REP_012_003:
 MO_WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:
   abstract: |
     For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
-    with resolutions corresponding to the L2 swath products:\n\n*0.5 degrees grid for the 50 km scatterometer L2 inputs,
-    \n*0.25 degrees grid based on 25 km scatterometer swath observations,\n*and 0.125 degrees based on 12.5 km scatterometer
+    with resolutions corresponding to the L2 swath products:\n\n0.5 degrees grid for the 50 km scatterometer L2 inputs,
+    \n0.25 degrees grid based on 25 km scatterometer swath observations,\nand 0.125 degrees based on 12.5 km scatterometer
     swath observations, i.e., from the coastal products.\n\nData from ascending and descending passes are gridded separately.
     \nThe product provides stress-equivalent wind and stress variables as well as their divergence and curl. The NRT L3 products
-    follow the NRT availability of the EUMETSAT OSI SAF L2 products and are available for:\n*The ASCAT scatterometers on Metop-A
-    (discontinued on 15/11/2021), Metop-B and Metop-C at 0.125 and 0.25 degrees;\n*The OSCAT scatterometer on Scatsat-1 at 0.25
-    and 0.5 degrees (discontinued on 28/2/2021); \n*The HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00182
+    follow the NRT availability of the EUMETSAT OSI SAF L2 products and are available for:\nThe ASCAT scatterometers on Metop-A
+    (discontinued on 15/11/2021), Metop-B and Metop-C at 0.125 and 0.25 degrees;\nThe OSCAT scatterometer on Scatsat-1 at 0.25
+    and 0.5 degrees (discontinued on 28/2/2021); \nThe HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00182
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5329,14 +5329,14 @@ MO_WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:
 MO_WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:
   abstract: |
     For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
-    with resolutions corresponding  to the L2 swath products:\n*0.5 degrees grid for the 50 km scatterometer L2 inputs,
-    \n*0.25 degrees grid based on 25 km scatterometer swath observations,\n*and 0.125 degrees based on 12.5 km scatterometer
+    with resolutions corresponding  to the L2 swath products:\n0.5 degrees grid for the 50 km scatterometer L2 inputs,
+    \n0.25 degrees grid based on 25 km scatterometer swath observations,\nand 0.125 degrees based on 12.5 km scatterometer
     swath observations, i.e., from the coastal products. Data from ascending and descending passes are gridded separately.
     \n\nThe product provides stress-equivalent wind and stress variables as well as their divergence and curl. The MY L3 products
     follow the availability of the reprocessed EUMETSAT OSI SAF L2 products and are available for: The ASCAT scatterometer
     on MetOp-A and Metop-B at 0.125 and 0.25 degrees; The Seawinds scatterometer on QuikSCAT at 0.25 and 0.5 degrees; The AMI
     scatterometer on ERS-1 and ERS-2 at 0.25 degrees; The OSCAT scatterometer on Oceansat-2 at 0.25 and 0.5 degrees;
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00183
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00183
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5356,7 +5356,7 @@ MO_WIND_GLO_WIND_L4_NRT_OBSERVATIONS_012_004:
     are used to correct for persistent biases in hourly ECMWF operational model fields. The product provides stress-equivalent wind
     and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
     (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00305
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00305
   instrument:
   platform:
   platformSerialIdentifier:
@@ -5376,7 +5376,7 @@ MO_WIND_GLO_WIND_L4_REP_OBSERVATIONS_012_006:
     Metop-C ASCAT (0.125 degrees), QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT (0.25 degrees). The product provides stress-equivalent wind
     and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
     (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
-    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00185
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00185
   instrument:
   platform:
   platformSerialIdentifier:
