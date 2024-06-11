@@ -244,9 +244,7 @@ class TestStacCore(unittest.TestCase):
             "downloadLink", "thumbnail" in response["features"][0]["assets"].keys()
         )
         # check that assets from the provider response search are reformatted in the response
-        product_id = self.earth_search_resp_search_json["features"][0]["properties"][
-            "s2:product_uri"
-        ].replace(".SAFE", "")
+        product_id = self.earth_search_resp_search_json["features"][0]["id"]
         for k in self.earth_search_resp_search_json["features"][0]["assets"]:
             self.assertIn(k, response["features"][0]["assets"].keys())
             if k == "thumbnail":
