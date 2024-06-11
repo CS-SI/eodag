@@ -779,7 +779,7 @@ class HTTPDownload(Download):
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and (
             not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset", None) is not None
+            or kwargs.get("asset") is not None
         ):
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset", None))
