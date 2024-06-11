@@ -360,10 +360,10 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         items_per_page = (
             DEFAULT_ITEMS_PER_PAGE if items_per_page is None else items_per_page
         )
-        results, total = gateway.search(
-            page=page, items_per_page=items_per_page, **criteria
+        results = gateway.search(page=page, items_per_page=items_per_page, **criteria)
+        click.echo(
+            "Found a total number of {} products".format(results.estimated_total_number)
         )
-        click.echo("Found a total number of {} products".format(total))
     click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
