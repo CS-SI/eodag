@@ -1041,8 +1041,9 @@ class EODataAccessGateway:
         geom: Optional[Union[str, Dict[str, float], BaseGeometry]] = None,
         locations: Optional[Dict[str, str]] = None,
         provider: Optional[str] = None,
+        count: bool = True,
         **kwargs: Any,
-    ) -> Tuple[SearchResult, Optional[int]]:
+    ) -> SearchResult:
         """Look for products matching criteria on known providers.
 
         The default behaviour is to look for products on the provider with the
@@ -1090,10 +1091,11 @@ class EODataAccessGateway:
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
         :type provider: str
+        :param count: (optional) Whether to run a query with a count request or not
+        :type count: bool
         :type kwargs: Union[int, str, bool, dict]
-        :returns: A collection of EO products matching the criteria and the total
-                  number of results found
-        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
+        :returns: A collection of EO products matching the criteria
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
 
         .. note::
             The search interfaces, which are implemented as plugins, are required to
@@ -1108,7 +1110,6 @@ class EODataAccessGateway:
             provider=provider,
             **kwargs,
         )
-
         if search_kwargs.get("id"):
             return self._search_by_id(
                 search_kwargs.pop("id"),
@@ -1128,9 +1129,9 @@ class EODataAccessGateway:
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
-            search_results, total_results = self._do_search(
+            search_results = self._do_search(
                 search_plugin,
-                count=True,
+                count=count,
                 raise_errors=raise_errors,
                 **search_kwargs,
             )
@@ -1140,11 +1141,11 @@ class EODataAccessGateway:
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
-                return search_results, total_results
+                return search_results
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
-        return SearchResult([]), 0
+        return SearchResult([], 0)
 
     def search_iter_page(
         self,
@@ -1259,7 +1260,7 @@ class EODataAccessGateway:
             try:
                 if "raise_errors" in kwargs:
                     kwargs.pop("raise_errors")
-                products, _ = self._do_search(
+                search_result = self._do_search(
                     search_plugin, count=False, raise_errors=True, **kwargs
                 )
             except Exception:
@@ -1298,12 +1299,12 @@ class EODataAccessGateway:
                     else:
                         search_plugin.next_page_query_obj = next_page_query_obj
 
-            if len(products) > 0:
+            if len(search_result) > 0:
                 # The first products between two iterations are compared. If they
                 # are actually the same product, it means the iteration failed at
                 # progressing for some reason. This is implemented as a workaround
                 # to some search plugins/providers not handling pagination.
-                product = products[0]
+                product = search_result[0]
                 if (
                     prev_product
                     and product.properties["id"] == prev_product.properties["id"]
@@ -1316,11 +1317,11 @@ class EODataAccessGateway:
                     )
                     last_page_with_products = iteration - 1
                     break
-                yield products
+                yield search_result
                 prev_product = product
                 # Prevent a last search if the current one returned less than the
                 # maximum number of items asked for.
-                if len(products) < items_per_page:
+                if len(search_result) < items_per_page:
                     last_page_with_products = iteration
                     break
             else:
@@ -1423,7 +1424,7 @@ class EODataAccessGateway:
                 search_plugin.provider,
                 itp,
             )
-            all_results = SearchResult([])
+            all_results = SearchResult([], 0)
             try:
                 for page_results in self.search_iter_page_plugin(
                     items_per_page=itp,
@@ -1431,6 +1432,7 @@ class EODataAccessGateway:
                     **search_kwargs,
                 ):
                     all_results.data.extend(page_results.data)
+                    all_results.estimated_total_results = len(all_results)
                 logger.info(
                     "Found %s result(s) on provider '%s'",
                     len(all_results),
@@ -1461,7 +1463,7 @@ class EODataAccessGateway:
 
     def _search_by_id(
         self, uid: str, provider: Optional[str] = None, **kwargs: Any
-    ) -> Tuple[SearchResult, int]:
+    ) -> SearchResult:
         """Internal method that enables searching a product by its id.
 
         Keeps requesting providers until a result matching the id is supplied. The
@@ -1481,9 +1483,8 @@ class EODataAccessGateway:
         :type provider: str
         :param kwargs: Search criteria to help finding the right product
         :type kwargs: Any
-        :returns: A search result with one EO product or None at all, and the number
-                  of EO products retrieved (0 or 1)
-        :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int)
+        :returns: A search result with one EO product or None at all
+        :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         product_type = kwargs.get("productType", None)
         if product_type is not None:
@@ -1550,13 +1551,14 @@ class EODataAccessGateway:
                     results[0].product_type = guesses[0]
                     # reset driver
                     results[0].driver = results[0].get_driver()
-                return results, 1
+                results.estimated_total_results = 1
+                return results
             elif len(results) > 1:
                 logger.info(
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
                 )
-        return SearchResult([]), 0
+        return SearchResult([], 0)
 
     def _fetch_external_product_type(self, provider: str, product_type: str):
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
@@ -1775,7 +1777,7 @@ class EODataAccessGateway:
         count: bool = True,
         raise_errors: bool = False,
         **kwargs: Any,
-    ) -> Tuple[SearchResult, Optional[int]]:
+    ) -> SearchResult:
         """Internal method that performs a search on a given provider.
 
         :param search_plugin: A search plugin
@@ -1787,8 +1789,7 @@ class EODataAccessGateway:
         :type raise_errors: bool
         :param kwargs: Some other criteria that will be used to do the search
         :type kwargs: Any
-        :returns: A collection of EO products matching the criteria and the total
-                  number of results found if count is True else None
+        :returns: A collection of EO products matching the criteria
         :rtype: tuple(:class:`~eodag.api.search_result.SearchResult`, int or None)
         """
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
@@ -1964,7 +1965,7 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 self.search_errors.add((search_plugin.provider, e))
-        return SearchResult(results), total_results
+        return SearchResult(results, total_results)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results
@@ -2178,12 +2179,14 @@ class EODataAccessGateway:
             )
         )
 
-        products, _ = self.search(productType=productType, provider=provider, **kwargs)
+        search_result = self.search(
+            productType=productType, provider=provider, **kwargs
+        )
 
         # restore plugin._request
         plugin._request = plugin_request
 
-        return products
+        return search_result
 
     def download(
         self,

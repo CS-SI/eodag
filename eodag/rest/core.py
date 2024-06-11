@@ -199,12 +199,13 @@ def search_stac_items(
     if eodag_args.ids:
         search_results = SearchResult([])
         for item_id in eodag_args.ids:
-            products, _ = eodag_api.search(
+            sr = eodag_api.search(
                 id=item_id,
                 productType=catalogs[0] if catalogs else eodag_args.productType,
                 provider=eodag_args.provider,
             )
-            search_results.extend(products)
+            search_results.extend(sr)
+        search_results.estimated_total_results = len(search_results)
         total = len(search_results)
 
     elif time_interval_overlap(eodag_args, catalog):
@@ -213,14 +214,15 @@ def search_stac_items(
             **eodag_args.model_dump(exclude_none=True),
         }
 
-        search_results, total = eodag_api.search(**criteria)
+        search_results = eodag_api.search(**criteria)
+        total = search_results.estimated_total_results
         if search_request.crunch:
             search_results = crunch_products(
                 search_results, search_request.crunch, **criteria
             )
     else:
         # return empty results
-        search_results = SearchResult([])
+        search_results = SearchResult([], 0)
         total = 0
 
     for record in search_results:
@@ -269,7 +271,7 @@ def download_stac_item(
     """
     product_type = catalogs[0]
 
-    search_results, _ = eodag_api.search(
+    search_results = eodag_api.search(
         id=item_id, productType=product_type, provider=provider, **kwargs
     )
     if len(search_results) > 0:
