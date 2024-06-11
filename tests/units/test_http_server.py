@@ -1392,9 +1392,7 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
 
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.post", autospec=True
-    )
+    @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     def test_product_type_queryables(self, mock_requests_session_post):
         """Request to /collections/{collection_id}/queryables should return a valid response."""
 
