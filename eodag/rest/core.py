@@ -205,7 +205,7 @@ def search_stac_items(
                 provider=eodag_args.provider,
             )
             search_results.extend(sr)
-        search_results.estimated_total_results = len(search_results)
+        search_results.estimated_total_number = len(search_results)
         total = len(search_results)
 
     elif time_interval_overlap(eodag_args, catalog):
@@ -215,7 +215,7 @@ def search_stac_items(
         }
 
         search_results = eodag_api.search(**criteria)
-        total = search_results.estimated_total_results
+        total = search_results.estimated_total_number
         if search_request.crunch:
             search_results = crunch_products(
                 search_results, search_request.crunch, **criteria

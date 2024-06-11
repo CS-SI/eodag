@@ -1432,7 +1432,7 @@ class EODataAccessGateway:
                     **search_kwargs,
                 ):
                     all_results.data.extend(page_results.data)
-                    all_results.estimated_total_results = len(all_results)
+                    all_results.estimated_total_number = len(all_results)
                 logger.info(
                     "Found %s result(s) on provider '%s'",
                     len(all_results),
@@ -1551,7 +1551,7 @@ class EODataAccessGateway:
                     results[0].product_type = guesses[0]
                     # reset driver
                     results[0].driver = results[0].get_driver()
-                results.estimated_total_results = 1
+                results.estimated_total_number = 1
                 return results
             elif len(results) > 1:
                 logger.info(

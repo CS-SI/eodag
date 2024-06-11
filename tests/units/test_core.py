@@ -2300,7 +2300,7 @@ class TestCoreSearch(TestCoreBase):
             return_value={"id": "foooooo"}
         )
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
-        self.assertEqual(found.estimated_total_results, 1)
+        self.assertEqual(found.estimated_total_number, 1)
         self.assertEqual(len(found), 1)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -2322,7 +2322,7 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(sr.estimated_total_results, self.search_results_size)
+        self.assertEqual(sr.estimated_total_number, self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_counts_by_default(self, search_plugin):
@@ -2340,7 +2340,7 @@ class TestCoreSearch(TestCoreBase):
         sr = self.dag._do_search(search_plugin=search_plugin)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(sr.estimated_total_results, self.search_results_size)
+        self.assertEqual(sr.estimated_total_number, self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_without_count(self, search_plugin):
@@ -2357,7 +2357,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
 
         sr = self.dag._do_search(search_plugin=search_plugin, count=False)
-        self.assertIsNone(sr.estimated_total_results)
+        self.assertIsNone(sr.estimated_total_number)
         self.assertEqual(len(sr), self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -2380,7 +2380,7 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertEqual(len(sr), self.search_results_size)
         # The count guess is: page * number_of_products_returned
-        self.assertEqual(sr.estimated_total_results, page * self.search_results_size)
+        self.assertEqual(sr.estimated_total_number, page * self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_fuzzy_count(self, search_plugin):
@@ -2410,7 +2410,7 @@ class TestCoreSearch(TestCoreBase):
         # count.
         expected_estimate = items_per_page * (page - 1) + len(sr)
         self.assertEqual(len(sr), 8)
-        self.assertEqual(sr.estimated_total_results, expected_estimate)
+        self.assertEqual(sr.estimated_total_number, expected_estimate)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
@@ -2436,7 +2436,7 @@ class TestCoreSearch(TestCoreBase):
         )
         expected_estimate = items_per_page * (page - 1)
         self.assertEqual(len(sr), 0)
-        self.assertEqual(sr.estimated_total_results, expected_estimate)
+        self.assertEqual(sr.estimated_total_number, expected_estimate)
 
     def test__do_search_does_not_raise_by_default(self):
         """_do_search must not raise any error by default"""
@@ -2452,7 +2452,7 @@ class TestCoreSearch(TestCoreBase):
         sr = self.dag._do_search(search_plugin=DummySearchPlugin())
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), 0)
-        self.assertEqual(sr.estimated_total_results, 0)
+        self.assertEqual(sr.estimated_total_number, 0)
 
     def test__do_search_can_raise_errors(self):
         """_do_search must not raise errors if raise_errors=True"""

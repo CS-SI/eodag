@@ -248,7 +248,7 @@ class TestCoreSearch(unittest.TestCase):
 
         search_result = self.dag.search(productType="S1_SAR_SLC")
         self.assertEqual(len(search_result), 0)
-        self.assertEqual(search_result.estimated_total_results, 0)
+        self.assertEqual(search_result.estimated_total_number, 0)
         self.assertEqual(
             mock_get.call_count + mock_post.call_count + mock_request.call_count,
             len(available_providers),
@@ -422,7 +422,7 @@ class TestCoreSearch(unittest.TestCase):
 
         search_result = self.dag.search(productType="S1_SAR_SLC")
         self.assertEqual(len(search_result), 1)
-        self.assertEqual(search_result.estimated_total_results, 1)
+        self.assertEqual(search_result.estimated_total_number, 1)
         self.assertEqual(
             mock_query.call_count, 4, "4 provider out of 6 must have been requested"
         )
@@ -451,7 +451,7 @@ class TestCoreSearch(unittest.TestCase):
 
         search_result = self.dag.search(productType="S1_SAR_SLC", provider="onda")
         self.assertEqual(len(search_result), 0)
-        self.assertEqual(search_result.estimated_total_results, 0)
+        self.assertEqual(search_result.estimated_total_number, 0)
         self.assertEqual(
             mock_query.call_count,
             1,

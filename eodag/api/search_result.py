@@ -45,10 +45,10 @@ class SearchResult(UserList):
     data: List[EOProduct]
 
     def __init__(
-        self, products: List[EOProduct], estimated_total_results: int = None
+        self, products: List[EOProduct], estimated_total_number: int = None
     ) -> None:
         super(SearchResult, self).__init__(products)
-        self.estimated_total_results = estimated_total_results
+        self.estimated_total_number = estimated_total_number
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.

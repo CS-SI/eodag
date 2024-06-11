@@ -159,7 +159,7 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search all items"""
         search_result = self.dag.search()
         self.assertEqual(len(search_result), self.root_cat_len)
-        self.assertEqual(search_result.estimated_total_results, self.root_cat_len)
+        self.assertEqual(search_result.estimated_total_number, self.root_cat_len)
         for item in search_result:
             self.assertEqual(item.provider, self.static_stac_provider)
 
@@ -283,7 +283,7 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search by date"""
         filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01")
         self.assertEqual(len(filtered_sr), self.child_cat_len)
-        self.assertEqual(filtered_sr.estimated_total_results, self.child_cat_len)
+        self.assertEqual(filtered_sr.estimated_total_number, self.child_cat_len)
         for item in filtered_sr:
             self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
@@ -356,7 +356,7 @@ class TestSearchStacStatic(unittest.TestCase):
             geom=self.extent_big,
         )
         self.assertEqual(len(search_result), 3)
-        self.assertEqual(search_result.estimated_total_results, 3)
+        self.assertEqual(search_result.estimated_total_number, 3)
 
     def test_search_stac_static_crunch_filter_property(self):
         """load_stac_items from root and filter by property"""
@@ -392,7 +392,7 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search by property"""
         search_result = self.dag.search(orbitNumber=110)
         self.assertEqual(len(search_result), 3)
-        self.assertEqual(search_result.estimated_total_results, 3)
+        self.assertEqual(search_result.estimated_total_number, 3)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
@@ -401,7 +401,7 @@ class TestSearchStacStatic(unittest.TestCase):
         """Use StaticStacSearch plugin to search by cloud cover"""
         search_result = self.dag.search(cloudCover=10)
         self.assertEqual(len(search_result), 1)
-        self.assertEqual(search_result.estimated_total_results, 1)
+        self.assertEqual(search_result.estimated_total_number, 1)
 
     def test_search_stac_static_crunch_filter_lastest_by_name(self):
         """load_stac_items from root and filter by name"""
