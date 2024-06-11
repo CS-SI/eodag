@@ -128,7 +128,7 @@ class StaticStacSearch(StacSearch):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
 
-        product_type = kwargs.get("productType", product_type)
+        product_type = kwargs.get("productType", prep.product_type)
         # provider product type specific conf
         self.product_type_def_params = (
             self.get_product_type_def_params(product_type, **kwargs)
@@ -136,7 +136,7 @@ class StaticStacSearch(StacSearch):
             else {}
         )
 
-        for collection in self.get_collections(**kwargs):
+        for collection in self.get_collections(prep, **kwargs):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
                 continue

@@ -31,7 +31,6 @@ from typing import (
     Set,
     Tuple,
     TypedDict,
-    Union,
     cast,
 )
 from urllib.error import URLError
@@ -76,7 +75,6 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     Annotated,
-    MockResponse,
     _deprecated,
     deepcopy,
     dict_items_recursive_apply,
@@ -401,8 +399,11 @@ class QueryStringSearch(Search):
             prep.exception_message = (
                 "Skipping error while fetching product types for " "{} {} instance:"
             ).format(self.provider, self.__class__.__name__)
-            if self.__class__.__name__ == "StaticStacSearch" or self.__class__.__name__ == "CopMarineSearch":
-                self._request(prep)
+            if (
+                self.__class__.__name__ == "StaticStacSearch"
+                or self.__class__.__name__ == "CopMarineSearch"
+            ):
+                response = self._request(prep)
             else:
                 response = QueryStringSearch._request(self, prep)
         except (RequestError, KeyError, AttributeError):
@@ -1044,7 +1045,10 @@ class QueryStringSearch(Search):
         # /asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         product_type: Optional[str] = kwargs.get("productType")
-        if product_type is None and not prep.product_type_def_params:
+        if product_type is None and (
+            not hasattr(prep, "product_type_def_params")
+            or not prep.product_type_def_params
+        ):
             collections: Set[Dict[str, Any]] = set()
             collection: Optional[str] = getattr(self.config, "collection", None)
             if collection is None:
