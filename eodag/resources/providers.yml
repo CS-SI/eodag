@@ -7211,7 +7211,7 @@
     discover_metadata:
       auto_discovery: false
     discover_queryables:
-      fetch_url: ""
+      fetch_url: null
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
   products:
