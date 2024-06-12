@@ -133,7 +133,12 @@ class StaticStacSearch(StacSearch):
         """Perform a search on a static STAC Catalog"""
 
         # only return 1 page if pagination is disabled
-        if prep.page and prep.page > 1 and prep.items_per_page is not None and prep.items_per_page <= 0:
+        if (
+            prep.page
+            and prep.page > 1
+            and prep.items_per_page is not None
+            and prep.items_per_page <= 0
+        ):
             return [], 0
 
         product_type = kwargs.get("productType", prep.product_type)
