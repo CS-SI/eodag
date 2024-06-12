@@ -4709,7 +4709,7 @@ METOP_MHSL1:
   missionStartDate: "2009-03-23T00:00:00Z"
 
 # Copernicus Marine
-MO_GLOBAL_ANALYSIS_FORECAST_PHY_001_024:
+MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |
     The Operational Mercator global ocean analysis and forecast system at 1/12 degree is providing 10 days of 3D global
     ocean forecasts updated daily. The time series is aggregated in time in order to reach a two full year’s time series
@@ -4729,7 +4729,7 @@ MO_GLOBAL_ANALYSIS_FORECAST_PHY_001_024:
   title: Global Ocean Physics Analysis and Forecast
   missionStartDate: "2019-01-01T00:00:00Z"
 
-MO_GLOBAL_ANALYSIS_FORECAST_BIO_001_028:
+MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
   abstract: |
     The Operational Mercator Ocean biogeochemical global ocean analysis and forecast system at 1/4 degree is providing
     10 days of 3D global ocean forecasts updated weekly. The time series is aggregated in time, in order to reach a two
@@ -4753,7 +4753,7 @@ MO_GLOBAL_ANALYSIS_FORECAST_BIO_001_028:
   title: Global Ocean Biogeochemistry Analysis and Forecast
   missionStartDate: "2021-10-01T00:00:00Z"
 
-MO_GLOBAL_ANALYSIS_FORECAST_WAV_001_027:
+MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
   abstract: |
     The operational global ocean analysis and forecast system of Météo-France with a resolution of 1/12 degree is
     providing daily analyses and 10 days forecasts for the global ocean sea surface waves. This product includes
@@ -4826,7 +4826,32 @@ MO_GLOBAL_MULTIYEAR_WAV_001_032:
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2024-01-31T21:00:00Z"
 
-MO_INSITU_GLO_UV_NRT_OBSERVATIONS_013_048:
+MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
+  abstract: |
+    You can find here the CMEMS Global Ocean Ensemble Reanalysis product at ¼ degree resolution: monthly means of Temperature, Salinity,
+    Currents and Ice variables for 75 vertical levels, starting from 1993 onward.\n \nGlobal ocean reanalyses are homogeneous 3D gridded
+    descriptions of the physical state of the ocean covering several decades, produced with a numerical ocean model constrained with data
+    assimilation of satellite and in situ observations. These reanalyses are built to be as close as possible to the observations
+    (i.e. realistic) and in agreement with the model physics The multi-model ensemble approach allows uncertainties or error bars in
+    the ocean state to be estimated.\n\nThe ensemble mean may even provide for certain regions and/or periods a more reliable estimate
+    than any individual reanalysis product.\n\nThe four reanalyses, used to create the ensemble, covering “altimetric era” period
+    (starting from 1st of January 1993) during which altimeter altimetry data observations are available:\n GLORYS2V4 from Mercator Ocean (Fr);
+    \n ORAS5 from ECMWF;\n GloSea5 from Met Office (UK);\n and C-GLORSv7 from CMCC (It);\n
+    \nThese four products provided four different time series of global ocean simulations 3D monthly estimates. All numerical products
+    available for users are monthly or daily mean averages describing the ocean.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00024
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,ensemble,multiyear,reanalysis,temperature,currents,salinity,ice,physics
+  sensorType:
+  license: proprietary
+  title: Global Ocean Ensemble Physics Reanalysis
+  missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T00:00:00Z"
+
+MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
   abstract: |
     This product is entirely dedicated to ocean current data observed in near-real time. Current data from 3 different types
     of instruments are distributed:\n The near-surface zonal and meridional velocities calculated along the trajectories of
@@ -4846,7 +4871,7 @@ MO_INSITU_GLO_UV_NRT_OBSERVATIONS_013_048:
   title: Global Ocean- in-situ Near real time observations of ocean currents
   missionStartDate: "1997-01-01T00:00:00Z"
 
-MO_INSITU_GLO_TS_OA_NRT_OBSERVATIONS_013_002_a:
+MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
   abstract: |
     For the Global Ocean- Gridded objective analysis fields of temperature and salinity using profiles from the in-situ near
     real time database are produced monthly. Objective analysis is based on a statistical estimation method that allows presenting
@@ -4863,6 +4888,23 @@ MO_INSITU_GLO_TS_OA_NRT_OBSERVATIONS_013_002_a:
   title: Global Ocean- Real time in-situ observations objective analysis
   missionStartDate: "2015-01-01T00:00:00Z"
   missionEndDate: "2024-04-01T00:00:00Z"
+
+MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
+  abstract: |
+    Global Ocean- Gridded objective analysis fields of temperature and salinity using profiles from the reprocessed in-situ global
+    product CORA (INSITU_GLO_TS_REP_OBSERVATIONS_013_001_b) using the ISAS software. Objective analysis is based on a statistical
+    estimation method that allows presenting a synthesis and a validation of the dataset, providing a validation source for operational
+    models, observing seasonal cycle and inter-annual variability.\n\n**DOI (product):**  \nhttps://doi.org/10.17882/46219
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,insitu,delayed,ocean,gridded,global,L4,analysis,temperature,salinity,CORA
+  sensorType:
+  license: proprietary
+  title: Global Ocean- Delayed Mode gridded CORA- In-situ Observations objective analysis in Delayed Mode
+  missionStartDate: "1960-01-01T00:00:00Z"
+  missionEndDate: "2023-06-01T00:00:00Z"
 
 MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   abstract: |
@@ -4909,7 +4951,7 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
   missionStartDate: "1985-01-01T00:00:00Z"
   missionEndDate: "2022-12-01T00:00:00Z"
 
-MO_MULTIOBS_GLO_BIO_NUTRIENTS_PROFILES_REP_015_009:
+MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   abstract: |
     This product consists of vertical profiles of the concentration of nutrients (nitrates, phosphates, and silicates) and
     carbonate system variables (total alkalinity, dissolved inorganic carbon, pH, and partial pressure of carbon dioxide),
@@ -4936,7 +4978,7 @@ MO_MULTIOBS_GLO_BIO_NUTRIENTS_PROFILES_REP_015_009:
   missionStartDate: "2002-09-01T00:00:00Z"
   missionEndDate: "2022-08-31T00:00:00Z"
 
-MO_MULTIOBS_GLO_PHY_NRT_015_003:
+MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
   abstract: |
     This product is a  L4 REP and NRT global total velocity field at 0m and 15m together wiht its individual components
     (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency and
@@ -5090,7 +5132,7 @@ MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
   title: Global Ocean Sea Ice Concentration Time Series REPROCESSED (OSI-SAF)
   missionStartDate: "1978-10-25T00:00:00Z"
 
-MO_SEALEVEL_GLO_PHY_L4_NRT_OBSERVATIONS_008_046:
+MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
   abstract: |
     Altimeter satellite gridded Sea Level Anomalies (SLA) computed with respect to a twenty-year [1993, 2012] mean. The SLA is
     estimated by Optimal Interpolation, merging the L3 along-track measurement from the different altimeter missions available.
@@ -5240,7 +5282,7 @@ MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
   title: GLOBAL OCEAN L3 SPECTRAL PARAMETERS FROM NRT SATELLITE MEASUREMENTS
   missionStartDate: "2018-05-28T00:00:00Z"
 
-MO_WAVE_GLO_WAV_L3_SWH_NRT_OBSERVATIONS_014_001:
+MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
   abstract: |
     Near-Real-Time mono-mission satellite-based along-track significant wave height. Only valid data are included, based on a
     rigorous editing combining various criteria such as quality flags (surface flag, presence of ice) and thresholds on parameter
@@ -5266,7 +5308,7 @@ MO_WAVE_GLO_WAV_L3_SWH_NRT_OBSERVATIONS_014_001:
   title: GLOBAL OCEAN L3 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
   missionStartDate: "2021-01-01T00:00:00Z"
 
-MO_WAVE_GLO_WAV_L4_SWH_NRT_OBSERVATIONS_014_003:
+MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
   abstract: |
     Near-Real-Time gridded multi-mission merged satellite significant wave height. Only valid data are included. This product
     is processed in Near-Real-Time by the WAVE-TAC multi-mission altimeter data processing system and is based on CMEMS level-3
@@ -5286,7 +5328,7 @@ MO_WAVE_GLO_WAV_L4_SWH_NRT_OBSERVATIONS_014_003:
   title: GLOBAL OCEAN L4 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
   missionStartDate: "2020-01-01T00:00:00Z"
 
-MO_WIND_GLO_PHY_CLIMATE_L4_REP_012_003:
+MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
   abstract: |
     For the Global Ocean - The product contains monthly Level-4 sea surface wind and stress fields at 0.25 degrees horizontal
     spatial resolution. The monthly averaged wind and stress fields are based on monthly average ECMWF ERA5 reanalysis fields,
@@ -5305,7 +5347,7 @@ MO_WIND_GLO_PHY_CLIMATE_L4_REP_012_003:
   missionStartDate: "1999-08-01T00:00:00Z"
   missionEndDate: "2024-01-01T00:00:00Z"
 
-MO_WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:
+MO_WIND_GLO_PHY_L3_NRT_012_002:
   abstract: |
     For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
     with resolutions corresponding to the L2 swath products:\n\n0.5 degrees grid for the 50 km scatterometer L2 inputs,
@@ -5326,7 +5368,7 @@ MO_WIND_GLO_WIND_L3_NRT_OBSERVATIONS_012_002:
   title: Global Ocean Daily Gridded Sea Surface Winds from Scatterometer
   missionStartDate: "2016-01-01T00:00:00Z"
 
-MO_WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:
+MO_WIND_GLO_PHY_L3_MY_012_005:
   abstract: |
     For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
     with resolutions corresponding  to the L2 swath products:\n0.5 degrees grid for the 50 km scatterometer L2 inputs,
@@ -5348,7 +5390,7 @@ MO_WIND_GLO_WIND_L3_REP_OBSERVATIONS_012_005:
   missionStartDate: "1991-08-01T00:00:00Z"
   missionEndDate: "2023-12-31T00:00:00Z"
 
-MO_WIND_GLO_WIND_L4_NRT_OBSERVATIONS_012_004:
+MO_WIND_GLO_PHY_L4_NRT_012_004:
   abstract: |
     For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 degrees horizontal spatial
     resolution. Scatterometer observations for Metop-B and Metop-C ASCAT and their collocated European Centre for Medium-Range
@@ -5367,7 +5409,7 @@ MO_WIND_GLO_WIND_L4_NRT_OBSERVATIONS_012_004:
   title: Global Ocean Hourly Sea Surface Wind and Stress from Scatterometer and Model
   missionStartDate: "2020-07-01T00:00:00Z"
 
-MO_WIND_GLO_WIND_L4_REP_OBSERVATIONS_012_006:
+MO_WIND_GLO_PHY_L4_MY_012_006:
   abstract: |
     For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 and 0.25 degrees horizontal
     spatial resolution. Scatterometer observations and their collocated European Centre for Medium-Range Weather Forecasts (ECMWF) ERA5
@@ -5387,6 +5429,130 @@ MO_WIND_GLO_WIND_L4_REP_OBSERVATIONS_012_006:
   title: Global Ocean Hourly Reprocessed Sea Surface Wind and Stress from Scatterometer and Model
   missionStartDate: "1994-06-01T00:00:00Z"
   missionEndDate: "2024-01-21T23:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, Brockmann Consult (BC) is providing **Bio-Geo_Chemical (BGC)** products
+    based on the ESA-CCI inputs.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the **""multi""** products.\n
+    Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional types and sizes (**PFT**) and  Reflectance (**RRS**).\n\n
+    Temporal resolutions: **daily**, **monthly**.\n* Spatial resolutions: **4 km** (multi).\n
+    Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).
+    \n\nTo find these products in the catalogue, use the search keyword **""ESA-CCI""**.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00282
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,L3,bio-geo-chemical,BGC,chlorophyll,phytoplankton,reflectance
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations
+  missionStartDate: "1997-09-04T00:00:00Z"
+  missionEndDate: "2024-04-30T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the **"multi"** products, and S3A & S3B only for the **"olci"** products.\n* Variables: Chlorophyll-a (**CHL**), Phytoplankton
+    Functional types and sizes (**PFT**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse Attenuation (**KD490**),
+    Particulate Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n\n* Temporal resolutions: **daily**
+    \n* Spatial resolutions: **4 km** and a finer resolution based on olci **300 meters** inputs.\n* Recent products are organized in
+    datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).\n
+    \nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword **"GlobColour"**.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00278
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,ocean,colour,L3,bio-geo-chemical,BGC,Copernicus-GlobColour,NRT
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (Near Real Time)
+  missionStartDate: "2023-04-25T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B for
+    the **"multi"** products, and S3A & S3B only for the **"olci"** products.\n* Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional
+    types and sizes (**PFT**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse Attenuation (**KD490**), Particulate
+    Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n\n Temporal resolutions: **daily**.\n Spatial resolutions:
+    **4 km** and a finer resolution based on olci **300 meters** inputs.\n* Recent products are organized in datasets called Near Real Time (**NRT**)
+    and long time-series (from 1997) in datasets called Multi-Years (**MY**).\n\nTo find the **Copernicus-GlobColour** products in the catalogue,
+    use the search keyword **"GlobColour"**.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00280
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,global,ocean,colour,L3,bio-geo-chemical,BGC,Copernicus-GlobColour,MY,multi-years
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-09-04T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B for the
+    **"multi"** products, and S3A & S3B only for the **"olci"** products.\n* Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional
+    types and sizes (**PFT**), Primary Production (**PP**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse
+    Attenuation (**KD490**), Particulate Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n
+    \n* Temporal resolutions: **monthly** plus, for some variables, **daily gap-free** based on a space-time interpolation to provide a
+    "cloud free" product.\n* Spatial resolutions: **4 km** and a finer resolution based on olci **300 meters** inputs.
+    \n* Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets
+    called Multi-Years (**MY**).\n\nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword
+    **"GlobColour"**.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00279
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,ocean,colour,L4,bio-geo-chemical,BGC,Copernicus-GlobColour,NRT,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time)
+  missionStartDate: "2023-04-01T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B for the
+    **""multi""** products, and S3A & S3B only for the **""olci""** products.\n Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional
+    types and sizes (**PFT**), Primary Production (**PP**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse Attenuation
+    (**KD490**), Particulate Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n\n Temporal resolutions:
+    **monthly** plus, for some variables, **daily gap-free** based on a space-time interpolation to provide a ""cloud free"" product.\n
+    Spatial resolutions: **4 km** and a finer resolution based on olci **300 meters** inputs.\n Recent products are organized
+    in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).
+    \n\nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword **""GlobColour""**."
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00281
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,ocean,colour,L4,bio-geo-chemical,BGC,Copernicus-GlobColour,MY,multi-years,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-09-01T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, Brockmann Consult (BC) is providing **Bio-Geo_Chemical (BGC)** products
+    based on the ESA-CCI inputs.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP,  OLCI-S3A & OLCI-S3B for the **""multi""** products.
+    \n Variables: Chlorophyll-a (**CHL**).\n\n* Temporal resolutions: **monthly**.\n* Spatial resolutions: **4 km** (multi).
+    \n Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets
+    called Multi-Years (**MY**).\n\nTo find these products in the catalogue, use the search keyword **""ESA-CCI""**.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00283
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 4
+  keywords: CMEMS,global,ocean,colour,L4,bio-geo-chemical,BGC,chlorophyll,MY,multi-years,monthly
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton MY L4 monthly observations
+  missionStartDate: "1997-09-01T00:00:00Z"
+  missionEndDate: "2024-04-01T00:00:00Z"
 
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
