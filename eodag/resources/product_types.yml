@@ -2372,7 +2372,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS European air quality forecasts
-  missionStartDate: "2021-01-01T00:00:00Z"
+  missionStartDate: "2020-08-26T00:00:00Z"
 
 CAMS_GFE_GFAS:
   abstract: |
@@ -3030,6 +3030,7 @@ SATELLITE_CARBON_DIOXIDE:
   license: proprietary
   title: Carbon dioxide data from 2002 to present derived from satellite observations
   missionStartDate: "2002-10-01T00:00:00Z"
+  missionEndDate: "2022-12-31T23:59:59"
 
 SATELLITE_METHANE:
   abstract: |
@@ -3648,7 +3649,7 @@ GLOFAS_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related forecasted data by the Global Flood Awareness System
-  missionStartDate: "2021-05-26T00:00:00Z"
+  missionStartDate: "2010-11-05T00:00:00Z"
 
 GLOFAS_HISTORICAL:
   abstract: |
@@ -3801,6 +3802,7 @@ EFAS_FORECAST:
   license: proprietary
   title: River discharge and related forecasted data by the European Flood Awareness System
   missionStartDate: "2018-10-11T00:00:00Z"
+  missionEndDate: "2023-09-19T00:00:00Z"
 
 EFAS_HISTORICAL:
   abstract: |
@@ -3906,6 +3908,7 @@ EFAS_SEASONAL:
   license: proprietary
   title: Seasonal forecasts of river discharge and related data by the European Flood Awareness System
   missionStartDate: "2020-11-01T00:00:00Z"
+  missionEndDate: "2023-09-30T00:00:00Z"
 
 EFAS_SEASONAL_REFORECAST:
   abstract: |
