@@ -39,7 +39,7 @@ jobs:
         key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
     - name: Install eodag
       run: |
-        python -m pip install .
+        python -m pip install ".[all-providers]"
     - name: Fetch and update external product types reference
       run: |
         export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
@@ -67,7 +67,7 @@ jobs:
         echo "${full_update_summary:0:65536}" >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v4
+      uses: peter-evans/create-pull-request@v6
       with:
         branch: external-product-types-ref-update
         delete-branch: true
