@@ -56,8 +56,7 @@ class _TextOpener:
                 with open(url) as f:
                     return f.read()
         except OSError:
-            logger.debug("read_local_json is not the right STAC opener")
-            raise STACOpenerError
+            raise STACOpenerError("read_local_json is not the right STAC opener")
 
     def read_http_remote_json(self, url: str, as_json: bool = False) -> Any:
         """Read JSON remote HTTP file"""
@@ -83,8 +82,9 @@ class _TextOpener:
                     f"{url} with a timeout of {self.timeout} seconds"
                 ) from None
             else:
-                logger.debug("read_http_remote_json is not the right STAC opener")
-                raise STACOpenerError
+                raise STACOpenerError(
+                    "read_http_remote_json is not the right STAC opener"
+                )
 
     def __call__(self, url: str, as_json: bool = False) -> Any:
         openers = self.openers[:]

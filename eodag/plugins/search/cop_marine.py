@@ -34,8 +34,9 @@ from dateutil.utils import today
 from eodag import EOProduct
 from eodag.api.product import AssetsDict
 from eodag.config import PluginConfig
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, get_bucket_name_and_prefix
+from eodag.utils import get_bucket_name_and_prefix
 from eodag.utils.exceptions import UnsupportedProductType, ValidationError
 
 if TYPE_CHECKING:
@@ -207,10 +208,7 @@ class CopMarineSearch(StaticStacSearch):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """
@@ -227,17 +225,20 @@ class CopMarineSearch(StaticStacSearch):
         :returns: list of products and total number of products
         :rtype: Tuple[List[EOProduct], Optional[int]]
         """
+        page = prep.page
+        items_per_page = prep.items_per_page
+
         # only return 1 page if pagination is disabled
         if page > 1 and items_per_page <= 0:
             return [], 0
 
-        product_type = kwargs.get("productType", product_type)
+        product_type = kwargs.get("productType", prep.product_type)
         if not product_type:
             raise ValidationError(
                 "parameter product type is required for search with cop_marine provider"
             )
         collection_dict, datasets_items_list = self._get_product_type_info(product_type)
-        products = []
+        products: List[EOProduct] = []
         start_index = items_per_page * (page - 1)
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
@@ -251,12 +252,16 @@ class CopMarineSearch(StaticStacSearch):
                     start_date = isoparse(dataset_item["properties"]["start_datetime"])
                 else:
                     start_date = isoparse(dataset_item["properties"]["datetime"])
+                if not start_date.tzinfo:
+                    start_date = start_date.replace(tzinfo=tzutc())
                 if "completionTimeFromAscendingNode" in kwargs:
                     end_date = isoparse(kwargs["completionTimeFromAscendingNode"])
                 elif "end_datetime" in dataset_item["properties"]:
                     end_date = isoparse(dataset_item["properties"]["end_datetime"])
                 else:
                     end_date = today(tzinfo=tzutc())
+                if not end_date.tzinfo:
+                    end_date = end_date.replace(tzinfo=tzutc())
 
                 # retrieve information about s3 from collection data
                 s3_url = dataset_item["assets"]["native"]["href"]
