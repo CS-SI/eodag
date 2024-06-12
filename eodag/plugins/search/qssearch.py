@@ -399,13 +399,8 @@ class QueryStringSearch(Search):
             prep.exception_message = (
                 "Skipping error while fetching product types for " "{} {} instance:"
             ).format(self.provider, self.__class__.__name__)
-            if (
-                self.__class__.__name__ == "StaticStacSearch"
-                or self.__class__.__name__ == "CopMarineSearch"
-            ):
-                response = self._request(prep)
-            else:
-                response = QueryStringSearch._request(self, prep)
+
+            response = QueryStringSearch._request(self, prep)
         except (RequestError, KeyError, AttributeError):
             return None
         else:

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from unittest import mock
 
 import geojson
 
@@ -108,20 +109,15 @@ class StaticStacSearch(StacSearch):
             collections = [c for c in collections if c["id"] == kwargs["q"]]
         collections_mock_response = {"collections": collections}
 
-        # save StaticStacSearch._request and mock it to make return loaded static results
-        stacapi_request = self._request
-        self._request = (
-            lambda url, info_message=None, exception_message=None: MockResponse(
-                collections_mock_response, 200
+        # discover_product_types on mocked QueryStringSearch._request
+        with mock.patch(
+            "eodag.plugins.search.qssearch.QueryStringSearch._request",
+            autospec=True,
+            return_value=MockResponse(collections_mock_response, 200),
+        ):
+            conf_update_dict = super(StaticStacSearch, self).discover_product_types(
+                **kwargs
             )
-        )
-        # discover_product_types on mock StacSearch
-        conf_update_dict = super(StaticStacSearch, self).discover_product_types(
-            **kwargs
-        )
-
-        # restore plugin._request
-        self._request = stacapi_request
 
         return conf_update_dict
 
@@ -167,18 +163,15 @@ class StaticStacSearch(StacSearch):
         nb_features = len(features)
         feature_collection = geojson.FeatureCollection(features)
 
-        # save StaticStacSearch._request and mock it to make return loaded static results
-        stacapi_request = self._request
-        self._request = (
-            lambda url, info_message=None, exception_message=None: MockResponse(
-                feature_collection, 200
+        # query on mocked StacSearch._request
+        with mock.patch(
+            "eodag.plugins.search.qssearch.StacSearch._request",
+            autospec=True,
+            return_value=MockResponse(feature_collection, 200),
+        ):
+            eo_products, _ = super(StaticStacSearch, self).query(
+                PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
             )
-        )
-
-        # query on mock StacSearch
-        eo_products, _ = super(StaticStacSearch, self).query(
-            PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
-        )
         # filter using query params
         search_result = SearchResult(eo_products)
         # Filter by date
@@ -219,8 +212,5 @@ class StaticStacSearch(StacSearch):
                 search_result = search_result.crunch(
                     FilterProperty({property_key: property_value, "operator": "eq"})
                 )
-
-        # restore plugin._request
-        self._request = stacapi_request
 
         return search_result.data, len(search_result)
