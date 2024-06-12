@@ -348,8 +348,15 @@ class PluginConfig(yaml.YAMLObject):
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
+
     order_on_response: PluginConfig.OrderOnResponse
     order_status: PluginConfig.OrderStatus
+    no_auth_download: Annotated[
+        bool,
+        Doc(
+            "Do not authenticate the download request but only the order and order status ones."
+        ),
+    ]
     bucket_path_level: int  # S3RestDownload
     requester_pays: bool  # AwsDownload
     flatten_top_dirs: bool
