@@ -251,3 +251,9 @@ eumetsat_ds:
             password:
     download:
         outputs_prefix:
+cop_marine:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:

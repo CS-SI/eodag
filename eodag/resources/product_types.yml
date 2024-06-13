@@ -973,7 +973,7 @@ S3_OLCI_L2WFR_BC003:
 S3_OLCI_L4BALTIC:
   abstract: |
     Baltic Sea Surface Ocean Colour Plankton from Sentinel-3 OLCI L4 monthly observations
-    For the Baltic Sea Ocean Satellite Observations, the Italian National Research Council (CNR – Rome, Italy), is
+    For the Baltic Sea Ocean Satellite Observations, the Italian National Research Council (CNR - Rome, Italy), is
     providing Bio-Geo_Chemical (BGC) regional datasets: + ''plankton'' with the phytoplankton chlorophyll
     concentration (CHL) evaluated via region-specific neural network (Brando et al. 2021) Upstreams: OLCI-S3A & S3B
     Temporal resolution: monthly Spatial resolution: 300 meters To find this product in the catalogue, use the search
@@ -1402,7 +1402,7 @@ S3_LAN:
 S3_LAN_HY:
   abstract: |
     Sentinel-3 STM payload includes two main instruments: the Sentinel-3 Radar ALtimeter (SRAL) and a MicroWave
-    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth’s surface. It is the first
+    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth's surface. It is the first
     radar altimeter operating exclusively with delay-Doppler capabilities, which provides a significant improvement of
     the along-track resolution compared to conventional Low Resolution Mode (LRM) altimeters. This enhancement is
     highly valuable over continental and sea ice surfaces, considering their heterogeneous characteristics.
@@ -1426,7 +1426,7 @@ S3_LAN_HY:
 S3_LAN_SI:
   abstract: |
     Sentinel-3 STM payload includes two main instruments: the Sentinel-3 Radar ALtimeter (SRAL) and a MicroWave
-    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth’s surface. It is the first
+    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth's surface. It is the first
     radar altimeter operating exclusively with delay-Doppler capabilities, which provides a significant improvement of
     the along-track resolution compared to conventional Low Resolution Mode (LRM) altimeters. This enhancement is
     highly valuable over continental and sea ice surfaces, considering their heterogeneous characteristics.
@@ -1450,7 +1450,7 @@ S3_LAN_SI:
 S3_LAN_LI:
   abstract: |
     Sentinel-3 STM payload includes two main instruments: the Sentinel-3 Radar ALtimeter (SRAL) and a MicroWave
-    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth’s surface. It is the first
+    Radiometer (MWR). SRAL is providing continuous topography measurements of the Earth's surface. It is the first
     radar altimeter operating exclusively with delay-Doppler capabilities, which provides a significant improvement of
     the along-track resolution compared to conventional Low Resolution Mode (LRM) altimeters. This enhancement is
     highly valuable over continental and sea ice surfaces, considering their heterogeneous characteristics.
@@ -2415,7 +2415,7 @@ CAMS_SOLAR_RADIATION:
 CAMS_GREENHOUSE_INVERSION:
   abstract: |
     This data set contains net fluxes at the surface, atmospheric mixing ratios at model levels, and column-mean atmospheric mixing ratios for carbon dioxide (CO2), methane (CH4) and nitrous oxide (N20).
-    Natural and anthropogenic surface fluxes of greenhouse gases are key drivers of the evolution of Earth’s climate, so their monitoring is essential.
+    Natural and anthropogenic surface fluxes of greenhouse gases are key drivers of the evolution of Earth's climate, so their monitoring is essential.
     Such information has been used in particular as part of the Assessment Reports of the Intergovernmental Panel on Climate Change (IPCC).
     Ground-based and satellite remote-sensing observations provide a means to quantifying the net fluxes between the land and ocean on the one hand and the atmosphere on the other hand.
     This is done through a process called atmospheric inversion, which uses transport models of the atmosphere to link the observed concentrations of CO2, CH4 and N2O to the net fluxes at the Earth's surface.
@@ -2955,7 +2955,7 @@ GLACIERS_DIST_RANDOLPH:
 GRIDDED_GLACIERS_MASS_CHANGE:
   abstract: |
     The dataset provides annual glacier mass changes distributed on a global regular grid at 0.5° resolution (latitude,
-    longitude). Glaciers play a fundamental role in the Earth’s water cycles. They are one of the most important
+    longitude). Glaciers play a fundamental role in the Earth's water cycles. They are one of the most important
     freshwater resources for societies and ecosystems and the recent increase in ice melt contributes directly to the
     rise of ocean levels. Due to this they have been declared as an Essential Climate Variable (ECV) by GCOS, the Global
     Climate Observing System. Within the Copernicus Services, the global gridded annual glacier mass change dataset
@@ -3073,7 +3073,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
     This dataset provides daily gridded data of sea ice edge and sea ice type derived from brightness temperatures
     measured by satellite passive microwave radiometers. Sea ice is an important component of our climate system and
     a sensitive indicator of climate change. Its presence or its retreat has a strong impact on air-sea interactions,
-    the Earth’s energy budget as well as marine ecosystems. It is recognized by the Global Climate Observing System as
+    the Earth's energy budget as well as marine ecosystems. It is recognized by the Global Climate Observing System as
     an Essential Climate Variable. Sea ice edge and type are some of the parameters used to characterise sea ice. Other
     parameters include sea ice concentration and sea ice thickness, also available in the Climate Data Store. Sea ice
     edge and type are defined as follows: Sea ice edge classifies the sea surface into open water, open ice, and closed
@@ -3115,7 +3115,7 @@ SATELLITE_SEA_ICE_THICKNESS:
   abstract: |
     This dataset provides monthly gridded data of sea ice thickness for the Arctic region based on satellite radar altimetry
     observations. Sea ice is an important component of our climate system and a sensitive indicator of climate change. Its
-    presence or its retreat has a strong impact on air-sea interactions, the Earth’s energy budget as well as marine ecosystems.
+    presence or its retreat has a strong impact on air-sea interactions, the Earth's energy budget as well as marine ecosystems.
     It is recognized by the Global Climate Observing System as an Essential Climate Variable. Sea ice thickness is one of the
     parameters commonly used to characterise sea ice, alongside sea ice concentration, sea ice edge, and sea ice type, also
     available in the Climate Data Store.
@@ -3160,7 +3160,7 @@ SATELLITE_SEA_ICE_CONCENTRATION:
   abstract: |
     This dataset provides daily gridded data of sea ice concentration for both hemispheres derived from satellite passive microwave
     brightness temperatures. Sea ice is an important component of our climate system and a sensitive indicator of climate change.
-    Its presence or its retreat has a strong impact on air-sea interactions, the Earth’s energy budget as well as marine ecosystems.
+    Its presence or its retreat has a strong impact on air-sea interactions, the Earth's energy budget as well as marine ecosystems.
     It is listed as an Essential Climate Variable by the Global Climate Observing System. Sea ice concentration is defined as the
     fraction of the ocean surface in a pixel or grid cell that is covered with sea ice. It is one of the parameters commonly used to
     characterise the sea-ice cover. Other sea ice parameters include sea ice thickness, sea ice edge, and sea ice type, also
@@ -3168,9 +3168,9 @@ SATELLITE_SEA_ICE_CONCENTRATION:
 
     The dataset consists of two products produced by the European Organisation for the Exploitation of Meteorological Satellites (EUMETSAT) Ocean and Sea Ice Satellite Application Facility (OSI SAF) with research & development from European Space Agency Climate Change Initiative projects (ESA CCI):
 
-    The Global Sea Ice Concentration Climate Data Record based on measurements from the following sensors: Scanning Multichannel Microwave Radiometer (SMMR; 1978–1987), Special Sensor Microwave/Imager (SSM/I; 1987–2006), and Special Sensor Microwave Imager/Sounder (SSMIS; 2005 onward). This product spans the period from October 1978 to present and is updated daily by an Interim Climate Data Record. In the following, it is referred to as the SSMIS product.
-    The Global Sea Ice Concentration Climate Data Record based on measurements from the Advanced Microwave Scanning Radiometer - Earth Observing System (AMSR-E) sensor (2002–2011) and its successor, AMSR2 (2012–2020). This product spans the 2002–2020 period and is not updated. In the following, it is referred to as the AMSR product. Note, that this product was first produced by the European Space Agency Climate Change Initiative Phase 2 project (ESA CCI) and has been transferred to EUMETSAT OSI SAF since version 3.0.
-    Both products are provided on the same polar projection with a grid resolution of 25 km. However, the AMSR product has a true spatial resolution (as resolved by the sensor) of about 15–25 km versus 30–60 km for the SSMIS product. Therefore, the AMSR product provides a much more detailed view of the sea ice cover than the SSMIS product, especially in the marginal ice zone, the transitional zone between open water and the dense sea ice pack. On the other hand, the clear strength of the SSMIS product is its more than 40-year long and consistent record with daily updates.
+    The Global Sea Ice Concentration Climate Data Record based on measurements from the following sensors: Scanning Multichannel Microwave Radiometer (SMMR; 1978-1987), Special Sensor Microwave/Imager (SSM/I; 1987-2006), and Special Sensor Microwave Imager/Sounder (SSMIS; 2005 onward). This product spans the period from October 1978 to present and is updated daily by an Interim Climate Data Record. In the following, it is referred to as the SSMIS product.
+    The Global Sea Ice Concentration Climate Data Record based on measurements from the Advanced Microwave Scanning Radiometer - Earth Observing System (AMSR-E) sensor (2002-2011) and its successor, AMSR2 (2012-2020). This product spans the 2002-2020 period and is not updated. In the following, it is referred to as the AMSR product. Note, that this product was first produced by the European Space Agency Climate Change Initiative Phase 2 project (ESA CCI) and has been transferred to EUMETSAT OSI SAF since version 3.0.
+    Both products are provided on the same polar projection with a grid resolution of 25 km. However, the AMSR product has a true spatial resolution (as resolved by the sensor) of about 15-25 km versus 30-60 km for the SSMIS product. Therefore, the AMSR product provides a much more detailed view of the sea ice cover than the SSMIS product, especially in the marginal ice zone, the transitional zone between open water and the dense sea ice pack. On the other hand, the clear strength of the SSMIS product is its more than 40-year long and consistent record with daily updates.
 
     The two products share the same algorithm baseline, which is both a continuation of the EUMETSAT OSI SAF approach and a series of innovations contributed by ESA CCI activities. For both products, the underlying algorithm makes use of a combination of the same three temperature channels near 19 GHz and 37 GHz. The data also share a common data format, that allows expert users to revert some of the filtering steps and access the raw output of the SIC algorithms. Both are level-4 products in the sense that gaps are filled by temporal and spatial interpolation. However, gap filling is not applied to fill in days when no input satellite data are available.
 
@@ -3259,7 +3259,7 @@ SATELLITE_SEA_LEVEL_GLOBAL:
     measurements. The rise in global mean sea level in recent decades has been one of the most important and well-known
     consequences of climate warming, putting a large fraction of the world population and economic infrastructure at
     greater risk of flooding. However, changes in the global average sea level mask regional variations that can be one
-    order of magnitude larger. Therefore, it is essential to measure changes in sea level over the world’s oceans as
+    order of magnitude larger. Therefore, it is essential to measure changes in sea level over the world's oceans as
     accurately as possible. Sea level anomaly is defined as the height of water over the mean sea surface in a given
     time and region. In this dataset sea level anomalies are computed with respect to a twenty-year mean reference
     period (1993-2012) using up-to-date altimeter standards. In the past, the altimeter sea level datasets were
@@ -4623,8 +4623,8 @@ METOP_GOMEL1:
 METOP_GOMEL1R03:
   abstract: |
     This is release 3 of the Global Ozone Monitoring Experiment 2 (GOME-2) Level 1B Fundamental Data Record from Metop-A
-    and -B. GOME-2 is an optical spectrometer. GOME-2 senses the Earth’s backscattered radiance and extra-terrestrial
-    solar irradiance in the ultraviolet and visible part of the spectrum (240 nm – 790 nm) at a high spectral resolution
+    and -B. GOME-2 is an optical spectrometer. GOME-2 senses the Earth's backscattered radiance and extra-terrestrial
+    solar irradiance in the ultraviolet and visible part of the spectrum (240 nm - 790 nm) at a high spectral resolution
     between 0.26 nm and 0.51 nm. There are 4096 spectral points from four detector channels transferred for each
     individual GOME-2 measurement. This is a Fundamental Data Record (FDR). Disclaimer: GOME2-A channel 3 should be
     careful to use for the period: April 2007 until March 2009 when doing DOAS retrievals.
@@ -4638,6 +4638,7 @@ METOP_GOMEL1R03:
   title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
   missionStartDate: "2007-04-01T00:00:00Z"
   missionEndDate: "2020-08-01T00:00:00Z"
+
 METOP_IASTHR011:
   abstract: |
     This is the release 1.1 of the climate data record of "all-sky" temperature and humidity profiles and their
@@ -4706,6 +4707,853 @@ METOP_MHSL1:
   license: proprietary
   title: MHS Level 1B - Metop - Global
   missionStartDate: "2009-03-23T00:00:00Z"
+
+# Copernicus Marine
+MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
+  abstract: |
+    The Operational Mercator global ocean analysis and forecast system at 1/12 degree is providing 10 days of 3D global
+    ocean forecasts updated daily. The time series is aggregated in time in order to reach a two full year's time series
+    sliding window. This product includes daily and monthly mean files of temperature, salinity, currents, sea level,
+    mixed layer depth and ice parameters from the top to the bottom over the global ocean. It also includes hourly mean
+    surface fields for sea level height, temperature and currents. The global ocean output files are displayed with a
+    1/12 degree horizontal resolution with regular longitude/latitude equirectangular projection. 50 vertical levels are
+    ranging from 0 to 5500 meters. This product also delivers a special dataset for surface current which also includes
+    wave and tidal drift called SMOC (Surface merged Ocean Current). DOI (product) : https://doi.org/10.48670/moi-00016
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,analysis,forecast,marine,physics
+  sensorType:
+  license: proprietary
+  title: Global Ocean Physics Analysis and Forecast
+  missionStartDate: "2019-01-01T00:00:00Z"
+
+MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
+  abstract: |
+    The Operational Mercator Ocean biogeochemical global ocean analysis and forecast system at 1/4 degree is providing
+    10 days of 3D global ocean forecasts updated weekly. The time series is aggregated in time, in order to reach a two
+    full year's time series sliding window. This product includes daily and monthly mean files of biogeochemical
+    parameters (chlorophyll, nitrate, phosphate, silicate, dissolved oxygen, dissolved iron, primary production,
+    phytoplankton, PH, and surface partial pressure of carbon dioxyde) over the global ocean. The global ocean output
+    files are displayed with a 1/4 degree horizontal resolution with regular longitude/latitude equirectangular
+    projection. 50 vertical levels are ranging from 0 to 5700 meters. + NEMO version (v3.6_STABLE) + Forcings:
+    GLOBAL_ANALYSIS_FORECAST_PHYS_001_024 at daily frequency. + Outputs mean fields are interpolated on a standard
+    regular grid in NetCDF format. + Initial conditions: World Ocean Atlas 2013 for nitrate, phosphate, silicate and
+    dissolved oxygen, GLODAPv2 for DIC and Alkalinity, and climatological model outputs for Iron and DOC +
+    Quality/Accuracy/Calibration information: See the related
+    QuID[http://catalogue.marine.copernicus.eu/documents/QUID/CMEMS-GLO-QUID-001-028.pdf] DOI (product): https://doi.org/10.48670/moi-00015
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,analysis,forecast,marine,biogeochemical,biogeochemistry
+  sensorType:
+  license: proprietary
+  title: Global Ocean Biogeochemistry Analysis and Forecast
+  missionStartDate: "2021-10-01T00:00:00Z"
+
+MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
+  abstract: |
+    The operational global ocean analysis and forecast system of Météo-France with a resolution of 1/12 degree is
+    providing daily analyses and 10 days forecasts for the global ocean sea surface waves. This product includes
+    3-hourly instantaneous fields of integrated wave parameters from the total spectrum (significant height, period,
+    direction, Stokes drift,...etc), as well as the following partitions: the wind wave, the primary and secondary swell
+    waves. The global wave system of Météo-France is based on the wave model MFWAM which is a third generation wave
+    model. MFWAM uses the computing code ECWAM-IFS-38R2 with a dissipation terms developed by Ardhuin et al. (2010). The
+    model MFWAM was upgraded on november 2014 thanks to improvements obtained from the european research project « my wave »
+    (Janssen et al. 2014). The model mean bathymetry is generated by using 2-minute gridded global topography data
+    ETOPO2/NOAA. Native model grid is irregular with decreasing distance in the latitudinal direction close to the poles.
+    At the equator the distance in the latitudinal direction is more or less fixed with grid size 1/10°. The operational
+    model MFWAM is driven by 6-hourly analysis and 3-hourly forecasted winds from the IFS-ECMWF atmospheric system. The
+    wave spectrum is discretized in 24 directions and 30 frequencies starting from 0.035 Hz to 0.58 Hz. The model MFWAM
+    uses the assimilation of altimeters with a time step of 6 hours. The global wave system provides analysis 4 times a
+    day, and a forecast of 10 days at 0:00 UTC. The wave model MFWAM uses the partitioning to split the swell spectrum
+    in primary and secondary swells. DOI (product) : https://doi.org/10.48670/moi-00017
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,analysis,forecast,marine,waves,surface
+  sensorType:
+  license: proprietary
+  title: Global Ocean Waves Analysis and Forecast
+  missionStartDate: "2021-01-01T00:00:00Z"
+
+MO_GLOBAL_MULTIYEAR_BGC_001_033:
+  abstract: |
+    The Low and Mid-Trophic Levels (LMTL) reanalysis for global ocean is produced at [https://www.cls.fr CLS] on behalf
+    of Global Ocean Marine Forecasting Center. It provides 2D fields of biomass content of zooplankton and six functional
+    groups of micronekton. It uses the LMTL component of SEAPODYM dynamical population model (http://www.seapodym.eu).
+    No data assimilation has been done. This product also contains forcing data: net primary production, euphotic depth,
+    depth of each pelagic layers zooplankton and micronekton inhabit, average temperature and currents over pelagic layers.
+    Forcings sources: + Ocean currents and temperature (CMEMS multiyear product) + Net Primary Production computed from
+    chlorophyll a, Sea Surface Temperature and Photosynthetically Active Radiation observations (chlorophyll from CMEMS
+    multiyear product, SST from NOAA NCEI AVHRR-only Reynolds, PAR from INTERIM) and relaxed by model outputs at high
+    latitudes (CMEMS biogeochemistry multiyear product)
+    Vertical coverage: + Epipelagic layer + Upper mesopelagic layer + Lower mesopelagic layer (max. 1000m)
+    DOI (product) : https://doi.org/10.48670/moi-00020
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,hindcast,marine,biomass,LMTL
+  sensorType:
+  license: proprietary
+  title: Global ocean low and mid trophic levels biomass content hindcast
+  missionStartDate: "1998-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T23:59:59Z"
+
+MO_GLOBAL_MULTIYEAR_WAV_001_032:
+  abstract: |
+    GLOBAL_REANALYSIS_WAV_001_032 for the global wave reanalysis describing past sea states since years 1993. This product
+    also bears the name of WAVERYS within the GLO-HR MFC. for correspondence to other global multi-year products like GLORYS.
+    BIORYS. etc. The core of WAVERYS is based on the MFWAM model. a third generation wave model that calculates the wave
+    spectrum. i.e. the distribution of sea state energy in frequency and direction on a 1/5° irregular grid. Average wave
+    quantities derived from this wave spectrum, such as the SWH (significant wave height) or the average wave period, are
+    delivered on a regular 1/5° grid with a 3h time step. The wave spectrum is discretized into 30 frequencies obtained from
+    a geometric sequence of first member 0.035 Hz and a reason 7.5. WAVERYS takes into account oceanic currents from the
+    GLORYS12 physical ocean reanalysis and assimilates significant wave height observed from historical altimetry missions
+    and directional wave spectra from Sentinel 1 SAR from 2017 onwards. DOI (product): https://doi.org/10.48670/moi-00022
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,reanalysis,forecast,marine,waves,WAVERYS
+  sensorType:
+  license: proprietary
+  title: Global Ocean Waves Reanalysis
+  missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2024-01-31T21:00:00Z"
+
+MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
+  abstract: |
+    You can find here the CMEMS Global Ocean Ensemble Reanalysis product at ¼ degree resolution: monthly means of Temperature, Salinity,
+    Currents and Ice variables for 75 vertical levels, starting from 1993 onward.\n \nGlobal ocean reanalyses are homogeneous 3D gridded
+    descriptions of the physical state of the ocean covering several decades, produced with a numerical ocean model constrained with data
+    assimilation of satellite and in situ observations. These reanalyses are built to be as close as possible to the observations
+    (i.e. realistic) and in agreement with the model physics The multi-model ensemble approach allows uncertainties or error bars in
+    the ocean state to be estimated.\n\nThe ensemble mean may even provide for certain regions and/or periods a more reliable estimate
+    than any individual reanalysis product.\n\nThe four reanalyses, used to create the ensemble, covering “altimetric era” period
+    (starting from 1st of January 1993) during which altimeter altimetry data observations are available:\n GLORYS2V4 from Mercator Ocean (Fr);
+    \n ORAS5 from ECMWF;\n GloSea5 from Met Office (UK);\n and C-GLORSv7 from CMCC (It);\n
+    \nThese four products provided four different time series of global ocean simulations 3D monthly estimates. All numerical products
+    available for users are monthly or daily mean averages describing the ocean.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00024
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,ensemble,multiyear,reanalysis,temperature,currents,salinity,ice,physics
+  sensorType:
+  license: proprietary
+  title: Global Ocean Ensemble Physics Reanalysis
+  missionStartDate: "1993-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T00:00:00Z"
+
+MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
+  abstract: |
+    This product is entirely dedicated to ocean current data observed in near-real time. Current data from 3 different types
+    of instruments are distributed:\n The near-surface zonal and meridional velocities calculated along the trajectories of
+    the drifting buoys which are part of the DBCP's Global Drifter Program. These data are delivered together with wind stress
+    components and surface temperature. \n The near-surface zonal and meridional total velocities, and near-surface radial
+    velocities, measured by High Frequency radars that are part of the European High Frequency radar Network. These data are
+    delivered together with standard deviation of near-surface zonal and meridional raw velocities, Geometrical Dilution of
+    Precision (GDOP), quality flags and metadata.\n The zonal and meridional velocities, at parking depth and in surface,
+    calculated along the trajectories of the floats which are part of the Argo Program.\n\nDOI (product):\nhttps://doi.org/10.48670/moi-00041
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 2
+  keywords: CMEMS,Mercator,ocean,insitu,NRT,currents,global,L2
+  sensorType:
+  license: proprietary
+  title: Global Ocean- in-situ Near real time observations of ocean currents
+  missionStartDate: "1997-01-01T00:00:00Z"
+
+MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
+  abstract: |
+    For the Global Ocean- Gridded objective analysis fields of temperature and salinity using profiles from the in-situ near
+    real time database are produced monthly. Objective analysis is based on a statistical estimation method that allows presenting
+    a synthesis and a validation of the dataset, providing a support for localized experience (cruises), providing a validation
+    source for operational models, observing seasonal cycle and inter-annual variability.
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00037
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,insitu,NRT,gridded,monthly,global,L4,analysis
+  sensorType:
+  license: proprietary
+  title: Global Ocean- Real time in-situ observations objective analysis
+  missionStartDate: "2015-01-01T00:00:00Z"
+  missionEndDate: "2024-04-01T00:00:00Z"
+
+MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
+  abstract: |
+    Global Ocean- Gridded objective analysis fields of temperature and salinity using profiles from the reprocessed in-situ global
+    product CORA (INSITU_GLO_TS_REP_OBSERVATIONS_013_001_b) using the ISAS software. Objective analysis is based on a statistical
+    estimation method that allows presenting a synthesis and a validation of the dataset, providing a validation source for operational
+    models, observing seasonal cycle and inter-annual variability.\n\n**DOI (product):**  \nhttps://doi.org/10.17882/46219
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,insitu,delayed,gridded,global,L4,analysis,temperature,salinity,CORA
+  sensorType:
+  license: proprietary
+  title: Global Ocean- Delayed Mode gridded CORA- In-situ Observations objective analysis in Delayed Mode
+  missionStartDate: "1960-01-01T00:00:00Z"
+  missionEndDate: "2023-06-01T00:00:00Z"
+
+MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
+  abstract: |
+    This product consists of 3D fields of Particulate Organic Carbon (POC), Particulate Backscattering coefficient (bbp)
+    and Chlorophyll-a concentration (Chla) at depth. The reprocessed product is provided at 0.25°x0.25° horizontal resolution,
+    over 36 levels from the surface to 1000 m depth. A neural network method estimates both the vertical distribution of
+    Chla concentration and of particulate backscattering coefficient (bbp), a bio-optical proxy for POC, from merged surface
+    ocean color satellite measurements with hydrological properties and additional relevant drivers.
+    DOI (product): https://doi.org/10.48670/moi-00046 Product Citation: Please refer to our Technical FAQ for citing
+    products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,marine,POC,organic,carbon,particulate,chlorophyll,backscattering,bbp,Chla
+  sensorType:
+  license: proprietary
+  title: Global Ocean 3D Chlorophyll-a concentration, Particulate Backscattering coefficient and Particulate Organic Carbon
+  missionStartDate: "1998-01-07T00:00:00Z"
+  missionEndDate: "2021-12-29T00:00:00Z"
+
+MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
+  abstract: |
+    This product corresponds to a REP L4 time series of monthly global reconstructed surface ocean pCO2, air-sea fluxes of CO2,
+    pH, total alkalinity, dissolved inorganic carbon, saturation state with respect to calcite and aragonite, and associated
+    uncertainties on a 0.25° x 0.25° regular grid. The product is obtained from an ensemble-based forward feed neural network
+    approach mapping situ data for surface ocean fugacity (SOCAT data base, Bakker et al.  2016, https://www.socat.info/) and
+    sea surface salinity, temperature, sea surface height, chlorophyll a, mixed layer depth and atmospheric CO2 mole fraction.
+    Sea-air flux fields are computed from the air-sea gradient of pCO2 and the dependence on wind speed of Wanninkhof (2014).
+    Surface ocean pH on total scale, dissolved inorganic carbon, and saturation states are then computed from surface ocean pCO2
+    and reconstructed surface ocean alkalinity using the CO2sys speciation software.\n\nProduct Citation: Please refer to our
+    Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    \n\nDOI (product):\nhttps://doi.org/10.48670/moi-00047\n\nReferences:\n\n Chau, T. T. T., Gehlen, M., and
+    Chevallier, F.: A seamless ensemble-based reconstruction of surface ocean pCO2 and air-sea CO2 fluxes over the global
+    coastal and open oceans, Biogeosciences, 19, 1087-1109, https://doi.org/10.5194/bg-19-1087-2022, 2022.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,surface,carbon,L4,REP
+  sensorType:
+  license: proprietary
+  title: Global Ocean Surface Carbon
+  missionStartDate: "1985-01-01T00:00:00Z"
+  missionEndDate: "2022-12-01T00:00:00Z"
+
+MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
+  abstract: |
+    This product consists of vertical profiles of the concentration of nutrients (nitrates, phosphates, and silicates) and
+    carbonate system variables (total alkalinity, dissolved inorganic carbon, pH, and partial pressure of carbon dioxide),
+    computed for each Argo float equipped with an oxygen sensor.\nThe method called CANYON (Carbonate system and Nutrients
+    concentration from hYdrological properties and Oxygen using a Neural-network) is based on a neural network trained using
+    high-quality nutrient data collected over the last 30 years (GLODAPv2 database, https://www.glodap.info/). The method is
+    applied to each Argo float equipped with an oxygen sensor using as input the properties measured by the float (pressure,
+    temperature, salinity, oxygen), and its date and position.\n\nProduct Citation: Please refer to our Technical FAQ for
+    citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.\n\nDOI (product):
+    \nhttps://doi.org/10.48670/moi-00048\n\nReferences:\n\n Sauzede R., H. C. Bittig, H. Claustre, O. Pasqueron de Fommervault,
+    J.-P. Gattuso, L. Legendre and K. S. Johnson, 2017: Estimates of Water-Column Nutrient Concentrations and Carbonate System
+    Parameters in the Global Ocean: A novel Approach Based on Neural Networks. Front. Mar. Sci. 4:128.
+    doi: 10.3389/fmars.2017.00128.\n Bittig H. C., T. Steinhoff, H. Claustre, B. Fiedler, N. L. Williams, R. Sauzède,
+    A. Körtzinger and J.-P. Gattuso,2018: An Alternative to Static Climatologies: Robust Estimation of Open Ocean CO2 Variables
+    and Nutrient Concentrations From T, S, and O2 Data Using Bayesian Neural Networks. Front. Mar. Sci. 5:328. doi: 10.3389/fmars.2018.00328.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,vertical,nutrients,carbon,carbonate,L3
+  sensorType:
+  license: proprietary
+  title: Nutrient and carbon profiles vertical distribution
+  missionStartDate: "2002-09-01T00:00:00Z"
+  missionEndDate: "2022-08-31T00:00:00Z"
+
+MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
+  abstract: |
+    This product is a  L4 REP and NRT global total velocity field at 0m and 15m together wiht its individual components
+    (geostrophy and Ekman) and related uncertainties. It consists of the zonal and meridional velocity at a 1h frequency and
+    at 1/4 degree regular grid. The total velocity fields are obtained by combining CMEMS  satellite Geostrophic surface currents
+    and modelled Ekman currents at the surface and 15m depth (using ERA5 wind stress in REP and ERA5 in NRT). 1 hourly product,
+    daily and monthly means are available. This product has been initiated in the frame of CNES/CLS projects. Then it has been
+    consolidated during the Globcurrent project (funded by the ESA User Element Program).
+    \n\nProduct Citation:\nPlease refer to our Technical FAQ for citing products:
+    http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    \n\nDOI (product): \nhttps://doi.org/10.48670/mds-00327\n\nReferences:\n\n Rio, M.-H., S. Mulet, and N. Picot:
+    Beyond GOCE for the ocean circulation estimate: Synergetic use of altimetry, gravimetry, and in situ data provides new
+    insight into geostrophic and Ekman currents, Geophys. Res. Lett., 41, doi:10.1002/2014GL061773, 2014.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,REP,NRT,geostrophic,currents,GLOBCURRENT,L4
+  sensorType:
+  license: proprietary
+  title: Global Total (COPERNICUS-GLOBCURRENT), Ekman and Geostrophic currents at the Surface and 15m
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
+  abstract: |
+    This product consits of daily global gap-free Level-4 (L4) analyses of the Sea Surface Salinity (SSS) and Sea Surface Density (SSD)
+    at 1/8° of resolution, obtained through a multivariate optimal interpolation algorithm that combines sea surface salinity images
+    from multiple satellite sources as NASA's Soil Moisture Active Passive (SMAP) and ESA's Soil Moisture Ocean Salinity (SMOS) satellites
+    with in situ salinity measurements and satellite SST information. The product was developed by the Consiglio Nazionale delle Ricerche (CNR)
+    and includes 4 datasets:\n cmems_obs-mob_glo_phy-sss_nrt_multi_P1D, which provides near-real-time (NRT) daily data
+    \n cmems_obs-mob_glo_phy-sss_nrt_multi_P1M, which provides near-real-time (NRT) monthly data\n cmems_obs-mob_glo_phy-sss_my_multi_P1D,
+    which provides multi-year reprocessed (REP) daily data \n cmems_obs-mob_glo_phy-sss_my_multi_P1M, which provides multi-year reprocessed (REP)
+    monthly data  \n\nProduct citation: \nPlease refer to our Technical FAQ for citing products:
+    http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.\n\nDOI
+    (product): \nhttps://doi.org/10.48670/moi-00051\n\nReferences:\n\n Droghei, R., B. Buongiorno Nardelli, and
+    R. Santoleri, 2016: Combining in-situ and satellite observations to retrieve salinity and density at the ocean surface.
+    J. Atmos. Oceanic Technol. doi:10.1175/JTECH-D-15-0194.1.\n Buongiorno Nardelli, B., R. Droghei, and R. Santoleri,
+    2016: Multi-dimensional interpolation of SMOS sea surface salinity with surface temperature and in situ salinity data.
+    Rem. Sens. Environ., doi:10.1016/j.rse.2015.12.052.\n Droghei, R., B. Buongiorno Nardelli, and R. Santoleri,
+    2018: A New Global Sea Surface Salinity and Density Dataset From Multivariate Observations (1993-2016), Front. Mar. Sci., 5(March),
+    1-13, doi:10.3389/fmars.2018.00084.\n Sammartino, Michela, Salvatore Aronica, Rosalia Santoleri, and Bruno Buongiorno Nardelli. (2022).
+    Retrieving Mediterranean Sea Surface Salinity Distribution and Interannual Trends from Multi-Sensor Satellite and In Situ Data,
+    Remote Sensing 14, 2502: https://doi.org/10.3390/rs14102502.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,surface,salinity,density,NRT,daily,REP,L4
+  sensorType:
+  license: proprietary
+  title: Multi Observation Global Ocean Sea Surface Salinity and Sea Surface Density
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
+  abstract: |
+    You can find here the Multi Observation Global Ocean ARMOR3D L4 analysis and multi-year reprocessing. It consists of 3D Temperature,
+    Salinity, Heights, Geostrophic Currents and Mixed Layer Depth, available on a 1/4 degree regular grid and on 50 depth levels from
+    the surface down to the bottom. The product includes 4 datasets: \n dataset-armor-3d-nrt-weekly, which delivers near-real-time (NRT)
+    weekly data\n dataset-armor-3d-nrt-monthly, which delivers near-real-time (NRT) monthly data\n dataset-armor-3d-rep-weekly, which
+    delivers multi-year reprocessed (REP) weekly data \n dataset-armor-3d-rep-monthly, which delivers multi-year reprocessed (REP)
+    monthly data\n\nDOI (product): \nhttps://doi.org/10.48670/moi-00052\n\n\nProduct Citation: \nPlease refer to our
+    Technical FAQ for citing products: http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169.
+    \n\nReferences:\n\n Guinehut S., A.-L. Dhomps, G. Larnicol and P.-Y. Le Traon, 2012: High resolution 3D temperature
+    and salinity fields derived from in situ and satellite observations. Ocean Sci., 8(5):845-857.\n Mulet, S., M.-H. Rio,
+    A. Mignot, S. Guinehut and R. Morrow, 2012: A new estimate of the global 3D geostrophic ocean circulation based on satellite
+    data and in-situ measurements. Deep Sea Research Part II : Topical Studies in Oceanography, 77-80(0):70-81.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,REP,NRT,ARMOR3D,temperature,salinity,heights,Geostrophic,currents,L4
+  sensorType:
+  license: proprietary
+  title: Multi Observation Global Ocean 3D Temperature Salinity Height Geostrophic Current and MLD
+  missionStartDate: "1993-01-01T00:00:00Z"
+
+MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
+  abstract: |
+    You can find here the OMEGA3D observation-based  quasi-geostrophic vertical and horizontal ocean currents developed by the
+    Consiglio Nazionale delle RIcerche. The data are provided weekly over a regular grid at 1/4° horizontal resolution, from
+    the surface to 1500 m depth (representative of each Wednesday). The velocities are obtained by solving a diabatic formulation
+    of the Omega equation, starting from ARMOR3D data (MULTIOBS_GLO_PHY_REP_015_002 which corresponds to former version of
+    MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012) and ERA-Interim surface fluxes.
+    \n\nDOI (product): \nhttps://commons.datacite.org/doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007\n\n
+    \nProduct citation: \nPlease refer to our Technical FAQ for citing products.http://marine.copernicus.eu/faq/cite-cmems-products-cmems-credit/?idpage=169
+    \n\nReferences:\n\n DOI (Product): https://doi.org/10.25423/cmcc/multiobs_glo_phy_w_rep_015_007
+    \n Buongiorno Nardelli, B. (2020). CNR global observation-based OMEGA3D quasi-geostrophic vertical and horizontal ocean
+    currents (1993-2018) (Version 1) [Data set]. Copernicus Monitoring Environment Marine Service (CMEMS).
+    https://doi.org/10.25423/CMCC/MULTIOBS_GLO_PHY_W_REP_015_007\n Buongiorno Nardelli, B. A Multi-Year Timeseries of Observation-Based
+    3D Horizontal and Vertical Quasi-Geostrophic Global Ocean Currents. Earth Syst. Sci. Data 2020, No. 12, 1711-1723.
+    https://doi.org/10.5194/essd-12-1711-2020.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,ARMOR3D,weekly,ERA-Interim,quasi-geostrophic,currents,L4,OMEGA3D
+  sensorType:
+  license: proprietary
+  title: Global Observed Ocean Physics 3D Quasi-Geostrophic Currents (OMEGA3D)
+  missionStartDate: "1993-01-06T00:00:00Z"
+  missionEndDate: "2018-12-26T00:00:00Z"
+
+MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
+  abstract: |
+    For the Global - Arctic and Antarctic - Ocean. The OSI SAF delivers three global sea ice products in operational mode:
+    sea ice concentration, sea ice edge, sea ice type (OSI-401 OSI-402 and OSI-403). These products are delivered daily at
+    10km resolution in a polar stereographic projection covering the Northern Hemisphere and the Southern Hemisphere. It is
+    the Sea Ice operational nominal product for the Global Ocean. In addition, a sea ice drift product is delivered at 60km
+    resolution in a polar stereographic projection covering the Northern and Southern Hemispheres. The sea ice motion vectors
+    have a time-span of 2 days.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00134
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,ice,arctic,antarctic,concentration,edge,type,L4
+  sensorType:
+  license: proprietary
+  title: Global Ocean - Arctic and Antarctic - Sea Ice Concentration, Edge, Type and Drift (OSI-SAF)
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
+  abstract: |
+    DTU Space produces polar covering Near Real Time gridded ice displacement fields obtained by MCC processing of Sentinel-1 SAR,
+    Envisat ASAR WSM swath data or RADARSAT ScanSAR Wide mode data . The nominal temporal span between processed swaths is 24hours,
+    the nominal product grid resolution is a 10km.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00135
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,NRT,gridded,MCC,DTU,displacement,L4
+  sensorType:
+  license: proprietary
+  title: Global Ocean - High Resolution SAR Sea Ice Drift
+  missionStartDate: "2019-05-04T00:00:00Z"
+
+MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
+  abstract: |
+    The CDR and ICDR sea ice concentration dataset of the EUMETSAT OSI SAF (OSI-450-a and OSI-430-a), covering the period from
+    October 1978 to present, with 16 days delay. It used passive microwave data from SMMR, SSM/I and SSMIS. Sea ice concentration
+    is computed from atmospherically corrected PMW brightness temperatures, using a combination of state-of-the-art algorithms and
+    dynamic tie points. It includes error bars for each grid cell (uncertainties). This version 3.0 of the CDR (OSI-450-a, 1978-2020)
+    and ICDR (OSI-430-a, 2021-present with 16 days latency) was released in November 2022
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00136\n
+    \nReferences:\n\n [http://osisaf.met.no/docs/osisaf_cdop2_ss2_pum_sea-ice-conc-reproc_v2p2.pdf]\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,ice,concentration,CDR,ICDR,REP,reprocessed,L4
+  sensorType:
+  license: proprietary
+  title: Global Ocean Sea Ice Concentration Time Series REPROCESSED (OSI-SAF)
+  missionStartDate: "1978-10-25T00:00:00Z"
+
+MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
+  abstract: |
+    Altimeter satellite gridded Sea Level Anomalies (SLA) computed with respect to a twenty-year [1993, 2012] mean. The SLA is
+    estimated by Optimal Interpolation, merging the L3 along-track measurement from the different altimeter missions available.
+    Part of the processing is fitted to the Global Ocean. (see QUID document or http://duacs.cls.fr [](http://duacs.cls.fr) pages
+    for processing details). The product gives additional variables (i.e. Absolute Dynamic Topography and geostrophic currents
+    (absolute and anomalies)). It serves in near-real time applications.\nThis product is processed by the DUACS multimission
+    altimeter data processing system. \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00149
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,gridded,surface,heights,SLA,NRT,L4
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN GRIDDED L4 SEA SURFACE HEIGHTS AND DERIVED VARIABLES NRT
+  missionStartDate: "2022-01-01T00:00:00Z"
+
+MO_SEALEVEL_GLO_PHY_MDT_008_063:
+  abstract: |
+    Mean Dynamic Topography that combines the global CNES-CLS-2022 MDT, the Black Sea CMEMS2020 MDT and the Med Sea CMEMS2020 MDT.
+    It  is an estimate of the mean over the 1993-2012 period of the sea surface height above geoid. This is consistent with the
+    reference time period also used in the  DUACS products\n\nDOI (product):  \nhttps://doi.org/10.48670/moi-00150
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,sealevel,topography,surface,height,L4
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN MEAN DYNAMIC TOPOGRAPHY
+  missionStartDate: "1993-01-06T00:00:00Z"
+
+MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
+  abstract: |
+    For the Global Ocean- Sea Surface Temperature L3 Observations . This product provides daily foundation sea surface temperature
+    from multiple satellite sources. The data are intercalibrated. This product consists in a fusion of sea surface temperature
+    observations from multiple satellite sensors, daily, over a 0.1° resolution global grid. It includes observations by polar
+    orbiting (NOAA-18 & NOAAA-19/AVHRR, METOP-A/AVHRR, ENVISAT/AATSR, AQUA/AMSRE, TRMM/TMI) and geostationary (MSG/SEVIRI, GOES-11)
+    satellites . The observations of each sensor are intercalibrated prior to merging using a bias correction based on a multi-sensor
+    median reference correcting the large-scale cross-sensor biases.3 more datasets are available that only contain "per sensor type" data:
+    Polar InfraRed (PIR), Polar MicroWave (PMW), Geostationary InfraRed (GIR)\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00164
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,surface,temperature,L3,PIR,PMW,GIR
+  sensorType:
+  license: proprietary
+  title: ODYSSEA Global Ocean - Sea Surface Temperature Multi-sensor L3 Observations
+  missionStartDate: "2020-12-31T00:00:00Z"
+
+MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
+  abstract: |
+    For the Global Ocean- the OSTIA global foundation Sea Surface Temperature product provides daily gap-free maps of: Foundation
+    Sea Surface Temperature at 0.05° x 0.05° horizontal grid resolution, using in-situ and satellite data from both infrared and
+    microwave radiometers. \n\nThe Operational Sea Surface Temperature and Ice Analysis (OSTIA) system is run by the UK's Met
+    Office and delivered by IFREMER PU. OSTIA uses satellite data provided by the GHRSST project together with in-situ observations
+    to determine the sea surface temperature.\nA high resolution (1/20° - approx. 6 km) daily analysis of sea surface temperature (SST)
+    is produced for the global ocean and some lakes.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00165\n\nReferences:
+    \n\n Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.; Waters, J.; While, J.;
+    Worsfold, M. The Current Configuration of the OSTIA System for Operational Production of Foundation Sea Surface Temperature and
+    Ice Concentration Analyses. Remote Sens. 2020, 12, 720. doi: 10.3390/rs12040720\n Donlon, C.J., Martin, M., Stark, J., Roberts-Jones,
+    J., Fiedler, E., and Wimmer, W., 2012, The Operational Sea Surface Temperature and Sea Ice Analysis (OSTIA) system. Remote Sensing
+    of the Environment. doi: 10.1016/j.rse.2010.10.017 2011.\n John D. Stark, Craig J. Donlon, Matthew J. Martin and Michael E. McCulloch,
+    2007, OSTIA : An operational, high resolution, real time, global sea surface temperature analysis system., Oceans 07 IEEE Aberdeen,
+    conference proceedings. Marine challenges: coastline to deep sea. Aberdeen, Scotland.IEEE.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,surface,temperature,L4,OSTIA
+  sensorType:
+  license: proprietary
+  title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Analysis
+  missionStartDate: "2007-01-01T00:00:00Z"
+
+MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
+  abstract: |
+    The OSTIA (Good et al., 2020) global sea surface temperature reprocessed product provides daily gap-free maps of foundation
+    sea surface temperature and ice concentration (referred to as an L4 product) at 0.05deg.x 0.05deg. horizontal grid resolution,
+    using in-situ and satellite data. This product provides the foundation Sea Surface Temperature, which is the temperature free
+    of diurnal variability.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00168\n
+    \nReferences:\n\n Good, S.; Fiedler, E.; Mao, C.; Martin, M.J.; Maycock, A.; Reid, R.; Roberts-Jones, J.; Searle, T.;
+    Waters, J.; While, J.; Worsfold, M. The Current Configuration of the OSTIA System for Operational Production of Foundation
+    Sea Surface Temperature and Ice Concentration Analyses. Remote Sens. 2020, 12, 720, doi:10.3390/rs12040720\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,surface,temperature,concentration,L4,OSTIA,reprocessed,REP
+  sensorType:
+  license: proprietary
+  title: Global Ocean OSTIA Sea Surface Temperature and Sea Ice Reprocessed
+  missionStartDate: "1981-10-01T00:00:00Z"
+  missionEndDate: "2022-05-31T00:00:00Z"
+
+MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
+  abstract: |
+    The ESA SST CCI and C3S global Sea Surface Temperature Reprocessed product provides gap-free maps of daily average SST at 20 cm
+    depth at 0.05deg. x 0.05deg. horizontal grid resolution, using satellite data from the (A)ATSRs, SLSTR and the AVHRR series of
+    sensors (Merchant et al., 2019). The ESA SST CCI and C3S level 4 analyses were produced by running the Operational Sea Surface
+    Temperature and Sea Ice Analysis (OSTIA) system (Good et al., 2020) to provide a high resolution (1/20deg. - approx. 5km grid resolution)
+    daily analysis of the daily average sea surface temperature (SST) at 20 cm depth for the global ocean. Only (A)ATSR, SLSTR and AVHRR
+    satellite data processed by the ESA SST CCI and C3S projects were used, giving a stable product. It also uses reprocessed sea-ice
+    concentration data from the EUMETSAT OSI-SAF (OSI-450 and OSI-430; Lavergne et al., 2019).
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00169\n\nReferences:\n\n Good, S., Fiedler, E., Mao, C., Martin,
+    M.J., Maycock, A., Reid, R., Roberts-Jones, J., Searle, T., Waters, J., While, J., Worsfold, M. The Current Configuration of the
+    OSTIA System for Operational Production of Foundation Sea Surface Temperature and Ice Concentration Analyses. Remote Sens.
+    2020, 12, 720, doi:10.3390/rs12040720.\n Lavergne, T., Sørensen, A. M., Kern, S., Tonboe, R., Notz, D., Aaboe, S., Bell, L., Dybkjær,
+    G., Eastwood, S., Gabarro, C., Heygster, G., Killie, M. A., Brandt Kreiner, M., Lavelle, J., Saldo, R., Sandven, S., and Pedersen,
+    L. T.: Version 2 of the EUMETSAT OSI SAF and ESA CCI sea-ice concentration climate data records, The Cryosphere, 13, 49-78,
+    doi:10.5194/tc-13-49-2019, 2019.\n Merchant, C.J., Embury, O., Bulgin, C.E. et al. Satellite-based time-series of sea-surface
+    temperature since 1981 for climate applications. Sci Data 6, 223 (2019) doi:10.1038/s41597-019-0236-x.\n
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,surface,temperature,ESA,SST,CCI,C3S,L4,reprocessed,REP
+  sensorType:
+  license: proprietary
+  title: ESA SST CCI and C3S reprocessed sea surface temperature analyses
+  missionStartDate: "1981-09-01T00:00:00Z"
+  missionEndDate: "2022-10-31T00:00:00Z"
+
+MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
+  abstract: |
+    Near-Real-Time mono-mission satellite-based integral parameters derived from the directional wave spectra. Using linear
+    propagation wave model, only wave observations that can be back-propagated to wave converging regions are considered.
+    The dataset parameters includes partition significant wave height, partition peak period and partition peak or principal
+    direction given along swell propagation path in space and time at a 3-hour timestep, from source to land. Validity flags
+    are also included for each parameter and indicates the valid time steps along propagation (eg. no propagation for significant
+    wave height close to the storm source or any integral parameter when reaching the land). The integral parameters at observation
+    point are also available together with a quality flag based on the consistency between each propagated observation and the overall
+    swell field.This product is processed by the WAVE-TAC multi-mission SAR data processing system. It serves in near-real time
+    the main operational oceanography and climate forecasting centers in Europe and worldwide. It processes near-real-time data
+    from the following SAR missions: Sentinel-1A and Sentinel-1B.One file is produced for each mission and is available in two
+    formats: one gathering in one netcdf file all observations related to the same swell field, and for another all observations
+    available in a 3-hour time range, and for both formats, propagated information from source to land.
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00178
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,NRT,wave,L3,WAVE-TAC,SAR,spectral,mono-mission
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN L3 SPECTRAL PARAMETERS FROM NRT SATELLITE MEASUREMENTS
+  missionStartDate: "2018-05-28T00:00:00Z"
+
+MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
+  abstract: |
+    Near-Real-Time mono-mission satellite-based along-track significant wave height. Only valid data are included, based on a
+    rigorous editing combining various criteria such as quality flags (surface flag, presence of ice) and thresholds on parameter
+    values. Such thresholds are applied on parameters linked to significant wave height determination from retracking (e.g. SWH,
+    sigma0, range, off nadir angle…). All the missions are homogenized with respect to a reference mission (Jason-3 until April 2022,
+    Sentinel-6A afterwards) and calibrated on in-situ buoy measurements. Finally, an along-track filter is applied to reduce the
+    measurement noise.\n\nAs a support of information to the significant wave height, wind speed measured by the altimeters is also
+    processed and included in the files. Wind speed values are provided by upstream products (L2) for each mission and are based on
+    different algorithms. Only valid data are included and all the missions are homogenized with respect to the reference mission.
+    \n\nThis product is processed by the WAVE-TAC multi-mission altimeter data processing system. It serves in near-real time the
+    main operational oceanography and climate forecasting centers in Europe and worldwide. It processes operational data (OGDR and NRT,
+    produced in near-real-time) from the following altimeter missions: Sentinel-6A, Jason-3, Sentinel-3A, Sentinel-3B, Cryosat-2,
+    SARAL/AltiKa, CFOSAT ; and interim data (IGDR, 1 to 2 days delay) from Hai Yang-2B mission.\n\nOne file containing valid SWH
+    is produced for each mission and for a 3-hour time window. It contains the filtered SWH (VAVH), the unfiltered SWH (VAVH_UNFILTERED)
+    and the wind speed (wind_speed).\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00179
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,NRT,wave,height,L3,wind,speed,WAVE-TAC,mono-mission
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN L3 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
+  missionStartDate: "2021-01-01T00:00:00Z"
+
+MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
+  abstract: |
+    Near-Real-Time gridded multi-mission merged satellite significant wave height. Only valid data are included. This product
+    is processed in Near-Real-Time by the WAVE-TAC multi-mission altimeter data processing system and is based on CMEMS level-3
+    SWH datasets (see the product WAVE_GLO_WAV_L3_SWH_NRT_OBSERVATIONS_014_001).\nIt merges along-track SWH data from the following
+    missions: Jason-3, Sentinel-3A, Sentinel-3B, SARAL/AltiKa, Cryosat-2, CFOSAT and HaiYang-2B. The resulting gridded product has
+    a 2° horizontal resolution and is produced daily. Different SWH fields are produced: VAVH_DAILY fields are daily statistics
+    computed from all available level 3 along-track measurements from 00 UTC until 23:59 UTC ; VAVH_INST field provides an estimate
+    of the instantaneous wave field at 12:00UTC (noon), using all available Level 3 along-track measurements and accounting for
+    their spatial and temporal proximity.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00180
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,NRT,wave,height,L4,gridded,WAVE-TAC,multi-mission
+  sensorType:
+  license: proprietary
+  title: GLOBAL OCEAN L4 SIGNIFICANT WAVE HEIGHT FROM NRT SATELLITE MEASUREMENTS
+  missionStartDate: "2020-01-01T00:00:00Z"
+
+MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
+  abstract: |
+    For the Global Ocean - The product contains monthly Level-4 sea surface wind and stress fields at 0.25 degrees horizontal
+    spatial resolution. The monthly averaged wind and stress fields are based on monthly average ECMWF ERA5 reanalysis fields,
+    corrected for persistent biases using all available Level-3 scatterometer observations from the Metop-A, Metop-B and Metop-C ASCAT,
+    QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT satellite instruments.  The product provides monthly mean stress-equivalent wind and
+    stress variables as well as their standard deviation. The number of observations used to calculate the monthly averages are
+    included in the product.\n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00181
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,L4,surface,wind,stress,monthly,Scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "1999-08-01T00:00:00Z"
+  missionEndDate: "2024-01-01T00:00:00Z"
+
+MO_WIND_GLO_PHY_L3_NRT_012_002:
+  abstract: |
+    For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
+    with resolutions corresponding to the L2 swath products:\n\n0.5 degrees grid for the 50 km scatterometer L2 inputs,
+    \n0.25 degrees grid based on 25 km scatterometer swath observations,\nand 0.125 degrees based on 12.5 km scatterometer
+    swath observations, i.e., from the coastal products.\n\nData from ascending and descending passes are gridded separately.
+    \nThe product provides stress-equivalent wind and stress variables as well as their divergence and curl. The NRT L3 products
+    follow the NRT availability of the EUMETSAT OSI SAF L2 products and are available for:\nThe ASCAT scatterometers on Metop-A
+    (discontinued on 15/11/2021), Metop-B and Metop-C at 0.125 and 0.25 degrees;\nThe OSCAT scatterometer on Scatsat-1 at 0.25
+    and 0.5 degrees (discontinued on 28/2/2021); \nThe HSCAT scatterometer on HY-2B, HY-2C and HY-2D at 0.25 and 0.5 degrees
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00182
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,L3,surface,wind,daily,gridded,NRT,Scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Daily Gridded Sea Surface Winds from Scatterometer
+  missionStartDate: "2016-01-01T00:00:00Z"
+
+MO_WIND_GLO_PHY_L3_MY_012_005:
+  abstract: |
+    For the Global Ocean - The product contains daily L3 gridded sea surface wind observations from available scatterometers
+    with resolutions corresponding  to the L2 swath products:\n0.5 degrees grid for the 50 km scatterometer L2 inputs,
+    \n0.25 degrees grid based on 25 km scatterometer swath observations,\nand 0.125 degrees based on 12.5 km scatterometer
+    swath observations, i.e., from the coastal products. Data from ascending and descending passes are gridded separately.
+    \n\nThe product provides stress-equivalent wind and stress variables as well as their divergence and curl. The MY L3 products
+    follow the availability of the reprocessed EUMETSAT OSI SAF L2 products and are available for: The ASCAT scatterometer
+    on MetOp-A and Metop-B at 0.125 and 0.25 degrees; The Seawinds scatterometer on QuikSCAT at 0.25 and 0.5 degrees; The AMI
+    scatterometer on ERS-1 and ERS-2 at 0.25 degrees; The OSCAT scatterometer on Oceansat-2 at 0.25 and 0.5 degrees;
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00183
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,L3,surface,wind,daily,gridded,reprocessed,REP,Scatterometer
+  sensorType:
+  license: proprietary
+  title: Global Ocean Daily Gridded Reprocessed L3 Sea Surface Winds from Scatterometer
+  missionStartDate: "1991-08-01T00:00:00Z"
+  missionEndDate: "2023-12-31T00:00:00Z"
+
+MO_WIND_GLO_PHY_L4_NRT_012_004:
+  abstract: |
+    For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 degrees horizontal spatial
+    resolution. Scatterometer observations for Metop-B and Metop-C ASCAT and their collocated European Centre for Medium-Range
+    Weather Forecasts (ECMWF) operational model variables are used to calculate temporally-averaged difference fields. These fields
+    are used to correct for persistent biases in hourly ECMWF operational model fields. The product provides stress-equivalent wind
+    and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
+    (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00305
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,L4,surface,wind,stress,hourly,NRT,Scatterometer,Metop
+  sensorType:
+  license: proprietary
+  title: Global Ocean Hourly Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "2020-07-01T00:00:00Z"
+
+MO_WIND_GLO_PHY_L4_MY_012_006:
+  abstract: |
+    For the Global Ocean - The product contains hourly Level-4 sea surface wind and stress fields at 0.125 and 0.25 degrees horizontal
+    spatial resolution. Scatterometer observations and their collocated European Centre for Medium-Range Weather Forecasts (ECMWF) ERA5
+    reanalysis model variables are used to calculate temporally-averaged difference fields. These fields are used to correct for
+    persistent biases in hourly ECMWF ERA5 model fields. Bias corrections are based on scatterometer observations from Metop-A, Metop-B,
+    Metop-C ASCAT (0.125 degrees), QuikSCAT SeaWinds, ERS-1 and ERS-2 SCAT (0.25 degrees). The product provides stress-equivalent wind
+    and stress variables as well as their divergence and curl. The applied bias corrections, the standard deviation of the differences
+    (for wind and stress fields) and difference of variances (for divergence and curl fields) are included in the product.
+    \n\nDOI (product):   \nhttps://doi.org/10.48670/moi-00185
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,L4,surface,wind,stress,hourly,REP,reprocessed,Scatterometer,Metop,QuikSCAT,ERS
+  sensorType:
+  license: proprietary
+  title: Global Ocean Hourly Reprocessed Sea Surface Wind and Stress from Scatterometer and Model
+  missionStartDate: "1994-06-01T00:00:00Z"
+  missionEndDate: "2024-01-21T23:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, Brockmann Consult (BC) is providing **Bio-Geo_Chemical (BGC)** products
+    based on the ESA-CCI inputs.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP, OLCI-S3A & OLCI-S3B for the **""multi""** products.\n
+    Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional types and sizes (**PFT**) and  Reflectance (**RRS**).\n\n
+    Temporal resolutions: **daily**, **monthly**.\n* Spatial resolutions: **4 km** (multi).\n
+    Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).
+    \n\nTo find these products in the catalogue, use the search keyword **""ESA-CCI""**.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00282
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,L3,bio-geo-chemical,BGC,chlorophyll,phytoplankton,reflectance
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations
+  missionStartDate: "1997-09-04T00:00:00Z"
+  missionEndDate: "2024-04-30T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B
+    for the **"multi"** products, and S3A & S3B only for the **"olci"** products.\n* Variables: Chlorophyll-a (**CHL**), Phytoplankton
+    Functional types and sizes (**PFT**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse Attenuation (**KD490**),
+    Particulate Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n\n* Temporal resolutions: **daily**
+    \n* Spatial resolutions: **4 km** and a finer resolution based on olci **300 meters** inputs.\n* Recent products are organized in
+    datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).\n
+    \nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword **"GlobColour"**.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00278
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,colour,L3,bio-geo-chemical,BGC,Copernicus-GlobColour,NRT
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (Near Real Time)
+  missionStartDate: "2023-04-25T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B for
+    the **"multi"** products, and S3A & S3B only for the **"olci"** products.\n* Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional
+    types and sizes (**PFT**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse Attenuation (**KD490**), Particulate
+    Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n\n Temporal resolutions: **daily**.\n Spatial resolutions:
+    **4 km** and a finer resolution based on olci **300 meters** inputs.\n* Recent products are organized in datasets called Near Real Time (**NRT**)
+    and long time-series (from 1997) in datasets called Multi-Years (**MY**).\n\nTo find the **Copernicus-GlobColour** products in the catalogue,
+    use the search keyword **"GlobColour"**.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00280
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: Level 3
+  keywords: CMEMS,Mercator,ocean,global,colour,L3,bio-geo-chemical,BGC,Copernicus-GlobColour,MY,multi-years
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L3 (daily) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-09-04T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B for the
+    **"multi"** products, and S3A & S3B only for the **"olci"** products.\n* Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional
+    types and sizes (**PFT**), Primary Production (**PP**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse
+    Attenuation (**KD490**), Particulate Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n
+    \n* Temporal resolutions: **monthly** plus, for some variables, **daily gap-free** based on a space-time interpolation to provide a
+    "cloud free" product.\n* Spatial resolutions: **4 km** and a finer resolution based on olci **300 meters** inputs.
+    \n* Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets
+    called Multi-Years (**MY**).\n\nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword
+    **"GlobColour"**.\n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00279
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,Copernicus-GlobColour,NRT,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (Near Real Time)
+  missionStartDate: "2023-04-01T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, ACRI-ST company (Sophia Antipolis, France) is providing **Bio-Geo-Chemical (BGC)**
+    products based on the **Copernicus-GlobColour** processor.\n Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP & JPSS1, OLCI-S3A & S3B for the
+    **""multi""** products, and S3A & S3B only for the **""olci""** products.\n Variables: Chlorophyll-a (**CHL**), Phytoplankton Functional
+    types and sizes (**PFT**), Primary Production (**PP**), Suspended Matter (**SPM**), Secchi Transparency Depth (**ZSD**), Diffuse Attenuation
+    (**KD490**), Particulate Backscattering (**BBP**), Absorption Coef. (**CDM**) and  Reflectance (**RRS**).\n\n Temporal resolutions:
+    **monthly** plus, for some variables, **daily gap-free** based on a space-time interpolation to provide a ""cloud free"" product.\n
+    Spatial resolutions: **4 km** and a finer resolution based on olci **300 meters** inputs.\n Recent products are organized
+    in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets called Multi-Years (**MY**).
+    \n\nTo find the **Copernicus-GlobColour** products in the catalogue, use the search keyword **""GlobColour""**."
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00281
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,Copernicus-GlobColour,MY,multi-years,monthly,interpolated
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)
+  missionStartDate: "1997-09-01T00:00:00Z"
+
+MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
+  abstract: |
+    For the **Global** Ocean **Satellite Observations**, Brockmann Consult (BC) is providing **Bio-Geo_Chemical (BGC)** products
+    based on the ESA-CCI inputs.\n* Upstreams: SeaWiFS, MODIS, MERIS, VIIRS-SNPP,  OLCI-S3A & OLCI-S3B for the **""multi""** products.
+    \n Variables: Chlorophyll-a (**CHL**).\n\n* Temporal resolutions: **monthly**.\n* Spatial resolutions: **4 km** (multi).
+    \n Recent products are organized in datasets called Near Real Time (**NRT**) and long time-series (from 1997) in datasets
+    called Multi-Years (**MY**).\n\nTo find these products in the catalogue, use the search keyword **""ESA-CCI""**.
+    \n\n**DOI (product):**   \nhttps://doi.org/10.48670/moi-00283
+  instrument:
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L4
+  keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,chlorophyll,MY,multi-years,monthly
+  sensorType:
+  license: proprietary
+  title: Global Ocean Colour Plankton MY L4 monthly observations
+  missionStartDate: "1997-09-01T00:00:00Z"
+  missionEndDate: "2024-04-01T00:00:00Z"
+
 # MARK: GENERIC ------------------------------------------------------------------------
 GENERIC_PRODUCT_TYPE:
   abstract:

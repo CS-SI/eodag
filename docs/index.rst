@@ -34,7 +34,7 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `creodias <https://creodias.eu/>`_, `creodias_s3 <https://creodias.eu/>`_,
       `onda <https://www.onda-dias.eu/cms/>`_, `ecmwf <https://www.ecmwf.int/>`_,
       `cop_ads <https://ads.atmosphere.copernicus.eu>`_, `cop_cds <https://cds.climate.copernicus.eu>`_,
-      `sara <https://copernicus.nci.org.au>`_,
+      `cop_marine <https://marine.copernicus.eu>`_, `sara <https://copernicus.nci.org.au>`_,
       `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_,
       `cop_dataspace <https://dataspace.copernicus.eu/>`_,
       `planetary_computer <https://planetarycomputer.microsoft.com/>`_,

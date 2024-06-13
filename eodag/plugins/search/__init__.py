@@ -36,8 +36,8 @@ class PreparedSearch:
     """An object collecting needed information for search."""
 
     product_type: Optional[str] = None
-    page: Optional[int] = DEFAULT_PAGE
-    items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
+    page: int = DEFAULT_PAGE
+    items_per_page: int = DEFAULT_ITEMS_PER_PAGE
     auth: Optional[Union[AuthBase, Dict[str, str]]] = None
     auth_plugin: Optional[Authentication] = None
     count: bool = True

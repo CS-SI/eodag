@@ -409,7 +409,6 @@ class QueryStringSearch(Search):
                     "providers_config": {},
                     "product_types_config": {},
                 }
-
                 if self.config.discover_product_types["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json
@@ -1041,7 +1040,10 @@ class QueryStringSearch(Search):
         # /asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         product_type: Optional[str] = kwargs.get("productType")
-        if product_type is None and not prep.product_type_def_params:
+        if product_type is None and (
+            not hasattr(prep, "product_type_def_params")
+            or not prep.product_type_def_params
+        ):
             collections: Set[Dict[str, Any]] = set()
             collection: Optional[str] = getattr(self.config, "collection", None)
             if collection is None:
