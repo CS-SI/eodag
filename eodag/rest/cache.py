@@ -31,7 +31,7 @@ T = TypeVar("T")
 
 
 def init_cache(app: FastAPI) -> None:
-    """Connect to redis or default to local cache"""
+    """Connect to local cache"""
     settings = Settings.from_environment()
 
     app.state.cache = LRUCache(maxsize=settings.cache_maxsize)
