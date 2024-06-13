@@ -5511,7 +5511,7 @@
       productType: EO:EEA:DAT:CLMS_HRVPP_VI
       metadata_mapping:
         id:
-          - '{{"uid": {id}}}'
+          - '{{"uid": "{id}"}}'
           - '$.id'
         <<: *clms_dates
         relativeOrbitNumber:
