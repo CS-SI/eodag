@@ -1794,7 +1794,10 @@ class EODataAccessGateway:
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
         )
-        if kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE) > max_items_per_page:
+        if (
+            kwargs.get("items_per_page", DEFAULT_ITEMS_PER_PAGE) > max_items_per_page
+            and max_items_per_page > 0
+        ):
             logger.warning(
                 "EODAG believes that you might have asked for more products/items "
                 "than the maximum allowed by '%s': %s > %s. Try to lower "

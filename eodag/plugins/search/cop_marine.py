@@ -239,7 +239,7 @@ class CopMarineSearch(StaticStacSearch):
             )
         collection_dict, datasets_items_list = self._get_product_type_info(product_type)
         products: List[EOProduct] = []
-        start_index = items_per_page * (page - 1)
+        start_index = items_per_page * (page - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
             try:
