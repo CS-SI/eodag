@@ -60,6 +60,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +--------------------+-----------------------+-------------------------------+----------------+
 | cop_cds            | BuildSearchResult     | GenericAuth                   | HTTPDownload   |
 +--------------------+-----------------------+-------------------------------+----------------+
+| cop_marine         | CopMarineSearch       | AwsDownload                   | AwsAuth        |
++--------------------+-----------------------+-------------------------------+----------------+
 | meteoblue          | BuildPostSearchResult | HttpQueryStringAuth           | HTTPDownload   |
 +--------------------+-----------------------+-------------------------------+----------------+
 | cop_dataspace      | QueryStringSearch     | KeycloakOIDCPasswordAuth      | HTTPDownload   |

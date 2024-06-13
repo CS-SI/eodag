@@ -434,7 +434,7 @@ class EODataAccessGateway:
                     )
                     update_needed = True
                     logger.info(
-                        "%s: provider needing auth for search has been pruned because no crendentials could be found",
+                        "%s: provider needing auth for search has been pruned because no credentials could be found",
                         provider,
                     )
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
@@ -462,7 +462,7 @@ class EODataAccessGateway:
                     )
                     update_needed = True
                     logger.info(
-                        "%s: provider needing auth for search has been pruned because no crendentials could be found",
+                        "%s: provider needing auth for search has been pruned because no credentials could be found",
                         provider,
                     )
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
