@@ -1637,12 +1637,35 @@ class StacSearch(PostJsonSearch):
                        arguments)
         :returns: fetched queryable parameters dict
         """
+        if (
+            not self.config.discover_queryables["fetch_url"]
+            and not self.config.discover_queryables["product_type_fetch_url"]
+        ):
+            logger.info(f"Cannot fetch queryables with {self.provider}")
+            return None
+
         product_type = kwargs.get("productType", None)
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)
             if product_type
             else None
         )
+        if (
+            provider_product_type
+            and not self.config.discover_queryables["product_type_fetch_url"]
+        ):
+            logger.info(
+                f"Cannot fetch queryables for a specific product type with {self.provider}"
+            )
+            return None
+        if (
+            not provider_product_type
+            and not self.config.discover_queryables["fetch_url"]
+        ):
+            logger.info(
+                f"Cannot fetch general queryables with {self.provider}. A product type must be specified"
+            )
+            return None
 
         try:
             unparsed_fetch_url = (
