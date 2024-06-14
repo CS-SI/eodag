@@ -150,9 +150,15 @@ to each provider supported by ``eodag``:
     * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
     * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
 
+<<<<<<< HEAD
 * ``wekeo_ecmwf``: The registration procedure is the same as for ``wekeo_main``.
 
 * ``wekeo_cmems``: The registration procedure is the same as for ``wekeo_main``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
+=======
+* ``wekeo_ecmwf``: The registration procedure is the same as for ``wekeo_sentinel``.
+
+* ``wekeo_cmems``: The registration procedure is the same as for ``wekeo_sentinel``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
+>>>>>>> dfd42174 (feat: split wekeo provider into two providers)
 
 * ``dedt_lumi``: Create an account on `DestinE <https://platform.destine.eu/>`__, then use your `username`, `password` in eodag credentials.
 

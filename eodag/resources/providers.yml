@@ -5006,6 +5006,10 @@
     constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
     constraints_file_dataset_key: productType
     constraints_entry: constraints
+<<<<<<< HEAD
+=======
+    stop_without_constraints_entry_key: true
+>>>>>>> dfd42174 (feat: split wekeo provider into two providers)
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'
