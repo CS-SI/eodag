@@ -15,9 +15,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 from shapely.geometry.polygon import Polygon
 
 NumType = Union[float, int]
@@ -60,7 +60,7 @@ class BBox(BaseModel):
             )
         super().__init__(**values)
 
-    @validator("lonmin", "lonmax")
+    @field_validator("lonmin", "lonmax")
     @classmethod
     def validate_longitude(cls, v: NumType) -> NumType:
         """
@@ -73,7 +73,7 @@ class BBox(BaseModel):
             raise ValueError("Longitude values must be between -180 and 180")
         return v
 
-    @validator("latmin", "latmax")
+    @field_validator("latmin", "latmax")
     @classmethod
     def validate_latitude(cls, v: NumType) -> NumType:
         """
@@ -86,31 +86,31 @@ class BBox(BaseModel):
             raise ValueError("Latitude values must be between -90 and 90")
         return v
 
-    @validator("lonmax")
+    @field_validator("lonmax")
     @classmethod
-    def validate_lonmax(cls, v: NumType, values: Dict[str, Any]) -> NumType:
+    def validate_lonmax(cls, v: NumType, info: ValidationInfo) -> NumType:
         """
         Validates that lonmax is greater than lonmin.
 
         :param v: The lonmax value to be validated.
-        :param values: A dictionary containing the current attribute values.
+        :param info: Additional validation informations.
         :return: The validated lonmax value.
         """
-        if "lonmin" in values and v < values["lonmin"]:
+        if "lonmin" in info.data and v < info.data["lonmin"]:
             raise ValueError("lonmax must be greater than lonmin")
         return v
 
-    @validator("latmax")
+    @field_validator("latmax")
     @classmethod
-    def validate_latmax(cls, v: NumType, values: Dict[str, Any]) -> NumType:
+    def validate_latmax(cls, v: NumType, info: ValidationInfo) -> NumType:
         """
         Validates that latmax is greater than latmin.
 
         :param v: The latmax value to be validated.
-        :param values: A dictionary containing the current attribute values.
+        :param info: Additional validation informations.
         :return: The validated latmax value.
         """
-        if "latmin" in values and v < values["latmin"]:
+        if "latmin" in info.data and v < info.data["latmin"]:
             raise ValueError("latmax must be greater than latmin")
         return v
 

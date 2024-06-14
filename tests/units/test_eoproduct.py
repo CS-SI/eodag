@@ -68,7 +68,7 @@ class TestEOProduct(EODagTestCase):
             self._dummy_product(properties={"geometry": NOT_AVAILABLE})
 
         product = self._dummy_product(
-            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": "0 0 1 1"}
+            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": (0, 0, 1, 1)}
         )
         self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
 

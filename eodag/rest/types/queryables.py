@@ -21,17 +21,49 @@ from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SerializationInfo,
     SerializerFunctionWrapHandler,
+    computed_field,
     model_serializer,
 )
 
+from eodag.rest.types.eodag_search import EODAGSearch
+from eodag.rest.utils.rfc3339 import str_to_interval
 from eodag.types import python_field_definition_to_json
 from eodag.utils import Annotated
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
+
+
+class QueryablesGetParams(BaseModel):
+    """Store GET Queryables query params"""
+
+    collection: Optional[str] = Field(default=None, serialization_alias="productType")
+    datetime: Optional[str] = Field(default=None)
+
+    model_config = ConfigDict(extra="allow", frozen=True)
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: SerializerFunctionWrapHandler) -> Dict[str, Any]:
+        dumped: Dict[str, Any] = handler(self)
+        return {EODAGSearch.to_eodag(k): v for k, v in dumped.items()}
+
+    @computed_field
+    @property
+    def start_datetime(self) -> Optional[str]:
+        """Extract start_datetime property from datetime"""
+        start = str_to_interval(self.datetime)[0]
+        return start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else None
+
+    @computed_field
+    @property
+    def end_datetime(self) -> Optional[str]:
+        """Extract end_datetime property from datetime"""
+        end = str_to_interval(self.datetime)[1]
+        return end.strftime("%Y-%m-%dT%H:%M:%SZ") if end else None
 
 
 class StacQueryableProperty(BaseModel):

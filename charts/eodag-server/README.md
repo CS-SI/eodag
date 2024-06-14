@@ -46,7 +46,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | `global.imagePullSecrets` | Global Docker registry secret names as an array | `[]`  |
 | `global.storageClass`     | Global StorageClass for Persistent Volume(s)    | `""`  |
 
-
 ### Common parameters
 
 | Name                | Description                                                          | Value           |
@@ -59,7 +58,6 @@ The command removes all the Kubernetes components associated with the chart and 
 | `commonAnnotations` | Annotations to add to all deployed objects                           | `{}`            |
 | `clusterDomain`     | Kubernetes cluster domain name                                       | `cluster.local` |
 | `extraDeploy`       | Array of extra objects to deploy with the release                    | `[]`            |
-
 
 ### EODAG Server parameters
 
@@ -179,6 +177,11 @@ The command removes all the Kubernetes components associated with the chart and 
 | `serviceAccount.name`                               | The name of the ServiceAccount to use.                                                                                    | `""`                     |
 | `serviceAccount.annotations`                        | Additional custom annotations for the ServiceAccount                                                                      | `{}`                     |
 | `serviceAccount.automountServiceAccountToken`       | Automount service account token for the server service account                                                            | `true`                   |
+| `autoscaling.enabled`                               | Enable autoscaling                                                                                                        | `false`                  |
+| `autoscaling.minReplicas`                           | Minimum number of replicas                                                                                                | `1`                      |
+| `autoscaling.maxReplicas`                           | Maximum number of replicas                                                                                                | `10`                     |
+| `autoscaling.targetCPU`                             | Target CPU utilization percentage                                                                                         | `""`                     |
+| `autoscaling.targetMemory`                          | Target Memory utilization percentage                                                                                      | `""`                     |
 
 
 ```console

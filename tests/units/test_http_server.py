@@ -36,7 +36,7 @@ from shapely.geometry import box
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
-from eodag.rest.types.stac_queryables import StacQueryables
+from eodag.rest.types.queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import NotAvailableError, TimeOutError
 from tests import mock
@@ -1095,7 +1095,7 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_list_product_types_nok(self, list_pt: Mock):
         """A request for product types with a not supported filter must return all product types"""
-        url = "/collections?platform=gibberish"
+        url = "/collections?gibberish=gibberish"
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
@@ -1129,10 +1129,9 @@ class RequestTestCase(unittest.TestCase):
                 "content-disposition": f"attachment; filename={expected_file}",
             },
         )
-        mock_auth.return_value = {}
 
         response = self._request_valid_raw(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
+            f"catalogs/{self.tested_product_type}/items/foo/download?provider=peps"
         )
         mock_download.assert_called_once()
 
@@ -1165,7 +1164,9 @@ class RequestTestCase(unittest.TestCase):
         mock_download.return_value = expected_file
         mock_stream_download.side_effect = NotImplementedError()
 
-        self._request_valid_raw("collections/some-collection/items/foo/download")
+        self._request_valid_raw(
+            f"collections/{self.tested_product_type}/items/foo/download?provider=peps"
+        )
         mock_download.assert_called_once()
         # downloaded file should have been immediatly deleted from the server
         assert not os.path.exists(
@@ -1825,6 +1826,11 @@ class RequestTestCase(unittest.TestCase):
 
         url = "/collections?q=TERM1,TERM2"
         r = self.app.get(url)
-        list_pt.assert_called_once_with(provider=None)
-        guess_pt.assert_called_once_with("(TERM1) OR (TERM2)")
+        list_pt.assert_called_once_with(provider=None, fetch_providers=False)
+        guess_pt.assert_called_once_with(
+            free_text="TERM1,TERM2",
+            platformSerialIdentifier=None,
+            instrument=None,
+            platform=None,
+        )
         self.assertEqual(200, r.status_code)
