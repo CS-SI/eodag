@@ -1654,10 +1654,16 @@ class StacSearch(PostJsonSearch):
             fetch_url = unparsed_fetch_url.format(
                 provider_product_type=provider_product_type, **self.config.__dict__
             )
+            auth = (
+                self.auth
+                if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
+                else None
+            )
             response = QueryStringSearch._request(
                 self,
                 PreparedSearch(
                     url=fetch_url,
+                    auth=auth,
                     info_message="Fetching queryables: {}".format(fetch_url),
                     exception_message="Skipping error while fetching queryables for "
                     "{} {} instance:".format(self.provider, self.__class__.__name__),
