@@ -1424,7 +1424,7 @@ class EODataAccessGateway:
                 search_plugin.provider,
                 itp,
             )
-            all_results = SearchResult([], 0)
+            all_results = SearchResult([])
             try:
                 for page_results in self.search_iter_page_plugin(
                     items_per_page=itp,
@@ -1432,7 +1432,6 @@ class EODataAccessGateway:
                     **search_kwargs,
                 ):
                     all_results.data.extend(page_results.data)
-                    all_results.estimated_total_number = len(all_results)
                 logger.info(
                     "Found %s result(s) on provider '%s'",
                     len(all_results),
