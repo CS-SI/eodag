@@ -438,8 +438,8 @@ class StacItem(StacCommon):
                     assets[asset_key]["href"] += f"/{asset_key}"
                 if asset_type := asset_value.get("type", None):
                     assets[asset_key]["type"] = asset_type
-                    if alternate := assets[asset_key].get("alternate"):
-                        alternate["type"] = asset_type
+                    if origin := assets[asset_key].get("alternate", {}).get("origin"):
+                        origin["type"] = asset_type
 
         if thumbnail_url := product.properties.get(
             "quicklook", product.properties.get("thumbnail", None)
