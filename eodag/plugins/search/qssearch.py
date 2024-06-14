@@ -1738,3 +1738,16 @@ class StacSearch(PostJsonSearch):
             python_queryables = create_model("m", **field_definitions).model_fields
 
         return model_fields_to_annotated(python_queryables)
+
+
+class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
+    """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        PostJsonSearch.__init__(self, provider, config)
+
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters"""
+        return PostJsonSearch.build_query_string(self, product_type, **kwargs)

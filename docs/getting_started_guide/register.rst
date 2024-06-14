@@ -107,7 +107,7 @@ to each provider supported by ``eodag``:
 
 * ``earth_search_cog``: no authentication needed.
 
-* ``wekeo``: you need an access token to authenticate and to accept terms and conditions with it:
+* ``wekeo_sentinel``: you need an access token to authenticate and to accept terms and conditions with it:
 
   * Create an account on `WEkEO <https://www.wekeo.eu/register>`__
 
@@ -150,7 +150,9 @@ to each provider supported by ``eodag``:
     * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
     * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
 
-* ``wekeo_cmems``: The registration procedure is the same as for ``wekeo``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
+* ``wekeo_ecmwf``: The registration procedure is the same as for ``wekeo_sentinel``.
+
+* ``wekeo_cmems``: The registration procedure is the same as for ``wekeo_sentinel``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
 
 * ``dedt_lumi``: Create an account on `DestinE <https://platform.destine.eu/>`__, then use your `username`, `password` in eodag credentials.
 

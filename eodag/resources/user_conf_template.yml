@@ -196,7 +196,16 @@ hydroweb_next:
             apikey:
     download:
         output_dir:
-wekeo:
+wekeo_sentinel:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
+wekeo_ecmwf:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
