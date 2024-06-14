@@ -2565,7 +2565,7 @@
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
       format: grib
-      variable: alder_pollen
+      variable: ammonia
       type: forecast
       time: '00:00'
       level: '0'
@@ -3171,7 +3171,7 @@
       time: 00:00
       format: grib
       variable: divergence
-      pressure_level: 1
+      pressure_level: '1'
       metadata_mapping:
         <<: *day_month_year
     ERA5_LAND:
@@ -3219,9 +3219,9 @@
       system_version: operational
       variable: river_discharge_in_the_last_24_hours
       format: grib
-      hydrological_model: lisflood
+      hydrological_model: htessel_lisflood
       api_product_type: control_forecast
-      leadtime_hour: 24
+      leadtime_hour: '24'
     GLOFAS_REFORECAST:
       dataset: cems-glofas-reforecast
       variable: river_discharge_in_the_last_24_hours
@@ -3229,7 +3229,7 @@
       system_version: version_4_0
       hydrological_model: lisflood
       api_product_type: control_reforecast
-      leadtime_hour: 24
+      leadtime_hour: '24'
     GLOFAS_HISTORICAL:
       dataset: cems-glofas-historical
       system_version: version_4_0
@@ -3238,14 +3238,14 @@
       hydrological_model: lisflood
       api_product_type: consolidated
       metadata_mapping:
-        <<: *hdate
+        <<: *hday_hmonth_hyear
     GLOFAS_SEASONAL:
       dataset: cems-glofas-seasonal
       variable: river_discharge_in_the_last_24_hours
       format: grib
       system_version: operational
       hydrological_model: lisflood
-      leadtime_hour: 24
+      leadtime_hour: '24'
       metadata_mapping:
         <<: *day_month_year
     GLOFAS_SEASONAL_REFORECAST:
@@ -3254,7 +3254,7 @@
       variable: river_discharge_in_the_last_24_hours
       system_version: version_4_0
       hydrological_model: lisflood
-      leadtime_hour: 24
+      leadtime_hour: '24'
       metadata_mapping:
         <<: *hday_hmonth_hyear
     EFAS_FORECAST:
@@ -3266,7 +3266,7 @@
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
       time: 00:00
-      leadtime_hour: 24
+      leadtime_hour: '24'
     EFAS_HISTORICAL:
       dataset: efas-historical
       format: grib.zip
@@ -3283,7 +3283,7 @@
       api_product_type: control_forecast
       variable: river_discharge_in_the_last_6_hours
       model_levels: surface_level
-      leadtime_hour: 6
+      leadtime_hour: '6'
       metadata_mapping:
         <<: *hday_hmonth_hyear
     EFAS_SEASONAL:
@@ -3292,7 +3292,7 @@
       format: grib.zip
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
-      leadtime_hour: 24
+      leadtime_hour: '24'
       metadata_mapping:
         <<: *day_month_year
     EFAS_SEASONAL_REFORECAST:
@@ -3301,7 +3301,7 @@
       format: grib.zip
       variable: river_discharge_in_the_last_24_hours
       model_levels: surface_level
-      leadtime_hour: 24
+      leadtime_hour: '24'
       metadata_mapping:
         <<: *hday_hmonth_hyear
     SATELLITE_CARBON_DIOXIDE:
@@ -3379,57 +3379,57 @@
       dataset: seasonal-postprocessed-pressure-levels
       format: grib
       originating_centre: ecmwf
-      system: 4
+      system: '4'
       variable: geopotential_anomaly
-      pressure_level: 10
+      pressure_level: '10'
       api_product_type: ensemble_mean
-      leadtime_month: 1
+      leadtime_month: '1'
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_SL:
       dataset: seasonal-postprocessed-single-levels
       format: grib
       originating_centre: ecmwf
-      system: 4
+      system: '4'
       variable: 2m_dewpoint_temperature_anomaly
       api_product_type: ensemble_mean
-      leadtime_month: 1
+      leadtime_month: '1'
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_SL:
       dataset: seasonal-original-single-levels
       format: grib
       originating_centre: ecmwf
-      system: 5
+      system: '5'
       variable: 10m_u_component_of_wind
-      leadtime_hour: 6
+      leadtime_hour: '6'
     SEASONAL_ORIGINAL_PL:
       dataset: seasonal-original-pressure-levels
       format: grib
       originating_centre: ecmwf
-      system: 5
+      system: '5'
       variable: geopotential
-      pressure_level: 10
-      leadtime_hour: 12
+      pressure_level: '10'
+      leadtime_hour: '12'
     SEASONAL_MONTHLY_PL:
       dataset: seasonal-monthly-pressure-levels
       format: grib
       originating_centre: ecmwf
-      system: 5
+      system: '5'
       variable: geopotential
-      pressure_level: 10
+      pressure_level: '10'
       api_product_type: monthly_mean
-      leadtime_month: 1
+      leadtime_month: '1'
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_MONTHLY_SL:
       dataset: seasonal-monthly-single-levels
       format: grib
       originating_centre: ecmwf
-      system: 5
+      system: '5'
       variable: 10m_u_component_of_wind
       api_product_type: monthly_mean
-      leadtime_month: 1
+      leadtime_month: '1'
       metadata_mapping:
         <<: *day_month_year
     SIS_HYDRO_MET_PROJ:
@@ -4752,7 +4752,7 @@
       providerProductType: SL_1_RBT___
       metadata_mapping:
         id:
-          - '{{"productType", "value": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{{"productType": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
         <<: *eo_eum_dates
         platform:
@@ -5511,7 +5511,7 @@
       productType: EO:EEA:DAT:CLMS_HRVPP_VI
       metadata_mapping:
         id:
-          - '{{"uid": {id}}}'
+          - '{{"uid": "{id}"}}'
           - '$.id'
         <<: *clms_dates
         relativeOrbitNumber:
