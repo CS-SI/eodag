@@ -4752,7 +4752,7 @@
       providerProductType: SL_1_RBT___
       metadata_mapping:
         id:
-          - '{{"productType", "value": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
+          - '{{"productType": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
         <<: *eo_eum_dates
         platform:
