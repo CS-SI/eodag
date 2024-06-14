@@ -1481,7 +1481,7 @@ class RequestTestCase(unittest.TestCase):
             constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
             with open(constraints_path) as f:
                 constraints = json.load(f)
-            wekeo_constraints = {"constraints": constraints}
+            wekeo_sentinel_constraints = {"constraints": constraints}
 
             planetary_computer_queryables_url = (
                 "https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
@@ -1490,7 +1490,7 @@ class RequestTestCase(unittest.TestCase):
             norm_planetary_computer_queryables_url = os.path.normpath(
                 planetary_computer_queryables_url
             ).replace("https:/", "https://")
-            wekeo_constraints_url = (
+            wekeo_sentinel_constraints_url = (
                 "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
                 "EO:ESA:DAT:SENTINEL-1"
             )
@@ -1507,9 +1507,9 @@ class RequestTestCase(unittest.TestCase):
             )
             responses.add(
                 responses.GET,
-                wekeo_constraints_url,
+                wekeo_sentinel_constraints_url,
                 status=200,
-                json=wekeo_constraints,
+                json=wekeo_sentinel_constraints,
             )
 
             # no provider is specified with the product type (2 providers get a queryables or constraints file
@@ -1531,9 +1531,13 @@ class RequestTestCase(unittest.TestCase):
             self.assertIn(
                 ("verify", True), responses.calls[0].request.req_kwargs.items()
             )
-            # check the mock call on wekeo
-            self.assertEqual(wekeo_constraints_url, responses.calls[1].request.url)
-            self.assertIn(("timeout", 5), responses.calls[1].request.req_kwargs.items())
+            # check the mock call on wekeo_sentinel
+            self.assertEqual(
+                wekeo_sentinel_constraints_url, responses.calls[1].request.url
+            )
+            self.assertIn(
+                ("timeout", 60), responses.calls[1].request.req_kwargs.items()
+            )
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[1].request.headers.items()
             )
@@ -1564,14 +1568,14 @@ class RequestTestCase(unittest.TestCase):
             # no property are added from providers queryables because none of them
             # is shared with all providers for this product type
             pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
-            pl_s1_sar_grd_wekeo_queryable = "processingLevel"
+            pl_s1_sar_grd_wekeo_sentinel_queryable = "processingLevel"
             stac_pl_property = "processing:level"
             self.assertIn(
                 pl_s1_sar_grd_planetary_computer_queryable,
                 provider_queryables["properties"],
             )
-            for constraint in wekeo_constraints["constraints"]:
-                self.assertNotIn(pl_s1_sar_grd_wekeo_queryable, constraint)
+            for constraint in wekeo_sentinel_constraints["constraints"]:
+                self.assertNotIn(pl_s1_sar_grd_wekeo_sentinel_queryable, constraint)
             self.assertNotIn(
                 stac_pl_property, res_product_type_no_provider["properties"]
             )

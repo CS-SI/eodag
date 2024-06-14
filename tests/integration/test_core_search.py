@@ -242,7 +242,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_sentinel",
             ],
         )
 
@@ -277,7 +277,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_sentinel",
             ],
         )
 
@@ -311,7 +311,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_sentinel",
             ],
         )
 
@@ -367,7 +367,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_sentinel",
             ],
         )
 
@@ -409,7 +409,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_sentinel",
             ],
         )
 
@@ -443,7 +443,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_sentinel",
             ],
         )
 

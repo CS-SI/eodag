@@ -580,13 +580,13 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_queryables(
         self, mock_requests_session_constraints
     ):
-        search_plugin = self.get_search_plugin(provider="wekeo")
+        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        wekeo_constraints = {"constraints": constraints}
+        wekeo_ecmwf_constraints = {"constraints": constraints}
         mock_requests_session_constraints.return_value = MockResponse(
-            wekeo_constraints, status_code=200
+            wekeo_ecmwf_constraints, status_code=200
         )
 
         provider_queryables_from_constraints_file = [
@@ -612,7 +612,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             timeout=5,
         )
 
-        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo)
+        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
         for provider_queryable in provider_queryables_from_constraints_file:
             provider_queryable = (
                 get_queryable_from_provider(
