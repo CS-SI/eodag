@@ -33,6 +33,7 @@ from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     AuthenticationError,
+    HeaderAuth,
     MisconfiguredError,
     PluginManager,
 )
@@ -324,6 +325,71 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                 )
                 self.assertEqual(auth_plugin.config.auth_error_code, 401)
                 auth_plugin.authenticate()
+
+
+class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
+    @classmethod
+    def setUpClass(cls):
+        super(TestAuthPluginHTTPHeaderAuth, cls).setUpClass()
+        override_config_from_mapping(
+            cls.providers_config,
+            {
+                "provider_with_headers_in_conf": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "HTTPHeaderAuth",
+                        "headers": {"X-API-Key": "{apikey}"},
+                    },
+                },
+                "provider_with_no_header_in_conf": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "HTTPHeaderAuth",
+                    },
+                },
+            },
+        )
+        cls.plugins_manager = PluginManager(cls.providers_config)
+
+    def test_plugins_auth_header_validate_credentials_empty(self):
+        """HTTPHeaderAuth.validate_credentials must raise an error on empty credentials"""
+        auth_plugin = self.get_auth_plugin("provider_with_headers_in_conf")
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.validate_config_credentials,
+        )
+
+    def test_plugins_auth_header_validate_credentials_ok(self):
+        """HTTPHeaderAuth.validate_credentials must be ok on non-empty credentials"""
+        auth_plugin = self.get_auth_plugin("provider_with_headers_in_conf")
+
+        auth_plugin.config.credentials = {"foo": "bar"}
+        auth_plugin.validate_config_credentials()
+
+    def test_plugins_auth_qsauth_authenticate(self):
+        """HTTPHeaderAuth.authenticate must return a HeaderAuth object"""
+
+        # auth with headers in conf and wrong credentials
+        auth_plugin = self.get_auth_plugin("provider_with_headers_in_conf")
+        auth_plugin.config.credentials = {"foo": "bar"}
+        self.assertRaises(
+            MisconfiguredError,
+            auth_plugin.authenticate,
+        )
+
+        # auth with headers in conf
+        auth_plugin = self.get_auth_plugin("provider_with_headers_in_conf")
+        auth_plugin.config.credentials = {"apikey": "foo"}
+        auth = auth_plugin.authenticate()
+        self.assertIsInstance(auth, HeaderAuth)
+        self.assertDictEqual(auth.auth_headers, {"X-API-Key": "foo"})
+
+        # auth with headers in credentials
+        auth_plugin = self.get_auth_plugin("provider_with_no_header_in_conf")
+        auth_plugin.config.credentials = {"X-API-Key": "foo"}
+        auth = auth_plugin.authenticate()
+        self.assertIsInstance(auth, HeaderAuth)
+        self.assertDictEqual(auth.auth_headers, {"X-API-Key": "foo"})
 
 
 class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
