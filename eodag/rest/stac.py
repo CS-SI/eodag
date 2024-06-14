@@ -39,6 +39,7 @@ from eodag.api.product.metadata_mapping import (
     format_metadata,
     get_metadata_path,
 )
+from eodag.rest.config import Settings
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     deepcopy,
@@ -382,6 +383,7 @@ class StacItem(StacCommon):
         _dc_qs: Optional[str] = None,
     ) -> Dict[str, Any]:
         assets: Dict[str, Any] = {}
+        settings = Settings.from_environment()
 
         if _dc_qs:
             parsed = urlparse(product.remote_location)
@@ -396,13 +398,16 @@ class StacItem(StacCommon):
             "title": "Download link",
             "href": downloadlink_href,
             "type": "application/zip",
-            "alternate": {
+        }
+
+        if not origin_href.startswith(tuple(settings.alt_url_blacklist)):
+            assets["downloadLink"]["alternate"] = {
                 "origin": {
                     "title": "Origin asset link",
                     "href": origin_href,
                 }
-            },
-        }
+            }
+
         if "storageStatus" in product.properties:
             assets["downloadLink"]["storage:tier"] = product.properties["storageStatus"]
 
@@ -414,12 +419,15 @@ class StacItem(StacCommon):
                 # use origin asset as default
                 assets[asset_key] = asset_value
                 # origin assets as alternate link
-                assets[asset_key]["alternate"] = {
-                    "origin": {
-                        "title": "Origin asset link",
-                        "href": asset_value["href"],
+                if not asset_value["href"].startswith(
+                    tuple(settings.alt_url_blacklist)
+                ):
+                    assets[asset_key]["alternate"] = {
+                        "origin": {
+                            "title": "Origin asset link",
+                            "href": asset_value["href"],
+                        }
                     }
-                }
                 # use server-mode assets download links
                 asset_value["href"] = without_arg_url
                 if query_dict:
@@ -430,7 +438,8 @@ class StacItem(StacCommon):
                     assets[asset_key]["href"] += f"/{asset_key}"
                 if asset_type := asset_value.get("type", None):
                     assets[asset_key]["type"] = asset_type
-                    assets[asset_key]["alternate"]["type"] = asset_type
+                    if alternate := assets[asset_key].get("alternate"):
+                        alternate["type"] = asset_type
 
         if thumbnail_url := product.properties.get(
             "quicklook", product.properties.get("thumbnail", None)

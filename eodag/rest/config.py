@@ -18,11 +18,21 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated, List, Union
 
 from pydantic import Field
+from pydantic.functional_validators import BeforeValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing_extensions import Doc
 
 from eodag.rest.constants import DEFAULT_MAXSIZE, DEFAULT_TTL
+
+
+def str2liststr(raw: Union[str, List[str]]) -> List[str]:
+    """Convert str to list[str]"""
+    if isinstance(raw, list):
+        return raw
+    return raw.split(",")
 
 
 class Settings(BaseSettings):
@@ -33,6 +43,14 @@ class Settings(BaseSettings):
     cache_maxsize: int = Field(default=DEFAULT_MAXSIZE)
 
     debug: bool = False
+
+    alt_url_blacklist: Annotated[
+        Union[str, List[str]],
+        BeforeValidator(str2liststr),
+        Doc(
+            "Hide from clients items assets' alternative URLs starting with URLs from the list"
+        ),
+    ] = Field(default=[])
 
     model_config = SettingsConfigDict(
         env_prefix="EODAG_", extra="ignore", env_nested_delimiter="__"
