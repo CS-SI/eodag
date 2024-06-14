@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Dict
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
+from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest
@@ -58,16 +59,40 @@ class HTTPHeaderAuth(Authentication):
                 oh-my-another-user-input: YYY
 
     Expect an undefined behaviour if you use empty braces in header value strings.
+
+    The plugin also accepts headers to be passed directly through credentials::
+
+        provider:
+            ...
+            auth:
+                plugin: HTTPHeaderAuth
+                credentials:
+                    Authorization: "Something XXX"
+                    X-Special-Header: "Fixed value"
+                    X-Another-Special-Header: "YYY"
+                ...
+            ...
     """
 
     def authenticate(self) -> HeaderAuth:
         """Authenticate"""
         self.validate_config_credentials()
-        headers = {
-            header: value.format(**self.config.credentials)
-            for header, value in self.config.headers.items()
-        }
-        return HeaderAuth(headers)
+        try:
+            headers = (
+                {
+                    header: value.format(**self.config.credentials)
+                    for header, value in self.config.headers.items()
+                }
+                if getattr(self.config, "headers", None)
+                else self.config.credentials
+            )
+            return HeaderAuth(headers)
+        except KeyError as e:
+            raise MisconfiguredError(
+                "The following credentials are missing for provider {}: {}".format(
+                    self.provider, ", ".join(e.args)
+                )
+            )
 
 
 class HeaderAuth(AuthBase):
