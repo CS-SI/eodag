@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import io
 import os
 import random
@@ -355,3 +356,19 @@ class EODagTestCase(unittest.TestCase):
                 pass
 
         return Response()
+
+
+@contextlib.contextmanager
+def temporary_environment(**env_vars):
+    # Save the original environment variables
+    original_env = os.environ.copy()
+
+    # Set the new temporary environment variables
+    os.environ.update(env_vars)
+
+    try:
+        yield
+    finally:
+        # Restore the original environment variables
+        os.environ.clear()
+        os.environ.update(original_env)

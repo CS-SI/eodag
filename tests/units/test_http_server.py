@@ -36,10 +36,11 @@ from shapely.geometry import box
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
+from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
 from eodag.utils.exceptions import NotAvailableError, TimeOutError
-from tests import mock
+from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,
@@ -1043,6 +1044,38 @@ class RequestTestCase(unittest.TestCase):
                 ]
             )
         )
+
+    def test_assets_alt_url_blacklist(self):
+        """Search through eodag server must not have alternate link if in blacklist"""
+        # no blacklist
+        response = self._request_valid(f"search?collections={self.tested_product_type}")
+        response_items = [f for f in response["features"]]
+        self.assertTrue(
+            all(["alternate" in i["assets"]["downloadLink"] for i in response_items]),
+            "alternate links are missing",
+        )
+
+        # with blacklist
+        try:
+            Settings.from_environment.cache_clear()
+            with temporary_environment(
+                EODAG_ORIGIN_URL_BLACKLIST="https://peps.cnes.fr"
+            ):
+                response = self._request_valid(
+                    f"search?collections={self.tested_product_type}"
+                )
+                response_items = [f for f in response["features"]]
+                self.assertTrue(
+                    all(
+                        [
+                            "alternate" not in i["assets"]["downloadLink"]
+                            for i in response_items
+                        ]
+                    ),
+                    "alternate links were not removed",
+                )
+        finally:
+            Settings.from_environment.cache_clear()
 
     @mock.patch(
         "eodag.rest.core.eodag_api.guess_product_type", autospec=True, return_value=[]
