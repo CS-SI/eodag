@@ -400,7 +400,7 @@ class StacItem(StacCommon):
             "type": "application/zip",
         }
 
-        if not origin_href.startswith(tuple(settings.alt_url_blacklist)):
+        if not origin_href.startswith(tuple(settings.origin_url_blacklist)):
             assets["downloadLink"]["alternate"] = {
                 "origin": {
                     "title": "Origin asset link",
@@ -420,7 +420,7 @@ class StacItem(StacCommon):
                 assets[asset_key] = asset_value
                 # origin assets as alternate link
                 if not asset_value["href"].startswith(
-                    tuple(settings.alt_url_blacklist)
+                    tuple(settings.origin_url_blacklist)
                 ):
                     assets[asset_key]["alternate"] = {
                         "origin": {

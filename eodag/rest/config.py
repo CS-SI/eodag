@@ -44,7 +44,7 @@ class Settings(BaseSettings):
 
     debug: bool = False
 
-    alt_url_blacklist: Annotated[
+    origin_url_blacklist: Annotated[
         Union[str, List[str]],
         BeforeValidator(str2liststr),
         Doc(
