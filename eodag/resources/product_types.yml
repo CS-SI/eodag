@@ -3649,7 +3649,7 @@ GLOFAS_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related forecasted data by the Global Flood Awareness System
-  missionStartDate: "2010-11-05T00:00:00Z"
+  missionStartDate: "2019-11-05T00:00:00Z"
 
 GLOFAS_HISTORICAL:
   abstract: |

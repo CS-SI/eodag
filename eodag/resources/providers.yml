@@ -3219,7 +3219,7 @@
       system_version: operational
       variable: river_discharge_in_the_last_24_hours
       format: grib
-      hydrological_model: lisflood
+      hydrological_model: htessel_lisflood
       api_product_type: control_forecast
       leadtime_hour: '24'
     GLOFAS_REFORECAST:
@@ -3238,7 +3238,7 @@
       hydrological_model: lisflood
       api_product_type: consolidated
       metadata_mapping:
-        <<: *hdate
+        <<: *hday_hmonth_hyear
     GLOFAS_SEASONAL:
       dataset: cems-glofas-seasonal
       variable: river_discharge_in_the_last_24_hours
