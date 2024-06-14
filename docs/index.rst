@@ -71,7 +71,7 @@ downloading *Sentinel 2 Level-1C* products from any provider's catalog is as sim
 
    dag = EODataAccessGateway()
 
-   search_results, total_count = dag.search(
+   search_results = dag.search(
        productType="S2_MSI_L1C",
        start="2021-03-01",
        end="2021-03-31",
