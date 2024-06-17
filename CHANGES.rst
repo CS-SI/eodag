@@ -1,6 +1,103 @@
 Release history
 ---------------
 
+3.0.0b1 (2024-06-18)
+++++++++++++++++++++
+
+Breaking changes
+^^^^^^^^^^^^^^^^
+
+* Packaging refactoring and new `optional dependencies
+  <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_ (:pull:`1108`).
+  EODAG default installs with a minimal set of dependencies.
+  New sets of extra requirements are: ``eodag[all]``, ``eodag[all-providers]``, ``eodag[aws]``, ``eodag[csw]``,
+  ``eodag[ecmwf]``, ``eodag[usgs]``, ``eodag[server]``. Previous existing sets of extra requirements are also kept:
+  ``eodag[notebook]``, ``eodag[tutorials]``, ``eodag[dev]``, ``eodag[docs]``.
+
+Core features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* Providers groups (:pull:`1071`)
+* Configurable download timeout (:pull:`1124`)
+* `Search by id <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#id-and-provider>`_ now
+  uses :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
+  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_
+  (:pull:`1099`).
+* Free text search available for all fields when `guessing a produc type
+  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`).
+* Configurable requests ``ssl_verify`` (:pull:`1045`)
+* Fixed and refactored `queryables` (:pull:`1050`)(:pull:`1097`)(:pull:`1102`)(:pull:`1157`), authentication fix
+  (:pull:`1194`), support for local constraints files (:pull:`1105`)
+* Fixed `metadata mapping` in templates detection (:pull:`1139`), ``format_query_params()`` fixes (:pull:`1145`) and
+  refactor (:pull:`1142`)
+
+Providers and product types updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* `dedl <https://hda.data.destination-earth.eu/ui>`_ as new provider (:pull:`750`)
+* `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_ as new provider (:pull:`1119`)
+  (:pull:`1126`), with authentication using destine credentials (:pull:`1127`)
+* `cop_marine <https://marine.copernicus.eu/>`_ as new provider (:pull:`1131`)
+* `eumetsat_ds <https://data.eumetsat.int/>`_ as new provider (:pull:`1060`), including `METOP` product types
+  (:pull:`1143`)(:pull:`1189`)
+* `OData` API usage for ``creodias`` & ``cop_dataspace`` (:pull:`1149`), fixes for empty geometries (:pull:`1186`),
+  search datetime intervals (:pull:`1158`), and removed `discover_product_types` (:pull:`1112`)
+* `cop_ads` and `cop_cds` now use :class:`~eodag.plugins.search.build_search_result.BuildSearchResult` and
+  :class:`~eodag.plugins.download.http.HTTPDownload` instead of move ``CdsApi`` (:pull:`1029`), `EFAS` dates formatting
+  (:pull:`1178`)
+* ``wekeo`` now uses `hda-broker 2.0` API (:pull:`1034`), lists queryables (:pull:`1104`), has fixed pagination
+  (:pull:`1098`) and CLMS search by id (:pull:`1100`)
+* Re-login in :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin on api file error (:pull:`1046`)
+* Adjusted timeouts (:pull:`1163`)
+* Opened time intervals supported for STAC providers (:pull:`1144`)
+* New product types (:pull:`1164`), providers and product types configuration update (:pull:`1212`)
+
+Plugins new features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Refactored search plugins methods to use ``PreparedSearch`` and ``RawSearchResult`` new classes (:pull:`1191`)
+* Refresh token for :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin
+  (:pull:`1138`), tests (:pull:`1135`)
+* :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth` accepts headers definition in credentials (:pull:`1215`)
+* Allow no auth for :class:`~eodag.plugins.download.http.HTTPDownload` download requests (:pull:`1196`)
+* Refactorization of ``Api`` base plugin that now inherits from ``Search`` and ``Download`` (:pull:`1051`)
+* `orderLink` support in `build_search_result.*` plugins (:pull:`1082`), and parsing fix (:pull:`1091`)
+
+Server mode
+^^^^^^^^^^^
+
+* Offline products order handling (:pull:`918`)
+* External enhanced product types metadata (:pull:`1008`)(:pull:`1171`)(:pull:`1176`)(:pull:`1180`)(:pull:`1197`)
+* Collections search using updated :meth:`~eodag.api.core.EODataAccessGateway.guess_product_type` (:pull:`909`)
+* Providers groups (:pull:`1192`), and fixes for listing (:pull:`1187`) and items self links (:pull:`1090`)
+* ``HEAD`` requests enabled (:pull:`1120`)
+* LRU caching (:pull:`1073`)
+* Additional item properties (:pull:`1170`)
+* ``order`` and ``storage`` extensions usage (:pull:`1117`)
+* ``bbox`` in queryables (:pull:`1185`), fixed some types missing (:pull:`1083`)
+* Blacklist configution for assets alternate URLs (:pull:`1213`)
+* ``id`` vs ``title`` in item metadata fix (:pull:`1193`)
+* Error handling fixes (:pull:`1078`)(:pull:`1103`)(:pull:`1182`)
+* Other server-mode fixes  (:pull:`1065`)(:pull:`1087`)(:pull:`1094`)(:pull:`1095`)(:pull:`1096`)(:pull:`1106`)
+  (:pull:`1113`)(:pull:`1115`)(:pull:`1156`)(:pull:`1174`)
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+* **[build]** Updated requirements for ``uvicorn`` (:pull:`1152`), ``shapely`` (:pull:`1155`), ``orjson`` (:pull:`1150`)
+  (:pull:`1079`)
+* **[build]** Remove ``requests-ftp`` (:pull:`1085`)
+* **[style]** type hints related fixes and refactoring (:pull:`1052`)
+* **[docs]** sphinx theme updated and removed jquery (:pull:`1054`), newlines between badges fixes (:pull:`1109`), and other
+  documentation fixes and updates (:pull:`1057`)(:pull:`1059`)(:pull:`1062`)(:pull:`1063`)(:pull:`1081`)(:pull:`1121`)
+  (:pull:`1122`)
+* **[ci]** Fetch product types Github action updates (:pull:`1202`)(:pull:`1205`)
+* Various minor fixes and improvements (:pull:`1072`)(:pull:`1077`)(:pull:`1101`)(:pull:`1111`)(:pull:`1118`)
+  (:pull:`1132`)(:pull:`1141`)(:pull:`1190`)
+* External product types reference updates (:pull:`1086`)(:pull:`1093`)(:pull:`1107`)(:pull:`1110`)(:pull:`1114`)
+  (:pull:`1136`)(:pull:`1137`)(:pull:`1140`)(:pull:`1146`)(:pull:`1151`)(:pull:`1153`)(:pull:`1160`)(:pull:`1165`)
+  (:pull:`1203`)(:pull:`1204`)(:pull:`1206`)(:pull:`1207`)(:pull:`1208`)
+
 2.12.1 (2024-03-05)
 +++++++++++++++++++
 
