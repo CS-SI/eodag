@@ -1865,5 +1865,8 @@ class RequestTestCase(unittest.TestCase):
             platformSerialIdentifier=None,
             instrument=None,
             platform=None,
+            missionStartDate=None,
+            missionEndDate=None,
+            productType=None,
         )
         self.assertEqual(200, r.status_code)

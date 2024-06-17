@@ -40,6 +40,7 @@ from eodag.api.product.metadata_mapping import (
     get_metadata_path,
 )
 from eodag.rest.config import Settings
+from eodag.rest.utils.rfc3339 import str_to_interval
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     deepcopy,
@@ -831,6 +832,7 @@ class StacCollection(StacCommon):
         platform: Optional[str] = None,
         instrument: Optional[str] = None,
         constellation: Optional[str] = None,
+        datetime: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Build STAC collections list
 
@@ -841,24 +843,29 @@ class StacCollection(StacCommon):
         """
         collection_model = deepcopy(self.stac_config["collection"])
 
+        start, end = str_to_interval(datetime)
+
         all_pt = self.eodag_api.list_product_types(
             provider=self.provider, fetch_providers=False
         )
 
-        if collection:
-            product_types = [pt for pt in all_pt if collection == pt["ID"]]
-        elif any((q, platform, instrument, constellation)):
-            # product types matching filters
+        if any((collection, q, platform, instrument, constellation, datetime)):
             try:
                 guessed_product_types = self.eodag_api.guess_product_type(
                     free_text=q,
                     platformSerialIdentifier=platform,
                     instrument=instrument,
                     platform=constellation,
+                    productType=collection,
+                    missionStartDate=start.isoformat() if start else None,
+                    missionEndDate=end.isoformat() if end else None,
                 )
             except NoMatchingProductType:
-                guessed_product_types = []
-            product_types = [pt for pt in all_pt if pt["ID"] in guessed_product_types]
+                product_types = []
+            else:
+                product_types = [
+                    pt for pt in all_pt if pt["ID"] in guessed_product_types
+                ]
         else:
             product_types = all_pt
 

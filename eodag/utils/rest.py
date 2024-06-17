@@ -19,12 +19,20 @@
 
 from __future__ import annotations
 
+import datetime
+import re
 from typing import Any, Dict, Optional, Tuple
 
 import dateutil.parser
 from dateutil import tz
 
 from eodag.utils.exceptions import ValidationError
+
+RFC3339_PATTERN = (
+    r"^(\d{4})-(\d{2})-(\d{2})"
+    r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
+    r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
+)
 
 
 def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
@@ -72,3 +80,25 @@ def get_date(date: Optional[str]) -> Optional[str]:
     except ValueError as e:
         exc = ValidationError("invalid input date: %s" % e)
         raise exc
+
+
+def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
+    """Convert a string conforming to RFC 3339 to a :class:`datetime.datetime`.
+
+    :param s: The string to convert to :class:`datetime.datetime`
+    :type s: str
+
+    :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
+    :rtype: :class:`datetime.datetime`
+
+    raises: :class:`ValidationError`
+    """
+    # Uppercase the string
+    s = s.upper()
+
+    # Match against RFC3339 regex.
+    result = re.match(RFC3339_PATTERN, s)
+    if not result:
+        raise ValidationError("Invalid RFC3339 datetime.")
+
+    return dateutil.parser.isoparse(s).replace(tzinfo=datetime.timezone.utc)

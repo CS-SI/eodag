@@ -31,6 +31,7 @@ from eodag.rest.stac import StacCollection
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.rest import rfc3339_str_to_datetime
 from tests import TEST_RESOURCES_PATH, mock
 from tests.context import SearchResult
 from tests.utils import mock_request
@@ -253,6 +254,11 @@ class TestStacUtils(unittest.TestCase):
         self.assertEqual(dtstart, start)
         self.assertEqual(dtend, end)
 
+    def test_rfc3339_str_to_datetime(self):
+        test_str = "2023-12-18T16:41:35Z"
+        expected_result = datetime(2023, 12, 18, 16, 41, 35, tzinfo=timezone.utc)
+        self.assertEqual(rfc3339_str_to_datetime(test_str), expected_result)
+
     async def test_fetch_external_stac_collections(self):
         """Load external STAC collections"""
 
@@ -425,11 +431,6 @@ class TestEodagCql2jsonEvaluator(unittest.TestCase):
 
 
 class TestRfc3339(unittest.TestCase):
-    def test_rfc3339_str_to_datetime(self):
-        test_str = "2023-12-18T16:41:35Z"
-        expected_result = datetime(2023, 12, 18, 16, 41, 35, tzinfo=timezone.utc)
-        self.assertEqual(rfc3339.rfc3339_str_to_datetime(test_str), expected_result)
-
     def test_str_to_interval(self):
         test_str = "2023-12-18T16:41:35Z/2023-12-19T16:41:35Z"
         expected_result = (

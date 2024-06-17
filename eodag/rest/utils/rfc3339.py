@@ -16,38 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime
-import re
 from typing import Optional, Tuple
 
-import dateutil.parser
-
-RFC3339_PATTERN = (
-    r"^(\d{4})-(\d{2})-(\d{2})"
-    r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
-    r"(Z|([+-])(\d{2}):(\d{2}))?)?$"
-)
-
-
-def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
-    """Convert a string conforming to RFC 3339 to a :class:`datetime.datetime`.
-
-    :param s: The string to convert to :class:`datetime.datetime`
-    :type s: str
-
-    :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
-    :rtype: :class:`datetime.datetime`
-
-    raises: :class:`ValueError`
-    """
-    # Uppercase the string
-    s = s.upper()
-
-    # Match against RFC3339 regex.
-    result = re.match(RFC3339_PATTERN, s)
-    if not result:
-        raise ValueError("Invalid RFC3339 datetime.")
-
-    return dateutil.parser.isoparse(s).replace(tzinfo=datetime.timezone.utc)
+from eodag.utils.rest import rfc3339_str_to_datetime
 
 
 def str_to_interval(
