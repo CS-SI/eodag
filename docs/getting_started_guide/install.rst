@@ -28,7 +28,6 @@ the following extras:
 
 * ``eodag[all]``, includes everything that would be needed to run EODAG and associated tutorials with all features
 * ``eodag[all-providers]``, includes dependencies required to have all providers available
-* ``eodag[aws]``, includes dependencies for plugins using Amazon S3
 * ``eodag[csw]``, includes dependencies for plugins using CSW
 * ``eodag[ecmwf]``, includes dependencies for :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` (`ecmwf` provider)
 * ``eodag[usgs]``, includes dependencies for :class:`~eodag.plugins.apis.usgs.UsgsApi` (`usgs` provider)
