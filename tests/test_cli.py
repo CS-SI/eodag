@@ -30,6 +30,7 @@ from faker import Faker
 from packaging import version
 from pkg_resources import resource_filename
 
+from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -283,7 +284,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with specified result filename without .geojson extension"""  # noqa
         with self.user_conf() as conf_file:
             api_obj = dag.return_value
-            api_obj.search.return_value = (mock.MagicMock(),) * 2
+            api_obj.search.return_value = SearchResult([mock.MagicMock() * 2], 2)
             self.runner.invoke(
                 eodag,
                 [
@@ -297,7 +298,7 @@ class TestEodagCli(unittest.TestCase):
                 ],
             )
             api_obj.serialize.assert_called_with(
-                api_obj.search.return_value[0], filename="results.geojson"
+                api_obj.search.return_value, filename="results.geojson"
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -305,7 +306,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""  # noqa
         with self.user_conf() as conf_file:
             api_obj = dag.return_value
-            api_obj.search.return_value = (mock.MagicMock(),) * 2
+            api_obj.search.return_value = SearchResult([mock.MagicMock() * 2], 2)
 
             product_type = "whatever"
             cruncher = "FilterLatestIntersect"
@@ -328,7 +329,7 @@ class TestEodagCli(unittest.TestCase):
                 ["search", "-f", conf_file, "-p", product_type, "--cruncher", cruncher],
             )
 
-            search_results = api_obj.search.return_value[0]
+            search_results = api_obj.search.return_value
             crunch_results = api_obj.crunch.return_value
 
             # Assertions
