@@ -1,17 +1,21 @@
 Release history
 ---------------
 
-3.0.0b1 (2024-06-18)
+3.0.0b1 (2024-06-24)
 ++++++++++++++++++++
 
 Breaking changes
 ^^^^^^^^^^^^^^^^
 
+* `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_ method now
+  returns only a :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple (:pull:`1200`). It can store
+  the estimated total number of products in ``SearchResult.number_matched`` if the method is called with ``count=True``
+  (``False`` by  default).
 * Packaging refactoring and new `optional dependencies
-  <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_ (:pull:`1108`).
-  EODAG default installs with a minimal set of dependencies.
-  New sets of extra requirements are: ``eodag[all]``, ``eodag[all-providers]``, ``eodag[aws]``, ``eodag[csw]``,
-  ``eodag[ecmwf]``, ``eodag[usgs]``, ``eodag[server]``. Previous existing sets of extra requirements are also kept:
+  <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_ (:pull:`1108`)
+  (:pull:`1219`). EODAG default installs with a minimal set of dependencies.
+  New sets of extra requirements are: ``eodag[all]``, ``eodag[all-providers]``, ``eodag[ecmwf]``, ``eodag[usgs]``,
+  ``eodag[csw]``, ``eodag[server]``. Previous existing sets of extra requirements are also kept:
   ``eodag[notebook]``, ``eodag[tutorials]``, ``eodag[dev]``, ``eodag[docs]``.
 
 Core features and fixes
@@ -24,7 +28,8 @@ Core features and fixes
   `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_
   (:pull:`1099`).
 * Free text search available for all fields when `guessing a produc type
-  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`).
+  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`),
+  mission dates filtering support (:pull:`1222`)
 * Configurable requests ``ssl_verify`` (:pull:`1045`)
 * Fixed and refactored `queryables` (:pull:`1050`)(:pull:`1097`)(:pull:`1102`)(:pull:`1157`), authentication fix
   (:pull:`1194`), support for local constraints files (:pull:`1105`)
@@ -37,31 +42,33 @@ Providers and product types updates
 * `dedl <https://hda.data.destination-earth.eu/ui>`_ as new provider (:pull:`750`)
 * `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_ as new provider (:pull:`1119`)
   (:pull:`1126`), with authentication using destine credentials (:pull:`1127`)
-* `cop_marine <https://marine.copernicus.eu/>`_ as new provider (:pull:`1131`)
+* `cop_marine <https://marine.copernicus.eu/>`_ as new provider (:pull:`1131`)(:pull:`1224`)
 * `eumetsat_ds <https://data.eumetsat.int/>`_ as new provider (:pull:`1060`), including `METOP` product types
   (:pull:`1143`)(:pull:`1189`)
 * `OData` API usage for ``creodias`` & ``cop_dataspace`` (:pull:`1149`), fixes for empty geometries (:pull:`1186`),
   search datetime intervals (:pull:`1158`), and removed `discover_product_types` (:pull:`1112`)
-* `cop_ads` and `cop_cds` now use :class:`~eodag.plugins.search.build_search_result.BuildSearchResult` and
+* ``cop_ads`` and ``cop_cds`` now use :class:`~eodag.plugins.search.build_search_result.BuildSearchResult` and
   :class:`~eodag.plugins.download.http.HTTPDownload` instead of move ``CdsApi`` (:pull:`1029`), `EFAS` dates formatting
-  (:pull:`1178`)
+  (:pull:`1178`), ``area`` metadata mapping fix for `CAMS_EU_AIR_QUALITY_FORECAST` (:pull:`1225`)
 * ``wekeo`` now uses `hda-broker 2.0` API (:pull:`1034`), lists queryables (:pull:`1104`), has fixed pagination
   (:pull:`1098`) and CLMS search by id (:pull:`1100`)
-* Re-login in :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin on api file error (:pull:`1046`)
 * Adjusted timeouts (:pull:`1163`)
 * Opened time intervals supported for STAC providers (:pull:`1144`)
-* New product types (:pull:`1164`), providers and product types configuration update (:pull:`1212`)
+* New product types (:pull:`1164`)(:pull:`1227`), providers and product types configuration update (:pull:`1212`)
 
 Plugins new features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Refactored search plugins methods to use ``PreparedSearch`` and ``RawSearchResult`` new classes (:pull:`1191`)
 * Refresh token for :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin
-  (:pull:`1138`), tests (:pull:`1135`)
+  (:pull:`1138`), tests (:pull:`1135`), and fix (:pull:`1232`)
 * :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth` accepts headers definition in credentials (:pull:`1215`)
+* ``flatten_top_dirs`` download plugins option set to true by default (#1220)
+* ``base_uri`` download plugins setting is not systematically mandatory any more (:pull:`1230`)
+* Re-login in :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin on api file error (:pull:`1046`)
 * Allow no auth for :class:`~eodag.plugins.download.http.HTTPDownload` download requests (:pull:`1196`)
 * Refactorization of ``Api`` base plugin that now inherits from ``Search`` and ``Download`` (:pull:`1051`)
-* `orderLink` support in `build_search_result.*` plugins (:pull:`1082`), and parsing fix (:pull:`1091`)
+* ``orderLink`` support in `build_search_result.*` plugins (:pull:`1082`), and parsing fix (:pull:`1091`)
 
 Server mode
 ^^^^^^^^^^^
@@ -79,7 +86,7 @@ Server mode
 * ``id`` vs ``title`` in item metadata fix (:pull:`1193`)
 * Error handling fixes (:pull:`1078`)(:pull:`1103`)(:pull:`1182`)
 * Other server-mode fixes  (:pull:`1065`)(:pull:`1087`)(:pull:`1094`)(:pull:`1095`)(:pull:`1096`)(:pull:`1106`)
-  (:pull:`1113`)(:pull:`1115`)(:pull:`1156`)(:pull:`1174`)
+  (:pull:`1113`)(:pull:`1115`)(:pull:`1156`)(:pull:`1174`)(:pull:`1210`)(:pull:`1221`)(:pull:`1223`)
 
 Miscellaneous
 ^^^^^^^^^^^^^
@@ -96,7 +103,7 @@ Miscellaneous
   (:pull:`1132`)(:pull:`1141`)(:pull:`1190`)
 * External product types reference updates (:pull:`1086`)(:pull:`1093`)(:pull:`1107`)(:pull:`1110`)(:pull:`1114`)
   (:pull:`1136`)(:pull:`1137`)(:pull:`1140`)(:pull:`1146`)(:pull:`1151`)(:pull:`1153`)(:pull:`1160`)(:pull:`1165`)
-  (:pull:`1203`)(:pull:`1204`)(:pull:`1206`)(:pull:`1207`)(:pull:`1208`)
+  (:pull:`1203`)(:pull:`1204`)(:pull:`1206`)(:pull:`1207`)(:pull:`1208`)(:pull:`1229`)
 
 2.12.1 (2024-03-05)
 +++++++++++++++++++
