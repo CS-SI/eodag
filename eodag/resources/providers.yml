@@ -1657,7 +1657,6 @@
   download: !plugin
     type: AwsDownload
     requester_pays: True
-    flatten_top_dirs: True
     ssl_verify: true
     products:
       S1_SAR_GRD:
@@ -1749,7 +1748,6 @@
   download: !plugin
     type: AwsDownload
     requester_pays: True
-    flatten_top_dirs: True
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
@@ -1846,7 +1844,6 @@
   download: !plugin
     type: AwsDownload
     requester_pays: True
-    flatten_top_dirs: True
     ssl_verify: true
     products:
       S2_MSI_L1C:
@@ -4226,7 +4223,6 @@
   download: !plugin
     type: HTTPDownload
     base_uri: 'https://planetarycomputer.microsoft.com/api/stac/download'
-    flatten_top_dirs: True
     auth_error_code: 403
     ssl_verify: true
   auth: !plugin
@@ -4277,7 +4273,6 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://hydroweb.next.theia-land.fr
-    flatten_top_dirs: true
     auth_error_code: 401
     ssl_verify: true
   auth: !plugin
@@ -5919,7 +5914,6 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
-    flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
@@ -6038,7 +6032,6 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
-    flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
@@ -6222,7 +6215,6 @@
       productIdentifier: '$.S3Path'
   download: !plugin
     type: CreodiasS3Download
-    flatten_top_dirs: True
     base_uri: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
     ssl_verify: true
@@ -6544,7 +6536,6 @@
     type: HTTPDownload
     base_uri: https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/
     ssl_verify: true
-    flatten_top_dirs: true
     auth_error_code: 401
     order_enabled: True
     order_method: POST
@@ -6646,7 +6637,6 @@
     timeout: 20
     ssl_verify: true
     extract: true
-    flatten_top_dirs: true
     order_enabled: True
     order_method: GET
     order_on_response:
@@ -7162,7 +7152,6 @@
     type: HTTPDownload
     base_uri: 'https://api.eumetsat.int/data/download/1.0.0'
     extract: true
-    flatten_top_dirs: True
     ignore_assets: True
     ssl_verify: true
   auth: !plugin
@@ -7301,6 +7290,5 @@
     type: AwsDownload
     base_uri: https://s3.waw3-1.cloudferro.com
     bucket_path_level: 0
-    flatten_top_dirs: True
   auth: !plugin
     type: AwsAuth

@@ -1072,7 +1072,7 @@ class HTTPDownload(Download):
             product.product_type, {}
         )
         flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
@@ -1184,7 +1184,7 @@ class HTTPDownload(Download):
             product.product_type, {}
         )
         flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
 
         # count local assets
@@ -1231,6 +1231,8 @@ class HTTPDownload(Download):
             shutil.rmtree(fs_dir_path)
             # and return assets_urls[0] path
             fs_dir_path = uri_to_path(assets_urls[0])
+            # do not flatten dir
+            flatten_top_dirs = False
         # several local assets
         elif local_assets_count == len(assets_urls) and local_assets_count > 0:
             common_path = os.path.commonpath([uri_to_path(uri) for uri in assets_urls])
@@ -1238,6 +1240,8 @@ class HTTPDownload(Download):
             shutil.rmtree(fs_dir_path)
             # and return assets_urls common path
             fs_dir_path = common_path
+            # do not flatten dir
+            flatten_top_dirs = False
         # no assets downloaded but some should have been
         elif len(os.listdir(fs_dir_path)) == 0:
             raise NotAvailableError("No assets could be downloaded")

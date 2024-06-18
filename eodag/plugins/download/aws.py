@@ -299,7 +299,7 @@ class AwsDownload(Download):
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
 
         # xtra metadata needed for SAFE product
@@ -808,7 +808,7 @@ class AwsDownload(Download):
             product.product_type, {}
         )
         flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
         common_path = ""
         if flatten_top_dirs:

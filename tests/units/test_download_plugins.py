@@ -633,11 +633,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(
-                    self.output_dir, "dummy_product", "mal_for_matted", "something"
-                )
-            )
+            os.path.isfile(os.path.join(self.output_dir, "dummy_product", "something"))
         )
 
         # Check if the GET request has been called for both size request and download request
