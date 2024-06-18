@@ -81,7 +81,6 @@ class TestSearchStacStatic(unittest.TestCase):
                 download:
                     type: HTTPDownload
                     base_uri: https://fake-endpoint
-                    flatten_top_dirs: True
         """
         )
         self.dag.set_preferred_provider(self.static_stac_provider)

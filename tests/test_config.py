@@ -290,7 +290,6 @@ class TestConfigFunctions(unittest.TestCase):
                 download:
                     type: AwsDownload
                     base_uri: https://api.my_new_provider
-                    flatten_top_dirs: True
                 auth:
                     type: AwsAuth
                     credentials:
@@ -354,7 +353,7 @@ class TestConfigFunctions(unittest.TestCase):
             download:
                 type: AwsDownload
                 base_uri: https://api.my_new_provider
-                flatten_top_dirs: True
+                flatten_top_dirs: false
             auth:
                 type: AwsAuth
                 credentials:
@@ -410,7 +409,7 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertEqual(
             my_new_provider_conf.download.base_uri, "https://api.my_new_provider"
         )
-        self.assertTrue(my_new_provider_conf.download.flatten_top_dirs)
+        self.assertFalse(my_new_provider_conf.download.flatten_top_dirs)
         self.assertIsInstance(my_new_provider_conf.auth, config.PluginConfig)
         self.assertEqual(my_new_provider_conf.auth.type, "AwsAuth")
         self.assertEqual(
