@@ -27,8 +27,6 @@ export OTEL_METRIC_EXPORT_INTERVAL="5000"
 from __future__ import annotations
 
 import logging
-import os
-import sys
 from typing import TYPE_CHECKING
 
 from opentelemetry import metrics, trace
@@ -47,15 +45,13 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from eodag.utils.logging import setup_logging
-
 if TYPE_CHECKING:
     from fastapi import FastAPI
 
     from eodag import EODataAccessGateway
 
 
-logger = logging.getLogger("opentelemetry.instrumentation.eodag")
+logger = logging.getLogger("eodag.rest.utils.observability")
 
 
 def instrument_server(
@@ -137,85 +133,4 @@ def instrument_server(
     EODAGInstrumentor(eodag_api).instrument(
         tracer_provider=tracer_provider,
         meter_provider=meter_provider,
-    )
-
-
-def serve_rest(
-    verbose: int,
-    daemon: bool,
-    world: bool,
-    port: int,
-    config: str,
-    locs: str,
-    debug: bool,
-) -> None:
-    """Serve EODAG functionalities through a WEB interface."""
-    setup_logging(verbose=verbose)
-    try:
-        import uvicorn
-    except ImportError:
-        raise ImportError(
-            "Feature not available, please install eodag[server] or eodag[all]"
-        )
-
-    # Set the settings of the app
-    # IMPORTANT: the order of imports counts here (first we override the settings,
-    # then we import the app so that the updated settings is taken into account in
-    # the app initialization)
-    if config:
-        os.environ["EODAG_CFG_FILE"] = config
-
-    if locs:
-        os.environ["EODAG_LOCS_CFG_FILE"] = locs
-
-    bind_host = "127.0.0.1"
-    if world:
-        bind_host = "0.0.0.0"
-    if daemon:
-        try:
-            pid = os.fork()
-        except OSError as e:
-            raise Exception("%s [%d]" % (e.strerror, e.errno))
-
-        if pid == 0:
-            os.setsid()
-            uvicorn.run("eodag.rest.server:app", host=bind_host, port=port)
-        else:
-            sys.exit(0)
-    else:
-        logging_config = uvicorn.config.LOGGING_CONFIG
-        if debug:
-            logging_config["loggers"]["uvicorn"]["level"] = "DEBUG"
-            logging_config["loggers"]["uvicorn.error"]["level"] = "DEBUG"
-            logging_config["loggers"]["uvicorn.access"]["level"] = "DEBUG"
-            logging_config["formatters"]["default"][
-                "fmt"
-            ] = "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
-            logging_config["loggers"]["eodag"] = {
-                "handlers": ["default"],
-                "level": "DEBUG" if debug else "INFO",
-                "propagate": False,
-            }
-        uvicorn.run(
-            "eodag.rest.server:app",
-            host=bind_host,
-            port=port,
-            reload=debug,
-            log_config=logging_config,
-        )
-
-
-if __name__ == "__main__":
-    from eodag.rest.core import eodag_api
-    from eodag.rest.server import app as fastapi_app
-
-    instrument_server(eodag_api, fastapi_app)
-    serve_rest(
-        verbose=1,
-        daemon=False,
-        world=False,
-        port=5000,
-        config=None,
-        locs=None,
-        debug=False,
     )
