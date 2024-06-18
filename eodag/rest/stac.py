@@ -1361,21 +1361,29 @@ class StacCatalog(StacCommon):
         :returns: This catalog obj
         :rtype: :class:`eodag.stac.StacCatalog`
         """
+        settings = Settings.from_environment()
+
         # update conf with user shp locations
         locations_config = self.build_locations_config()
 
-        self.stac_config["catalogs"] = dict(
-            deepcopy(self.stac_config["catalogs"]), **locations_config
-        )
+        self.stac_config["catalogs"] = {
+            **deepcopy(self.stac_config["catalogs"]),
+            **locations_config,
+        }
 
         if not catalogs:
             # Build root catalog combined with landing page
             self.__update_data_from_catalog_config(
                 {
-                    "model": dict(
-                        deepcopy(self.stac_config["landing_page"]),
-                        **{"provider": self.provider},
-                    )
+                    "model": {
+                        **deepcopy(self.stac_config["landing_page"]),
+                        **{
+                            "provider": self.provider,
+                            "id": settings.stac_api_landing_id,
+                            "title": settings.stac_api_title,
+                            "description": settings.stac_api_description,
+                        },
+                    }
                 }
             )
 
