@@ -429,16 +429,6 @@ async def all_collections(
             format_dict_items(link, **format_args) for link in collections["links"]
         ]
 
-        collections["links"] += [
-            {
-                "rel": "child",
-                "title": collec["id"],
-                "href": [
-                    link["href"] for link in collec["links"] if link["rel"] == "self"
-                ][0],
-            }
-            for collec in collections["collections"]
-        ]
         collections = format_dict_items(collections, **format_args)
         return collections
 

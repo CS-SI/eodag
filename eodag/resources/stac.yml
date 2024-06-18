@@ -85,17 +85,18 @@ conformance:
 
 # https://stacspec.org/STAC-api.html#operation/getCollections
 collections:
-  links:
-    - rel: self
-      title: collections
-      href: "{collections[url]}"
-    - rel: root
-      href: "{collections[root]}/"
-    - rel: parent
-      href: "{collections[root]}/"
   collections:
     - "{collection}"
-  stac_version: "{stac_version}"
+  links:
+    - rel: root
+      type: "application/json"
+      href: "{collections[root]}/"
+    - rel: parent
+      type: "application/json"
+      href: "{collections[root]}/"
+    - rel: self
+      type: "application/json"
+      href: "{collections[url]}"
 
 # https://stacspec.org/STAC-api.html#operation/describeCollection
 collection:

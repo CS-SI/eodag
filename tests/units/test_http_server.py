@@ -1094,14 +1094,6 @@ class RequestTestCase(unittest.TestCase):
             r = self.app.get(url)
             self.assertTrue(list_pt.called)
             self.assertEqual(200, r.status_code)
-            self.assertListEqual(
-                ["S2_MSI_L1C", "S2_MSI_L2A"],
-                [
-                    it["title"]
-                    for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                    if it["rel"] == "child"
-                ],
-            )
 
         guess_pt.return_value = ["S2_MSI_L1C"]
         url = "/collections?instrument=MSI"
@@ -1109,14 +1101,6 @@ class RequestTestCase(unittest.TestCase):
         self.assertTrue(guess_pt.called)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
-        self.assertListEqual(
-            ["S2_MSI_L1C"],
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
-        )
 
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
@@ -1132,14 +1116,6 @@ class RequestTestCase(unittest.TestCase):
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
-        self.assertListEqual(
-            ["S2_MSI_L1C", "S2_MSI_L2A"],
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
-        )
 
     @mock.patch(
         "eodag.plugins.authentication.base.Authentication.authenticate",
