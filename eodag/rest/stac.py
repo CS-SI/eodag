@@ -1393,7 +1393,7 @@ class StacCatalog(StacCommon):
                         "href": urljoin(
                             self.url, f"{STAC_CATALOGS_PREFIX}/{product_type['ID']}"
                         ),
-                        "title": product_type["ID"],
+                        "title": product_type["title"],
                     }
                     for product_type in product_types_list
                 ]
