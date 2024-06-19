@@ -1041,7 +1041,7 @@ class EODataAccessGateway:
         geom: Optional[Union[str, Dict[str, float], BaseGeometry]] = None,
         locations: Optional[Dict[str, str]] = None,
         provider: Optional[str] = None,
-        count: bool = True,
+        count: bool = False,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1773,7 +1773,7 @@ class EODataAccessGateway:
     def _do_search(
         self,
         search_plugin: Union[Search, Api],
-        count: bool = True,
+        count: bool = False,
         raise_errors: bool = False,
         **kwargs: Any,
     ) -> SearchResult:

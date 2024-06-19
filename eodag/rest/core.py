@@ -214,7 +214,7 @@ def search_stac_items(
             **eodag_args.model_dump(exclude_none=True),
         }
 
-        search_results = eodag_api.search(**criteria)
+        search_results = eodag_api.search(count=True, **criteria)
         total = search_results.estimated_total_number
         if search_request.crunch:
             search_results = crunch_products(

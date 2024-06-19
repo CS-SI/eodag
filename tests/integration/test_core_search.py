@@ -385,7 +385,7 @@ class TestCoreSearch(unittest.TestCase):
             onda_resp_search_file_content,
         ]
 
-        search_result = self.dag.search(productType="S1_SAR_SLC")
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), onda_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
