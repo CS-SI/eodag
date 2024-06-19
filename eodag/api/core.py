@@ -1145,7 +1145,7 @@ class EODataAccessGateway:
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
-        return SearchResult([], 0)
+        return SearchResult([], 0) if count else SearchResult([])
 
     def search_iter_page(
         self,
@@ -1813,7 +1813,7 @@ class EODataAccessGateway:
         can_authenticate = callable(getattr(auth_plugin, "authenticate", None))
 
         results: List[EOProduct] = []
-        total_results: Optional[int] = 0
+        total_results: Optional[int] = 0 if count else None
 
         try:
             prep = PreparedSearch(count=count)
@@ -1825,44 +1825,6 @@ class EODataAccessGateway:
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
-
-            # Only do the pagination computations when it makes sense. For example,
-            # for a search by id, we can reasonably guess that the provider will return
-            # At most 1 product, so we don't need such a thing as pagination
-            page = prep.page
-            items_per_page = prep.items_per_page
-            if page and items_per_page and count:
-                # Take into account the fact that a provider may not return the count of
-                # products (in that case, fallback to using the length of the results it
-                # returned and the page requested. As an example, check the result of
-                # the following request (look for the value of properties.totalResults)
-                # https://theia-landsat.cnes.fr/resto/api/collections/Landsat/search.json?
-                # maxRecords=1&page=1
-                if not nb_res:
-                    nb_res = len(res) * page
-
-                # Attempt to ensure a little bit more coherence. Some providers return
-                # a fuzzy number of total results, meaning that you have to keep
-                # requesting it until it has returned everything it has to know exactly
-                # how many EO products they have in their stock. In that case, we need
-                # to replace the returned number of results with the sum of the number
-                # of items that were skipped so far and the length of the currently
-                # retrieved items. We know there is an incoherence when the number of
-                # skipped items is greater than the total number of items returned by
-                # the plugin
-                nb_skipped_items = items_per_page * (page - 1)
-                nb_current_items = len(res)
-                if nb_skipped_items > nb_res:
-                    if nb_res != 0:
-                        nb_res = nb_skipped_items + nb_current_items
-                    # This is for when the returned results is an empty list and the
-                    # number of results returned is incoherent with the observations.
-                    # In that case, we assume the total number of results is the number
-                    # of skipped results. By requesting a lower page than the current
-                    # one, a user can iteratively reach the last page of results for
-                    # these criteria on the provider.
-                    else:
-                        nb_res = nb_skipped_items
 
             if not isinstance(res, list):
                 raise PluginImplementationError(
@@ -1886,7 +1848,6 @@ class EODataAccessGateway:
                     try:
                         guesses = self.guess_product_type(
                             **{
-                                # k:str(v) for k,v in eo_product.properties.items()
                                 k: pattern.sub("", str(v).upper())
                                 for k, v in eo_product.properties.items()
                                 if k
@@ -1926,7 +1887,7 @@ class EODataAccessGateway:
                 if (nb_res is None or total_results is None)
                 else total_results + nb_res
             )
-            if count:
+            if count and nb_res is not None:
                 logger.info(
                     "Found %s result(s) on provider '%s'",
                     nb_res,

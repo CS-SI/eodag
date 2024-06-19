@@ -71,7 +71,7 @@ class CSWSearch(Search):
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
-            return [], 0
+            return ([], 0) if prep.count else ([], None)
         auth = kwargs.get("auth")
         if auth:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))

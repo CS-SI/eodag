@@ -236,9 +236,9 @@ def search_stac_items(
         root=request.state.url_root,
     ).get_stac_items(
         search_results=search_results,
-        total=total or 0,
+        total=total,
         next_link=get_next_link(
-            request, search_request, total or 0, eodag_args.items_per_page
+            request, search_request, total, eodag_args.items_per_page
         ),
         catalog={
             **catalog.data,
