@@ -242,6 +242,11 @@ def version() -> None:
     "maximum value equals to 50.",
 )
 @click.option(
+    "--count",
+    is_flag=True,
+    help="Whether to run a query with a count request or not.",
+)
+@click.option(
     "--locations",
     type=str,
     help="Custom query-string argument(s) to select locations. "
@@ -333,6 +338,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     if locs_file:
         locs_file = click.format_filename(locs_file)
 
+    count = kwargs.pop("count")
+
     # Process inputs for crunch
     cruncher_names: Set[Any] = set(kwargs.pop("cruncher") or [])
     cruncher_args = kwargs.pop("cruncher_args")
@@ -360,10 +367,15 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         items_per_page = (
             DEFAULT_ITEMS_PER_PAGE if items_per_page is None else items_per_page
         )
-        results = gateway.search(page=page, items_per_page=items_per_page, **criteria)
-        click.echo(
-            "Found a total number of {} products".format(results.estimated_total_number)
+        results = gateway.search(
+            count=count, page=page, items_per_page=items_per_page, **criteria
         )
+        if results.estimated_total_number is not None:
+            click.echo(
+                "Found a total number of {} products".format(
+                    results.estimated_total_number
+                )
+            )
     click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
