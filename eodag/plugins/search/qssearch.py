@@ -774,6 +774,9 @@ class QueryStringSearch(Search):
         # use only sort_by parameters for search, not for count
         #  and remove potential leading '&'
         qs_with_sort = (prep.query_string + getattr(prep, "sort_by_qs", "")).strip("&")
+        # append count template if needed
+        if count:
+            qs_with_sort += self.config.pagination.get("count_tpl", "")
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result

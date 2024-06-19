@@ -231,6 +231,7 @@ class PluginConfig(yaml.YAMLObject):
         next_page_url_key_path: Union[str, JSONPath]
         next_page_query_obj_key_path: Union[str, JSONPath]
         next_page_merge_key_path: Union[str, JSONPath]
+        count_tpl: str
         next_page_url_tpl: str
         next_page_query_obj: str
         count_endpoint: str
