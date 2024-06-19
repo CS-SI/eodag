@@ -46,19 +46,32 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(date_str: str) -> datetime:
+def _get_date_from_yyyymmdd(date_str: str) -> Optional[datetime]:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
         day = date_str[6:]
     else:
         day = 1
-    return datetime(
-        int(year),
-        int(month),
-        int(day),
-        tzinfo=tzutc(),
-    )
+    try:
+        date = datetime(
+            int(year),
+            int(month),
+            int(day),
+            tzinfo=tzutc(),
+        )
+    except ValueError:
+        if day == "29" and month == "02":  # 29/02 that does not exist
+            return datetime(
+                int(year),
+                int(month),
+                28,
+                tzinfo=tzutc(),
+            )
+        else:
+            return None
+    else:
+        return date
 
 
 def _get_s3_client(endpoint_url: str) -> S3Client:
@@ -176,6 +189,10 @@ class CopMarineSearch(StaticStacSearch):
             if not item_dates:
                 item_dates = re.findall(r"\d{6}", item_key)
             item_start = _get_date_from_yyyymmdd(item_dates[0])
+            if not item_start:  # identified pattern was not a valid datetime
+                # use version in dataset id
+                item_dates = re.findall(r"\d{6}", dataset_item["id"])
+                item_start = _get_date_from_yyyymmdd(item_dates[0])
             if len(item_dates) > 2:  # start, end and created_at timestamps
                 item_end = _get_date_from_yyyymmdd(item_dates[1])
             else:  # only date and created_at timestamps
@@ -336,6 +353,10 @@ class CopMarineSearch(StaticStacSearch):
                     if not item_dates:
                         item_dates = re.findall(r"\d{6}", item_key)
                     item_start = _get_date_from_yyyymmdd(item_dates[0])
+                    if not item_start:  # identified pattern was not a valid datetime
+                        # use version in dataset id
+                        item_dates = re.findall(r"\d{6}", dataset_item["id"])
+                        item_start = _get_date_from_yyyymmdd(item_dates[0])
                     if item_start > end_date:
                         stop_search = True
                     if not item_dates or (start_date <= item_start <= end_date):
