@@ -246,7 +246,7 @@ class TestCoreSearch(unittest.TestCase):
             ],
         )
 
-        search_result = self.dag.search(productType="S1_SAR_SLC")
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.estimated_total_number, 0)
         self.assertEqual(
@@ -325,7 +325,7 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_get.return_value.json.return_value = peps_resp_search_file_content
 
-        search_result = self.dag.search(productType="S1_SAR_SLC")
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), peps_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
@@ -420,7 +420,7 @@ class TestCoreSearch(unittest.TestCase):
             ([EOProduct("onda", dict(geometry="POINT (0 0)", id="a"))], 1),
         ]
 
-        search_result = self.dag.search(productType="S1_SAR_SLC")
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.estimated_total_number, 1)
         self.assertEqual(
@@ -449,7 +449,9 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_query.return_value = ([], 0)
 
-        search_result = self.dag.search(productType="S1_SAR_SLC", provider="onda")
+        search_result = self.dag.search(
+            productType="S1_SAR_SLC", provider="onda", count=True
+        )
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.estimated_total_number, 0)
         self.assertEqual(

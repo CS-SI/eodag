@@ -124,7 +124,7 @@ class OIDCRefreshTokenBase(Authentication):
 
     def _request_new_token_error(self, e: requests.RequestException) -> Dict[str, str]:
         """Handle RequestException raised by `self._request_new_token()`"""
-        if self.token_info["access_token"]:
+        if self.token_info.get("access_token"):
             # try using already retrieved token if authenticate() fails (OTP use-case)
             if "access_token_expiration" in self.token_info:
                 return {

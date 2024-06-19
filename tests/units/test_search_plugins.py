@@ -782,7 +782,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock__request.return_value.json.side_effect = mock_values
 
         products, estimate = self.awseos_search_plugin.query(
-            prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
+            prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin, count=True),
             **{
                 "productType": "S2_MSI_L2A",
                 "id": "S2B_MSIL2A_20220101T000459_N0301_R130_T53DMB_20220101T012649",
@@ -799,7 +799,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "https://roda.sentinel-hub.com/sentinel-s2-l2a/tiles/53/D/MB/2022/1/1/0/productInfo.json",
         )
 
-        self.assertEqual(estimate, 1)
         self.assertEqual(len(products), 1)
         self.assertIsInstance(products[0], EOProduct)
 

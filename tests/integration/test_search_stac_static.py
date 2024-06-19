@@ -157,7 +157,7 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search all items"""
-        search_result = self.dag.search()
+        search_result = self.dag.search(count=True)
         self.assertEqual(len(search_result), self.root_cat_len)
         self.assertEqual(search_result.estimated_total_number, self.root_cat_len)
         for item in search_result:
@@ -281,7 +281,7 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_date(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by date"""
-        filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01")
+        filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01", count=True)
         self.assertEqual(len(filtered_sr), self.child_cat_len)
         self.assertEqual(filtered_sr.estimated_total_number, self.child_cat_len)
         for item in filtered_sr:
@@ -352,9 +352,7 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_geom(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by geometry"""
-        search_result = self.dag.search(
-            geom=self.extent_big,
-        )
+        search_result = self.dag.search(geom=self.extent_big, count=True)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.estimated_total_number, 3)
 
@@ -390,7 +388,7 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_property(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by property"""
-        search_result = self.dag.search(orbitNumber=110)
+        search_result = self.dag.search(orbitNumber=110, count=True)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.estimated_total_number, 3)
 
@@ -399,7 +397,7 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_cloudcover(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by cloud cover"""
-        search_result = self.dag.search(cloudCover=10)
+        search_result = self.dag.search(cloudCover=10, count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.estimated_total_number, 1)
 
