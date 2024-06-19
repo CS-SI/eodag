@@ -370,11 +370,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         results = gateway.search(
             count=count, page=page, items_per_page=items_per_page, **criteria
         )
-        if results.estimated_total_number is not None:
+        if results.number_matched is not None:
             click.echo(
-                "Found a total number of {} products".format(
-                    results.estimated_total_number
-                )
+                "Found a total number of {} products".format(results.number_matched)
             )
     click.echo("Returned {} products".format(len(results)))
 

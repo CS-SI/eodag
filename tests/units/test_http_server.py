@@ -311,7 +311,7 @@ class RequestTestCase(unittest.TestCase):
         for p in search_result:
             p.downloader = Download("peps", config)
             p.downloader_auth = Authentication("peps", config)
-        search_result.estimated_total_number = len(search_result)
+        search_result.number_matched = len(search_result)
         return search_result
 
     @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)

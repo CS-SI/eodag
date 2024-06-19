@@ -293,7 +293,7 @@ class TestCoreSearchResults(EODagTestCase):
             self.dag.providers_config["creodias"].search.pagination["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
-        self.assertIsNone(search_results.estimated_total_number)
+        self.assertIsNone(search_results.number_matched)
 
         # count enabled
         search_results = self.dag.search(
@@ -303,4 +303,4 @@ class TestCoreSearchResults(EODagTestCase):
             self.dag.providers_config["creodias"].search.pagination["count_tpl"],
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
-        self.assertIsNotNone(search_results.estimated_total_number)
+        self.assertIsNotNone(search_results.number_matched)

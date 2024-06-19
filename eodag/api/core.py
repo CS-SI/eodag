@@ -1550,7 +1550,7 @@ class EODataAccessGateway:
                     results[0].product_type = guesses[0]
                     # reset driver
                     results[0].driver = results[0].get_driver()
-                results.estimated_total_number = 1
+                results.number_matched = 1
                 return results
             elif len(results) > 1:
                 logger.info(
