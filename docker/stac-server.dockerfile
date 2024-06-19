@@ -29,7 +29,7 @@ RUN apt-get update \
 
 # reconfigure timezone
 RUN echo $TZ > /etc/timezone && \
-    apt-get install -y tzdata && \
+    apt-get install -y tzdata git && \
     rm /etc/localtime && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
