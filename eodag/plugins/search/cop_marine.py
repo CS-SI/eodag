@@ -46,13 +46,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(date_str: str) -> Optional[datetime]:
+def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
         day = date_str[6:]
     else:
-        day = 1
+        day = "1"
     try:
         date = datetime(
             int(year),
@@ -61,7 +61,7 @@ def _get_date_from_yyyymmdd(date_str: str) -> Optional[datetime]:
             tzinfo=tzutc(),
         )
     except ValueError:
-        logger.error("%s is not a valid date", date_str)
+        logger.error(f"{item_key}: {date_str} is not a valid date")
         return None
     else:
         return date
@@ -194,19 +194,19 @@ class CopMarineSearch(StaticStacSearch):
             item_dates = re.findall(r"\d{8}", item_key)
             if not item_dates:
                 item_dates = re.findall(r"\d{6}", item_key)
-            item_start = _get_date_from_yyyymmdd(item_dates[0])
+            item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
             if not item_start:  # identified pattern was not a valid datetime
                 return None
             if len(item_dates) > 2:  # start, end and created_at timestamps
-                item_end = _get_date_from_yyyymmdd(item_dates[1])
+                item_end = _get_date_from_yyyymmdd(item_dates[1], item_key)
             else:  # only date and created_at timestamps
                 item_end = item_start
             properties["startTimeFromAscendingNode"] = item_start.strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
-            properties["completionTimeFromAscendingNode"] = item_end.strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            properties["completionTimeFromAscendingNode"] = (
+                item_end or item_start
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         for key, value in collection_dict["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime"]:
@@ -354,7 +354,7 @@ class CopMarineSearch(StaticStacSearch):
                     item_dates = re.findall(r"\d{8}", item_key)
                     if not item_dates:
                         item_dates = re.findall(r"\d{6}", item_key)
-                    item_start = _get_date_from_yyyymmdd(item_dates[0])
+                    item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
                     if not item_start:  # identified pattern was not a valid datetime
                         continue
                     if item_start > end_date:
