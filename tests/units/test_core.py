@@ -1985,6 +1985,32 @@ class TestCoreSearch(TestCoreBase):
         actual = self.dag.guess_product_type(productType="foo")
         self.assertEqual(actual, ["foo"])
 
+        # with dates
+        self.assertEqual(
+            self.dag.product_types_config.source["S2_MSI_L1C"]["missionStartDate"],
+            "2015-06-23T00:00:00Z",
+        )
+        self.assertNotIn(
+            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-06-01")
+        )
+        self.assertIn(
+            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
+        )
+        self.assertEqual(
+            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionStartDate"],
+            "2017-05-23T00:00:00Z",
+        )
+        self.assertEqual(
+            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionEndDate"],
+            "2018-03-25T00:00:00Z",
+        )
+        self.assertNotIn(
+            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-04-01")
+        )
+        self.assertIn(
+            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-03-01")
+        )
+
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingProductType):
