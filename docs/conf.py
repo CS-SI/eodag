@@ -137,6 +137,7 @@ html_theme_options = {
         "image_light": "_static/eodag_logo_160.png",
         "image_dark": "_static/eodag_logo_160r.png",
     },
+    "show_toc_level": 2,
 }
 
 html_logo = "_static/eodag_logo_160.png"
