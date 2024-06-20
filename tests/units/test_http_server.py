@@ -1110,7 +1110,7 @@ class RequestTestCase(unittest.TestCase):
         "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
         return_value=[
-            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C"},
+            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C", "title": "SENTINEL2 Level-1C"},
             {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
         ],
     )
@@ -1123,9 +1123,10 @@ class RequestTestCase(unittest.TestCase):
             self.assertListEqual(
                 ["S2_MSI_L1C", "S2_MSI_L2A"],
                 [
-                    it["title"]
-                    for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                    if it["rel"] == "child"
+                    col["id"]
+                    for col in json.loads(r.content.decode("utf-8")).get(
+                        "collections", []
+                    )
                 ],
             )
 
@@ -1135,14 +1136,12 @@ class RequestTestCase(unittest.TestCase):
         self.assertTrue(guess_pt.called)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
+        resp_json = json.loads(r.content.decode("utf-8"))
         self.assertListEqual(
             ["S2_MSI_L1C"],
-            [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
-            ],
+            [col["id"] for col in resp_json.get("collections", [])],
         )
+        self.assertEqual(resp_json["collections"][0]["title"], "SENTINEL2 Level-1C")
 
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
@@ -1161,9 +1160,8 @@ class RequestTestCase(unittest.TestCase):
         self.assertListEqual(
             ["S2_MSI_L1C", "S2_MSI_L2A"],
             [
-                it["title"]
-                for it in json.loads(r.content.decode("utf-8")).get("links", [])
-                if it["rel"] == "child"
+                col["id"]
+                for col in json.loads(r.content.decode("utf-8")).get("collections", [])
             ],
         )
 
@@ -1306,6 +1304,28 @@ class RequestTestCase(unittest.TestCase):
         product.downloader.order_response_process.assert_called()
         product.downloader.order_response_process.reset_mock()
         product.downloader._stream_download_dict.assert_not_called()
+
+    def test_root(self):
+        """Request to / should return a valid response"""
+        resp_json = self._request_valid("", check_links=False)
+        self.assertEqual(resp_json["id"], "eodag-stac-api")
+        self.assertEqual(resp_json["title"], "eodag-stac-api")
+        self.assertEqual(resp_json["description"], "STAC API provided by EODAG")
+
+        # customize root info
+        try:
+            Settings.from_environment.cache_clear()
+            with temporary_environment(
+                EODAG_STAC_API_LANDING_ID="foo-id",
+                EODAG_STAC_API_TITLE="foo title",
+                EODAG_STAC_API_DESCRIPTION="foo description",
+            ):
+                resp_json = self._request_valid("", check_links=False)
+                self.assertEqual(resp_json["id"], "foo-id")
+                self.assertEqual(resp_json["title"], "foo title")
+                self.assertEqual(resp_json["description"], "foo description")
+        finally:
+            Settings.from_environment.cache_clear()
 
     def test_conformance(self):
         """Request to /conformance should return a valid response"""

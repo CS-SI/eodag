@@ -23,30 +23,37 @@ stac_api_version: 1.0.0
 
 # https://stacspec.org/STAC-api.html#operation/getLandingPage
 landing_page:
-  title: "EODAG"
   type: "Catalog"
-  description: "STAC API provided by EODAG"
   links:
     - rel: self
       type: "application/json"
       href: "{catalog[root]}/"
     - rel: service-desc
       type: "application/vnd.oai.openapi+json;version=3.0"
+      title: "OpenAPI service description"
       href: "{catalog[root]}/api"
     - rel: service-doc
       type: "text/html"
+      title: "OpenAPI service documentation"
       href: "{catalog[root]}/api.html"
     - rel: conformance
       type: "application/json"
+      title: "STAC/WFS3 conformance classes implemented by this server"
       href: "{catalog[root]}/conformance"
     - rel: data
       type: "application/json"
       href: "{catalog[root]}/collections"
     - rel: search
+      type: "application/geo+json"
+      title: "STAC search"
       href: "{catalog[root]}/search"
       method: GET
+    - rel: search
+      type: "application/geo+json"
+      title: "STAC search"
+      href: "{catalog[root]}/search"
+      method: POST
   stac_version: "{stac_version}"
-  id: eodag-stac-api
   conformsTo: "{conformance[conformsTo]}"
 
 # required by OGC API - Features
@@ -78,17 +85,18 @@ conformance:
 
 # https://stacspec.org/STAC-api.html#operation/getCollections
 collections:
-  links:
-    - rel: self
-      title: collections
-      href: "{collections[url]}"
-    - rel: root
-      href: "{collections[root]}/"
-    - rel: parent
-      href: "{collections[root]}/"
   collections:
     - "{collection}"
-  stac_version: "{stac_version}"
+  links:
+    - rel: root
+      type: "application/json"
+      href: "{collections[root]}/"
+    - rel: parent
+      type: "application/json"
+      href: "{collections[root]}/"
+    - rel: self
+      type: "application/json"
+      href: "{collections[url]}"
 
 # https://stacspec.org/STAC-api.html#operation/describeCollection
 collection:

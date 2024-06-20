@@ -45,6 +45,10 @@ class Settings(BaseSettings):
 
     debug: bool = False
 
+    stac_api_title: str = "eodag-stac-api"
+    stac_api_description: str = "STAC API provided by EODAG"
+    stac_api_landing_id: str = "eodag-stac-api"
+
     origin_url_blacklist: Annotated[
         Union[str, List[str]],
         BeforeValidator(str2liststr),
