@@ -46,19 +46,25 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.cop_marine")
 
 
-def _get_date_from_yyyymmdd(date_str: str) -> datetime:
+def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
     year = date_str[:4]
     month = date_str[4:6]
     if len(date_str) > 6:
         day = date_str[6:]
     else:
-        day = 1
-    return datetime(
-        int(year),
-        int(month),
-        int(day),
-        tzinfo=tzutc(),
-    )
+        day = "1"
+    try:
+        date = datetime(
+            int(year),
+            int(month),
+            int(day),
+            tzinfo=tzutc(),
+        )
+    except ValueError:
+        logger.error(f"{item_key}: {date_str} is not a valid date")
+        return None
+    else:
+        return date
 
 
 def _get_s3_client(endpoint_url: str) -> S3Client:
@@ -72,6 +78,19 @@ def _get_s3_client(endpoint_url: str) -> S3Client:
         ),
         endpoint_url=endpoint_url,
     )
+
+
+def _check_int_values_properties(properties: Dict[str, Any]):
+    # remove int values with a bit length of more than 64 from the properties
+    invalid = []
+    for prop, prop_value in properties.items():
+        if isinstance(prop_value, int) and prop_value.bit_length() > 64:
+            invalid.append(prop)
+        if isinstance(prop_value, dict):
+            _check_int_values_properties(prop_value)
+
+    for inv_key in invalid:
+        properties.pop(inv_key)
 
 
 class CopMarineSearch(StaticStacSearch):
@@ -149,7 +168,7 @@ class CopMarineSearch(StaticStacSearch):
         dataset_item: Dict[str, Any],
         collection_dict: Dict[str, Any],
         use_dataset_dates: bool = False,
-    ) -> EOProduct:
+    ) -> Optional[EOProduct]:
 
         item_id = item_key.split("/")[-1].split(".")[0]
         download_url = s3_url + "/" + item_key
@@ -175,23 +194,28 @@ class CopMarineSearch(StaticStacSearch):
             item_dates = re.findall(r"\d{8}", item_key)
             if not item_dates:
                 item_dates = re.findall(r"\d{6}", item_key)
-            item_start = _get_date_from_yyyymmdd(item_dates[0])
+            item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
+            if not item_start:  # identified pattern was not a valid datetime
+                return None
             if len(item_dates) > 2:  # start, end and created_at timestamps
-                item_end = _get_date_from_yyyymmdd(item_dates[1])
+                item_end = _get_date_from_yyyymmdd(item_dates[1], item_key)
             else:  # only date and created_at timestamps
                 item_end = item_start
             properties["startTimeFromAscendingNode"] = item_start.strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
-            properties["completionTimeFromAscendingNode"] = item_end.strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            properties["completionTimeFromAscendingNode"] = (
+                item_end or item_start
+            ).strftime("%Y-%m-%dT%H:%M:%SZ")
+
         for key, value in collection_dict["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime"]:
                 properties[key] = value
         for key, value in dataset_item["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime"]:
                 properties[key] = value
+        _check_int_values_properties(properties)
+
         properties["thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
         if "omiFigure" in collection_dict["assets"]:
             properties["quicklook"] = collection_dict["assets"]["omiFigure"]["href"]
@@ -213,14 +237,8 @@ class CopMarineSearch(StaticStacSearch):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """
         Implementation of search for the Copernicus Marine provider
-        :param product_type: product type for the search
-        :type product_type: str
-        :param items_per_page: number of items per page
-        :type items_per_page: int
-        :param page: page number
-        :type page: int
-        :param count: if the total number of records should be returned
-        :type count: bool
+        :param prep: object containing search parameterds
+        :type prep: PreparedSearch
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         :rtype: Tuple[List[EOProduct], Optional[int]]
@@ -293,7 +311,8 @@ class CopMarineSearch(StaticStacSearch):
                         collection_dict,
                         True,
                     )
-                    products.append(product)
+                    if product:
+                        products.append(product)
                     continue
 
             s3_client = _get_s3_client(endpoint_url)
@@ -335,7 +354,9 @@ class CopMarineSearch(StaticStacSearch):
                     item_dates = re.findall(r"\d{8}", item_key)
                     if not item_dates:
                         item_dates = re.findall(r"\d{6}", item_key)
-                    item_start = _get_date_from_yyyymmdd(item_dates[0])
+                    item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
+                    if not item_start:  # identified pattern was not a valid datetime
+                        continue
                     if item_start > end_date:
                         stop_search = True
                     if not item_dates or (start_date <= item_start <= end_date):
@@ -350,7 +371,8 @@ class CopMarineSearch(StaticStacSearch):
                                 dataset_item,
                                 collection_dict,
                             )
-                            products.append(product)
+                            if product:
+                                products.append(product)
                     current_object = item_key
 
         return products, num_total
