@@ -87,6 +87,19 @@ def _get_s3_client(endpoint_url: str) -> S3Client:
     )
 
 
+def _check_int_values_properties(properties: Dict[str, Any]):
+    # remove int values with a bit length of more than 64 from the properties
+    invalid = []
+    for prop, prop_value in properties.items():
+        if isinstance(prop_value, int) and prop_value.bit_length() > 64:
+            invalid.append(prop)
+        if isinstance(prop_value, dict):
+            _check_int_values_properties(prop_value)
+
+    for inv_key in invalid:
+        properties.pop(inv_key)
+
+
 class CopMarineSearch(StaticStacSearch):
     """class that implements search for the Copernicus Marine provider"""
 
@@ -203,12 +216,15 @@ class CopMarineSearch(StaticStacSearch):
             properties["completionTimeFromAscendingNode"] = item_end.strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
+
         for key, value in collection_dict["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime"]:
                 properties[key] = value
         for key, value in dataset_item["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime"]:
                 properties[key] = value
+        _check_int_values_properties(properties)
+
         properties["thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
         if "omiFigure" in collection_dict["assets"]:
             properties["quicklook"] = collection_dict["assets"]["omiFigure"]["href"]
@@ -230,14 +246,8 @@ class CopMarineSearch(StaticStacSearch):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """
         Implementation of search for the Copernicus Marine provider
-        :param product_type: product type for the search
-        :type product_type: str
-        :param items_per_page: number of items per page
-        :type items_per_page: int
-        :param page: page number
-        :type page: int
-        :param count: if the total number of records should be returned
-        :type count: bool
+        :param prep: object containing search parameterds
+        :type prep: PreparedSearch
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
         :rtype: Tuple[List[EOProduct], Optional[int]]
