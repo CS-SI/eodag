@@ -393,6 +393,7 @@ async def all_collections(
     platform: Optional[str] = None,
     instrument: Optional[str] = None,
     constellation: Optional[str] = None,
+    datetime: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build STAC collections
 
@@ -418,7 +419,11 @@ async def all_collections(
         )
         collections = deepcopy(stac_config["collections"])
         collections["collections"] = stac_collection.get_collection_list(
-            q=q, platform=platform, instrument=instrument, constellation=constellation
+            q=q,
+            platform=platform,
+            instrument=instrument,
+            constellation=constellation,
+            datetime=datetime,
         )
 
         # # parse f-strings

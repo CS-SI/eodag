@@ -3110,7 +3110,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
   license: proprietary
   title: Sea ice edge and type daily gridded data from 1978 to present derived from satellite observations
   missionStartDate: "1978-10-25T00:00:00Z"
-  missionEndDate: "2023-05-02-02T23:59:59"
+  missionEndDate: "2023-05-02T23:59:59"
 
 SATELLITE_SEA_ICE_THICKNESS:
   abstract: |
@@ -3322,7 +3322,7 @@ SATELLITE_SEA_LEVEL_MEDITERRANEAN:
   license: proprietary
   title: Sea level daily gridded data from satellite observations for the Mediterranean Sea
   missionStartDate: "1993-01-01T00:00:00Z"
-  missionEndDate: "2018-11-01T:23:59:59Z"
+  missionEndDate: "2018-11-01T23:59:59Z"
 
 SEASONAL_POSTPROCESSED_SL:
   abstract: |

@@ -572,6 +572,7 @@ async def collections(
     platform: Optional[str] = None,
     instrument: Optional[str] = None,
     constellation: Optional[str] = None,
+    datetime: Optional[str] = None,
 ) -> ORJSONResponse:
     """STAC collections
 
@@ -581,7 +582,7 @@ async def collections(
     logger.debug("URL: %s", request.url)
 
     collections = await all_collections(
-        request, provider, q, platform, instrument, constellation
+        request, provider, q, platform, instrument, constellation, datetime
     )
     return ORJSONResponse(collections)
 

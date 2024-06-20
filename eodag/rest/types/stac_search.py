@@ -45,6 +45,7 @@ from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from typing_extensions import Annotated
 
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime, str_to_interval
+from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
     try:
@@ -224,8 +225,12 @@ class SearchPostRequest(BaseModel):
                 dates.append("..")
                 continue
 
-            # throws ValueError if invalid RFC 3339 string
-            dates.append(rfc3339_str_to_datetime(value).strftime("%Y-%m-%dT%H:%M:%SZ"))
+            try:
+                dates.append(
+                    rfc3339_str_to_datetime(value).strftime("%Y-%m-%dT%H:%M:%SZ")
+                )
+            except ValidationError as e:
+                raise ValueError(e)
 
         if dates[0] == ".." and dates[1] == "..":
             raise ValueError(

@@ -83,6 +83,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     UnsupportedProvider,
 )
+from eodag.utils.rest import rfc3339_str_to_datetime
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
@@ -275,8 +276,7 @@ class EODataAccessGateway:
             )
 
             product_types_schema = Schema(
-                ID=fields.STORED,
-                alias=fields.ID,
+                ID=fields.ID(stored=True),
                 abstract=fields.TEXT,
                 instrument=fields.IDLIST,
                 platform=fields.ID,
@@ -286,8 +286,8 @@ class EODataAccessGateway:
                 md5=fields.ID,
                 license=fields.ID,
                 title=fields.TEXT,
-                missionStartDate=fields.ID,
-                missionEndDate=fields.ID,
+                missionStartDate=fields.STORED,
+                missionEndDate=fields.STORED,
                 keywords=fields.KEYWORD(analyzer=kw_analyzer),
                 stacCollection=fields.STORED,
             )
@@ -960,6 +960,8 @@ class EODataAccessGateway:
         keywords: Optional[str] = None,
         abstract: Optional[str] = None,
         title: Optional[str] = None,
+        missionStartDate: Optional[str] = None,
+        missionEndDate: Optional[str] = None,
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -989,6 +991,10 @@ class EODataAccessGateway:
         :type abstract: Optional[str]
         :param title: Title parameter.
         :type title: Optional[str]
+        :param missionStartDate: start date for datetime filtering. Not used by free_text
+        :type missionStartDate: Optional[str]
+        :param missionEndDate: end date for datetime filtering. Not used by free_text
+        :type missionEndDate: Optional[str]
         :returns: The best match for the given parameters.
         :rtype: List[str]
         :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
@@ -1020,15 +1026,38 @@ class EODataAccessGateway:
         if filters_text:
             text += f"({filters_text})"
 
+        if not text and (missionStartDate or missionEndDate):
+            text = "*"
+
         with self._product_types_index.searcher() as searcher:
             p = EODAGQueryParser(list(filters.keys()), self._product_types_index.schema)
             query = p.parse(text)
             results = searcher.search(query, limit=None)
 
-            guesses: List[str] = [r["ID"] for r in results or []]
+            guesses: List[Dict[str, str]] = [dict(r) for r in results or []]
+
+        # datetime filtering
+        if missionStartDate or missionEndDate:
+            guesses = [
+                g
+                for g in guesses
+                if (
+                    not missionEndDate
+                    or g.get("missionStartDate")
+                    and rfc3339_str_to_datetime(g["missionStartDate"])
+                    <= rfc3339_str_to_datetime(missionEndDate)
+                )
+                and (
+                    not missionStartDate
+                    or g.get("missionEndDate")
+                    and rfc3339_str_to_datetime(g["missionEndDate"])
+                    >= rfc3339_str_to_datetime(missionStartDate)
+                )
+            ]
 
         if guesses:
-            return guesses
+            return [g["ID"] for g in guesses or []]
+
         raise NoMatchingProductType()
 
     def search(
@@ -1397,7 +1426,7 @@ class EODataAccessGateway:
         # of items_per_page if defined for the provider used.
         try:
             product_type = self.get_product_type_from_alias(
-                kwargs.get("productType", None) or self.guess_product_type(**kwargs)[0]
+                self.guess_product_type(**kwargs)[0]
             )
         except NoMatchingProductType:
             product_type = GENERIC_PRODUCT_TYPE

@@ -69,8 +69,10 @@ conformance:
     - https://api.stacspec.org/v1.0.0/ogcapi-features#query
     - https://api.stacspec.org/v1.0.0/ogcapi-features#sort
     - https://api.stacspec.org/v1.0.0/collections
+    - https://api.stacspec.org/v1.0.0/collection-search
     - https://api.stacspec.org/v1.0.0/collection-search#free-text
     - https://api.stacspec.org/v1.0.0/collection-search#advanced-free-text
+    - http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/simple-query
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
