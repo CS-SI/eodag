@@ -7148,6 +7148,8 @@
       parentIdentifier: EO:EUM:DAT:METOP:IASIL1C-ALL
     METOP_MHSL1:
       parentIdentifier: EO:EUM:DAT:METOP:MHSL1
+    METOP_HIRSL1:
+      parentIdentifier: EO:EUM:DAT:MULT:HIRSL1
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'

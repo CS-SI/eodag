@@ -4710,6 +4710,20 @@ METOP_MHSL1:
   license: proprietary
   title: MHS Level 1B - Metop - Global
   missionStartDate: "2009-03-23T00:00:00Z"
+METOP_HIRSL1:
+  abstract: |
+    The High Resolution Infrared Sounder (HIRS) operates at 20 channels (19 channels in the infrared and one in the
+    visible). Its main purpose is to provide input for the vertical temperature and humidity profile retrievals. In
+    addition, the HIRS pixel resolution serves as the standard grid resolution for all ATOVS level 2 products.
+  instrument: HIRS
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,HIRS,SOUNDER,L1,L1B,ATMOSPHERE,HIRxxx1B,HIRSL1
+  sensorType: SOUNDER
+  license: proprietary
+  title: HIRS Level 1B - Metop - Global
+  missionStartDate: "2009-03-23T00:00:00Z"
 
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
