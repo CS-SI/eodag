@@ -61,15 +61,8 @@ def _get_date_from_yyyymmdd(date_str: str) -> Optional[datetime]:
             tzinfo=tzutc(),
         )
     except ValueError:
-        if day == "29" and month == "02":  # 29/02 that does not exist
-            return datetime(
-                int(year),
-                int(month),
-                28,
-                tzinfo=tzutc(),
-            )
-        else:
-            return None
+        logger.error("%s is not a valid date", date_str)
+        return None
     else:
         return date
 
@@ -175,7 +168,7 @@ class CopMarineSearch(StaticStacSearch):
         dataset_item: Dict[str, Any],
         collection_dict: Dict[str, Any],
         use_dataset_dates: bool = False,
-    ) -> EOProduct:
+    ) -> Optional[EOProduct]:
 
         item_id = item_key.split("/")[-1].split(".")[0]
         download_url = s3_url + "/" + item_key
@@ -203,9 +196,7 @@ class CopMarineSearch(StaticStacSearch):
                 item_dates = re.findall(r"\d{6}", item_key)
             item_start = _get_date_from_yyyymmdd(item_dates[0])
             if not item_start:  # identified pattern was not a valid datetime
-                # use version in dataset id
-                item_dates = re.findall(r"\d{6}", dataset_item["id"])
-                item_start = _get_date_from_yyyymmdd(item_dates[0])
+                return None
             if len(item_dates) > 2:  # start, end and created_at timestamps
                 item_end = _get_date_from_yyyymmdd(item_dates[1])
             else:  # only date and created_at timestamps
@@ -320,7 +311,8 @@ class CopMarineSearch(StaticStacSearch):
                         collection_dict,
                         True,
                     )
-                    products.append(product)
+                    if product:
+                        products.append(product)
                     continue
 
             s3_client = _get_s3_client(endpoint_url)
@@ -364,9 +356,7 @@ class CopMarineSearch(StaticStacSearch):
                         item_dates = re.findall(r"\d{6}", item_key)
                     item_start = _get_date_from_yyyymmdd(item_dates[0])
                     if not item_start:  # identified pattern was not a valid datetime
-                        # use version in dataset id
-                        item_dates = re.findall(r"\d{6}", dataset_item["id"])
-                        item_start = _get_date_from_yyyymmdd(item_dates[0])
+                        continue
                     if item_start > end_date:
                         stop_search = True
                     if not item_dates or (start_date <= item_start <= end_date):
@@ -381,7 +371,8 @@ class CopMarineSearch(StaticStacSearch):
                                 dataset_item,
                                 collection_dict,
                             )
-                            products.append(product)
+                            if product:
+                                products.append(product)
                     current_object = item_key
 
         return products, num_total
