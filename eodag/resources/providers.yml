@@ -2569,7 +2569,7 @@
       leadtime_hour: '0'
       metadata_mapping:
         geometry:
-          - 'area={geometry#to_nwse_bounds}'
+          - '{{"area": {geometry#to_nwse_bounds} }}'
           - '$.geometry'
     CAMS_EU_AIR_QUALITY_RE:
       dataset: cams-europe-air-quality-reanalyses
