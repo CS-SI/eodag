@@ -1084,7 +1084,7 @@ class RequestTestCase(unittest.TestCase):
         "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
         return_value=[
-            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C"},
+            {"_id": "S2_MSI_L1C", "ID": "S2_MSI_L1C", "title": "SENTINEL2 Level-1C"},
             {"_id": "S2_MSI_L2A", "ID": "S2_MSI_L2A"},
         ],
     )
@@ -1094,6 +1094,15 @@ class RequestTestCase(unittest.TestCase):
             r = self.app.get(url)
             self.assertTrue(list_pt.called)
             self.assertEqual(200, r.status_code)
+            self.assertListEqual(
+                ["S2_MSI_L1C", "S2_MSI_L2A"],
+                [
+                    col["id"]
+                    for col in json.loads(r.content.decode("utf-8")).get(
+                        "collections", []
+                    )
+                ],
+            )
 
         guess_pt.return_value = ["S2_MSI_L1C"]
         url = "/collections?instrument=MSI"
@@ -1101,6 +1110,12 @@ class RequestTestCase(unittest.TestCase):
         self.assertTrue(guess_pt.called)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
+        resp_json = json.loads(r.content.decode("utf-8"))
+        self.assertListEqual(
+            ["S2_MSI_L1C"],
+            [col["id"] for col in resp_json.get("collections", [])],
+        )
+        self.assertEqual(resp_json["collections"][0]["title"], "SENTINEL2 Level-1C")
 
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
@@ -1116,6 +1131,13 @@ class RequestTestCase(unittest.TestCase):
         r = self.app.get(url)
         self.assertTrue(list_pt.called)
         self.assertEqual(200, r.status_code)
+        self.assertListEqual(
+            ["S2_MSI_L1C", "S2_MSI_L2A"],
+            [
+                col["id"]
+                for col in json.loads(r.content.decode("utf-8")).get("collections", [])
+            ],
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.base.Authentication.authenticate",
