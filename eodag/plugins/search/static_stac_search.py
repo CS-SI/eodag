@@ -135,7 +135,7 @@ class StaticStacSearch(StacSearch):
             and prep.items_per_page is not None
             and prep.items_per_page <= 0
         ):
-            return [], 0
+            return ([], 0) if prep.count else ([], None)
 
         product_type = kwargs.get("productType", prep.product_type)
         # provider product type specific conf
@@ -213,4 +213,8 @@ class StaticStacSearch(StacSearch):
                     FilterProperty({property_key: property_value, "operator": "eq"})
                 )
 
-        return search_result.data, len(search_result)
+        return (
+            (search_result.data, len(search_result))
+            if prep.count
+            else (search_result.data, None)
+        )

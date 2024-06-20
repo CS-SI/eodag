@@ -40,12 +40,17 @@ class SearchResult(UserList):
 
     :param products: A list of products resulting from a search
     :type products: list(:class:`~eodag.api.product._product.EOProduct`)
+    :param number_matched: (optional) the estimated total number of matching results
+    :type number_matched: Optional[int]
     """
 
     data: List[EOProduct]
 
-    def __init__(self, products: List[EOProduct]) -> None:
+    def __init__(
+        self, products: List[EOProduct], number_matched: Optional[int] = None
+    ) -> None:
         super(SearchResult, self).__init__(products)
+        self.number_matched = number_matched
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.

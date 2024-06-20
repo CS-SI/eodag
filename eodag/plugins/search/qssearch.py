@@ -665,7 +665,7 @@ class QueryStringSearch(Search):
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
-            return [], 0
+            return ([], 0) if prep.count else ([], None)
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         prep.sort_by_qs, _ = (
@@ -731,7 +731,6 @@ class QueryStringSearch(Search):
         raw_search_result.product_type_def_params = prep.product_type_def_params
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
-        total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
     @_deprecated(
@@ -774,6 +773,9 @@ class QueryStringSearch(Search):
         # use only sort_by parameters for search, not for count
         #  and remove potential leading '&'
         qs_with_sort = (prep.query_string + getattr(prep, "sort_by_qs", "")).strip("&")
+        # append count template if needed
+        if count:
+            qs_with_sort += self.config.pagination.get("count_tpl", "")
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
@@ -971,6 +973,13 @@ class QueryStringSearch(Search):
             if getattr(prep, "need_count", False):
                 prep.total_items_nb = total_items_nb
                 del prep.need_count
+            # remove prep.total_items_nb if value could not be extracted from response
+            if (
+                hasattr(prep, "total_items_nb")
+                and not prep.total_items_nb
+                and len(results) > 0
+            ):
+                del prep.total_items_nb
             if items_per_page is not None and len(results) == items_per_page:
                 return results
         return results
@@ -1349,7 +1358,7 @@ class PostJsonSearch(QueryStringSearch):
             for k in keywords.keys()
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
-            return [], 0
+            return ([], 0) if prep.count else ([], None)
         prep.query_params = dict(qp, **sort_by_qp)
         prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
         if not count and getattr(prep, "need_count", False):
@@ -1365,7 +1374,6 @@ class PostJsonSearch(QueryStringSearch):
         raw_search_result.product_type_def_params = prep.product_type_def_params
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
-        total_items = len(eo_products) if total_items == 0 else total_items
         return eo_products, total_items
 
     def normalize_results(

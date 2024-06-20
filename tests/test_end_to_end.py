@@ -252,8 +252,7 @@ class EndToEndBase(unittest.TestCase):
             search_criteria["items_per_page"] = items_per_page
         if page:
             search_criteria["page"] = page
-        self.eodag.set_preferred_provider(provider)
-        results, nb_results = self.eodag.search(**search_criteria)
+        results = self.eodag.search(provider=provider, **search_criteria)
         if offline:
             results = [
                 prod
@@ -582,7 +581,7 @@ class TestEODagEndToEnd(EndToEndBase):
         tile_id = "31TCJ"
 
         for provider, product_type in supported_providers_product_types:
-            products, _ = self.eodag.search(
+            products = self.eodag.search(
                 productType=product_type,
                 start="2021-06-01",
                 end="2021-06-30",
@@ -795,7 +794,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
         # Search for products that are ONLINE and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
-        search_results, _ = self.eodag.search(
+        search_results = self.eodag.search(
             productType="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
@@ -981,7 +980,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
     def test_end_to_end_wrong_apikey_search_aws_eos(self):
         self.eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
@@ -1009,7 +1008,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
             )
             eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
-            results, nb_results = eodag.search(
+            results = eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
@@ -1045,7 +1044,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(USGS_RECENT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1059,7 +1058,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(METEOBLUE_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1073,7 +1072,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(HYDROWBEB_NEXT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1087,7 +1086,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(WEKEO_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(

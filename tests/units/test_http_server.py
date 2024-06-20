@@ -311,7 +311,8 @@ class RequestTestCase(unittest.TestCase):
         for p in search_result:
             p.downloader = Download("peps", config)
             p.downloader_auth = Authentication("peps", config)
-        return (search_result, len(search_result))
+        search_result.number_matched = len(search_result)
+        return search_result
 
     @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
     def _request_valid_raw(
@@ -475,6 +476,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -485,6 +487,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
 
@@ -586,6 +589,7 @@ class RequestTestCase(unittest.TestCase):
                 page=1,
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
+                count=True,
             ),
         )
         self.assertEqual(len(result1.features), 2)
@@ -597,6 +601,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -614,6 +619,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-01-25T00:00:00.000Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -625,6 +631,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00.000Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -636,6 +643,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-01-25T00:00:00.000Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -648,6 +656,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-01-20T00:00:00.000Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
 
@@ -661,6 +670,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -673,6 +683,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-01-25T00:00:00.000Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
 
@@ -688,6 +699,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -703,6 +715,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-01-25T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -718,6 +731,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-02-01T00:00:00Z",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -751,6 +765,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-01T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         # args & catalog intersection
@@ -763,6 +778,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -774,6 +790,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00Z",
                 end="2018-02-01T00:00:00Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -785,6 +802,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-01T00:00:00Z",
                 end="2018-01-05T00:00:00Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -796,6 +814,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-05T00:00:00Z",
                 end="2018-01-05T00:00:00Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         result = self._request_valid(
@@ -818,6 +837,7 @@ class RequestTestCase(unittest.TestCase):
                 provider="peps",
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=True,
+                count=True,
             ),
         )
         self.assertEqual(len(results.features), 2)
@@ -878,6 +898,7 @@ class RequestTestCase(unittest.TestCase):
                 cloudCover=10,
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
 
@@ -899,6 +920,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
+                count=True,
             ),
         )
 
@@ -918,6 +940,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00.000Z",
                 end="2018-01-25T00:00:00.000Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -933,6 +956,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 start="2018-01-20T00:00:00.000Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -948,6 +972,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 end="2018-01-25T00:00:00.000Z",
                 raise_errors=False,
+                count=True,
             ),
         )
         self._request_valid(
@@ -964,6 +989,7 @@ class RequestTestCase(unittest.TestCase):
                 start="2018-01-20T00:00:00.000Z",
                 end="2018-01-20T00:00:00.000Z",
                 raise_errors=False,
+                count=True,
             ),
         )
 
@@ -1215,13 +1241,8 @@ class RequestTestCase(unittest.TestCase):
         response with HTTP Status 202"""
         # mock_search_result returns 2 search results, only keep one
         two_results = self.mock_search_result()
-        product = two_results[0][0]
-        mock_search.return_value = (
-            [
-                product,
-            ],
-            1,
-        )
+        product = two_results[0]
+        mock_search.return_value = SearchResult([product], 1)
         product.downloader_auth = MagicMock()
         product.downloader.orderDownload = MagicMock(return_value={"status": "foo"})
         product.downloader.orderDownloadStatus = MagicMock()
@@ -1826,6 +1847,7 @@ class RequestTestCase(unittest.TestCase):
                 "page": 1,
                 "items_per_page": 20,
                 "raise_errors": False,
+                "count": True,
             },
         )
 

@@ -230,7 +230,7 @@ class CopMarineSearch(StaticStacSearch):
 
         # only return 1 page if pagination is disabled
         if page > 1 and items_per_page <= 0:
-            return [], 0
+            return ([], 0) if prep.count else ([], None)
 
         product_type = kwargs.get("productType", prep.product_type)
         if not product_type:
@@ -311,7 +311,7 @@ class CopMarineSearch(StaticStacSearch):
                     )
                 if "Contents" not in s3_objects:
                     if len(products) == 0 and i == len(datasets_items_list) - 1:
-                        return [], 0
+                        return ([], 0) if prep.count else ([], None)
                     else:
                         break
 

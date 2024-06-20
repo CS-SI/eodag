@@ -2222,7 +2222,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
         autospec=True,
-        return_value=(SearchResult([mock.Mock()]), 1),
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     @mock.patch(
@@ -2246,7 +2246,7 @@ class TestCoreSearch(TestCoreBase):
             mock_get_search_plugins.return_value[0]
         ).next_page_query_obj = mock.PropertyMock(return_value={})
         # mocked search result id
-        type(mock__do_search.return_value[0][0]).properties = mock.PropertyMock(
+        type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
         )
 
@@ -2278,34 +2278,34 @@ class TestCoreSearch(TestCoreBase):
 
         mock__do_search.reset_mock()
         # return None if more than 1 product is found
-        mock__do_search.return_value = (SearchResult([mock.Mock(), mock.Mock()]), 2)
-        type(mock__do_search.return_value[0][0]).properties = mock.PropertyMock(
+        mock__do_search.return_value = SearchResult([mock.Mock(), mock.Mock()], 2)
+        type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
         )
-        type(mock__do_search.return_value[0][1]).properties = mock.PropertyMock(
+        type(mock__do_search.return_value[1]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
         )
         with self.assertLogs(level="INFO") as cm:
             found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
-            self.assertEqual(found, (SearchResult([]), 0))
+            self.assertEqual(found, SearchResult([], 0))
             self.assertIn("Several products found for this id", str(cm.output))
 
         mock__do_search.reset_mock()
         # return 1 result if more than 1 product is found but only 1 has the matching id
-        mock__do_search.return_value = (SearchResult([mock.Mock(), mock.Mock()]), 2)
-        type(mock__do_search.return_value[0][0]).properties = mock.PropertyMock(
+        mock__do_search.return_value = SearchResult([mock.Mock(), mock.Mock()], 2)
+        type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
             return_value={"id": "foo"}
         )
-        type(mock__do_search.return_value[0][1]).properties = mock.PropertyMock(
+        type(mock__do_search.return_value[1]).properties = mock.PropertyMock(
             return_value={"id": "foooooo"}
         )
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
-        self.assertEqual(found[1], 1)
-        self.assertEqual(len(found[0]), 1)
+        self.assertEqual(found.number_matched, 1)
+        self.assertEqual(len(found), 1)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
-        """_do_search must create a count query by default"""
+        """_do_search must support itemsperpage higher than maximum"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,  # a list must be returned by .query
@@ -2316,17 +2316,23 @@ class TestCoreSearch(TestCoreBase):
             pagination = {"max_items_per_page": 1}
 
         search_plugin.config = DummyConfig()
-        sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
-            items_per_page=2,
-        )
-        self.assertIsInstance(sr, SearchResult)
-        self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(estimate, self.search_results_size)
+        with self.assertLogs(level="WARNING") as cm:
+            sr = self.dag._do_search(
+                count=True,
+                search_plugin=search_plugin,
+                items_per_page=2,
+            )
+            self.assertIsInstance(sr, SearchResult)
+            self.assertEqual(len(sr), self.search_results_size)
+            self.assertEqual(sr.number_matched, self.search_results_size)
+            self.assertIn(
+                "Try to lower the value of 'items_per_page'",
+                str(cm.output),
+            )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test__do_search_counts_by_default(self, search_plugin):
-        """_do_search must create a count query by default"""
+    def test__do_search_counts(self, search_plugin):
+        """_do_search must create a count query if specified"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,  # a list must be returned by .query
@@ -2337,10 +2343,10 @@ class TestCoreSearch(TestCoreBase):
             pagination = {}
 
         search_plugin.config = DummyConfig()
-        sr, estimate = self.dag._do_search(search_plugin=search_plugin)
+        sr = self.dag._do_search(search_plugin=search_plugin, count=True)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(estimate, self.search_results_size)
+        self.assertEqual(sr.number_matched, self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_without_count(self, search_plugin):
@@ -2356,16 +2362,15 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        sr, estimate = self.dag._do_search(search_plugin=search_plugin, count=False)
-        self.assertIsNone(estimate)
+        sr = self.dag._do_search(search_plugin=search_plugin, count=False)
+        self.assertIsNone(sr.number_matched)
         self.assertEqual(len(sr), self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
-        """_do_search must provide a best estimate when a provider doesn't return a count"""
+        """_do_search must return None as count if provider does not return the count"""
         search_plugin.provider = "peps"
-        # If the provider doesn't return a count, .query returns 0
-        search_plugin.query.return_value = (self.search_results.data, 0)
+        search_plugin.query.return_value = (self.search_results.data, None)
 
         class DummyConfig:
             pagination = {}
@@ -2373,52 +2378,18 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
 
         page = 4
-        sr, estimate = self.dag._do_search(
+        sr = self.dag._do_search(
+            count=True,
             search_plugin=search_plugin,
             page=page,
             items_per_page=2,
         )
         self.assertEqual(len(sr), self.search_results_size)
-        # The count guess is: page * number_of_products_returned
-        self.assertEqual(estimate, page * self.search_results_size)
-
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test__do_search_paginated_handle_fuzzy_count(self, search_plugin):
-        """_do_search must provide a best estimate when a provider returns a fuzzy count"""
-        search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
-            self.search_results.data * 4,  # 8 products returned
-            22,  # fuzzy number, less than the real total count
-        )
-
-        class DummyConfig:
-            pagination = {}
-
-        search_plugin.config = DummyConfig()
-
-        page = 4
-        items_per_page = 10
-        sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
-            page=page,
-            items_per_page=items_per_page,
-        )
-        # At page 4 with 10 items_per_page we should have a count of at least 30
-        # products available. However the provider returned 22. We know it's wrong.
-        # So we update the count with our current knowledge: 30 + 8
-        # Note that this estimate could still be largely inferior to the real total
-        # count.
-        expected_estimate = items_per_page * (page - 1) + len(sr)
-        self.assertEqual(len(sr), 8)
-        self.assertEqual(estimate, expected_estimate)
+        self.assertEqual(sr.number_matched, None)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
-        """_do_search must provide a best estimate when a provider returns a null count"""
-        # TODO: check the underlying implementation, it doesn't make so much sense since
-        # this case is already covered with nb_res = len(res) * page. This one uses
-        # nb_res = items_per_page * (page - 1) whick actually makes more sense. Choose
-        # one of them.
+        """_do_search must return provider response even if provider returns a null count"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([], 0)
 
@@ -2429,14 +2400,14 @@ class TestCoreSearch(TestCoreBase):
 
         page = 4
         items_per_page = 10
-        sr, estimate = self.dag._do_search(
+        sr = self.dag._do_search(
+            count=True,
             search_plugin=search_plugin,
             page=page,
             items_per_page=items_per_page,
         )
-        expected_estimate = items_per_page * (page - 1)
         self.assertEqual(len(sr), 0)
-        self.assertEqual(estimate, expected_estimate)
+        self.assertEqual(sr.number_matched, 0)
 
     def test__do_search_does_not_raise_by_default(self):
         """_do_search must not raise any error by default"""
@@ -2449,10 +2420,10 @@ class TestCoreSearch(TestCoreBase):
             provider = "peps"
             config = DummyConfig()
 
-        sr, estimate = self.dag._do_search(search_plugin=DummySearchPlugin())
+        sr = self.dag._do_search(search_plugin=DummySearchPlugin(), count=True)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), 0)
-        self.assertEqual(estimate, 0)
+        self.assertEqual(sr.number_matched, 0)
 
     def test__do_search_can_raise_errors(self):
         """_do_search must not raise errors if raise_errors=True"""
@@ -2495,7 +2466,7 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        sr = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNotNone(product.downloader)
 
@@ -2514,7 +2485,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([DummyProduct(), DummyProduct()], 2)
-        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        sr = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNone(product.downloader)
 

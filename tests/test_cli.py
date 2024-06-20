@@ -30,6 +30,7 @@ from faker import Faker
 from packaging import version
 from pkg_resources import resource_filename
 
+from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -207,6 +208,7 @@ class TestEodagCli(unittest.TestCase):
                 productType=product_type,
                 id=None,
                 locations=None,
+                count=False,
             )
 
     def test_eodag_search_geom_wkt_invalid(self):
@@ -253,6 +255,7 @@ class TestEodagCli(unittest.TestCase):
                 productType=product_type,
                 id=None,
                 locations=None,
+                count=False,
             )
 
     def test_eodag_search_bbox_geom_mutually_exclusive(self):
@@ -283,7 +286,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with specified result filename without .geojson extension"""  # noqa
         with self.user_conf() as conf_file:
             api_obj = dag.return_value
-            api_obj.search.return_value = (mock.MagicMock(),) * 2
+            api_obj.search.return_value = SearchResult([mock.MagicMock() * 2], 2)
             self.runner.invoke(
                 eodag,
                 [
@@ -297,7 +300,7 @@ class TestEodagCli(unittest.TestCase):
                 ],
             )
             api_obj.serialize.assert_called_with(
-                api_obj.search.return_value[0], filename="results.geojson"
+                api_obj.search.return_value, filename="results.geojson"
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -305,7 +308,7 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag search with --cruncher arg should call crunch method of search result"""  # noqa
         with self.user_conf() as conf_file:
             api_obj = dag.return_value
-            api_obj.search.return_value = (mock.MagicMock(),) * 2
+            api_obj.search.return_value = SearchResult([mock.MagicMock() * 2], 2)
 
             product_type = "whatever"
             cruncher = "FilterLatestIntersect"
@@ -328,7 +331,7 @@ class TestEodagCli(unittest.TestCase):
                 ["search", "-f", conf_file, "-p", product_type, "--cruncher", cruncher],
             )
 
-            search_results = api_obj.search.return_value[0]
+            search_results = api_obj.search.return_value
             crunch_results = api_obj.crunch.return_value
 
             # Assertions
@@ -336,7 +339,7 @@ class TestEodagCli(unittest.TestCase):
                 user_conf_file_path=conf_file, locations_conf_path=None
             )
             api_obj.search.assert_called_once_with(
-                items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
             api_obj.crunch.assert_called_once_with(
                 search_results, search_criteria=criteria, **{cruncher: {}}
@@ -439,6 +442,7 @@ class TestEodagCli(unittest.TestCase):
                 foo="1",
                 bar=["2", "3"],
                 locations=None,
+                count=False,
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -474,6 +478,7 @@ class TestEodagCli(unittest.TestCase):
                 sensorType=None,
                 id=None,
                 locations={"country": "FRA", "continent": "Africa"},
+                count=False,
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -513,6 +518,7 @@ class TestEodagCli(unittest.TestCase):
                 sensorType=None,
                 id=None,
                 locations=None,
+                count=False,
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -534,6 +540,7 @@ class TestEodagCli(unittest.TestCase):
                     product_type,
                     "--end",
                     stop_date_str,
+                    "--count",
                 ],
             )
             api_obj = dag.return_value
@@ -552,6 +559,7 @@ class TestEodagCli(unittest.TestCase):
                 sensorType=None,
                 id=None,
                 locations=None,
+                count=True,
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -575,7 +583,8 @@ class TestEodagCli(unittest.TestCase):
             )
 
             dag.assert_called_once_with(
-                user_conf_file_path=conf_file, locations_conf_path=locs_file
+                user_conf_file_path=conf_file,
+                locations_conf_path=locs_file,
             )
 
     def test_eodag_list_product_type_ok(self):

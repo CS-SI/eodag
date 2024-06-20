@@ -246,9 +246,9 @@ class TestCoreSearch(unittest.TestCase):
             ],
         )
 
-        products, count = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), 0)
-        self.assertEqual(count, 0)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), 0)
+        self.assertEqual(search_result.number_matched, 0)
         self.assertEqual(
             mock_get.call_count + mock_post.call_count + mock_request.call_count,
             len(available_providers),
@@ -325,8 +325,8 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_get.return_value.json.return_value = peps_resp_search_file_content
 
-        products, _ = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), peps_resp_search_results_count)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), peps_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
             1,
@@ -385,8 +385,8 @@ class TestCoreSearch(unittest.TestCase):
             onda_resp_search_file_content,
         ]
 
-        products, _ = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), onda_resp_search_results_count)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), onda_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
             4,
@@ -420,9 +420,9 @@ class TestCoreSearch(unittest.TestCase):
             ([EOProduct("onda", dict(geometry="POINT (0 0)", id="a"))], 1),
         ]
 
-        products, count = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), 1)
-        self.assertEqual(count, 1)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
             mock_query.call_count, 4, "4 provider out of 6 must have been requested"
         )
@@ -449,9 +449,11 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_query.return_value = ([], 0)
 
-        products, count = self.dag.search(productType="S1_SAR_SLC", provider="onda")
-        self.assertEqual(len(products), 0)
-        self.assertEqual(count, 0)
+        search_result = self.dag.search(
+            productType="S1_SAR_SLC", provider="onda", count=True
+        )
+        self.assertEqual(len(search_result), 0)
+        self.assertEqual(search_result.number_matched, 0)
         self.assertEqual(
             mock_query.call_count,
             1,

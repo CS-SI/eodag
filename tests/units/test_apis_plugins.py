@@ -279,7 +279,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
                 pass
 
         mock_ecmwfdataserver_retrieve.side_effect = create_empty_file_for_public_dataset
-        results, _ = dag.search(
+        results = dag.search(
             **self.query_dates,
             **self.custom_query_params,
         )
@@ -316,7 +316,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         operation_archive_custom_query_params = self.custom_query_params.copy()
         operation_archive_custom_query_params.pop("dataset")
         operation_archive_custom_query_params["format"] = "netcdf"
-        results, _ = dag.search(
+        results = dag.search(
             **self.query_dates,
             **operation_archive_custom_query_params,
         )
@@ -370,13 +370,13 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         eoproducts = SearchResult([])
 
         # public dataset request
-        results, _ = dag.search(
+        results = dag.search(
             **self.query_dates,
             **self.custom_query_params,
             accuracy="bar",
         )
         eoproducts.extend(results)
-        results, _ = dag.search(
+        results = dag.search(
             **self.query_dates,
             **self.custom_query_params,
             accuracy="baz",
