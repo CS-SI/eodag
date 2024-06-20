@@ -1284,6 +1284,28 @@ class RequestTestCase(unittest.TestCase):
         product.downloader.order_response_process.reset_mock()
         product.downloader._stream_download_dict.assert_not_called()
 
+    def test_root(self):
+        """Request to / should return a valid response"""
+        resp_json = self._request_valid("", check_links=False)
+        self.assertEqual(resp_json["id"], "eodag-stac-api")
+        self.assertEqual(resp_json["title"], "eodag-stac-api")
+        self.assertEqual(resp_json["description"], "STAC API provided by EODAG")
+
+        # customize root info
+        try:
+            Settings.from_environment.cache_clear()
+            with temporary_environment(
+                EODAG_STAC_API_LANDING_ID="foo-id",
+                EODAG_STAC_API_TITLE="foo title",
+                EODAG_STAC_API_DESCRIPTION="foo description",
+            ):
+                resp_json = self._request_valid("", check_links=False)
+                self.assertEqual(resp_json["id"], "foo-id")
+                self.assertEqual(resp_json["title"], "foo title")
+                self.assertEqual(resp_json["description"], "foo description")
+        finally:
+            Settings.from_environment.cache_clear()
+
     def test_conformance(self):
         """Request to /conformance should return a valid response"""
         self._request_valid("conformance", check_links=False)
