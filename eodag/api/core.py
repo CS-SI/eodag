@@ -1085,14 +1085,14 @@ class EODataAccessGateway:
                           'PA' such as Panama and Pakistan in the shapefile configured with
                           name=country and attr=ISO3
         :type locations: dict
-        :param kwargs: Some other criteria that will be used to do the search,
-                       using paramaters compatibles with the provider
         :param provider: (optional) the provider to be used. If set, search fallback will be disabled.
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
         :type provider: str
         :param count: (optional) Whether to run a query with a count request or not
         :type count: bool
+        :param kwargs: Some other criteria that will be used to do the search,
+                       using paramaters compatibles with the provider
         :type kwargs: Union[int, str, bool, dict]
         :returns: A collection of EO products matching the criteria
         :rtype: :class:`~eodag.api.search_result.SearchResult`
@@ -1258,8 +1258,9 @@ class EODataAccessGateway:
                 pagination_config["next_page_query_obj"] = next_page_query_obj
             logger.info("Iterate search over multiple pages: page #%s", iteration)
             try:
-                if "raise_errors" in kwargs:
-                    kwargs.pop("raise_errors")
+                # remove unwanted kwargs for _do_search
+                kwargs.pop("count", None)
+                kwargs.pop("raise_errors", None)
                 search_result = self._do_search(
                     search_plugin, count=False, raise_errors=True, **kwargs
                 )
