@@ -47,7 +47,7 @@ spec:
       nodePort: null
       {{- end }}
     {{- if and .Values.otel.enabled .Values.otel.collector.enabled }}
-    - port: 8888
+    - port: 9090
       targetPort: prom-exporter
       protocol: TCP
       name: metrics
