@@ -40,6 +40,8 @@ class SearchResult(UserList):
 
     :param products: A list of products resulting from a search
     :type products: list(:class:`~eodag.api.product._product.EOProduct`)
+    :param number_matched: (optional) the estimated total number of matching results
+    :type number_matched: Optional[int]
     """
 
     data: List[EOProduct]
