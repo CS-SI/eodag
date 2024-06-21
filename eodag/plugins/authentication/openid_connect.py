@@ -62,13 +62,11 @@ class OIDCRefreshTokenBase(Authentication):
         access_token_expiration: float
         refresh_token_expiration: float
 
-    token_info: TokenInfo = {}
-    # already retrieved token store, to be used if authenticate() fails (OTP use-case)
-    retrieved_token: str = ""
-
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
         self.session = requests.Session()
+        # already retrieved token info store
+        self.token_info: OIDCRefreshTokenBase.TokenInfo = {}
 
     def _get_access_token(self) -> str:
         current_time = datetime.now()
