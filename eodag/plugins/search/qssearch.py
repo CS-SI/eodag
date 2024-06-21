@@ -55,7 +55,7 @@ from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
 
-from eodag.api.product import EOProduct
+from eodag.api.product import AssetsDict, EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     format_query_params,
@@ -81,6 +81,7 @@ from eodag.utils import (
     format_dict_items,
     get_args,
     get_ssl_context,
+    guess_file_type,
     quote,
     string_to_jsonpath,
     update_nested_dict,
@@ -1242,6 +1243,69 @@ class ODataV4Search(QueryStringSearch):
 
         # once metadata pre-mapping applied execute QueryStringSearch.normalize_results
         products = super(ODataV4Search, self).normalize_results(results, **kwargs)
+
+        return products
+
+
+class CopDataSpaceSearch(ODataV4Search):
+    """A specialisation of a ODataV4Search that performs a multi step search to retrieve
+    all products assets"""
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        super(CopDataSpaceSearch, self).__init__(provider, config)
+
+    def normalize_results(
+        self, results: RawSearchResult, **kwargs: Any
+    ) -> List[EOProduct]:
+        """Build EOProducts from provider results"""
+
+        products = super(CopDataSpaceSearch, self).normalize_results(results, **kwargs)
+
+        api_endpoint = self.config.api_endpoint.rstrip("/")
+        for product in products:
+            product.assets = {}
+            id = product.properties.get("uid")
+            name = product.properties.get("title")
+
+            base_url = f"{api_endpoint}({id})/Nodes({name})/Nodes(GRANULE)/Nodes"
+            response = self._request(
+                PreparedSearch(
+                    url=base_url,
+                    info_message="Fetching granule's list: {}".format(base_url),
+                    exception_message="Skipping error while fetching granule list for product {}".format(
+                        name
+                    ),
+                )
+            )
+            granule_list_json = response.json()
+            # loop over the list of granules
+            for granule in granule_list_json["result"]:
+                granule_url = f"{base_url}({granule['Id']})/Nodes(IMG_DATA)/Nodes"
+                response = self._request(
+                    PreparedSearch(
+                        url=granule_url,
+                        info_message="Fetching granule: {}".format(granule_url),
+                        exception_message="Skipping error while fetching granule {} for product {}".format(
+                            granule["Id"], name
+                        ),
+                    )
+                )
+                granule_json = response.json()
+                product.assets = AssetsDict(product)
+                # loop bands contained in a single granule
+                for band in granule_json["result"]:
+                    # replace suffix "/Nodes" with "/$value" in the download link
+                    band_url = band["Nodes"]["uri"]
+                    band_url = band_url[: -len("/Nodes")] + "/$value"
+                    asset_basename = f"{granule['Id']}/{band['Id']}"
+                    product.assets[asset_basename] = {
+                        "title": asset_basename,
+                        "roles": ["data"],
+                        "href": band_url,
+                    }
+                    logger.debug(f"Add asset {asset_basename}")
+                    if mime_type := guess_file_type(band["Id"]):
+                        product.assets[asset_basename]["type"] = mime_type
 
         return products
 
