@@ -201,8 +201,10 @@ class HTTPDownload(Download):
                     logger.debug(ordered_message)
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
-                    if e.response and hasattr(e.response, "content"):
-                        error_message = f"{e.response.content.decode('utf-8')} - {e}"
+                    if hasattr(e, "response") and (
+                        content := getattr(e.response, "content")
+                    ):
+                        error_message = f"{content.decode('utf-8')} - {e}"
                     else:
                         error_message = str(e)
                     logger.warning(
