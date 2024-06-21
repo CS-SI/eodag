@@ -3032,6 +3032,40 @@ SATELLITE_CARBON_DIOXIDE:
   missionStartDate: "2002-10-01T00:00:00Z"
   missionEndDate: "2022-12-31T23:59:59"
 
+SATELLITE_FIRE_BURNED_AREA:
+  abstract: |
+    The Burned Area products provide global information of total burned area (BA) at pixel and grid scale. The BA is
+    identified with the date of first detection of the burned signal in the case of the pixel product, and with the
+    total BA per grid cell in the case of the grid product. The products were obtained through the analysis of
+    reflectance changes from medium resolution sensors (Terra MODIS, Sentinel-3 OLCI), supported by the use of MODIS
+    thermal information. The burned area products also include information related to the land cover that has been
+    burned, which has been extracted from the Copernicus Climate Change Service (C3S) land cover dataset, thus
+    assuring consistency between the datasets.
+    The algorithms for BA retrieval were developed by the University of Alcala (Spain), and processed by Brockmann
+    Consult GmbH (Germany). Different product versions are available. FireCCI v5.0cds and FireCCI v5.1cds were
+    developed as part of the Fire ECV Climate Change Initiative Project (Fire CCI) and brokered to C3S, offering the
+    first global burned area time series at 250m spatial resolution. FireCCI v5.1cds used a more mature algorithm than
+    the previous version. This algorithm was adapted to Sentinel-3 OLCI data to create the C3S v1.0 burned area
+    product, extending the BA database to the present.
+    During July 2020, an error in some files in the version v5.1cds were identified, affecting the files of the grid
+    product of January 2018, and the pixel and grid products of October, November and December 2019. These errors were
+    fixed, and a new version, v5.1.1cds, was created for the whole time series, to replace version v5.1cds. The latter
+    product has been deprecated, but it is temporally kept in the database for transparency and traceability reasons.
+    Only version v5.1.1cds should be used.
+    The BA products are useful for researchers studying climate change, as they provide crucial information on burned
+    biomass, which can be translated to greenhouse gases emissions amongst other contaminants. Burned area is also
+    useful for land cover change studies, fire management and risk analysis.
+  platform:
+  instrument:
+  platformSerialIdentifier:
+  processingLevel:
+  keywords: ECMWF,CDS,C3S,burned
+  sensorType: ATMOSPHERIC
+  license: proprietary
+  title: Fire burned area from 2001 to present derived from satellite observations
+  missionStartDate: "2001-01-01T00:00:00Z"
+  missionEndDate: "2022-04-01T23:59:59"
+
 SATELLITE_METHANE:
   abstract: |
     This dataset provides observations of atmospheric methane (CH4)\namounts obtained from observations collected
@@ -4641,7 +4675,6 @@ METOP_GOMEL1R03:
   title: GOME-2 Level 1B Fundamental Data Record Release 3 - Metop-A and -B
   missionStartDate: "2007-04-01T00:00:00Z"
   missionEndDate: "2020-08-01T00:00:00Z"
-
 METOP_IASTHR011:
   abstract: |
     This is the release 1.1 of the climate data record of "all-sky" temperature and humidity profiles and their
@@ -4709,6 +4742,20 @@ METOP_MHSL1:
   sensorType: SOUNDER
   license: proprietary
   title: MHS Level 1B - Metop - Global
+  missionStartDate: "2009-03-23T00:00:00Z"
+METOP_HIRSL1:
+  abstract: |
+    The High Resolution Infrared Sounder (HIRS) operates at 20 channels (19 channels in the infrared and one in the
+    visible). Its main purpose is to provide input for the vertical temperature and humidity profile retrievals. In
+    addition, the HIRS pixel resolution serves as the standard grid resolution for all ATOVS level 2 products.
+  instrument: HIRS
+  platform: METOP
+  platformSerialIdentifier: METOP
+  processingLevel: L1
+  keywords: METOP,HIRS,SOUNDER,L1,L1B,ATMOSPHERE,HIRxxx1B,HIRSL1
+  sensorType: SOUNDER
+  license: proprietary
+  title: HIRS Level 1B - Metop - Global
   missionStartDate: "2009-03-23T00:00:00Z"
 
 # Copernicus Marine
