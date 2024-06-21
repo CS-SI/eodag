@@ -100,7 +100,7 @@ class HTTPDownload(Download):
     :type provider: str
     :param config: Download plugin configuration:
 
-        * ``config.base_uri`` (str) - default endpoint url
+        * ``config.base_uri`` (str) - (optional) default endpoint url
         * ``config.extract`` (bool) - (optional) extract downloaded archive or not
         * ``config.auth_error_code`` (int) - (optional) authentication error code
         * ``config.dl_url_params`` (dict) - (optional) attitional parameters to send in the request
@@ -111,7 +111,7 @@ class HTTPDownload(Download):
         * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
+        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - (optional) Order status handling
 
 
     :type config: :class:`~eodag.config.PluginConfig`
@@ -120,12 +120,6 @@ class HTTPDownload(Download):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(HTTPDownload, self).__init__(provider, config)
-        if not hasattr(self.config, "base_uri"):
-            raise MisconfiguredError(
-                "{} plugin require a base_uri configuration key".format(
-                    type(self).__name__
-                )
-            )
 
     def orderDownload(
         self,

@@ -1689,7 +1689,7 @@ class EODataAccessGateway:
             try:
                 product_type = self.get_product_type_from_alias(product_type)
             except NoMatchingProductType:
-                logger.warning("unknown product type " + product_type)
+                logger.info("unknown product type " + product_type)
         kwargs["productType"] = product_type
 
         if start is not None:
