@@ -202,7 +202,7 @@ class HTTPDownload(Download):
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
                     if hasattr(e, "response") and (
-                        content := getattr(e.response, "content")
+                        content := getattr(e.response, "content", None)
                     ):
                         error_message = f"{content.decode('utf-8')} - {e}"
                     else:
