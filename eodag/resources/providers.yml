@@ -2829,6 +2829,9 @@
       SATELLITE_CARBON_DIOXIDE:
         outputs_extension: .zip
         extract: true
+      SATELLITE_FIRE_BURNED_AREA:
+        outputs_extension: .zip
+        extract: true
       SATELLITE_METHANE:
         outputs_extension: .zip
         extract: true
@@ -3311,6 +3314,22 @@
       version: '4.0'
       metadata_mapping:
         <<: *day_month_year
+    SATELLITE_FIRE_BURNED_AREA:
+      dataset: satellite-fire-burned-area
+      format: zip
+      origin: esa_cci
+      sensor: modis
+      variable: grid_variables
+      version: 5_1_1cds
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "year": {_date#interval_to_datetime_dict}["year"],
+              "month": {_date#interval_to_datetime_dict}["month"],
+              "nominal_day": {_date#interval_to_datetime_dict}["day"]
+            }}
+          - '{$.completionTimeFromAscendingNode#to_iso_date}'
     SATELLITE_METHANE:
       dataset: satellite-methane
       format: zip
@@ -4466,7 +4485,7 @@
         - '{{"time": {time}}}'
         - '$.null'
       region:
-        - '{{"region": "{region}"}}'
+        - '{{"region": {region}}}'
         - '$.null'
       type:
         - '{{"type": "{type}"}}'
@@ -4539,6 +4558,9 @@
         - '$.null'
       statistic:
         - '{{"statistic": {statistic}}}'
+        - '$.null'
+      sensor:
+        - '{{"sensor": "{sensor}"}}'
         - '$.null'
   products:
     S1_SAR_GRD:
@@ -4808,6 +4830,32 @@
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE"}}'
+    SATELLITE_FIRE_BURNED_AREA:
+      productType: EO:ECMWF:DAT:SATELLITE_FIRE_BURNED_AREA
+      origin: c3s
+      sensor: modis
+      variable: grid_variables
+      version: 5_1_1cds
+      region:
+        - europe
+      format: zip
+      metadata_mapping:
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        version:
+          - '{{"version": "{version}"}}'
+          - '$.null'
+        startTimeFromAscendingNode:
+          - |
+            {{
+              "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
+              "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
+              "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
+            }}
+          - $.properties.startDate
+        completionTimeFromAscendingNode: $.properties.endDate
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:SATELLITE_FIRE_BURNED_AREA"}}'
     SATELLITE_METHANE:
       productType: EO:ECMWF:DAT:SATELLITE_METHANE
       processingLevel:
@@ -4839,6 +4887,9 @@
       metadata_mapping:
         id: '$.id'
         <<: *day_month_year
+        region:
+          - '{{"region": "{region}"}}'
+          - '$.null'
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
