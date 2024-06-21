@@ -602,15 +602,32 @@ class EODataAccessGateway:
         :param provider: (optional) The name of a provider for which product types list
                          should be updated. Defaults to all providers (None value).
         """
+        # check if some providers are grouped under a group name which is not a provider name
         if provider is not None and provider not in self.providers_config:
-            return
+            grouped_providers = [
+                provider_to_fetch
+                for provider_to_fetch, provider_config in self.providers_config.items()
+                if provider == getattr(provider_config, "group", None)
+            ]
+            if grouped_providers:
+                logger.info(
+                    f"The requested provider {provider} is actually a group of providers. "
+                    f"Fetch product types of {', '.join(grouped_providers)}"
+                )
+            else:
+                return None
 
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: Dict[str, Any] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
         for provider_to_fetch, provider_config in (
-            {provider: self.providers_config[provider]}.items()
+            {
+                provider_to_fetch: provider_config
+                for provider_to_fetch, provider_config in self.providers_config.items()
+                if provider
+                in [provider_to_fetch, getattr(provider_config, "group", None)]
+            }.items()
             if provider
             else self.providers_config.items()
         ):
@@ -739,7 +756,17 @@ class EODataAccessGateway:
                          providers (None value).
         :returns: external product types configuration
         """
-        if provider and provider not in self.providers_config:
+        grouped_providers = [
+            p
+            for p, provider_config in self.providers_config.items()
+            if provider == getattr(provider_config, "group", None)
+        ]
+        if provider and provider not in self.providers_config and grouped_providers:
+            logger.info(
+                f"The requested provider {provider} is actually a group of providers. "
+                f"Discover product types of {', '.join(grouped_providers)}"
+            )
+        elif provider and provider not in self.providers_config:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
@@ -748,7 +775,9 @@ class EODataAccessGateway:
             p
             for p in (
                 [
-                    provider,
+                    p
+                    for p in self.providers_config
+                    if p in grouped_providers + [provider]
                 ]
                 if provider
                 else self.available_providers()
@@ -762,7 +791,9 @@ class EODataAccessGateway:
                 search_plugin_config = self.providers_config[provider].api
             else:
                 return None
-            if getattr(search_plugin_config, "discover_product_types", None):
+            if getattr(search_plugin_config, "discover_product_types", {}).get(
+                "fetch_url", None
+            ):
                 search_plugin: Union[Search, Api] = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
                 )
@@ -815,7 +846,9 @@ class EODataAccessGateway:
                     ) or getattr(self.providers_config[provider], "api", None)
                     if search_plugin_config is None:
                         continue
-                    if not hasattr(search_plugin_config, "discover_product_types"):
+                    if not getattr(
+                        search_plugin_config, "discover_product_types", {}
+                    ).get("fetch_url", None):
                         # conf has been updated and provider product types are no more discoverable
                         continue
                     provider_products_config = (

@@ -538,9 +538,7 @@ class QueryStringSearch(Search):
             self,
             PreparedSearch(
                 url=single_collection_url,
-                info_message="Fetching data for product type product type: {}".format(
-                    product_type
-                ),
+                info_message=f"Fetching data for product type: {product_type}",
                 exception_message="Skipping error while fetching product types for "
                 "{} {} instance:".format(self.provider, self.__class__.__name__),
             ),

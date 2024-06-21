@@ -4339,6 +4339,7 @@
 ---
 !provider  # MARK: wekeo_sentinel
   name: wekeo_sentinel # wekeo_sentinel
+  group: wekeo
   priority: 0
   roles:
     - host
@@ -4953,6 +4954,7 @@
 ---
 !provider  # MARK: wekeo_ecmwf
   name: wekeo_ecmwf
+  group: wekeo
   priority: 0
   roles:
     - host
@@ -6243,6 +6245,7 @@
 ---
 !provider  # MARK: wekeo_cmems
   name: wekeo_cmems
+  group: wekeo
   priority: 0
   roles:
     - host
