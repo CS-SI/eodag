@@ -1035,7 +1035,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         auth.config.credentials = {"username": "john", "password": "doe"}
         self.product.register_downloader(plugin, auth)
 
-        endpoint = plugin.config.base_uri
+        endpoint = "https://ads.atmosphere.copernicus.eu/api/v2"
         self.product.properties["orderLink"] = (
             f"{endpoint}/resources/{product_dataset}" + '?{"foo": "bar"}'
         )
