@@ -113,7 +113,6 @@ class TestCore(TestCoreBase):
         "CBERS4_PAN10M_L4": ["aws_eos"],
         "CBERS4_PAN5M_L2": ["aws_eos"],
         "CBERS4_PAN5M_L4": ["aws_eos"],
-
         "CLMS_CORINE": ["dedl", "wekeo_main"],
         "CLMS_GLO_DMP_333M": ["dedl", "wekeo_main"],
         "CLMS_GLO_FAPAR_333M": ["dedl", "wekeo_main"],
