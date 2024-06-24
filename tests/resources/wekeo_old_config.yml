@@ -1,0 +1,183 @@
+wekeo_old:
+  search:
+    type: DataRequestSearch
+    api_endpoint: "https://wekeo-broker.prod.wekeo2.eu/databroker/"
+    data_request_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest"
+    metadata_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/querymetadata/"
+    status_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest/status/"
+    result_url: "https://wekeo-broker.prod.wekeo2.eu/databroker/datarequest/jobs/{jobId}/result?size={items_per_page}&page={page}"
+    timeout: 60
+    need_auth: true
+    auth_error_code: 401
+    results_entry: content
+    two_passes_id_search: true
+    dates_required: true
+    ssl_verify: true
+    pagination:
+      start_page: 0
+      max_items_per_page: 20
+      total_items_nb_key_path: '$.totItems'
+    discover_product_types:
+      fetch_url: null
+    constraints_file_url: "https://wekeo-broker.apps.mercator.dpi.wekeo.eu/databroker/querymetadata/{dataset}"
+    constraints_entry: constraints
+    metadata_mapping:
+      productType:
+        - '{{"datasetId": "{productType}"}}'
+        - '$.productInfo.datasetId'
+      startTimeFromAscendingNode:
+        - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+        - '$.productInfo.productStartDate'
+      completionTimeFromAscendingNode:
+        - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+        - '$.productInfo.productEndDate'
+      geometry:
+        - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {geometry#to_bounds}}}]}}'
+        - '$.extraInformation.footprint'
+      cloudCover: '$.extraInformation.cloudCover'
+      downloadLink: '$.url'
+      title: '{$.productInfo.product#remove_extension}'
+      orderLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
+      storageStatus: 'OFFLINE'
+  auth:
+    type: TokenAuth
+    auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
+    token_type: json
+    token_key: access_token
+    request_method: GET
+    ssl_verify: true
+    headers:
+      Authorization: Bearer $token
+  products:
+    S1_SAR_SLC:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: SLC
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "SLC"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '$.null'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '$.null'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S1_SAR_GRD:
+      productType: EO:ESA:DAT:SENTINEL-1:SAR
+      providerProductType: "GRD"
+      metadata_mapping:
+        id:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "GRD"}}, {{"name": "sensorMode", "value": {id#split_id_into_s1_params}["sensorMode"]}}, {{"name": "processingLevel", "value": {id#split_id_into_s1_params}["processingLevel"]}}], "dateRangeSelectValues": [{{"name": "position", "start": {id#split_id_into_s1_params}["startDate"], "end": {id#split_id_into_s1_params}["endDate"]}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode:
+          - '{{"dateRangeSelectValues": [{{"name": "position", "start": "{startTimeFromAscendingNode#to_iso_utc_datetime}", "end": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}]}}'
+          - '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "productType", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '$.null'
+        sensorMode:
+          - '{{"stringChoiceValues": [{{"name": "sensorMode", "value": "{sensorMode}"}}]}}'
+          - '$.null'
+        swath:
+          - '{{"stringChoiceValues": [{{"name": "swath", "value": "{swath}"}}]}}'
+          - '$.null'
+        timeliness:
+          - '{{"stringChoiceValues": [{{"name": "timeliness", "value": "{timeliness}"}}]}}'
+          - '$.null'
+        orbitDirection:
+          - '{{"stringChoiceValues": [{{"name": "orbitDirection", "value": "{orbitDirection}"}}]}}'
+          - '$.null'
+        polarisation:
+          - '{{"stringChoiceValues": [{{"name": "polarisation", "value": "{polarisation}"}}]}}'
+          - '$.null'
+        relativeOrbitNumber:
+          - '{{"stringInputValues": [{{"name": "relativeOrbitNumber", "value": "{relativeOrbitNumber}"}}]}}'
+          - '$.null'
+        missionTakeId:
+          - '{{"stringInputValues": [{{"name": "missionTakeId", "value": "{missionTakeId}"}}]}}'
+          - '$.null'
+    S2_MSI_L1C:
+      productType: EO:ESA:DAT:SENTINEL-2:MSI
+      processingLevel: S2MSI1C
+      metadata_mapping:
+        id:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        processingLevel:
+          - '{{"stringChoiceValues": [{{"name": "processingLevel", "value": "{processingLevel}"}}]}}'
+          - '$.null'
+        cloudCover:
+          - '{{"stringInputValues": [{{"name": "cloudCover", "value": "{cloudCover}"}}]}}'
+          - '$.extraInformation.cloudCover'
+        productIdentifier:
+          - '{{"stringInputValues": [{{"name": "productIdentifier", "value": "{productIdentifier}"}}]}}'
+          - '$.null'
+    COP_DEM_GLO30_DGED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1
+      metadata_mapping:
+        id:
+          - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode: '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+    COP_DEM_GLO90_DGED:
+      productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2022_1
+      metadata_mapping:
+        id:
+          - '{{"boundingBoxValues": [{{"name": "bbox", "bbox": {id#split_cop_dem_id}}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        startTimeFromAscendingNode: '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+    CLMS_CORINE:
+      productType: EO:CLMS:DAT:CORINE
+      providerProductType: "Corine Land Cover 2018"
+      format: "GeoTiff100mt"
+      metadata_mapping:
+        # the given datetimes are used to determine the product type, i.e. from which year the data will be taken
+        startTimeFromAscendingNode: '$.productInfo.productStartDate'
+        completionTimeFromAscendingNode: '$.productInfo.productEndDate'
+        providerProductType:
+          - '{{"stringChoiceValues": [{{"name": "product_type", "value": "{providerProductType}"}}]}}'
+          - '$.null'
+        format:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}]}}'
+          - '$.null'
+        id:
+          - '{{"stringChoiceValues": [{{"name": "format", "value": "{format}"}}, {{"name": "product_type", "value": "{id#split_corine_id}"}}]}}'
+          - '{$.productInfo.product#remove_extension}'
+        geometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))' # geometry is not available for this product type

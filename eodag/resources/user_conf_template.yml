@@ -133,15 +133,21 @@ ecmwf:
             password:
 cop_ads:
     priority: # Lower value means lower priority (Default: 0)
-    api:
+    search:   # Search parameters configuration
+    download:
+        extract:
         outputs_prefix:
+    auth:
         credentials:
             username:
             password:
 cop_cds:
     priority: # Lower value means lower priority (Default: 0)
-    api:
+    search:   # Search parameters configuration
+    download:
+        extract:
         outputs_prefix:
+    auth:
         credentials:
             username:
             password:
@@ -192,6 +198,15 @@ hydroweb_next:
         outputs_prefix:
 wekeo:
     priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
+wekeo_cmems:
+    priority: # Lower value means lower priority (Default: 0)
     search:
     download:
         outputs_prefix:
@@ -199,7 +214,6 @@ wekeo:
         credentials:
             username:
             password:
-
 creodias_s3:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -209,3 +223,37 @@ creodias_s3:
         credentials:
           aws_access_key_id:
           aws_secret_access_key:
+dedt_lumi:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+    download:
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
+dedl:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        outputs_prefix:
+    auth:
+      credentials:
+        username:
+        password:
+eumetsat_ds:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+        outputs_prefix:
+    auth:
+        credentials:
+            username:
+            password:
+    download:
+        outputs_prefix:
+cop_marine:
+    priority: # Lower value means lower priority (Default: 0)
+    search:   # Search parameters configuration
+    download:
+        extract:
+        outputs_prefix:

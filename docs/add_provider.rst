@@ -31,8 +31,6 @@ the `STAC client page <notebooks/tutos/tuto_stac_client.ipynb#stac-api>`_, shows
                productType: '{productType}'
       download:
          type: AwsDownload
-         base_uri: https://tamn.snapplanet.io
-         flatten_top_dirs: True
       auth:
          type: AwsAuth
          credentials:

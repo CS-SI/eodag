@@ -36,7 +36,7 @@ my_new_provider:
     download:
         type: AwsDownload
         base_uri: https://api.my_new_provider
-        flatten_top_dirs: True
+        flatten_top_dirs: false
     auth:
         type: AwsAuth
         credentials:

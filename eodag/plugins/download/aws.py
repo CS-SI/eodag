@@ -43,6 +43,7 @@ import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
+from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -57,6 +58,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
+    StreamResponse,
     flatten_top_directories,
     get_bucket_name_and_prefix,
     path_to_uri,
@@ -66,6 +68,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     NotAvailableError,
     TimeOutError,
 )
@@ -76,7 +79,8 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 
 logger = logging.getLogger("eodag.download.aws")
@@ -230,23 +234,23 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> str:
+        **kwargs: Unpack[DownloadConf],
+    ) -> Optional[str]:
         """Download method for AWS S3 API.
 
         The product can be downloaded as it is, or as SAFE-formatted product.
         SAFE-build is configured for a given provider and product type.
         If the product title is configured to be updated during download and
         SAFE-formatted, its destination path will be:
-        `{outputs_prefix}/{title}/{updated_title}.SAFE`
+        `{outputs_prefix}/{title}`
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
+        :param auth: (optional) authenticated object
         :type auth: Union[AuthBase, Dict[str, str]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
@@ -262,6 +266,11 @@ class AwsDownload(Download):
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if auth is None:
+            auth = {}
+        if isinstance(auth, AuthBase):
+            raise MisconfiguredError("Please use AwsAuth plugin with AwsDownload")
+
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -272,7 +281,7 @@ class AwsDownload(Download):
         product_local_path, record_filename = self._download_preparation(
             product, progress_callback=progress_callback, **kwargs
         )
-        if not record_filename:
+        if not record_filename or not product_local_path:
             return product_local_path
 
         product_conf = getattr(self.config, "products", {}).get(
@@ -290,7 +299,7 @@ class AwsDownload(Download):
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
 
         # xtra metadata needed for SAFE product
@@ -328,7 +337,7 @@ class AwsDownload(Download):
             product,
         )
 
-        total_size = sum([p.size for p in unique_product_chunks])
+        total_size = sum([p.size for p in unique_product_chunks]) or None
 
         # download
         progress_callback.reset(total=total_size)
@@ -384,8 +393,11 @@ class AwsDownload(Download):
         return product_local_path
 
     def _download_preparation(
-        self, product: EOProduct, progress_callback: ProgressCallback, **kwargs: Any
-    ) -> Tuple[str, Optional[str]]:
+        self,
+        product: EOProduct,
+        progress_callback: ProgressCallback,
+        **kwargs: Unpack[DownloadConf],
+    ) -> Tuple[Optional[str], Optional[str]]:
         """
         preparation for the download:
         - check if file was already downloaded
@@ -427,6 +439,9 @@ class AwsDownload(Download):
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+
         if build_safe and "fetch_metadata" in product_conf.keys():
             fetch_format = product_conf["fetch_metadata"]["fetch_format"]
             update_metadata = product_conf["fetch_metadata"]["update_metadata"]
@@ -436,10 +451,13 @@ class AwsDownload(Download):
             logger.info("Fetching extra metadata from %s" % fetch_url)
             try:
                 resp = requests.get(
-                    fetch_url, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                    fetch_url,
+                    headers=USER_AGENT,
+                    timeout=timeout,
+                    verify=ssl_verify,
                 )
             except requests.exceptions.Timeout as exc:
-                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+                raise TimeOutError(exc, timeout=timeout) from exc
             update_metadata = mtd_cfg_as_conversion_and_querypath(update_metadata)
             if fetch_format == "json":
                 json_resp = resp.json()
@@ -454,7 +472,10 @@ class AwsDownload(Download):
                 )
 
     def _get_bucket_names_and_prefixes(
-        self, product: EOProduct, asset_filter: str, ignore_assets: bool
+        self,
+        product: EOProduct,
+        asset_filter: Optional[str] = None,
+        ignore_assets: Optional[bool] = False,
     ) -> List[Tuple[str, Optional[str]]]:
         """
         retrieves the bucket names and path prefixes for the assets
@@ -483,7 +504,7 @@ class AwsDownload(Download):
                         rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                     )
             else:
-                assets_values = getattr(product, "assets", {}).values()
+                assets_values = product.assets.values()
 
             bucket_names_and_prefixes = []
             for complementary_url in assets_values:
@@ -501,8 +522,8 @@ class AwsDownload(Download):
     def _do_authentication(
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
-        auth: Dict[str, str],
-    ) -> Tuple[Dict[str, Any], ResourceCollection[Any]]:
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+    ) -> Tuple[Dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
@@ -513,11 +534,19 @@ class AwsDownload(Download):
         :return: authenticated objects per bucket, list of available objects
         :rtype: Tuple[Dict[str, Any], ResourceCollection[Any]]
         """
+        if not isinstance(auth, (dict, type(None))):
+            raise AuthenticationError(
+                f"Incompatible authentication information, expected dict or None, got {type(auth)}"
+            )
+        if auth is None:
+            auth = {}
         authenticated_objects: Dict[str, Any] = {}
         auth_error_messages: Set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
             try:
                 bucket_name, prefix = pack
+                if not prefix:
+                    continue
                 if bucket_name not in authenticated_objects:
                     # get Prefixes longest common base path
                     common_prefix = ""
@@ -532,7 +561,7 @@ class AwsDownload(Download):
                                 [
                                     p
                                     for b, p in bucket_names_and_prefixes
-                                    if b == bucket_name and common_prefix in p
+                                    if p and b == bucket_name and common_prefix in p
                                 ]
                             )
                             < prefixes_in_bucket
@@ -566,7 +595,7 @@ class AwsDownload(Download):
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
         authenticated_objects: Dict[str, Any],
-        asset_filter: str,
+        asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
     ) -> Set[Any]:
@@ -626,12 +655,12 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        **kwargs: Unpack[DownloadConf],
+    ) -> StreamResponse:
         r"""
         Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
@@ -725,11 +754,11 @@ class AwsDownload(Download):
             if assets_values[0].get("type", None):
                 headers["content-type"] = assets_values[0]["type"]
 
-            return dict(
+            return StreamResponse(
                 content=chain(iter([first_chunks_tuple]), chunks_tuples),
                 headers=headers,
             )
-        return dict(
+        return StreamResponse(
             content=stream_zip(chunks_tuples),
             media_type="application/zip",
             headers={
@@ -779,7 +808,7 @@ class AwsDownload(Download):
             product.product_type, {}
         )
         flatten_top_dirs = product_conf.get(
-            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", False)
+            "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
         common_path = ""
         if flatten_top_dirs:
@@ -1154,8 +1183,7 @@ class AwsDownload(Download):
         # S2 L2A Tile files -----------------------------------------------
         if matched := S2L2A_TILE_IMG_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/IMG_DATA/R%s/T%s%s%s_%s_%s_%s.jp2" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/IMG_DATA/R%s/T%s%s%s_%s_%s_%s.jp2" % (
                 found_dict["num"],
                 found_dict["res"],
                 found_dict["tile1"],
@@ -1167,16 +1195,14 @@ class AwsDownload(Download):
             )
         elif matched := S2L2A_TILE_AUX_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/AUX_DATA/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/AUX_DATA/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         # S2 L2A QI Masks
         elif matched := S2_TILE_QI_MSK_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/QI_DATA/MSK_%sPRB_%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/QI_DATA/MSK_%sPRB_%s" % (
                 found_dict["num"],
                 found_dict["file_base"],
                 found_dict["file_suffix"],
@@ -1184,8 +1210,7 @@ class AwsDownload(Download):
         # S2 L2A QI PVI
         elif matched := S2_TILE_QI_PVI_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/QI_DATA/%s_%s_PVI.jp2" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/QI_DATA/%s_%s_PVI.jp2" % (
                 found_dict["num"],
                 title_part3,
                 title_date1,
@@ -1193,15 +1218,13 @@ class AwsDownload(Download):
         # S2 Tile files ---------------------------------------------------
         elif matched := S2_TILE_PREVIEW_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/preview/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/preview/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         elif matched := S2_TILE_IMG_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/IMG_DATA/T%s%s%s_%s_%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/IMG_DATA/T%s%s%s_%s_%s" % (
                 found_dict["num"],
                 found_dict["tile1"],
                 found_dict["tile2"],
@@ -1211,97 +1234,74 @@ class AwsDownload(Download):
             )
         elif matched := S2_TILE_THUMBNAIL_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         elif matched := S2_TILE_MTD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/MTD_TL.xml" % (
-                product.properties["title"],
-                found_dict["num"],
-            )
+            product_path = "GRANULE/%s/MTD_TL.xml" % found_dict["num"]
         elif matched := S2_TILE_AUX_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/AUX_DATA/AUX_%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/AUX_DATA/AUX_%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         elif matched := S2_TILE_QI_DIR_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/QI_DATA/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/QI_DATA/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         # S2 Tiles generic
         elif matched := S2_TILE_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/GRANULE/%s/%s" % (
-                product.properties["title"],
+            product_path = "GRANULE/%s/%s" % (
                 found_dict["num"],
                 found_dict["file"],
             )
         # S2 Product files
         elif matched := S2_PROD_DS_MTD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/DATASTRIP/%s/MTD_DS.xml" % (
-                product.properties["title"],
-                ds_dir,
-            )
+            product_path = "DATASTRIP/%s/MTD_DS.xml" % ds_dir
         elif matched := S2_PROD_DS_QI_REPORT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/DATASTRIP/%s/QI_DATA/%s.xml" % (
-                product.properties["title"],
+            product_path = "DATASTRIP/%s/QI_DATA/%s.xml" % (
                 ds_dir,
                 found_dict["filename"],
             )
         elif matched := S2_PROD_DS_QI_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/DATASTRIP/%s/QI_DATA/%s" % (
-                product.properties["title"],
+            product_path = "DATASTRIP/%s/QI_DATA/%s" % (
                 ds_dir,
                 found_dict["file"],
             )
         elif matched := S2_PROD_INSPIRE_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/INSPIRE.xml" % (product.properties["title"],)
+            product_path = "INSPIRE.xml"
         elif matched := S2_PROD_MTD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/MTD_MSI%s.xml" % (
-                product.properties["title"],
-                s2_processing_level,
-            )
+            product_path = "MTD_MSI%s.xml" % s2_processing_level
         # S2 Product generic
         elif matched := S2_PROD_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/%s" % (
-                product.properties["title"],
-                found_dict["file"],
-            )
+            product_path = "%s" % found_dict["file"]
         # S1 --------------------------------------------------------------
         elif matched := S1_CALIB_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = (
-                "%s.SAFE/annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml"
-                % (
-                    product.properties["title"],
-                    found_dict["file_prefix"],
-                    product.properties["platformSerialIdentifier"].lower(),
-                    found_dict["file_beam"],
-                    found_dict["file_pol"],
-                    s1_title_suffix,
-                    S1_IMG_NB_PER_POLAR.get(
-                        product.properties["polarizationMode"], {}
-                    ).get(found_dict["file_pol"].upper(), 1),
-                )
+            product_path = "annotation/calibration/%s-%s-%s-grd-%s-%s-%03d.xml" % (
+                found_dict["file_prefix"],
+                product.properties["platformSerialIdentifier"].lower(),
+                found_dict["file_beam"],
+                found_dict["file_pol"],
+                s1_title_suffix,
+                S1_IMG_NB_PER_POLAR.get(product.properties["polarizationMode"], {}).get(
+                    found_dict["file_pol"].upper(), 1
+                ),
             )
         elif matched := S1_ANNOT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/annotation/%s-%s-grd-%s-%s-%03d.xml" % (
-                product.properties["title"],
+            product_path = "annotation/%s-%s-grd-%s-%s-%03d.xml" % (
                 product.properties["platformSerialIdentifier"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
@@ -1312,8 +1312,7 @@ class AwsDownload(Download):
             )
         elif matched := S1_MEAS_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/measurement/%s-%s-grd-%s-%s-%03d.%s" % (
-                product.properties["title"],
+            product_path = "measurement/%s-%s-grd-%s-%s-%03d.%s" % (
                 product.properties["platformSerialIdentifier"].lower(),
                 found_dict["file_beam"],
                 found_dict["file_pol"],
@@ -1325,18 +1324,14 @@ class AwsDownload(Download):
             )
         elif matched := S1_REPORT_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/%s.SAFE-%s" % (
-                product.properties["title"],
+            product_path = "%s.SAFE-%s" % (
                 product.properties["title"],
                 found_dict["file"],
             )
         # S1 generic
         elif matched := S1_REGEX.match(chunk.key):
             found_dict = matched.groupdict()
-            product_path = "%s.SAFE/%s" % (
-                product.properties["title"],
-                found_dict["file"],
-            )
+            product_path = "%s" % found_dict["file"]
         # out of SAFE format
         else:
             raise NotAvailableError(f"Ignored {chunk.key} out of SAFE matching pattern")
@@ -1347,12 +1342,12 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         download_all using parent (base plugin) method

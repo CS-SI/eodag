@@ -17,6 +17,7 @@ This table lists all the download plugins currently available:
    eodag.plugins.download.http.HTTPDownload
    eodag.plugins.download.aws.AwsDownload
    eodag.plugins.download.s3rest.S3RestDownload
+   eodag.plugins.download.creodias_s3.CreodiasS3Download
 
 ---------------------------
 Download methods call graph

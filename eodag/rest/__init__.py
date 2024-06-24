@@ -16,3 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG REST API"""
+try:
+    from fastapi import __version__  # noqa: F401
+except ImportError:
+    raise ImportError(
+        f"{__name__} not available, please install eodag[server] or eodag[all]"
+    )

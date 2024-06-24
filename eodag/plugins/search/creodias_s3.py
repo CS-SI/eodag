@@ -17,17 +17,18 @@
 # limitations under the License.
 import logging
 from types import MethodType
-from typing import Any, Dict, List
+from typing import Any, List
 
 import boto3
 import botocore
 from botocore.exceptions import BotoCoreError
 
-from eodag import EOProduct
-from eodag.api.product._assets import AssetsDict
+from eodag.api.product import AssetsDict, EOProduct  # type: ignore
+from eodag.api.search_result import RawSearchResult
 from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
-from eodag.plugins.search.qssearch import QueryStringSearch
+from eodag.plugins.search.qssearch import ODataV4Search
+from eodag.utils import guess_file_type
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
 
 DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
@@ -64,18 +65,19 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
         try:
             auth_dict = auth.authenticate()
             required_creds = ["aws_access_key_id", "aws_secret_access_key"]
-            if not all(getattr(auth, x) for x in required_creds):
+            if not all(x in auth_dict for x in required_creds):
                 raise MisconfiguredError(
                     f"Incomplete credentials for {product.provider}, missing "
-                    f"{[x for x in required_creds if not getattr(auth, x)]}"
+                    f"{[x for x in required_creds if x not in auth_dict]}"
                 )
             if not getattr(auth, "s3_client", None):
                 auth.s3_client = boto3.client(
                     "s3",
                     endpoint_url=config.base_uri,
-                    **auth_dict,
+                    aws_access_key_id=auth_dict["aws_access_key_id"],
+                    aws_secret_access_key=auth_dict["aws_secret_access_key"],
                 )
-            logger.debug(f"Listing assets in {prefix}")
+            logger.debug("Listing assets in %s", prefix)
             product.assets = AssetsDict(product)
             for asset in auth.s3_client.list_objects(
                 Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
@@ -96,6 +98,8 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                         "roles": [role],
                         "href": f"s3://{config.s3_bucket}/{asset['Key']}",
                     }
+                    if mime_type := guess_file_type(asset["Key"]):
+                        product.assets[asset_basename]["type"] = mime_type
             # update driver
             product.driver = product.get_driver()
 
@@ -104,13 +108,10 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                 raise AuthenticationError(
                     f"Authentication failed on {config.base_uri} s3"
                 ) from e
-            else:
-                raise RequestError(
-                    "assets for product %s could not be found", prefix
-                ) from e
+            raise RequestError(f"assets for product {prefix} could not be found") from e
 
 
-class CreodiasS3Search(QueryStringSearch):
+class CreodiasS3Search(ODataV4Search):
     """
     Search on creodias and adapt results to s3
     """
@@ -119,7 +120,7 @@ class CreodiasS3Search(QueryStringSearch):
         super(CreodiasS3Search, self).__init__(provider, config)
 
     def normalize_results(
-        self, results: List[Dict[str, Any]], **kwargs: Any
+        self, results: RawSearchResult, **kwargs: Any
     ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
 

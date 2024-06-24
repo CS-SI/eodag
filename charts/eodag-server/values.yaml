@@ -481,7 +481,7 @@ config:
   #       credentials:
   #           username:
   #           password:
-  # cop_cds:
+  # usgs:
   #     priority: # Lower value means lower priority (Default: 0)
   #     api:
   #         outputs_prefix:
@@ -690,3 +690,17 @@ serviceAccount:
   ## @param serviceAccount.automountServiceAccountToken Automount service account token for the server service account
   ##
   automountServiceAccountToken: true
+
+## Autoscaling configuration
+## @param autoscaling.enabled Enable autoscaling
+## @param autoscaling.minReplicas Minimum number of replicas
+## @param autoscaling.maxReplicas Maximum number of replicas
+## @param autoscaling.targetCPU Target CPU utilization percentage
+## @param autoscaling.targetMemory Target Memory utilization percentage
+##
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPU: ""
+  targetMemory: ""

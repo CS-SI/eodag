@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import io
 import os
 import random
@@ -49,7 +50,7 @@ class EODagTestCase(unittest.TestCase):
             "https://zipper.creodias.eu/download/8ff765a2-e089-465d-a48f-cc27008a0962"
         )
         self.local_filename = (
-            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.SAFE"
+            "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911"
         )
         self.local_product_abspath = os.path.abspath(
             jp(TEST_RESOURCES_PATH, "products", self.local_filename)
@@ -335,6 +336,7 @@ class EODagTestCase(unittest.TestCase):
                     response.__zip_buffer = io.BytesIO(fh.read())
                 cl = response.__zip_buffer.getbuffer().nbytes
                 response.headers = {"content-length": cl}
+                response.url = "http://foo.bar"
 
             def __enter__(response):
                 return response
@@ -354,3 +356,19 @@ class EODagTestCase(unittest.TestCase):
                 pass
 
         return Response()
+
+
+@contextlib.contextmanager
+def temporary_environment(**env_vars):
+    # Save the original environment variables
+    original_env = os.environ.copy()
+
+    # Set the new temporary environment variables
+    os.environ.update(env_vars)
+
+    try:
+        yield
+    finally:
+        # Restore the original environment variables
+        os.environ.clear()
+        os.environ.update(original_env)

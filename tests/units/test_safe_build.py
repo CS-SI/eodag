@@ -123,9 +123,7 @@ class TestSafeBuild(unittest.TestCase):
 
         copyfile(
             os.path.join(TEST_RESOURCES_PATH, "safe_build", "manifest.safe.S1_SAR_GRD"),
-            os.path.join(
-                product_path, "%s.SAFE" % prod.properties["title"], "manifest.safe"
-            ),
+            os.path.join(product_path, "manifest.safe"),
         )
 
         with self.assertLogs(self.logger, logging.WARN) as cm:
@@ -167,9 +165,7 @@ class TestSafeBuild(unittest.TestCase):
 
         copyfile(
             os.path.join(TEST_RESOURCES_PATH, "safe_build", "manifest.safe.S2_MSI_L2A"),
-            os.path.join(
-                product_path, "%s.SAFE" % prod.properties["title"], "manifest.safe"
-            ),
+            os.path.join(product_path, "manifest.safe"),
         )
 
         self.awsd.finalize_s2_safe_product(product_path)
@@ -213,9 +209,7 @@ class TestSafeBuild(unittest.TestCase):
 
         copyfile(
             os.path.join(TEST_RESOURCES_PATH, "safe_build", "manifest.safe.S2_MSI_L1C"),
-            os.path.join(
-                product_path, "%s.SAFE" % prod.properties["title"], "manifest.safe"
-            ),
+            os.path.join(product_path, "manifest.safe"),
         )
 
         self.awsd.finalize_s2_safe_product(product_path)

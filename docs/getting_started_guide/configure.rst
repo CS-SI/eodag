@@ -255,7 +255,7 @@ This file can be used to download products with the API:
 
    from eodag import EODataAccessGateway
    dag = EODataAccessGateway()
-   products, total_count = dag.search(
+   products = dag.search(
       productType="S2_MSI_L1C",
       start="2018-01-01",
       end="2018-01-31",

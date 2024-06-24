@@ -259,7 +259,7 @@ class TestCoreSearchResults(EODagTestCase):
 
         mock_query.return_value = (products.data, len(products))
 
-        search_results, count = self.dag.search(productType="S2_MSI_L1C")
+        search_results = self.dag.search(productType="S2_MSI_L1C")
 
         for search_result in search_results:
             self.assertIsInstance(search_result.downloader, PluginTopic)
@@ -279,8 +279,28 @@ class TestCoreSearchResults(EODagTestCase):
             search_results_peps = json.load(f)
 
         mock_query.return_value = search_results_peps["features"]
-        search_results, count = self.dag.search(
-            productType="S2_MSI_L1C", provider="peps"
-        )
+        search_results = self.dag.search(productType="S2_MSI_L1C", provider="peps")
         # use given provider and not preferred provider
         self.assertEqual("peps", search_results[0].provider)
+
+    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
+    def test_core_search_with_count(self, mock_urlopen):
+        """The core search must use the count parameter"""
+
+        # count disabled by default
+        search_results = self.dag.search(productType="S2_MSI_L1C", provider="creodias")
+        self.assertNotIn(
+            self.dag.providers_config["creodias"].search.pagination["count_tpl"],
+            mock_urlopen.call_args_list[-1][0][0].full_url,
+        )
+        self.assertIsNone(search_results.number_matched)
+
+        # count enabled
+        search_results = self.dag.search(
+            productType="S2_MSI_L1C", provider="creodias", count=True
+        )
+        self.assertIn(
+            self.dag.providers_config["creodias"].search.pagination["count_tpl"],
+            mock_urlopen.call_args_list[-1][0][0].full_url,
+        )
+        self.assertIsNotNone(search_results.number_matched)

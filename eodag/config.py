@@ -27,6 +27,7 @@ from typing import (
     ItemsView,
     Iterator,
     List,
+    Literal,
     Optional,
     Tuple,
     TypedDict,
@@ -40,13 +41,16 @@ import requests
 import yaml
 import yaml.constructor
 import yaml.parser
+from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from pkg_resources import resource_filename
 from requests.auth import AuthBase
+from typing_extensions import Doc
 
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    Annotated,
     cached_yaml_load,
     cached_yaml_load_all,
     cast_scalar_value,
@@ -125,7 +129,11 @@ class ProviderConfig(yaml.YAMLObject):
     """
 
     name: str
+    group: str
     priority: int = 0  # Set default priority to 0
+    roles: List[str]
+    description: str
+    url: str
     api: PluginConfig
     search: PluginConfig
     products: Dict[str, Any]
@@ -138,7 +146,7 @@ class ProviderConfig(yaml.YAMLObject):
     yaml_tag = "!provider"
 
     @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node: Any) -> ProviderConfig:
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Iterator[ProviderConfig]:
         """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
         cls.validate(tuple(node_key.value for node_key, _ in node.value))
         for node_key, node_value in node.value:
@@ -223,18 +231,76 @@ class PluginConfig(yaml.YAMLObject):
         next_page_url_key_path: Union[str, JSONPath]
         next_page_query_obj_key_path: Union[str, JSONPath]
         next_page_merge_key_path: Union[str, JSONPath]
+        count_tpl: str
         next_page_url_tpl: str
         next_page_query_obj: str
         count_endpoint: str
         start_page: int
 
-    class OrderStatusOnSuccess(TypedDict):
-        """Configuration for order on-success during download"""
+    class Sort(TypedDict):
+        """Configuration for sort during search"""
 
-        need_search: bool
+        sort_by_default: List[Tuple[str, str]]
+        sort_by_tpl: str
+        sort_param_mapping: Dict[str, str]
+        sort_order_mapping: Dict[Literal["ascending", "descending"], str]
+        max_sort_params: Annotated[int, Gt(0)]
+
+    class OrderOnResponse(TypedDict):
+        """Configuration for order on-response during download"""
+
+        metadata_mapping: Dict[str, Union[str, List[str]]]
+
+    class OrderStatusSuccess(TypedDict):
+        """
+        Configuration to identify order status success during download
+
+        Order status response matching the following parameters are considered success
+        At least one is required
+        """
+
+        status: Annotated[str, Doc("Variable in the order status response json body")]
+        message: Annotated[str, Doc("Variable in the order status response json body")]
+        http_code: Annotated[int, Doc("HTTP code of the order status response")]
+
+    class OrderStatusOrdered(TypedDict):
+        """
+        Configuration to identify order status ordered during download
+        """
+
+        http_code: Annotated[int, Doc("HTTP code of the order status response")]
+
+    class OrderStatusRequest(TypedDict):
+        """
+        Order status request configuration
+        """
+
+        method: Annotated[str, Doc("Request HTTP method")]
+        headers: Annotated[Dict[str, Any], Doc("Request hearders")]
+
+    class OrderStatusOnSuccess(TypedDict):
+        """Configuration for order status on-success during download"""
+
+        need_search: Annotated[bool, Doc("If a new search is needed on success")]
         result_type: str
         results_entry: str
         metadata_mapping: Dict[str, Union[str, List[str]]]
+
+    class OrderStatus(TypedDict):
+        """Configuration for order status during download"""
+
+        request: PluginConfig.OrderStatusRequest
+        metadata_mapping: Annotated[
+            Dict[str, Union[str, List[str]]],
+            Doc("Metadata-mapping used to parse order status response"),
+        ]
+        success: PluginConfig.OrderStatusSuccess
+        error: Annotated[
+            Dict[str, Any],
+            Doc("Part of the order status response that tells there is an error"),
+        ]
+        ordered: PluginConfig.OrderStatusOrdered
+        on_success: PluginConfig.OrderStatusOnSuccess
 
     name: str
     type: str
@@ -251,12 +317,15 @@ class PluginConfig(yaml.YAMLObject):
     result_type: str
     results_entry: str
     pagination: PluginConfig.Pagination
+    sort: PluginConfig.Sort
     query_params_key: str
-    discover_metadata: Dict[str, str]
+    discover_metadata: Dict[str, Union[str, bool]]
     discover_product_types: Dict[str, Any]
     discover_queryables: Dict[str, Any]
     metadata_mapping: Dict[str, Union[str, List[str]]]
     free_params: Dict[Any, Any]
+    constraints_file_url: str
+    remove_from_queryables: List[str]
     free_text_search_operations: Dict[str, Any]  # ODataV4Search
     metadata_pre_mapping: Dict[str, Any]  # ODataV4Search
     data_request_url: str  # DataRequestSearch
@@ -268,16 +337,30 @@ class PluginConfig(yaml.YAMLObject):
     max_connections: int  # StaticStacSearch
     timeout: float  # StaticStacSearch
     s3_bucket: str  # CreodiasS3Search
+    end_date_excluded: bool  # BuildSearchResult
+    remove_from_query: List[str]  # BuildSearchResult
+    ssl_verify: bool
 
     # download -------------------------------------------------------------------------
     base_uri: str
     outputs_prefix: str
     extract: bool
+    outputs_extension: str
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
-    order_status_on_success: PluginConfig.OrderStatusOnSuccess
+
+    order_on_response: PluginConfig.OrderOnResponse
+    order_status: PluginConfig.OrderStatus
+    no_auth_download: Annotated[
+        bool,
+        Doc(
+            "Do not authenticate the download request but only the order and order status ones."
+        ),
+    ]
     bucket_path_level: int  # S3RestDownload
+    requester_pays: bool  # AwsDownload
+    flatten_top_dirs: bool
 
     # auth -----------------------------------------------------------------------------
     credentials: Dict[str, str]
@@ -299,7 +382,13 @@ class PluginConfig(yaml.YAMLObject):
     token_exchange_post_data_method: str  # OIDCAuthorizationCodeFlowAuth
     token_uri: str  # OIDCAuthorizationCodeFlowAuth
     token_key: str  # OIDCAuthorizationCodeFlowAuth
+    req_data: Dict[str, Any]  # TokenAuth
     signed_url_key: str  # SASAuth
+    refresh_uri: str  # TokenAuth
+    refresh_token_key: str  # TokenAuth
+    subject: Dict[str, Any]  # TokenExchangeAuth
+    subject_issuer: str  # TokenExchangeAuth
+    audience: str  # TokenExchangeAuth
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
@@ -362,7 +451,7 @@ def load_config(config_path: str) -> Dict[str, ProviderConfig]:
     :returns: The default provider's configuration
     :rtype: dict
     """
-    logger.debug(f"Loading configuration from {config_path}")
+    logger.debug("Loading configuration from %s", config_path)
     config: Dict[str, ProviderConfig] = {}
     try:
         # Providers configs are stored in this file as separated yaml documents

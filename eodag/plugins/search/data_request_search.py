@@ -19,8 +19,8 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 import requests
 
@@ -30,10 +30,11 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
+    DEFAULT_MISSION_START_DATE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
@@ -41,7 +42,12 @@ from eodag.utils import (
     deepcopy,
     string_to_jsonpath,
 )
-from eodag.utils.exceptions import NotAvailableError, RequestError, TimeOutError
+from eodag.utils.exceptions import (
+    NotAvailableError,
+    RequestError,
+    TimeOutError,
+    ValidationError,
+)
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
@@ -56,6 +62,8 @@ class DataRequestSearch(Search):
         - check the status of the request job
         - if finished - fetch the result of the job
     """
+
+    data_request_id: Optional[str]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(DataRequestSearch, self).__init__(provider, config)
@@ -101,10 +109,10 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
-        self.download_info = {}
+        self.download_info: Dict[str, Any] = {}
         self.data_request_id = None
 
-    def discover_product_types(self) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types is disabled for `DataRequestSearch`
 
         :returns: empty dict
@@ -119,26 +127,30 @@ class DataRequestSearch(Search):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """
         performs the search for a provider where several steps are required to fetch the data
         """
+        if kwargs.get("sortBy"):
+            raise ValidationError(f"{self.provider} does not support sorting feature")
+
         product_type = kwargs.get("productType", None)
+
+        if product_type is None:
+            raise ValidationError("Required productType is missing")
+
         # replace "product_type" to "providerProductType" in search args if exists
         # for compatibility with DataRequestSearch method
         if kwargs.get("product_type"):
             kwargs["providerProductType"] = kwargs.pop("product_type", None)
-        provider_product_type = self._map_product_type(product_type or "")
+        provider_product_type = cast(str, self._map_product_type(product_type or ""))
         keywords = {k: v for k, v in kwargs.items() if k != "auth" and v is not None}
 
         if provider_product_type and provider_product_type != GENERIC_PRODUCT_TYPE:
             keywords["productType"] = provider_product_type
-        elif product_type:
+        else:
             keywords["productType"] = product_type
 
         # provider product type specific conf
@@ -185,7 +197,7 @@ class DataRequestSearch(Search):
             if not keywords.get("completionTimeFromAscendingNode", None):
                 keywords["completionTimeFromAscendingNode"] = getattr(
                     self.config, "product_type_config", {}
-                ).get("missionEndDate", datetime.utcnow().isoformat())
+                ).get("missionEndDate", datetime.now(timezone.utc).isoformat())
 
         # ask for data_request_id if not set (it must exist when iterating over pages)
         if not self.data_request_id:
@@ -246,16 +258,19 @@ class DataRequestSearch(Search):
         self, product_type: str, eodag_product_type: str, **kwargs: Any
     ) -> str:
         headers = getattr(self.auth, "headers", USER_AGENT)
+        ssl_verify = getattr(self.config.ssl_verify, "ssl_verify", True)
         try:
             url = self.config.data_request_url
-            request_body = format_query_params(
-                eodag_product_type, self.config, **kwargs
-            )
+            request_body = format_query_params(eodag_product_type, self.config, kwargs)
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
             )
             request_job = requests.post(
-                url, json=request_body, headers=headers, timeout=HTTP_REQ_TIMEOUT
+                url,
+                json=request_body,
+                headers=headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             request_job.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -271,9 +286,10 @@ class DataRequestSearch(Search):
     def _cancel_request(self, data_request_id: str) -> None:
         logger.info("deleting request job %s", data_request_id)
         delete_url = f"{self.config.data_request_url}/{data_request_id}"
+        headers = getattr(self.auth, "headers", USER_AGENT)
         try:
             delete_resp = requests.delete(
-                delete_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                delete_url, headers=headers, timeout=HTTP_REQ_TIMEOUT
             )
             delete_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -284,9 +300,15 @@ class DataRequestSearch(Search):
     def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
         status_url = self.config.status_url + data_request_id
+        headers = getattr(self.auth, "headers", USER_AGENT)
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         try:
             status_resp = requests.get(
-                status_url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                status_url,
+                headers=headers,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             status_resp.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -315,9 +337,11 @@ class DataRequestSearch(Search):
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
         )
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+        headers = getattr(self.auth, "headers", USER_AGENT)
         try:
             return requests.get(
-                url, headers=self.auth.headers, timeout=HTTP_REQ_TIMEOUT
+                url, headers=headers, timeout=HTTP_REQ_TIMEOUT, verify=ssl_verify
             ).json()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc

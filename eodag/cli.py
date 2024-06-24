@@ -50,7 +50,6 @@ from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 
 import click
-import uvicorn
 
 from eodag.api.core import EODataAccessGateway
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
@@ -243,6 +242,11 @@ def version() -> None:
     "maximum value equals to 50.",
 )
 @click.option(
+    "--count",
+    is_flag=True,
+    help="Whether to run a query with a count request or not.",
+)
+@click.option(
     "--locations",
     type=str,
     help="Custom query-string argument(s) to select locations. "
@@ -334,6 +338,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     if locs_file:
         locs_file = click.format_filename(locs_file)
 
+    count = kwargs.pop("count")
+
     # Process inputs for crunch
     cruncher_names: Set[Any] = set(kwargs.pop("cruncher") or [])
     cruncher_args = kwargs.pop("cruncher_args")
@@ -361,10 +367,13 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         items_per_page = (
             DEFAULT_ITEMS_PER_PAGE if items_per_page is None else items_per_page
         )
-        results, total = gateway.search(
-            page=page, items_per_page=items_per_page, **criteria
+        results = gateway.search(
+            count=count, page=page, items_per_page=items_per_page, **criteria
         )
-        click.echo("Found a total number of {} products".format(total))
+        if results.number_matched is not None:
+            click.echo(
+                "Found a total number of {} products".format(results.number_matched)
+            )
     click.echo("Returned {} products".format(len(results)))
 
     # Crunch !
@@ -446,8 +455,6 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
                     provider=provider, fetch_providers=fetch_providers
                 )
                 if pt["ID"] in guessed_product_types
-                or "alias" in pt
-                and pt["alias"] in guessed_product_types
             ]
         else:
             product_types = dag.list_product_types(
@@ -645,6 +652,13 @@ def serve_rest(
 ) -> None:
     """Serve EODAG functionalities through a WEB interface"""
     setup_logging(verbose=ctx.obj["verbosity"])
+    try:
+        import uvicorn
+    except ImportError:
+        raise ImportError(
+            "Feature not available, please install eodag[server] or eodag[all]"
+        )
+
     # Set the settings of the app
     # IMPORTANT: the order of imports counts here (first we override the settings,
     # then we import the app so that the updated settings is taken into account in

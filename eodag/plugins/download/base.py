@@ -43,6 +43,7 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     ProgressCallback,
+    StreamResponse,
     sanitize,
     uri_to_path,
 )
@@ -54,10 +55,13 @@ from eodag.utils.exceptions import (
 from eodag.utils.notebook import NotebookWidgets
 
 if TYPE_CHECKING:
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 
 logger = logging.getLogger("eodag.download.base")
@@ -86,9 +90,9 @@ class Download(PluginTopic):
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
     - save a *record* file in the directory ``outputs_prefix/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``remote_location`` attribute
-      (``hashlib.md5(remote_location.encode("utf-8")).hexdigest()``) and whose content is
-      the product's ``remote_location`` attribute itself.
+      is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
+      attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+      and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an
       existing file/directory
     - not try to download a product if its *record* file exists as long as the expected
@@ -108,19 +112,19 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         r"""
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -145,19 +149,19 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        **kwargs: Unpack[DownloadConf],
+    ) -> StreamResponse:
         r"""
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
         :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
@@ -181,7 +185,7 @@ class Download(PluginTopic):
         self,
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Tuple[Optional[str], Optional[str]]:
         """Check if file has already been downloaded, and prepare product download
 
@@ -233,7 +237,9 @@ class Download(PluginTopic):
             prefix,
             f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{outputs_extension}",
         )
-        fs_dir_path = fs_path.replace(outputs_extension, "")
+        fs_dir_path = (
+            fs_path.replace(outputs_extension, "") if outputs_extension else fs_path
+        )
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
             os.makedirs(download_records_dir)
@@ -246,8 +252,9 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        record_filename = os.path.join(download_records_dir, url_hash)
+        record_filename = os.path.join(
+            download_records_dir, self.generate_record_hash(product)
+        )
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info(
                 f"Product already downloaded: {fs_path}",
@@ -278,6 +285,21 @@ class Download(PluginTopic):
 
         return fs_path, record_filename
 
+    def generate_record_hash(self, product: EOProduct) -> str:
+        """Generate the record hash of the given product.
+
+        The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
+        (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+
+        :param product: The product to calculate the record hash
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :returns: The MD5 hash
+        :rtype: str
+        """
+        # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
+        product_hash = str(product.product_type) + "-" + str(product.properties["id"])
+        return hashlib.md5(product_hash.encode("utf-8")).hexdigest()
+
     def _resolve_archive_depth(self, product_path: str) -> str:
         """Update product_path using archive_depth from provider configuration.
 
@@ -302,7 +324,7 @@ class Download(PluginTopic):
         self,
         fs_path: str,
         progress_callback: Optional[ProgressCallback] = None,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Finalize the download process.
 
@@ -332,6 +354,11 @@ class Download(PluginTopic):
         extract = (
             extract if extract is not None else getattr(self.config, "extract", True)
         )
+        if not extract:
+            logger.info("Extraction not activated. The product is available as is.")
+            progress_callback(1, total=1)
+            return fs_path
+
         delete_archive = kwargs.pop("delete_archive", None)
         delete_archive = (
             delete_archive
@@ -339,11 +366,6 @@ class Download(PluginTopic):
             else getattr(self.config, "delete_archive", True)
         )
         outputs_extension = kwargs.pop("outputs_extension", ".zip")
-
-        if not extract:
-            logger.info("Extraction not activated. The product is available as is.")
-            progress_callback(1, total=1)
-            return fs_path
 
         product_path = (
             fs_path[: fs_path.index(outputs_extension)]
@@ -373,7 +395,6 @@ class Download(PluginTopic):
                 f"Extraction cancelled, destination directory already exists and is not empty: {product_path}"
             )
             progress_callback(1, total=1)
-            product_path = self._resolve_archive_depth(product_path)
             return product_path
         outputs_prefix = (
             kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
@@ -402,14 +423,28 @@ class Download(PluginTopic):
                             path=extraction_dir,
                         )
                         progress_callback(1)
-                shutil.move(extraction_dir, outputs_dir)
+                # in some cases, only a lone file is extracted without being in a directory
+                # then, we create a directory in which we place this file
+                product_extraction_path = self._resolve_archive_depth(extraction_dir)
+                if os.path.isfile(product_extraction_path) and not os.path.isdir(
+                    outputs_dir
+                ):
+                    os.makedirs(outputs_dir)
+                shutil.move(product_extraction_path, outputs_dir)
 
-            elif fs_path.endswith(".tar.gz"):
+            elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r") as zfile:
                     progress_callback.reset(total=1)
                     zfile.extractall(path=extraction_dir)
                     progress_callback(1)
-                shutil.move(extraction_dir, outputs_dir)
+                # in some cases, only a lone file is extracted without being in a directory
+                # then, we create a directory in which we place this file
+                product_extraction_path = self._resolve_archive_depth(extraction_dir)
+                if os.path.isfile(product_extraction_path) and not os.path.isdir(
+                    outputs_dir
+                ):
+                    os.makedirs(outputs_dir)
+                shutil.move(product_extraction_path, outputs_dir)
             else:
                 progress_callback(1, total=1)
 
@@ -429,19 +464,17 @@ class Download(PluginTopic):
         if close_progress_callback:
             progress_callback.close()
 
-        product_path = self._resolve_archive_depth(product_path)
-
         return product_path
 
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Base download_all method.
@@ -451,8 +484,8 @@ class Download(PluginTopic):
 
         :param products: Products to download
         :type products: :class:`~eodag.api.search_result.SearchResult`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
                                     :class:`~eodag.api.product.DownloadedCallback` and override
@@ -610,7 +643,7 @@ class Download(PluginTopic):
         """
 
         def decorator(download: Callable[..., T]) -> Callable[..., T]:
-            def download_and_retry(*args: Any, **kwargs: Any) -> T:
+            def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
                 start_time = datetime.now()
                 stop_time = start_time + timedelta(minutes=timeout)
@@ -634,8 +667,7 @@ class Download(PluginTopic):
                                     f"Product is not available for download and order is not supported for"
                                     f" {self.provider}, {e}"
                                 )
-                            not_available_info = e
-                            pass
+                            not_available_info = str(e)
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
                         wait_seconds = (
@@ -646,7 +678,7 @@ class Download(PluginTopic):
                             f"[Retry #{retry_count}] Waited {wait_seconds}s, trying again to download ordered product"
                             f" (retry every {wait}' for {timeout}')"
                         )
-                        logger.debug(not_available_info)
+                        logger.info(not_available_info)
                         # Retry-After info from Response header
                         if hasattr(self, "stream"):
                             retry_server_info = self.stream.headers.get(
@@ -656,7 +688,7 @@ class Download(PluginTopic):
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
-                        logger.info(retry_info)
+                        logger.debug(retry_info)
                         nb_info.display_html(retry_info)
                         product.next_try = datetime_now
                     elif datetime_now < product.next_try and datetime_now < stop_time:
@@ -668,7 +700,7 @@ class Download(PluginTopic):
                             f"[Retry #{retry_count}] Waiting {wait_seconds}s until next download try"
                             f" for ordered product (retry every {wait}' for {timeout}')"
                         )
-                        logger.debug(not_available_info)
+                        logger.info(not_available_info)
                         # Retry-After info from Response header
                         if hasattr(self, "stream"):
                             retry_server_info = self.stream.headers.get(
@@ -678,7 +710,7 @@ class Download(PluginTopic):
                                 logger.debug(
                                     f"[{self.provider} response] Retry-After: {retry_server_info}"
                                 )
-                        logger.info(retry_info)
+                        logger.debug(retry_info)
                         nb_info.display_html(retry_info)
                         sleep(wait_seconds)
                     elif datetime_now >= stop_time and timeout > 0:

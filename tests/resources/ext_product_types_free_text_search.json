@@ -1,0 +1,59 @@
+{
+  "astraea_eod": {
+    "providers_config": {
+      "foo": {
+        "productType": "foo",
+        "metadata_mapping": {
+          "cloudCover": "$.null"
+        }
+      },
+      "bar": {
+        "productType": "bar",
+        "metadata_mapping": {
+          "cloudCover": "$.null"
+        }
+      },
+      "foobar": {
+        "productType": "foobar",
+        "metadata_mapping": {
+          "cloudCover": "$.null"
+        }
+      }
+    },
+    "product_types_config": {
+      "foo": {
+        "abstract": "abstractFOO - This is FOO. FooAndBar",
+        "instrument": "Not Available",
+        "platform": "Not Available",
+        "platformSerialIdentifier": "Not Available",
+        "processingLevel": "Not Available",
+        "keywords": "suspendisse",
+        "license": "WTFPL",
+        "title": "titleFOO - Lorem FOO collection",
+        "missionStartDate": "2012-12-12T00:00:00.000Z"
+      },
+      "bar": {
+        "abstract": "abstractBAR - This is BAR",
+        "instrument": "Not Available",
+        "platform": "Not Available",
+        "platformSerialIdentifier": "Not Available",
+        "processingLevel": "Not Available",
+        "keywords": "lectus,lectus_bar_key",
+        "license": "WTFPL",
+        "title": "titleBAR - Lorem BAR collection (FooAndBar)",
+        "missionStartDate": "2012-12-12T00:00:00.000Z"
+      },
+      "foobar": {
+        "abstract": "abstract FOOBAR - This is FOOBAR",
+        "instrument": "Not Available",
+        "platform": "Not Available",
+        "platformSerialIdentifier": "Not Available",
+        "processingLevel": "Not Available",
+        "keywords": "tortor",
+        "license": "WTFPL",
+        "title": "titleFOOBAR - Lorem FOOBAR collection",
+        "missionStartDate": "2012-12-12T00:00:00.000Z"
+      }
+    }
+  }
+}

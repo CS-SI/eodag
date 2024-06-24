@@ -209,6 +209,13 @@ WEKEO_SEARCH_ARGS = [
     "2023-01-01",
     [-180, -90, 180, 90],
 ]
+EUMETSAT_DS_SEARCH_ARGS = [
+    "eumetsat_ds",
+    "S3_OLCI_L2WFR",
+    "2021-03-11",
+    "2021-03-11",
+    [-69.3363, -75.9038, -39.3465, -68.2361],
+]
 
 
 @pytest.mark.enable_socket
@@ -245,8 +252,7 @@ class EndToEndBase(unittest.TestCase):
             search_criteria["items_per_page"] = items_per_page
         if page:
             search_criteria["page"] = page
-        self.eodag.set_preferred_provider(provider)
-        results, nb_results = self.eodag.search(**search_criteria)
+        results = self.eodag.search(provider=provider, **search_criteria)
         if offline:
             results = [
                 prod
@@ -493,21 +499,21 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(
             *ECMWF_SEARCH_ARGS, search_kwargs_dict=ECMWF_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_ads(self):
         product = self.execute_search(
             *COP_ADS_SEARCH_ARGS, search_kwargs_dict=COP_ADS_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_cds(self):
         product = self.execute_search(
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
-        expected_filename = "{}.grib".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sara(self):
@@ -517,13 +523,18 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_meteoblue(self):
         product = self.execute_search(*METEOBLUE_SEARCH_ARGS)
-        expected_filename = "{}.nc".format(product.properties["title"])
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_wekeo(self):
         product = self.execute_search(*WEKEO_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
+
+    def test_end_to_end_search_download_eumetsat_ds(self):
+        product = self.execute_search(*EUMETSAT_DS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
 
     # @unittest.skip("service unavailable for the moment")
     def test_get_quicklook_peps(self):
@@ -570,7 +581,7 @@ class TestEODagEndToEnd(EndToEndBase):
         tile_id = "31TCJ"
 
         for provider, product_type in supported_providers_product_types:
-            products, _ = self.eodag.search(
+            products = self.eodag.search(
                 productType=product_type,
                 start="2021-06-01",
                 end="2021-06-30",
@@ -783,7 +794,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
         # Search for products that are ONLINE and as small as possible
         today = datetime.date.today()
         month_span = datetime.timedelta(weeks=4)
-        search_results, _ = self.eodag.search(
+        search_results = self.eodag.search(
             productType="S2_MSI_L1C",
             start=(today - month_span).isoformat(),
             end=today.isoformat(),
@@ -834,8 +845,9 @@ class TestEODagEndToEndComplete(EndToEndBase):
         record_dir = os.path.join(self.tmp_download_path, ".downloaded")
         self.assertTrue(os.path.isdir(record_dir))
         # It must contain a file per product downloade, whose name is
-        # the MD5 hash of the product's remote location
-        expected_hash = hashlib.md5(product.remote_location.encode("utf-8")).hexdigest()
+        # the MD5 hash of the product's ``product_type`` and ``properties['id']``
+        expected_hash = product.product_type + "-" + product.properties["id"]
+        expected_hash = hashlib.md5(expected_hash.encode("utf-8")).hexdigest()
         record_file = os.path.join(record_dir, expected_hash)
         self.assertTrue(os.path.isfile(record_file))
         # Its content must be the product's remote location
@@ -890,11 +902,8 @@ class TestEODagEndToEndComplete(EndToEndBase):
         self.assertNotEqual(prev_location, product.location)
         # The location must follow the file URI scheme
         self.assertTrue(product.location.startswith("file://"))
-        # The location must point to a SAFE directory
-        self.assertTrue(product.location.endswith("SAFE"))
-        # The path must point to a SAFE directory
+        # The path must point to a directory
         self.assertTrue(os.path.isdir(product_dir_path))
-        self.assertTrue(product_dir_path.endswith("SAFE"))
 
         # The downloaded & extracted product should not be downloaded again if
         # the download method is executed again
@@ -971,7 +980,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
     def test_end_to_end_wrong_apikey_search_aws_eos(self):
         self.eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
@@ -999,7 +1008,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 user_conf_file_path=os.path.join(TEST_RESOURCES_PATH, "user_conf.yml")
             )
             eodag.set_preferred_provider(AWSEOS_SEARCH_ARGS[0])
-            results, nb_results = eodag.search(
+            results = eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(["productType", "start", "end", "geom"], AWSEOS_SEARCH_ARGS[1:])
@@ -1035,7 +1044,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(USGS_RECENT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1049,7 +1058,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(METEOBLUE_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1063,7 +1072,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(HYDROWBEB_NEXT_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1077,7 +1086,7 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
         # It should already fail while searching for the products.
         self.eodag.set_preferred_provider(WEKEO_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
-            results, _ = self.eodag.search(
+            self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
@@ -1086,3 +1095,8 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                     )
                 ),
             )
+
+    def test_end_to_end_wrong_credentials_search_eumetsat_ds(self):
+        product = self.execute_search(*EUMETSAT_DS_SEARCH_ARGS)
+        with self.assertRaises(AuthenticationError):
+            self.eodag.download(product)

@@ -22,7 +22,6 @@ import os
 import pathlib
 import shutil
 import tempfile
-import urllib.parse
 import zipfile
 
 import geojson
@@ -69,7 +68,7 @@ class TestEOProduct(EODagTestCase):
             self._dummy_product(properties={"geometry": NOT_AVAILABLE})
 
         product = self._dummy_product(
-            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": "0 0 1 1"}
+            properties={"geometry": NOT_AVAILABLE, "defaultGeometry": (0, 0, 1, 1)}
         )
         self.assertEqual(product.geometry.bounds, (0.0, 0.0, 1.0, 1.0))
 
@@ -384,12 +383,14 @@ class TestEOProduct(EODagTestCase):
             # Check that the extracted dir has at least one file, there are more
             # but that should be enough.
             self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
-            # The zip file should is around
-            product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
+            # The zip file should be around
+            product_zip_file = product_dir_path.with_suffix(".zip")
             self.assertTrue(product_zip_file.is_file)
         finally:
             # Teardown
             self._clean_product(product_dir_path)
+
+    # TODO: add a test on tarfiles extraction
 
     def test_eoproduct_download_http_dynamic_options(self):
         """eoproduct.download must accept the download options to be set automatically"""
@@ -426,7 +427,7 @@ class TestEOProduct(EODagTestCase):
             # but that should be enough.
             self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
             # The downloaded zip file is still around
-            product_zip_file = product_dir_path.with_suffix(".SAFE.zip")
+            product_zip_file = product_dir_path.with_suffix(".zip")
             self.assertTrue(product_zip_file.is_file)
         finally:
             # Teardown (all the created files are within outputs_prefix)
@@ -497,9 +498,7 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertEqual(
             downloadable_product.properties["otherProperty"],
-            urllib.parse.quote(
-                f"{downloadable_product.downloader.config.outputs_prefix}/also/resolved"
-            ),
+            f"{downloadable_product.downloader.config.outputs_prefix}/also/resolved",
         )
 
     def test_eoproduct_register_downloader_resolve_ignored(self):
@@ -513,23 +512,23 @@ class TestEOProduct(EODagTestCase):
                     properties=dict(
                         self.eoproduct_props,
                         **{
-                            "downloadLink": "%257B/cannot/be/resolved",
-                            "otherProperty": "%/%s/neither/resolved",
+                            "downloadLink": "%(257B/cannot/be/resolved",
+                            "otherProperty": "%(/%s/neither/resolved",
                         },
                     )
                 )
             )
-            self.assertEqual(downloadable_product.location, "%257B/cannot/be/resolved")
+            self.assertEqual(downloadable_product.location, "%(257B/cannot/be/resolved")
             self.assertEqual(
-                downloadable_product.remote_location, "%257B/cannot/be/resolved"
+                downloadable_product.remote_location, "%(257B/cannot/be/resolved"
             )
             self.assertEqual(
                 downloadable_product.properties["downloadLink"],
-                "%257B/cannot/be/resolved",
+                "%(257B/cannot/be/resolved",
             )
             self.assertEqual(
                 downloadable_product.properties["otherProperty"],
-                "%/%s/neither/resolved",
+                "%(/%s/neither/resolved",
             )
 
             needed_logs = [

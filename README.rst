@@ -3,31 +3,35 @@
 
 |
 
-.. image:: https://badge.fury.io/py/eodag.svg
+.. |pypi-badge| image:: https://badge.fury.io/py/eodag.svg
     :target: https://badge.fury.io/py/eodag
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/eodag
+.. |conda-badge| image:: https://img.shields.io/conda/vn/conda-forge/eodag
     :target: https://anaconda.org/conda-forge/eodag
 
-.. image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
+.. |rtd-badge| image:: https://readthedocs.org/projects/eodag/badge/?version=latest&style=flat
     :target: https://eodag.readthedocs.io/en/latest/
 
-.. image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
+.. |gha-badge| image:: https://github.com/CS-SI/eodag/actions/workflows/test.yml/badge.svg
     :target: https://github.com/CS-SI/eodag/actions
 
-.. image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
+.. |ghi-badge| image:: https://img.shields.io/github/issues/CS-SI/eodag.svg
     :target: https://github.com/CS-SI/eodag/issues
 
-.. image:: https://mybinder.org/badge_logo.svg
+.. |binder-badge| image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/git/https%3A%2F%2Fgithub.com%2FCS-SI%2Feodag.git/master?filepath=docs%2Fnotebooks%2Fintro_notebooks.ipynb
+
+|pypi-badge| |conda-badge| |rtd-badge| |gha-badge| |ghi-badge| |binder-badge|
 
 |
 
-.. image:: https://img.shields.io/pypi/l/eodag.svg
+.. |license-badge| image:: https://img.shields.io/pypi/l/eodag.svg
     :target: https://pypi.org/project/eodag/
 
-.. image:: https://img.shields.io/pypi/pyversions/eodag.svg
+.. |versions-badge| image:: https://img.shields.io/pypi/pyversions/eodag.svg
     :target: https://pypi.org/project/eodag/
+
+|license-badge| |versions-badge|
 
 |
 
@@ -80,6 +84,9 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
    conda install -c conda-forge eodag
 
+**[New in v3.0.0]** Please note that EODAG comes with a minimal set of dependencies. If you want more features, please install using one of
+the `available extras <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_.
+
 Usage
 =====
 
@@ -98,7 +105,7 @@ Example usage for interacting with the api in your Python code:
 
     dag = EODataAccessGateway()
 
-    search_results, total_count = dag.search(
+    search_results = dag.search(
         productType='S2_MSI_L1C',
         geom={'lonmin': 1, 'latmin': 43.5, 'lonmax': 2, 'latmax': 44}, # accepts WKT polygons, shapely.geometry, ...
         start='2021-01-01',
@@ -112,10 +119,13 @@ This will search for Sentinel 2 level-1C products on the default provider and re
 an estimated total number of products matching the search criteria. And then it will download these products. Please
 check the `Python API User Guide <https://eodag.readthedocs.io/en/latest/api_user_guide.html>`_ for more details.
 
+**[New in v3.0.0]** `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_
+method now returns only a single ``SearchResult`` instead of a 2 values tuple.
+
 STAC REST API
 -------------
 
-An eodag instance can be exposed through a STAC compliant REST api from the command line:
+An eodag instance can be exposed through a STAC compliant REST api from the command line (``eodag[server]`` needed):
 
 .. code-block:: bash
 
@@ -173,7 +183,7 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
 
 .. code-block:: bash
 
-    docker run -p 5000:5000 --rm csspace/eodag-server:2.12.1
+    docker run -p 5000:5000 --rm csspace/eodag-server:3.0.0b1
 
 You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
 Simply run:

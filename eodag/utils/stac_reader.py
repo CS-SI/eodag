@@ -27,8 +27,9 @@ from urllib.request import urlopen
 import concurrent.futures
 import orjson
 import pystac
+from pystac.stac_object import STACObjectType
 
-from eodag.utils import HTTP_REQ_TIMEOUT
+from eodag.utils import HTTP_REQ_TIMEOUT, get_ssl_context
 from eodag.utils.exceptions import STACOpenerError
 
 logger = logging.getLogger("eodag.utils.stac_reader")
@@ -38,10 +39,11 @@ class _TextOpener:
     """Exhaust read methods for pystac.StacIO in the order defined
     in the openers list"""
 
-    def __init__(self, timeout: int) -> None:
+    def __init__(self, timeout: int, ssl_verify: bool) -> None:
         self.openers = [self.read_local_json, self.read_http_remote_json]
         # Only used by read_http_remote_json
         self.timeout = timeout
+        self.ssl_verify = ssl_verify
 
     @staticmethod
     def read_local_json(url: str, as_json: bool = False) -> Any:
@@ -54,13 +56,14 @@ class _TextOpener:
                 with open(url) as f:
                     return f.read()
         except OSError:
-            logger.debug("read_local_json is not the right STAC opener")
-            raise STACOpenerError
+            raise STACOpenerError("read_local_json is not the right STAC opener")
 
     def read_http_remote_json(self, url: str, as_json: bool = False) -> Any:
         """Read JSON remote HTTP file"""
+        ssl_ctx = get_ssl_context(self.ssl_verify)
+
         try:
-            res = urlopen(url, timeout=self.timeout)
+            res = urlopen(url, timeout=self.timeout, context=ssl_ctx)
             content_type = res.getheader("Content-Type")
             if content_type is None:
                 encoding = "utf-8"
@@ -79,17 +82,19 @@ class _TextOpener:
                     f"{url} with a timeout of {self.timeout} seconds"
                 ) from None
             else:
-                logger.debug("read_http_remote_json is not the right STAC opener")
-                raise STACOpenerError
+                raise STACOpenerError(
+                    "read_http_remote_json is not the right STAC opener"
+                )
 
     def __call__(self, url: str, as_json: bool = False) -> Any:
+        openers = self.openers[:]
         res = None
-        while self.openers:
+        while openers:
             try:
-                res = self.openers[0](url, as_json)
+                res = openers[0](url, as_json)
             except STACOpenerError:
                 # Remove the opener that just failed
-                self.openers.pop(0)
+                openers.pop(0)
             if res is not None:
                 break
         if res is None:
@@ -102,6 +107,7 @@ def fetch_stac_items(
     recursive: bool = False,
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
+    ssl_verify: bool = True,
 ) -> List[Dict[str, Any]]:
     """Fetch STAC item from a single item file or items from a catalog.
 
@@ -112,14 +118,16 @@ def fetch_stac_items(
     :param max_connections: (optional) Maximum number of connections for HTTP requests
     :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
-    :type timeout: float
+    :type timeout: int
+    :param ssl_verify: (optional) SSL Verification for HTTP request
+    :type ssl_verify: bool
     :returns: The items found in `stac_path`
     :rtype: :class:`list`
     """
 
     # URI opener used by PySTAC internally, instantiated here
     # to retrieve the timeout.
-    _text_opener = _TextOpener(timeout)
+    _text_opener = _TextOpener(timeout, ssl_verify)
     pystac.StacIO.read_text = _text_opener
 
     stac_obj = pystac.read_file(stac_path)
@@ -142,6 +150,8 @@ def _fetch_stac_items_from_catalog(
     _text_opener: Callable[[str, bool], Any],
 ) -> List[Any]:
     """Fetch items from a STAC catalog"""
+    items: List[Dict[Any, Any]] = []
+
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
     extensions: Optional[Union[List[str], str]] = getattr(cat, "stac_extensions", None)
@@ -151,8 +161,7 @@ def _fetch_stac_items_from_catalog(
             items = [feature for feature in cat.to_dict()["features"]]
             return items
 
-    # Making the links absolutes allow for both relative and absolute links
-    # to be handled.
+    # Making the links absolutes allow for both relative and absolute links to be handled.
     if not recursive:
         hrefs: List[Optional[str]] = [
             link.get_absolute_href() for link in cat.get_item_links()
@@ -164,7 +173,6 @@ def _fetch_stac_items_from_catalog(
                 link.get_absolute_href() for link in parent_catalog.get_item_links()
             ]
 
-    items: List[Dict[Any, Any]] = []
     if hrefs:
         logger.debug("Fetching %s items", len(hrefs))
         with concurrent.futures.ThreadPoolExecutor(
@@ -176,5 +184,81 @@ def _fetch_stac_items_from_catalog(
             for future in concurrent.futures.as_completed(future_to_href):
                 item = future.result()
                 if item:
-                    items.append(future.result())
+                    items.append(item)
     return items
+
+
+def fetch_stac_collections(
+    stac_path: str,
+    collection: Optional[str] = None,
+    max_connections: int = 100,
+    timeout: int = HTTP_REQ_TIMEOUT,
+    ssl_verify: bool = True,
+) -> List[Dict[str, Any]]:
+    """Fetch STAC collection(s) from a catalog.
+
+    :param stac_path: A STAC object filepath
+    :type stac_path: str
+    :param collection: the collection to fetch
+    :type collection: Optional[str]
+    :param max_connections: (optional) Maximum number of connections for HTTP requests
+    :type max_connections: int
+    :param timeout: (optional) Timeout in seconds for each internal HTTP request
+    :type timeout: int
+    :param ssl_verify: (optional) SSL Verification for HTTP request
+    :type ssl_verify: bool
+    :returns: The collection(s) found in `stac_path`
+    :rtype: :class:`list`
+    """
+
+    # URI opener used by PySTAC internally, instantiated here to retrieve the timeout.
+    _text_opener = _TextOpener(timeout, ssl_verify)
+    pystac.StacIO.read_text = _text_opener
+
+    stac_obj = pystac.read_file(stac_path)
+    if isinstance(stac_obj, pystac.Catalog):
+        return _fetch_stac_collections_from_catalog(
+            stac_obj, collection, max_connections, _text_opener
+        )
+    else:
+        raise STACOpenerError(f"{stac_path} must be a STAC catalog")
+
+
+def _fetch_stac_collections_from_catalog(
+    cat: pystac.Catalog,
+    collection: Optional[str],
+    max_connections: int,
+    _text_opener: Callable[[str, bool], Any],
+) -> List[Any]:
+    """Fetch collections from a STAC catalog"""
+    collections: List[Dict[Any, Any]] = []
+
+    # Making the links absolutes allow for both relative and absolute links to be handled.
+    hrefs: List[Optional[str]] = [
+        link.get_absolute_href()
+        for link in cat.get_child_links()
+        if collection is not None and link.title == collection
+    ]
+    if len(hrefs) == 0:
+        hrefs = [link.get_absolute_href() for link in cat.get_child_links()]
+
+    if hrefs:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_connections
+        ) as executor:
+            future_to_href = (
+                executor.submit(_text_opener, str(href), True) for href in hrefs
+            )
+            for future in concurrent.futures.as_completed(future_to_href):
+                fetched_collection = future.result()
+                if (
+                    fetched_collection
+                    and fetched_collection["type"] == STACObjectType.COLLECTION
+                    and (
+                        collection is None
+                        or collection is not None
+                        and fetched_collection.get("id") == collection
+                    )
+                ):
+                    collections.append(fetched_collection)
+    return collections

@@ -40,6 +40,8 @@ to each provider supported by ``eodag``:
   Then go to your profile and use from the section named "API key" use *UID* as *username* and *API Key* as *password* in eodag credentials.
   EODAG can be used to request for public datasets, you can browse them `here <https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset>`__.
 
+* ``cop_marine``: no account is required
+
 * ``sara``: create an account `here <https://copernicus.nci.org.au/sara.client/#/register>`__, then use your email as `username` in eodag credentials.
 
 * ``meteoblue``: eodag uses `dataset API <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_
@@ -111,7 +113,7 @@ to each provider supported by ``eodag``:
 
   * Add your WEkEO credentials (*username*, *password*) to the user configuration file.
 
-  * You will then need to accept Copernicus terms and conditions (for once). To do this, follow the
+  * Depending on which data you want to retrieve, you will then need to accept terms and conditions (for once). To do this, follow the
     `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
     or run the following commands in your terminal.
 
@@ -119,16 +121,42 @@ to each provider supported by ``eodag``:
 
     .. code-block:: bash
 
-      curl -X GET --header "Authorization: Basic $(echo USERNAME:PASSWORD | base64)" "https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken"
+      curl -X POST --data '{"username": "USERNAME", "password": "PASSWORD"}' -H "Content-Type: application/json" "https://gateway.prod.wekeo2.eu/hda-broker/gettoken"
 
     The WEkEO API will respond with a token:
 
     .. code-block:: bash
 
-      { "access_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy" }
+      { "access_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy",
+        "refresh_token": "xxxxxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy",
+        "scope":"openid",
+        "id_token":"token",
+        "token_type":"Bearer",
+        "expires_in":3600
+      }
 
-  * Accept terms and conditions by running this command and replacing <access_token>:
+  * Accept terms and conditions by running this command and replacing <access_token> and <licence_name>:
 
     .. code-block:: bash
 
-      curl --request PUT --header 'accept: application/json' --header 'authorization: <access_token>' --data 'accepted=true' https://wekeo-broker.prod.wekeo2.eu/databroker/termsaccepted/Copernicus_General_License
+      curl --request PUT --header 'accept: application/json' --header 'Authorization: Bearer <access_token>' https://gateway.prod.wekeo2.eu/hda-broker/api/v1/termsaccepted/<licence_name>
+
+    The licence name depends on which data you want to retrieve. To use all datasets available in wekeo, the following licences have to be accepted:
+
+    * EUMETSAT_Copernicus_Data_Licence
+    * Copernicus_Land_Monitoring_Service_Data_Policy
+    * Copernicus_Sentinel_License
+    * Copernicus_ECMWF_License
+    * Copernicus_DEM_Instance_COP-DEM-GLO-30-F_Global_30m
+    * Copernicus_DEM_Instance_COP-DEM-GLO-90-F_Global_90m
+
+* ``wekeo_cmems``: The registration procedure is the same as for ``wekeo``. The licence that has to be accepted to access the Copernicus Marine data is ``Copernicus_Marine_Service_Product_License``.
+
+* ``dedt_lumi``: Create an account on `DestinE <https://platform.destine.eu/>`__, then use your `username`, `password` in eodag credentials.
+
+* ``dedl``: You need a `DESP OpenID` account in order to authenticate. To create one go
+  `here <https://hda.data.destination-earth.eu/ui>`__, then click on `Sign In`, select the identity provider
+  `DESP OpenID` and then click `Authenticate`. Finally click on `Register` to create a new account.
+
+* ``eumetsat_ds``: create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
+  Then use the consumer key as `username` and the consumer secret as `password` from `here <https://api.eumetsat.int/api-key/>`__ in eodag credentials.

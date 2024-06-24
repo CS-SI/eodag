@@ -17,6 +17,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from datetime import datetime
 from importlib.metadata import metadata
 from typing import Dict
 
@@ -39,7 +40,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "sphinx_copybutton",
-    "sphinxcontrib.jquery",
 ]
 
 # Notebook integration parameters
@@ -80,7 +80,7 @@ master_doc = "index"
 # General information about the project.
 project = metadata("eodag")["Name"]
 author = metadata("eodag")["Author"]
-copyright = "2018-2022, CS GROUP - France, https://www.csgroup.eu"
+copyright = f"2018-{datetime.now().year}, CS GROUP - France, https://www.csgroup.eu"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -124,19 +124,6 @@ html_theme = "sphinx_book_theme"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {
-#     "logo": "eodag_logo.png",
-#     "logo_name": False,
-#     "fixed_sidebar": True,
-#     "show_powered_by": False,
-#     "github_user": "CS-SI",
-#     "github_repo": "eodag",
-#     "github_type": "star",
-#     "github_banner": True,
-#     "page_width": "1140px",
-#     "pre_bg": "#eeffcc",
-# }
 
 html_theme_options = {
     "repository_url": "https://github.com/CS-SI/eodag",
@@ -146,10 +133,14 @@ html_theme_options = {
     "repository_branch": "develop",
     "path_to_docs": "docs",
     "use_download_button": True,
-    "extra_navbar": "",
+    "logo": {
+        "image_light": "_static/eodag_logo_160.png",
+        "image_dark": "_static/eodag_logo_160r.png",
+    },
+    "show_toc_level": 2,
 }
 
-html_logo = "_static/eodag_logo.png"
+html_logo = "_static/eodag_logo_160.png"
 html_title = ""
 
 html_favicon = "_static/favicon-32x32.png"
@@ -163,13 +154,9 @@ html_static_path = ["_static"]
 # or fully qualified paths (eg. https://...)
 html_css_files = [
     "custom.css",
-    "https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css",
 ]
 
-html_js_files = [
-    "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
-    "product_types.js",
-]
+html_js_files = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -208,7 +195,7 @@ latex_documents = [
         master_doc,
         "eodag.tex",
         "eodag Documentation",
-        "CS GROUP - France (CSSI)",
+        "CS GROUP - France",
         "manual",
     )
 ]

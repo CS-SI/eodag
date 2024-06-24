@@ -81,7 +81,6 @@ class TestSearchStacStatic(unittest.TestCase):
                 download:
                     type: HTTPDownload
                     base_uri: https://fake-endpoint
-                    flatten_top_dirs: True
         """
         )
         self.dag.set_preferred_provider(self.static_stac_provider)
@@ -93,9 +92,15 @@ class TestSearchStacStatic(unittest.TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_load_child(self, mock_fetch_product_types_list):
+    def test_search_stac_static_load_child(
+        self, mock_fetch_product_types_list, mock_discover_produc_types
+    ):
         """load_stac_items from child catalog must provide items"""
         with pytest.warns(
             DeprecationWarning,
@@ -111,10 +116,14 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(items[0].product_type, "S2_MSI_L1C")
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_search_stac_static_load_root_not_recursive(
-        self, mock_fetch_product_types_list
+        self, mock_fetch_product_types_list, mock_discover_product_types
     ):
         """load_stac_items from root must provide an empty list when no recursive"""
         with pytest.warns(
@@ -148,16 +157,22 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search all items"""
-        items, nb = self.dag.search()
-        self.assertEqual(len(items), self.root_cat_len)
-        self.assertEqual(nb, self.root_cat_len)
-        for item in items:
+        search_result = self.dag.search(count=True)
+        self.assertEqual(len(search_result), self.root_cat_len)
+        self.assertEqual(search_result.number_matched, self.root_cat_len)
+        for item in search_result:
             self.assertEqual(item.provider, self.static_stac_provider)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_load_item(self, mock_fetch_product_types_list):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    def test_search_stac_static_load_item(
+        self, mock_fetch_product_types_list, mock_discover_product_types
+    ):
         """load_stac_items from a single item must provide it"""
         with pytest.warns(
             DeprecationWarning,
@@ -171,10 +186,14 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(item[0].product_type, "S2_MSI_L1C")
 
     @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_search_stac_static_load_item_updated_provider(
-        self, mock_fetch_product_types_list
+        self, mock_fetch_product_types_list, mock_discover_product_types
     ):
         """load_stac_items from a single item using updated provider"""
         with pytest.warns(
@@ -262,10 +281,10 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_date(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by date"""
-        filtered_items, nb = self.dag.search(start="2018-01-01", end="2019-01-01")
-        self.assertEqual(len(filtered_items), self.child_cat_len)
-        self.assertEqual(nb, self.child_cat_len)
-        for item in filtered_items:
+        filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01", count=True)
+        self.assertEqual(len(filtered_sr), self.child_cat_len)
+        self.assertEqual(filtered_sr.number_matched, self.child_cat_len)
+        for item in filtered_sr:
             self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
     def test_search_stac_static_crunch_filter_overlap(self):
@@ -333,11 +352,9 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_geom(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by geometry"""
-        items, nb = self.dag.search(
-            geom=self.extent_big,
-        )
-        self.assertEqual(len(items), 3)
-        self.assertEqual(nb, 3)
+        search_result = self.dag.search(geom=self.extent_big, count=True)
+        self.assertEqual(len(search_result), 3)
+        self.assertEqual(search_result.number_matched, 3)
 
     def test_search_stac_static_crunch_filter_property(self):
         """load_stac_items from root and filter by property"""
@@ -371,18 +388,18 @@ class TestSearchStacStatic(unittest.TestCase):
     )
     def test_search_stac_static_by_property(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by property"""
-        items, nb = self.dag.search(orbitNumber=110)
-        self.assertEqual(len(items), 3)
-        self.assertEqual(nb, 3)
+        search_result = self.dag.search(orbitNumber=110, count=True)
+        self.assertEqual(len(search_result), 3)
+        self.assertEqual(search_result.number_matched, 3)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_search_stac_static_by_cloudcover(self, mock_fetch_product_types_list):
         """Use StaticStacSearch plugin to search by cloud cover"""
-        items, nb = self.dag.search(cloudCover=10)
-        self.assertEqual(len(items), 1)
-        self.assertEqual(nb, 1)
+        search_result = self.dag.search(cloudCover=10, count=True)
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 1)
 
     def test_search_stac_static_crunch_filter_lastest_by_name(self):
         """load_stac_items from root and filter by name"""

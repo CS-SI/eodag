@@ -33,6 +33,7 @@ from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,
     ONLINE_STATUS,
+    STAGING_STATUS,
     properties_from_json,
     NOT_AVAILABLE,
 )
@@ -63,11 +64,12 @@ from eodag.plugins.download.base import (
 )
 from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.utils import (
+    DEFAULT_MISSION_START_DATE,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -88,7 +90,9 @@ from eodag.utils import (
     cached_parse,
     sanitize,
     parse_header,
+    get_ssl_context,
 )
+from eodag.utils.requests import fetch_json
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,
@@ -107,3 +111,4 @@ from eodag.utils.exceptions import (
 from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH
 from usgs.api import USGSAuthExpiredError, USGSError
+from usgs.api import TMPFILE as USGS_TMPFILE

@@ -29,6 +29,7 @@ from tests.context import (
     NoMatchingProductType,
     RequestError,
     USGSError,
+    ValidationError,
 )
 from tests.utils import mock
 
@@ -77,9 +78,14 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # QueryStringSearch / peps
         self.dag.set_preferred_provider("peps")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, productType="foo", raise_errors=True
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(
+            RequestError, next, self.dag.search_iter_page(productType="foo")
+        )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
@@ -147,9 +153,14 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # ODataV4Search / onda
         self.dag.set_preferred_provider("onda")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, productType="foo", raise_errors=True
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(
+            RequestError, next, self.dag.search_iter_page(productType="foo")
+        )
 
     @mock.patch(
         "eodag.plugins.apis.usgs.api.scene_search", autospec=True, side_effect=USGSError
@@ -225,12 +236,19 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            [
+                "peps",
+                "cop_dataspace",
+                "creodias",
+                "onda",
+                "sara",
+                "wekeo",
+            ],
         )
 
-        products, count = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), 0)
-        self.assertEqual(count, 0)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), 0)
+        self.assertEqual(search_result.number_matched, 0)
         self.assertEqual(
             mock_get.call_count + mock_post.call_count + mock_request.call_count,
             len(available_providers),
@@ -253,7 +271,14 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            [
+                "peps",
+                "cop_dataspace",
+                "creodias",
+                "onda",
+                "sara",
+                "wekeo",
+            ],
         )
 
         self.assertRaises(
@@ -280,7 +305,14 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            [
+                "peps",
+                "cop_dataspace",
+                "creodias",
+                "onda",
+                "sara",
+                "wekeo",
+            ],
         )
 
         # peps comes 1st by priority
@@ -293,8 +325,8 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_get.return_value.json.return_value = peps_resp_search_file_content
 
-        products, _ = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), peps_resp_search_results_count)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), peps_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
             1,
@@ -313,6 +345,8 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
+        # fail on creodias, then succeeds on onda (count and search)
+        side_effect=[RequestException, mock.DEFAULT, mock.DEFAULT],
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.get",
@@ -327,7 +361,14 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            [
+                "peps",
+                "cop_dataspace",
+                "creodias",
+                "onda",
+                "sara",
+                "wekeo",
+            ],
         )
 
         # onda comes 3rd by priority
@@ -344,8 +385,8 @@ class TestCoreSearch(unittest.TestCase):
             onda_resp_search_file_content,
         ]
 
-        products, _ = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), onda_resp_search_results_count)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), onda_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
             4,
@@ -362,7 +403,14 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            [
+                "peps",
+                "cop_dataspace",
+                "creodias",
+                "onda",
+                "sara",
+                "wekeo",
+            ],
         )
 
         mock_query.side_effect = [
@@ -372,9 +420,9 @@ class TestCoreSearch(unittest.TestCase):
             ([EOProduct("onda", dict(geometry="POINT (0 0)", id="a"))], 1),
         ]
 
-        products, count = self.dag.search(productType="S1_SAR_SLC")
-        self.assertEqual(len(products), 1)
-        self.assertEqual(count, 1)
+        search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
+        self.assertEqual(len(search_result), 1)
+        self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
             mock_query.call_count, 4, "4 provider out of 6 must have been requested"
         )
@@ -389,14 +437,23 @@ class TestCoreSearch(unittest.TestCase):
         available_providers = self.dag.available_providers(product_type)
         self.assertListEqual(
             available_providers,
-            ["cop_dataspace", "creodias", "onda", "peps", "sara", "wekeo"],
+            [
+                "peps",
+                "cop_dataspace",
+                "creodias",
+                "onda",
+                "sara",
+                "wekeo",
+            ],
         )
 
         mock_query.return_value = ([], 0)
 
-        products, count = self.dag.search(productType="S1_SAR_SLC", provider="onda")
-        self.assertEqual(len(products), 0)
-        self.assertEqual(count, 0)
+        search_result = self.dag.search(
+            productType="S1_SAR_SLC", provider="onda", count=True
+        )
+        self.assertEqual(len(search_result), 0)
+        self.assertEqual(search_result.number_matched, 0)
         self.assertEqual(
             mock_query.call_count,
             1,

@@ -40,12 +40,17 @@ class SearchResult(UserList):
 
     :param products: A list of products resulting from a search
     :type products: list(:class:`~eodag.api.product._product.EOProduct`)
+    :param number_matched: (optional) the estimated total number of matching results
+    :type number_matched: Optional[int]
     """
 
     data: List[EOProduct]
 
-    def __init__(self, products: List[EOProduct]) -> None:
+    def __init__(
+        self, products: List[EOProduct], number_matched: Optional[int] = None
+    ) -> None:
         super(SearchResult, self).__init__(products)
+        self.number_matched = number_matched
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -168,3 +173,18 @@ class SearchResult(UserList):
         See https://gist.github.com/sgillies/2217756
         """
         return self.as_geojson_object()
+
+
+class RawSearchResult(UserList):
+    """An object representing a collection of raw/unparsed search results obtained from a provider.
+
+    :param results: A list of raw/unparsed search results
+    :type results: List[Any]
+    """
+
+    data: List[Any]
+    query_params: Dict[str, Any]
+    product_type_def_params: Dict[str, Any]
+
+    def __init__(self, results: List[Any]) -> None:
+        super(RawSearchResult, self).__init__(results)

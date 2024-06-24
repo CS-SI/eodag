@@ -17,16 +17,16 @@
 # limitations under the License.
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
 import requests
 from requests import RequestException
+from requests.auth import AuthBase
 
 from eodag.api.product.metadata_mapping import OFFLINE_STATUS, ONLINE_STATUS
 from eodag.plugins.download.base import Download
@@ -46,6 +46,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     NotAvailableError,
     RequestError,
 )
@@ -53,6 +54,8 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 logger = logging.getLogger("eodag.download.s3rest")
 
@@ -76,10 +79,7 @@ class S3RestDownload(Download):
         * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status_method`` (str) - (optional) status HTTP request method, GET (default) or POST
-        * ``config.order_status_percent`` (str) - (optional) progress percentage key in obtained status response
-        * ``config.order_status_success`` (dict) - (optional) key/value identifying an error success
-        * ``config.order_status_on_success`` (dict) - (optional) edit or add new product properties
+        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
 
     :type config: :class:`~eodag.config.PluginConfig`
     """
@@ -91,18 +91,18 @@ class S3RestDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Union[str, bool, Dict[str, Any]],
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download method for S3 REST API.
 
         :param product: The EO product to download
         :type product: :class:`~eodag.api.product._product.EOProduct`
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
+        :param auth: (optional) authenticated object
+        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
@@ -117,6 +117,9 @@ class S3RestDownload(Download):
         :returns: The absolute path to the downloaded product in the local filesystem
         :rtype: str
         """
+        if auth is not None and not isinstance(auth, AuthBase):
+            raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
+
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -135,10 +138,10 @@ class S3RestDownload(Download):
         @self._download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
-            auth: PluginConfig,
+            auth: AuthBase,
             progress_callback: ProgressCallback,
             ordered_message: str,
-            **kwargs: Any,
+            **kwargs: Unpack[DownloadConf],
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):
@@ -172,8 +175,16 @@ class S3RestDownload(Download):
 
             # get nodes/files list contained in the bucket
             logger.debug("Retrieving product content from %s", nodes_list_url)
+
+            ssl_verify = getattr(self.config, "ssl_verify", True)
+            timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+
             bucket_contents = requests.get(
-                nodes_list_url, auth=auth, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+                nodes_list_url,
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=timeout,
+                verify=ssl_verify,
             )
             try:
                 bucket_contents.raise_for_status()
@@ -252,8 +263,9 @@ class S3RestDownload(Download):
                         "Unable to create records directory. Got:\n%s", tb.format_exc()
                     )
             # check if product has already been downloaded
-            url_hash = hashlib.md5(product.remote_location.encode("utf-8")).hexdigest()
-            record_filename = os.path.join(download_records_dir, url_hash)
+            record_filename = os.path.join(
+                download_records_dir, self.generate_record_hash(product)
+            )
             if os.path.isfile(record_filename) and os.path.exists(product_local_path):
                 product.location = path_to_uri(product_local_path)
                 return product_local_path
@@ -303,6 +315,7 @@ class S3RestDownload(Download):
                     auth=auth,
                     headers=USER_AGENT,
                     timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
                 ) as stream:
                     try:
                         stream.raise_for_status()

@@ -18,8 +18,9 @@
 """EODAG types"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
 
+from annotated_types import Gt, Lt
 from pydantic import Field
 from pydantic.fields import FieldInfo
 
@@ -56,13 +57,51 @@ def json_type_to_python(json_type: Union[str, List[str]]) -> type:
         return type(None)
 
 
-def python_type_to_json(python_type: type) -> Optional[Union[str, List[str]]]:
+def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> Tuple[str, Any]:
+    """
+    checks if the value from an Annotated object is a minimum or maximum
+    :param type_info: info from Annotated
+    :return: "min" or "max"
+    """
+    if isinstance(type_info, Gt):
+        return "min", type_info.gt
+    if isinstance(type_info, Lt):
+        return "max", type_info.lt
+    return "", None
+
+
+def _get_type_info_from_annotated(
+    annotated_type: Annotated[type, Any]
+) -> Dict[str, Any]:
+    """
+    retrieves type information from an annotated object
+    :param annotated_type: annotated object
+    :return: dict containing type and min/max if available
+    """
+    type_args = get_args(annotated_type)
+    type_data = {
+        "type": list(JSON_TYPES_MAPPING.keys())[
+            list(JSON_TYPES_MAPPING.values()).index(type_args[0])
+        ]
+    }
+    if len(type_args) >= 2:
+        min_or_max, value = _get_min_or_max(type_args[1])
+        type_data[min_or_max] = value
+    if len(type_args) > 2:
+        min_or_max, value = _get_min_or_max(type_args[2])
+        type_data[min_or_max] = value
+    return type_data
+
+
+def python_type_to_json(
+    python_type: type,
+) -> Optional[Union[str, List[Dict[str, Any]]]]:
     """Get json type from python https://spec.openapis.org/oas/v3.1.0#data-types
 
     >>> python_type_to_json(int)
     'integer'
     >>> python_type_to_json(Union[float, str])
-    ['number', 'string']
+    [{'type': 'number'}, {'type': 'string'}]
 
     :param python_type: the python type
     :returns: the json type
@@ -70,18 +109,25 @@ def python_type_to_json(python_type: type) -> Optional[Union[str, List[str]]]:
     if get_origin(python_type) is Union:
         json_type = list()
         for single_python_type in get_args(python_type):
+            type_data = {}
             if single_python_type in JSON_TYPES_MAPPING.values():
                 # JSON_TYPES_MAPPING key from given value
                 single_json_type = list(JSON_TYPES_MAPPING.keys())[
                     list(JSON_TYPES_MAPPING.values()).index(single_python_type)
                 ]
-                json_type.append(single_json_type)
+                type_data["type"] = single_json_type
+                json_type.append(type_data)
+            elif get_origin(single_python_type) == Annotated:
+                type_data = _get_type_info_from_annotated(single_python_type)
+                json_type.append(type_data)
         return json_type
     elif python_type in JSON_TYPES_MAPPING.values():
         # JSON_TYPES_MAPPING key from given value
         return list(JSON_TYPES_MAPPING.keys())[
             list(JSON_TYPES_MAPPING.values()).index(python_type)
         ]
+    elif get_origin(python_type) == Annotated:
+        return [_get_type_info_from_annotated(python_type)]
     else:
         return None
 
@@ -99,7 +145,9 @@ def json_field_definition_to_python(
     ...         'title': 'Foo parameter'
     ...     }
     ... )
-    >>> str(result).replace('_extensions', '') # python3.8 compatibility
+    >>> res_repr = str(result).replace('_extensions', '') # python3.8 compatibility
+    >>> res_repr = res_repr.replace(', default=None', '') # pydantic >= 2.7.0 compatibility
+    >>> res_repr
     "typing.Annotated[bool, FieldInfo(annotation=NoneType, required=False, title='Foo parameter')]"
 
     :param json_field_definition: the json field definition
@@ -159,13 +207,39 @@ def python_field_definition_to_json(
     # enum & type
     if get_origin(python_field_args[0]) is Literal:
         enum_args = get_args(python_field_args[0])
-        json_field_definition["type"] = python_type_to_json(type(enum_args[0]))
+        type_data = python_type_to_json(type(enum_args[0]))
+        if isinstance(type_data, str):
+            json_field_definition["type"] = type_data
+        else:
+            json_field_definition["type"] = [row["type"] for row in type_data]
+            json_field_definition["min"] = [
+                row["min"] if "min" in row else None for row in type_data
+            ]
+            json_field_definition["max"] = [
+                row["max"] if "max" in row else None for row in type_data
+            ]
         json_field_definition["enum"] = list(enum_args)
     # type
     else:
         field_type = python_type_to_json(python_field_args[0])
-        if field_type is not None:
-            json_field_definition["type"] = python_type_to_json(python_field_args[0])
+        if isinstance(field_type, str):
+            json_field_definition["type"] = field_type
+        else:
+            json_field_definition["type"] = [row["type"] for row in field_type]
+            json_field_definition["min"] = [
+                row["min"] if "min" in row else None for row in field_type
+            ]
+            json_field_definition["max"] = [
+                row["max"] if "max" in row else None for row in field_type
+            ]
+    if "min" in json_field_definition and json_field_definition["min"].count(
+        None
+    ) == len(json_field_definition["min"]):
+        json_field_definition.pop("min")
+    if "max" in json_field_definition and json_field_definition["max"].count(
+        None
+    ) == len(json_field_definition["max"]):
+        json_field_definition.pop("max")
 
     if len(python_field_args) < 2:
         return json_field_definition
@@ -204,7 +278,9 @@ def model_fields_to_annotated(
     >>> from pydantic import create_model
     >>> some_model = create_model("some_model", foo=(str, None))
     >>> fields_definitions = model_fields_to_annotated(some_model.model_fields)
-    >>> str(fields_definitions).replace('_extensions', '') # python3.8 compatibility
+    >>> fd_repr = str(fields_definitions).replace('_extensions', '') # python3.8 compatibility
+    >>> fd_repr = fd_repr.replace(', default=None', '') # pydantic >= 2.7.0 compatibility
+    >>> fd_repr
     "{'foo': typing.Annotated[str, FieldInfo(annotation=NoneType, required=False)]}"
 
     :param model_fields: BaseModel.model_fields to convert
@@ -217,3 +293,17 @@ def model_fields_to_annotated(
         new_field_info.annotation = None
         annotated_model_fields[param] = Annotated[field_type, new_field_info]
     return annotated_model_fields
+
+
+class ProviderSortables(TypedDict):
+    """A class representing sortable parameter(s) of a provider and the allowed
+    maximum number of used sortable(s) in a search request with the provider
+
+    :param sortables: The list of sortable parameter(s) of a provider
+    :type sortables: list[str]
+    :param max_sort_params: (optional) The allowed maximum number of sortable(s) in a search request with the provider
+    :type max_sort_params: int
+    """
+
+    sortables: List[str]
+    max_sort_params: Annotated[Optional[int], Gt(0)]

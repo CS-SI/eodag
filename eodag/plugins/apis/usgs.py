@@ -18,10 +18,11 @@
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -35,7 +36,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
+from eodag.plugins.search import PreparedSearch
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -52,17 +53,21 @@ from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
     RequestError,
+    ValidationError,
 )
 
 if TYPE_CHECKING:
+    from requests.auth import AuthBase
+
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, Unpack
 
 logger = logging.getLogger("eodag.apis.usgs")
 
 
-class UsgsApi(Download, Api):
+class UsgsApi(Api):
     """A plugin that enables to query and download data on the USGS catalogues"""
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -71,7 +76,7 @@ class UsgsApi(Download, Api):
         # Same method as in base.py, Search.__init__()
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas = DEFAULT_METADATA_MAPPING.copy()
+        metas: Dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata.
         metas.update(self.config.metadata_mapping)
@@ -98,25 +103,33 @@ class UsgsApi(Download, Api):
             except USGSAuthExpiredError:
                 api.logout()
                 continue
-            except USGSError:
-                raise AuthenticationError(
-                    "Please check your USGS credentials."
-                ) from None
+            except USGSError as e:
+                if i == 0:
+                    # `.usgs` API file key might be obsolete
+                    # Remove it and try again
+                    os.remove(api.TMPFILE)
+                    continue
+                raise AuthenticationError("Please check your USGS credentials.") from e
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Search for data on USGS catalogues"""
+        page = prep.page if prep.page is not None else DEFAULT_PAGE
+        items_per_page = (
+            prep.items_per_page
+            if prep.items_per_page is not None
+            else DEFAULT_ITEMS_PER_PAGE
+        )
         product_type = kwargs.get("productType")
         if product_type is None:
             raise NoMatchingProductType(
                 "Cannot search on USGS without productType specified"
             )
+        if kwargs.get("sortBy"):
+            raise ValidationError("USGS does not support sorting feature")
 
         self.authenticate()
 
@@ -230,11 +243,11 @@ class UsgsApi(Download, Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download data from USGS catalogues"""
 
@@ -250,11 +263,11 @@ class UsgsApi(Download, Api):
                 product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
             ).get("outputs_extension", ".tar.gz"),
         )
+        kwargs["outputs_extension"] = kwargs.get("outputs_extension", outputs_extension)
 
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
-            outputs_extension=outputs_extension,
             **kwargs,
         )
         if not fs_path or not record_filename:
@@ -308,13 +321,14 @@ class UsgsApi(Download, Api):
         req_url = req_urls[0]
         progress_callback.reset()
         logger.debug(f"Downloading {req_url}")
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         @self._download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
             fs_path: str,
             progress_callback: ProgressCallback,
-            **kwargs: Any,
+            **kwargs: Unpack[DownloadConf],
         ) -> None:
             try:
                 with requests.get(
@@ -322,6 +336,7 @@ class UsgsApi(Download, Api):
                     stream=True,
                     headers=USER_AGENT,
                     timeout=wait * 60,
+                    verify=ssl_verify,
                 ) as stream:
                     try:
                         stream.raise_for_status()
@@ -334,7 +349,9 @@ class UsgsApi(Download, Api):
                             error_message = str(e)
                         raise NotAvailableError(error_message)
                     else:
-                        stream_size = int(stream.headers.get("content-length", 0))
+                        stream_size = (
+                            int(stream.headers.get("content-length", 0)) or None
+                        )
                         progress_callback.reset(total=stream_size)
                         with open(fs_path, "wb") as fhandle:
                             for chunk in stream.iter_content(chunk_size=64 * 1024):
@@ -357,13 +374,12 @@ class UsgsApi(Download, Api):
         api.logout()
 
         # Check downloaded file format
-        if (outputs_extension == ".tar.gz" and tarfile.is_tarfile(fs_path)) or (
-            outputs_extension == ".zip" and zipfile.is_zipfile(fs_path)
-        ):
+        if (
+            kwargs["outputs_extension"] == ".tar.gz" and tarfile.is_tarfile(fs_path)
+        ) or (kwargs["outputs_extension"] == ".zip" and zipfile.is_zipfile(fs_path)):
             product_path = self._finalize(
                 fs_path,
                 progress_callback=progress_callback,
-                outputs_extension=outputs_extension,
                 **kwargs,
             )
             product.location = path_to_uri(product_path)
@@ -396,12 +412,12 @@ class UsgsApi(Download, Api):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Download all using parent (base plugin) method

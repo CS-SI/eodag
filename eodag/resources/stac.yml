@@ -17,63 +17,88 @@
 # limitations under the License.
 
 stac_version: 1.0.0
-stac_api_version: 1.0.0-rc.3
+stac_api_version: 1.0.0
 
 # Capabilities ----------------------------------------------------------------
 
 # https://stacspec.org/STAC-api.html#operation/getLandingPage
 landing_page:
-  title: "EODAG"
   type: "Catalog"
-  description: "STAC API provided by EODAG"
   links:
     - rel: self
       type: "application/json"
       href: "{catalog[root]}/"
     - rel: service-desc
       type: "application/vnd.oai.openapi+json;version=3.0"
+      title: "OpenAPI service description"
       href: "{catalog[root]}/api"
     - rel: service-doc
       type: "text/html"
+      title: "OpenAPI service documentation"
       href: "{catalog[root]}/api.html"
     - rel: conformance
       type: "application/json"
+      title: "STAC/WFS3 conformance classes implemented by this server"
       href: "{catalog[root]}/conformance"
     - rel: data
       type: "application/json"
       href: "{catalog[root]}/collections"
     - rel: search
+      type: "application/geo+json"
+      title: "STAC search"
       href: "{catalog[root]}/search"
       method: GET
+    - rel: search
+      type: "application/geo+json"
+      title: "STAC search"
+      href: "{catalog[root]}/search"
+      method: POST
   stac_version: "{stac_version}"
-  id: eodag-stac-api
   conformsTo: "{conformance[conformsTo]}"
 
 # required by OGC API - Features
 # http://docs.opengeospatial.org/is/17-069r3/17-069r3.html#_declaration_of_conformance_classes
 conformance:
   conformsTo:
-    - https://api.stacspec.org/v1.0.0-rc.3/core
-    - https://api.stacspec.org/v1.0.0-rc.3/item-search
-    - https://api.stacspec.org/v1.0.0-rc.3/ogcapi-features
-    - https://api.stacspec.org/v1.0.0-rc.3/collections
+    - https://api.stacspec.org/v1.0.0/core
+    - https://api.stacspec.org/v1.0.0/item-search
+    - https://api.stacspec.org/v1.0.0/item-search#query
+    - https://api.stacspec.org/v1.0.0/item-search#filter
+    - https://api.stacspec.org/v1.0.0/item-search#sort
+    - https://api.stacspec.org/v1.0.0/ogcapi-features
+    - https://api.stacspec.org/v1.0.0/ogcapi-features#query
+    - https://api.stacspec.org/v1.0.0/ogcapi-features#sort
+    - https://api.stacspec.org/v1.0.0/collections
+    - https://api.stacspec.org/v1.0.0/collection-search
+    - https://api.stacspec.org/v1.0.0/collection-search#free-text
+    - https://api.stacspec.org/v1.0.0/collection-search#advanced-free-text
+    - http://www.opengis.net/spec/ogcapi-common-2/1.0/conf/simple-query
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30
     - http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson
+    - http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter
+    - http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter
+    - http://www.opengis.net/spec/cql2/1.0/conf/cql2-text
+    - http://www.opengis.net/spec/cql2/1.0/conf/cql2-json
+    - http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2
+    - http://www.opengis.net/spec/cql2/1.0/conf/basic-spatial-operators
+    - http://www.opengis.net/spec/cql2/1.0/conf/temporal-operators
+    - http://www.opengis.net/spec/cql2/1.0/conf/advanced-comparison-operators
 
 # https://stacspec.org/STAC-api.html#operation/getCollections
 collections:
-  links:
-    - rel: self
-      title: collections
-      href: "{collections[url]}"
-    - rel: root
-      href: "{collections[root]}/"
-    - rel: parent
-      href: "{collections[root]}/"
   collections:
     - "{collection}"
-  stac_version: "{stac_version}"
+  links:
+    - rel: root
+      type: "application/json"
+      href: "{collections[root]}/"
+    - rel: parent
+      type: "application/json"
+      href: "{collections[root]}/"
+    - rel: self
+      type: "application/json"
+      href: "{collections[url]}"
 
 # https://stacspec.org/STAC-api.html#operation/describeCollection
 collection:
@@ -121,14 +146,6 @@ collection:
       - '$.product_type.instrument'
     processing:level: '$.product_type.processingLevel'
 
-provider:
-  name: '$.provider.name'
-  description: '$.provider.description'
-  # one or more of "producer" "licensor" "processor" "host"
-  roles: '$.provider.roles'
-  url: '$.provider.url'
-  priority: '$.provider.priority'
-
 # Data ------------------------------------------------------------------------
 
 # https://stacspec.org/STAC-api.html#operation/getFeatures
@@ -147,26 +164,18 @@ items:
     - rel: parent
       title: "{catalog[id]}"
       href: "{catalog[url]}"
-    # implement next/prev page links
-    # https://github.com/radiantearth/stac-spec/blob/master/api-spec/api-spec.md#paging-extension
-    - rel: next
-      href: '$.search_results.next'
-      title: Next page
-      type: application/geo+json
-      method: '$.search_results.method'
-      body: '$.search_results.body'
   # time and date when the response was generated
-  timeStamp: '$.search_results.timeStamp'
+  timeStamp: '$.timeStamp'
   # count request result
-  numberMatched: '$.search_results.numberMatched'
+  numberMatched: '$.numberMatched'
   # len(features)
-  numberReturned: '$.search_results.numberReturned'
+  numberReturned: '$.numberReturned'
 
 # https://stacspec.org/STAC-api.html#operation/getFeature
 item:
   stac_version: "{stac_version}"
   stac_extensions:
-  id: '$.product.properties.title'
+  id: '$.product.properties.id'
   bbox:
     - '{item[geometry].bounds[0]}'
     - '{item[geometry].bounds[1]}'
@@ -204,6 +213,7 @@ item:
     version: '$.product.properties.productVersion'
     view:sun_elevation: '$.product.properties.illuminationElevationAngle'
     view:sun_azimuth: '$.product.properties.illuminationAzimuthAngle'
+    order:status: '{$.product.properties.storageStatus#get_group_name((?P<succeeded>ONLINE)|(?P<shipping>STAGING)|(?P<orderable>OFFLINE))}'
   links:
     - rel: self
       title: "{item[id]}"
@@ -216,20 +226,7 @@ item:
     - rel: collection
       title: "{item[collection]}"
       href: "{catalog[url]}"
-  assets:
-    downloadLink:
-        title: 'Download link'
-        href: "{catalog[url]}/items/{item[id]}/download"
-        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-        type: 'application/zip'
-        _dc_qs: '$.product.properties._dc_qs'
-    thumbnail:
-        title: 'Thumbnail'
-        href: '$.product.properties.quicklook'
-        type: 'image/jpeg'
-        role: thumbnail
-        # https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#media-types
-    origin_assets: '$.product.assets'
+
 # product properties not needed in items
 metadata_ignore:
   - title
@@ -242,10 +239,12 @@ metadata_ignore:
 # extensions mapping {prefix: schema_url,}
 stac_extensions:
   eo: 'https://stac-extensions.github.io/eo/v1.0.0/schema.json'
+  order: 'https://stac-extensions.github.io/order/v1.1.0/schema.json'
   published: 'https://stac-extensions.github.io/timestamps/v1.0.0/schema.json'
   processing: 'https://stac-extensions.github.io/processing/v1.0.0/schema.json'
   sar: 'https://stac-extensions.github.io/sar/v1.0.0/schema.json'
   sat: 'https://stac-extensions.github.io/sat/v1.0.0/schema.json'
+  storage: 'https://stac-extensions.github.io/storage/v1.0.0/schema.json'
   sci: 'https://stac-extensions.github.io/scientific/v1.0.0/schema.json'
   version: 'https://stac-extensions.github.io/version/v1.0.0/schema.json'
   view: 'https://stac-extensions.github.io/view/v1.0.0/schema.json'
@@ -297,12 +296,7 @@ catalogs:
             - - "{collection[extent][temporal][interval][0][0]}"
               - "{collection[extent][temporal][interval][0][1]}"
       crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
-      keywords:
-        - "{collection[keywords][0]}"
-        - "{collection[keywords][1]}"
-        - "{collection[keywords][2]}"
-        - "{collection[keywords][3]}"
-        - "{collection[keywords][4]}"
+      keywords: "{collection[keywords]}"
       license: "{collection[license]}"
       properties: "{collection[properties]}"
       providers: "{collection[providers]}"

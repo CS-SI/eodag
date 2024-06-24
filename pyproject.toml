@@ -3,13 +3,10 @@ requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-fallback_version = "2.12.2.dev0"
+fallback_version = "3.0.0b2.dev0"
 
 [[tool.mypy.overrides]]
 module = [
-    "boto3",
-    "botocore.*",
-    "cdsapi",
     "click",
     "click.*",
     "ecmwfapi",
@@ -18,13 +15,13 @@ module = [
     "geojson",
     "IPython.display",
     "owslib.*",
-    "requests_ftp",
     "shapefile",
     "shapely",
     "shapely.*",
     "stream_zip",
     "jsonpath_ng",
     "jsonpath_ng.*",
+    "rasterio",
     "usgs",
     "usgs.*",
     "whoosh",

@@ -22,12 +22,17 @@ Products from the following providers are made avaiable through ``eodag``:
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
+* `cop_marine <https://marine.copernicus.eu>`_: Copernicus Marine Service
 * `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Access
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 * `wekeo <https://www.wekeo.eu>`_: WEkEO Copernicus and Sentinel data
+* `wekeo_cmems <https://www.wekeo.eu>`_: Copernicus Marine (CMEMS) data from WEkEO
+* `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_: DestinE Digital Twin output on Lumi
+* `dedl <https://hda.data.destination-earth.eu/ui>`_: Destination Earth Data Lake (DEDL)
+* `eumetsat_ds <https://data.eumetsat.int>`_: EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
 
 Providers available through an external plugin:
 

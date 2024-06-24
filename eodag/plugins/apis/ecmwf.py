@@ -18,42 +18,47 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+import os
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 
 from eodag.plugins.apis.base import Api
-from eodag.plugins.download.base import Download
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
-from eodag.rest.stac import DEFAULT_MISSION_START_DATE
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_PAGE,
+    DEFAULT_MISSION_START_DATE,
     get_geometry_from_various,
     path_to_uri,
+    sanitize,
     urlsplit,
 )
 from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Tuple, Union
+
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
-    from eodag.utils import DownloadedCallback, ProgressCallback
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.apis.ecmwf")
 
 ECMWF_MARS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
-class EcmwfApi(Download, Api, BuildPostSearchResult):
+class EcmwfApi(Api, BuildPostSearchResult):
     """A plugin that enables to build download-request and download data on ECMWF MARS.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -84,10 +89,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
@@ -112,7 +114,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         if "completionTimeFromAscendingNode" not in kwargs:
             kwargs["completionTimeFromAscendingNode"] = getattr(
                 self.config, "product_type_config", {}
-            ).get("missionEndDate", None) or datetime.utcnow().isoformat(
+            ).get("missionEndDate", None) or datetime.now(timezone.utc).isoformat(
                 timespec="seconds"
             )
 
@@ -120,9 +122,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
         if "geometry" in kwargs:
             kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
-        return BuildPostSearchResult.query(
-            self, items_per_page=items_per_page, page=page, count=count, **kwargs
-        )
+        return BuildPostSearchResult.query(self, prep, **kwargs)
 
     def authenticate(self) -> Dict[str, Optional[str]]:
         """Check credentials and returns information needed for auth
@@ -156,21 +156,23 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download data from ECMWF MARS"""
         product_format = product.properties.get("format", "grib")
         product_extension = ECMWF_MARS_KNOWN_FORMATS.get(product_format, product_format)
+        kwargs["outputs_extension"] = kwargs.get(
+            "outputs_extension", f".{product_extension}"
+        )
 
         # Prepare download
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
             **kwargs,
         )
 
@@ -178,6 +180,13 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             if fs_path:
                 product.location = path_to_uri(fs_path)
             return fs_path
+
+        new_fs_path = os.path.join(
+            os.path.dirname(fs_path), sanitize(product.properties["title"])
+        )
+        if not os.path.isdir(new_fs_path):
+            os.makedirs(new_fs_path)
+        fs_path = os.path.join(new_fs_path, os.path.basename(fs_path))
 
         # get download request dict from product.location/downloadLink url query string
         # separate url & parameters
@@ -222,13 +231,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             fh.write(product.properties["downloadLink"])
         logger.debug("Download recorded in %s", record_filename)
 
-        # do not try to extract or delete grib/netcdf
+        # do not try to extract a directory
         kwargs["extract"] = False
 
         product_path = self._finalize(
-            fs_path,
+            new_fs_path,
             progress_callback=progress_callback,
-            outputs_extension=f".{product_extension}",
             **kwargs,
         )
         product.location = path_to_uri(product_path)
@@ -237,12 +245,12 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[PluginConfig] = None,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
         Download all using parent (base plugin) method
@@ -256,3 +264,7 @@ class EcmwfApi(Download, Api, BuildPostSearchResult):
             timeout=timeout,
             **kwargs,
         )
+
+    def clear(self) -> None:
+        """Clear search context"""
+        pass

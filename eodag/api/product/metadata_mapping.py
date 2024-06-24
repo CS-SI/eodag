@@ -26,6 +26,8 @@ from string import Formatter
 from typing import (
     TYPE_CHECKING,
     Any,
+    AnyStr,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -40,7 +42,7 @@ import orjson
 import pyproj
 from dateutil.parser import isoparse
 from dateutil.tz import UTC, tzutc
-from jsonpath_ng.jsonpath import Child
+from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
 from lxml.etree import XPathEvalError
 from shapely import wkt
@@ -52,6 +54,7 @@ from eodag.utils import (
     DEFAULT_PROJ,
     deepcopy,
     dict_items_recursive_apply,
+    format_string,
     get_geometry_from_various,
     get_timestamp,
     items_recursive_apply,
@@ -79,10 +82,11 @@ OFFLINE_STATUS = "OFFLINE"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")
+DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 
 def get_metadata_path(
-    map_value: Union[str, List[str]]
+    map_value: Union[str, List[str]],
 ) -> Tuple[Union[List[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
@@ -151,7 +155,7 @@ def get_search_param(map_value: List[str]) -> str:
     return map_value[0]
 
 
-def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
+def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
     """Format a string of form {<field_name>#<conversion_function>}
 
     The currently understood converters are:
@@ -203,8 +207,8 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         )
 
         def __init__(self) -> None:
-            self.custom_converter = None
-            self.custom_args = None
+            self.custom_converter: Optional[Callable] = None
+            self.custom_args: Optional[str] = None
 
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
@@ -305,6 +309,11 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return dt.isoformat()[:10]
 
         @staticmethod
+        def convert_to_non_separated_date(datetime_string):
+            iso_date = MetadataFormatter.convert_to_iso_date(datetime_string)
+            return iso_date.replace("-", "")
+
+        @staticmethod
         def convert_to_rounded_wkt(value: BaseGeometry) -> str:
             wkt_value = cast(
                 str, wkt.dumps(value, rounding_precision=COORDS_ROUNDING_PRECISION)
@@ -379,7 +388,9 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
-            ewkt_regex = re.compile(r"^(?P<proj>[A-Za-z]+=[0-9]+);(?P<wkt>.*)$")
+            ewkt_regex = re.compile(
+                r"^.*(?P<proj>SRID=[0-9]+);(?P<wkt>[A-Z0-9 \(\),\.-]+).*$"
+            )
             ewkt_match = ewkt_regex.match(ewkt_string)
             if ewkt_match:
                 g = ewkt_match.groupdict()
@@ -463,6 +474,15 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 return georss
 
         @staticmethod
+        def convert_to_longitude_latitude(
+            input_geom_unformatted: Any,
+        ) -> Dict[str, float]:
+            bounds = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
+            lon = (bounds[0] + bounds[2]) / 2
+            lat = (bounds[1] + bounds[3]) / 2
+            return {"lon": lon, "lat": lat}
+
+        @staticmethod
         def convert_csv_list(values_list: Any) -> Any:
             if isinstance(values_list, list):
                 return ",".join([str(x) for x in values_list])
@@ -479,12 +499,15 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         @staticmethod
         def convert_get_group_name(string: str, pattern: str) -> str:
             try:
-                return re.search(pattern, str(string)).lastgroup
+                match = re.search(pattern, str(string))
+                if match:
+                    return match.lastgroup or NOT_AVAILABLE
             except AttributeError:
-                logger.warning(
-                    "Could not extract property from %s using %s", string, pattern
-                )
-                return NOT_AVAILABLE
+                pass
+            logger.warning(
+                "Could not extract property from %s using %s", string, pattern
+            )
+            return NOT_AVAILABLE
 
         @staticmethod
         def convert_replace_str(string: str, args: str) -> str:
@@ -514,9 +537,33 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return dict(input_dict, **new_items_dict)
 
         @staticmethod
+        def convert_dict_filter(
+            input_dict: Dict[Any, Any], jsonpath_filter_str: str
+        ) -> Dict[Any, Any]:
+            """Fitlers dict items using jsonpath"""
+
+            jsonpath_filter = string_to_jsonpath(jsonpath_filter_str, force=True)
+            if isinstance(jsonpath_filter, str) or not isinstance(input_dict, dict):
+                return {}
+
+            keys_list = list(input_dict.keys())
+            matches = jsonpath_filter.find(input_dict)
+            result = {}
+            for match in matches:
+                # extract key index from matched jsonpath
+                matched_jsonpath_str = str(match.full_path)
+                matched_index = int(matched_jsonpath_str.split(".")[-1][1:-1])
+                key = keys_list[matched_index]
+                result[key] = match.value
+            return result
+
+        @staticmethod
         def convert_slice_str(string: str, args: str) -> str:
-            cmin, cmax, cstep = [x.strip() for x in args.split(",")]
-            return string[int(cmin) : int(cmax) : int(cstep)]
+            cmin, cmax, cstep = [
+                int(x.strip()) if x.strip().lstrip("-").isdigit() else None
+                for x in args.split(",")
+            ]
+            return string[cmin:cmax:cstep]
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:
@@ -596,23 +643,6 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s1_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            level = "LEVEL" + parts[3][0]
-            return level
-
-        @staticmethod
-        def convert_get_sensor_mode_from_s1_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            return parts[1]
-
-        @staticmethod
-        def convert_get_processing_level_from_s2_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            processing_level = "S2" + parts[1]
-            return processing_level
-
-        @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> Dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
@@ -648,12 +678,6 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_get_processing_level_from_s5p_id(product_id: str) -> str:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
-            processing_level = parts[2].replace("_", "")
-            return processing_level
-
-        @staticmethod
         def convert_split_cop_dem_id(product_id: str) -> List[int]:
             parts = product_id.split("_")
             lattitude = parts[3]
@@ -670,17 +694,25 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
             return bbox
 
         @staticmethod
-        def convert_split_corine_id(product_id: str) -> str:
-            if "clc" in product_id:
-                year = product_id.split("_")[1][3:]
-                product_type = "Corine Land Cover " + year
+        def convert_dates_from_cmems_id(product_id: str):
+            date_format_1 = "[0-9]{10}"
+            date_format_2 = "[0-9]{8}"
+            dates = re.findall(date_format_1, product_id)
+            if dates:
+                date = dates[0]
             else:
-                years = [1990, 2000, 2006, 2012, 2018]
-                end_year = product_id[1:5]
-                i = years.index(int(end_year))
-                start_year = str(years[i - 1])
-                product_type = "Corine Land Change " + start_year + " " + end_year
-            return product_type
+                dates = re.findall(date_format_2, product_id)
+                date = dates[0]
+            if len(date) == 10:
+                date_time = datetime.strptime(dates[0], "%Y%m%d%H")
+            else:
+                date_time = datetime.strptime(dates[0], "%Y%m%d")
+            return {
+                "min_date": date_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "max_date": (date_time + timedelta(days=1)).strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+            }
 
         @staticmethod
         def convert_to_datetime_dict(
@@ -791,7 +823,10 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
         @staticmethod
         def convert_get_dates_from_string(text: str, split_param="-"):
             reg = "[0-9]{8}" + split_param + "[0-9]{8}"
-            dates_str = re.search(reg, text).group()
+            match = re.search(reg, text)
+            if not match:
+                return NOT_AVAILABLE
+            dates_str = match.group()
             dates = dates_str.split(split_param)
             start_date = datetime.strptime(dates[0], "%Y%m%d")
             end_date = datetime.strptime(dates[1], "%Y%m%d")
@@ -799,6 +834,79 @@ def format_metadata(search_param: str, *args: Tuple[Any], **kwargs: Any) -> str:
                 "startDate": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "endDate": end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
+
+        @staticmethod
+        def convert_get_hydrological_year(date: str):
+            utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
+            date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+            date_object_second_year = date_object + timedelta(days=365)
+            return [
+                f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
+            ]
+
+        @staticmethod
+        def convert_get_variables_from_path(path: str):
+            if "?" not in path:
+                return []
+            variables = path.split("?")[1]
+            return variables.split(",")
+
+        @staticmethod
+        def convert_assets_list_to_dict(
+            assets_list: List[Dict[str, str]], asset_name_key: str = "title"
+        ) -> Dict[str, Dict[str, str]]:
+            """Convert a list of assets to a dictionary where keys represent
+            name of assets and are found among values of asset dictionaries.
+
+            assets_list == [
+                {"href": "foo", "title": "asset1", "name": "foo-name"},
+                {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+                {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+                {"href": "qux", "title": "asset3", "name": "qux-name"},
+            ] and asset_name_key == "title" => {
+                "asset1": {"href": "foo", "title": "asset1", "name": "foo-name"},
+                "path/to/asset1": {"href": "bar", "title": "path/to/asset1", "name": "bar-name"},
+                "asset2": {"href": "baz", "title": "path/to/asset2", "name": "baz-name"},
+                "asset3": {"href": "qux", "title": "asset3", "name": "qux-name"},
+            }
+            assets_list == [
+                {"href": "foo", "title": "foo-title", "name": "asset1"},
+                {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+                {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+                {"href": "qux", "title": "qux-title", "name": "asset3"},
+            ] and asset_name_key == "name" => {
+                "asset1": {"href": "foo", "title": "foo-title", "name": "asset1"},
+                "path/to/asset1": {"href": "bar", "title": "bar-title", "name": "path/to/asset1"},
+                "asset2": {"href": "baz", "title": "baz-title", "name": "path/to/asset2"},
+                "asset3": {"href": "qux", "title": "qux-title", "name": "asset3"},
+            }
+            """
+            asset_names: List[str] = []
+            assets_dict: Dict[str, Dict[str, str]] = {}
+
+            for asset in assets_list:
+                asset_name = asset[asset_name_key]
+                asset_names.append(asset_name)
+                assets_dict[asset_name] = asset
+
+            # we only keep the equivalent of the path basename in the case where the
+            # asset name has a path pattern and this basename is only found once
+            immutable_asset_indexes: List[int] = []
+            for i, asset_name in enumerate(asset_names):
+                if i in immutable_asset_indexes:
+                    continue
+                change_asset_name = True
+                asset_basename = asset_name.split("/")[-1]
+                j = i + 1
+                while change_asset_name and j < len(asset_names):
+                    asset_tmp_basename = asset_names[j].split("/")[-1]
+                    if asset_basename == asset_tmp_basename:
+                        change_asset_name = False
+                        immutable_asset_indexes.extend([i, j])
+                    j += 1
+                if change_asset_name:
+                    assets_dict[asset_basename] = assets_dict.pop(asset_name)
+            return assets_dict
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
@@ -840,7 +948,7 @@ def properties_from_json(
         else:
             conversion_or_none, path_or_text = value
         if isinstance(path_or_text, str):
-            if re.search(r"({[^{}]+})+", path_or_text):
+            if re.search(r"({[^{}:]+})+", path_or_text):
                 templates[metadata] = path_or_text
             else:
                 properties[metadata] = path_or_text
@@ -874,7 +982,7 @@ def properties_from_json(
                         conversion_or_none = conversion_or_none[0]
 
                     # check if conversion uses variables to format
-                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                    if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
                     properties[metadata] = format_metadata(
@@ -890,7 +998,7 @@ def properties_from_json(
     # Resolve templates
     for metadata, template in templates.items():
         try:
-            properties[metadata] = template.format(**properties)
+            properties[metadata] = format_string(metadata, template, **properties)
         except ValueError:
             logger.warning(
                 f"Could not parse {metadata} ({template}) using product properties"
@@ -905,13 +1013,18 @@ def properties_from_json(
     discovery_pattern = discovery_config.get("metadata_pattern", None)
     discovery_path = discovery_config.get("metadata_path", None)
     if discovery_pattern and discovery_path:
-        discovered_properties = string_to_jsonpath(discovery_path).find(json)
+        discovery_jsonpath = string_to_jsonpath(discovery_path)
+        discovered_properties = (
+            discovery_jsonpath.find(json)
+            if isinstance(discovery_jsonpath, JSONPath)
+            else []
+        )
         for found_jsonpath in discovered_properties:
             if "metadata_path_id" in discovery_config.keys():
                 found_key_paths = string_to_jsonpath(
                     discovery_config["metadata_path_id"], force=True
                 ).find(found_jsonpath.value)
-                if not found_key_paths:
+                if not found_key_paths or isinstance(found_key_paths, int):
                     continue
                 found_key = found_key_paths[0].value
                 used_jsonpath = Child(
@@ -934,7 +1047,9 @@ def properties_from_json(
                         discovery_config["metadata_path_value"], force=True
                     ).find(found_jsonpath.value)
                     properties[found_key] = (
-                        found_value_path[0].value if found_value_path else NOT_AVAILABLE
+                        found_value_path[0].value
+                        if found_value_path and not isinstance(found_value_path, int)
+                        else NOT_AVAILABLE
                     )
                 else:
                     # default value got from metadata_path
@@ -950,7 +1065,7 @@ def properties_from_json(
 
 
 def properties_from_xml(
-    xml_as_text: str,
+    xml_as_text: AnyStr,
     mapping: Any,
     empty_ns_prefix: str = "ns",
     discovery_config: Optional[Dict[str, Any]] = None,
@@ -1051,7 +1166,7 @@ def properties_from_xml(
                         conversion_or_none = conversion_or_none[0]
 
                     # check if conversion uses variables to format
-                    if re.search(r"({[^{}]+})+", conversion_or_none):
+                    if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
                     properties[metadata] = [
@@ -1073,7 +1188,7 @@ def properties_from_xml(
             # formatting resolution using previously successfully resolved properties
             # Ignore any transformation specified. If a value is to be passed as is,
             # we don't want to transform it further
-            if re.search(r"({[^{}]+})+", path_or_text):
+            if re.search(r"({[^{}:]+})+", path_or_text):
                 templates[metadata] = path_or_text
             else:
                 properties[metadata] = path_or_text
@@ -1146,7 +1261,7 @@ def mtd_cfg_as_conversion_and_querypath(
             else:
                 parsed_path = path
 
-            if len(dest_dict[metadata]) == 2:
+            if isinstance(dest_dict[metadata], list) and len(dest_dict[metadata]) == 2:
                 dest_dict[metadata][1] = (conversion, parsed_path)
             else:
                 dest_dict[metadata] = (conversion, parsed_path)
@@ -1158,13 +1273,13 @@ def mtd_cfg_as_conversion_and_querypath(
 
 
 def format_query_params(
-    product_type: str, config: PluginConfig, **kwargs: Any
+    product_type: str, config: PluginConfig, query_dict: Dict[str, Any]
 ) -> Dict[str, Any]:
     """format the search parameters to query parameters"""
-    if "raise_errors" in kwargs.keys():
-        del kwargs["raise_errors"]
+    if "raise_errors" in query_dict.keys():
+        del query_dict["raise_errors"]
     # . not allowed in eodag_search_key, replaced with %2E
-    kwargs = {k.replace(".", "%2E"): v for k, v in kwargs.items()}
+    query_dict = {k.replace(".", "%2E"): v for k, v in query_dict.items()}
 
     product_type_metadata_mapping = dict(
         config.metadata_mapping,
@@ -1174,16 +1289,16 @@ def format_query_params(
     query_params: Dict[str, Any] = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
-    queryables = _get_queryables(kwargs, config, product_type_metadata_mapping)
+    queryables = _get_queryables(query_dict, config, product_type_metadata_mapping)
 
     for eodag_search_key, provider_search_key in queryables.items():
-        user_input = kwargs[eodag_search_key]
+        user_input = query_dict[eodag_search_key]
 
         if COMPLEX_QS_REGEX.match(provider_search_key):
             parts = provider_search_key.split("=")
             if len(parts) == 1:
                 formatted_query_param = format_metadata(
-                    provider_search_key, product_type, **kwargs
+                    provider_search_key, product_type, **query_dict
                 )
                 formatted_query_param = formatted_query_param.replace("'", '"')
                 if "{{" in provider_search_key:
@@ -1202,7 +1317,7 @@ def format_query_params(
             else:
                 provider_search_key, provider_value = parts
                 query_params.setdefault(provider_search_key, []).append(
-                    format_metadata(provider_value, product_type, **kwargs)
+                    format_metadata(provider_value, product_type, **query_dict)
                 )
         else:
             query_params[provider_search_key] = user_input
@@ -1221,7 +1336,7 @@ def format_query_params(
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
     literal_search_params.update(
-        _format_free_text_search(config, product_type_metadata_mapping, **kwargs)
+        _format_free_text_search(config, product_type_metadata_mapping, **query_dict)
     )
     for provider_search_key, provider_value in literal_search_params.items():
         if isinstance(provider_value, list):

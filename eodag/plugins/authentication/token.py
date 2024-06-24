@@ -46,6 +46,7 @@ class TokenAuth(Authentication):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(TokenAuth, self).__init__(provider, config)
         self.token = ""
+        self.refresh_token = ""
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -55,9 +56,9 @@ class TokenAuth(Authentication):
             self.config.auth_uri = self.config.auth_uri.format(
                 **self.config.credentials
             )
-            # format headers if needed
+            # format headers if needed (and accepts {token} to be formatted later)
             self.config.headers = {
-                header: value.format(**self.config.credentials)
+                header: value.format(**{"token": "{token}", **self.config.credentials})
                 for header, value in getattr(self.config, "headers", {}).items()
             }
         except KeyError as e:
@@ -69,65 +70,108 @@ class TokenAuth(Authentication):
         """Authenticate"""
         self.validate_config_credentials()
 
-        # append headers to req if some are specified in config
-        req_kwargs: Dict[str, Any] = (
-            {"headers": dict(self.config.headers, **USER_AGENT)}
-            if hasattr(self.config, "headers")
-            else {"headers": USER_AGENT}
-        )
         s = requests.Session()
-        retries = Retry(
-            total=3, backoff_factor=2, status_forcelist=[401, 429, 500, 502, 503, 504]
-        )
-        s.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
         try:
             # First get the token
-            if getattr(self.config, "request_method", "POST") == "POST":
-                response = s.post(
-                    self.config.auth_uri,
-                    data=self.config.credentials,
-                    timeout=HTTP_REQ_TIMEOUT,
-                    **req_kwargs,
-                )
-            else:
-                cred = self.config.credentials
-                response = s.get(
-                    self.config.auth_uri,
-                    auth=(cred["username"], cred["password"]),
-                    timeout=HTTP_REQ_TIMEOUT,
-                    **req_kwargs,
-                )
+            response = self._token_request(session=s)
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except RequestException as e:
             response_text = getattr(e.response, "text", "").strip()
-            raise AuthenticationError(
-                f"Could no get authentication token: {str(e)}, {response_text}"
-            )
+            # check if error is identified as auth_error in provider conf
+            auth_errors = getattr(self.config, "auth_error_code", [None])
+            if not isinstance(auth_errors, list):
+                auth_errors = [auth_errors]
+            if (
+                e.response is not None
+                and getattr(e.response, "status_code", None)
+                and e.response.status_code in auth_errors
+            ):
+                raise AuthenticationError(
+                    f"HTTP Error {e.response.status_code} returned, {response_text}\n"
+                    f"Please check your credentials for {self.provider}"
+                )
+            # other error
+            else:
+                raise AuthenticationError(
+                    f"Could no get authentication token: {str(e)}, {response_text}"
+                )
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]
             else:
                 token = response.text
-            headers = self._get_headers(token)
             self.token = token
+            if getattr(self.config, "refresh_token_key", None):
+                self.refresh_token = response.json()[self.config.refresh_token_key]
+            if not hasattr(self.config, "headers"):
+                raise MisconfiguredError(f"Missing headers configuration for {self}")
             # Return auth class set with obtained token
-            return RequestsTokenAuth(token, "header", headers=headers)
-
-    def _get_headers(self, token: str) -> Dict[str, str]:
-        headers = self.config.headers
-        if "Authorization" in headers and "$" in headers["Authorization"]:
-            headers["Authorization"] = headers["Authorization"].replace("$token", token)
-        if (
-            self.token
-            and token != self.token
-            and self.token in headers["Authorization"]
-        ):
-            headers["Authorization"] = headers["Authorization"].replace(
-                self.token, token
+            return RequestsTokenAuth(
+                token, "header", headers=getattr(self.config, "headers", {})
             )
-        return headers
+
+    def _token_request(
+        self,
+        session: requests.Session,
+    ) -> requests.Response:
+        retries = Retry(
+            total=3,
+            backoff_factor=2,
+            status_forcelist=[401, 429, 500, 502, 503, 504],
+        )
+
+        # append headers to req if some are specified in config
+        req_kwargs: Dict[str, Any] = {
+            "headers": dict(self.config.headers, **USER_AGENT)
+        }
+
+        if self.refresh_token:
+            logger.debug("fetching access token with refresh token")
+            session.mount(self.config.refresh_uri, HTTPAdapter(max_retries=retries))
+            try:
+                response = session.post(
+                    self.config.refresh_uri,
+                    data={"refresh_token": self.refresh_token},
+                    timeout=HTTP_REQ_TIMEOUT,
+                    **req_kwargs,
+                )
+                response.raise_for_status()
+                return response
+            except requests.exceptions.HTTPError as e:
+                logger.debug(getattr(e.response, "text", "").strip())
+
+        logger.debug("fetching access token from %s", self.config.auth_uri)
+        # append headers to req if some are specified in config
+        session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
+        method = getattr(self.config, "request_method", "POST")
+
+        # send credentials also as data in POST requests
+        if method == "POST":
+            # append req_data to credentials if specified in config
+            req_kwargs["data"] = dict(
+                getattr(self.config, "req_data", {}), **self.config.credentials
+            )
+
+        # credentials as auth tuple if possible
+        req_kwargs["auth"] = (
+            (
+                self.config.credentials["username"],
+                self.config.credentials["password"],
+            )
+            if all(
+                k in self.config.credentials.keys() for k in ["username", "password"]
+            )
+            else None
+        )
+
+        return session.request(
+            method=method,
+            url=self.config.auth_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            **req_kwargs,
+        )
 
 
 class RequestsTokenAuth(AuthBase):
@@ -165,5 +209,7 @@ class RequestsTokenAuth(AuthBase):
                 )
             )
         elif self.where == "header":
-            request.headers["Authorization"] = "Bearer {}".format(self.token)
+            request.headers["Authorization"] = request.headers.get(
+                "Authorization", "Bearer {token}"
+            ).format(token=self.token)
         return request

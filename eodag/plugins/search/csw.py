@@ -35,8 +35,9 @@ from shapely import geometry, wkt
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import properties_from_xml
+from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, DEFAULT_PROJ
+from eodag.utils import DEFAULT_PROJ
 from eodag.utils.import_system import patch_owslib_requests
 
 if TYPE_CHECKING:
@@ -64,16 +65,13 @@ class CSWSearch(Search):
 
     def query(
         self,
-        product_type: Optional[str] = None,
-        items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
-        page: int = DEFAULT_PAGE,
-        count: bool = True,
+        prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
-            return [], 0
+            return ([], 0) if prep.count else ([], None)
         auth = kwargs.get("auth")
         if auth:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
@@ -118,7 +116,7 @@ class CSWSearch(Search):
                 )
                 results.extend(partial_results)
         logger.info("Found %s overall results", len(results))
-        total_results = len(results) if count else None
+        total_results = len(results) if prep.count else None
         return results, total_results
 
     def __init_catalog(

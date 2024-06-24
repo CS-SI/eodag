@@ -21,17 +21,27 @@ import base64
 import logging
 import os
 import re
-import urllib.parse
+import tempfile
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import requests
 from requests import RequestException
-from shapely import geometry, wkb, wkt
+from requests.auth import AuthBase
+from shapely import geometry
 from shapely.errors import ShapelyError
 
-from eodag.api.product._assets import AssetsDict
+try:
+    # import from eodag-cube if installed
+    from eodag_cube.api.product import AssetsDict  # type: ignore # noqa
+except ImportError:
+    from eodag.api.product._assets import AssetsDict  # type: ignore # noqa
+
 from eodag.api.product.drivers import DRIVERS, NoDriver
-from eodag.api.product.metadata_mapping import NOT_AVAILABLE, NOT_MAPPED
+from eodag.api.product.metadata_mapping import (
+    DEFAULT_GEOMETRY,
+    NOT_AVAILABLE,
+    NOT_MAPPED,
+)
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -49,6 +59,8 @@ if TYPE_CHECKING:
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
+    from eodag.types.download_args import DownloadConf
+    from eodag.utils import Unpack
 
 try:
     from shapely.errors import GEOSException
@@ -133,40 +145,15 @@ class EOProduct:
             raise MisconfiguredError(
                 f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
             )
-        elif properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties.pop("defaultGeometry")
+        elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
+            product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
         else:
             product_geometry = properties["geometry"]
-        # Let's try 'latmin lonmin latmax lonmax'
-        if isinstance(product_geometry, str):
-            bbox_pattern = re.compile(
-                r"^(-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*) (-?\d+\.?\d*)$"
-            )
-            found_bbox = bbox_pattern.match(product_geometry)
-            if found_bbox:
-                coords = found_bbox.groups()
-                if len(coords) == 4:
-                    product_geometry = geometry.box(
-                        float(coords[1]),
-                        float(coords[0]),
-                        float(coords[3]),
-                        float(coords[2]),
-                    )
-        # Best effort to understand provider specific geometry (the default is to
-        # assume an object implementing the Geo Interface: see
-        # https://gist.github.com/2217756)
-        if isinstance(product_geometry, str):
-            try:
-                product_geometry = wkt.loads(product_geometry)
-            except (ShapelyError, GEOSException):
-                try:
-                    product_geometry = wkb.loads(product_geometry)
-                # Also catching TypeError because product_geometry can be a
-                # string and not a bytes string
-                except (ShapelyError, GEOSException, TypeError):
-                    # Giv up!
-                    raise
-        self.geometry = self.search_intersection = geometry.shape(product_geometry)
+
+        self.geometry = self.search_intersection = get_geometry_from_various(
+            geometry=product_geometry
+        )
+
         self.search_kwargs = kwargs
         if self.search_kwargs.get("geometry") is not None:
             searched_geom = get_geometry_from_various(
@@ -273,31 +260,23 @@ class EOProduct:
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")
         for location_attr in location_attrs:
-            try:
-                setattr(
-                    self,
-                    location_attr,
-                    urllib.parse.unquote(getattr(self, location_attr))
-                    % vars(self.downloader.config),
-                )
-            except ValueError as e:
-                logger.debug(
-                    f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
-                    f" in register_downloader: {str(e)}"
-                )
+            if "%(" in getattr(self, location_attr):
+                try:
+                    setattr(
+                        self,
+                        location_attr,
+                        getattr(self, location_attr) % vars(self.downloader.config),
+                    )
+                except ValueError as e:
+                    logger.debug(
+                        f"Could not resolve product.{location_attr} ({getattr(self, location_attr)})"
+                        f" in register_downloader: {str(e)}"
+                    )
 
         for k, v in self.properties.items():
-            if isinstance(v, str):
+            if isinstance(v, str) and "%(" in v:
                 try:
-                    if "%" in v:
-                        parsed = urllib.parse.urlparse(v)
-                        prop = urllib.parse.unquote(parsed.path) % vars(
-                            self.downloader.config
-                        )
-                        parsed = parsed._replace(path=urllib.parse.quote(prop))
-                        self.properties[k] = urllib.parse.urlunparse(parsed)
-                    else:
-                        self.properties[k] = v % vars(self.downloader.config)
+                    self.properties[k] = v % vars(self.downloader.config)
                 except (TypeError, ValueError) as e:
                     logger.debug(
                         f"Could not resolve {k} property ({v}) in register_downloader: {str(e)}"
@@ -308,7 +287,7 @@ class EOProduct:
         progress_callback: Optional[ProgressCallback] = None,
         wait: int = DEFAULT_DOWNLOAD_WAIT,
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download the EO product using the provided download plugin and the
         authenticator if necessary.
@@ -350,13 +329,6 @@ class EOProduct:
             if self.downloader_auth is not None
             else self.downloader_auth
         )
-
-        # resolve remote location if needed with downloader configuration
-        self.remote_location = urllib.parse.unquote(self.remote_location) % vars(
-            self.downloader.config
-        )
-        if not self.location.startswith("file"):
-            self.location = urllib.parse.unquote(self.location)
 
         progress_callback, close_progress_callback = self._init_progress_bar(
             progress_callback
@@ -469,9 +441,13 @@ class EOProduct:
         if base_dir is not None:
             quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
         else:
-            quicklooks_base_dir = os.path.join(
-                self.downloader.config.outputs_prefix, "quicklooks"
+            tempdir = tempfile.gettempdir()
+            outputs_prefix = (
+                getattr(self.downloader.config, "outputs_prefix", tempdir)
+                if self.downloader
+                else tempdir
             )
+            quicklooks_base_dir = os.path.join(outputs_prefix, "quicklooks")
         if not os.path.isdir(quicklooks_base_dir):
             os.makedirs(quicklooks_base_dir)
         quicklook_file = os.path.join(
@@ -497,6 +473,8 @@ class EOProduct:
                 if self.downloader_auth is not None
                 else None
             )
+            if not isinstance(auth, AuthBase):
+                auth = None
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,

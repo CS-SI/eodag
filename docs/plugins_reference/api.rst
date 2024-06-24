@@ -16,4 +16,3 @@ This table lists all the api plugins currently available:
 
    eodag.plugins.apis.usgs.UsgsApi
    eodag.plugins.apis.ecmwf.EcmwfApi
-   eodag.plugins.apis.cds.CdsApi

@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 from eodag.plugins.authentication.base import Authentication
 
@@ -30,8 +30,8 @@ class OAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OAuth, self).__init__(provider, config)
-        self.access_key = None
-        self.secret_key = None
+        self.access_key: Optional[str] = None
+        self.secret_key: Optional[str] = None
 
     def authenticate(self) -> Dict[str, str]:
         """Authenticate"""

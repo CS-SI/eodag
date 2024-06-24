@@ -27,8 +27,9 @@ import unittest
 import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import Mock
 
-from pkg_resources import resource_filename
+from pkg_resources import DistributionNotFound, resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -90,19 +91,20 @@ class TestCoreBase(unittest.TestCase):
 
 class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
-        "CAMS_GAC_FORECAST": ["cop_ads"],
-        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads"],
-        "CAMS_GFE_GFAS": ["cop_ads"],
-        "CAMS_GRF": ["cop_ads"],
-        "CAMS_GRF_AUX": ["cop_ads"],
-        "CAMS_SOLAR_RADIATION": ["cop_ads"],
-        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads"],
-        "CAMS_GREENHOUSE_EGG4": ["cop_ads"],
-        "CAMS_GREENHOUSE_INVERSION": ["cop_ads"],
-        "CAMS_GLOBAL_EMISSIONS": ["cop_ads"],
-        "CAMS_EAC4": ["cop_ads"],
-        "CAMS_EAC4_MONTHLY": ["cop_ads"],
-        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads"],
+        "AG_ERA5": ["cop_cds", "wekeo"],
+        "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GFE_GFAS": ["cop_ads", "dedl"],
+        "CAMS_GRF": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GRF_AUX": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_SOLAR_RADIATION": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GREENHOUSE_EGG4": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GREENHOUSE_INVERSION": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GLOBAL_EMISSIONS": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_EAC4": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_EAC4_MONTHLY": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads", "dedl", "wekeo"],
         "CBERS4_AWFI_L2": ["aws_eos"],
         "CBERS4_AWFI_L4": ["aws_eos"],
         "CBERS4_MUX_L2": ["aws_eos"],
@@ -111,50 +113,63 @@ class TestCore(TestCoreBase):
         "CBERS4_PAN10M_L4": ["aws_eos"],
         "CBERS4_PAN5M_L2": ["aws_eos"],
         "CBERS4_PAN5M_L4": ["aws_eos"],
-        "CLMS_CORINE": ["wekeo"],
-        "CLMS_GLO_DMP_333M": ["wekeo"],
-        "CLMS_GLO_FAPAR_333M": ["wekeo"],
-        "CLMS_GLO_FCOVER_333M": ["wekeo"],
-        "CLMS_GLO_GDMP_333M": ["wekeo"],
-        "CLMS_GLO_LAI_333M": ["wekeo"],
-        "CLMS_GLO_NDVI_1KM_LTS": ["wekeo"],
-        "CLMS_GLO_NDVI_333M": ["wekeo"],
-        "COP_DEM_GLO30_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
-        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3"],
-        "COP_DEM_GLO90_DGED": ["creodias", "creodias_s3", "earth_search", "wekeo"],
-        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3"],
-        "EEA_DAILY_SSM_1KM": ["wekeo"],
-        "EEA_DAILY_SWI_1KM": ["wekeo"],
-        "EEA_DAILY_VI": ["wekeo"],
-        "EFAS_FORECAST": ["cop_cds", "wekeo"],
-        "EFAS_HISTORICAL": ["cop_cds", "wekeo"],
-        "EFAS_REFORECAST": ["cop_cds", "wekeo"],
-        "EFAS_SEASONAL": ["cop_cds", "wekeo"],
-        "EFAS_SEASONAL_REFORECAST": ["cop_cds", "wekeo"],
-        "ERA5_LAND": ["cop_cds", "wekeo"],
-        "ERA5_LAND_MONTHLY": ["cop_cds", "wekeo"],
-        "ERA5_PL": ["cop_cds", "wekeo"],
-        "ERA5_PL_MONTHLY": ["cop_cds", "wekeo"],
-        "ERA5_SL": ["cop_cds", "wekeo"],
-        "ERA5_SL_MONTHLY": ["cop_cds", "wekeo"],
-        "FIRE_HISTORICAL": ["cop_cds", "wekeo"],
-        "GLACIERS_DIST_RANDOLPH": ["cop_cds", "wekeo"],
-        "GLACIERS_ELEVATION_AND_MASS_CHANGE": ["wekeo"],
-        "GLOFAS_FORECAST": ["cop_cds", "wekeo"],
-        "GLOFAS_HISTORICAL": ["cop_cds", "wekeo"],
-        "GLOFAS_REFORECAST": ["cop_cds", "wekeo"],
-        "GLOFAS_SEASONAL": ["cop_cds", "wekeo"],
-        "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "wekeo"],
+        "CLMS_CORINE": ["dedl", "wekeo"],
+        "CLMS_GLO_DMP_333M": ["dedl", "wekeo"],
+        "CLMS_GLO_FAPAR_333M": ["dedl", "wekeo"],
+        "CLMS_GLO_FCOVER_333M": ["dedl", "wekeo"],
+        "CLMS_GLO_GDMP_333M": ["dedl", "wekeo"],
+        "CLMS_GLO_LAI_333M": ["dedl", "wekeo"],
+        "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo"],
+        "CLMS_GLO_NDVI_333M": ["dedl", "wekeo"],
+        "COP_DEM_GLO30_DGED": [
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "earth_search",
+            "wekeo",
+        ],
+        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO90_DGED": [
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "earth_search",
+            "wekeo",
+        ],
+        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
+        "DT_EXTREMES": ["dedl", "dedt_lumi"],
+        "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
+        "EEA_DAILY_VI": ["dedl", "wekeo"],
+        "EFAS_FORECAST": ["cop_cds", "dedl", "wekeo"],
+        "EFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo"],
+        "EFAS_REFORECAST": ["cop_cds", "dedl", "wekeo"],
+        "EFAS_SEASONAL": ["cop_cds", "dedl", "wekeo"],
+        "EFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo"],
+        "ERA5_LAND": ["cop_cds", "dedl", "wekeo"],
+        "ERA5_LAND_MONTHLY": ["cop_cds", "dedl", "wekeo"],
+        "ERA5_PL": ["cop_cds", "dedl", "wekeo"],
+        "ERA5_PL_MONTHLY": ["cop_cds", "dedl", "wekeo"],
+        "ERA5_SL": ["cop_cds", "dedl", "wekeo"],
+        "ERA5_SL_MONTHLY": ["cop_cds", "dedl", "wekeo"],
+        "FIRE_HISTORICAL": ["cop_cds", "dedl", "wekeo"],
+        "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo"],
+        "GLOFAS_FORECAST": ["cop_cds", "dedl", "wekeo"],
+        "GLOFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo"],
+        "GLOFAS_REFORECAST": ["cop_cds", "dedl", "wekeo"],
+        "GLOFAS_SEASONAL": ["cop_cds", "dedl", "wekeo"],
+        "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo"],
+        "GRIDDED_GLACIERS_MASS_CHANGE": ["dedl", "wekeo"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
         "LANDSAT_C2L1": [
             "astraea_eod",
+            "dedl",
             "planetary_computer",
             "usgs",
             "usgs_satapi_aws",
         ],
-        "LANDSAT_C2L2": ["usgs", "planetary_computer", "earth_search"],
+        "LANDSAT_C2L2": ["dedl", "earth_search", "planetary_computer", "usgs"],
         "LANDSAT_C2L2ALB_BT": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_SR": ["usgs_satapi_aws"],
         "LANDSAT_C2L2ALB_ST": ["usgs_satapi_aws"],
@@ -167,8 +182,70 @@ class TestCore(TestCoreBase):
         "LANDSAT_TM_C1": ["usgs"],
         "LANDSAT_TM_C2L1": ["usgs"],
         "LANDSAT_TM_C2L2": ["usgs"],
+        "METOP_AMSU_L1": ["eumetsat_ds"],
+        "METOP_ASCSZF1B": ["eumetsat_ds"],
+        "METOP_ASCSZFR02": ["eumetsat_ds"],
+        "METOP_ASCSZO1B": ["eumetsat_ds"],
+        "METOP_ASCSZOR02": ["eumetsat_ds"],
+        "METOP_ASCSZR1B": ["eumetsat_ds"],
+        "METOP_ASCSZRR02": ["eumetsat_ds"],
+        "METOP_AVHRRL1": ["eumetsat_ds"],
+        "METOP_AVHRRGACR02": ["eumetsat_ds"],
+        "METOP_GLB_SST_NC": ["eumetsat_ds"],
+        "METOP_GOMEL1": ["eumetsat_ds"],
+        "METOP_GOMEL1R03": ["eumetsat_ds"],
+        "METOP_HIRSL1": ["eumetsat_ds"],
+        "METOP_IASTHR011": ["eumetsat_ds"],
+        "METOP_IASSND02": ["eumetsat_ds"],
+        "METOP_IASIL1C_ALL": ["eumetsat_ds"],
+        "METOP_LSA_002": ["eumetsat_ds"],
+        "METOP_MHSL1": ["eumetsat_ds"],
+        "METOP_OSI_104": ["eumetsat_ds"],
+        "METOP_OSI_150A": ["eumetsat_ds"],
+        "METOP_OSI_150B": ["eumetsat_ds"],
+        "METOP_SOMO12": ["eumetsat_ds"],
+        "METOP_SOMO25": ["eumetsat_ds"],
         "MODIS_MCD43A4": ["astraea_eod", "aws_eos", "planetary_computer"],
-        "NAIP": ["astraea_eod", "aws_eos", "planetary_computer", "earth_search"],
+        "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024": ["cop_marine"],
+        "MO_GLOBAL_ANALYSISFORECAST_BGC_001_028": ["cop_marine"],
+        "MO_GLOBAL_ANALYSISFORECAST_WAV_001_027": ["cop_marine"],
+        "MO_GLOBAL_MULTIYEAR_BGC_001_033": ["cop_marine"],
+        "MO_GLOBAL_MULTIYEAR_WAV_001_032": ["cop_marine"],
+        "MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031": ["cop_marine"],
+        "MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048": ["cop_marine"],
+        "MO_INSITU_GLO_PHY_TS_OA_NRT_013_002": ["cop_marine"],
+        "MO_INSITU_GLO_PHY_TS_OA_MY_013_052": ["cop_marine"],
+        "MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010": ["cop_marine"],
+        "MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008": ["cop_marine"],
+        "MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009": ["cop_marine"],
+        "MO_MULTIOBS_GLO_PHY_MYNRT_015_003": ["cop_marine"],
+        "MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013": ["cop_marine"],
+        "MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012": ["cop_marine"],
+        "MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007": ["cop_marine"],
+        "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001": ["cop_marine"],
+        "MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009": ["cop_marine"],
+        "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006": ["cop_marine"],
+        "MO_SEALEVEL_GLO_PHY_L4_NRT_008_046": ["cop_marine"],
+        "MO_SEALEVEL_GLO_PHY_MDT_008_063": ["cop_marine"],
+        "MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010": ["cop_marine"],
+        "MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001": ["cop_marine"],
+        "MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011": ["cop_marine"],
+        "MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024": ["cop_marine"],
+        "MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002": ["cop_marine"],
+        "MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001": ["cop_marine"],
+        "MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003": ["cop_marine"],
+        "MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003": ["cop_marine"],
+        "MO_WIND_GLO_PHY_L3_NRT_012_002": ["cop_marine"],
+        "MO_WIND_GLO_PHY_L3_MY_012_005": ["cop_marine"],
+        "MO_WIND_GLO_PHY_L4_NRT_012_004": ["cop_marine"],
+        "MO_WIND_GLO_PHY_L4_MY_012_006": ["cop_marine"],
+        "MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107": ["cop_marine"],
+        "MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101": ["cop_marine"],
+        "MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103": ["cop_marine"],
+        "MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102": ["cop_marine"],
+        "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104": ["cop_marine"],
+        "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108": ["cop_marine"],
+        "NAIP": ["astraea_eod", "aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
         "OSO": ["theia"],
@@ -182,6 +259,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
             "earth_search",
             "onda",
             "peps",
@@ -203,6 +281,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
             "onda",
             "peps",
             "sara",
@@ -214,6 +293,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
             "earth_search",
             "earth_search_gcs",
             "onda",
@@ -228,6 +308,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
             "onda",
             "planetary_computer",
             "sara",
@@ -239,13 +320,42 @@ class TestCore(TestCoreBase):
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
         "S2_MSI_L3A_WASP": ["theia"],
-        "S3_EFR": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
-        "S3_ERR": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
-        "S3_LAN": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
+        "S3_EFR": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_EFR_BC002": ["eumetsat_ds"],
+        "S3_ERR": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
+        "S3_ERR_BC002": ["eumetsat_ds"],
+        "S3_LAN": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "onda",
+            "sara",
+            "wekeo",
+        ],
         "S3_OLCI_L2LFR": [
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
             "onda",
             "sara",
             "wekeo",
@@ -254,6 +364,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
             "onda",
             "sara",
             "wekeo",
@@ -262,6 +373,8 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
@@ -270,6 +383,8 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
@@ -279,34 +394,64 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
         ],
+        "S3_SLSTR_L1RBT_BC003": ["eumetsat_ds"],
         "S3_SLSTR_L2": ["wekeo"],
-        "S3_SLSTR_L2AOD": ["cop_dataspace", "creodias", "creodias_s3", "sara", "wekeo"],
+        "S3_SLSTR_L2AOD": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
+            "sara",
+        ],
         "S3_SLSTR_L2FRP": [
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
         ],
-        "S3_SLSTR_L2LST": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SLSTR_L2LST": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "onda",
+            "sara",
+        ],
         "S3_SLSTR_L2WST": [
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
+            "onda",
+            "sara",
+        ],
+        "S3_SRA": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
         ],
-        "S3_SRA": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
         "S3_SRA_A": [
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
@@ -315,39 +460,44 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
         ],
         "S3_SY_AOD": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_SYN": [
+        "S3_SY_SYN": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_V10": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_VG1": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_VGP": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_WAT": [
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "dedl",
+            "eumetsat_ds",
             "onda",
             "sara",
             "wekeo",
         ],
-        "S3_SY_V10": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_VG1": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_VGP": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_WAT": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara", "wekeo"],
-        "S3_OLCI_L2WFR_BC003": ["wekeo"],
-        "S3_OLCI_L2WRR_BC003": ["wekeo"],
-        "S3_SRA_1A_BC004": ["wekeo"],
-        "S3_SRA_1B_BC004": ["wekeo"],
-        "S3_SRA_BS_BC004": ["wekeo"],
-        "S3_WAT_BC004": ["wekeo"],
-        "S3_SLSTR_L1RBT_BC004": ["wekeo"],
-        "S3_SLSTR_L2WST_BC003": ["wekeo"],
-        "S3_OLCI_L4BALTIC": ["wekeo"],
-        "S6_P4_L1AHR_F06": ["wekeo"],
-        "S6_P4_L1BLR_F06": ["wekeo"],
-        "S6_P4_L1BAHR_F06": ["wekeo"],
-        "S6_P4_L2LR_F06": ["wekeo"],
-        "S6_P4_L2HR_F06": ["wekeo"],
-        "S6_AMR_L2_F06": ["wekeo"],
-        "S5P_L1B2_IR_ALL": ["wekeo"],
+        "S3_LAN_HY": ["wekeo"],
+        "S3_LAN_SI": ["wekeo"],
+        "S3_LAN_LI": ["wekeo"],
+        "S5P_L1B_IR_ALL": ["dedl", "wekeo"],
+        "S5P_L2_IR_ALL": ["dedl", "wekeo"],
+        "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
+        "S3_OLCI_L2WRR_BC003": ["eumetsat_ds"],
+        "S3_SRA_1A_BC004": ["eumetsat_ds"],
+        "S3_SRA_1A_BC005": ["eumetsat_ds"],
+        "S3_SRA_1B_BC004": ["eumetsat_ds"],
+        "S3_SRA_1B_BC005": ["eumetsat_ds"],
+        "S3_SRA_BS_BC004": ["eumetsat_ds"],
+        "S3_SRA_BS_BC005": ["eumetsat_ds"],
+        "S3_WAT_BC004": ["eumetsat_ds"],
+        "S3_WAT_BC005": ["eumetsat_ds"],
+        "S3_SLSTR_L1RBT_BC004": ["eumetsat_ds"],
+        "S3_SLSTR_L2WST_BC003": ["eumetsat_ds"],
         "S5P_L1B_IR_SIR": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_IR_UVN": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
@@ -372,21 +522,27 @@ class TestCore(TestCoreBase):
         "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
         "S5P_L2_O3_TCL": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L2_SO2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "wekeo"],
-        "SATELLITE_METHANE": ["cop_cds", "wekeo"],
-        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "wekeo"],
-        "SEASONAL_MONTHLY_PL": ["cop_cds", "wekeo"],
-        "SEASONAL_MONTHLY_SL": ["cop_cds", "wekeo"],
-        "SEASONAL_ORIGINAL_PL": ["cop_cds", "wekeo"],
-        "SEASONAL_ORIGINAL_SL": ["cop_cds", "wekeo"],
-        "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "wekeo"],
-        "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "wekeo"],
-        "SIS_HYDRO_MET_PROJ": ["cop_cds", "wekeo"],
+        "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo"],
+        "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo"],
+        "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo"],
+        "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo"],
+        "SEASONAL_MONTHLY_SL": ["cop_cds", "dedl", "wekeo"],
+        "SEASONAL_ORIGINAL_PL": ["cop_cds", "dedl", "wekeo"],
+        "SEASONAL_ORIGINAL_SL": ["cop_cds", "dedl", "wekeo"],
+        "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "dedl", "wekeo"],
+        "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "dedl", "wekeo"],
+        "SIS_HYDRO_MET_PROJ": ["cop_cds", "dedl"],
         "SPOT5_SPIRIT": ["theia"],
         "SPOT_SWH": ["theia"],
         "SPOT_SWH_OLD": ["theia"],
         "TIGGE_CF_SFC": ["ecmwf"],
-        "UERRA_EUROPE_SL": ["cop_cds", "wekeo"],
+        "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo"],
         "VENUS_L1C": ["theia"],
         "VENUS_L2A_MAJA": ["theia"],
         "VENUS_L3A_MAJA": ["theia"],
@@ -409,30 +565,36 @@ class TestCore(TestCoreBase):
             "planetary_computer",
             "hydroweb_next",
             "creodias_s3",
+            "dedl",
         ],
     }
     SUPPORTED_PROVIDERS = [
         "peps",
-        "usgs",
-        "theia",
-        "creodias",
-        "onda",
-        "aws_eos",
         "astraea_eod",
-        "usgs_satapi_aws",
+        "aws_eos",
+        "cop_ads",
+        "cop_cds",
+        "cop_dataspace",
+        "cop_marine",
+        "creodias",
+        "creodias_s3",
+        "dedl",
+        "dedt_lumi",
         "earth_search",
         "earth_search_cog",
         "earth_search_gcs",
         "ecmwf",
-        "cop_ads",
-        "cop_cds",
-        "sara",
-        "meteoblue",
-        "cop_dataspace",
-        "planetary_computer",
+        "eumetsat_ds",
         "hydroweb_next",
+        "meteoblue",
+        "onda",
+        "planetary_computer",
+        "sara",
+        "theia",
+        "usgs",
+        "usgs_satapi_aws",
         "wekeo",
-        "creodias_s3",
+        "wekeo_cmems",
     ]
 
     def setUp(self):
@@ -491,11 +653,15 @@ class TestCore(TestCoreBase):
                 self.assertListProductTypesRightStructure(product_type)
                 if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
-                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]]
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]],
+                        f"missing in supported providers for {product_type['ID']}",
                     )
                 else:
                     self.assertIn(
-                        provider, self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]]
+                        provider,
+                        self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]],
+                        f"missing in supported providers for {product_type['_id']}",
                     )
 
     def test_list_product_types_for_unsupported_provider(self):
@@ -516,6 +682,75 @@ class TestCore(TestCoreBase):
         assert not mock_fetch_product_types_list.called
         self.dag.list_product_types(provider="peps", fetch_providers=True)
         mock_fetch_product_types_list.assert_called_once_with(self.dag, provider="peps")
+
+    def test_guess_product_type_with_filter(self):
+        """Testing the search terms"""
+
+        with open(
+            os.path.join(TEST_RESOURCES_PATH, "ext_product_types_free_text_search.json")
+        ) as f:
+            ext_product_types_conf = json.load(f)
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        # Search any filter contains filter value
+        filter = "ABSTRACTFOO"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(product_types_ids, ["foo"])
+        # Search the exact phrase. Search is case insensitive
+        filter = '"THIS IS FOO. fooandbar"'
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(product_types_ids, ["foo"])
+
+        # Free text search: match in the keywords
+        filter = "LECTUS_BAR_KEY"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(product_types_ids, ["bar"])
+
+        # Free text search: match the phrase in title
+        filter = '"FOOBAR COLLECTION"'
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(product_types_ids, ["foobar"])
+
+        # Free text search: Using OR term match
+        filter = "FOOBAR,BAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+
+        filter = "FOOBAR BAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+
+        filter = "FOOBAR OR BAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+
+        # Free text search: using OR term match with additional filter UNION
+        filter = "FOOBAR OR BAR"
+        product_types_ids = self.dag.guess_product_type(filter, title="FOO*")
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar"])
+
+        # Free text search: Using AND term match
+        filter = "suspendisse AND FOO"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["foo"])
+
+        # Free text search: Parentheses can be used to group terms
+        filter = "(FOOBAR OR BAR) AND titleFOOBAR"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["foobar"])
+
+        # Free text search: multiple terms joined with param search (INTERSECT)
+        filter = "FOOBAR OR BAR"
+        product_types_ids = self.dag.guess_product_type(
+            filter, intersect=True, title="titleFOO*"
+        )
+        self.assertListEqual(sorted(product_types_ids), ["foobar"])
+
+        # Free text search: Indicate included and excluded terms using +/-
+        # This will search for items that INCLUDES "abstractfoo" EXCLUDES "bar" OR CONTAIN "foo"
+        filter = "foo +abstractfoo -bar"
+        product_types_ids = self.dag.guess_product_type(filter)
+        self.assertListEqual(sorted(product_types_ids), ["foo"])
 
     def test_update_product_types_list(self):
         """Core api.update_product_types_list must update eodag product types list"""
@@ -719,7 +954,8 @@ class TestCore(TestCoreBase):
             {"productType": "foo"},
         )
         self.assertEqual(
-            self.dag.product_types_config.source["foo"], {"title": "Foo collection"}
+            self.dag.product_types_config.source["foo"],
+            {"_id": "foo", "title": "Foo collection"},
         )
 
         # update existing provider conf and check that discover_product_types() is launched for it
@@ -877,7 +1113,7 @@ class TestCore(TestCoreBase):
         self.assertIn("platformSerialIdentifier", structure)
         self.assertIn("processingLevel", structure)
         self.assertIn("sensorType", structure)
-        assert (
+        self.assertTrue(
             structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
             or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
         )
@@ -934,6 +1170,27 @@ class TestCore(TestCoreBase):
         finally:
             os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
+
+    @mock.patch("eodag.plugins.manager.pkg_resources.iter_entry_points", autospec=True)
+    def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
+        """Providers needing skipped plugin must be pruned on init"""
+        empty_conf_file = resource_filename(
+            "eodag", os.path.join("resources", "user_conf_template.yml")
+        )
+
+        def skip_qssearch(topic):
+            ep = mock.MagicMock()
+            if topic == "eodag.plugins.search":
+                ep.name = "QueryStringSearch"
+                ep.load = mock.MagicMock(side_effect=DistributionNotFound())
+            return [ep]
+
+        mock_iter_ep.side_effect = skip_qssearch
+
+        dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
+        self.assertNotIn("peps", dag.available_providers())
+        self.assertEqual(dag._plugins_manager.skipped_plugins, ["QueryStringSearch"])
+        dag._plugins_manager.skipped_plugins = []
 
     def test_prune_providers_list_for_search_without_auth(self):
         """Providers needing auth for search but without auth plugin must be pruned on init"""
@@ -1075,20 +1332,35 @@ class TestCore(TestCoreBase):
         self.dag.update_providers_config(new_config)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
     )
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+    )
     def test_list_queryables(
-        self, mock_discover_queryables, mock_fetch_product_types_list
-    ):
+        self,
+        mock_stacsearch_discover_queryables: Mock,
+        mock_qssearch_discover_queryables: Mock,
+        mock_fetch_product_types_list: Mock,
+        mock_auth_plugin: Mock,
+    ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
+        mock_stacsearch_discover_queryables.return_value = {}
+        mock_qssearch_discover_queryables.return_value = {}
+
         with self.assertRaises(UnsupportedProvider):
-            self.dag.list_queryables(provider="not_existing_provider")
+            self.dag.list_queryables(provider="not_supported_provider")
 
         with self.assertRaises(UnsupportedProductType):
-            self.dag.list_queryables(productType="not_existing_product_type")
+            self.dag.list_queryables(productType="not_supported_product_type")
 
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
@@ -1118,8 +1390,29 @@ class TestCore(TestCoreBase):
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
 
-    @mock.patch("eodag.plugins.apis.cds.CdsApi.discover_queryables", autospec=True)
-    def test_list_queryables_with_constraints(self, mock_discover_queryables):
+        # when a product type is specified but not the provider, the intersection of the queryables of all providers
+        # having the product type in its config is returned, using queryables of the provider with the highest priority
+        queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
+        self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
+        self.assertLess(len(queryables_none_s1grd), len(queryables_peps_none))
+        self.assertLessEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
+        self.assertLess(len(queryables_none_s1grd), len(expected_longer_result))
+        # check that peps gets the highest priority
+        self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
+        for key, queryable in queryables_none_s1grd.items():
+            # compare obj.__repr__
+            if key == "productType":
+                self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
+            else:
+                self.assertEqual(str(expected_longer_result[key]), str(queryable))
+            # queryables intersection comes from peps's queryables
+            self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.BuildSearchResult.discover_queryables",
+        autospec=True,
+    )
+    def test_list_queryables_with_constraints(self, mock_discover_queryables: Mock):
         plugin = next(
             self.dag._plugins_manager.get_search_plugins(
                 provider="cop_cds", product_type="ERA5_SL"
@@ -1148,6 +1441,7 @@ class TestCore(TestCoreBase):
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
         mock_discover_queryables.reset_mock()
+
         # unset default values
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
         defaults = {
@@ -1158,6 +1452,183 @@ class TestCore(TestCoreBase):
             "format": None,
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+
+    def test_available_sortables(self):
+        """available_sortables must return available sortable(s) and its (their)
+        maximum number dict for providers which support the sorting feature"""
+        self.maxDiff = None
+        expected_result = {
+            "peps": None,
+            "astraea_eod": {
+                "sortables": ["id", "startTimeFromAscendingNode", "creationDate"],
+                "max_sort_params": None,
+            },
+            "aws_eos": None,
+            "cop_ads": None,
+            "cop_cds": None,
+            "cop_dataspace": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "creodias": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "creodias_s3": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "publicationDate",
+                    "modificationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "dedl": {
+                "max_sort_params": None,
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "creationDate",
+                    "modificationDate",
+                    "platformSerialIdentifier",
+                    "resolution",
+                    "cloudCover",
+                ],
+            },
+            "dedt_lumi": None,
+            "earth_search": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "creationDate",
+                    "modificationDate",
+                    "platformSerialIdentifier",
+                    "resolution",
+                    "cloudCover",
+                ],
+                "max_sort_params": None,
+            },
+            "earth_search_gcs": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "creationDate",
+                    "modificationDate",
+                    "platformSerialIdentifier",
+                    "resolution",
+                    "cloudCover",
+                ],
+                "max_sort_params": None,
+            },
+            "earth_search_cog": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "creationDate",
+                    "modificationDate",
+                    "platform",
+                    "platformSerialIdentifier",
+                    "resolution",
+                    "cloudCover",
+                ],
+                "max_sort_params": None,
+            },
+            "ecmwf": None,
+            "eumetsat_ds": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "publicationDate",
+                ],
+                "max_sort_params": 1,
+            },
+            "cop_marine": None,
+            "hydroweb_next": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "productVersion",
+                    "processingLevel",
+                ],
+                "max_sort_params": None,
+            },
+            "meteoblue": None,
+            "onda": {
+                "sortables": ["startTimeFromAscendingNode", "uid", "storageStatus"],
+                "max_sort_params": 1,
+            },
+            "planetary_computer": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "platformSerialIdentifier",
+                ],
+                "max_sort_params": None,
+            },
+            "sara": {
+                "sortables": [
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "sensorMode",
+                ],
+                "max_sort_params": 1,
+            },
+            "theia": None,
+            "usgs": None,
+            "usgs_satapi_aws": {
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "creationDate",
+                    "modificationDate",
+                    "platformSerialIdentifier",
+                    "illuminationElevationAngle",
+                    "illuminationAzimuthAngle",
+                    "cloudCover",
+                ],
+                "max_sort_params": None,
+            },
+            "wekeo": None,
+            "wekeo_cmems": None,
+        }
+        sortables = self.dag.available_sortables()
+        self.assertDictEqual(sortables, expected_result)
+
+        # check if sortables are set to None when the provider does not support the sorting feature
+        self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
+        self.assertEqual(sortables["peps"], None)
+
+        # check if sortable parameter(s) and its (their) maximum number of a provider are set
+        # to their value when the provider supports the sorting feature and has a maximum number of sortables
+        self.assertTrue(hasattr(self.dag.providers_config["creodias"].search, "sort"))
+        self.assertTrue(
+            self.dag.providers_config["creodias"].search.sort.get("max_sort_params")
+        )
+        if sortables["creodias"]:
+            self.assertIsNotNone(sortables["creodias"]["max_sort_params"])
+
+        # check if sortable parameter(s) of a provider is set to its value and its (their) maximum number is set
+        # to None when the provider supports the sorting feature and does not have a maximum number of sortables
+        self.assertTrue(
+            hasattr(self.dag.providers_config["planetary_computer"].search, "sort")
+        )
+        self.assertFalse(
+            self.dag.providers_config["planetary_computer"].search.sort.get(
+                "max_sort_params"
+            )
+        )
+        if sortables["planetary_computer"]:
+            self.assertIsNone(sortables["planetary_computer"]["max_sort_params"])
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
@@ -1256,7 +1727,8 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
     def execution_involving_conf_dir(self, inspect=None, conf_dir=None):
         """Check that the path(s) inspected (str, list) are created after the instantation
         of EODataAccessGateway. If they were already there, rename them (.old), instantiate,
-        check, delete the new files, and restore the existing files to there previous name."""
+        check, delete the new files, and restore the existing files to there previous name.
+        """
         if inspect is not None:
             if conf_dir is None:
                 conf_dir = os.path.join(os.path.expanduser("~"), ".config", "eodag")
@@ -1515,6 +1987,32 @@ class TestCoreSearch(TestCoreBase):
         actual = self.dag.guess_product_type(productType="foo")
         self.assertEqual(actual, ["foo"])
 
+        # with dates
+        self.assertEqual(
+            self.dag.product_types_config.source["S2_MSI_L1C"]["missionStartDate"],
+            "2015-06-23T00:00:00Z",
+        )
+        self.assertNotIn(
+            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-06-01")
+        )
+        self.assertIn(
+            "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
+        )
+        self.assertEqual(
+            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionStartDate"],
+            "2017-05-23T00:00:00Z",
+        )
+        self.assertEqual(
+            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionEndDate"],
+            "2018-03-25T00:00:00Z",
+        )
+        self.assertNotIn(
+            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-04-01")
+        )
+        self.assertIn(
+            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-03-01")
+        )
+
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingProductType):
@@ -1752,7 +2250,7 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway._do_search",
         autospec=True,
-        return_value=([mock.Mock()], 1),
+        return_value=(SearchResult([mock.Mock()], 1)),
     )
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     @mock.patch(
@@ -1764,6 +2262,21 @@ class TestCoreSearch(TestCoreBase):
         self, mock_get_search_plugins, mock_get_auth_plugin, mock__do_search
     ):
         """_search_by_id must filter search plugins using given kwargs, clear plugin and perform search"""
+        # max_items_per_page plugin conf
+        mock_config = mock.Mock()
+        type(mock_config).pagination = mock.PropertyMock(
+            return_value={"max_items_per_page": 100}
+        )
+        type(mock_get_search_plugins.return_value[0]).config = mock.PropertyMock(
+            return_value=mock_config
+        )
+        type(
+            mock_get_search_plugins.return_value[0]
+        ).next_page_query_obj = mock.PropertyMock(return_value={})
+        # mocked search result id
+        type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
+        )
 
         found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
 
@@ -1784,26 +2297,43 @@ class TestCoreSearch(TestCoreBase):
             mock_get_search_plugins.return_value[0],
             id="foo",
             productType="bar",
+            count=False,
+            raise_errors=True,
+            page=1,
+            items_per_page=100,
         )
         self.assertEqual(found, mock__do_search.return_value)
 
         mock__do_search.reset_mock()
         # return None if more than 1 product is found
-        m = mock.MagicMock()
-        p = EOProduct(
-            "peps", {"id": "a", "geometry": {"type": "Point", "coordinates": [1, 1]}}
+        mock__do_search.return_value = SearchResult([mock.Mock(), mock.Mock()], 2)
+        type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
         )
-        m.__len__.return_value = 2
-        m.__iter__.return_value = [p, p]
-        mock__do_search.return_value = (m, 2)
+        type(mock__do_search.return_value[1]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
+        )
         with self.assertLogs(level="INFO") as cm:
             found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
-            self.assertEqual(found, (SearchResult([]), 0))
+            self.assertEqual(found, SearchResult([], 0))
             self.assertIn("Several products found for this id", str(cm.output))
+
+        mock__do_search.reset_mock()
+        # return 1 result if more than 1 product is found but only 1 has the matching id
+        mock__do_search.return_value = SearchResult([mock.Mock(), mock.Mock()], 2)
+        type(mock__do_search.return_value[0]).properties = mock.PropertyMock(
+            return_value={"id": "foo"}
+        )
+        type(mock__do_search.return_value[1]).properties = mock.PropertyMock(
+            return_value={"id": "foooooo"}
+        )
+        found = self.dag._search_by_id(uid="foo", productType="bar", provider="baz")
+        self.assertEqual(found.number_matched, 1)
+        self.assertEqual(len(found), 1)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
-        """_do_search must create a count query by default"""
+        """_do_search must support itemsperpage higher than maximum"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,  # a list must be returned by .query
@@ -1814,17 +2344,23 @@ class TestCoreSearch(TestCoreBase):
             pagination = {"max_items_per_page": 1}
 
         search_plugin.config = DummyConfig()
-        sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
-            items_per_page=2,
-        )
-        self.assertIsInstance(sr, SearchResult)
-        self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(estimate, self.search_results_size)
+        with self.assertLogs(level="WARNING") as cm:
+            sr = self.dag._do_search(
+                count=True,
+                search_plugin=search_plugin,
+                items_per_page=2,
+            )
+            self.assertIsInstance(sr, SearchResult)
+            self.assertEqual(len(sr), self.search_results_size)
+            self.assertEqual(sr.number_matched, self.search_results_size)
+            self.assertIn(
+                "Try to lower the value of 'items_per_page'",
+                str(cm.output),
+            )
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test__do_search_counts_by_default(self, search_plugin):
-        """_do_search must create a count query by default"""
+    def test__do_search_counts(self, search_plugin):
+        """_do_search must create a count query if specified"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = (
             self.search_results.data,  # a list must be returned by .query
@@ -1835,10 +2371,10 @@ class TestCoreSearch(TestCoreBase):
             pagination = {}
 
         search_plugin.config = DummyConfig()
-        sr, estimate = self.dag._do_search(search_plugin=search_plugin)
+        sr = self.dag._do_search(search_plugin=search_plugin, count=True)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(estimate, self.search_results_size)
+        self.assertEqual(sr.number_matched, self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_without_count(self, search_plugin):
@@ -1854,16 +2390,15 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        sr, estimate = self.dag._do_search(search_plugin=search_plugin, count=False)
-        self.assertIsNone(estimate)
+        sr = self.dag._do_search(search_plugin=search_plugin, count=False)
+        self.assertIsNone(sr.number_matched)
         self.assertEqual(len(sr), self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
-        """_do_search must provide a best estimate when a provider doesn't return a count"""
+        """_do_search must return None as count if provider does not return the count"""
         search_plugin.provider = "peps"
-        # If the provider doesn't return a count, .query returns 0
-        search_plugin.query.return_value = (self.search_results.data, 0)
+        search_plugin.query.return_value = (self.search_results.data, None)
 
         class DummyConfig:
             pagination = {}
@@ -1871,52 +2406,18 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
 
         page = 4
-        sr, estimate = self.dag._do_search(
+        sr = self.dag._do_search(
+            count=True,
             search_plugin=search_plugin,
             page=page,
             items_per_page=2,
         )
         self.assertEqual(len(sr), self.search_results_size)
-        # The count guess is: page * number_of_products_returned
-        self.assertEqual(estimate, page * self.search_results_size)
-
-    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
-    def test__do_search_paginated_handle_fuzzy_count(self, search_plugin):
-        """_do_search must provide a best estimate when a provider returns a fuzzy count"""
-        search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
-            self.search_results.data * 4,  # 8 products returned
-            22,  # fuzzy number, less than the real total count
-        )
-
-        class DummyConfig:
-            pagination = {}
-
-        search_plugin.config = DummyConfig()
-
-        page = 4
-        items_per_page = 10
-        sr, estimate = self.dag._do_search(
-            search_plugin=search_plugin,
-            page=page,
-            items_per_page=items_per_page,
-        )
-        # At page 4 with 10 items_per_page we should have a count of at least 30
-        # products available. However the provider returned 22. We know it's wrong.
-        # So we update the count with our current knowledge: 30 + 8
-        # Note that this estimate could still be largely inferior to the real total
-        # count.
-        expected_estimate = items_per_page * (page - 1) + len(sr)
-        self.assertEqual(len(sr), 8)
-        self.assertEqual(estimate, expected_estimate)
+        self.assertEqual(sr.number_matched, None)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
-        """_do_search must provide a best estimate when a provider returns a null count"""
-        # TODO: check the underlying implementation, it doesn't make so much sense since
-        # this case is already covered with nb_res = len(res) * page. This one uses
-        # nb_res = items_per_page * (page - 1) whick actually makes more sense. Choose
-        # one of them.
+        """_do_search must return provider response even if provider returns a null count"""
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([], 0)
 
@@ -1927,17 +2428,18 @@ class TestCoreSearch(TestCoreBase):
 
         page = 4
         items_per_page = 10
-        sr, estimate = self.dag._do_search(
+        sr = self.dag._do_search(
+            count=True,
             search_plugin=search_plugin,
             page=page,
             items_per_page=items_per_page,
         )
-        expected_estimate = items_per_page * (page - 1)
         self.assertEqual(len(sr), 0)
-        self.assertEqual(estimate, expected_estimate)
+        self.assertEqual(sr.number_matched, 0)
 
     def test__do_search_does_not_raise_by_default(self):
         """_do_search must not raise any error by default"""
+
         # provider attribute required internally by __do_search for logging purposes.
         class DummyConfig:
             pagination = {}
@@ -1946,10 +2448,10 @@ class TestCoreSearch(TestCoreBase):
             provider = "peps"
             config = DummyConfig()
 
-        sr, estimate = self.dag._do_search(search_plugin=DummySearchPlugin())
+        sr = self.dag._do_search(search_plugin=DummySearchPlugin(), count=True)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), 0)
-        self.assertEqual(estimate, 0)
+        self.assertEqual(sr.number_matched, 0)
 
     def test__do_search_can_raise_errors(self):
         """_do_search must not raise errors if raise_errors=True"""
@@ -1992,7 +2494,7 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        sr = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNotNone(product.downloader)
 
@@ -2011,7 +2513,7 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         search_plugin.provider = "peps"
         search_plugin.query.return_value = ([DummyProduct(), DummyProduct()], 2)
-        sr, _ = self.dag._do_search(search_plugin=search_plugin)
+        sr = self.dag._do_search(search_plugin=search_plugin)
         for product in sr:
             self.assertIsNone(product.downloader)
 
@@ -2150,6 +2652,223 @@ class TestCoreSearch(TestCoreBase):
             search_plugin.config.pagination["next_page_url_tpl"],
             "dummy_next_page_url_tpl",
         )
+
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    def test_search_sort_by(
+        self,
+        mock_normalize_results,
+        mock_qssearch__request,
+        mock_postjsonsearch__request,
+    ):
+        """search must sort results by sorting parameter(s) in their sorting order
+        from the "sortBy" argument or by default sorting parameter if exists"""
+        mock_qssearch__request.return_value.json.return_value = {
+            "properties": {"totalResults": 2},
+            "features": [],
+            "links": [{"rel": "next", "href": "url/to/next/page"}],
+        }
+        mock_postjsonsearch__request.return_value.json.return_value = {
+            "meta": {"found": 2},
+            "features": [],
+            "links": [{"rel": "next", "href": "url/to/next/page"}],
+        }
+
+        p1 = EOProduct(
+            "dummy", dict(geometry="POINT (0 0)", id="1", eodagSortParam="1")
+        )
+        p1.search_intersection = None
+        p2 = EOProduct(
+            "dummy", dict(geometry="POINT (0 0)", id="2", eodagSortParam="2")
+        )
+        p2.search_intersection = None
+        mock_normalize_results.return_value = [p2, p1]
+
+        dag = EODataAccessGateway()
+
+        # with a GET mode search
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                sort:
+                    sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_param_mapping:
+                        eodagSortParam: providerSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+
+        dag.search(
+            provider="dummy_provider",
+            productType="S2_MSI_L1C",
+            sortBy=[("eodagSortParam", "DESC")],
+        )
+
+        # a provider-specific string has been created to sort by
+        self.assertIn(
+            "sortParam=providerSortParam&sortOrder=desc",
+            mock_qssearch__request.call_args[0][1].url,
+        )
+
+        # with a POST mode search
+        dummy_provider_config = """
+        other_dummy_provider:
+            search:
+                type: PostJsonSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+                    total_items_nb_key_path: '$.meta.found'
+                sort:
+                    sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+                    sort_param_mapping:
+                        eodagSortParam: providerSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        dag.search(
+            provider="other_dummy_provider",
+            productType="S2_MSI_L1C",
+            sortBy=[("eodagSortParam", "DESC")],
+        )
+
+        # a provider-specific dictionnary has been created to sort by
+        self.assertIn(
+            "sortby", mock_postjsonsearch__request.call_args[0][1].query_params.keys()
+        )
+        self.assertEqual(
+            [{"field": "providerSortParam", "direction": "desc"}],
+            mock_postjsonsearch__request.call_args[0][1].query_params["sortby"],
+        )
+
+        # TODO: sort by default sorting parameter and sorting order
+
+    def test_search_sort_by_raise_errors(self):
+        """search used with "sortBy" argument must raise errors if the argument is incorrect or if the provider does
+        not support a maximum number of sorting parameter, one sorting parameter or the sorting feature
+        """
+        dag = EODataAccessGateway()
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        # raise an error with a provider which does not support sorting feature
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("eodagSortParam", "ASC")],
+            )
+            self.assertIn(
+                "dummy_provider does not support sorting feature", str(cm_logs.output)
+            )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                sort:
+                    sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_param_mapping:
+                        eodagSortParam: providerSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        # raise an error with a parameter not sortable with a provider
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("otherEodagSortParam", "ASC")],
+            )
+            self.assertIn(
+                "\\'otherEodagSortParam\\' parameter is not sortable with dummy_provider. "
+                "Here is the list of sortable parameter(s) with dummy_provider: eodagSortParam",
+                str(cm_logs.output),
+            )
+
+        dummy_provider_config = """
+        dummy_provider:
+            search:
+                type: QueryStringSearch
+                api_endpoint: https://api.my_new_provider/search
+                pagination:
+                    next_page_url_tpl: '{url}?{search}{sort_by}&maxRecords={items_per_page}&page={page}&exactCount=1'
+                    total_items_nb_key_path: '$.properties.totalResults'
+                sort:
+                    sort_by_tpl: '&sortParam={sort_param}&sortOrder={sort_order}'
+                    sort_param_mapping:
+                        eodagSortParam: providerSortParam
+                        otherEodagSortParam: otherProviderSortParam
+                    sort_order_mapping:
+                        ascending: asc
+                        descending: desc
+                    max_sort_params: 1
+                metadata_mapping:
+                    dummy: 'dummy'
+            products:
+                S2_MSI_L1C:
+                    productType: '{productType}'
+        """
+        dag.update_providers_config(dummy_provider_config)
+        # raise an error with more sorting parameters than supported by the provider
+        with self.assertLogs(level="ERROR") as cm_logs:
+            dag.search(
+                provider="dummy_provider",
+                productType="S2_MSI_L1C",
+                sortBy=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],
+            )
+            self.assertIn(
+                "Search results can be sorted by only 1 parameter(s) with dummy_provider",
+                str(cm_logs.output),
+            )
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -2347,3 +3066,73 @@ class TestCoreProductAlias(TestCoreBase):
         # not existing product type
         with self.assertRaises(NoMatchingProductType):
             self.dag.get_product_type_from_alias("JUST_A_TYPE")
+
+
+class TestCoreProviderGroup(TestCoreBase):
+    group = ("peps", "creodias")
+    group_name = "testgroup"
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls.dag = EODataAccessGateway()
+        providers_configs = cls.dag.providers_config
+
+        setattr(providers_configs[cls.group[0]], "group", cls.group_name)
+        setattr(providers_configs[cls.group[1]], "group", cls.group_name)
+
+    def test_available_providers_by_group(self) -> None:
+        """
+        The method available_providers returns only one entry for both grouped providers
+        """
+        # drop the grouped names from expected providers, as they are grouped under "testgroup" name
+        providers = self.dag.available_providers()
+        providers.remove(self.group[0])
+        providers.remove(self.group[1])
+        providers.append(self.group_name)
+
+        self.assertCountEqual(self.dag.available_providers(by_group=True), providers)
+
+    def test_list_product_types(self) -> None:
+        """
+        List the product types for the provider group.
+        EODAG return the merged list of product types from both providers of the group.
+        """
+
+        earth_search_products = self.dag.list_product_types(
+            self.group[0], fetch_providers=False
+        )
+        earth_search_cog_products = self.dag.list_product_types(
+            self.group[1], fetch_providers=False
+        )
+
+        merged_list = list(
+            {
+                d["ID"]: d for d in earth_search_products + earth_search_cog_products
+            }.values()
+        )
+
+        self.assertCountEqual(
+            self.dag.list_product_types(self.group_name, fetch_providers=False),
+            merged_list,
+        )
+
+    def test_get_search_plugins(
+        self,
+    ) -> None:
+        """
+        The method _plugins_manager.get_search_plugins is called with provider group
+        It returns a list containing the 2 grouped plugins
+        """
+        plugin1 = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group[0])
+        )
+        plugin2 = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group[1])
+        )
+
+        group_plugins = list(
+            self.dag._plugins_manager.get_search_plugins(provider=self.group_name)
+        )
+
+        self.assertCountEqual(group_plugins, [*plugin1, *plugin2])

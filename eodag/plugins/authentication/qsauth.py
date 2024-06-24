@@ -67,6 +67,8 @@ class HttpQueryStringAuth(Authentication):
         auth = QueryStringAuth(**self.config.credentials)
 
         auth_uri = getattr(self.config, "auth_uri", None)
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         if auth_uri:
             try:
                 response = requests.get(
@@ -74,6 +76,7 @@ class HttpQueryStringAuth(Authentication):
                     timeout=HTTP_REQ_TIMEOUT,
                     headers=USER_AGENT,
                     auth=auth,
+                    verify=ssl_verify,
                 )
                 response.raise_for_status()
             except requests.exceptions.Timeout as exc:

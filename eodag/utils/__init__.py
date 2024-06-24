@@ -20,6 +20,7 @@
 Everything that does not fit into one of the specialised categories of utilities in
 this package should go here
 """
+
 from __future__ import annotations
 
 import ast
@@ -29,15 +30,19 @@ import functools
 import hashlib
 import inspect
 import logging as py_logging
+import mimetypes
 import os
 import re
 import shutil
+import ssl
 import string
+import sys
 import types
 import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
+from dataclasses import dataclass
 from datetime import datetime as dt
 from email.message import Message
 from glob import glob
@@ -52,10 +57,12 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 # All modules using these should import them from utils package
@@ -71,11 +78,15 @@ from urllib.parse import (  # noqa; noqa
 )
 from urllib.request import url2pathname
 
-try:
+if sys.version_info >= (3, 9):
     from typing import Annotated, get_args, get_origin  # noqa
-except ImportError:
-    # for python < 3.9
+else:
     from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
+
+if sys.version_info >= (3, 12):
+    from typing import Unpack  # type: ignore # noqa
+else:
+    from typing_extensions import Unpack  # noqa
 
 import click
 import orjson
@@ -89,7 +100,7 @@ from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
 from requests import HTTPError
 from shapely.geometry import Polygon, shape
-from shapely.geometry.base import BaseGeometry
+from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
 
 from eodag.utils import logging as eodag_logging
@@ -127,6 +138,9 @@ DEFAULT_ITEMS_PER_PAGE = 20
 # Default maximum number of items per page requested by search_all. 50 instead of 20
 # (DEFAULT_ITEMS_PER_PAGE) to increase it to the known and current minimum value (mundi)
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
+
+# default product-types start date
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
 
 
 def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
@@ -822,7 +836,7 @@ def list_items_recursive_apply(
 
 
 def items_recursive_sort(
-    input_obj: Union[List[Any], Dict[Any, Any]]
+    input_obj: Union[List[Any], Dict[Any, Any]],
 ) -> Union[List[Any], Dict[Any, Any]]:
     """Recursive sort dict items contained in input object (dict or list)
 
@@ -1083,7 +1097,10 @@ def get_geometry_from_various(
         geom_arg = query_args["geometry"]
 
         bbox_keys = ["lonmin", "latmin", "lonmax", "latmax"]
-        if isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
+        if isinstance(geom_arg, dict) and geom_arg.get("type") in GEOMETRY_TYPES:
+            # geojson geometry
+            geom = cast(BaseGeometry, shape(geom_arg))
+        elif isinstance(geom_arg, dict) and all(k in geom_arg for k in bbox_keys):
             # bbox dict
             geom = Polygon(
                 (
@@ -1230,7 +1247,9 @@ def cached_parse(str_to_parse: str) -> JSONPath:
 
 @functools.lru_cache()
 def _mutable_cached_yaml_load(config_path: str) -> Any:
-    with open(os.path.abspath(os.path.realpath(config_path)), "r") as fh:
+    with open(
+        os.path.abspath(os.path.realpath(config_path)), mode="r", encoding="utf-8"
+    ) as fh:
         return yaml.load(fh, Loader=yaml.SafeLoader)
 
 
@@ -1289,8 +1308,9 @@ def get_bucket_name_and_prefix(
         prefix = path
     elif bucket_path_level is not None:
         parts = path.split("/")
-        bucket, prefix = parts[bucket_path_level], "/".join(
-            parts[(bucket_path_level + 1) :]
+        bucket, prefix = (
+            parts[bucket_path_level],
+            "/".join(parts[(bucket_path_level + 1) :]),
         )
 
     return bucket, prefix
@@ -1409,3 +1429,46 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
         return eval(value.capitalize())
 
     return new_type(value)
+
+
+@dataclass
+class StreamResponse:
+    """Represents a streaming response"""
+
+    content: Iterator[bytes]
+    headers: Optional[Mapping[str, str]] = None
+    media_type: Optional[str] = None
+    status_code: Optional[int] = None
+
+
+def guess_file_type(file: str) -> Optional[str]:
+    """guess the mime type of a file or URL based on its extension"""
+    mimetypes.add_type("text/xml", ".xsd")
+    mimetypes.add_type("application/x-grib", ".grib")
+    mime_type, _ = mimetypes.guess_type(file, False)
+    return mime_type
+
+
+def guess_extension(type: str) -> Optional[str]:
+    """guess extension from mime type"""
+    mimetypes.add_type("text/xml", ".xsd")
+    mimetypes.add_type("application/x-grib", ".grib")
+    return mimetypes.guess_extension(type, strict=False)
+
+
+def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
+    """
+    Returns an SSL context based on ssl_verify argument.
+    :param ssl_verify: ssl_verify parameter
+    :type ssl_verify: bool
+    :returns: An SSL context object.
+    :rtype: ssl.SSLContext
+    """
+    ctx = ssl.create_default_context()
+    if not ssl_verify:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    else:
+        ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
+    return ctx
