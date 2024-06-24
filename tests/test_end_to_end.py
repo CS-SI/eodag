@@ -203,11 +203,10 @@ METEOBLUE_SEARCH_ARGS = [
 ]
 WEKEO_MAIN_SEARCH_ARGS = [
     "wekeo_main",
-    "CLMS_CORINE",
-    # the following arguments will be ignored in the search
-    "2023-01-01",
-    "2023-01-01",
-    [-180, -90, 180, 90],
+    "EEA_DAILY_VI",
+    "2016-10-01",
+    "2016-10-02",
+    [19.8614709, 36.9525649, 21.111086, 37.9475371],
 ]
 WEKEO_ECMWF_SEARCH_ARGS = [
     "wekeo_ecmwf",
@@ -534,8 +533,8 @@ class TestEODagEndToEnd(EndToEndBase):
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_wekeo_main(self):
-        product = self.execute_search(*WEKEO_MAIN_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
+        product = self.execute_search(*WEKEO_MAIN_SEARCH_ARGS, page=2, items_per_page=4)
+        expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
 
     def test_end_to_end_search_download_wekeo_ecmwf(self):
