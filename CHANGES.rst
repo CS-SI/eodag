@@ -8,9 +8,9 @@ Breaking changes
 ^^^^^^^^^^^^^^^^
 
 * `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_ method now
-  returns only a :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple (:pull:`1200`). It can store
-  the estimated total number of products in ``SearchResult.number_matched`` if the method is called with ``count=True``
-  (``False`` by  default).
+  returns only a :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple (:pull:`1200`). It can
+  optionally store the estimated total number of products in ``SearchResult.number_matched`` if the method is called
+  with ``count=True`` (``False`` by  default).
 * Packaging refactoring and new `optional dependencies
   <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_ (:pull:`1108`)
   (:pull:`1219`). EODAG default installs with a minimal set of dependencies.
@@ -49,7 +49,7 @@ Providers and product types updates
   search datetime intervals (:pull:`1158`), and removed `discover_product_types` (:pull:`1112`)
 * ``cop_ads`` and ``cop_cds`` now use :class:`~eodag.plugins.search.build_search_result.BuildSearchResult` and
   :class:`~eodag.plugins.download.http.HTTPDownload` instead of move ``CdsApi`` (:pull:`1029`), `EFAS` dates formatting
-  (:pull:`1178`), ``area`` metadata mapping fix for `CAMS_EU_AIR_QUALITY_FORECAST` (:pull:`1225`)
+  (:pull:`1178`), ``area`` metadata mapping fix (:pull:`1225`)
 * ``wekeo`` now uses `hda-broker 2.0` API (:pull:`1034`), lists queryables (:pull:`1104`), has fixed pagination
   (:pull:`1098`) and CLMS search by id (:pull:`1100`)
 * Adjusted timeouts (:pull:`1163`)
