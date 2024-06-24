@@ -29,7 +29,12 @@ from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils import guess_file_type
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    NotAvailableError,
+    RequestError,
+)
 
 DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
 logger = logging.getLogger("eodag.search.creodiass3")
@@ -105,7 +110,9 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                 raise AuthenticationError(
                     f"Authentication failed on {config.base_uri} s3"
                 ) from e
-            raise RequestError(f"assets for product {prefix} could not be found") from e
+            raise NotAvailableError(
+                f"assets for product {prefix} could not be found"
+            ) from e
 
 
 class CreodiasS3Search(ODataV4Search):
