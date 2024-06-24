@@ -19,6 +19,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from typing_extensions import Annotated, Doc
+
 if TYPE_CHECKING:
     from typing import Optional, Set, Tuple
 
@@ -84,6 +86,7 @@ class RequestError(EodagError):
     """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""
 
+    status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
     history: Set[Tuple[str, Exception]] = set()
     parameters: Set[str] = set()
 

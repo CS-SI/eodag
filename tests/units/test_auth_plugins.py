@@ -28,7 +28,6 @@ from requests.exceptions import RequestException
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
-from eodag.utils.exceptions import RequestError
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -1510,7 +1509,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         """
         state = "1234567890123456789012"
         self.assertRaises(
-            RequestError,
+            MisconfiguredError,
             auth_plugin.authenticate_user,
             state,
         )

@@ -1177,7 +1177,10 @@ class QueryStringSearch(Search):
                     self.__class__.__name__,
                     err_msg,
                 )
-            raise RequestError(str(err))
+            response = getattr(err, "response", None) or Response()
+            error = RequestError(response.text or str(err))
+            error.status_code = response.status_code
+            raise error from err
         return response
 
 
@@ -1632,20 +1635,16 @@ class PostJsonSearch(QueryStringSearch):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
         except (requests.RequestException, URLError) as err:
+            response = locals().get("response", Response())
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
-            if (
-                hasattr(err, "response")
-                and err.response is not None
-                and getattr(err.response, "status_code", None)
-                and err.response.status_code in auth_errors
-            ):
+            if response.status_code and response.status_code in auth_errors:
                 raise AuthenticationError(
                     "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
-                        err.response.status_code,
-                        err.response.text.strip(),
+                        response.status_code,
+                        response.text.strip(),
                         self.provider,
                     )
                 )
@@ -1658,16 +1657,10 @@ class PostJsonSearch(QueryStringSearch):
                     self.provider,
                     self.__class__.__name__,
                 )
-            if "response" in locals():
-                logger.debug(response.content)
-            error_text = str(err)
-            if (
-                hasattr(err, "response")
-                and err.response is not None
-                and getattr(err.response, "text", None)
-            ):
-                error_text = err.response.text
-            raise RequestError(error_text) from err
+            logger.debug(response.content or str(err))
+            error = RequestError(response.text or str(err))
+            error.status_code = response.status_code
+            raise error from err
         return response
 
 
