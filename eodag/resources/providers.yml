@@ -4003,7 +4003,7 @@
     realm: 'CDSE'
     client_id: 'cdse-public'
     client_secret: null
-    token_provision: qs
+    token_provision: header
     token_qs_key: 'token'
     auth_error_code: 401
     ssl_verify: true
