@@ -28,7 +28,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
-* `wekeo_sentinel <https://www.wekeo.eu/>`_: WEkEO Sentinel data
+* `wekeo_main <https://www.wekeo.eu/>`_: WEkEO Sentinel and some various Copernicus data
 * `wekeo_ecmwf <https://www.wekeo.eu/>`_: WEkEO ECMWF data
 * `wekeo_cmems <https://www.wekeo.eu>`_: Copernicus Marine (CMEMS) data from WEkEO
 * `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_: DestinE Digital Twin output on Lumi

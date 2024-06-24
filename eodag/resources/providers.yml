@@ -4337,13 +4337,13 @@
       X-API-Key: "{apikey}"
 
 ---
-!provider  # MARK: wekeo_sentinel
-  name: wekeo_sentinel # wekeo_sentinel
+!provider  # MARK: wekeo_main
+  name: wekeo_main # wekeo_main
   group: wekeo
   priority: 0
   roles:
     - host
-  description: WEkEO - Sentinel data
+  description: WEkEO - Sentinel and some various Copernicus data
   url: https://www.wekeo.eu/
   # anchors to avoid duplications
   anchor_dates_eum: &eo_eum_dates

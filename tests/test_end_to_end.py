@@ -201,8 +201,8 @@ METEOBLUE_SEARCH_ARGS = [
     (today + 2 * day_span).isoformat(),
     [0.2, 43.2, 0.5, 43.5],
 ]
-WEKEO_SENTINEL_SEARCH_ARGS = [
-    "wekeo_sentinel",
+WEKEO_MAIN_SEARCH_ARGS = [
+    "wekeo_main",
     "CLMS_CORINE",
     # the following arguments will be ignored in the search
     "2023-01-01",
@@ -533,8 +533,8 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_wekeo_sentinel(self):
-        product = self.execute_search(*WEKEO_SENTINEL_SEARCH_ARGS)
+    def test_end_to_end_search_download_wekeo_main(self):
+        product = self.execute_search(*WEKEO_MAIN_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
 
@@ -1094,16 +1094,16 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
                 ),
             )
 
-    def test_end_to_end_wrong_credentials_search_wekeo_sentinel(self):
+    def test_end_to_end_wrong_credentials_search_wekeo_main(self):
         # It should already fail while searching for the products.
-        self.eodag.set_preferred_provider(WEKEO_SENTINEL_SEARCH_ARGS[0])
+        self.eodag.set_preferred_provider(WEKEO_MAIN_SEARCH_ARGS[0])
         with self.assertRaises(AuthenticationError):
             results, _ = self.eodag.search(
                 raise_errors=True,
                 **dict(
                     zip(
                         ["productType", "start", "end", "geom"],
-                        WEKEO_SENTINEL_SEARCH_ARGS[1:],
+                        WEKEO_MAIN_SEARCH_ARGS[1:],
                     )
                 ),
             )
