@@ -701,20 +701,20 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "earth_search"
         ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
         self.assertEqual(
-            "sentinel-s2-l1c",
-            ext_product_types_conf[provider]["providers_config"]["sentinel-s2-l1c"][
+            "sentinel-2-l1c",
+            ext_product_types_conf[provider]["providers_config"]["sentinel-2-l1c"][
                 "productType"
             ],
         )
         self.assertEqual(
-            "Sentinel 2 L1C",
-            ext_product_types_conf[provider]["product_types_config"]["sentinel-s2-l1c"][
+            "Sentinel-2 Level-1C",
+            ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
                 "title"
             ],
         )
         self.assertEqual(
             "proprietary",
-            ext_product_types_conf[provider]["product_types_config"]["sentinel-s2-l1c"][
+            ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
                 "license"
             ],
         )
