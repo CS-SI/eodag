@@ -1443,7 +1443,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
                 )
             search_provider = self.onda_auth_plugin.provider
             search_type = self.onda_search_plugin.__class__.__name__
-            error_message = f"Skipping error while searching for {search_provider} {search_type} instance:"
+            error_message = f"Skipping error while searching for {search_provider} {search_type} instance"
             error_message_indexes_list = [
                 i.start() for i in re.finditer(error_message, str(cm.output))
             ]

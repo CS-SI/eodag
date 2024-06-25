@@ -111,8 +111,8 @@ class BuildPostSearchResult(PostJsonSearch):
         prep.url = prep.search_urls[0]
         prep.info_message = f"Sending search request: {prep.url}"
         prep.exception_message = (
-            f"Skipping error while searching for {self.provider} "
-            f"{self.__class__.__name__} instance:"
+            f"Skipping error while searching for {self.provider}"
+            f" {self.__class__.__name__} instance"
         )
         response = self._request(prep)
 

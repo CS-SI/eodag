@@ -857,8 +857,8 @@ class QueryStringSearch(Search):
                 search_url
             )
             single_search_prep.exception_message = (
-                "Skipping error while searching for {} {} "
-                "instance:".format(self.provider, self.__class__.__name__)
+                f"Skipping error while searching for {self.provider}"
+                f" {self.__class__.__name__} instance"
             )
             response = self._request(single_search_prep)
             next_page_url_key_path = self.config.pagination.get(
@@ -1222,7 +1222,7 @@ class ODataV4Search(QueryStringSearch):
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
                 except requests.RequestException:
                     logger.exception(
-                        "Skipping error while searching for %s %s instance:",
+                        "Skipping error while searching for %s %s instance",
                         self.provider,
                         self.__class__.__name__,
                     )

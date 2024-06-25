@@ -285,7 +285,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            "Could no get authentication token: 404 .* test error message",
+            "('Could no get authentication token', '404 .* 'test error message')",
         ):
             # mock token post request response with a different status code from the one in the provider auth config
             with responses.RequestsMock(
@@ -310,7 +310,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            f"HTTP Error 401 returned, test error message\nPlease check your credentials for {provider}",
+            f"('Please check your credentials for {provider}', 'HTTP Error 401 returned', 'test error message')",
         ):
             # mock token post request response with the same status code as the one in the provider auth config
             with responses.RequestsMock(
