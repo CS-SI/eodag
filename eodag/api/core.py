@@ -1472,7 +1472,7 @@ class EODataAccessGateway:
                 )
                 or DEFAULT_MAX_ITEMS_PER_PAGE
             )
-            logger.debug(
+            logger.info(
                 "Searching for all the products with provider %s and a maximum of %s "
                 "items per page.",
                 search_plugin.provider,
@@ -1770,12 +1770,10 @@ class EODataAccessGateway:
             provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
         if provider not in providers:
-            logger.warning(
-                "Product type '%s' is not available with provider '%s'. "
-                "Searching it on provider '%s' instead.",
+            logger.debug(
+                "Product type '%s' is not available with preferred provider '%s'.",
                 product_type,
                 provider,
-                search_plugins[0].provider,
             )
         else:
             provider_plugin = list(
@@ -1783,11 +1781,6 @@ class EODataAccessGateway:
             )[0]
             search_plugins.remove(provider_plugin)
             search_plugins.insert(0, provider_plugin)
-            logger.info(
-                "Searching product type '%s' on provider: %s",
-                product_type,
-                search_plugins[0].provider,
-            )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
@@ -1831,6 +1824,7 @@ class EODataAccessGateway:
         :param kwargs: Some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria
         """
+        logger.info("Searching on provider %s", search_plugin.provider)
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
         )
@@ -1951,13 +1945,6 @@ class EODataAccessGateway:
                         "the total number of products matching the search criteria"
                     )
         except Exception as e:
-            log_msg = f"No result from provider '{search_plugin.provider}' due to an error during search."
-            if not raise_errors:
-                log_msg += " Raise verbosity of log messages for details"
-            logger.info(log_msg)
-            # keep only the message from exception args
-            if len(e.args) > 1:
-                e.args = (e.args[0],)
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next
