@@ -585,7 +585,6 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_queryables(
         self, mock_requests_session_constraints
     ):
-
         # One of the providers that has discover_queryables() configured with QueryStringSearch
         search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
         self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
