@@ -448,9 +448,14 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        # One of the providers that has discover_product_types() configured with QueryStringSearch
         provider = "wekeo_cmems"
         search_plugin = self.get_search_plugin(provider=provider)
+        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "QueryStringSearch",
+            search_plugin.discover_product_types.__func__.__qualname__.split(".")[0],
+        )
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
@@ -580,7 +585,14 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_queryables(
         self, mock_requests_session_constraints
     ):
+        # One of the providers that has discover_queryables() configured with QueryStringSearch
         search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "QueryStringSearch",
+            search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
+        )
+
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
