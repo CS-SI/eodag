@@ -836,7 +836,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-02-01T00:00:00Z",
                 provider="peps",
                 geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=True,
+                raise_errors=False,
                 count=True,
             ),
         )
@@ -1500,7 +1500,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("UnsupportedProvider", response_content["description"])
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     def test_product_type_queryables(self, mock_requests_session_post):
@@ -1626,7 +1626,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("UnsupportedProductType", response_content["description"])
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):

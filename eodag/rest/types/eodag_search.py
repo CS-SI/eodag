@@ -116,13 +116,6 @@ class EODAGSearch(BaseModel):
     _to_eodag_map: Dict[str, str]
 
     @model_validator(mode="after")
-    def set_raise_errors(self) -> Self:
-        """Set raise_errors to True if provider is set"""
-        if self.provider:
-            self.raise_errors = True
-        return self
-
-    @model_validator(mode="after")
     def remove_timeFromAscendingNode(self) -> Self:  # pylint: disable=invalid-name
         """TimeFromAscendingNode are just used for translation and not for search"""
         self.startTimeFromAscendingNode = None  # pylint: disable=invalid-name
