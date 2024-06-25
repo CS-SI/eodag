@@ -3845,7 +3845,7 @@
     - host
   url: https://dataspace.copernicus.eu/
   search: !plugin
-    type: CopDataSpaceSearch
+    type: ODataV4Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
     need_auth: false
     timeout: 120
@@ -3908,6 +3908,7 @@
               and:
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
+    add_nodes_to_assets: true
     per_product_metadata_query: false
     metadata_pre_mapping:
       metadata_path: '$.Attributes'
