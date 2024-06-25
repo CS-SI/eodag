@@ -19,10 +19,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from typing_extensions import Annotated, Doc
-
 if TYPE_CHECKING:
-    from typing import Optional, Set, Tuple
+    from typing import Optional, Set
+
+    from typing_extensions import Annotated, Doc
 
 
 class EodagError(Exception):
@@ -87,14 +87,6 @@ class RequestError(EodagError):
     and methods should catch and skip this"""
 
     status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
-    history: Set[Tuple[str, Exception]] = set()
-    parameters: Set[str] = set()
-
-    def __str__(self):
-        repr = super().__str__()
-        for err_tuple in self.history:
-            repr += f"- {str(err_tuple)}"
-        return repr
 
     @classmethod
     def from_error(cls, error: Exception, msg: Optional[str] = None):
