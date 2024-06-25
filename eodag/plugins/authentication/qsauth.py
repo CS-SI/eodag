@@ -82,7 +82,7 @@ class HttpQueryStringAuth(Authentication):
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
             except RequestException as e:
-                raise AuthenticationError(f"Could no authenticate: {str(e)}")
+                raise AuthenticationError("Could no authenticate", str(e)) from e
 
         return auth
 
