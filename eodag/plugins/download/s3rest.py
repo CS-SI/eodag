@@ -225,7 +225,7 @@ class S3RestDownload(Download):
                         self.__class__.__name__,
                         bucket_contents.text,
                     )
-                    raise RequestError(str(err))
+                    raise RequestError.from_error(err) from err
             try:
                 xmldoc = minidom.parseString(bucket_contents.text)
             except ExpatError as err:

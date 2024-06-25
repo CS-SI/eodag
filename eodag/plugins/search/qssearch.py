@@ -1172,10 +1172,7 @@ class QueryStringSearch(Search):
                     self.__class__.__name__,
                     err_msg,
                 )
-            response = getattr(err, "response", None) or Response()
-            error = RequestError(response.text or str(err))
-            error.status_code = response.status_code
-            raise error from err
+            raise RequestError.from_error(err, exception_message) from err
         return response
 
 
@@ -1575,9 +1572,7 @@ class PostJsonSearch(QueryStringSearch):
                     self.__class__.__name__,
                 )
             logger.debug(response.content or str(err))
-            error = RequestError(response.text or str(err))
-            error.status_code = response.status_code
-            raise error from err
+            raise RequestError.from_error(err, exception_message) from err
         return response
 
 

@@ -55,7 +55,7 @@ def patched_register_downloader(self, downloader, authenticator):
     try:
         _update_assets(self, downloader.config, authenticator)
     except BotoCoreError as e:
-        raise RequestError(f"could not update assets: {str(e)}") from e
+        raise RequestError.from_error(e, "could not update assets") from e
 
 
 def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):

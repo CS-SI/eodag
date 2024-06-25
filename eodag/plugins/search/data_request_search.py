@@ -275,13 +275,9 @@ class DataRequestSearch(Search):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            error = RequestError(
-                f"search job for product_type {product_type} could not be created:"
-                f" {e.response.text if e.response else str(e)}"
-            )
-            if e.response:
-                error.status_code = e.response.status_code
-            raise error from e
+            raise RequestError.from_error(
+                e, f"search job for product_type {product_type} could not be created"
+            ) from e
         else:
             logger.info("search job for product_type %s created", product_type)
             return request_job.json()["jobId"]
@@ -298,12 +294,7 @@ class DataRequestSearch(Search):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            error = RequestError(
-                f"_cancel_request failed: {e.response.text if e.response else str(e)}"
-            )
-            if e.response:
-                error.status_code = e.response.status_code
-            raise error from e
+            raise RequestError.from_error(e, "_cancel_request failed") from e
 
     def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
@@ -322,12 +313,7 @@ class DataRequestSearch(Search):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            error = RequestError(
-                f"_check_request_status failed: {e.response.text if e. response else str(e)}"
-            )
-            if e.response:
-                error.status_code = e.response.status_code
-            raise error from e
+            raise RequestError.from_error(e, "_check_request_status failed") from e
         else:
             status_data = status_resp.json()
             if "status_code" in status_data and status_data["status_code"] in [
