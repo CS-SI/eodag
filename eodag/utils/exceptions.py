@@ -96,6 +96,22 @@ class RequestError(EodagError):
             repr += f"- {str(err_tuple)}"
         return repr
 
+    @classmethod
+    def from_error(cls, error: Exception, msg: Optional[str] = None):
+        """Generate a RequestError from an Exception"""
+        status_code = getattr(error, "code", None)
+        text = getattr(error, "msg", None)
+
+        if getattr(error, "response", None):
+            status_code = error.response.status_code
+            text = error.response.text
+
+        text = text or str(error)
+
+        e = cls(msg, text) if msg else cls(text)
+        e.status_code = status_code
+        return e
+
 
 class NoMatchingProductType(EodagError):
     """An error indicating that eodag was unable to derive a product type from a set

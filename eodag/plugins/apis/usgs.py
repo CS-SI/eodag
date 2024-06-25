@@ -256,7 +256,7 @@ class UsgsApi(Api):
                 f"Product type {usgs_dataset} may not exist on USGS EE catalog"
             )
             api.logout()
-            raise RequestError(e)
+            raise RequestError.from_error(e) from e
 
         api.logout()
 

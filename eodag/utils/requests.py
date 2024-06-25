@@ -63,12 +63,7 @@ def fetch_json(
     except requests.exceptions.Timeout as exc:
         raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
     except requests.exceptions.RequestException as exc:
-        error = RequestError(
-            f"Unable to fetch {file_url}: {exc.response.text if exc.response else str(exc)}",
-        )
-        if resp := exc.response:
-            error.status_code = resp.status_code
-        raise error from exc
+        raise RequestError.from_error(exc, f"Unable to fetch {file_url}") from exc
     else:
         return res.json()
 
