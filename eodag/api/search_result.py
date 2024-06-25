@@ -18,9 +18,10 @@
 from __future__ import annotations
 
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from shapely.geometry import GeometryCollection, shape
+from typing_extensions import Doc
 
 from eodag.api.product import EOProduct
 from eodag.plugins.crunch.filter_date import FilterDate
@@ -28,6 +29,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
+from eodag.utils import Annotated
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
@@ -47,11 +49,19 @@ class SearchResult(UserList):
 
     data: List[EOProduct]
 
+    errors: Annotated[
+        List[Tuple[str, Exception]], Doc("Tuple of provider name, exception")
+    ]
+
     def __init__(
-        self, products: List[EOProduct], number_matched: Optional[int] = None
+        self,
+        products: List[EOProduct],
+        number_matched: Optional[int] = None,
+        errors: List[Tuple[str, Exception]] = [],
     ) -> None:
-        super(SearchResult, self).__init__(products)
+        super().__init__(products)
         self.number_matched = number_matched
+        self.errors = errors
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -196,6 +206,13 @@ class SearchResult(UserList):
             )
             + "</table>"
         )
+
+    def extend(self, other: Iterable) -> None:
+        """override extend method to include errors"""
+        if isinstance(other, SearchResult):
+            self.errors.extend(other.errors)
+
+        return super().extend(other)
 
 
 class RawSearchResult(UserList):

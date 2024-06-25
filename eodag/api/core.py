@@ -217,7 +217,6 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
-        self.search_errors: Set = set()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -1191,7 +1190,7 @@ class EODataAccessGateway:
             items_per_page=items_per_page,
         )
 
-        self.search_errors = set()
+        errors: List[Tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1201,17 +1200,19 @@ class EODataAccessGateway:
                 raise_errors=raise_errors,
                 **search_kwargs,
             )
+            errors.extend(search_results.errors)
             if len(search_results) == 0 and i < len(search_plugins) - 1:
                 logger.warning(
                     f"No result could be obtained from provider {search_plugin.provider}, "
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
+                search_results.errors = errors
                 return search_results
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
-        return SearchResult([], 0) if count else SearchResult([])
+        return SearchResult([], 0, errors) if count else SearchResult([], errors=errors)
 
     def search_iter_page(
         self,
@@ -1854,6 +1855,8 @@ class EODataAccessGateway:
         results: List[EOProduct] = []
         total_results: Optional[int] = 0 if count else None
 
+        errors: List[Tuple[str, Exception]] = []
+
         try:
             prep = PreparedSearch(count=count)
             if need_auth and auth_plugin and can_authenticate:
@@ -1964,8 +1967,8 @@ class EODataAccessGateway:
                     "Error while searching on provider %s (ignored):",
                     search_plugin.provider,
                 )
-                self.search_errors.add((search_plugin.provider, e))
-        return SearchResult(results, total_results)
+                errors.append((search_plugin.provider, e))
+        return SearchResult(results, total_results, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results
