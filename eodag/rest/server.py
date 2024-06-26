@@ -355,7 +355,7 @@ async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
 @router.api_route(methods=["GET", "HEAD"], path="/", tags=["Capabilities"])
 async def catalogs_root(request: Request) -> ORJSONResponse:
     """STAC catalogs root"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     response = await get_stac_catalogs(
         request=request,
@@ -367,9 +367,9 @@ async def catalogs_root(request: Request) -> ORJSONResponse:
 
 
 @router.api_route(methods=["GET", "HEAD"], path="/conformance", tags=["Capabilities"])
-def conformance() -> ORJSONResponse:
+def conformance(request: Request) -> ORJSONResponse:
     """STAC conformance"""
-    logger.debug("URL: /conformance")
+    logger.info(f"{request.method} {request.state.url}")
     response = get_stac_conformance()
 
     return ORJSONResponse(response)
@@ -382,7 +382,7 @@ def conformance() -> ORJSONResponse:
 )
 def stac_extension_oseo(request: Request) -> ORJSONResponse:
     """STAC OGC / OpenSearch extension for EO"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
     response = get_stac_extension_oseo(url=request.state.url)
 
     return ORJSONResponse(response)
@@ -398,7 +398,7 @@ def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC collection item download"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -422,7 +422,7 @@ def stac_collections_item_download_asset(
     collection_id: str, item_id: str, asset: str, request: Request
 ):
     """STAC collection item asset download"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -446,7 +446,7 @@ def stac_collections_item(
     collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection item by id"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     search_request = SearchPostRequest(
         provider=provider, ids=[item_id], collections=[collection_id], limit=1
@@ -522,7 +522,7 @@ async def list_collection_queryables(
     :param collection_id: The identifier of the collection for which to retrieve queryable properties.
     :returns: A json object containing the list of available queryable properties for the specified collection.
     """
-    logger.debug(f"URL: {request.url}")
+    logger.info(f"{request.method} {request.state.url}")
     additional_params = dict(request.query_params)
     provider = additional_params.pop("provider", None)
 
@@ -545,7 +545,7 @@ async def collection_by_id(
     collection_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection by id"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     response = await get_collection(
         request=request,
@@ -576,7 +576,7 @@ async def collections(
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType,
     processingLevel
     """
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     collections = await all_collections(
         request, provider, q, platform, instrument, constellation, datetime
@@ -594,7 +594,7 @@ def stac_catalogs_item_download(
     catalogs: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC Catalog item download"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -620,7 +620,7 @@ def stac_catalogs_item_download_asset(
     catalogs: str, item_id: str, asset_filter: str, request: Request
 ):
     """STAC Catalog item asset download"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
@@ -647,7 +647,7 @@ def stac_catalogs_item(
     catalogs: str, item_id: str, request: Request, provider: Optional[str] = None
 ):
     """Fetch catalog's single features."""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     list_catalog = catalogs.strip("/").split("/")
 
@@ -682,7 +682,7 @@ def stac_catalogs_items(
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Fetch catalog's features"""
-    logger.debug("URL: %s", request.state.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     base_args = {
         "provider": provider,
@@ -721,7 +721,7 @@ async def stac_catalogs(
     catalogs: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """Describe the given catalog and list available sub-catalogs"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     if not catalogs:
         raise HTTPException(
@@ -756,7 +756,7 @@ async def list_queryables(request: Request) -> ORJSONResponse:
     :param request: The incoming request object.
     :returns: A json object containing the list of available queryable terms.
     """
-    logger.debug(f"URL: {request.url}")
+    logger.info(f"{request.method} {request.state.url}")
     additional_params = dict(request.query_params.items())
     provider = additional_params.pop("provider", None)
     queryables = await get_queryables(
@@ -789,7 +789,7 @@ def get_search(
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
-    logger.debug("URL: %s", request.state.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     query_params = str(request.query_params)
 
@@ -843,7 +843,7 @@ def get_search(
 )
 async def post_search(request: Request) -> ORJSONResponse:
     """STAC post search"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     content_type = request.headers.get("Content-Type")
 
