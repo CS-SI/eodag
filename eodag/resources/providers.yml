@@ -5569,22 +5569,22 @@
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2023_1
       metadata_mapping:
         id: '$.id'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2023_1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2023_1"}}'
     COP_DEM_GLO30_DTED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DTED__2023_1
       metadata_mapping:
         id: '$.id'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-30-DTED__2023_1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-30-DTED__2023_1"}}'
     COP_DEM_GLO90_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-90-DGED__2023_1
       metadata_mapping:
         id: '$.id'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DGED__2023_1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DGED__2023_1"}}'
     COP_DEM_GLO90_DTED:
       productType: EO:DEM:DAT:COP-DEM_GLO-90-DTED__2023_1
       metadata_mapping:
         id: '$.id'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DTED__2023_1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:DEM:DAT:COP-DEM_GLO-90-DTED__2023_1"}}'
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
       metadata_mapping:
