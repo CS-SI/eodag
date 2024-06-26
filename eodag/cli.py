@@ -689,14 +689,17 @@ def serve_rest(
             logging_config["loggers"]["uvicorn"]["level"] = "DEBUG"
             logging_config["loggers"]["uvicorn.error"]["level"] = "DEBUG"
             logging_config["loggers"]["uvicorn.access"]["level"] = "DEBUG"
-            logging_config["formatters"]["default"][
-                "fmt"
-            ] = "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
-            logging_config["loggers"]["eodag"] = {
-                "handlers": ["default"],
-                "level": "DEBUG" if debug else "INFO",
-                "propagate": False,
-            }
+        logging_config["formatters"]["default"][
+            "fmt"
+        ] = "%(asctime)-15s %(name)-32s [%(levelname)-8s] (tid=%(thread)d) %(message)s"
+        logging_config["formatters"]["access"][
+            "fmt"
+        ] = "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
+        logging_config["loggers"]["eodag"] = {
+            "handlers": ["default"],
+            "level": "DEBUG" if debug else "INFO",
+            "propagate": False,
+        }
         uvicorn.run(
             "eodag.rest.server:app",
             host=bind_host,
