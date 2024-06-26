@@ -37,6 +37,9 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
     global disable_tqdm
     disable_tqdm = no_progress_bar
 
+    if verbose > 3:
+        raise ValueError("'verbose' must be one of: 0, 1, 2, 3")
+
     if verbose < 1:
         disable_tqdm = True
 
@@ -53,72 +56,41 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
                 },
             }
         )
-    elif verbose == 2:
-        logging.config.dictConfig(
-            {
-                "version": 1,
-                "disable_existing_loggers": False,
-                "formatters": {
-                    "standard": {
-                        "format": "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
-                    }
+        return None
+
+    formatter = "standard" if verbose == 2 else "verbose"
+    level = "INFO" if verbose == 2 else "DEBUG"
+
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                f"{formatter}": {
+                    "format": "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
+                }
+            },
+            "handlers": {
+                "console": {
+                    "level": f"{level}",
+                    "class": "logging.StreamHandler",
+                    "formatter": f"{formatter}",
+                }
+            },
+            "loggers": {
+                "eodag": {
+                    "handlers": ["console"],
+                    "propagate": True,
+                    "level": f"{level}",
                 },
-                "handlers": {
-                    "console": {
-                        "level": "DEBUG",
-                        "class": "logging.StreamHandler",
-                        "formatter": "standard",
-                    }
+                "sentinelsat": {
+                    "handlers": ["console"],
+                    "propagate": True,
+                    "level": f"{level}",
                 },
-                "loggers": {
-                    "eodag": {
-                        "handlers": ["console"],
-                        "propagate": True,
-                        "level": "INFO",
-                    },
-                    "sentinelsat": {
-                        "handlers": ["console"],
-                        "propagate": True,
-                        "level": "INFO",
-                    },
-                },
-            }
-        )
-    elif verbose == 3:
-        logging.config.dictConfig(
-            {
-                "version": 1,
-                "disable_existing_loggers": False,
-                "formatters": {
-                    "verbose": {
-                        "format": (
-                            "%(asctime)-15s %(name)-32s [%(levelname)-8s] (tid=%(thread)d) %(message)s"
-                        )
-                    }
-                },
-                "handlers": {
-                    "console": {
-                        "level": "DEBUG",
-                        "class": "logging.StreamHandler",
-                        "formatter": "verbose",
-                    }
-                },
-                "loggers": {
-                    "eodag": {
-                        "handlers": ["console"],
-                        "propagate": True,
-                        "level": "DEBUG",
-                    },
-                    "sentinelsat": {
-                        "handlers": ["console"],
-                        "propagate": True,
-                        "level": "DEBUG",
-                    },
-                },
-            }
-        )
-    else:
-        raise ValueError("'verbose' must be one of: 0, 1, 2, 3")
+            },
+        }
+    )
 
 
 def get_logging_verbose() -> Optional[int]:
