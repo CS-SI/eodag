@@ -4587,7 +4587,7 @@
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "false", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2A:
       productType: EO:ESA:DAT:SENTINEL-2
       processingLevel: S2MSI2A
@@ -5564,7 +5564,7 @@
         tileIdentifier:
           - '{{"tileId": "{tileIdentifier}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CLMS_HRVPP_VI"}}'
     COP_DEM_GLO30_DGED:
       productType: EO:DEM:DAT:COP-DEM_GLO-30-DGED__2023_1
       metadata_mapping:
@@ -5680,7 +5680,7 @@
           - '{{"dataset_type": "{type}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"}}'
     GLOFAS_FORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST
       variable: river_discharge_in_the_last_24_hours
@@ -5709,7 +5709,7 @@
           - '{{"variable": "{variable}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_FORECAST"}}'
     GLOFAS_HISTORICAL:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL
       variable:
@@ -5734,7 +5734,7 @@
           - '{{"hydrological_model": {model}}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL"}}'
     GLOFAS_REFORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST
       variable:
@@ -5761,7 +5761,7 @@
           - '{{"hydrological_model": {model}}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST"}}'
     GLOFAS_SEASONAL:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL
       variable:
@@ -5783,7 +5783,7 @@
           - '{{"hydrological_model": {model}}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL"}}'
     GLOFAS_SEASONAL_REFORECAST:
       productType: EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST
       variable:
@@ -5805,7 +5805,7 @@
           - '{{"hydrological_model": {model}}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST"}}'
     EFAS_FORECAST:
       productType: EO:ECMWF:DAT:EFAS_FORECAST
       providerProductType:
@@ -5841,7 +5841,7 @@
           - '{{"variable": "{variable}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_FORECAST"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:EFAS_FORECAST"}}'
     EFAS_HISTORICAL:
       productType: EO:ECMWF:DAT:EFAS_HISTORICAL
       version:
@@ -5865,7 +5865,7 @@
           - '{{"variable": "{variable}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_HISTORICAL"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:EFAS_HISTORICAL"}}'
     EFAS_REFORECAST:
       productType: EO:ECMWF:DAT:EFAS_REFORECAST
       providerProductType:
@@ -5895,7 +5895,7 @@
           - '{{"variable": "{variable}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_REFORECAST"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:EFAS_REFORECAST"}}'
     EFAS_SEASONAL:
       productType: EO:ECMWF:DAT:EFAS_SEASONAL
       version:
@@ -5920,7 +5920,7 @@
           - '{{"variable": "{variable}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ECMWF:DAT:EFAS_SEASONAL"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:EFAS_SEASONAL"}}'
     EFAS_SEASONAL_REFORECAST:
       productType: EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST
       version:
