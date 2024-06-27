@@ -4558,25 +4558,25 @@
       providerProductType: GRD
       metadata_mapping:
         <<: *s1_sar_params
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_RAW:
       productType: EO:ESA:DAT:SENTINEL-1
       providerProductType: RAW
       metadata_mapping:
         <<: *s1_sar_params
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_OCN:
       productType: EO:ESA:DAT:SENTINEL-1
       providerProductType: OCN
       metadata_mapping:
         <<: *s1_sar_params
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S1_SAR_SLC:
       productType: EO:ESA:DAT:SENTINEL-1
       providerProductType: SLC
       metadata_mapping:
         <<: *s1_sar_params
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-1"}}'
     S2_MSI_L1C:
       productType: EO:ESA:DAT:SENTINEL-2
       processingLevel: S2MSI1C
@@ -4587,7 +4587,7 @@
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "false", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2A:
       productType: EO:ESA:DAT:SENTINEL-2
       processingLevel: S2MSI2A
@@ -4598,7 +4598,7 @@
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S2_MSI_L2AP:
       productType: EO:ESA:DAT:SENTINEL-2
       processingLevel: S2MSI2AP
@@ -4609,7 +4609,7 @@
         cloudCover:
           - '{{"cloudCover": "{cloudCover}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-2"}}'
     S3_LAN_HY:
       productType: EO:ESA:DAT:SENTINEL-3
       providerProductType: SR_2_LAN_HY
@@ -4618,7 +4618,7 @@
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_SI:
       productType: EO:ESA:DAT:SENTINEL-3
       providerProductType: SR_2_LAN_SI
@@ -4627,7 +4627,7 @@
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_LAN_LI:
       productType: EO:ESA:DAT:SENTINEL-3
       providerProductType: SR_2_LAN_LI
@@ -4636,7 +4636,7 @@
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_OLCI_L2LFR:
       productType: EO:ESA:DAT:SENTINEL-3
       providerProductType: OL_2_LFR___
@@ -4645,7 +4645,7 @@
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_OLCI_L2LRR:
       productType: EO:ESA:DAT:SENTINEL-3
       providerProductType: OL_2_LRR___
@@ -4654,7 +4654,7 @@
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_SLSTR_L2:
       productType: EO:ESA:DAT:SENTINEL-3
       providerProductType: SL_2_LST___
@@ -4663,7 +4663,7 @@
         processingLevel:
           - '{{"processingLevel": "{processingLevel}"}}'
           - '2'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-3"}}'
     S3_EFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_EFR___
       metadata_mapping:
@@ -4676,7 +4676,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_EFR___"}}'
     S3_ERR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_1_ERR___
       metadata_mapping:
@@ -4689,7 +4689,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_1_ERR___"}}'
     S3_OLCI_L2WFR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WFR___
       metadata_mapping:
@@ -4702,7 +4702,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WFR___"}}'
     S3_OLCI_L2WRR:
       productType: EO:EUM:DAT:SENTINEL-3:OL_2_WRR___
       metadata_mapping:
@@ -4715,7 +4715,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:OL_2_WRR___"}}'
     S3_SRA:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA___
       metadata_mapping:
@@ -4728,7 +4728,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA___"}}'
     S3_SRA_A:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_
       metadata_mapping:
@@ -4741,7 +4741,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_A_"}}'
     S3_SRA_BS:
       productType: EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS
       metadata_mapping:
@@ -4754,7 +4754,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
 
     S3_SLSTR_L1RBT:
       productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
@@ -4769,7 +4769,7 @@
           - '$.id.`sub(/^[^_]([^_]+)_.*/, Sentinel-\\1)`'
         platformSerialIdentifier: '$.id.`sub(/^[^_]([^_]+)_.*/, S\\1)`'
         <<: *orbit_cycle
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SL_1_RBT___"}}'
     S3_WAT:
       productType: EO:EUM:DAT:SENTINEL-3:SR_2_WAT___
       metadata_mapping:
@@ -4777,7 +4777,7 @@
           - '{{"type": "SR_2_WAT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
           - '{$.id#remove_extension}'
         <<: *eo_eum_dates
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_2_WAT___"}}'
     S5P_L1B_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P
       processingLevel: L1B
@@ -4788,7 +4788,7 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     S5P_L2_IR_ALL:
       productType: EO:ESA:DAT:SENTINEL-5P
       processingLevel: L2
@@ -4799,7 +4799,7 @@
         processingMode:
           - '{{"processingMode": "{processingMode}"}}'
           - '$.null'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:SENTINEL-5P"}}'
     SATELLITE_CARBON_DIOXIDE:
       productType: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
       processingLevel:
