@@ -19,26 +19,28 @@ the `STAC client page <notebooks/tutos/tuto_stac_client.ipynb#stac-api>`_, shows
 
 .. code-block::
 
-   tamn:
+   my_pc:
       search:
          type: StacSearch
-         api_endpoint: https://tamn.snapplanet.io/search
-         need_auth: false
+         api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
       products:
-         S2_MSI_L1C:
-               productType: S2
+         S2_MSI_L2A:
+            productType: sentinel-2-l2a
          GENERIC_PRODUCT_TYPE:
-               productType: '{productType}'
+            productType: '{productType}'
       download:
-         type: AwsDownload
+         type: HTTPDownload
       auth:
-         type: AwsAuth
+         type: SASAuth
+         auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
+         signed_url_key: href
+         headers:
+            Ocp-Apim-Subscription-Key: "{apikey}"
          credentials:
-               aws_access_key_id: PLEASE_CHANGE_ME
-               aws_secret_access_key: PLEASE_CHANGE_ME
+            apikey: CHANGE_ME
 
 It configures the following existing plugins: :class:`~eodag.plugins.search.qssearch.StacSearch` (search),
-:class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.aws.AwsDownload` (download).
+:class:`~eodag.plugins.authentication.sas_auth.SASAuth` (authentication) and :class:`~eodag.plugins.download.http.HTTPDownload` (download).
 
 Of course, it is also necessary to know how to configure these plugins (which parameters they take, what values they can have, etc.).
 You can get some inspiration from the *Providers pre-configuration* section by analysing how ``eodag`` configures the providers it comes installed with.
