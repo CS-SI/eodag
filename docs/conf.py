@@ -40,6 +40,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "nbsphinx",
     "sphinx_copybutton",
+    "sphinx_tabs.tabs",
 ]
 
 # Notebook integration parameters
