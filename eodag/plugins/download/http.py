@@ -25,6 +25,7 @@ import zipfile
 from datetime import datetime
 from email.message import Message
 from itertools import chain
+from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -167,9 +168,14 @@ class HTTPDownload(Download):
         if order_method == "POST":
             # separate url & parameters
             parts = urlparse(str(product.properties["orderLink"]))
-            query_dict = parse_qs(parts.query)
-            if not query_dict and parts.query:
+            query_dict = {}
+            # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
+            # the resulting `query_dict` would be erroneous.
+            try:
                 query_dict = geojson.loads(parts.query)
+            except JSONDecodeError:
+                if parts.query:
+                    query_dict = parse_qs(parts.query)
             order_url = parts._replace(query=None).geturl()
             if query_dict:
                 order_kwargs["json"] = query_dict
