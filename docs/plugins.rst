@@ -111,19 +111,28 @@ named ``your_package.your_module``:
 Then, in the `setup.py <https://setuptools.readthedocs.io/en/latest/userguide/quickstart.html#id2>`_ of your Python project,
 add this:
 
-.. code-block:: python
 
-   setup(
-      ...
-      entry_points={
+.. tabs::
+   .. tab:: pyproject.toml
+   .. code-block:: toml
+
+      [project.entry-points."eodag.plugins.api"]
+      SampleApiPlugin = "your_package.your_module:SampleApiPlugin"
+
+   .. tab:: setup.py
+   .. code-block:: python
+
+      setup(
          ...
-         'eodag.plugins.api': [
-            'SampleApiPlugin = your_package.your_module:SampleApiPlugin'
-         ],
+         entry_points={
+            ...
+            'eodag.plugins.api': [
+               'SampleApiPlugin = your_package.your_module:SampleApiPlugin'
+            ],
+            ...
+         },
          ...
-      },
-      ...
-   )
+      )
 
 See `what the PyPa explains <https://packaging.python.org/guides/creating-and-discovering-plugins/#using-package-metadata>`_ to better
 understand this concept. In EODAG, the name you give to your plugin in the
