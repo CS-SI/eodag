@@ -491,11 +491,8 @@ class Download(PluginTopic):
             if search_kwargs:
                 other_products = SearchResult([])
                 tmp_search_kwargs = deepcopy(search_kwargs)
-                # remove parameters not used in the following search method
-                if tmp_search_kwargs.get("page", False):
-                    del tmp_search_kwargs["page"]
-                if tmp_search_kwargs.get("raise_errors", False):
-                    del tmp_search_kwargs["raise_errors"]
+                # remove "page" parameter which is not used in the following search method
+                del tmp_search_kwargs["page"]
                 # we can not import ~eodag.api.search_result.SearchResult because of a circular import,
                 # then we initialize other products by copying and clearing initial products
                 for page_results in dag.search_iter_page(
