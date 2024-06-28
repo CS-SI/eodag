@@ -493,12 +493,15 @@ class Download(PluginTopic):
                 tmp_search_kwargs = deepcopy(search_kwargs)
                 # remove "page" parameter which is not used in the following search method
                 del tmp_search_kwargs["page"]
+                # search products from all pages of the same search request than the one of the previous products
+                # the provider must be the one with which products were found
                 for page_results in dag.search_iter_page(
                     items_per_page=tmp_search_kwargs.pop("items_per_page", None),
                     start=tmp_search_kwargs.pop("startTimeFromAscendingNode", None),
                     end=tmp_search_kwargs.pop("completionTimeFromAscendingNode", None),
                     geom=tmp_search_kwargs.pop("geometry", None),
                     locations=tmp_search_kwargs.pop("locations", None),
+                    provider=products[0].provider,
                     **tmp_search_kwargs,
                 ):
                     other_products.data.extend(page_results.data)
