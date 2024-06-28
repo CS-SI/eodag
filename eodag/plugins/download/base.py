@@ -493,8 +493,6 @@ class Download(PluginTopic):
                 tmp_search_kwargs = deepcopy(search_kwargs)
                 # remove "page" parameter which is not used in the following search method
                 del tmp_search_kwargs["page"]
-                # we can not import ~eodag.api.search_result.SearchResult because of a circular import,
-                # then we initialize other products by copying and clearing initial products
                 for page_results in dag.search_iter_page(
                     items_per_page=tmp_search_kwargs.pop("items_per_page", None),
                     start=tmp_search_kwargs.pop("startTimeFromAscendingNode", None),
