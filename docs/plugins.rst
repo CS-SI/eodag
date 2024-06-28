@@ -108,40 +108,37 @@ named ``your_package.your_module``:
       def download(self):
          pass
 
-Then, in the `setup.py <https://setuptools.readthedocs.io/en/latest/userguide/quickstart.html#id2>`_ of your Python project,
+Then, in the `configuration file <https://setuptools.readthedocs.io/en/latest/userguide/quickstart.html#id2>`_ of your Python project,
 add this:
 
 
 .. tabs::
    .. tab:: pyproject.toml
-   .. code-block:: toml
+      .. code-block:: toml
 
-      [project.entry-points."eodag.plugins.api"]
-      SampleApiPlugin = "your_package.your_module:SampleApiPlugin"
+         [project.entry-points."eodag.plugins.api"]
+         SampleApiPlugin = "your_package.your_module:SampleApiPlugin"
 
    .. tab:: setup.py
-   .. code-block:: python
+      .. code-block:: python
 
-      setup(
-         ...
-         entry_points={
-            ...
-            'eodag.plugins.api': [
-               'SampleApiPlugin = your_package.your_module:SampleApiPlugin'
-            ],
-            ...
-         },
-         ...
-      )
+         setup(
+            # ...
+            entry_points={
+               'eodag.plugins.api': [
+                  'SampleApiPlugin = your_package.your_module:SampleApiPlugin'
+               ]
+            }
+         )
 
 See `what the PyPa explains <https://packaging.python.org/guides/creating-and-discovering-plugins/#using-package-metadata>`_ to better
 understand this concept. In EODAG, the name you give to your plugin in the
-`setup.py` script's entry point doesn't matter, but we prefer it to be the
-same as the class name of the plugin. What matters is that the entry point
-must be a class deriving from one of the 5 plugin topics supported. Be
-particularly careful with consistency between the entry point name and the
-super class of you plugin class. Here is a list of entry point names and the
-plugin topic to which they map:
+entry point doesn't matter, but we prefer it to be the same as the class
+name of the plugin. What matters is that the entry point must be a class
+deriving from one of the 5 plugin topics supported. Be particularly careful
+with consistency between the entry point name and the super class of you
+plugin class. Here is a list of entry point names and the plugin topic to
+which they map:
 
 * 'eodag.plugins.api'      : :class:`~eodag.plugins.apis.base.Api`
 * 'eodag.plugins.auth'     : :class:`~eodag.plugins.auth.base.Authentication`
@@ -149,8 +146,82 @@ plugin topic to which they map:
 * 'eodag.plugins.download' : :class:`~eodag.plugins.download.base.Download`
 * 'eodag.plugins.search'   : :class:`~eodag.plugins.search.base.Search`
 
+
+Read the :ref:`mock search plugin` section to get an example of how to build a search
+plugin.
+
 As an example of external plugin, you can have a look to
 `eodag-sentinelsat <https://github.com/CS-SI/eodag-sentinelsat>`_.
+
+.. _mock search plugin:
+
+A sample mock search plugin
+"""""""""""""""""""""""""""
+
+In this section, we demonstrate the creation of custom search plugin. This plugin will
+return a list of mocked EOProducts on search requests.
+
+1. Create a folder called `eodag_search_mock`. It will be the name of our package.
+
+2. Make an empty `__init.py__` file in the package folder.
+
+3. Make a `mock_search.py` file and paste in it the following class
+   definition.
+
+   It is our search plugin. The `query()` function is the one called by EODAG when
+   searching for products.
+
+   .. code-block:: python
+
+      # mock_search.py
+      from typing import Any, List, Optional, Tuple
+      from eodag.plugins.search import PreparedSearch
+      from eodag.plugins.search.base import Search
+      from eodag.api.product import EOProduct
+
+      class MockSearch(Search):
+      """Implement a Mock search plugin"""
+
+      def query(
+         self,
+         prep: PreparedSearch = PreparedSearch(),
+         **kwargs: Any,
+      ) -> Tuple[List[EOProduct], Optional[int]]:
+         """Generate EOProduct from the request"""
+         return ([EOProduct(
+            provider=self.provider,
+            properties={
+               **{
+                  "id": f"mock_{kwargs.get('productType')}_{i}"
+                  },
+               **kwargs
+            }
+            ) for i in range(0, prep.items_per_page)],
+            prep.items_per_page if prep.count else None
+         )
+
+4. Create a `pyproject.toml` file in the package folder and paste in it the following
+   content.
+
+   The `projects.entry-points` is crucial for EODAG to detect this new plugin.
+
+   .. code-block:: toml
+
+      [project]
+      name = "eodag-search-mock"
+      version = "0.0.1"
+      description = "Mock Search plugin for EODAG"
+      requires-python = ">=3.8"
+      dependencies = [ "eodag" ]
+
+      [project.entry-points."eodag.plugins.search"]
+      MockSearch = "mock_search:MockSearch"
+
+5. Your plugin is now ready. You need to install it for EODAG to be able to use it.
+
+   .. code-block:: shell
+
+      pip install eodag_search_mock
 
 Provider configuration
 ^^^^^^^^^^^^^^^^^^^^^^
