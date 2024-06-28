@@ -20,6 +20,7 @@ import unittest
 from collections import UserList
 
 import geojson
+from lxml import html
 from shapely.geometry.collection import GeometryCollection
 
 from tests.context import EOProduct, SearchResult
@@ -82,3 +83,8 @@ class TestSearchResult(unittest.TestCase):
             geojson.loads(geojson.dumps(self.search_result))
         )
         self.assertEqual(len(same_search_result), len(self.search_result))
+
+    def test_search_result_repr_html(self):
+        """SearchResult html repr must be correctly formatted"""
+        sr_repr = html.fromstring(self.search_result._repr_html_())
+        self.assertIn("SearchResult", sr_repr.xpath("//thead/tr/td")[0].text)

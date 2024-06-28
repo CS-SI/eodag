@@ -26,6 +26,7 @@ import zipfile
 
 import geojson
 import requests
+from lxml import html
 from shapely import geometry
 
 from tests import EODagTestCase
@@ -539,3 +540,18 @@ class TestEOProduct(EODagTestCase):
             ]
             for needed_log in needed_logs:
                 self.assertIn(needed_log, str(mock_debug.call_args_list))
+
+    def test_eoproduct_repr_html(self):
+        """eoproduct html repr must be correctly formatted"""
+        product = self._dummy_product()
+        product_repr = html.fromstring(product._repr_html_())
+        self.assertIn("EOProduct", product_repr.xpath("//thead/tr/td")[0].text)
+
+        # assets dict
+        product.assets.update({"foo": {"href": "foo.href"}})
+        assets_dict_repr = html.fromstring(product.assets._repr_html_())
+        self.assertIn("AssetsDict", assets_dict_repr.xpath("//thead/tr/td")[0].text)
+
+        # asset
+        asset_repr = html.fromstring(product.assets._repr_html_())
+        self.assertIn("Asset", asset_repr.xpath("//thead/tr/td")[0].text)
