@@ -1,6 +1,26 @@
 Release history
 ---------------
 
+3.0.0b2 (2024-06-29)
+++++++++++++++++++++
+
+Core features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* New :class:`~eodag.api.search_result.SearchResult` HTML representation for notebooks (:pull:`1243`)
+
+Plugins new features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Fixed missing ``products`` configuration in ``Api`` plugin download (:pull:`1241`)
+* Fixed ``pagination`` configuration to be not allways mandatory (:pull:`1240`)
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+* **[docs]** Custom mock search plugin example (:pull:`1242`)
+* External product types reference updates (:pull:`1234`)
+
 3.0.0b1 (2024-06-24)
 ++++++++++++++++++++
 
@@ -63,7 +83,7 @@ Plugins new features and fixes
 * Refresh token for :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin
   (:pull:`1138`), tests (:pull:`1135`), and fix (:pull:`1232`)
 * :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth` accepts headers definition in credentials (:pull:`1215`)
-* ``flatten_top_dirs`` download plugins option set to true by default (#1220)
+* ``flatten_top_dirs`` download plugins option set to true by default (:pull:`1220`)
 * ``base_uri`` download plugins setting is not systematically mandatory any more (:pull:`1230`)
 * Re-login in :class:`~eodag.plugins.apis.usgs.UsgsApi` plugin on api file error (:pull:`1046`)
 * Allow no auth for :class:`~eodag.plugins.download.http.HTTPDownload` download requests (:pull:`1196`)
