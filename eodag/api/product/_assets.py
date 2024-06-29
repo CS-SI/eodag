@@ -22,6 +22,7 @@ from collections import UserDict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from eodag.utils.exceptions import NotAvailableError
+from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -84,6 +85,43 @@ class AssetsDict(UserDict):
         else:
             return [a for a in self.values() if "href" in a]
 
+    def _repr_html_(self, embeded=False):
+        thead = (
+            f"""<thead><tr><td style='text-align: left; color: grey;'>
+                {type(self).__name__}&ensp;({len(self)})
+                </td></tr></thead>
+            """
+            if not embeded
+            else ""
+        )
+        tr_style = "style='background-color: transparent;'" if embeded else ""
+        return (
+            f"<table>{thead}"
+            + "".join(
+                [
+                    f"""<tr {tr_style}><td style='text-align: left;'>
+                <details><summary style='color: grey;'>
+                    <span style='color: black'>'{k}'</span>:&ensp;
+                    {{
+                        {"'roles': '<span style='color: black'>"+str(v['roles'])+"</span>',&ensp;"
+                            if v.get("roles") else ""}
+                        {"'type': '"+str(v['type'])+"',&ensp;"
+                            if v.get("type") else ""}
+                        {"'title': '<span style='color: black'>"+str(v['title'])+"</span>',&ensp;"
+                            if v.get("title") else ""}
+                        ...
+                    }}
+                </summary>
+                    {dict_to_html_table(v, depth=1)}
+                </details>
+                </td></tr>
+                """
+                    for k, v in self.items()
+                ]
+            )
+            + "</table>"
+        )
+
 
 class Asset(UserDict):
     """A UserDict object containg one of the assets of a
@@ -127,3 +165,15 @@ class Asset(UserDict):
         :rtype: str
         """
         return self.product.download(asset=self.key, **kwargs)
+
+    def _repr_html_(self):
+        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
+            {type(self).__name__}&ensp;-&ensp;{self.key}
+            </td></tr></thead>
+        """
+        return f"""<table>{thead}
+                <tr><td style='text-align: left;'>
+                    {dict_to_html_table(self)}
+                </details>
+                </td></tr>
+            </table>"""

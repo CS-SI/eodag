@@ -174,6 +174,33 @@ class SearchResult(UserList):
         """
         return self.as_geojson_object()
 
+    def _repr_html_(self):
+        total_count = f"/{self.number_matched}" if self.number_matched else ""
+        return (
+            f"""<table>
+                <thead><tr><td style='text-align: left; color: grey;'>
+                 {type(self).__name__}&ensp;({len(self)}{total_count})
+                </td></tr></thead>
+            """
+            + "".join(
+                [
+                    f"""<tr><td style='text-align: left;'>
+                <details><summary style='color: grey; font-family: monospace;'>
+                    {i}&ensp;
+                    {type(p).__name__}(id=<span style='color: black;'>{
+                        p.properties['id']
+                    }</span>, provider={p.provider})
+                </summary>
+                {p._repr_html_()}
+                </details>
+                </td></tr>
+                """
+                    for i, p in enumerate(self)
+                ]
+            )
+            + "</table>"
+        )
+
 
 class RawSearchResult(UserList):
     """An object representing a collection of raw/unparsed search results obtained from a provider.

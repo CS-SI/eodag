@@ -1445,8 +1445,12 @@ class EODataAccessGateway:
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
         for i, search_plugin in enumerate(search_plugins):
-            itp = items_per_page or search_plugin.config.pagination.get(
-                "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
+            itp = (
+                items_per_page
+                or getattr(search_plugin.config, "pagination", {}).get(
+                    "max_items_per_page"
+                )
+                or DEFAULT_MAX_ITEMS_PER_PAGE
             )
             logger.debug(
                 "Searching for all the products with provider %s and a maximum of %s "

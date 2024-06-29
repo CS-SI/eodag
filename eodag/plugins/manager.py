@@ -242,6 +242,7 @@ class PluginManager:
                 self._build_plugin(product.provider, download, Download),
             )
         elif api := getattr(plugin_conf, "api", None):
+            plugin_conf.api.products = plugin_conf.products
             plugin_conf.api.priority = plugin_conf.priority
             plugin = cast(Api, self._build_plugin(product.provider, api, Api))
         else:

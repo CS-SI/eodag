@@ -51,6 +51,7 @@ from eodag.utils import (
     get_geometry_from_various,
 )
 from eodag.utils.exceptions import DownloadError, MisconfiguredError
+from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
@@ -517,3 +518,45 @@ class EOProduct:
             )
             pass
         return NoDriver()
+
+    def _repr_html_(self):
+        thumbnail = self.properties.get("thumbnail", None)
+        thumbnail_html = (
+            f"<img src='{thumbnail}' width=100 alt='thumbnail'/>"
+            if thumbnail and not thumbnail.startswith("s3")
+            else ""
+        )
+        geom_style = "style='color: grey; text-align: center; min-width:100px; vertical-align: top;'"
+        thumbnail_style = (
+            "style='padding-top: 1.5em; min-width:100px; vertical-align: top;'"
+        )
+
+        return f"""<table>
+                <thead><tr style='background-color: transparent;'><td style='text-align: left; color: grey;'>
+                {type(self).__name__}
+                </td></tr></thead>
+
+                <tr style='background-color: transparent;'>
+                    <td style='text-align: left; vertical-align: top;'>
+                        {dict_to_html_table({
+                            "provider": self.provider,
+                            "product_type": self.product_type,
+                            "properties[&quot;id&quot;]": self.properties.get('id', None),
+                            "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
+                                'startTimeFromAscendingNode', None
+                            ),
+                            "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
+                                'completionTimeFromAscendingNode', None
+                            ),
+                        }, brackets=False)}
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
+                            len(self.properties)
+                        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
+                            len(self.assets)
+                        })</summary>{self.assets._repr_html_(embeded=True)}</details>
+                    </td>
+                    <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
+                    <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>
+                </tr>
+            </table>"""
