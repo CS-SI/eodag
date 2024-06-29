@@ -92,8 +92,7 @@ class SearchResult(UserList):
         crunched_results_list = cruncher.proceed(self.data, **search_params)
         crunched_results = SearchResult(crunched_results_list)
         crunched_results.search_kwargs = self.search_kwargs
-        self.crunchers.append(cruncher)
-        crunched_results.crunchers = self.crunchers
+        crunched_results.crunchers = self.crunchers + [cruncher]
         return crunched_results
 
     def filter_date(
