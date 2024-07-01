@@ -6055,7 +6055,7 @@
         - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.enddate'
       variable:
-        - '{{"variables": "{variable}"}}'
+        - '{{"variable": "{variable}"}}'
         - '{$.properties.location#get_variables_from_path}'
       downloadLink: '$.properties.location'
       title: '$.id'
