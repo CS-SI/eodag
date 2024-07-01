@@ -4442,7 +4442,7 @@
         - '{{"orbitDirection": "{orbitDirection}"}}'
         - '$.null'
       variable:
-        - '{{"variable": {variable}}}'
+        - '{{"variable": "{variable}"}}'
         - '$.null'
       leadtime_hour:
         - '{{"leadtime_hour": {leadtime_hour}}}'
@@ -6055,7 +6055,7 @@
         - '{{"max_date": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.enddate'
       variable:
-        - '{{"variables": {variable}}}'
+        - '{{"variables": "{variable}"}}'
         - '{$.properties.location#get_variables_from_path}'
       downloadLink: '$.properties.location'
       title: '$.id'
