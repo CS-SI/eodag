@@ -508,12 +508,15 @@ class Download(PluginTopic):
                 # the dag does not need search kwargs record anymore
                 dag.search_kwargs_for_exhaust = None
                 logger.info("Found %s other result(s)", len(other_products))
-                # apply the same crunchers than the one used to filter initial results
                 if other_products:
-                    for cruncher in products.crunchers:
+                    # apply on the new results the same cruncher(s) as the one(s) used to filter initial results
+                    for i, cruncher in enumerate(products.crunchers):
+                        if i == 0:
+                            logger.info("Apply the crunchers used on initial results")
                         other_products = other_products.crunch(
                             cruncher, **search_kwargs
                         )
+                    # add the new results to the initial ones
                     products.data.extend(other_products.data)
             else:
                 logger.info(
