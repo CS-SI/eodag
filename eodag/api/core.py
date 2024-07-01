@@ -1305,7 +1305,9 @@ class EODataAccessGateway:
                     # yields, the attr next_page_url (to None) and
                     # config.pagination["next_page_url_tpl"] (to its original value).
                     next_page_url = getattr(search_plugin, "next_page_url", None)
-                    next_page_query_obj = getattr(search_plugin, "next_page_query_obj", {})
+                    next_page_query_obj = getattr(
+                        search_plugin, "next_page_query_obj", {}
+                    )
                     next_page_merge = getattr(search_plugin, "next_page_merge", None)
 
                     if next_page_url:
@@ -1938,7 +1940,9 @@ class EODataAccessGateway:
                 )
                 self.search_errors.add((search_plugin.provider, e))
         normalized_results = SearchResult(results, total_results)
-        normalized_results.search_kwargs = kwargs
+        normalized_results.search_kwargs = dict(
+            {"page": prep.page, "items_per_page": prep.items_per_page}, **kwargs
+        )
         return normalized_results
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
