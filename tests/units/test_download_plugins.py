@@ -1177,6 +1177,25 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
+        # orderLink with JSON data containing a query string
+        mock_request.reset_mock()
+        self.product.properties[
+            "orderLink"
+        ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
+        plugin.orderDownload(self.product, auth=auth)
+        mock_request.assert_called_once_with(
+            method="POST",
+            url="http://somewhere/order",
+            auth=auth,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            json={
+                "location": "dataset_id=lorem&data_version=202211",
+                "cacheable": "true",
+            },
+            verify=True,
+        )
+
     def test_plugins_download_http_order_status(self):
         """HTTPDownload.orderDownloadStatus() must request status using orderStatusLink"""
         plugin = self.get_download_plugin(self.product)
