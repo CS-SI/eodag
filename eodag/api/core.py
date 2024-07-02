@@ -2025,7 +2025,7 @@ class EODataAccessGateway:
         paths = []
         if search_result:
             if not kwargs.get("exhaust", False):
-                logger.info("Downloading %s products", len(search_result))
+                logger.info(f"Downloading {len(search_result)} products")
             # Get download plugin using first product assuming product from several provider
             # aren't mixed into a search result
             download_plugin = self._plugins_manager.get_download_plugin(

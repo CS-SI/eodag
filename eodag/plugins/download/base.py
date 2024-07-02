@@ -507,7 +507,7 @@ class Download(PluginTopic):
                     other_products.data.extend(page_results.data)
                 # the dag does not need search kwargs record anymore
                 dag.search_kwargs_for_exhaust = None
-                logger.info("Found %s other result(s)", len(other_products))
+                logger.info(f"Found {len(other_products)} other result(s)")
                 if other_products:
                     # apply on the new results the same cruncher(s) as the one(s) used to filter initial results
                     for i, cruncher in enumerate(products.crunchers):
@@ -522,7 +522,7 @@ class Download(PluginTopic):
                 logger.info(
                     "Products from all pages have already been searched, then the 'exhaust' parameter is not used here"
                 )
-            logger.info("Downloading %s products", len(products))
+            logger.info(f"Downloading {len(products)} products")
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
