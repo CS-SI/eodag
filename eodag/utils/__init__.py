@@ -1472,3 +1472,21 @@ def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
         ctx.check_hostname = True
         ctx.verify_mode = ssl.CERT_REQUIRED
     return ctx
+
+
+def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively sorts a dict by keys.
+
+    :param input_dict: input dict
+    :type input_dict: Dict[str, Any]
+    :returns: sorted dict
+    :rtype: Dict[str, Any]
+
+    >>> sort_dict({"b": {"c": 1, "a": 2, "b": 3}, "a": 4})
+    {'a': 4, 'b': {'a': 2, 'b': 3, 'c': 1}}
+    """
+    return {
+        k: sort_dict(v) if isinstance(v, dict) else v
+        for k, v in sorted(input_dict.items())
+    }
