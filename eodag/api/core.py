@@ -70,6 +70,7 @@ from eodag.utils import (
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
+    sort_dict,
     string_to_jsonpath,
     uri_to_path,
 )
@@ -769,7 +770,7 @@ class EODataAccessGateway:
                     **kwargs
                 )
 
-        return ext_product_types_conf
+        return sort_dict(ext_product_types_conf)
 
     def update_product_types_list(
         self, ext_product_types_conf: Dict[str, Optional[Dict[str, Dict[str, Any]]]]
