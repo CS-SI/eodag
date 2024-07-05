@@ -46,6 +46,7 @@ from requests import RequestException
 from requests.auth import AuthBase
 from stream_zip import ZIP_AUTO, stream_zip
 
+from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     OFFLINE_STATUS,
@@ -91,6 +92,8 @@ if TYPE_CHECKING:
     from eodag.utils import DownloadedCallback, Unpack
 
 logger = logging.getLogger("eodag.download.http")
+
+DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
 
 
 class HTTPDownload(Download):
@@ -1366,3 +1369,98 @@ class HTTPDownload(Download):
             timeout=timeout,
             **kwargs,
         )
+
+
+class ODataV4Download(HTTPDownload):
+    """ODataV4Download plugin. Enhance HTTPDownload with assets discovery using OData API.
+
+    :param provider: provider name
+    :type provider: str
+    :param config: Download plugin configuration:
+
+        * ``config.discover_assets`` (bool) - (optional) Enable assets discovery (default false)
+        * ``discover_endpoint`` (str): (mandatory if discover_assets is true) The endpoint of the
+          provider's search interface
+
+
+    :type config: :class:`~eodag.config.PluginConfig`
+
+    """
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        super(ODataV4Download, self).__init__(provider, config)
+
+    def discover_assets(self, product: EOProduct) -> EOProduct:
+        """Discover the assets and add them to the given product.
+
+        :param product: The EO product whose assets are discovered
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        :returns: The EO product updated with the discovered assets
+        :type product: :class:`~eodag.api.product._product.EOProduct`
+        """
+        # add assets from nodes
+        if not getattr(self.config, "discover_assets", False):
+            return product
+
+        def _request(url: str):
+            try:
+                timeout = HTTP_REQ_TIMEOUT
+                logger.debug(f"Discovering assets from node {url}")
+                with requests.request(
+                    method="GET",
+                    url=url,
+                    timeout=timeout,
+                    headers={**USER_AGENT},
+                ) as response:
+                    response.raise_for_status()
+                    return response
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=timeout) from exc
+
+        product.assets = AssetsDict(product)
+
+        discover_endpoint = self.config.discover_assets_endpoint.rstrip("/")
+        id = product.properties.get("uid")
+        base_url = f"{discover_endpoint}({id})"
+        nodes_queue = []
+        nodes_queue.append(f"{base_url}/Nodes")
+
+        while nodes_queue:
+            url = nodes_queue.pop(0)
+            response = _request(url)
+            json_response = response.json()
+            # loop over the list of children
+            for node in json_response["result"]:
+                if node["ChildrenNumber"] > 0:
+                    # explore sub-nodes
+                    nodes_queue.append(node["Nodes"]["uri"])
+                elif node["ContentLength"] > 0:
+                    # this is a file
+                    # replace suffix "/Nodes" with "/$value" in the download link
+                    file_url = node["Nodes"]["uri"]
+                    file_url = file_url[: -len("/Nodes")] + "/$value"
+                    # build the asset's key as the sequence of all the node's names (skip the first node)
+                    url_parse = urlparse(file_url)
+                    node_path = [
+                        p for p in url_parse.path.split("/") if p.startswith("Nodes(")
+                    ]
+                    if node_path:
+                        # skip the first node
+                        node_path = node_path[1:]
+                    if node_path:
+                        # extract the names by removing "Nodes(...)"
+                        node_path = [p[6:-1] for p in node_path]
+                        asset_key = "/".join(node_path)
+                        logger.debug(f"Adding asset {asset_key}")
+                        role = (
+                            "data"
+                            if node["Id"].split(".")[-1] in DATA_EXTENSIONS
+                            else "metadata"
+                        )
+                        product.assets[asset_key] = {
+                            "title": node["Id"],
+                            "roles": [role],
+                            "href": file_url,
+                        }
+                        if mime_type := guess_file_type(node["Id"]):
+                            product.assets[asset_key]["type"] = mime_type

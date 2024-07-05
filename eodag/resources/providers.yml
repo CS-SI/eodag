@@ -3908,7 +3908,6 @@
               and:
                 -  "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq '{metadata}' and att/OData.CSC.StringAttribute/Value eq '{{{metadata}}}')"
       metadata_path: '$.Attributes.*'
-    add_nodes_to_assets: true
     per_product_metadata_query: false
     metadata_pre_mapping:
       metadata_path: '$.Attributes'
@@ -3993,11 +3992,13 @@
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
   download: !plugin
-    type: HTTPDownload
+    type: ODataV4Download
     extract: true
     order_enabled: false
     archive_depth: 2
     ssl_verify: true
+    discover_assets: true
+    discover_assets_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: 'https://identity.dataspace.copernicus.eu/auth'
