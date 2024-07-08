@@ -32,7 +32,7 @@ import responses
 import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
-from eodag.utils import ProgressCallback
+from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import DownloadError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1999,3 +1999,95 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
         self.assertEqual(mock_check_manifest_file_list.call_count, 0)
         self.assertEqual(mock_flatten_top_directories.call_count, 1)
+
+
+class TestDownloadPluginODataV4(BaseDownloadPluginTest):
+    def setUp(self):
+        super(TestDownloadPluginODataV4, self).setUp()
+
+    @mock.patch("eodag.plugins.download.http.ODataV4Download._request", autospec=True)
+    def test_plugins_download_odatav4_discover_assets(self, mock__request):
+        """ODataV4Download.discover_assets must add additional nodes as assets if configured"""
+        product = EOProduct(
+            "cop_dataspace",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+            ),
+        )
+        plugin = self.get_download_plugin(product)
+        api_endpoint = plugin.config.discover_assets_endpoint.rstrip("/")
+        # response to /Products(1234-5678)/Nodes(dummy)/Nodes
+        response_1 = {
+            "result": [
+                {
+                    "Id": "bar",
+                    "Name": "bar",
+                    "ContentLength": 0,
+                    "ChildrenNumber": 2,
+                    "Nodes": {
+                        "uri": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(bar)/Nodes"
+                    },
+                },
+                {
+                    "Id": "metadata.xml",
+                    "Name": "metadata.xml",
+                    "ContentLength": 100,
+                    "ChildrenNumber": 0,
+                    "Nodes": {
+                        "uri": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(metadata.xml)/Nodes"
+                    },
+                },
+            ]
+        }
+        # response to /Products(1234-5678)/Nodes(dummy)/Nodes(bar)/Nodes
+        response_2 = {
+            "result": [
+                {
+                    "Id": "img_1.jp2",
+                    "Name": "img_1.jp2",
+                    "ContentLength": 100,
+                    "ChildrenNumber": 0,
+                    "Nodes": {
+                        "uri": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(bar)/Nodes(img_1.jp2)/Nodes"
+                    },
+                },
+                {
+                    "Id": "img_2.jp2",
+                    "Name": "img_2.jp2",
+                    "ContentLength": 100,
+                    "ChildrenNumber": 0,
+                    "Nodes": {
+                        "uri": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(bar)/Nodes(img_2.jp2)/Nodes"
+                    },
+                },
+            ]
+        }
+        mock__request.side_effect = [
+            MockResponse(response_1, 200),
+            MockResponse(response_2, 200),
+        ]
+
+        expected_assets = {
+            "metadata.xml": {
+                "title": "metadata.xml",
+                "roles": ["metadata"],
+                "href": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(metadata.xml)/$value",
+                "type": "text/xml",
+            },
+            "bar/img_1.jp2": {
+                "title": "img_1.jp2",
+                "roles": ["data"],
+                "href": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(bar)/Nodes(img_1.jp2)/$value",
+                "type": "image/jpeg2000",
+            },
+            "bar/img_2.jp2": {
+                "title": "img_2.jp2",
+                "roles": ["data"],
+                "href": f"{api_endpoint}(1234-5678)/Nodes(dummy)/Nodes(bar)/Nodes(img_2.jp2)/$value",
+                "type": "image/jpeg2000",
+            },
+        }
+        product = plugin.discover_assets(product)
+        self.assertDictEqual(product.assets.as_dict(), expected_assets)

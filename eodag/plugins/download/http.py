@@ -1390,6 +1390,21 @@ class ODataV4Download(HTTPDownload):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(ODataV4Download, self).__init__(provider, config)
 
+    def _request(self, url: str):
+        try:
+            timeout = HTTP_REQ_TIMEOUT
+            logger.debug(f"Discovering assets from node {url}")
+            with requests.request(
+                method="GET",
+                url=url,
+                timeout=timeout,
+                headers={**USER_AGENT},
+            ) as response:
+                response.raise_for_status()
+                return response
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=timeout) from exc
+
     def discover_assets(self, product: EOProduct) -> EOProduct:
         """Discover the assets and add them to the given product.
 
@@ -1402,21 +1417,6 @@ class ODataV4Download(HTTPDownload):
         if not getattr(self.config, "discover_assets", False):
             return product
 
-        def _request(url: str):
-            try:
-                timeout = HTTP_REQ_TIMEOUT
-                logger.debug(f"Discovering assets from node {url}")
-                with requests.request(
-                    method="GET",
-                    url=url,
-                    timeout=timeout,
-                    headers={**USER_AGENT},
-                ) as response:
-                    response.raise_for_status()
-                    return response
-            except requests.exceptions.Timeout as exc:
-                raise TimeOutError(exc, timeout=timeout) from exc
-
         product.assets = AssetsDict(product)
 
         discover_endpoint = self.config.discover_assets_endpoint.rstrip("/")
@@ -1427,7 +1427,7 @@ class ODataV4Download(HTTPDownload):
 
         while nodes_queue:
             url = nodes_queue.pop(0)
-            response = _request(url)
+            response = self._request(url)
             json_response = response.json()
             # loop over the list of children
             for node in json_response["result"]:
@@ -1464,3 +1464,4 @@ class ODataV4Download(HTTPDownload):
                         }
                         if mime_type := guess_file_type(node["Id"]):
                             product.assets[asset_key]["type"] = mime_type
+        return product
