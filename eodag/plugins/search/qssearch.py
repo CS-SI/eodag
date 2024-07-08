@@ -23,7 +23,6 @@ from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -753,7 +752,9 @@ class QueryStringSearch(Search):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
+        def quote_via(x: Any, *_args, **_kwargs) -> str:
+            return x
+
         return (
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),
@@ -1595,7 +1596,9 @@ class StacSearch(PostJsonSearch):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
+        def quote_via(x: Any, *_args, **_kwargs) -> str:
+            return x
+
         return (
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),
