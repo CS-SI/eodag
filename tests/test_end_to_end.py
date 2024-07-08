@@ -559,7 +559,7 @@ class TestEODagEndToEnd(EndToEndBase):
         uid = "S2A_MSIL1C_20200810T030551_N0209_R075_T53WPU_20200810T050611"
         provider = "creodias"
 
-        products, _ = self.eodag._search_by_id(
+        products = self.eodag._search_by_id(
             uid=uid, provider=provider, productType="S2_MSI_L1C"
         )
         product = products[0]
@@ -701,20 +701,20 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "earth_search"
         ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
         self.assertEqual(
-            "sentinel-s2-l1c",
-            ext_product_types_conf[provider]["providers_config"]["sentinel-s2-l1c"][
+            "sentinel-2-l1c",
+            ext_product_types_conf[provider]["providers_config"]["sentinel-2-l1c"][
                 "productType"
             ],
         )
         self.assertEqual(
-            "Sentinel 2 L1C",
-            ext_product_types_conf[provider]["product_types_config"]["sentinel-s2-l1c"][
+            "Sentinel-2 Level-1C",
+            ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
                 "title"
             ],
         )
         self.assertEqual(
             "proprietary",
-            ext_product_types_conf[provider]["product_types_config"]["sentinel-s2-l1c"][
+            ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
                 "license"
             ],
         )
