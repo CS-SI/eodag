@@ -94,7 +94,7 @@ otel:
     image:
       registry: docker.io
       repository: otel/opentelemetry-collector-contrib
-      tag: "0.95.0"
+      tag: "0.104.0"
       ports:
         otlpReceiver: 4318
         prometheusExporter: 8000
@@ -103,6 +103,9 @@ otel:
       ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
       ##
       pullPolicy: IfNotPresent
+    resources:
+      limits: {}
+      requests: {}
   serviceMonitor:
     ## @param otel.serviceMonitor.enabled if `true`, creates a Prometheus Operator PodMonitor
     ##

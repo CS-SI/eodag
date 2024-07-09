@@ -210,6 +210,9 @@ spec:
             - name: config
               mountPath: /etc/otelcol-contrib/config.yaml
               subPath: otelcol_config.yml
+          {{- if .Values.otel.collector.resources }}
+          resources: {{- toYaml .Values.otel.collector.resources | nindent 12 }}
+          {{- end }}
         {{- end }}
         {{- if .Values.sidecars }}
         {{- include "common.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
