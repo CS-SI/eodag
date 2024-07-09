@@ -26,6 +26,7 @@ from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
+
 logger = logging.getLogger("eodag.crunch.latest_tpl_name")
 
 
