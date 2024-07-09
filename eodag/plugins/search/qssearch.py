@@ -1538,7 +1538,9 @@ class PostJsonSearch(QueryStringSearch):
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
             if (
-                hasattr(err.response, "status_code")
+                hasattr(err, "response")
+                and err.response is not None
+                and getattr(err.response, "status_code", None)
                 and err.response.status_code in auth_errors
             ):
                 raise AuthenticationError(
@@ -1560,7 +1562,11 @@ class PostJsonSearch(QueryStringSearch):
             if "response" in locals():
                 logger.debug(response.content)
             error_text = str(err)
-            if getattr(err, "response", None) is not None:
+            if (
+                hasattr(err, "response")
+                and err.response is not None
+                and getattr(err.response, "text", None)
+            ):
                 error_text = err.response.text
             raise RequestError(error_text) from err
         return response

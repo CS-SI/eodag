@@ -223,7 +223,7 @@ async def forward_middleware(
 
 @app.exception_handler(StarletteHTTPException)
 async def default_exception_handler(
-    request: Request, error: Exception
+    request: Request, error: HTTPException
 ) -> ORJSONResponse:
     """Default errors handle"""
     description = (
