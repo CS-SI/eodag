@@ -28,4 +28,5 @@ except ImportError:
     from ._assets import Asset, AssetsDict  # type: ignore[assignment]
     from ._product import EOProduct  # type: ignore[assignment]
 
+# exportable content
 __all__ = ["Asset", "AssetsDict", "EOProduct"]
