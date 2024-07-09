@@ -3898,6 +3898,7 @@
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
+    discover_assets: true
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
@@ -3992,13 +3993,11 @@
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
   download: !plugin
-    type: ODataV4Download
+    type: HTTPDownload
     extract: true
     order_enabled: false
     archive_depth: 2
     ssl_verify: true
-    discover_assets: true
-    discover_assets_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     auth_base_uri: 'https://identity.dataspace.copernicus.eu/auth'
