@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -278,18 +278,18 @@ class S3RestDownload(Download):
                 os.remove(record_filename)
 
             # total size for progress_callback
-            total_size = sum(
-                [
-                    int(node.firstChild.nodeValue)
-                    for node in xmldoc.getElementsByTagName("Size")
-                ]
-            )
+            size_list: List[int] = [
+                int(node.firstChild.nodeValue)  # type: ignore[attr-defined]
+                for node in xmldoc.getElementsByTagName("Size")
+                if node.firstChild is not None
+            ]
+            total_size = sum(size_list)
             progress_callback.reset(total=total_size)
 
             # download each node key
             for node_xml in nodes_xml_list:
                 node_key = unquote(
-                    node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue
+                    node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue  # type: ignore[union-attr]
                 )
                 # As "Key", "Size" and "ETag" (md5 hash) can also be retrieved from node_xml
                 node_url = urljoin(bucket_url.strip("/") + "/", node_key.strip("/"))

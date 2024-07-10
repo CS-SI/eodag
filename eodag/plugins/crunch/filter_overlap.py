@@ -73,10 +73,10 @@ class FilterOverlap(Crunch):
                 "geometry not found in cruncher arguments, filtering disabled."
             )
             return products
-        minimum_overlap = float(self.config.get("minimum_overlap", "0"))
-        contains = self.config.get("contains", False)
-        intersects = self.config.get("intersects", False)
-        within = self.config.get("within", False)
+        minimum_overlap = float(self.config.__dict__.get("minimum_overlap", "0"))
+        contains = self.config.__dict__.get("contains", False)
+        intersects = self.config.__dict__.get("intersects", False)
+        within = self.config.__dict__.get("within", False)
 
         if contains and (within or intersects) or (within and intersects):
             logger.warning(

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
 
 if TYPE_CHECKING:
@@ -29,7 +30,8 @@ class Crunch(PluginTopic):
     """Base cruncher"""
 
     def __init__(self, config: Optional[Dict[str, Any]]) -> None:
-        self.config = config if config is not None else {}
+        self.config = PluginConfig()
+        self.config.__dict__ = config if config is not None else {}
 
     def proceed(
         self, products: List[EOProduct], **search_params: Any

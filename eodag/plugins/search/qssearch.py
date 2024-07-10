@@ -19,15 +19,14 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Iterable
 from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     List,
     Optional,
+    Sequence,
     Set,
     Tuple,
     TypedDict,
@@ -48,6 +47,7 @@ import geojson
 import orjson
 import requests
 import yaml
+from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import create_model
 from pydantic.fields import FieldInfo
@@ -93,6 +93,7 @@ from eodag.utils.constraints import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
+    PluginImplementationError,
     RequestError,
     TimeOutError,
     ValidationError,
@@ -751,7 +752,9 @@ class QueryStringSearch(Search):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
+        def quote_via(x: Any, *_args, **_kwargs) -> str:
+            return x
+
         return (
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),
@@ -873,7 +876,7 @@ class QueryStringSearch(Search):
                 )
                 result = (
                     [etree.tostring(element_or_tree=entry) for entry in results_xpath]
-                    if isinstance(results_xpath, Iterable)
+                    if isinstance(results_xpath, Sequence)
                     else []
                 )
 
@@ -893,7 +896,7 @@ class QueryStringSearch(Search):
                         )
                         total_nb_results = (
                             total_nb_results_xpath
-                            if isinstance(total_nb_results_xpath, Iterable)
+                            if isinstance(total_nb_results_xpath, Sequence)
                             else []
                         )[0]
                         _total_items_nb = int(total_nb_results)
@@ -910,55 +913,60 @@ class QueryStringSearch(Search):
                 resp_as_json = response.json()
                 if next_page_url_key_path:
                     path_parsed = next_page_url_key_path
-                    try:
-                        self.next_page_url = path_parsed.find(resp_as_json)[0].value
+                    found_paths = path_parsed.find(resp_as_json)
+                    if found_paths and not isinstance(found_paths, int):
+                        self.next_page_url = found_paths[0].value
                         logger.debug(
                             "Next page URL collected and set for the next search",
                         )
-                    except IndexError:
+                    else:
                         logger.debug("Next page URL could not be collected")
                 if next_page_query_obj_key_path:
                     path_parsed = next_page_query_obj_key_path
-                    try:
-                        self.next_page_query_obj = path_parsed.find(resp_as_json)[
-                            0
-                        ].value
+                    found_paths = path_parsed.find(resp_as_json)
+                    if found_paths and not isinstance(found_paths, int):
+                        self.next_page_query_obj = found_paths[0].value
                         logger.debug(
                             "Next page Query-object collected and set for the next search",
                         )
-                    except IndexError:
+                    else:
                         logger.debug("Next page Query-object could not be collected")
                 if next_page_merge_key_path:
                     path_parsed = next_page_merge_key_path
-                    try:
-                        self.next_page_merge = path_parsed.find(resp_as_json)[0].value
+                    found_paths = path_parsed.find(resp_as_json)
+                    if found_paths and not isinstance(found_paths, int):
+                        self.next_page_merge = found_paths[0].value
                         logger.debug(
                             "Next page merge collected and set for the next search",
                         )
-                    except IndexError:
+                    else:
                         logger.debug("Next page merge could not be collected")
 
                 results_entry = string_to_jsonpath(
                     self.config.results_entry, force=True
                 )
-                try:
-                    result = results_entry.find(resp_as_json)[0].value
-                except Exception:
+                found_entry_paths = results_entry.find(resp_as_json)
+                if found_entry_paths and not isinstance(found_entry_paths, int):
+                    result = found_entry_paths[0].value
+                else:
                     result = []
                 if not isinstance(result, list):
                     result = [result]
 
                 if getattr(prep, "need_count", False):
                     # extract total_items_nb from search results
-                    try:
-                        _total_items_nb = total_items_nb_key_path_parsed.find(
-                            resp_as_json
-                        )[0].value
+                    found_total_items_nb_paths = total_items_nb_key_path_parsed.find(
+                        resp_as_json
+                    )
+                    if found_total_items_nb_paths and not isinstance(
+                        found_total_items_nb_paths, int
+                    ):
+                        _total_items_nb = found_total_items_nb_paths[0].value
                         if getattr(self.config, "merge_responses", False):
                             total_items_nb = _total_items_nb or 0
                         else:
                             total_items_nb += _total_items_nb or 0
-                    except IndexError:
+                    else:
                         logger.debug(
                             "Could not extract total_items_nb from search results"
                         )
@@ -1036,7 +1044,17 @@ class QueryStringSearch(Search):
             count_results = response.json()
             if isinstance(count_results, dict):
                 path_parsed = self.config.pagination["total_items_nb_key_path"]
-                total_results = path_parsed.find(count_results)[0].value
+                if not isinstance(path_parsed, JSONPath):
+                    raise PluginImplementationError(
+                        "total_items_nb_key_path must be parsed to JSONPath on plugin init"
+                    )
+                found_paths = path_parsed.find(count_results)
+                if found_paths and not isinstance(found_paths, int):
+                    total_results = found_paths[0].value
+                else:
+                    raise MisconfiguredError(
+                        "Could not get results count from response using total_items_nb_key_path"
+                    )
             else:  # interpret the result as a raw int
                 total_results = int(count_results)
         return total_results
@@ -1520,7 +1538,9 @@ class PostJsonSearch(QueryStringSearch):
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
             if (
-                hasattr(err.response, "status_code")
+                hasattr(err, "response")
+                and err.response is not None
+                and getattr(err.response, "status_code", None)
                 and err.response.status_code in auth_errors
             ):
                 raise AuthenticationError(
@@ -1542,7 +1562,11 @@ class PostJsonSearch(QueryStringSearch):
             if "response" in locals():
                 logger.debug(response.content)
             error_text = str(err)
-            if getattr(err, "response", None) is not None:
+            if (
+                hasattr(err, "response")
+                and err.response is not None
+                and getattr(err.response, "text", None)
+            ):
                 error_text = err.response.text
             raise RequestError(error_text) from err
         return response
@@ -1578,7 +1602,9 @@ class StacSearch(PostJsonSearch):
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        quote_via: Callable[[Any, str, str, str], str] = lambda x, *_args, **_kwargs: x
+        def quote_via(x: Any, *_args, **_kwargs) -> str:
+            return x
+
         return (
             query_params,
             urlencode(query_params, doseq=True, quote_via=quote_via),

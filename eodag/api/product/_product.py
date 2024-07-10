@@ -32,9 +32,11 @@ from shapely.errors import ShapelyError
 
 try:
     # import from eodag-cube if installed
-    from eodag_cube.api.product import AssetsDict  # type: ignore # noqa
+    from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
+        AssetsDict,
+    )
 except ImportError:
-    from eodag.api.product._assets import AssetsDict  # type: ignore # noqa
+    from eodag.api.product._assets import AssetsDict
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import (

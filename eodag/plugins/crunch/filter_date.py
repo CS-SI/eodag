@@ -21,7 +21,7 @@ import datetime
 import logging
 import time
 from datetime import datetime as dt
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, List
 
 import dateutil.parser
 from dateutil import tz
@@ -44,8 +44,6 @@ class FilterDate(Crunch):
 
     :type config: dict
     """
-
-    config: Dict[str, str]
 
     @staticmethod
     def sort_product_by_start_date(product: EOProduct) -> dt:
@@ -72,7 +70,7 @@ class FilterDate(Crunch):
             return []
 
         # filter start date
-        filter_start_str = self.config.get("start", None)
+        filter_start_str = self.config.__dict__.get("start", None)
         if filter_start_str:
             filter_start = dateutil.parser.parse(filter_start_str)
             if not filter_start.tzinfo:
@@ -81,7 +79,7 @@ class FilterDate(Crunch):
             filter_start = None
 
         # filter end date
-        filter_end_str = self.config.get("end", None)
+        filter_end_str = self.config.__dict__.get("end", None)
         if filter_end_str:
             filter_end = dateutil.parser.parse(filter_end_str)
             if not filter_end.tzinfo:

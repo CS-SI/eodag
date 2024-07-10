@@ -515,7 +515,7 @@ class CodeAuthorizedAuth(AuthBase):
             parts = urlparse(request.url)
             query_dict = parse_qs(parts.query)
             query_dict.update({self.key: self.token})
-            url_without_args = parts._replace(query=None).geturl()
+            url_without_args = parts._replace(query="").geturl()
 
             request.prepare_url(url_without_args, query_dict)
 

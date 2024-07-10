@@ -386,8 +386,11 @@ class DataRequestSearch(Search):
         total_items_nb_key_path = string_to_jsonpath(
             self.config.pagination["total_items_nb_key_path"]
         )
-        if len(total_items_nb_key_path.find(results)) > 0:
-            total_items_nb = total_items_nb_key_path.find(results)[0].value
+        found_total_items_nb_paths = total_items_nb_key_path.find(results)
+        if found_total_items_nb_paths and not isinstance(
+            found_total_items_nb_paths, int
+        ):
+            total_items_nb = found_total_items_nb_paths[0].value
         else:
             total_items_nb = 0
         for p in products:
@@ -423,7 +426,10 @@ class DataRequestSearch(Search):
         path = string_to_jsonpath(custom_filters["filter_attribute"])
         indexes = custom_filters["indexes"].split("-")
         for record in results:
-            filter_param = path.find(record)[0].value
+            found_paths = path.find(record)
+            if not found_paths or isinstance(found_paths, int):
+                continue
+            filter_param = found_paths[0].value
             filter_value = filter_param[int(indexes[0]) : int(indexes[1])]
             filter_clause = "'" + filter_value + "' " + custom_filters["filter_clause"]
             if eval(filter_clause):

@@ -17,9 +17,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from __future__ import annotations
+
 from datetime import datetime
 from importlib.metadata import metadata
-from typing import Dict
+from typing import Any, Dict, List
 
 # -- General configuration ------------------------------------------------
 
@@ -157,7 +159,7 @@ html_css_files = [
     "custom.css",
 ]
 
-html_js_files = []
+html_js_files: List[Any] = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

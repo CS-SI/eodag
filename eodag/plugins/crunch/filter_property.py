@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import operator
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, List
 
 from eodag.plugins.crunch.base import Crunch
 
@@ -42,8 +42,6 @@ class FilterProperty(Crunch):
     :type config: dict
     """
 
-    config: Dict[str, Union[str, Optional[str]]]
-
     def proceed(
         self, products: List[EOProduct], **search_params: Any
     ) -> List[EOProduct]:
@@ -54,7 +52,7 @@ class FilterProperty(Crunch):
         :returns: The filtered products
         :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
-        operator_name = self.config.pop("operator", "eq") or "eq"
+        operator_name = self.config.__dict__.pop("operator", "eq") or "eq"
         try:
             operator_method = getattr(operator, operator_name)
         except AttributeError:
@@ -64,12 +62,12 @@ class FilterProperty(Crunch):
             )
             return products
 
-        if len(self.config.keys()) != 1:
+        if len(self.config.__dict__.keys()) != 1:
             logger.warning("One property is needed for filtering, filtering disabled.")
             return products
 
-        property_key = next(iter(self.config))
-        property_value = self.config.get(property_key, None)
+        property_key = next(iter(self.config.__dict__))
+        property_value = self.config.__dict__.get(property_key, None)
 
         logger.debug(
             "Start filtering for products matching operator.%s(product.properties['%s'], %s)",
