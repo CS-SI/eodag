@@ -22,6 +22,7 @@ import stat
 import tarfile
 import unittest
 import zipfile
+from copy import copy
 from itertools import chain
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
@@ -42,10 +43,13 @@ from tests.context import (
     OFFLINE_STATUS,
     ONLINE_STATUS,
     USER_AGENT,
+    EODataAccessGateway,
     EOProduct,
+    FilterProperty,
     HTTPDownload,
     NotAvailableError,
     PluginManager,
+    SearchResult,
     config,
     load_default_config,
     override_config_from_mapping,
@@ -159,6 +163,200 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         with self.assertLogs(level="WARNING") as cm:
             fs_path, _ = plugin._prepare_download(self.product, output_dir=outdir.name)
             self.assertIn("Unable to create records directory", str(cm.output))
+
+    @mock.patch("eodag.api.product._product.EOProduct.download", autospec=True)
+    @mock.patch("eodag.api.search_result.SearchResult.crunch", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
+    def test_plugins_download_base_download_all_exhaust_ok(
+        self, mock__do_search, mock_crunch, mock_download
+    ):
+        """Download.download_all with "exhaust" parameter set to True must download
+        products from all pages of the initial product search request"""
+        search_iter_page_search_result_1 = SearchResult(
+            [
+                EOProduct(
+                    "peps",
+                    dict(
+                        geometry="POINT (0 0)",
+                        title="other_dummy_product_1",
+                        id="other_dummy_1",
+                        cloudCover=80,
+                    ),
+                )
+            ]
+        )
+        search_iter_page_search_result_1.search_kwargs = {
+            "page": 2,
+            "items_per_page": 1,
+            "productType": "S2_MSI_L1C",
+            "geometry": None,
+            "cloudCover": 80,
+        }
+        search_iter_page_search_result_2 = SearchResult(
+            [
+                EOProduct(
+                    "peps",
+                    dict(
+                        geometry="POINT (0 0)",
+                        title="other_dummy_product_2",
+                        id="other_dummy_2",
+                        cloudCover=20,
+                    ),
+                )
+            ]
+        )
+        search_iter_page_search_result_2.search_kwargs = {
+            "page": 3,
+            "items_per_page": 1,
+            "productType": "S2_MSI_L1C",
+            "geometry": None,
+            "cloudCover": 80,
+        }
+        search_iter_page_search_result_3 = SearchResult([])
+        search_iter_page_search_result_3.search_kwargs = {
+            "page": 4,
+            "items_per_page": 1,
+            "productType": "S2_MSI_L1C",
+            "geometry": None,
+            "cloudCover": 80,
+        }
+
+        do_search_results_list = [
+            search_iter_page_search_result_1,
+            search_iter_page_search_result_2,
+            search_iter_page_search_result_3,
+        ]
+        non_empty_do_search_results = SearchResult(
+            [
+                do_search_result[0]
+                for do_search_result in do_search_results_list
+                if do_search_result
+            ]
+        )
+
+        mock__do_search.side_effect = do_search_results_list
+        mock_crunch.return_value = search_iter_page_search_result_2
+
+        search_result = SearchResult([self.product])
+        # simulate search kwargs and crunchers of the search result
+        search_result.search_kwargs = {
+            "page": 1,
+            "items_per_page": 1,
+            "productType": "S2_MSI_L1C",
+            "geometry": None,
+            "cloudCover": 80,
+        }
+        search_result.crunchers = [FilterProperty({"cloudCover": 20, "operator": "lt"})]
+        # save a copy of the search result to check if it was called well below
+        tmp_search_result = copy(search_result)
+
+        dag = EODataAccessGateway()
+
+        plugin = self.get_download_plugin(self.product)
+
+        with self.assertLogs(level="DEBUG") as cm:
+            paths = plugin.download_all(search_result, dag, exhaust=True)
+
+        # check that _do_search() method is called for all pages except the one already requested
+        self.assertEqual(mock__do_search.call_count, 3)
+        default_kwargs = {"count": False, "raise_errors": True}
+        self.assertDictEqual(
+            {
+                **search_result.search_kwargs,
+                **default_kwargs,
+                **{"page": search_result.search_kwargs["page"] + 1},
+            },
+            mock__do_search.call_args_list[0][1],
+        )
+        self.assertDictEqual(
+            {
+                **search_result.search_kwargs,
+                **default_kwargs,
+                **{"page": search_result.search_kwargs["page"] + 2},
+            },
+            mock__do_search.call_args_list[1][1],
+        )
+        self.assertDictEqual(
+            {
+                **search_result.search_kwargs,
+                **default_kwargs,
+                **{"page": search_result.search_kwargs["page"] + 3},
+            },
+            mock__do_search.call_args_list[2][1],
+        )
+        # check that the initial dag is called in each search request
+        self.assertSetEqual(
+            {dag}, {call_args[0][0] for call_args in mock__do_search.call_args_list}
+        )
+
+        # chat that crunch() method is called with search_iter_page() results and for the cruncher given
+        self.assertEqual(mock_crunch.call_count, 1)
+        self.assertTupleEqual(
+            (non_empty_do_search_results, search_result.crunchers[0]),
+            mock_crunch.call_args_list[0][0],
+        )
+        self.assertDictEqual(
+            search_result.search_kwargs, mock_crunch.call_args_list[0][1]
+        )
+
+        # chack that download() method is called for initial search result and the one added to it
+        self.assertEqual(mock_download.call_count, 2)
+        self.assertEqual(tmp_search_result[0], mock_download.call_args_list[0].args[0])
+        self.assertEqual(
+            search_iter_page_search_result_2[0], mock_download.call_args_list[1].args[0]
+        )
+
+        # check that two paths are returned
+        self.assertEqual(len(paths), 2)
+
+        # check that logs have been well raised
+        self.assertIn("Searching other products from all pages", str(cm.output))
+        self.assertIn(
+            "Search on page #1 skipped since it was already requested", str(cm.output)
+        )
+        self.assertIn(
+            "Iterate over pages: last products found on page 3", str(cm.output)
+        )
+        self.assertIn("Found 2 other result(s)", str(cm.output))
+        self.assertIn("Apply the crunchers used on initial results", str(cm.output))
+        self.assertIn("1 result(s) crunched", str(cm.output))
+        self.assertIn("Downloading 2 product(s)", str(cm.output))
+
+    @mock.patch("eodag.api.product._product.EOProduct.download", autospec=True)
+    @mock.patch("eodag.api.core.EODataAccessGateway.search_iter_page", autospec=True)
+    def test_plugins_download_base_download_all_exhaust_after_search_all(
+        self, mock_search_iter_page, mock_download
+    ):
+        """Download.download_all with "exhaust" parameter set to True must download
+        only products in arguments if they are results of search_all()"""
+        mock_search_iter_page.return_value = mock.ANY
+
+        # simulate a search result which is a result of search_all(), its "search kwargs" attribute is keep to None then
+        search_result = SearchResult([self.product])
+
+        dag = EODataAccessGateway()
+
+        plugin = self.get_download_plugin(self.product)
+
+        with self.assertLogs(level="DEBUG") as cm:
+            paths = plugin.download_all(search_result, dag, exhaust=True)
+
+        # check that search_iter_page() method is not called
+        mock_search_iter_page.assert_not_called()
+
+        # chack that download() method is called only for the initial search result
+        self.assertEqual(mock_download.call_count, 1)
+        self.assertEqual(search_result[0], mock_download.call_args_list[0].args[0])
+
+        # check that two paths are returned
+        self.assertEqual(len(paths), 1)
+
+        # check that logs have been well raised
+        self.assertIn("Searching other products from all pages", str(cm.output))
+        self.assertIn(
+            "Products from all pages have already been searched", str(cm.output)
+        )
+        self.assertIn("Downloading 1 product(s)", str(cm.output))
 
 
 class TestDownloadPluginHttp(BaseDownloadPluginTest):
