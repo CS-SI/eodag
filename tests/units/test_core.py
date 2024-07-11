@@ -2394,6 +2394,27 @@ class TestCoreSearch(TestCoreBase):
         self.assertEqual(len(sr), self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_must_save_search_kwargs(self, search_plugin):
+        """_do_search must return a "SearchResult" instance with its search kwargs"""
+        search_plugin.provider = "peps"
+        search_plugin.query.return_value = (
+            self.search_results.data,
+            None,  # .query must return None if count is False
+        )
+
+        class DummyConfig:
+            pagination = {}
+
+        search_plugin.config = DummyConfig()
+
+        kwargs = {"page": 1, "items_per_page": 2, "productType": "S2_MSI_L1C", "cloud_cover": 80}
+        sr = self.dag._do_search(
+            search_plugin=search_plugin, count=False, raise_errors=False, **kwargs
+        )
+        self.assertIsNotNone(sr.search_kwargs)
+        self.assertDictEqual(sr.search_kwargs, kwargs)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
         """_do_search must return None as count if provider does not return the count"""
         search_plugin.provider = "peps"
