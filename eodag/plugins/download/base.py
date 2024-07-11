@@ -510,12 +510,14 @@ class Download(PluginTopic):
                 logger.info(f"Found {len(other_products)} other result(s)")
                 if other_products:
                     # apply on the new results the same cruncher(s) as the one(s) used to filter initial results
-                    for i, cruncher in enumerate(products.crunchers):
-                        if i == 0:
-                            logger.info("Apply the crunchers used on initial results")
+                    if products.crunchers:
+                        logger.info("Apply the crunchers used on initial results")
+                    for cruncher in products.crunchers:
                         other_products = other_products.crunch(
                             cruncher, **search_kwargs
                         )
+                    if products.crunchers:
+                        logger.info(f"{len(other_products.data)} result(s) crunched")
                     # add the new results to the initial ones
                     products.data.extend(other_products.data)
             else:
