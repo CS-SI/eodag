@@ -4434,6 +4434,10 @@
           "end": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}"
         }}
       - '$.id'
+  anchor_variable: &variable_list
+    variable:
+      - '{{"variable": {variable}}}'
+      - '$.null'
   search: !plugin
     type: PostJsonSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
@@ -4927,6 +4931,7 @@
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_ICE_EDGE_TYPE"}}'
     SATELLITE_SEA_ICE_THICKNESS:
@@ -4984,6 +4989,7 @@
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL"}}'
     SATELLITE_SEA_LEVEL_MEDITERRANEAN:
@@ -5013,6 +5019,7 @@
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS"}}'
     SEASONAL_ORIGINAL_PL:
@@ -5032,6 +5039,7 @@
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS"}}'
     SEASONAL_POSTPROCESSED_SL:
@@ -5054,6 +5062,7 @@
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS"}}'
     SEASONAL_POSTPROCESSED_PL:
@@ -5078,6 +5087,7 @@
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS"}}'
     SEASONAL_MONTHLY_SL:
@@ -5100,6 +5110,7 @@
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS"}}'
     SEASONAL_MONTHLY_PL:
@@ -5125,11 +5136,9 @@
         origin:
           - '{{"originating_centre": "{origin}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS"}}'
-        variable:
-          - '{{"variable": {variable}}}'
-          - '$.null'
     GLACIERS_DIST_RANDOLPH:
       productType: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
       variable:
@@ -5147,11 +5156,9 @@
         version:
           - '{{"version": "{version}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT"}}'
-        variable:
-          - '{{"variable": {variable}}}'
-          - '$.null'
     GRIDDED_GLACIERS_MASS_CHANGE:
       productType: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
       variable: glacier_mass_change
@@ -5229,6 +5236,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS"}}'
     ERA5_PL:
@@ -5255,6 +5263,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS"}}'
     ERA5_SL_MONTHLY:
@@ -5279,6 +5288,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS"}}'
     ERA5_PL_MONTHLY:
@@ -5305,6 +5315,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS"}}'
     ERA5_LAND:
@@ -5324,6 +5335,7 @@
             }}
           - $.properties.startDate
         completionTimeFromAscendingNode: $.properties.endDate
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_LAND"}}'
     ERA5_LAND_MONTHLY:
@@ -5348,6 +5360,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS"}}'
     CAMS_EAC4:
@@ -5365,6 +5378,7 @@
         completionTimeFromAscendingNode:
           - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4"}}'
     CAMS_GLOBAL_EMISSIONS:
@@ -5385,6 +5399,7 @@
             }}
           - $.properties.startDate
         completionTimeFromAscendingNode: $.properties.endDate
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES"}}'
     CAMS_EAC4_MONTHLY:
@@ -5400,6 +5415,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY"}}'
     CAMS_GREENHOUSE_INVERSION:
@@ -5440,6 +5456,7 @@
         type:
           - '{{"type": {type}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES"}}'
     CAMS_GRF:
@@ -5459,6 +5476,7 @@
       metadata_mapping:
         id: '$.id'
         <<: *month_year
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS"}}'
     CAMS_GRF_AUX:
@@ -5479,6 +5497,7 @@
       metadata_mapping:
         id: '$.id'
         <<: *month_year
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES"}}'
     CAMS_GREENHOUSE_EGG4:
@@ -5496,6 +5515,7 @@
         completionTimeFromAscendingNode:
           - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
           - '$.properties.enddate'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4"}}'
     CAMS_GREENHOUSE_EGG4_MONTHLY:
@@ -5515,6 +5535,7 @@
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY"}}'
     CAMS_EU_AIR_QUALITY_FORECAST:
@@ -5543,6 +5564,7 @@
         type:
           - '{{"type": {type}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS"}}'
     CAMS_GAC_FORECAST:
@@ -5567,6 +5589,7 @@
         type:
           - '{{"type": {type}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS"}}'
     CAMS_SOLAR_RADIATION:
@@ -5729,6 +5752,7 @@
         type:
           - '{{"dataset_type": "{type}"}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"}}'
     GLOFAS_FORECAST:
@@ -5783,6 +5807,7 @@
         model:
           - '{{"hydrological_model": {model}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_HISTORICAL"}}'
     GLOFAS_REFORECAST:
@@ -5810,6 +5835,7 @@
         model:
           - '{{"hydrological_model": {model}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_REFORECAST"}}'
     GLOFAS_SEASONAL:
@@ -5832,6 +5858,7 @@
         model:
           - '{{"hydrological_model": {model}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL"}}'
     GLOFAS_SEASONAL_REFORECAST:
@@ -5854,6 +5881,7 @@
         model:
           - '{{"hydrological_model": {model}}}'
           - '$.null'
+        <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_GLOFAS_SEASONAL_REFORECAST"}}'
     EFAS_FORECAST:
