@@ -32,6 +32,13 @@ class Crunch(PluginTopic):
     def __init__(self, config: Optional[Dict[str, Any]]) -> None:
         self.config = PluginConfig()
         self.config.__dict__ = config if config is not None else {}
+        self.provider = None
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(provider=None, config={self.config}, "
+            f"topic={self.__class__.mro()[-3].__name__})"
+        )
 
     def proceed(
         self, products: List[EOProduct], **search_params: Any
