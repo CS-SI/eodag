@@ -439,7 +439,9 @@ async def all_collections(
         collections = format_dict_items(collections, **format_args)
         return collections
 
-    hashed_collections = hash(f"{provider}:{q}:{platform}:{instrument}:{constellation}")
+    hashed_collections = hash(
+        f"{provider}:{q}:{platform}:{instrument}:{constellation}:{datetime}"
+    )
     cache_key = f"{CACHE_KEY_COLLECTIONS}:{hashed_collections}"
     return await cached(_fetch, cache_key, request)
 
