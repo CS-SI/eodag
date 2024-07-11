@@ -401,6 +401,68 @@ class EODataAccessGateway:
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
 
+    def add_provider(
+        self,
+        name: str,
+        url: Optional[str] = None,
+        priority: Optional[int] = None,
+        search: Dict[str, Any] = {"type": "StacSearch"},
+        products: Dict[str, Any] = {
+            GENERIC_PRODUCT_TYPE: {"productType": "{productType}"}
+        },
+        download: Dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        **kwargs: Dict[str, Any],
+    ):
+        """Adds a new provider.
+
+        :param name: Name of provider
+        :type name: str
+        :param url: Provider url, also used as ``search["api_endpoint"]`` if not defined
+        :type url: Optional[str]
+        :param priority: Provider priority. If None, provider will be set as preferred (highest priority)
+        :type priority: Optional[int]
+        :param search: Search :class:`~eodag.config.PluginConfig` mapping
+        :type search: Dict[str, Any]
+        :param products: Provider product types mapping
+        :type products: Dict[str, Any]
+        :param download: Download :class:`~eodag.config.PluginConfig` mapping
+        :type download: Dict[str, Any]
+        :param kwargs: Additional :class:`~eodag.config.ProviderConfig` mapping
+        :type kwargs: Dict[str, Any]
+        """
+        conf_dict: Dict[str, Any] = {
+            name: {
+                "url": url,
+                "search": search,
+                "products": products,
+                "download": download,
+                **kwargs,
+            }
+        }
+        if priority is not None:
+            conf_dict[name]["priority"] = priority
+        # if provided, use url as default search api_endpoint
+        if (
+            url
+            and conf_dict[name].get("search", {})
+            and not conf_dict[name]["search"].get("api_endpoint")
+        ):
+            conf_dict[name]["search"]["api_endpoint"] = url
+
+        # api plugin usage: remove unneeded search/download/auth plugin conf
+        if conf_dict[name].get("api"):
+            conf_dict[name].pop("search", None)
+            conf_dict[name].pop("download", None)
+            conf_dict[name].pop("auth", None)
+
+        override_config_from_mapping(self.providers_config, conf_dict)
+        provider_config_init(self.providers_config[name], load_stac_provider_config())
+        setattr(self.providers_config[name], "product_types_fetched", False)
+        self._plugins_manager.build_product_type_to_provider_config_map()
+
+        if priority is None:
+            self.set_preferred_provider(name)
+
     def _prune_providers_list(self) -> None:
         """Removes from config providers needing auth that have no credentials set."""
         update_needed = False
