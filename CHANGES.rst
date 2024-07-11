@@ -41,6 +41,7 @@ Breaking changes
 Core features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+* Search results sort feature (:pull:`943`)
 * Providers groups (:pull:`1071`)
 * Configurable download timeout (:pull:`1124`)
 * `Search by id <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#id-and-provider>`_ now
@@ -51,10 +52,11 @@ Core features and fixes
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`),
   mission dates filtering support (:pull:`1222`)
 * Configurable requests ``ssl_verify`` (:pull:`1045`)
+* Download record hash independent from provider (:pull:`1023`)
 * Fixed and refactored `queryables` (:pull:`1050`)(:pull:`1097`)(:pull:`1102`)(:pull:`1157`), authentication fix
   (:pull:`1194`), support for local constraints files (:pull:`1105`)
 * Fixed `metadata mapping` in templates detection (:pull:`1139`), ``format_query_params()`` fixes (:pull:`1145`) and
-  refactor (:pull:`1142`)
+  refactor (:pull:`1142`). Configurable assets filtering (:pull:`1033`).
 
 Providers and product types updates
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -79,6 +81,7 @@ Providers and product types updates
 Plugins new features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+* Standardized download output tree (:pull:`746`)
 * Refactored search plugins methods to use ``PreparedSearch`` and ``RawSearchResult`` new classes (:pull:`1191`)
 * Refresh token for :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin
   (:pull:`1138`), tests (:pull:`1135`), and fix (:pull:`1232`)
@@ -89,10 +92,12 @@ Plugins new features and fixes
 * Allow no auth for :class:`~eodag.plugins.download.http.HTTPDownload` download requests (:pull:`1196`)
 * Refactorization of ``Api`` base plugin that now inherits from ``Search`` and ``Download`` (:pull:`1051`)
 * ``orderLink`` support in `build_search_result.*` plugins (:pull:`1082`), and parsing fix (:pull:`1091`)
+* Fixed resume interrupted assets download using :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`1017`)
 
 Server mode
 ^^^^^^^^^^^
 
+* Server-mode rework and cql2 support (:pull:`966`)
 * Offline products order handling (:pull:`918`)
 * External enhanced product types metadata (:pull:`1008`)(:pull:`1171`)(:pull:`1176`)(:pull:`1180`)(:pull:`1197`)
 * Collections search using updated :meth:`~eodag.api.core.EODataAccessGateway.guess_product_type` (:pull:`909`)
@@ -115,15 +120,15 @@ Miscellaneous
   (:pull:`1079`)
 * **[build]** Remove ``requests-ftp`` (:pull:`1085`)
 * **[style]** type hints related fixes and refactoring (:pull:`1052`)
-* **[docs]** sphinx theme updated and removed jquery (:pull:`1054`), newlines between badges fixes (:pull:`1109`), and other
-  documentation fixes and updates (:pull:`1057`)(:pull:`1059`)(:pull:`1062`)(:pull:`1063`)(:pull:`1081`)(:pull:`1121`)
-  (:pull:`1122`)
+* **[docs]** sphinx theme updated and removed jquery (:pull:`1054`), newlines between badges fixes (:pull:`1109`), and
+  other documentation fixes and updates (:pull:`1057`)(:pull:`1059`)(:pull:`1062`)(:pull:`1063`)(:pull:`1081`)
+  (:pull:`1121`)(:pull:`1122`)
 * **[ci]** Fetch product types Github action updates (:pull:`1202`)(:pull:`1205`)
 * Various minor fixes and improvements (:pull:`1072`)(:pull:`1077`)(:pull:`1101`)(:pull:`1111`)(:pull:`1118`)
   (:pull:`1132`)(:pull:`1141`)(:pull:`1190`)
-* External product types reference updates (:pull:`1086`)(:pull:`1093`)(:pull:`1107`)(:pull:`1110`)(:pull:`1114`)
-  (:pull:`1136`)(:pull:`1137`)(:pull:`1140`)(:pull:`1146`)(:pull:`1151`)(:pull:`1153`)(:pull:`1160`)(:pull:`1165`)
-  (:pull:`1203`)(:pull:`1204`)(:pull:`1206`)(:pull:`1207`)(:pull:`1208`)(:pull:`1229`)
+* External product types reference updates (:pull:`1027`)(:pull:`1028`)(:pull:`1086`)(:pull:`1093`)(:pull:`1107`)
+  (:pull:`1110`)(:pull:`1114`)(:pull:`1136`)(:pull:`1137`)(:pull:`1140`)(:pull:`1146`)(:pull:`1151`)(:pull:`1153`)
+  (:pull:`1160`)(:pull:`1165`)(:pull:`1203`)(:pull:`1204`)(:pull:`1206`)(:pull:`1207`)(:pull:`1208`)(:pull:`1229`)
 
 2.12.1 (2024-03-05)
 +++++++++++++++++++
