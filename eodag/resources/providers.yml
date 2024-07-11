@@ -4426,7 +4426,7 @@
     cycleNumber:
       - '{{"cycle": "{cycleNumber}"}}'
       - '$.null'
-  andchor_id_from_date: &id_from_date
+  anchor_id_from_date: &id_from_date
     id:
       - |
         {{
