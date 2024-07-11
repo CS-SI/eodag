@@ -524,7 +524,7 @@ class Download(PluginTopic):
                 logger.info(
                     "Products from all pages have already been searched, then the 'exhaust' parameter is not used here"
                 )
-            logger.info(f"Downloading {len(products)} products")
+            logger.info(f"Downloading {len(products)} product(s)")
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
