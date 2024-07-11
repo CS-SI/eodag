@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime
 import logging
 import os
 import re
@@ -1044,20 +1045,28 @@ class EODataAccessGateway:
 
         # datetime filtering
         if missionStartDate or missionEndDate:
+            today = datetime.datetime.now(datetime.timezone.utc)
+            earliest = datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)
             guesses = [
                 g
                 for g in guesses
                 if (
-                    not missionEndDate
-                    or g.get("missionStartDate")
-                    and rfc3339_str_to_datetime(g["missionStartDate"])
-                    <= rfc3339_str_to_datetime(missionEndDate)
-                )
-                and (
-                    not missionStartDate
-                    or g.get("missionEndDate")
-                    and rfc3339_str_to_datetime(g["missionEndDate"])
-                    >= rfc3339_str_to_datetime(missionStartDate)
+                    max(
+                        rfc3339_str_to_datetime(missionStartDate)
+                        if missionStartDate
+                        else earliest,
+                        rfc3339_str_to_datetime(g["missionStartDate"])
+                        if g.get("missionStartDate")
+                        else earliest,
+                    )
+                    <= min(
+                        rfc3339_str_to_datetime(missionEndDate)
+                        if missionEndDate
+                        else today,
+                        rfc3339_str_to_datetime(g["missionEndDate"])
+                        if g.get("missionEndDate")
+                        else today,
+                    )
                 )
             ]
 
