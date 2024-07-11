@@ -3053,6 +3053,9 @@
       product:
         - product
         - $.product
+      product_version:
+        - product_version
+        - $.product_version
       range:
         - range
         - $.range
@@ -3204,6 +3207,18 @@
       api_product_type: gridded
       version: '6_0'
       format: zip
+    GRIDDED_GLACIERS_MASS_CHANGE:
+      dataset: derived-gridded-glacier-mass-change
+      variable: glacier_mass_change
+      product_version: wgms_fog_2023_09
+      format: zip
+      metadata_mapping:
+        completionTimeFromAscendingNode:
+          - |
+            {{
+              "hydrological_year": {completionTimeFromAscendingNode#get_hydrological_year}
+            }}
+          - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
     FIRE_HISTORICAL:
       dataset: cems-fire-historical-v1
       grid: original_grid
