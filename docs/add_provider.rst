@@ -10,10 +10,17 @@ providers themselves, they just implement generic methods required to talk to di
 * :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth`: Authentication plugin that implements `HTTP authentication using headers <https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication>`_
 * :class:`~eodag.plugins.download.http.HTTPDownload`: Download plugin that implements download over `HTTP protocol <https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol>`_
 
+Dynamically add a new provider
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can dynamically add a new provider, from your python code using :meth:`~eodag.api.core.EODataAccessGateway.add_provider`
+or :meth:`~eodag.api.core.EODataAccessGateway.update_providers_config` methods.
+Check `Python API User Guide / Add-or-update-a-provider <notebooks/api_user_guide/3_configuration.ipynb#Add-or-update-a-provider>`_ for guidelines.
+
 Configure a new provider
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The simplest way to add a new provider is to **configure existing plugins**. This approach requires to
+The simplest way to add a new provider is to **use existing plugins**. This approach requires to
 provide the new provider's configuration in a ``YAML`` format. The following example, extracted from
 the `STAC client page <notebooks/tutos/tuto_stac_client.ipynb#stac-api>`_, shows how to add a new STAC provider:
 
