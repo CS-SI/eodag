@@ -152,12 +152,11 @@ class TestSearchStacStatic(unittest.TestCase):
             self.assertEqual(item.provider, self.stac_provider)
             self.assertEqual(item.product_type, self.product_type)
 
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    def test_search_stac_static(self, mock_fetch_product_types_list):
+    def test_search_stac_static(self):
         """Use StaticStacSearch plugin to search all items"""
-        search_result = self.dag.search(count=True)
+        # mock on fetch_product_types_list not needed with provider specified,
+        #    as product types discovery must be disabled by default for stac static
+        search_result = self.dag.search(provider=self.static_stac_provider, count=True)
         self.assertEqual(len(search_result), self.root_cat_len)
         self.assertEqual(search_result.number_matched, self.root_cat_len)
         for item in search_result:
