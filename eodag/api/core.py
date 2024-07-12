@@ -743,6 +743,11 @@ class EODataAccessGateway:
                 search_plugin: Union[Search, Api] = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
                 )
+                # check after plugin init if still fetchable
+                if not getattr(search_plugin.config, "discover_product_types", {}).get(
+                    "fetch_url"
+                ):
+                    continue
                 # append auth to search plugin if needed
                 if getattr(search_plugin.config, "need_auth", False):
                     auth_plugin = self._plugins_manager.get_auth_plugin(
@@ -1598,6 +1603,10 @@ class EODataAccessGateway:
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
         plugin = next(plugins)
 
+        # check after plugin init if still fetchable
+        if not getattr(plugin.config, "discover_product_types", {}).get("fetch_url"):
+            return None
+
         kwargs: Dict[str, Any] = {"productType": product_type}
 
         # append auth if needed
@@ -1726,18 +1735,15 @@ class EODataAccessGateway:
             product_type
             not in self._plugins_manager.product_type_to_provider_config_map.keys()
         ):
-            logger.debug(
-                f"Fetching external product types sources to find {product_type} product type"
-            )
             if provider:
                 # Try to get specific product type from external provider
+                logger.debug(f"Fetching {provider} to find {product_type} product type")
                 self._fetch_external_product_type(provider, product_type)
-            if (
-                not provider
-                or product_type
-                not in self._plugins_manager.product_type_to_provider_config_map.keys()
-            ):
+            if not provider:
                 # no provider or still not found -> fetch all external product types
+                logger.debug(
+                    f"Fetching external product types sources to find {product_type} product type"
+                )
                 self.fetch_product_types_list()
 
         preferred_provider = self.get_preferred_provider()[0]
