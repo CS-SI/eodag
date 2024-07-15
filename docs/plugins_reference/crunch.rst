@@ -14,11 +14,11 @@ This table lists all the crunch plugins currently available:
 .. autosummary::
    :toctree: generated/
 
-   eodag.plugins.crunch.filter_date.FilterDate
-   eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect
-   eodag.plugins.crunch.filter_latest_tpl_name.FilterLatestByName
-   eodag.plugins.crunch.filter_overlap.FilterOverlap
-   eodag.plugins.crunch.filter_property.FilterProperty
+   filter_date.FilterDate
+   filter_latest_intersect.FilterLatestIntersect
+   filter_latest_tpl_name.FilterLatestByName
+   filter_overlap.FilterOverlap
+   filter_property.FilterProperty
 
 The signature of each plugin's :meth:`proceed` method is displayed below, it may contain information useful to execute the cruncher:
 
