@@ -31,7 +31,9 @@
       max_items_per_page: 5000
       total_items_nb_key_path: '$.totalHits'
     metadata_mapping:
-      id: '$.displayId'
+      id:
+        - '_ID'
+        - '$.displayId'
       geometry: '$.spatialBounds'
       productType: '$.productType'
       title: '$.displayId'

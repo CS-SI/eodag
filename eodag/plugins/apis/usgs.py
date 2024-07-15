@@ -172,11 +172,39 @@ class UsgsApi(Api):
                 max_results=items_per_page,
                 starting_number=(1 + (page - 1) * items_per_page),
             )
-            logger.info(
-                f"Sending search request for {usgs_dataset} with {api_search_kwargs}"
-            )
 
-            results = api.scene_search(usgs_dataset, **api_search_kwargs)
+            # search by id
+            if searched_id := kwargs.get("id"):
+                dataset_filters = api.dataset_filters(usgs_dataset)
+                # ip pattern set as parameter queryable (first element of param conf list)
+                id_pattern = self.config.metadata_mapping["id"][0]
+                # loop on matching dataset_filters until one returns expected results
+                for dataset_filter in dataset_filters["data"]:
+                    if id_pattern in dataset_filter["searchSql"]:
+                        logger.debug(
+                            f"Try using {dataset_filter['searchSql']} dataset filter to search by id on {usgs_dataset}"
+                        )
+                        full_api_search_kwargs = {
+                            "where": {
+                                "filter_id": dataset_filter["id"],
+                                "value": searched_id,
+                            },
+                            **api_search_kwargs,
+                        }
+                        logger.info(
+                            f"Sending search request for {usgs_dataset} with {full_api_search_kwargs}"
+                        )
+                        results = api.scene_search(
+                            usgs_dataset, **full_api_search_kwargs
+                        )
+                        if len(results["data"]["results"]) == 1:
+                            # search by id using this dataset_filter succeeded
+                            break
+            else:
+                logger.info(
+                    f"Sending search request for {usgs_dataset} with {api_search_kwargs}"
+                )
+                results = api.scene_search(usgs_dataset, **api_search_kwargs)
 
             # update results with storage info from download_options()
             results_by_entity_id = {
