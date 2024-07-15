@@ -14,5 +14,5 @@ This table lists all the api plugins currently available:
 .. autosummary::
    :toctree: generated/
 
-   eodag.plugins.apis.usgs.UsgsApi
-   eodag.plugins.apis.ecmwf.EcmwfApi
+   usgs.UsgsApi
+   ecmwf.EcmwfApi
