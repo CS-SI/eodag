@@ -2407,7 +2407,12 @@ class TestCoreSearch(TestCoreBase):
 
         search_plugin.config = DummyConfig()
 
-        kwargs = {"page": 1, "items_per_page": 2, "productType": "S2_MSI_L1C", "cloud_cover": 80}
+        kwargs = {
+            "page": 1,
+            "items_per_page": 2,
+            "productType": "S2_MSI_L1C",
+            "cloud_cover": 80,
+        }
         sr = self.dag._do_search(
             search_plugin=search_plugin, count=False, raise_errors=False, **kwargs
         )
