@@ -246,6 +246,14 @@ class PluginConfig(yaml.YAMLObject):
         sort_order_mapping: Dict[Literal["ascending", "descending"], str]
         max_sort_params: Annotated[int, Gt(0)]
 
+    class DiscoverMetadata(TypedDict):
+        """Configuration for metadata discovery"""
+
+        auto_discovery: bool
+        metadata_pattern: str
+        search_param: str
+        metadata_path: str
+
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
 
@@ -319,7 +327,7 @@ class PluginConfig(yaml.YAMLObject):
     pagination: PluginConfig.Pagination
     sort: PluginConfig.Sort
     query_params_key: str
-    discover_metadata: Dict[str, Union[str, bool]]
+    discover_metadata: PluginConfig.DiscoverMetadata
     discover_product_types: Dict[str, Any]
     discover_queryables: Dict[str, Any]
     metadata_mapping: Dict[str, Union[str, List[str]]]
