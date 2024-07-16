@@ -415,6 +415,13 @@ class EODataAccessGateway:
     ):
         """Adds a new provider.
 
+        ``search``, ``products`` & ``download`` already have default values that will be
+        updated (not replaced), with user provided ones:
+
+            * ``search`` : ``{"type": "StacSearch"}``
+            * ``products`` : ``{"GENERIC_PRODUCT_TYPE": {"productType": "{productType}"}}``
+            * ``download`` : ``{"type": "HTTPDownload", "auth_error_code": 401}``
+
         :param name: Name of provider
         :type name: str
         :param url: Provider url, also used as ``search["api_endpoint"]`` if not defined
@@ -433,9 +440,16 @@ class EODataAccessGateway:
         conf_dict: Dict[str, Any] = {
             name: {
                 "url": url,
-                "search": search,
-                "products": products,
-                "download": download,
+                "search": {"type": "StacSearch", **search},
+                "products": {
+                    GENERIC_PRODUCT_TYPE: {"productType": "{productType}"},
+                    **products,
+                },
+                "download": {
+                    "type": "HTTPDownload",
+                    "auth_error_code": 401,
+                    **download,
+                },
                 **kwargs,
             }
         }
