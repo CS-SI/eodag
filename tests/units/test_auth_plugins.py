@@ -327,6 +327,76 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                 auth_plugin.authenticate()
 
 
+class TestAuthPluginAwsAuth(BaseAuthPluginTest):
+    @classmethod
+    def setUpClass(cls):
+        super(TestAuthPluginAwsAuth, cls).setUpClass()
+        cls.aws_access_key_id = "my_access_key"
+        cls.aws_secret_access_key = "my_secret_key"
+        cls.aws_session_token = "my_session_token"
+        cls.profile_name = "my_profile"
+        override_config_from_mapping(
+            cls.providers_config,
+            {
+                "provider_with_auth_keys": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "AwsAuth",
+                        "credentials": {
+                            "aws_access_key_id": cls.aws_access_key_id,
+                            "aws_secret_access_key": cls.aws_secret_access_key,
+                        },
+                    },
+                },
+                "provider_with_auth_keys_session": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "AwsAuth",
+                        "credentials": {
+                            "aws_access_key_id": cls.aws_access_key_id,
+                            "aws_secret_access_key": cls.aws_secret_access_key,
+                            "aws_session_token": cls.aws_session_token,
+                        },
+                    },
+                },
+                "provider_with_auth_profile": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "AwsAuth",
+                        "credentials": {
+                            "aws_profile": cls.profile_name,
+                        },
+                    },
+                },
+            },
+        )
+        cls.plugins_manager = PluginManager(cls.providers_config)
+
+    def test_plugins_auth_aws_authenticate(self):
+        """AwsAuth.authenticate must return credentials in a dict"""
+        self.assertDictEqual(
+            self.get_auth_plugin("provider_with_auth_keys").authenticate(),
+            {
+                "aws_access_key_id": self.aws_access_key_id,
+                "aws_secret_access_key": self.aws_secret_access_key,
+            },
+        )
+        self.assertDictEqual(
+            self.get_auth_plugin("provider_with_auth_keys_session").authenticate(),
+            {
+                "aws_access_key_id": self.aws_access_key_id,
+                "aws_secret_access_key": self.aws_secret_access_key,
+                "aws_session_token": self.aws_session_token,
+            },
+        )
+        self.assertDictEqual(
+            self.get_auth_plugin("provider_with_auth_profile").authenticate(),
+            {
+                "profile_name": self.profile_name,
+            },
+        )
+
+
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
     @classmethod
     def setUpClass(cls):
