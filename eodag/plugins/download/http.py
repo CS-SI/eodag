@@ -45,6 +45,7 @@ import requests
 from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
+from requests.structures import CaseInsensitiveDict
 from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
@@ -1297,12 +1298,18 @@ class HTTPDownload(Download):
         for asset in assets_values:
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
-                asset_headers = requests.head(
-                    asset["href"],
-                    auth=auth,
-                    headers=USER_AGENT,
-                    timeout=timeout,
-                ).headers
+                try:
+                    asset_headers = requests.head(
+                        asset["href"],
+                        auth=auth,
+                        params=params,
+                        headers=USER_AGENT,
+                        timeout=timeout,
+                        verify=ssl_verify,
+                    ).headers
+                except RequestException as e:
+                    logger.debug(f"HEAD request failed: {str(e)}")
+                    asset_headers = CaseInsensitiveDict()
 
                 if not getattr(asset, "size", 0):
                     # size from HEAD header / Content-length

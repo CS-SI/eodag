@@ -595,6 +595,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin.config.ssl_verify = False
 
         plugin.download(self.product, outputs_prefix=self.output_dir)
+        mock_requests_head.assert_called_once_with(
+            self.product.assets["foo"]["href"],
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            verify=False,
+        )
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -651,8 +659,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.assert_called_once_with(
             self.product.assets["foo"]["href"],
             auth=None,
+            params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
