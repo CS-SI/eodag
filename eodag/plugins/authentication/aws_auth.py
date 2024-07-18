@@ -45,6 +45,7 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.aws_access_key_id = None
         self.aws_secret_access_key = None
+        self.aws_session_token = None
         self.profile_name = None
 
     def authenticate(self) -> Dict[str, str]:
@@ -60,7 +61,15 @@ class AwsAuth(Authentication):
         self.aws_secret_access_key = credentials.get(
             "aws_secret_access_key", self.aws_secret_access_key
         )
+        self.aws_session_token = credentials.get(
+            "aws_session_token", self.aws_session_token
+        )
         self.profile_name = credentials.get("aws_profile", self.profile_name)
 
-        auth_keys = ["aws_access_key_id", "aws_secret_access_key", "profile_name"]
+        auth_keys = [
+            "aws_access_key_id",
+            "aws_secret_access_key",
+            "aws_session_token",
+            "profile_name",
+        ]
         return {k: getattr(self, k) for k in auth_keys if getattr(self, k)}

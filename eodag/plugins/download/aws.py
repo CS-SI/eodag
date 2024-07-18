@@ -981,10 +981,13 @@ class AwsDownload(Download):
         from provided credentials"""
 
         if all(k in auth_dict for k in ("aws_access_key_id", "aws_secret_access_key")):
-            s3_session = boto3.session.Session(  # type: ignore
-                aws_access_key_id=auth_dict["aws_access_key_id"],
-                aws_secret_access_key=auth_dict["aws_secret_access_key"],
-            )
+            s3_session_kwargs = {
+                "aws_access_key_id": auth_dict["aws_access_key_id"],
+                "aws_secret_access_key": auth_dict["aws_secret_access_key"],
+            }
+            if auth_dict.get("aws_session_token"):
+                s3_session_kwargs["aws_session_token"] = auth_dict["aws_session_token"]
+            s3_session = boto3.session.Session(**s3_session_kwargs)  # type: ignore
             s3_resource = s3_session.resource(  # type: ignore
                 service_name="s3",
                 endpoint_url=getattr(self.config, "base_uri", None),
