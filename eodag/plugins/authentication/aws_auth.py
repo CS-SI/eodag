@@ -35,6 +35,7 @@ class AwsAuth(Authentication):
     - auth anonymously using no-sign-request
     - auth using ``aws_profile``
     - auth using ``aws_access_key_id`` and ``aws_secret_access_key``
+      (optionally ``aws_session_token``)
     - auth using current environment (AWS environment variables and/or ``~/aws/*``),
       will be skipped if AWS credentials are filled in eodag conf
     """
