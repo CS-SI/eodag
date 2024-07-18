@@ -34,6 +34,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TypedDict,
     Union,
     cast,
 )
@@ -229,7 +230,7 @@ class AwsDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsDownload, self).__init__(provider, config)
         self.requester_pays = getattr(self.config, "requester_pays", False)
-        self.s3_session = None
+        self.s3_session: Optional[boto3.session.Session] = None
 
     def download(
         self,
@@ -941,15 +942,15 @@ class AwsDownload(Download):
     ) -> Optional[ResourceCollection]:
         """Auth strategy using no-sign-request"""
 
-        s3_resource = boto3.resource(  # type: ignore
+        s3_resource = boto3.resource(
             service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
         )
-        s3_resource.meta.client.meta.events.register(  # type: ignore
+        s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
         )
-        objects = s3_resource.Bucket(bucket_name).objects  # type: ignore
-        list(objects.filter(Prefix=prefix).limit(1))  # type: ignore
-        return objects  # type: ignore
+        objects = s3_resource.Bucket(bucket_name).objects
+        list(objects.filter(Prefix=prefix).limit(1))
+        return objects
 
     def _get_authenticated_objects_from_auth_profile(
         self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
@@ -957,20 +958,20 @@ class AwsDownload(Download):
         """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
 
         if "profile_name" in auth_dict.keys():
-            s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])  # type: ignore
-            s3_resource = s3_session.resource(  # type: ignore
+            s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
+            s3_resource = s3_session.resource(
                 service_name="s3",
                 endpoint_url=getattr(self.config, "base_uri", None),
             )
             if self.requester_pays:
-                objects = s3_resource.Bucket(bucket_name).objects.filter(  # type: ignore
+                objects = s3_resource.Bucket(bucket_name).objects.filter(
                     RequestPayer="requester"
                 )
             else:
-                objects = s3_resource.Bucket(bucket_name).objects  # type: ignore
-            list(objects.filter(Prefix=prefix).limit(1))  # type: ignore
-            self.s3_session = s3_session  # type: ignore
-            return objects  # type: ignore
+                objects = s3_resource.Bucket(bucket_name).objects
+            list(objects.filter(Prefix=prefix).limit(1))
+            self.s3_session = s3_session
+            return objects
         else:
             return None
 
@@ -981,23 +982,35 @@ class AwsDownload(Download):
         from provided credentials"""
 
         if all(k in auth_dict for k in ("aws_access_key_id", "aws_secret_access_key")):
-            s3_session = boto3.session.Session(  # type: ignore
-                aws_access_key_id=auth_dict["aws_access_key_id"],
-                aws_secret_access_key=auth_dict["aws_secret_access_key"],
+            S3SessionKwargs = TypedDict(
+                "S3SessionKwargs",
+                {
+                    "aws_access_key_id": str,
+                    "aws_secret_access_key": str,
+                    "aws_session_token": str,
+                },
+                total=False,
             )
-            s3_resource = s3_session.resource(  # type: ignore
+            s3_session_kwargs: S3SessionKwargs = {
+                "aws_access_key_id": auth_dict["aws_access_key_id"],
+                "aws_secret_access_key": auth_dict["aws_secret_access_key"],
+            }
+            if auth_dict.get("aws_session_token"):
+                s3_session_kwargs["aws_session_token"] = auth_dict["aws_session_token"]
+            s3_session = boto3.session.Session(**s3_session_kwargs)
+            s3_resource = s3_session.resource(
                 service_name="s3",
                 endpoint_url=getattr(self.config, "base_uri", None),
             )
             if self.requester_pays:
-                objects = s3_resource.Bucket(bucket_name).objects.filter(  # type: ignore
+                objects = s3_resource.Bucket(bucket_name).objects.filter(
                     RequestPayer="requester"
                 )
             else:
-                objects = s3_resource.Bucket(bucket_name).objects  # type: ignore
-            list(objects.filter(Prefix=prefix).limit(1))  # type: ignore
-            self.s3_session = s3_session  # type: ignore
-            return objects  # type: ignore
+                objects = s3_resource.Bucket(bucket_name).objects
+            list(objects.filter(Prefix=prefix).limit(1))
+            self.s3_session = s3_session
+            return objects
         else:
             return None
 
@@ -1006,19 +1019,19 @@ class AwsDownload(Download):
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and current environment"""
 
-        s3_session = boto3.session.Session()  # type: ignore
-        s3_resource = s3_session.resource(  # type: ignore
+        s3_session = boto3.session.Session()
+        s3_resource = s3_session.resource(
             service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
         )
         if self.requester_pays:
-            objects = s3_resource.Bucket(bucket_name).objects.filter(  # type: ignore
+            objects = s3_resource.Bucket(bucket_name).objects.filter(
                 RequestPayer="requester"
             )
         else:
-            objects = s3_resource.Bucket(bucket_name).objects  # type: ignore
-        list(objects.filter(Prefix=prefix).limit(1))  # type: ignore
-        self.s3_session = s3_session  # type: ignore
-        return objects  # type: ignore
+            objects = s3_resource.Bucket(bucket_name).objects
+        list(objects.filter(Prefix=prefix).limit(1))
+        self.s3_session = s3_session
+        return objects
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None
