@@ -774,7 +774,7 @@ class AwsDownload(Download):
         build_safe: bool,
         progress_callback: ProgressCallback,
         assets_values: List[Dict[str, Any]],
-    ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
+    ) -> Iterator[Any]:
         """Yield product data chunks"""
 
         chunk_size = 4096 * 1024

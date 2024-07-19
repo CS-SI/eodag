@@ -670,7 +670,7 @@ class Download(PluginTopic):
                             not_available_info = str(e)
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
-                        wait_seconds = (
+                        wait_seconds: Union[float, int] = (
                             datetime_now - product.next_try + timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
