@@ -247,7 +247,7 @@ class CopMarineSearch(StaticStacSearch):
         items_per_page = prep.items_per_page
 
         # only return 1 page if pagination is disabled
-        if page > 1 and items_per_page <= 0:
+        if page is None or items_per_page is None or page > 1 and items_per_page <= 0:
             return ([], 0) if prep.count else ([], None)
 
         product_type = kwargs.get("productType", prep.product_type)

@@ -23,6 +23,7 @@ from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     List,
     Optional,
@@ -203,7 +204,10 @@ class QueryStringSearch(Search):
     :type config: str
     """
 
-    extract_properties = {"xml": properties_from_xml, "json": properties_from_json}
+    extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {
+        "xml": properties_from_xml,
+        "json": properties_from_json,
+    }
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(QueryStringSearch, self).__init__(provider, config)
@@ -631,7 +635,7 @@ class QueryStringSearch(Search):
                         )
                     )
 
-        field_definitions = dict()
+        field_definitions: Dict[str, Any] = dict()
         for json_param, json_mtd in constraint_params.items():
             param = (
                 get_queryable_from_provider(
@@ -786,7 +790,7 @@ class QueryStringSearch(Search):
             prep.need_count = True
             prep.total_items_nb = None
 
-        for collection in self.get_collections(prep, **kwargs):
+        for collection in self.get_collections(prep, **kwargs) or (None,):
             # skip empty collection if one is required in api_endpoint
             if "{collection}" in self.config.api_endpoint and not collection:
                 continue
@@ -1059,20 +1063,19 @@ class QueryStringSearch(Search):
                 total_results = int(count_results)
         return total_results
 
-    def get_collections(
-        self, prep: PreparedSearch, **kwargs: Any
-    ) -> Tuple[Set[Dict[str, Any]], ...]:
+    def get_collections(self, prep: PreparedSearch, **kwargs: Any) -> Tuple[str, ...]:
         """Get the collection to which the product belongs"""
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
         # /asset_publisher/Ac0d/content/change-of
         # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
         product_type: Optional[str] = kwargs.get("productType")
+        collection: Optional[str] = None
         if product_type is None and (
             not hasattr(prep, "product_type_def_params")
             or not prep.product_type_def_params
         ):
-            collections: Set[Dict[str, Any]] = set()
-            collection: Optional[str] = getattr(self.config, "collection", None)
+            collections: Set[str] = set()
+            collection = getattr(self.config, "collection", None)
             if collection is None:
                 try:
                     for product_type, product_config in self.config.products.items():
@@ -1090,18 +1093,26 @@ class QueryStringSearch(Search):
                 collections.add(collection)
             return tuple(collections)
 
-        collection: Optional[str] = getattr(self.config, "collection", None)
+        collection = getattr(self.config, "collection", None)
         if collection is None:
             collection = (
                 prep.product_type_def_params.get("collection", None) or product_type
             )
-        return (collection,) if not isinstance(collection, list) else tuple(collection)
+
+        if collection is None:
+            return ()
+        elif not isinstance(collection, list):
+            return (collection,)
+        else:
+            return tuple(collection)
 
     def _request(
         self,
         prep: PreparedSearch,
     ) -> Response:
         url = prep.url
+        if url is None:
+            raise ValidationError("Cannot request empty URL")
         info_message = prep.info_message
         exception_message = prep.exception_message
         try:
@@ -1347,8 +1358,11 @@ class PostJsonSearch(QueryStringSearch):
                     "specific_qssearch"
                 ].get("merge_responses", None)
 
-                self.count_hits = lambda *x, **y: 1
-                self._request = super(PostJsonSearch, self)._request
+                def count_hits(self, *x, **y):
+                    return 1
+
+                def _request(self, *x, **y):
+                    return super(PostJsonSearch, self)._request(*x, **y)
 
                 try:
                     eo_products, total_items = super(PostJsonSearch, self).query(
@@ -1449,7 +1463,7 @@ class PostJsonSearch(QueryStringSearch):
             auth_conf_dict = getattr(prep.auth_plugin.config, "credentials", {})
         else:
             auth_conf_dict = {}
-        for collection in self.get_collections(prep, **kwargs):
+        for collection in self.get_collections(prep, **kwargs) or (None,):
             try:
                 search_endpoint: str = self.config.api_endpoint.rstrip("/").format(
                     **dict(collection=collection, **auth_conf_dict)
@@ -1472,7 +1486,11 @@ class PostJsonSearch(QueryStringSearch):
                         if getattr(self.config, "merge_responses", False):
                             total_results = _total_results or 0
                         else:
-                            total_results += _total_results or 0
+                            total_results = (
+                                (_total_results or 0)
+                                if total_results is None
+                                else total_results + (_total_results or 0)
+                            )
                 if "next_page_query_obj" in self.config.pagination and isinstance(
                     self.config.pagination["next_page_query_obj"], str
                 ):
@@ -1497,6 +1515,8 @@ class PostJsonSearch(QueryStringSearch):
         prep: PreparedSearch,
     ) -> Response:
         url = prep.url
+        if url is None:
+            raise ValidationError("Cannot request empty URL")
         info_message = prep.info_message
         exception_message = prep.exception_message
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
@@ -1515,7 +1535,10 @@ class PostJsonSearch(QueryStringSearch):
                 kwargs["auth"] = prep.auth
 
             # perform the request using the next page arguments if they are defined
-            if getattr(self, "next_page_query_obj", None):
+            if (
+                hasattr(self, "next_page_query_obj")
+                and self.next_page_query_obj is not None
+            ):
                 prep.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
