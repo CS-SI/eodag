@@ -49,10 +49,7 @@ from eodag.rest.utils.cql_evaluate import EodagEvaluator
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE
 
 if TYPE_CHECKING:
-    try:
-        from typing import Self
-    except ImportError:
-        from _typeshed import Self
+    from typing_extensions import Self
 
 Geometry = Union[
     Dict[str, Any],

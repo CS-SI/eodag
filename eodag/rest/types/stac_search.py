@@ -48,10 +48,7 @@ from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime, str_to_interval
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    try:
-        from typing import Self
-    except ImportError:
-        from _typeshed import Self
+    from typing_extensions import Self
 
 NumType = Union[float, int]
 
