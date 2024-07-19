@@ -23,7 +23,7 @@ from typing import Any, Optional
 def check_ipython() -> bool:
     """Check if called from ipython"""
     try:
-        __IPYTHON__
+        __IPYTHON__  # type: ignore[name-defined]
         return True
     except NameError:
         return False
@@ -32,7 +32,7 @@ def check_ipython() -> bool:
 def check_notebook() -> bool:
     """Check if called from a notebook"""
     try:
-        shell = get_ipython().__class__.__name__
+        shell = get_ipython().__class__.__name__  # type: ignore[name-defined]
         if shell == "ZMQInteractiveShell":
             return True  # Jupyter notebook or qtconsole
         elif shell == "TerminalInteractiveShell":
@@ -69,7 +69,7 @@ class NotebookWidgets:
         if not self.is_notebook:
             return None
 
-        self.html_box.data = html_value
+        setattr(self.html_box, "data", html_value)
 
         if not self.html_box_shown:
             self._html_handle = self.display(self.html_box, display_id=True)
@@ -83,5 +83,5 @@ class NotebookWidgets:
         if not self.is_notebook:
             return None
 
-        self.html_box.data = ""
+        setattr(self.html_box, "data", "")
         self._update_display(self.html_box, display_id=self._html_handle.display_id)
