@@ -55,6 +55,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -1435,7 +1436,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
 class StreamResponse:
     """Represents a streaming response"""
 
-    content: Iterator[bytes]
+    content: Iterable[bytes]
     headers: Optional[Mapping[str, str]] = None
     media_type: Optional[str] = None
     status_code: Optional[int] = None

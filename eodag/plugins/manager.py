@@ -111,7 +111,11 @@ class PluginManager:
                         "Check that the plugin module (%s) is importable",
                         entry_point.module_name,
                     )
-                if entry_point.dist and entry_point.dist.key != "eodag":
+                if (
+                    entry_point.dist
+                    and entry_point.dist.key != "eodag"
+                    and entry_point.dist.location is not None
+                ):
                     # use plugin providers if any
                     plugin_providers_config_path = [
                         str(x)
