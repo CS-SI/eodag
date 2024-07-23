@@ -21,7 +21,7 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import dateutil.parser
@@ -149,16 +149,18 @@ class StacCommon:
         ):
             for i, bbox in enumerate(self.data["extent"]["spatial"]["bbox"]):
                 self.data["extent"]["spatial"]["bbox"][i] = [float(x) for x in bbox]
-        # "None" values to None
-        apply_method: Callable[[str, str], Optional[str]] = lambda _, v: (
-            None if v == "None" else v
-        )
-        self.data = dict_items_recursive_apply(self.data, apply_method)
-        # ids and titles as str
-        apply_method: Callable[[str, str], Optional[str]] = lambda k, v: (
-            str(v) if k in ["title", "id"] else v
-        )
-        self.data = dict_items_recursive_apply(self.data, apply_method)
+
+        def apply_method_none(_: str, v: str) -> Optional[str]:
+            """ "None" values to None"""
+            return None if v == "None" else v
+
+        self.data = dict_items_recursive_apply(self.data, apply_method_none)
+
+        def apply_method_ids(k, v):
+            """ids and titles as str"""
+            return str(v) if k in ["title", "id"] else v
+
+        self.data = dict_items_recursive_apply(self.data, apply_method_ids)
 
         # empty stac_extensions: "" to []
         if not self.data.get("stac_extensions", True):

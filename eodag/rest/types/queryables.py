@@ -51,14 +51,16 @@ class QueryablesGetParams(BaseModel):
         dumped: Dict[str, Any] = handler(self)
         return {EODAGSearch.to_eodag(k): v for k, v in dumped.items()}
 
-    @computed_field
+    # use [prop-decorator] mypy error code when mypy==1.12 is released
+    @computed_field  # type: ignore[misc]
     @property
     def start_datetime(self) -> Optional[str]:
         """Extract start_datetime property from datetime"""
         start = str_to_interval(self.datetime)[0]
         return start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else None
 
-    @computed_field
+    # use [prop-decorator] mypy error code when mypy==1.12 is released
+    @computed_field  # type: ignore[misc]
     @property
     def end_datetime(self) -> Optional[str]:
         """Extract end_datetime property from datetime"""

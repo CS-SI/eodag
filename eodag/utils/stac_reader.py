@@ -128,7 +128,7 @@ def fetch_stac_items(
     # URI opener used by PySTAC internally, instantiated here
     # to retrieve the timeout.
     _text_opener = _TextOpener(timeout, ssl_verify)
-    pystac.StacIO.read_text = _text_opener
+    pystac.StacIO.read_text = _text_opener  # type: ignore[assignment]
 
     stac_obj = pystac.read_file(stac_path)
     # Single STAC item
@@ -213,7 +213,7 @@ def fetch_stac_collections(
 
     # URI opener used by PySTAC internally, instantiated here to retrieve the timeout.
     _text_opener = _TextOpener(timeout, ssl_verify)
-    pystac.StacIO.read_text = _text_opener
+    pystac.StacIO.read_text = _text_opener  # type: ignore[assignment]
 
     stac_obj = pystac.read_file(stac_path)
     if isinstance(stac_obj, pystac.Catalog):

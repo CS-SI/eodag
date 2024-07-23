@@ -33,7 +33,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Tuple,
     TypedDict,
     Union,
     cast,
@@ -1011,8 +1010,11 @@ class HTTPDownload(Download):
                     "content-disposition"
                 ] = f"attachment; filename={filename}"
                 content_type = product.headers.get("Content-Type")
-                if filename and not content_type:
-                    product.headers["Content-Type"] = guess_file_type(filename)
+                guessed_content_type = (
+                    guess_file_type(filename) if filename and not content_type else None
+                )
+                if guessed_content_type is not None:
+                    product.headers["Content-Type"] = guessed_content_type
 
                 progress_callback.reset(total=stream_size)
                 for chunk in self.stream.iter_content(chunk_size=64 * 1024):
@@ -1027,7 +1029,7 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         assets_values: List[Asset] = [],
         **kwargs: Unpack[DownloadConf],
-    ) -> Iterator[Tuple[str, datetime, int, Any, Iterator[Any]]]:
+    ) -> Iterator[Any]:
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
@@ -1201,7 +1203,9 @@ class HTTPDownload(Download):
             # start reading chunks to set asset.rel_path
             first_chunks_tuple = next(chunks_tuples)
             chunks = chain(iter([first_chunks_tuple]), chunks_tuples)
-            chunks_tuples = [(assets_values[0].rel_path, None, None, None, chunks)]
+            chunks_tuples = iter(
+                [(assets_values[0].rel_path, None, None, None, chunks)]
+            )
 
         for chunk_tuple in chunks_tuples:
             asset_path = chunk_tuple[0]

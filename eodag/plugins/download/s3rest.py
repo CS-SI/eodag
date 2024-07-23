@@ -153,6 +153,8 @@ class S3RestDownload(Download):
             bucket_name, prefix = get_bucket_name_and_prefix(
                 url=product.location, bucket_path_level=self.config.bucket_path_level
             )
+            if prefix is None:
+                raise DownloadError(f"Could not extract prefix from {product.location}")
 
             if (
                 bucket_name is None

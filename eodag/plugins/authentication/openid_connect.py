@@ -482,7 +482,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         if not match:
             return value
         value_from_xpath = form_element.xpath(
-            self.CONFIG_XPATH_REGEX.match(value).groupdict("xpath_value")["xpath_value"]
+            match.groupdict("xpath_value")["xpath_value"]
         )
         if len(value_from_xpath) == 1:
             return value_from_xpath[0]
@@ -512,9 +512,10 @@ class CodeAuthorizedAuth(AuthBase):
     def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
         if self.where == "qs":
-            parts = urlparse(request.url)
+            parts = urlparse(str(request.url))
             query_dict = parse_qs(parts.query)
-            query_dict.update({self.key: self.token})
+            if self.key is not None:
+                query_dict.update({self.key: [self.token]})
             url_without_args = parts._replace(query="").geturl()
 
             request.prepare_url(url_without_args, query_dict)

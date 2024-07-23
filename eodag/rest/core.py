@@ -80,7 +80,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+    from typing import Any, Dict, List, Optional, Tuple, Union
 
     from fastapi import Request
     from requests.auth import AuthBase
@@ -215,7 +215,7 @@ def search_stac_items(
         }
 
         search_results = eodag_api.search(count=True, **criteria)
-        total = search_results.number_matched
+        total = search_results.number_matched or 0
         if search_request.crunch:
             search_results = crunch_products(
                 search_results, search_request.crunch, **criteria
@@ -588,9 +588,9 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     :rtype: dict
     """
 
-    apply_method: Callable[[str, str], str] = lambda _, x: str(x).replace(
-        "$.product.", "$."
-    )
+    def apply_method(_: str, x: str) -> str:
+        return str(x).replace("$.product.", "$.")
+
     item_mapping = dict_items_recursive_apply(stac_config["item"], apply_method)
 
     # all properties as string type by default
