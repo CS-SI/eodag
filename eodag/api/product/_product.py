@@ -141,7 +141,7 @@ class EOProduct:
             or properties.get("_collection")
         )
         self.location = self.remote_location = properties.get("eodag:download_link", "")
-        self.assets = AssetsDict(self)
+        self.assets = AssetsDict(self, properties.pop("assets"))
         self.properties = {
             key: value
             for key, value in properties.items()
@@ -336,14 +336,22 @@ class EOProduct:
                                 the download and authentication plugins.
         """
         download_plugin = plugins_manager.get_download_plugin(self)
-        if len(self.assets) > 0:
-            matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("order:status") != ONLINE_STATUS:
-            matching_url = self.properties.get(
-                "eodag:order_link"
-            ) or self.properties.get("eodag:download_link")
+
+        assets_values = self.assets.values()
+        is_there_download_link = any(assets_val.key == "eodag:download_link" for assets_val in assets_values)
+
+        # check url of property "order:status" and asset "eodag:download_link" first
+        # since other assets can have paths not matching plugin matching_url pattern
+        if self.properties.get("order:status") != ONLINE_STATUS and (
+            (order_link := self.properties.get("eodag:order_link")) is not None
+        ):
+            matching_url = order_link
+        elif not assets_values:
+            matching_url = None
+        elif is_there_download_link:
+            matching_url = self.assets["eodag:download_link"]["href"]
         else:
-            matching_url = self.properties.get("eodag:download_link")
+            matching_url = next(iter(assets_values))["href"]
 
         try:
             auth_plugin = next(

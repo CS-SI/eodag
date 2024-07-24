@@ -250,12 +250,13 @@ class PluginManager:
         :returns: The Authentication plugin
         """
         # matching url from product to download
-        if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
+
+        # check url of asset "eodag:download_link" first since other assets
+        # can have paths not matching plugin matching_url pattern
+        if product is not None and (assets_values := product.assets.values()) and any(assets_val.key == "eodag:download_link" for assets_val in assets_values):
+            product.assets["eodag:download_link"]["href"]
         elif product is not None:
-            matching_url = product.properties.get(
-                "eodag:download_link"
-            ) or product.properties.get("eodag:order_link")
+            matching_url = next(iter(assets_values))["href"]
         else:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)

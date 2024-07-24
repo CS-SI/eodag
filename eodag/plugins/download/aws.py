@@ -586,8 +586,10 @@ class AwsDownload(Download):
         :param ignore_assets: if product instead of individual assets should be used
         :return: tuples of bucket names and prefixes
         """
+        is_there_download_link = any(assets_val.key == "eodag:download_link" for assets_val in product.assets.values())
+
         # if assets are defined, use them instead of scanning product.location
-        if len(product.assets) > 0 and not ignore_assets:
+        if not is_there_download_link and not ignore_assets:
             if asset_filter:
                 filter_regex = re.compile(asset_filter)
                 assets_keys = getattr(product, "assets", {}).keys()

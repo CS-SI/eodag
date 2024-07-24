@@ -522,22 +522,23 @@ class Download(PluginTopic):
         progress_callback.refresh()
 
         # anticipate nested tasks to download assets in parallel for at least one product
+        try:
+            assets_values = product.assets.get_values(kwargs.get("asset", None))
+        except NotAvailableError as e:
+            if kwargs.get("asset") is not None:
+                raise NotAvailableError(e).with_traceback(e.__traceback__)
         nested_asset_downloads = any(
             product
             for product in products
             if (
                 product.downloader
                 and product.downloader.config.type == "AwsDownload"
-                or len(product.assets) > 0
-                and (
-                    not getattr(self.config, "ignore_assets", False)
-                    or kwargs.get("asset") is not None
-                )
+                or all([assets_val.key != "downloadLink" for assets_val in assets_values])
             )
         )
 
         with progress_callback as bar:
-            while "Loop until all products are download or timeout is reached":
+            while "Loop until all products are downloaded or timeout is reached":
                 # try downloading each product in parallel before retry
 
                 # Download products in batches to handle nested tasks to download assets in parallel.

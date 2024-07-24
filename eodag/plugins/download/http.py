@@ -110,9 +110,6 @@ class HTTPDownload(Download):
           default: ``1``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
           flattened; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using
-          eodag:download_link;
-          default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
@@ -626,11 +623,16 @@ class HTTPDownload(Download):
                 product.location = path_to_uri(fs_path)
             return fs_path
 
-        # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset") is not None
-        ):
+        try:
+            skip_assets_download = False
+            assets_values = product.assets.get_values(kwargs.get("asset"))
+        except NotAvailableError as e:
+            if kwargs.get("asset") is not None:
+                raise NotAvailableError(e).with_traceback(e.__traceback__)
+            skip_assets_download = True
+
+        # download single assets if there is no the full product asset
+        if not skip_assets_download and not any(assets_val.key == "eodag:download_link" for assets_val in assets_values):
             try:
                 fs_path = self._download_assets(
                     product,
@@ -641,15 +643,15 @@ class HTTPDownload(Download):
                     executor,
                     **kwargs,
                 )
-                if kwargs.get("asset") is None:
-                    product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError as e:
                 if kwargs.get("asset") is not None:
                     raise NotAvailableError(e).with_traceback(e.__traceback__)
-                else:
-                    pass
 
+        if len(assets_values) > 1 and kwargs.get("asset") is not None:
+            logger.info("Download only the full product asset, ignoring the other ones")
+
+        # download the full product asset
         url = product.remote_location
 
         @self._order_download_retry(product, wait, timeout)
@@ -662,7 +664,7 @@ class HTTPDownload(Download):
             **kwargs: Unpack[DownloadConf],
         ) -> os.PathLike:
             is_empty = True
-            chunk_iterator = self._stream_download(
+            chunk_iterator = self._stream_download_full_product_asset(
                 product, auth, progress_callback, **kwargs
             )
             if fs_path is not None:
@@ -786,69 +788,71 @@ class HTTPDownload(Download):
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
+        try:
+            skip_assets_download = False
+            assets_values = product.assets.get_values(kwargs.get("asset"))
+        except NotAvailableError as e:
+            if kwargs.get("asset") is not None:
+                raise NotAvailableError(e).with_traceback(e.__traceback__)
+            skip_assets_download = True
+
         # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset") is not None
-        ):
+        if not skip_assets_download and not any(assets_val.key == "eodag:download_link" for assets_val in assets_values):
             executor = ThreadPoolExecutor(
                 max_workers=getattr(self.config, "max_workers", None)
             )
-            try:
-                assets_values = product.assets.get_values(kwargs.get("asset"))
-                with executor:
-                    assets_stream_list = self._stream_download_assets(
-                        product,
-                        executor,
-                        auth,
-                        None,
-                        assets_values,
-                        **kwargs,
+            with executor:
+                assets_stream_list = self._stream_download_assets(
+                    product,
+                    executor,
+                    auth,
+                    None,
+                    assets_values,
+                    **kwargs,
+                )
+
+            # single asset
+            if len(assets_stream_list) == 1:
+                asset_stream = assets_stream_list[0]
+                if assets_values[0].get("type"):
+                    asset_stream.headers["content-type"] = assets_values[0]["type"]
+                return asset_stream
+
+            # multiple assets in zip
+            else:
+                outputs_filename = (
+                    sanitize(product.properties["title"])
+                    if "title" in product.properties
+                    else sanitize(product.properties.get("id", "download"))
+                )
+
+                # do not use global size if one of the assets has no size
+                missing_length = any(not (asset.size) for asset in assets_values)
+
+                zip_stream = (
+                    ZipStream(sized=True) if not missing_length else ZipStream()
+                )
+                for asset_stream in assets_stream_list:
+                    zip_stream.add(
+                        asset_stream.content,
+                        arcname=asset_stream.arcname,
+                        size=asset_stream.size,
                     )
 
-                # single asset
-                if len(assets_stream_list) == 1:
-                    asset_stream = assets_stream_list[0]
-                    if assets_values[0].get("type"):
-                        asset_stream.headers["content-type"] = assets_values[0]["type"]
-                    return asset_stream
+                zip_length = len(zip_stream) if not missing_length else None
 
-                # multiple assets in zip
-                else:
-                    outputs_filename = (
-                        sanitize(product.properties["title"])
-                        if "title" in product.properties
-                        else sanitize(product.properties.get("id", "download"))
-                    )
+                return StreamResponse(
+                    content=zip_stream,
+                    media_type="application/zip",
+                    filename=f"{outputs_filename}.zip",
+                    size=zip_length,
+                )
 
-                    # do not use global size if one of the assets has no size
-                    missing_length = any(not (asset.size) for asset in assets_values)
+        if len(assets_values) > 1 and kwargs.get("asset") is not None:
+            logger.info("Download only the full product asset, ignoring the other ones")
 
-                    zip_stream = (
-                        ZipStream(sized=True) if not missing_length else ZipStream()
-                    )
-                    for asset_stream in assets_stream_list:
-                        zip_stream.add(
-                            asset_stream.content,
-                            arcname=asset_stream.arcname,
-                            size=asset_stream.size,
-                        )
-
-                    zip_length = len(zip_stream) if not missing_length else None
-
-                    return StreamResponse(
-                        content=zip_stream,
-                        media_type="application/zip",
-                        filename=f"{outputs_filename}.zip",
-                        size=zip_length,
-                    )
-            except NotAvailableError as e:
-                if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
-                else:
-                    pass
-
-        chunk_iterator = self._stream_download(product, auth, None, **kwargs)
+        # download the full product asset
+        chunk_iterator = self._stream_download_full_product_asset(product, auth, None, **kwargs)
 
         # start reading chunks to set product.headers
         try:
@@ -957,7 +961,7 @@ class HTTPDownload(Download):
             product, auth
         )
 
-    def _stream_download(
+    def _stream_download_full_product_asset(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -965,9 +969,9 @@ class HTTPDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         """
-        Fetches a zip file containing the assets of a given product as a stream
-        and returns a generator yielding the chunks of the file
-
+        Fetches the zip file of the full product asset containing the assets
+        of a given product as a stream and returns a generator yielding the
+        chunks of the file
         :param product: product for which the assets should be downloaded
         :param auth: The configuration of a plugin of type Authentication
         :param progress_callback: A method or a callable object
@@ -1240,10 +1244,10 @@ class HTTPDownload(Download):
         self._config_executor(executor)
 
         assets_urls = [
-            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
+            a["href"]
+            for a in getattr(product, "assets", {}).values()
+            if "href" in a and a.key != "downloadLink"
         ]
-        if not assets_urls:
-            raise NotAvailableError("No assets available for %s" % product)
 
         assets_values = product.assets.get_values(kwargs.get("asset"))
 
