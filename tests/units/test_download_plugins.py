@@ -246,7 +246,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             "geometry": None,
             "cloudCover": 80,
         }
-        search_result.crunchers = [FilterProperty({"cloudCover": 20, "operator": "lt"})]
+        search_result.crunchers = {FilterProperty({"cloudCover": 20, "operator": "lt"})}
         # save a copy of the search result to check if it was called well below
         tmp_search_result = copy(search_result)
 
@@ -292,7 +292,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         # chat that crunch() method is called with search_iter_page() results and for the cruncher given
         self.assertEqual(mock_crunch.call_count, 1)
         self.assertTupleEqual(
-            (non_empty_do_search_results, search_result.crunchers[0]),
+            (non_empty_do_search_results, list(search_result.crunchers)[0]),
             mock_crunch.call_args_list[0][0],
         )
         self.assertDictEqual(

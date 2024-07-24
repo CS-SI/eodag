@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union
 
 from shapely.geometry import GeometryCollection, shape
 
@@ -60,7 +60,7 @@ class SearchResult(UserList):
         super(SearchResult, self).__init__(products)
         self.number_matched = number_matched
         self.search_kwargs: Optional[Dict[str, Any]] = None
-        self.crunchers: List[Crunch] = []
+        self.crunchers: Set[Crunch] = set()
 
     def clear(self) -> None:
         """Clear search result"""
@@ -76,23 +76,11 @@ class SearchResult(UserList):
         :param search_params: The criteria that have been used to produce this result
         :returns: The result of the application of the crunching method to the EO products
         """
-        for results_cruncher in self.crunchers:
-            if (
-                cruncher.__class__.__name__ == results_cruncher.__class__.__name__
-                and cruncher.config == results_cruncher.config
-            ):
-                logger.info(
-                    (
-                        f"The cruncher '{cruncher.__class__.__name__}' has already been used "
-                        "for these search results with the following parameter(s): "
-                        f"{cruncher.config}. Please change parameters or use an other cruncher"
-                    )
-                )
-                return self
         crunched_results_list = cruncher.proceed(self.data, **search_params)
         crunched_results = SearchResult(crunched_results_list)
         crunched_results.search_kwargs = self.search_kwargs
-        crunched_results.crunchers = self.crunchers + [cruncher]
+        self.crunchers.add(cruncher)
+        crunched_results.crunchers = self.crunchers
         return crunched_results
 
     def filter_date(
