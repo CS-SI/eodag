@@ -7210,7 +7210,6 @@
   download: !plugin
     type: HTTPDownload
     extract: true
-    ignore_assets: True
     ssl_verify: true
   auth: !plugin
     type: TokenAuth

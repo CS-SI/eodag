@@ -130,7 +130,7 @@ class EOProduct:
         self.provider = provider
         self.product_type = kwargs.get("productType")
         self.location = self.remote_location = properties.get("downloadLink", "")
-        self.assets = AssetsDict(self)
+        self.assets = AssetsDict(self, properties.pop("assets"))
         self.properties = {
             key: value
             for key, value in properties.items()

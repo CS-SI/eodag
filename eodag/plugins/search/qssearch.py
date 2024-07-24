@@ -1020,8 +1020,6 @@ class QueryStringSearch(Search):
             product.properties = dict(
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
-            # move assets from properties to product's attr
-            product.assets.update(product.properties.pop("assets", {}))
             products.append(product)
         return products
 
