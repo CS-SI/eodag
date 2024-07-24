@@ -30,7 +30,8 @@ include the following information in your post:
 Submit patches
 --------------
 
-If you intend to contribute to eodag source code:
+If you intend to contribute to eodag source code, first install the `Git LFS <https://git-lfs.com>`_ command line
+extension. Then proceed with cloning and setting up the repository:
 
 .. code-block:: bash
 
