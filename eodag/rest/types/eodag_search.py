@@ -110,7 +110,7 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
-    sortBy: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
+    sort_by: Optional[List[Tuple[str, str]]] = Field(None, alias="sort_by")
     raise_errors: bool = False
 
     _to_eodag_map: Dict[str, str]
@@ -311,14 +311,14 @@ class EODAGSearch(BaseModel):
             return ",".join(v)
         return v
 
-    @field_validator("sortBy", mode="before")
+    @field_validator("sort_by", mode="before")
     @classmethod
     def parse_sortby(
         cls,
         sortby_post_params: List[Dict[str, str]],
     ) -> List[Tuple[str, str]]:
         """
-        Convert STAC POST sortby to EODAG sortby
+        Convert STAC POST sort_by to EODAG sort_by
         """
         special_fields = {
             "start": "startTimeFromAscendingNode",

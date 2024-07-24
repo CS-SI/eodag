@@ -25,7 +25,7 @@ search:
     next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'
     next_page_merge_key_path: '$.links[?(@.rel="next")].merge'
   sort:
-    sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+    sort_by_tpl: '{{"sort_by": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
     sort_order_mapping:
       ascending: asc
       descending: desc

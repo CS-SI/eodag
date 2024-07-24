@@ -9,18 +9,18 @@ from eodag.rest.types import eodag_search, stac_search
 class TestStacSearch(unittest.TestCase):
     def test_sortby(self):
         # Test with valid field and direction
-        sortby = stac_search.Sortby(field="test", direction="asc")
-        self.assertEqual(sortby.field, "test")
-        self.assertEqual(sortby.direction, "asc")
+        sort_by = stac_search.SortBy(field="test", direction="asc")
+        self.assertEqual(sort_by.field, "test")
+        self.assertEqual(sort_by.direction, "asc")
 
         # Test with invalid direction
         with self.assertRaises(ValidationError) as context:
-            stac_search.Sortby(field="test", direction="invalid")
+            stac_search.SortBy(field="test", direction="invalid")
         self.assertTrue("Input should be 'asc' or 'desc'" in str(context.exception))
 
         # Test with empty field
         with self.assertRaises(ValidationError) as context:
-            stac_search.Sortby(field="", direction="asc")
+            stac_search.SortBy(field="", direction="asc")
 
     def test_sortby2list(self):
         # Test with no input
@@ -396,7 +396,7 @@ class TestEODAGSearch(unittest.TestCase):
 
     def test_convert_stac_to_eodag_sortby(self):
         values = {
-            "sortby": [{"field": "test", "direction": "desc"}],
+            "sort_by": [{"field": "test", "direction": "desc"}],
             "collections": ["test_collection"],
         }
         self.assertEqual(
@@ -404,7 +404,7 @@ class TestEODAGSearch(unittest.TestCase):
                 exclude_none=True
             ),
             {
-                "sortBy": [("test", "desc")],
+                "sort_by": [("test", "desc")],
                 "productType": "test_collection",
                 "items_per_page": 20,
                 "page": 1,

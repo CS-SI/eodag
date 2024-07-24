@@ -206,16 +206,16 @@ class Search(PluginTopic):
         return self.config.metadata_mapping
 
     def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
-        """Extract the "sortBy" argument from the kwargs or the provider default sort configuration
+        """Extract the "sort_by" argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
         :type kwargs: Dict[str, Any]
-        :returns: The "sortBy" argument from the kwargs or the provider default sort configuration
+        :returns: The "sort_by" argument from the kwargs or the provider default sort configuration
         :rtype: :class:`~eodag.types.search_args.SortByList`
         """
-        # remove "sortBy" from search args if exists because it is not part of metadata mapping,
+        # remove "sort_by" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string or body once metadata mapping will be done
-        sort_by_arg_tmp = kwargs.pop("sortBy", None)
+        sort_by_arg_tmp = kwargs.pop("sort_by", None)
         sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
             "sort_by_default", None
         )
@@ -230,11 +230,11 @@ class Search(PluginTopic):
         self, sort_by_arg: SortByList
     ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
-        the "sortBy" argument into a provider-specific string or dictionnary
+        the "sort_by" argument into a provider-specific string or dictionnary
 
-        :param sort_by_arg: the "sortBy" argument in EODAG format
+        :param sort_by_arg: the "sort_by" argument in EODAG format
         :type sort_by_arg: :class:`~eodag.types.search_args.SortByList`
-        :returns: The "sortBy" argument in provider-specific format
+        :returns: The "sort_by" argument in provider-specific format
         :rtype: Union[str, Dict[str, List[Dict[str, str]]]]
         """
         if not hasattr(self.config, "sort"):

@@ -323,7 +323,7 @@ paths:
         - $ref: '#/components/parameters/collectionsArray'
         - $ref: '#/components/parameters/provider'
         - $ref: '#/components/parameters/filter'
-        - $ref: '#/components/parameters/sortby'
+        - $ref: '#/components/parameters/sort_by'
       responses:
         '200':
           description: A feature collection.
@@ -638,8 +638,8 @@ components:
         oneOf:
           - $ref: 'https://api.stacspec.org/v1.0.0-beta.3/item-search/openapi.yaml#/components/schemas/booleanValueExpression'
           - $ref: '#/components/schemas/filter-cql-text'
-    sortby:
-      name: sortby
+    sort_by:
+      name: sort_by
       x-stac-api-fragment: sort
       in: query
       description: |-

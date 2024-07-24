@@ -128,13 +128,14 @@ class UsgsApi(Api):
             raise NoMatchingProductType(
                 "Cannot search on USGS without productType specified"
             )
-        if kwargs.get("sortBy"):
+        if kwargs.get("sort_by"):
             raise ValidationError("USGS does not support sorting feature")
 
         self.authenticate()
 
         product_type_def_params = self.config.products.get(  # type: ignore
-            product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+            product_type,
+            self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
         )
         usgs_dataset = format_dict_items(product_type_def_params, **kwargs)["dataset"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
@@ -288,7 +289,8 @@ class UsgsApi(Api):
         outputs_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+                product.product_type,
+                self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
             ).get("outputs_extension", ".tar.gz"),
         )
         kwargs["outputs_extension"] = kwargs.get("outputs_extension", outputs_extension)

@@ -1242,8 +1242,8 @@ class RequestTestCase(unittest.TestCase):
         product = two_results[0]
         mock_search.return_value = SearchResult([product], 1)
         product.downloader_auth = MagicMock()
-        product.downloader.orderDownload = MagicMock(return_value={"status": "foo"})
-        product.downloader.orderDownloadStatus = MagicMock()
+        product.downloader.order_download = MagicMock(return_value={"status": "foo"})
+        product.downloader.order_download_status = MagicMock()
         product.downloader.order_response_process = MagicMock()
         product.downloader._stream_download_dict = MagicMock(
             side_effect=NotAvailableError("Product offline. Try again later.")
@@ -1257,8 +1257,8 @@ class RequestTestCase(unittest.TestCase):
         self._request_not_found(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
-        product.downloader.orderDownload.assert_not_called()
-        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_download.assert_not_called()
+        product.downloader.order_download_status.assert_not_called()
         product.downloader.order_response_process.assert_not_called()
         product.downloader._stream_download_dict.assert_called_once()
         product.downloader._stream_download_dict.reset_mock()
@@ -1269,9 +1269,9 @@ class RequestTestCase(unittest.TestCase):
         resp_json = self._request_accepted(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
-        product.downloader.orderDownload.assert_called_once()
-        product.downloader.orderDownload.reset_mock()
-        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_download.assert_called_once()
+        product.downloader.order_download.reset_mock()
+        product.downloader.order_download_status.assert_not_called()
         product.downloader.order_response_process.assert_called()
         product.downloader.order_response_process.reset_mock()
         product.downloader._stream_download_dict.assert_not_called()
@@ -1284,8 +1284,8 @@ class RequestTestCase(unittest.TestCase):
         resp_json = self._request_accepted(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
-        product.downloader.orderDownload.assert_not_called()
-        product.downloader.orderDownloadStatus.assert_not_called()
+        product.downloader.order_download.assert_not_called()
+        product.downloader.order_download_status.assert_not_called()
         product.downloader.order_response_process.assert_not_called()
         product.downloader._stream_download_dict.assert_called_once()
         product.downloader._stream_download_dict.reset_mock()
@@ -1298,9 +1298,9 @@ class RequestTestCase(unittest.TestCase):
         self._request_accepted(
             f"catalogs/{self.tested_product_type}/items/foo/download"
         )
-        product.downloader.orderDownload.assert_not_called()
-        product.downloader.orderDownloadStatus.assert_called_once()
-        product.downloader.orderDownloadStatus.reset_mock()
+        product.downloader.order_download.assert_not_called()
+        product.downloader.order_download_status.assert_called_once()
+        product.downloader.order_download_status.reset_mock()
         product.downloader.order_response_process.assert_called()
         product.downloader.order_response_process.reset_mock()
         product.downloader._stream_download_dict.assert_not_called()
