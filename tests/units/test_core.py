@@ -158,7 +158,7 @@ class TestCore(TestCoreBase):
         "GLOFAS_REFORECAST": ["cop_cds", "dedl", "wekeo"],
         "GLOFAS_SEASONAL": ["cop_cds", "dedl", "wekeo"],
         "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo"],
-        "GRIDDED_GLACIERS_MASS_CHANGE": ["dedl", "wekeo"],
+        "GRIDDED_GLACIERS_MASS_CHANGE": ["cop_cds", "dedl", "wekeo"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
