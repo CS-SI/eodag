@@ -1045,8 +1045,8 @@ class EODataAccessGateway:
 
         # datetime filtering
         if missionStartDate or missionEndDate:
-            today = datetime.datetime.now(datetime.timezone.utc)
-            earliest = datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)
+            min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+            max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
             guesses = [
                 g
                 for g in guesses
@@ -1054,18 +1054,18 @@ class EODataAccessGateway:
                     max(
                         rfc3339_str_to_datetime(missionStartDate)
                         if missionStartDate
-                        else earliest,
+                        else min_aware,
                         rfc3339_str_to_datetime(g["missionStartDate"])
                         if g.get("missionStartDate")
-                        else earliest,
+                        else min_aware,
                     )
                     <= min(
                         rfc3339_str_to_datetime(missionEndDate)
                         if missionEndDate
-                        else today,
+                        else max_aware,
                         rfc3339_str_to_datetime(g["missionEndDate"])
                         if g.get("missionEndDate")
-                        else today,
+                        else max_aware,
                     )
                 )
             ]
