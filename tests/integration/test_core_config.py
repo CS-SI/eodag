@@ -19,6 +19,8 @@
 import tempfile
 from unittest import TestCase, mock
 
+from jsonpath_ng.jsonpath import Child, Fields, Root
+
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -163,6 +165,135 @@ class TestCoreProvidersConfig(TestCase):
         self.assertEqual(
             self.dag.providers_config["bar_provider"].auth.credentials["username"],
             "bar",
+        )
+
+    def test_core_providers_add(self):
+        """add_provider method must add provider using given conf"""
+
+        # minimal STAC provider
+        self.dag.add_provider("foo", "https://foo.bar/search")
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.type,
+            "StacSearch",
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.api_endpoint,
+            "https://foo.bar/search",
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo"].download.type,
+            "HTTPDownload",
+        )
+        self.assertFalse(hasattr(self.dag.providers_config["foo"], "auth"))
+        self.assertEqual(
+            self.dag.get_preferred_provider()[0],
+            "foo",
+        )
+
+        # Advanced QueryStringSearch provider
+        self.dag.add_provider(
+            "bar",
+            search={
+                "type": "QueryStringSearch",
+                "api_endpoint": "https://foo.bar/search",
+                "discover_metadata": {"metadata_path": "$.properties.*"},
+            },
+            download={"type": "AwsDownload"},
+            auth={"type": "AwsAuth", "credentials": {"aws_profile": "abc"}},
+            priority=0,
+        )
+        self.assertEqual(
+            self.dag.providers_config["bar"].search.type,
+            "QueryStringSearch",
+        )
+        self.assertEqual(
+            self.dag.providers_config["bar"].search.api_endpoint,
+            "https://foo.bar/search",
+        )
+        self.assertEqual(
+            self.dag.providers_config["bar"].download.type,
+            "AwsDownload",
+        )
+        self.assertEqual(
+            self.dag.providers_config["bar"].auth.type,
+            "AwsAuth",
+        )
+        self.assertDictEqual(
+            self.dag.providers_config["bar"].auth.credentials,
+            {"aws_profile": "abc"},
+        )
+        self.assertNotEqual(
+            self.dag.get_preferred_provider()[0],
+            "bar",
+        )
+
+        # Plugin provider
+        self.dag.add_provider(
+            "baz", api={"type": "UsgsApi", "some_parameter": "some_value"}
+        )
+        self.assertEqual(
+            self.dag.providers_config["baz"].api.type,
+            "UsgsApi",
+        )
+        self.assertEqual(
+            self.dag.providers_config["baz"].api.some_parameter,
+            "some_value",
+        )
+        self.assertFalse(hasattr(self.dag.providers_config["baz"], "search"))
+        self.assertFalse(hasattr(self.dag.providers_config["baz"], "download"))
+        self.assertFalse(hasattr(self.dag.providers_config["baz"], "auth"))
+        self.assertEqual(
+            self.dag.get_preferred_provider()[0],
+            "baz",
+        )
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_core_providers_add_update(
+        self, mock__request, mock_fetch_product_types_list
+    ):
+        """add_provider method must add provider using given conf and update if exists"""
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {}
+
+        self.dag.add_provider(
+            "foo",
+            search={
+                "type": "QueryStringSearch",
+                "api_endpoint": "https://foo.bar/search",
+                "pagination": {"next_page_url_tpl": ""},
+                "metadata_mapping": {"bar": "$.properties.bar"},
+            },
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.metadata_mapping["bar"],
+            "$.properties.bar",
+        )
+
+        # search method must build metadata_mapping as jsonpath object
+        self.dag.search(provider="foo", productType="abc", raise_errors=True)
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.metadata_mapping["bar"],
+            (None, Child(Child(Root(), Fields("properties")), Fields("bar"))),
+        )
+
+        # add provider again will update as already built
+        self.dag.add_provider(
+            "foo",
+            search={
+                "type": "QueryStringSearch",
+                "api_endpoint": "https://foo.bar/search",
+                "pagination": {"next_page_url_tpl": ""},
+                "metadata_mapping": {"bar": "$.properties.baz"},
+            },
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.metadata_mapping["bar"],
+            (None, Child(Child(Root(), Fields("properties")), Fields("baz"))),
         )
 
 

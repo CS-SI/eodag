@@ -47,6 +47,7 @@ from pkg_resources import resource_filename
 from requests.auth import AuthBase
 from typing_extensions import Doc
 
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -623,6 +624,36 @@ def override_config_from_mapping(
     :type mapping: dict
     """
     for provider, new_conf in mapping.items():
+        # check if metada-mapping as already been built as jsonpath in providers_config
+        if not isinstance(new_conf, dict):
+            continue
+        new_conf_search = new_conf.get("search", {}) or {}
+        new_conf_api = new_conf.get("api", {}) or {}
+        if provider in config and "metadata_mapping" in {
+            **new_conf_search,
+            **new_conf_api,
+        }:
+            search_plugin_key = (
+                "search" if "metadata_mapping" in new_conf_search else "api"
+            )
+            # get some already configured value
+            configured_metadata_mapping = getattr(
+                config[provider], search_plugin_key
+            ).metadata_mapping
+            some_configured_value = next(iter(configured_metadata_mapping.values()))
+            # check if the configured value has already been built as jsonpath
+            if (
+                isinstance(some_configured_value, list)
+                and isinstance(some_configured_value[1], tuple)
+                or isinstance(some_configured_value, tuple)
+            ):
+                # also build as jsonpath the incoming conf
+                mtd_cfg_as_conversion_and_querypath(
+                    deepcopy(mapping[provider][search_plugin_key]["metadata_mapping"]),
+                    mapping[provider][search_plugin_key]["metadata_mapping"],
+                )
+
+        # try overriding conf
         old_conf: Optional[Dict[str, Any]] = config.get(provider)
         if old_conf is not None:
             old_conf.update(new_conf)

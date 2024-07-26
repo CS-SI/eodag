@@ -66,7 +66,6 @@ from eodag.utils import (
     MockResponse,
     _deprecated,
     copy_deepcopy,
-    deepcopy,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
@@ -359,39 +358,6 @@ class EODataAccessGateway:
                     provider
                 )
 
-        # check if metada-mapping as already been built as jsonpath in providers_config
-        for provider, provider_conf in conf_update.items():
-            if (
-                provider in self.providers_config
-                and "metadata_mapping" in provider_conf.get("search", {})
-            ):
-                search_plugin_key = "search"
-            elif (
-                provider in self.providers_config
-                and "metadata_mapping" in provider_conf.get("api", {})
-            ):
-                search_plugin_key = "api"
-            else:
-                continue
-            # get some already configured value
-            configured_metadata_mapping = getattr(
-                self.providers_config[provider], search_plugin_key
-            ).metadata_mapping
-            some_configured_value = next(iter(configured_metadata_mapping.values()))
-            # check if the configured value has already been built as jsonpath
-            if (
-                isinstance(some_configured_value, list)
-                and isinstance(some_configured_value[1], tuple)
-                or isinstance(some_configured_value, tuple)
-            ):
-                # also build as jsonpath the incoming conf
-                mtd_cfg_as_conversion_and_querypath(
-                    deepcopy(
-                        conf_update[provider][search_plugin_key]["metadata_mapping"]
-                    ),
-                    conf_update[provider][search_plugin_key]["metadata_mapping"],
-                )
-
         override_config_from_mapping(self.providers_config, conf_update)
 
         stac_provider_config = load_stac_provider_config()
@@ -400,6 +366,82 @@ class EODataAccessGateway:
             setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
+
+    def add_provider(
+        self,
+        name: str,
+        url: Optional[str] = None,
+        priority: Optional[int] = None,
+        search: Dict[str, Any] = {"type": "StacSearch"},
+        products: Dict[str, Any] = {
+            GENERIC_PRODUCT_TYPE: {"productType": "{productType}"}
+        },
+        download: Dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        **kwargs: Dict[str, Any],
+    ):
+        """Adds a new provider.
+
+        ``search``, ``products`` & ``download`` already have default values that will be
+        updated (not replaced), with user provided ones:
+
+            * ``search`` : ``{"type": "StacSearch"}``
+            * ``products`` : ``{"GENERIC_PRODUCT_TYPE": {"productType": "{productType}"}}``
+            * ``download`` : ``{"type": "HTTPDownload", "auth_error_code": 401}``
+
+        :param name: Name of provider
+        :type name: str
+        :param url: Provider url, also used as ``search["api_endpoint"]`` if not defined
+        :type url: Optional[str]
+        :param priority: Provider priority. If None, provider will be set as preferred (highest priority)
+        :type priority: Optional[int]
+        :param search: Search :class:`~eodag.config.PluginConfig` mapping
+        :type search: Dict[str, Any]
+        :param products: Provider product types mapping
+        :type products: Dict[str, Any]
+        :param download: Download :class:`~eodag.config.PluginConfig` mapping
+        :type download: Dict[str, Any]
+        :param kwargs: Additional :class:`~eodag.config.ProviderConfig` mapping
+        :type kwargs: Dict[str, Any]
+        """
+        conf_dict: Dict[str, Any] = {
+            name: {
+                "url": url,
+                "search": {"type": "StacSearch", **search},
+                "products": {
+                    GENERIC_PRODUCT_TYPE: {"productType": "{productType}"},
+                    **products,
+                },
+                "download": {
+                    "type": "HTTPDownload",
+                    "auth_error_code": 401,
+                    **download,
+                },
+                **kwargs,
+            }
+        }
+        if priority is not None:
+            conf_dict[name]["priority"] = priority
+        # if provided, use url as default search api_endpoint
+        if (
+            url
+            and conf_dict[name].get("search", {})
+            and not conf_dict[name]["search"].get("api_endpoint")
+        ):
+            conf_dict[name]["search"]["api_endpoint"] = url
+
+        # api plugin usage: remove unneeded search/download/auth plugin conf
+        if conf_dict[name].get("api"):
+            conf_dict[name].pop("search", None)
+            conf_dict[name].pop("download", None)
+            conf_dict[name].pop("auth", None)
+
+        override_config_from_mapping(self.providers_config, conf_dict)
+        provider_config_init(self.providers_config[name], load_stac_provider_config())
+        setattr(self.providers_config[name], "product_types_fetched", False)
+        self._plugins_manager.build_product_type_to_provider_config_map()
+
+        if priority is None:
+            self.set_preferred_provider(name)
 
     def _prune_providers_list(self) -> None:
         """Removes from config providers needing auth that have no credentials set."""
