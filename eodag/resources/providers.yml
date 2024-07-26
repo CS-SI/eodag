@@ -3906,12 +3906,17 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformSerialIdentifier' and att/OData.CSC.StringAttribute/Value eq '{platformSerialIdentifier}')"
             - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'spatialResolution' and att/OData.CSC.StringAttribute/Value eq '{resolution}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'authority' and att/OData.CSC.StringAttribute/Value eq '{organisationName}')"
-            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.StringAttribute/Value eq '{orbitNumber}')"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'orbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {orbitNumber})"
+            - "Attributes/OData.CSC.IntegerAttribute/any(att:att/Name eq 'relativeOrbitNumber' and att/OData.CSC.IntegerAttribute/Value eq {relativeOrbitNumber})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
+            - "ModificationDate gt {modifiedAfter#to_iso_utc_datetime}"
+            - "ModificationDate lt {modifiedBefore#to_iso_utc_datetime}"
+            - "PublicationDate gt {publishedAfter#to_iso_utc_datetime}"
+            - "PublicationDate lt {publishedBefore#to_iso_utc_datetime}"
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
@@ -3960,6 +3965,12 @@
       organisationName:
         - null
         - '$.Attributes.authority'
+      publishedAfter:
+        - null
+        - '$.PublicationDate'
+      publishedBefore:
+        - null
+        - '$.PublicationDate'
       publicationDate: '$.PublicationDate'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
@@ -3971,7 +3982,18 @@
       cloudCover:
         - null
         - '$.Attributes.cloudCover'
-      modificationDate: '$.ModificationDate'
+      modifiedAfter:
+        - null
+        - '$.ModificationDate'
+      modifiedBefore:
+        - null
+        - '$.ModificationDate'
+      modificationDate:
+        - null
+        - '$.ModificationDate'
+      relativeOrbitNumber:
+        - null
+        - '$.Attributes.relativeOrbitNumber'
       sensorMode:
         - null
         - '$.Attributes.operationalMode'
@@ -4040,6 +4062,11 @@
         cloudCover: '$.null'
     S1_SAR_GRD:
       productType: GRD
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_GRD_COG:
+      productType: GRD-COG
       collection: SENTINEL-1
       metadata_mapping:
         cloudCover: '$.null'

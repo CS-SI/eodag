@@ -267,6 +267,7 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo",
         ],
+        "S1_SAR_GRD_COG": ["cop_dataspace"],
         "S1_SAR_OCN": [
             "cop_dataspace",
             "creodias",
