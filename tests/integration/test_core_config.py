@@ -19,6 +19,8 @@
 import tempfile
 from unittest import TestCase, mock
 
+from jsonpath_ng.jsonpath import Child, Fields, Root
+
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -243,6 +245,55 @@ class TestCoreProvidersConfig(TestCase):
         self.assertEqual(
             self.dag.get_preferred_provider()[0],
             "baz",
+        )
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_core_providers_add_update(
+        self, mock__request, mock_fetch_product_types_list
+    ):
+        """add_provider method must add provider using given conf and update if exists"""
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {}
+
+        self.dag.add_provider(
+            "foo",
+            search={
+                "type": "QueryStringSearch",
+                "api_endpoint": "https://foo.bar/search",
+                "pagination": {"next_page_url_tpl": ""},
+                "metadata_mapping": {"bar": "$.properties.bar"},
+            },
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.metadata_mapping["bar"],
+            "$.properties.bar",
+        )
+
+        # search method must build metadata_mapping as jsonpath object
+        self.dag.search(provider="foo", productType="abc", raise_errors=True)
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.metadata_mapping["bar"],
+            (None, Child(Child(Root(), Fields("properties")), Fields("bar"))),
+        )
+
+        # add provider again will update as already built
+        self.dag.add_provider(
+            "foo",
+            search={
+                "type": "QueryStringSearch",
+                "api_endpoint": "https://foo.bar/search",
+                "pagination": {"next_page_url_tpl": ""},
+                "metadata_mapping": {"bar": "$.properties.baz"},
+            },
+        )
+        self.assertEqual(
+            self.dag.providers_config["foo"].search.metadata_mapping["bar"],
+            (None, Child(Child(Root(), Fields("properties")), Fields("baz"))),
         )
 
 
