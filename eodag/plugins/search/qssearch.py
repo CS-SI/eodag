@@ -818,6 +818,10 @@ class QueryStringSearch(Search):
                                 0 if total_results is None else total_results
                             )
                             total_results += _total_results or 0
+                if "next_page_url_tpl" not in self.config.pagination:
+                    raise MisconfiguredError(
+                        f"next_page_url_tpl is missing in {self.provider} search.pagination configuration"
+                    )
                 next_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=qs_with_sort,
