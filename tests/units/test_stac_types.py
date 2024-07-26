@@ -9,9 +9,9 @@ from eodag.rest.types import eodag_search, stac_search
 class TestStacSearch(unittest.TestCase):
     def test_sortby(self):
         # Test with valid field and direction
-        sort_by = stac_search.SortBy(field="test", direction="asc")
-        self.assertEqual(sort_by.field, "test")
-        self.assertEqual(sort_by.direction, "asc")
+        sortby = stac_search.SortBy(field="test", direction="asc")
+        self.assertEqual(sortby.field, "test")
+        self.assertEqual(sortby.direction, "asc")
 
         # Test with invalid direction
         with self.assertRaises(ValidationError) as context:
@@ -28,6 +28,7 @@ class TestStacSearch(unittest.TestCase):
 
         # Test with valid input
         sortby_list = stac_search.sortby2list("test,+test2,-test3")
+        self.assertIsNotNone(sortby_list)
         self.assertEqual(len(sortby_list), 3)
         self.assertEqual(sortby_list[0].field, "test")
         self.assertEqual(sortby_list[0].direction, "asc")
@@ -396,7 +397,7 @@ class TestEODAGSearch(unittest.TestCase):
 
     def test_convert_stac_to_eodag_sortby(self):
         values = {
-            "sort_by": [{"field": "test", "direction": "desc"}],
+            "sortby": [{"field": "test", "direction": "desc"}],
             "collections": ["test_collection"],
         }
         self.assertEqual(

@@ -478,7 +478,7 @@ def stac_collections_items(
     limit: Optional[int] = None,
     query: Optional[str] = None,
     page: Optional[int] = None,
-    sort_by: Optional[str] = None,
+    sortby: Optional[str] = None,
     filter: Optional[str] = None,
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
@@ -494,7 +494,7 @@ def stac_collections_items(
         limit=limit,
         query=query,
         page=page,
-        sort_by=sort_by,
+        sortby=sortby,
         filter=filter,
         filter_lang=filter_lang,
         crunch=crunch,
@@ -681,7 +681,7 @@ def stac_catalogs_items(
     datetime: Optional[str] = None,
     limit: Optional[int] = None,
     page: Optional[int] = None,
-    sort_by: Optional[str] = None,
+    sortby: Optional[str] = None,
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Fetch catalog's features"""
@@ -693,7 +693,7 @@ def stac_catalogs_items(
         "bbox": str2list(bbox),
         "limit": limit,
         "page": page,
-        "sort_by": sortby2list(sort_by),
+        "sortby": sortby2list(sortby),
         "crunch": crunch,
     }
 
@@ -788,7 +788,7 @@ def get_search(
     limit: Optional[int] = None,
     query: Optional[str] = None,
     page: Optional[int] = None,
-    sort_by: Optional[str] = None,
+    sortby: Optional[str] = None,
     filter: Optional[str] = None,  # pylint: disable=redefined-builtin
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
@@ -814,7 +814,7 @@ def get_search(
         "limit": limit,
         "query": str2json("query", query),
         "page": page,
-        "sort_by": sortby2list(sort_by),
+        "sortby": sortby2list(sortby),
         "crunch": crunch,
     }
 

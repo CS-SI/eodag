@@ -118,7 +118,7 @@ class SearchPostRequest(BaseModel):
         description="The language used for filtering.",
         validate_default=True,
     )
-    sort_by: Optional[List[SortBy]] = None
+    sortby: Optional[List[SortBy]] = None
     crunch: Optional[str] = None
 
     @field_serializer("intersects")
@@ -262,14 +262,14 @@ def sortby2list(
     v: Optional[str],
 ) -> Optional[List[SortBy]]:
     """
-    Convert sort_by filter parameter GET syntax to POST syntax
+    Convert sortby filter parameter GET syntax to POST syntax
     """
     if not v:
         return None
-    sort_by: List[SortBy] = []
+    sortby: List[SortBy] = []
     for sortby_param in v.split(","):
         sortby_param = sortby_param.strip()
         direction: Direction = "desc" if sortby_param.startswith("-") else "asc"
         field = sortby_param.lstrip("+-")
-        sort_by.append(SortBy(field=field, direction=direction))
-    return sort_by
+        sortby.append(SortBy(field=field, direction=direction))
+    return sortby
