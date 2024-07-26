@@ -43,48 +43,36 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
     if verbose < 1:
         disable_tqdm = True
 
-    if verbose <= 1:
-        logging.config.dictConfig(
-            {
-                "version": 1,
-                "disable_existing_loggers": False,
-                "handlers": {
-                    "null": {"level": "DEBUG", "class": "logging.NullHandler"}
-                },
-                "loggers": {
-                    "eodag": {"handlers": ["null"], "propagate": True, "level": "INFO"}
-                },
-            }
-        )
-        return None
+    level = "DEBUG" if verbose == 3 else "INFO"
 
-    formatter = "standard" if verbose == 2 else "verbose"
-    level = "INFO" if verbose == 2 else "DEBUG"
+    handlers = {
+        "console": {
+            "level": level,
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+        "null": {"level": level, "class": "logging.NullHandler"},
+    }
+    handler = "console" if verbose > 1 else "null"
 
     logging.config.dictConfig(
         {
             "version": 1,
             "disable_existing_loggers": False,
             "formatters": {
-                f"{formatter}": {
+                "standard": {
                     "format": "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
                 }
             },
-            "handlers": {
-                "console": {
-                    "level": f"{level}",
-                    "class": "logging.StreamHandler",
-                    "formatter": f"{formatter}",
-                }
-            },
+            "handlers": handlers,
             "loggers": {
                 "eodag": {
-                    "handlers": ["console"],
+                    "handlers": [handler],
                     "propagate": True,
                     "level": f"{level}",
                 },
-                "sentinelsat": {
-                    "handlers": ["console"],
+                "eodag-cube": {
+                    "handlers": [handler],
                     "propagate": True,
                     "level": f"{level}",
                 },
