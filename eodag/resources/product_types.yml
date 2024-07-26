@@ -566,7 +566,7 @@ S1_SAR_GRD_COG:
       Medium Resolution (MR).
     The resolution is dependent upon the amount of multi-looking performed. Level-1 GRD products are available in MR
     and HR for IW and EW modes, MR for WV mode and MR, HR and FR for SM mode.
-    Product without SAFE formatting, see
+    Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
     https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
   instrument: SAR
   platform: SENTINEL1
