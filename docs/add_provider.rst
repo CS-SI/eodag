@@ -21,28 +21,27 @@ Configure a new provider
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 The simplest way to add a new provider is to **use existing plugins**. This approach requires to
-provide the new provider's configuration in a ``YAML`` format. The following example, extracted from
-the `STAC client page <notebooks/tutos/tuto_stac_client.ipynb#stac-api>`_, shows how to add a new STAC provider:
+provide the new provider's configuration in a ``YAML`` format. The following example shows how to add a new STAC provider:
 
 .. code-block::
 
-   tamn:
+   another_earth_search:
       search:
          type: StacSearch
-         api_endpoint: https://tamn.snapplanet.io/search
+         api_endpoint: https://earth-search.aws.element84.com/v1/search
          need_auth: false
       products:
          S2_MSI_L1C:
-               productType: S2
+            productType: sentinel-2-l1c
          GENERIC_PRODUCT_TYPE:
-               productType: '{productType}'
+            productType: '{productType}'
       download:
          type: AwsDownload
       auth:
          type: AwsAuth
          credentials:
-               aws_access_key_id: PLEASE_CHANGE_ME
-               aws_secret_access_key: PLEASE_CHANGE_ME
+            aws_access_key_id: PLEASE_CHANGE_ME
+            aws_secret_access_key: PLEASE_CHANGE_ME
 
 It configures the following existing plugins: :class:`~eodag.plugins.search.qssearch.StacSearch` (search),
 :class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.aws.AwsDownload` (download).
