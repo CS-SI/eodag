@@ -63,6 +63,7 @@ class AssetsDict(UserDict):
     def get_values(self, asset_filter: str = "") -> List[Asset]:
         """
         retrieves the assets matching the given filter
+
         :param asset_filter: regex filter with which the assets should be matched
         :type asset_filter: str
         :return: list of assets
