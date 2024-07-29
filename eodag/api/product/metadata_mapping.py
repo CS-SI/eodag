@@ -120,10 +120,8 @@ def get_metadata_path(
                       in the provider search config. For example, it is the list
                       `['productType', '$.properties.productType']` with the sample
                       above. Or the string `$.properties.id`.
-    :type map_value: str or list(str)
     :returns: Either, None and the path to the metadata value, or a list of converter
              and its args, and the path to the metadata value.
-    :rtype: tuple(list(str) or None, str)
     """
     path = get_metadata_path_value(map_value)
     try:
@@ -147,9 +145,7 @@ def get_search_param(map_value: List[str]) -> str:
 
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config
-    :type map_value: list
     :returns: The value of the search parameter as defined in the provider config
-    :rtype: str
     """
     # Assume that caller will pass in the value as a list
     return map_value[0]
@@ -190,13 +186,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
 
     :param search_param: The string to be formatted
-    :type search_param: str
     :param args: (optional) Additional arguments to use in the formatting process
-    :type args: tuple
     :param kwargs: (optional) Additional named-arguments to use when formatting
-    :type kwargs: Any
     :returns: The formatted string
-    :rtype: str
     """
 
     class MetadataFormatter(Formatter):
@@ -926,7 +918,6 @@ def properties_from_json(
     """Extract properties from a provider json result.
 
     :param json: The representation of a provider result as a json object
-    :type json: dict
     :param mapping: A mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the json
                     representation, expressed as a
@@ -934,9 +925,7 @@ def properties_from_json(
     :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
                              `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
                              `discovery_path` (String representation of jsonpath)
-    :type discovery_config: dict
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
-    :rtype: dict
     """
     properties: Dict[str, Any] = {}
     templates = {}
@@ -1073,7 +1062,6 @@ def properties_from_xml(
     """Extract properties from a provider xml result.
 
     :param xml_as_text: The representation of a provider result as xml
-    :type xml_as_text: str
     :param mapping: A mapping between :class:`~eodag.api.product._product.EOProduct`'s metadata
                     keys and the location of the values of these properties in the xml
                     representation, expressed as a
@@ -1083,13 +1071,10 @@ def properties_from_xml(
                             not supporting empty namespace prefix. The
                             xpath in `mapping` must use this value to be able to
                             correctly reach empty-namespace prefixed elements
-    :type empty_ns_prefix: str
     :param discovery_config: (optional) metadata discovery configuration dict, accepting among other items
                              `discovery_pattern` (Regex pattern for metadata key discovery, e.g. "^[a-zA-Z]+$"),
                              `discovery_path` (String representation of xpath)
-    :type discovery_config: dict
     :returns: the metadata of the :class:`~eodag.api.product._product.EOProduct`
-    :rtype: dict
     """
     properties: Dict[str, Any] = {}
     templates = {}
@@ -1228,11 +1213,8 @@ def mtd_cfg_as_conversion_and_querypath(
     or from xpath_str to tuple `(conversion, xpath_str)`
 
     :param src_dict: Input dict containing jsonpath str as values
-    :type src_dict: dict
     :param dest_dict: (optional) Output dict containing jsonpath objects as values
-    :type dest_dict: dict
     :returns: dest_dict
-    :rtype: dict
     """
     # check if the configuration has already been converted
     some_configured_value = (
@@ -1476,11 +1458,8 @@ def get_queryable_from_provider(
     """Get EODAG configured queryable parameter from provider queryable parameter
 
     :param provider_queryable: provider queryable parameter
-    :type provider_queryable: str
     :param metadata_mapping: metadata-mapping configuration
-    :type metadata_mapping: Dict[str, Union[str, List[str]]])
     :returns: EODAG configured queryable parameter or None
-    :rtype: Optional[str]
     """
     pattern = rf"\b{provider_queryable}\b"
     for param, param_conf in metadata_mapping.items():
@@ -1495,11 +1474,8 @@ def get_provider_queryable_path(
     """Get EODAG configured queryable path from its parameter
 
     :param queryable: eodag queryable parameter
-    :type queryable: str
     :param metadata_mapping: metadata-mapping configuration
-    :type metadata_mapping: Dict[str, Union[str, List[str]]])
     :returns: EODAG configured queryable path or None
-    :rtype: Optional[str]
     """
     parameter_conf = metadata_mapping.get(queryable, None)
     if isinstance(parameter_conf, list):
@@ -1515,13 +1491,9 @@ def get_provider_queryable_key(
 ) -> str:
     """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
     :param eodag_key: key in eodag
-    :type eodag_key: str
     :param provider_queryables: queryables returned from the provider
-    :type provider_queryables: dict
     :param metadata_mapping: metadata mapping from which the keys are retrieved
-    :type metadata_mapping: Dict[str, Union[List[Any], str]]
     :returns: provider queryable key
-    :rtype: str
     """
     if eodag_key not in metadata_mapping:
         return ""

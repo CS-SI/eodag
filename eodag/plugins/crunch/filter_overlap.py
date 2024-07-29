@@ -48,7 +48,6 @@ class FilterOverlap(Crunch):
                    - `within` : True if product geometry is within the search area
 
                    These configuration parameters are mutually exclusive.
-    :type config: dict
     """
 
     def proceed(
@@ -57,11 +56,8 @@ class FilterOverlap(Crunch):
         """Execute crunch: Filter products, retaining only those that are overlapping with the search_extent
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :param search_params: Search criteria that must contain `geometry`
-        :type search_params: dict
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Start filtering for overlapping products")
         filtered: List[EOProduct] = []

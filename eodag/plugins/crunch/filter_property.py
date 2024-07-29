@@ -38,8 +38,6 @@ class FilterProperty(Crunch):
 
                    - `property=value` : property key from product.properties, associated to its filter value
                    - `operator` : (optional) Operator used for filtering (one of `lt,le,eq,ne,ge,gt`). Default is `eq`
-
-    :type config: dict
     """
 
     def proceed(
@@ -48,9 +46,7 @@ class FilterProperty(Crunch):
         """Execute crunch: Filter products, retaining only those that match property filtering
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         operator_name = self.config.__dict__.pop("operator", "eq") or "eq"
         try:

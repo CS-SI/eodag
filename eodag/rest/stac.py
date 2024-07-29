@@ -106,15 +106,10 @@ class StacCommon:
     """Stac common object
 
     :param url: Requested URL
-    :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
-    :type stac_config: dict
     :param provider: (optional) Chosen provider
-    :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: (optional) API root
-    :type root: str
     """
 
     def __init__(
@@ -137,7 +132,6 @@ class StacCommon:
         """Updates data using given input STAC dict data
 
         :param data: Catalog data (parsed STAC dict)
-        :type data: dict
         """
         self.data.update(data)
 
@@ -173,15 +167,10 @@ class StacCommon:
         """Parse STAC extension from config and return as dict
 
         :param url: Requested URL
-        :type url: str
         :param stac_config: STAC configuration from stac.yml conf file
-        :type stac_config: dict
         :param extension: Extension name
-        :type extension: str
         :param kwargs: Additional variables needed for parsing extension
-        :type kwargs: Any
         :returns: STAC extension as dictionnary
-        :rtype: dict
         """
         extension_model = deepcopy(stac_config).get("extensions", {}).get(extension, {})
 
@@ -213,15 +202,10 @@ class StacItem(StacCommon):
     """Stac item object
 
     :param url: Requested URL
-    :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
-    :type stac_config: dict
     :param provider: (optional) Chosen provider
-    :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: (optional) API root
-    :type root: str
     """
 
     def __init__(
@@ -246,11 +230,8 @@ class StacItem(StacCommon):
         """Build STAC items list from EODAG search results
 
         :param search_results: EODAG search results
-        :type search_results: :class:`~eodag.api.search_result.SearchResult`
         :param catalog: STAC catalog dict used for parsing item metadata
-        :type catalog: dict
         :returns: STAC item dicts list
-        :rtype: list
         """
         if len(search_results) <= 0:
             return []
@@ -466,11 +447,8 @@ class StacItem(StacCommon):
         """Build STAC items from EODAG search results
 
         :param search_results: EODAG search results
-        :type search_results: :class:`~eodag.api.search_result.SearchResult`
         :param catalog: STAC catalog dict used for parsing item metadata
-        :type catalog: dict
         :returns: Items dictionnary
-        :rtype: dict
         """
         items_model = deepcopy(self.stac_config["items"])
 
@@ -521,11 +499,8 @@ class StacItem(StacCommon):
         part of oseo extension.
 
         :param item_model: Item model from stac_config
-        :type item_model: dict
         :param product_type: Product type
-        :type product_type: str
         :returns: Filtered item model
-        :rtype: dict
         """
         try:
             product_type_dict = [
@@ -586,9 +561,7 @@ class StacItem(StacCommon):
         """Removes empty properties, unused extensions, and add missing extensions
 
         :param item: STAC item data
-        :type item: dict
         :returns: Filtered item model
-        :rtype: dict
         """
         all_extensions_dict: Dict[str, str] = deepcopy(
             self.stac_config["stac_extensions"]
@@ -619,9 +592,7 @@ class StacItem(StacCommon):
         """Build STAC item from EODAG product
 
         :param product: EODAG product
-        :type product: :class:`eodag.api.product._product.EOProduct`
         :returns: STAC item
-        :rtype: list
         """
         product_type = str(product.product_type)
 
@@ -670,15 +641,10 @@ class StacCollection(StacCommon):
     """Stac collection object
 
     :param url: Requested URL
-    :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
-    :type stac_config: dict
     :param provider: (optional) Chosen provider
-    :type provider: str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: (optional) API root
-    :type root: str
     """
 
     # External STAC collections
@@ -689,7 +655,6 @@ class StacCollection(StacCommon):
         """Load external STAC collections
 
         :param eodag_api: EODAG python API instance
-        :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
         """
         list_product_types = eodag_api.list_product_types(fetch_providers=False)
         for product_type in list_product_types:
@@ -729,9 +694,7 @@ class StacCollection(StacCommon):
         """Retrieve a list of providers for a given product type.
 
         :param product_type: Dictionary containing information about the product type.
-        :type product_type: dict
         :return: A list of provider names.
-        :rtype: list
         """
         if self.provider:
             return [self.provider]
@@ -749,11 +712,8 @@ class StacCollection(StacCommon):
         """Generate a STAC collection dictionary for a given product type.
 
         :param collection_model: The base model for the STAC collection.
-        :type collection_model: Any
         :param product_type: Dictionary containing information about the product type.
-        :type product_type: dict
         :return: A dictionary representing the STAC collection for the given product type.
-        :rtype: dict
         """
         providers = self.__list_product_type_providers(product_type)
 
@@ -839,9 +799,7 @@ class StacCollection(StacCommon):
         """Build STAC collections list
 
         :param filters: (optional) Additional filters for collections search
-        :type filters: dict
         :returns: STAC collection dicts list
-        :rtype: list
         """
         collection_model = deepcopy(self.stac_config["collection"])
 
@@ -886,17 +844,11 @@ class StacCatalog(StacCommon):
     """Stac Catalog object
 
     :param url: Requested URL
-    :type url: str
     :param stac_config: STAC configuration from stac.yml conf file
-    :type stac_config: dict
     :param provider: Chosen provider
-    :type provider: (optional) str
     :param eodag_api: EODAG python API instance
-    :type eodag_api: :class:`eodag.api.core.EODataAccessGateway`
     :param root: (optional) API root
-    :type root: str
     :param catalogs: (optional) Catalogs list
-    :type catalogs: list
     """
 
     def __init__(
@@ -939,7 +891,6 @@ class StacCatalog(StacCommon):
         """Updates configuration and data using given input catalog config
 
         :param catalog_config: Catalog config, from yml stac_config[catalogs]
-        :type catalog_config: dict
         """
         model = catalog_config["model"]
 
@@ -963,7 +914,6 @@ class StacCatalog(StacCommon):
         """Set catalog children / links
 
         :param children: (optional) Children list
-        :type children: list
         """
         self.children = children or []
         self.data["links"] = [
@@ -978,7 +928,6 @@ class StacCatalog(StacCommon):
         """Updates catalog with given product_type
 
         :param product_type: Product type
-        :type product_type: str
         """
         collections = StacCollection(
             url=self.url,
@@ -1015,7 +964,6 @@ class StacCatalog(StacCommon):
         """Get catalog available years list
 
         :returns: Years list
-        :rtype: list
         """
         extent_date_min, extent_date_max = self.get_datetime_extent()
 
@@ -1025,7 +973,6 @@ class StacCatalog(StacCommon):
         """Get catalog available months list
 
         :returns: Months list
-        :rtype: list
         """
         extent_date_min, extent_date_max = self.get_datetime_extent()
 
@@ -1040,7 +987,6 @@ class StacCatalog(StacCommon):
         """Get catalog available days list
 
         :returns: Days list
-        :rtype: list
         """
         extent_date_min, extent_date_max = self.get_datetime_extent()
 
@@ -1054,9 +1000,7 @@ class StacCatalog(StacCommon):
         """Updates and returns catalog with given year
 
         :param year: Year number
-        :type year: str
         :returns: Updated catalog
-        :rtype: dict
         """
         extent_date_min, extent_date_max = self.get_datetime_extent()
 
@@ -1081,9 +1025,7 @@ class StacCatalog(StacCommon):
         """Updates and returns catalog with given month
 
         :param month: Month number
-        :type month: str
         :returns: Updated catalog
-        :rtype: dict
         """
         extent_date_min, extent_date_max = self.get_datetime_extent()
         year = extent_date_min.year
@@ -1112,9 +1054,7 @@ class StacCatalog(StacCommon):
         """Updates and returns catalog with given day
 
         :param day: Day number
-        :type day: str
         :returns: Updated catalog
-        :rtype: dict
         """
         extent_date_min, extent_date_max = self.get_datetime_extent()
         year = extent_date_min.year
@@ -1144,7 +1084,6 @@ class StacCatalog(StacCommon):
         """Returns catalog temporal extent as datetime objs
 
         :returns: Start & stop dates
-        :rtype: tuple
         """
         extent_date_min = dateutil.parser.parse(DEFAULT_MISSION_START_DATE).replace(
             tzinfo=tz.UTC
@@ -1177,13 +1116,9 @@ class StacCatalog(StacCommon):
         """Updates catalog data using given dates
 
         :param datetime_min: Date min of interval
-        :type datetime_min: :class:`datetime`
         :param datetime_max: Date max of interval
-        :type datetime_max: :class:`datetime`
         :param catalog_model: Catalog model to use, from yml stac_config[catalogs]
-        :type catalog_model: dict
         :returns: Updated catalog
-        :rtype: dict
         """
         # parse f-strings
         format_args = deepcopy(self.stac_config)
@@ -1217,7 +1152,6 @@ class StacCatalog(StacCommon):
         """Get cloud_cover list
 
         :returns: cloud_cover list
-        :rtype: list
         """
         return list(range(0, 101, 10))
 
@@ -1225,9 +1159,7 @@ class StacCatalog(StacCommon):
         """Updates and returns catalog with given max cloud_cover
 
         :param cloud_cover: Cloud_cover number
-        :type cloud_cover: str
         :returns: Updated catalog
-        :rtype: dict
         """
         cat_model = deepcopy(self.stac_config["catalogs"]["cloud_cover"]["model"])
         # parse f-strings
@@ -1249,9 +1181,7 @@ class StacCatalog(StacCommon):
         """Get locations list using stac_conf & locations_config
 
         :param catalog_name: Catalog/location name
-        :type catalog_name: str
         :returns: Locations list
-        :rtype: list
         """
 
         if catalog_name not in self.stac_config["catalogs"]:
@@ -1284,11 +1214,8 @@ class StacCatalog(StacCommon):
         """Updates and returns catalog with given location
 
         :param location: Feature attribute value for shp filtering
-        :type location: str
         :param catalog_name: Catalog/location name
-        :type catalog_name: str
         :returns: Updated catalog
-        :rtype: dict
         """
         location_list_cat_key = catalog_name + "_list"
 
@@ -1341,7 +1268,6 @@ class StacCatalog(StacCommon):
         """Build locations config from stac_conf[locations_catalogs] & eodag_api.locations_config
 
         :returns: Locations configuration dict
-        :rtype: dict
         """
         user_config_locations_list = self.eodag_api.locations_config
 
@@ -1366,9 +1292,7 @@ class StacCatalog(StacCommon):
         """Build nested catalog from catalag list
 
         :param catalogs: (optional) Catalogs list
-        :type catalogs: list
         :returns: This catalog obj
-        :rtype: :class:`eodag.stac.StacCatalog`
         """
         settings = Settings.from_environment()
 

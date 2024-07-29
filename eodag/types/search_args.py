@@ -96,10 +96,8 @@ class SearchArgs(BaseModel):
         """Check if the sort_by argument is correct
 
         :param sort_by_arg: The sort_by argument
-        :type sort_by_arg: str
         :returns: The sort_by argument with sorting order parsed (whitespace(s) are
                   removed and only the 3 first letters in uppercase are kept)
-        :rtype: str
         """
         if sort_by_arg is None:
             return None

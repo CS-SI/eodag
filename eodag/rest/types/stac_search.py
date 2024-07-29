@@ -78,9 +78,7 @@ class SortBy(BaseModel):
     POST search
 
     :param field: The name of the parameter with which we want to sort results
-    :type field: str
     :param direction: The sorting order of the parameter
-    :type direction: str
     """
 
     __pydantic_config__ = ConfigDict(extra="forbid")

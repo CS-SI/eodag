@@ -88,9 +88,7 @@ class EOProduct:
     parameters that led to its creation.
 
     :param provider: The provider from which the product originates
-    :type provider: str
     :param properties: The metadata of the product
-    :type properties: dict
     :ivar product_type: The product type
     :vartype product_type: str
     :ivar location: The path to the product, either remote or local if downloaded
@@ -182,7 +180,6 @@ class EOProduct:
 
         :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
-        :rtype: dict
         """
         search_intersection = None
         if self.search_intersection is not None:
@@ -214,9 +211,7 @@ class EOProduct:
 
         :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
                         as a Python dict
-        :type feature: dict
         :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
-        :rtype: :class:`~eodag.api.product._product.EOProduct`
         """
         properties = feature["properties"]
         properties["geometry"] = feature["geometry"]
@@ -250,11 +245,9 @@ class EOProduct:
         """Give to the product the information needed to download itself.
 
         :param downloader: The download method that it can use
-        :type downloader: Concrete subclass of
                           :class:`~eodag.plugins.download.base.Download` or
                           :class:`~eodag.plugins.api.base.Api`
         :param authenticator: The authentication method needed to perform the download
-        :type authenticator: Concrete subclass of
                              :class:`~eodag.plugins.authentication.base.Authentication`
         """
         self.downloader = downloader
@@ -304,20 +297,15 @@ class EOProduct:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :type timeout: int
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product on the local filesystem
-        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
@@ -393,18 +381,14 @@ class EOProduct:
 
         :param filename: (optional) The name to give to the downloaded quicklook. If not
                          given, it defaults to the product's ID (without file extension).
-        :type filename: str
         :param base_dir: (optional) The absolute path of the directory where to store
                          the quicklooks in the filesystem. If not given, it defaults to the
                          `quicklooks` directory under this EO product downloader's ``outputs_prefix``
                          config param (e.g. '/tmp/quicklooks/')
-        :type base_dir: str
         :param progress_callback: (optional) A method or a callable object which takes
                                    a current size and a maximum size as inputs and handle progress bar
                                    creation and update to give the user a feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
-        :rtype: str
         """
 
         def format_quicklook_address() -> None:

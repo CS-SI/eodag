@@ -199,9 +199,7 @@ class QueryStringSearch(Search):
     ``free_text_search_operations`` configuration parameter follow the same rule.
 
     :param provider: An eodag providers configuration dictionary
-    :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str
     """
 
     extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {
@@ -365,7 +363,6 @@ class QueryStringSearch(Search):
         """Fetch product types list from provider using `discover_product_types` conf
 
         :returns: configuration dict containing fetched product types information
-        :rtype: (optional) dict
         """
         try:
             prep = PreparedSearch()
@@ -532,9 +529,7 @@ class QueryStringSearch(Search):
         """
         retrieves additional product type information from an endpoint returning data for a single collection
         :param product_type: product type
-        :type product_type: str
         :return: product types and their metadata
-        :rtype: Dict[str, Any]
         """
         single_collection_url = self.config.discover_product_types[
             "single_collection_fetch_url"
@@ -563,9 +558,7 @@ class QueryStringSearch(Search):
 
         :param kwargs: additional filters for queryables (`productType` and other search
                        arguments)
-        :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
         product_type = kwargs.pop("productType", None)
         if not product_type:
@@ -662,7 +655,6 @@ class QueryStringSearch(Search):
         """Perform a search on an OpenSearch-like interface
 
         :param prep: Object collecting needed information for search.
-        :type prep: :class:`~eodag.plugins.search.PreparedSearch`
         """
         count = prep.count
         product_type = kwargs.get("productType", prep.product_type)
@@ -844,7 +836,6 @@ class QueryStringSearch(Search):
         as this number is reached
 
         :param prep: Object collecting needed information for search.
-        :type prep: :class:`~eodag.plugins.search.PreparedSearch`
         """
         items_per_page = prep.items_per_page
         total_items_nb = 0
@@ -1644,9 +1635,7 @@ class StacSearch(PostJsonSearch):
 
         :param kwargs: additional filters for queryables (`productType` and other search
                        arguments)
-        :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
         product_type = kwargs.get("productType", None)
         provider_product_type = (
