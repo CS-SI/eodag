@@ -380,8 +380,10 @@ class TestStacCore(unittest.TestCase):
         # check that invalid characters have been quoted
         self.assertIn(",", response["features"][0]["id"])
         self.assertNotIn(",", response["features"][0]["assets"]["downloadLink"]["href"])
+        self.assertNotIn(",", response["features"][0]["links"][0]["href"])
         self.assertIn("*", response["features"][1]["id"])
         self.assertNotIn("*", response["features"][1]["assets"]["downloadLink"]["href"])
+        self.assertNotIn("*", response["features"][1]["links"][0]["href"])
         # check that no other asset have also been added to the response
         self.assertEqual(len(response["features"][0]["assets"]), 2)
 

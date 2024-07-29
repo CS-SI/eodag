@@ -376,6 +376,10 @@ class StacItem(StacCommon):
             # remove empty properties
             product_item = self.__filter_item_properties_values(product_item)
 
+            # quote invalid characters in links
+            for link in product_item["links"]:
+                link["href"] = _quote_url_path(link["href"])
+
             # update item link with datacube query-string
             if _dc_qs or self.provider:
                 url_parts = urlparse(str(product_item["links"][0]["href"]))
