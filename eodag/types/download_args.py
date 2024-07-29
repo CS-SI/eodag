@@ -21,7 +21,16 @@ from typing import Dict, Optional, TypedDict
 
 
 class DownloadConf(TypedDict, total=False):
-    """Download configuration"""
+    """Download configuration
+
+    :cvar outputs_prefix: where to store downloaded products, as an absolute file path
+                          (Default: local temporary directory)
+    :cvar outputs_extension: downloaded file extension
+    :cvar extract: whether to extract the downloaded products, only applies to archived products
+    :cvar dl_url_params: additional parameters to pass over to the download url as an url parameter
+    :cvar delete_archive: whether to delete the downloaded archives
+    :cvar asset: regex filter to identify assets to download
+    """
 
     outputs_prefix: str
     outputs_extension: str
