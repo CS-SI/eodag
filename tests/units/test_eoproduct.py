@@ -173,7 +173,7 @@ class TestEOProduct(EODagTestCase):
             spec_set=Download(provider=self.provider, config=None)
         )
         mock_downloader.config = config.PluginConfig.from_mapping(
-            {"outputs_prefix": tempfile.gettempdir()}
+            {"output_dir": tempfile.gettempdir()}
         )
         product.register_downloader(mock_downloader, None)
 
@@ -197,7 +197,7 @@ class TestEOProduct(EODagTestCase):
             spec_set=Download(provider=self.provider, config=None)
         )
         mock_downloader.config = config.PluginConfig.from_mapping(
-            {"outputs_prefix": tempfile.gettempdir()}
+            {"output_dir": tempfile.gettempdir()}
         )
         product.register_downloader(mock_downloader, None)
 
@@ -253,7 +253,7 @@ class TestEOProduct(EODagTestCase):
             spec_set=Download(provider=self.provider, config=None)
         )
         mock_downloader.config = config.PluginConfig.from_mapping(
-            {"outputs_prefix": tempfile.gettempdir()}
+            {"output_dir": tempfile.gettempdir()}
         )
         product.register_downloader(mock_downloader, None)
 
@@ -292,7 +292,7 @@ class TestEOProduct(EODagTestCase):
         return Response()
 
     def test_eoproduct_download_http_default(self):
-        """eoproduct.download must save the product at outputs_prefix and create a .downloaded dir"""  # noqa
+        """eoproduct.download must save the product at output_dir and create a .downloaded dir"""  # noqa
         # Setup
         product = self._dummy_downloadable_product()
         try:
@@ -399,7 +399,7 @@ class TestEOProduct(EODagTestCase):
         product = self._dummy_product()
         self._set_download_simulation()
         dl_config = config.PluginConfig.from_mapping(
-            {"base_uri": "fake_base_uri", "outputs_prefix": "will_be_overriden"}
+            {"base_uri": "fake_base_uri", "output_dir": "will_be_overriden"}
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)
@@ -413,13 +413,13 @@ class TestEOProduct(EODagTestCase):
 
             # Download
             product_dir_path = product.download(
-                outputs_prefix=str(output_dir),
+                output_dir=str(output_dir),
                 extract=True,
                 dl_url_params={"fakeparam": "dummy"},
             )
             # Check that dl_url_params are properly passed to the GET request
             self.requests_request.assert_called_once()
-            # Check that "outputs_prefix" is respected.
+            # Check that "output_dir" is respected.
             product_dir_path = pathlib.Path(product_dir_path)
             self.assertEqual(product_dir_path.parent.name, output_dir_name)
             # We've asked to extract the product so there should be a directory.
@@ -431,7 +431,7 @@ class TestEOProduct(EODagTestCase):
             product_zip_file = product_dir_path.with_suffix(".zip")
             self.assertTrue(product_zip_file.is_file)
         finally:
-            # Teardown (all the created files are within outputs_prefix)
+            # Teardown (all the created files are within output_dir)
             shutil.rmtree(output_dir)
 
     def test_eoproduct_download_progress_bar(self):
@@ -446,7 +446,7 @@ class TestEOProduct(EODagTestCase):
         # extract=true would replace bar desc with extraction status
         product.download(
             progress_callback=progress_callback,
-            outputs_prefix=self.output_dir,
+            output_dir=self.output_dir,
             extract=False,
         )
 
@@ -480,7 +480,7 @@ class TestEOProduct(EODagTestCase):
                     self.eoproduct_props,
                     **{
                         "downloadLink": "%(base_uri)s/is/resolved",
-                        "otherProperty": "%(outputs_prefix)s/also/resolved",
+                        "otherProperty": "%(output_dir)s/also/resolved",
                     },
                 )
             )
@@ -499,7 +499,7 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertEqual(
             downloadable_product.properties["otherProperty"],
-            f"{downloadable_product.downloader.config.outputs_prefix}/also/resolved",
+            f"{downloadable_product.downloader.config.output_dir}/also/resolved",
         )
 
     def test_eoproduct_register_downloader_resolve_ignored(self):

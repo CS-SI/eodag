@@ -79,17 +79,17 @@ class Download(PluginTopic):
 
     They must:
 
-    - download data in the ``outputs_prefix`` folder defined in the plugin's
+    - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
     - extract products from their archive (if relevant) if ``extract`` is set to True
       (True by default)
-    - save a product in an archive/directory (in ``outputs_prefix``) whose name must be
+    - save a product in an archive/directory (in ``output_dir``) whose name must be
       the product's ``title`` property
     - update the product's ``location`` attribute once its data is downloaded (and
       eventually after it's extracted) to the product's location given as a file URI
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
-    - save a *record* file in the directory ``outputs_prefix/.downloaded`` whose name
+    - save a *record* file in the directory ``output_dir/.downloaded`` whose name
       is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
       attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
@@ -125,7 +125,7 @@ class Download(PluginTopic):
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
@@ -155,7 +155,7 @@ class Download(PluginTopic):
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
@@ -197,9 +197,9 @@ class Download(PluginTopic):
             f"Download url: {url}",
         )
 
-        outputs_prefix = (
-            kwargs.pop("outputs_prefix", None)
-            or getattr(self.config, "outputs_prefix", tempfile.gettempdir())
+        output_dir = (
+            kwargs.pop("output_dir", None)
+            or getattr(self.config, "output_dir", tempfile.gettempdir())
             or tempfile.gettempdir()
         )
         outputs_extension = kwargs.get("outputs_extension", None) or getattr(
@@ -208,7 +208,7 @@ class Download(PluginTopic):
 
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
-        prefix = os.path.abspath(outputs_prefix)
+        prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
         if sanitized_title == product.properties["title"]:
             collision_avoidance_suffix = ""
@@ -370,9 +370,7 @@ class Download(PluginTopic):
             )
             progress_callback(1, total=1)
             return product_path
-        outputs_prefix = (
-            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
-        )
+        output_dir = kwargs.pop("output_dir", None) or self.config.output_dir
 
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
@@ -381,9 +379,9 @@ class Download(PluginTopic):
             )
             progress_callback.refresh()
 
-            outputs_dir = os.path.join(outputs_prefix, product_path)
+            product_dir = os.path.join(output_dir, product_path)
             tmp_dir = tempfile.TemporaryDirectory()
-            extraction_dir = os.path.join(tmp_dir.name, os.path.basename(outputs_dir))
+            extraction_dir = os.path.join(tmp_dir.name, os.path.basename(product_dir))
 
             if fs_path.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
@@ -401,10 +399,10 @@ class Download(PluginTopic):
                 # then, we create a directory in which we place this file
                 product_extraction_path = self._resolve_archive_depth(extraction_dir)
                 if os.path.isfile(product_extraction_path) and not os.path.isdir(
-                    outputs_dir
+                    product_dir
                 ):
-                    os.makedirs(outputs_dir)
-                shutil.move(product_extraction_path, outputs_dir)
+                    os.makedirs(product_dir)
+                shutil.move(product_extraction_path, product_dir)
 
             elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r") as zfile:
@@ -415,10 +413,10 @@ class Download(PluginTopic):
                 # then, we create a directory in which we place this file
                 product_extraction_path = self._resolve_archive_depth(extraction_dir)
                 if os.path.isfile(product_extraction_path) and not os.path.isdir(
-                    outputs_dir
+                    product_dir
                 ):
-                    os.makedirs(outputs_dir)
-                shutil.move(product_extraction_path, outputs_dir)
+                    os.makedirs(product_dir)
+                shutil.move(product_extraction_path, product_dir)
             else:
                 progress_callback(1, total=1)
 
@@ -467,7 +465,7 @@ class Download(PluginTopic):
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.

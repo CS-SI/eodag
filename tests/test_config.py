@@ -265,7 +265,7 @@ class TestConfigFunctions(unittest.TestCase):
             # tempdir by default
             download_plugin = getattr(value, "download", getattr(value, "api", None))
             if download_plugin is not None:
-                self.assertEqual(download_plugin.outputs_prefix, tempfile.gettempdir())
+                self.assertEqual(download_plugin.output_dir, tempfile.gettempdir())
             # priority is set to 0 unless you are 'peps' provider
             if key == "peps":
                 self.assertEqual(value.priority, 1)
@@ -334,11 +334,11 @@ class TestConfigFunctions(unittest.TestCase):
 
         peps:
           download:
-              outputs_prefix: /data
+              output_dir: /data
 
         theia:
             download:
-                outputs_prefix:
+                output_dir:
 
         my_new_provider:
             priority: 4
@@ -383,10 +383,10 @@ class TestConfigFunctions(unittest.TestCase):
         )
 
         peps_conf = default_config["peps"]
-        self.assertEqual(peps_conf.download.outputs_prefix, "/data")
+        self.assertEqual(peps_conf.download.output_dir, "/data")
 
         theia_conf = default_config["theia"]
-        self.assertEqual(theia_conf.download.outputs_prefix, tempfile.gettempdir())
+        self.assertEqual(theia_conf.download.output_dir, tempfile.gettempdir())
 
         my_new_provider_conf = default_config["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)
@@ -435,7 +435,7 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ[
             "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
-        os.environ["EODAG__PEPS__DOWNLOAD__OUTPUTS_PREFIX"] = "/data"
+        os.environ["EODAG__PEPS__DOWNLOAD__OUTPUT_DIR"] = "/data"
         # check a parameter that has not been set yet
         self.assertFalse(hasattr(default_config["peps"].search, "timeout"))
         self.assertNotIn("start_page", default_config["peps"].search.pagination)
@@ -460,7 +460,7 @@ class TestConfigFunctions(unittest.TestCase):
         )
 
         peps_conf = default_config["peps"]
-        self.assertEqual(peps_conf.download.outputs_prefix, "/data")
+        self.assertEqual(peps_conf.download.output_dir, "/data")
         self.assertEqual(peps_conf.search.timeout, 3.1)
         self.assertEqual(peps_conf.search.pagination["start_page"], 2)
 

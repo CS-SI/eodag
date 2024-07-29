@@ -157,9 +157,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         os.chmod(outdir.name, stat.S_IREAD)
 
         with self.assertLogs(level="WARNING") as cm:
-            fs_path, _ = plugin._prepare_download(
-                self.product, outputs_prefix=outdir.name
-            )
+            fs_path, _ = plugin._prepare_download(self.product, output_dir=outdir.name)
             self.assertIn("Unable to create records directory", str(cm.output))
 
 
@@ -227,7 +225,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         dl_config = config.PluginConfig.from_mapping(
             {
                 "base_uri": "fake_base_uri",
-                "outputs_prefix": self.output_dir,
+                "output_dir": self.output_dir,
                 "extract": False,
                 "delete_archive": False,
             }
@@ -421,7 +419,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         path = plugin.download(
             self.product,
-            outputs_prefix=self.output_dir,
+            output_dir=self.output_dir,
             progress_callback=progress_callback,
         )
 
@@ -447,7 +445,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product,
             None,
             progress_callback,
-            outputs_prefix=self.output_dir,
+            output_dir=self.output_dir,
             outputs_extension=outputs_extension,
         )
 
@@ -479,7 +477,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         progress_callback = ProgressCallback(disable=True)
 
         path = plugin.download(
-            product, outputs_prefix=self.output_dir, progress_callback=progress_callback
+            product, output_dir=self.output_dir, progress_callback=progress_callback
         )
 
         self.assertTrue(
@@ -504,7 +502,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             product,
             None,
             progress_callback,
-            outputs_prefix=self.output_dir,
+            output_dir=self.output_dir,
             outputs_extension=outputs_extension,
         )
 
@@ -532,7 +530,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # download asset if ignore_assets = False
         plugin.config.ignore_assets = False
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -551,7 +549,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # download using remote_location if ignore_assets = True
         plugin.config.ignore_assets = True
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_not_called()
         mock_stream_download.assert_called_once()
         # re-enable product download
@@ -562,7 +560,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # download asset if ignore_assets unset
         del plugin.config.ignore_assets
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -594,7 +592,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # download asset if ssl_verify = False
         plugin.config.ssl_verify = False
 
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_head.assert_called_once_with(
             self.product.assets["foo"]["href"],
             auth=None,
@@ -636,7 +634,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -685,7 +683,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -726,7 +724,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 progress_callback_exception,
             ]
             with self.assertRaises(Exception) as cm:
-                plugin.download(self.product, outputs_prefix=self.output_dir)
+                plugin.download(self.product, output_dir=self.output_dir)
             # Interrupted download
             self.assertEqual(progress_callback_exception, cm.exception)
             # Product location not changed
@@ -771,7 +769,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "w",
         ):
             pass
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
         # Product directory created
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -813,9 +811,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
-        path = plugin.download(
-            self.product, outputs_prefix=self.output_dir, asset="else.*"
-        )
+        path = plugin.download(self.product, output_dir=self.output_dir, asset="else.*")
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -826,7 +822,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         self.assertEqual(2, mock_requests_get.call_count)
         self.product.location = self.product.remote_location = "http://elsewhere"
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
         self.assertEqual(6, mock_requests_get.call_count)
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -851,7 +847,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "content-disposition": '; filename = "anotherthing"'
         }
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -893,7 +889,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # size from HEAD / Content-length
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=1 + 1)
 
         # size from HEAD / content-disposition
@@ -908,7 +904,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=2 + 2)
 
         # size from GET / Content-length
@@ -923,7 +919,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=3 + 3)
 
         # size from GET / content-disposition
@@ -943,7 +939,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=4 + 4)
 
         # unknown size
@@ -960,7 +956,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=None)
 
     def test_plugins_download_http_one_local_asset(
@@ -982,7 +978,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, uri_to_path(self.product.assets["foo"]["href"]))
         # empty product download directory should have been removed
@@ -1021,7 +1017,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         # assets common path
         self.assertEqual(
@@ -1104,7 +1100,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             # download
             path = self.product.download(
-                outputs_prefix=output_data_path,
+                output_dir=output_data_path,
                 wait=0.001 / 60,
                 timeout=0.2 / 60,
             )
@@ -1314,7 +1310,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.001 / 60,
                     timeout=0.2 / 60,
                 )
@@ -1328,7 +1324,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.09 / 60,
                     timeout=0.2 / 60,
                 )
@@ -1350,7 +1346,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.001 / 60,
                     timeout=0.2 / 60,
                 )
@@ -1380,7 +1376,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
             self.plugin.download(
                 self.product,
-                outputs_prefix=self.output_dir,
+                output_dir=self.output_dir,
                 wait=0.001 / 60,
                 timeout=0.2 / 60,
             )
@@ -1401,7 +1397,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.1 / 60,
                     timeout=1e-9 / 60,
                 )
@@ -1422,7 +1418,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.1 / 60,
                     timeout=0.1 / 60,
                 )
@@ -1442,7 +1438,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
             with self.assertRaisesRegex(NotAvailableError, r"^((?!timeout).)*$"):
                 self.plugin.download(
-                    self.product, outputs_prefix=self.output_dir, wait=-1, timeout=-1
+                    self.product, output_dir=self.output_dir, wait=-1, timeout=-1
                 )
 
             # there must have been only one try
@@ -1519,7 +1515,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.products[self.product.product_type]["build_safe"] = False
         plugin.config.flatten_top_dirs = False
 
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
 
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "somebucket", "path/to/some", {}
@@ -1562,7 +1558,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.products[self.product.product_type]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
 
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
 
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "somebucket", "path/to/some", {}
@@ -1624,7 +1620,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # SAFE build
         plugin.config.products[self.product.product_type]["build_safe"] = True
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
             self.product.properties["tileInfo"],
@@ -1705,7 +1701,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # SAFE build
         plugin.config.products[self.product.product_type]["build_safe"] = True
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
             self.product.properties["tileInfo"],
@@ -1729,7 +1725,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # with filter for assets
         self.product.properties["title"] = "newTitle"
         setattr(self.product, "location", "file://path/to/file")
-        plugin.download(self.product, outputs_prefix=self.output_dir, asset="file1")
+        plugin.download(self.product, output_dir=self.output_dir, asset="file1")
         # 3 additional calls
         self.assertEqual(7, mock_get_chunk_dest_path.call_count)
 
@@ -1840,7 +1836,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
                 body=b"something else",
                 auto_calculate_content_length=True,
             )
-            path = plugin.download(self.product, outputs_prefix=self.output_dir)
+            path = plugin.download(self.product, output_dir=self.output_dir)
 
             # there must have been 3 calls (list, 1st download, 2nd download)
             self.assertEqual(len(responses.calls), 3)
@@ -1897,7 +1893,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
             with self.assertRaises(NotAvailableError):
                 plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=-1,
                     timeout=-1,
                 )
@@ -1956,7 +1952,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
             )
             path = plugin.download(
                 self.product,
-                outputs_prefix=self.output_dir,
+                output_dir=self.output_dir,
                 wait=0.001 / 60,
                 timeout=0.2 / 60,
             )
@@ -2023,7 +2019,7 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
             lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
         )
 
-        plugin.download(product, outputs_prefix=self.output_dir, auth={})
+        plugin.download(product, output_dir=self.output_dir, auth={})
 
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "eodata", "a", {}

@@ -1990,7 +1990,7 @@ class EODataAccessGateway:
                      two download tries of the same product
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
@@ -2159,7 +2159,7 @@ class EODataAccessGateway:
                     two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.

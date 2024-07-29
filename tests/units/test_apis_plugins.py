@@ -292,7 +292,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "%s" % eoproduct.properties["title"],
             "%s.grib" % eoproduct.properties["title"],
         )
-        path = eoproduct.download(outputs_prefix=output_data_path)
+        path = eoproduct.download(output_dir=output_data_path)
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_called_once_with(
             mock.ANY,  # ECMWFDataServer instance
@@ -329,7 +329,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "%s" % eoproduct.properties["title"],
             "%s.nc" % eoproduct.properties["title"],
         )
-        path = eoproduct.download(outputs_prefix=output_data_path)
+        path = eoproduct.download(output_dir=output_data_path)
         download_request = geojson.loads(urlsplit(eoproduct.remote_location).query)
         download_request.pop("dataset", None)
         mock_ecmwfservice_execute.assert_called_once_with(
@@ -347,7 +347,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.reset_mock()
 
         # download again
-        eoproduct.download(outputs_prefix=output_data_path)
+        eoproduct.download(output_dir=output_data_path)
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
@@ -385,7 +385,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert len(eoproducts) == 2
 
         paths = dag.download_all(
-            eoproducts, outputs_prefix=os.path.join(os.path.expanduser("~"), "data")
+            eoproducts, output_dir=os.path.join(os.path.expanduser("~"), "data")
         )
         assert mock_ecmwfdataserver_retrieve.call_count == 2
         assert len(paths) == 2
@@ -671,16 +671,14 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
             # missing download_request return value
             with self.assertRaises(NotAvailableError):
-                self.api_plugin.download(product, outputs_prefix=self.tmp_home_dir.name)
+                self.api_plugin.download(product, output_dir=self.tmp_home_dir.name)
 
             # download 1 available product
             mock_api_download_request.return_value = {
                 "data": {"preparingDownloads": [{"url": "http://path/to/product"}]}
             }
 
-            path = self.api_plugin.download(
-                product, outputs_prefix=self.tmp_home_dir.name
-            )
+            path = self.api_plugin.download(product, output_dir=self.tmp_home_dir.name)
 
             self.assertEqual(len(responses.calls), 1)
             self.assertIn(
@@ -698,7 +696,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             os.remove(path)
             with mock.patch("tarfile.is_tarfile", return_value=True, autospec=True):
                 path = self.api_plugin.download(
-                    product, outputs_prefix=self.tmp_home_dir.name, extract=False
+                    product, output_dir=self.tmp_home_dir.name, extract=False
                 )
                 self.assertEqual(
                     path, os.path.join(self.tmp_home_dir.name, "dummy_product.tar.gz")
@@ -708,7 +706,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             product.product_type = "S2_MSI_L1C"
             with mock.patch("zipfile.is_zipfile", return_value=True, autospec=True):
                 path = self.api_plugin.download(
-                    product, outputs_prefix=self.tmp_home_dir.name, extract=False
+                    product, output_dir=self.tmp_home_dir.name, extract=False
                 )
                 self.assertEqual(
                     path, os.path.join(self.tmp_home_dir.name, "dummy_product.zip")

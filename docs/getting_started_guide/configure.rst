@@ -37,7 +37,7 @@ one (e.g. credentials). *PEPS*'s configuration template is shown below:
        search:  # Search parameters configuration
        download:
            extract:  # whether to extract the downloaded products (true or false).
-           outputs_prefix: # where to store downloaded products.
+           output_dir: # where to store downloaded products.
            dl_url_params:  # additional parameters to pass over to the download url as an url parameter
            delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
        auth:
@@ -107,7 +107,7 @@ See for instance the following configuration extracted from YAML file:
    creodias:
        download:
            extract: True
-           outputs_prefix: /absolute/path/to/a/folder/
+           output_dir: /absolute/path/to/a/folder/
            delete_archive: False
 
 
@@ -116,7 +116,7 @@ The same configuration could be achieved by setting environment variables:
 .. code-block:: bash
 
    export EODAG__CREODIAS__DOWNLOAD__EXTRACT=True
-   export EODAG__CREODIAS__DOWNLOAD__OUTPUTS_PREFIX=/absolute/path/to/a/folder/
+   export EODAG__CREODIAS__DOWNLOAD__OUTPUT_DIR=/absolute/path/to/a/folder/
    export EODAG__CREODIAS__DOWNLOAD__DELETE_ARCHIVE=False
 
 
@@ -198,7 +198,7 @@ Two useful download parameters can be set by a user:
 * ``extract`` indicates whether the downloaded product archive should be automatically
   extracted or not. ``True`` by default.
 
-*  ``outputs_prefix`` indicates the absolute file path to `eodag`'s download folder.
+*  ``output_dir`` indicates the absolute file path to `eodag`'s download folder.
    It is the temporary folder by default (e.g. ``/tmp`` on Linux).
 
 * ``delete_archive`` indicates whether the downloaded product archive should be automatically
@@ -231,7 +231,7 @@ Edit your configuration file ``$HOME/.config/eodag/eodag.yml`` with the followin
        priority: 2
        download:
            extract: False
-           outputs_prefix: /home/user/eodagworkspace/
+           output_dir: /home/user/eodagworkspace/
        auth:
            credentials:
                username: my_creodias_username

@@ -244,7 +244,7 @@ class AwsDownload(Download):
         SAFE-build is configured for a given provider and product type.
         If the product title is configured to be updated during download and
         SAFE-formatted, its destination path will be:
-        `{outputs_prefix}/{title}`
+        `{output_dir}/{title}`
 
         :param product: The EO product to download
         :param auth: (optional) authenticated object
@@ -253,7 +253,7 @@ class AwsDownload(Download):
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
@@ -645,7 +645,7 @@ class AwsDownload(Download):
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.

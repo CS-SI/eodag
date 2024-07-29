@@ -339,7 +339,7 @@ class PluginConfig(yaml.YAMLObject):
 
     # download -------------------------------------------------------------------------
     base_uri: str
-    outputs_prefix: str
+    output_dir: str
     extract: bool
     outputs_extension: str
     order_enabled: bool  # HTTPDownload
@@ -469,13 +469,13 @@ def provider_config_init(
     :param provider_config: An eodag provider configuration
     :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
     """
-    # For the provider, set the default outputs_prefix of its download plugin
+    # For the provider, set the default output_dir of its download plugin
     # as tempdir in a portable way
     for param_name in ("download", "api"):
         if param_name in vars(provider_config):
             param_value = getattr(provider_config, param_name)
-            if not getattr(param_value, "outputs_prefix", None):
-                param_value.outputs_prefix = tempfile.gettempdir()
+            if not getattr(param_value, "output_dir", None):
+                param_value.output_dir = tempfile.gettempdir()
             if not getattr(param_value, "delete_archive", None):
                 param_value.delete_archive = True
 

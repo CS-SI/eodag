@@ -1671,9 +1671,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             # usgs priority is set to 5 in the test config overrides
             self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
             # peps outputs prefix is set to /data
-            self.assertEqual(
-                dag.providers_config["peps"].download.outputs_prefix, "/data"
-            )
+            self.assertEqual(dag.providers_config["peps"].download.output_dir, "/data")
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
 

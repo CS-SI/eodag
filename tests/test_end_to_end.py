@@ -322,12 +322,12 @@ class TestEODagEndToEnd(EndToEndBase):
 
         for provider, conf in cls.eodag.providers_config.items():
             # Change download directory to cls.tmp_download_path for tests
-            if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
-                conf.download.outputs_prefix = cls.tmp_download_path
-            elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
-                conf.api.outputs_prefix = cls.tmp_download_path
+            if hasattr(conf, "download") and hasattr(conf.download, "output_dir"):
+                conf.download.output_dir = cls.tmp_download_path
+            elif hasattr(conf, "api") and hasattr(conf.api, "output_dir"):
+                conf.api.output_dir = cls.tmp_download_path
             else:
-                # no outputs_prefix found for provider
+                # no output_dir found for provider
                 pass
             # Force all providers implementing RestoSearch and defining how to retrieve
             # products by specifying the
@@ -385,10 +385,10 @@ class TestEODagEndToEnd(EndToEndBase):
         print(stop_time - start_time)
 
         self.assertIn(
-            expected_filename, os.listdir(product.downloader.config.outputs_prefix)
+            expected_filename, os.listdir(product.downloader.config.output_dir)
         )
         self.downloaded_file_path = os.path.join(
-            product.downloader.config.outputs_prefix, expected_filename
+            product.downloader.config.output_dir, expected_filename
         )
         # check whether expected_filename refers to a file or a dir
         if os.path.isdir(self.downloaded_file_path):
@@ -549,7 +549,7 @@ class TestEODagEndToEnd(EndToEndBase):
         self.assertEqual(os.path.basename(quicklook_file_path), "peps_quicklook")
         self.assertEqual(
             os.path.dirname(quicklook_file_path),
-            os.path.join(product.downloader.config.outputs_prefix, "quicklooks"),
+            os.path.join(product.downloader.config.output_dir, "quicklooks"),
         )
         self.assertGreaterEqual(os.stat(quicklook_file_path).st_size, 2**5)
 
@@ -769,12 +769,12 @@ class TestEODagEndToEndComplete(EndToEndBase):
 
         for provider, conf in cls.eodag.providers_config.items():
             # Change download directory to cls.tmp_download_path for tests
-            if hasattr(conf, "download") and hasattr(conf.download, "outputs_prefix"):
-                conf.download.outputs_prefix = cls.tmp_download_path
-            elif hasattr(conf, "api") and hasattr(conf.api, "outputs_prefix"):
-                conf.api.outputs_prefix = cls.tmp_download_path
+            if hasattr(conf, "download") and hasattr(conf.download, "output_dir"):
+                conf.download.output_dir = cls.tmp_download_path
+            elif hasattr(conf, "api") and hasattr(conf.api, "output_dir"):
+                conf.api.output_dir = cls.tmp_download_path
             else:
-                # no outputs_prefix found for provider
+                # no output_dir found for provider
                 pass
             # Force all providers implementing RestoSearch and defining how to retrieve
             # products by specifying the
@@ -828,7 +828,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
         self.assertTrue(os.path.isfile(archive_file_path))
         # Its name must be the "{product_title}.zip"
         self.assertIn(
-            expected_product_name, os.listdir(product.downloader.config.outputs_prefix)
+            expected_product_name, os.listdir(product.downloader.config.output_dir)
         )
         # Its size should be >= 5 KB
         archive_size = os.stat(archive_file_path).st_size
