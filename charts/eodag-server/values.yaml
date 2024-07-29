@@ -455,13 +455,13 @@ providers: ""
 #       # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
 #       LANDSAT_C2L1:
 #         dataset: landsat_ot_c2_l1
-#         outputs_extension: .tar.gz
+#         output_extension: .tar.gz
 #       LANDSAT_C2L2:
 #         dataset: landsat_ot_c2_l2
-#         outputs_extension: .tar.gz
+#         output_extension: .tar.gz
 #       S2_MSI_L1C:
 #         dataset: SENTINEL_2A
-#         outputs_extension: .zip
+#         output_extension: .zip
 #       GENERIC_PRODUCT_TYPE:
 #         dataset: '{productType}'
 

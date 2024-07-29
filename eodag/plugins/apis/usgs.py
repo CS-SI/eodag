@@ -286,14 +286,13 @@ class UsgsApi(Api):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        outputs_extension = cast(
+        output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
-                product.product_type,
-                self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
-            ).get("outputs_extension", ".tar.gz"),
+                product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+            ).get("output_extension", ".tar.gz"),
         )
-        kwargs["outputs_extension"] = kwargs.get("outputs_extension", outputs_extension)
+        kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
 
         fs_path, record_filename = self._prepare_download(
             product,
@@ -405,8 +404,8 @@ class UsgsApi(Api):
 
         # Check downloaded file format
         if (
-            kwargs["outputs_extension"] == ".tar.gz" and tarfile.is_tarfile(fs_path)
-        ) or (kwargs["outputs_extension"] == ".zip" and zipfile.is_zipfile(fs_path)):
+            kwargs["output_extension"] == ".tar.gz" and tarfile.is_tarfile(fs_path)
+        ) or (kwargs["output_extension"] == ".zip" and zipfile.is_zipfile(fs_path)):
             product_path = self._finalize(
                 fs_path,
                 progress_callback=progress_callback,
@@ -418,7 +417,7 @@ class UsgsApi(Api):
             logger.info(
                 "Downloaded product detected as a tar File, but was was expected to be a zip file"
             )
-            new_fs_path = fs_path[: fs_path.index(outputs_extension)] + ".tar.gz"
+            new_fs_path = fs_path[: fs_path.index(output_extension)] + ".tar.gz"
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
@@ -426,7 +425,7 @@ class UsgsApi(Api):
             logger.info(
                 "Downloaded product detected as a zip File, but was was expected to be a tar file"
             )
-            new_fs_path = fs_path[: fs_path.index(outputs_extension)] + ".zip"
+            new_fs_path = fs_path[: fs_path.index(output_extension)] + ".zip"
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
@@ -434,7 +433,7 @@ class UsgsApi(Api):
             logger.warning(
                 "Downloaded product is not a tar or a zip File. Please check its file type before using it"
             )
-            new_fs_path = fs_path[: fs_path.index(outputs_extension)]
+            new_fs_path = fs_path[: fs_path.index(output_extension)]
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path

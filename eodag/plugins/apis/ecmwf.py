@@ -164,8 +164,8 @@ class EcmwfApi(Api, BuildPostSearchResult):
         """Download data from ECMWF MARS"""
         product_format = product.properties.get("format", "grib")
         product_extension = ECMWF_MARS_KNOWN_FORMATS.get(product_format, product_format)
-        kwargs["outputs_extension"] = kwargs.get(
-            "outputs_extension", f".{product_extension}"
+        kwargs["output_extension"] = kwargs.get(
+            "output_extension", f".{product_extension}"
         )
 
         # Prepare download

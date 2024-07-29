@@ -290,15 +290,15 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             product_type,
         )
-        outputs_extension = getattr(
-            product.downloader.config, "outputs_extension", ".zip"
+        output_extension = getattr(
+            product.downloader.config, "output_extension", ".zip"
         )
         path = product.download()
 
         self.assertTrue(
             path == os.path.join(self.output_dir, product.properties["title"] + ".zip")
             and os.path.isfile(path)
-            and outputs_extension == ".zip"
+            and output_extension == ".zip"
             and zipfile.is_zipfile(path)
         )
 
@@ -375,15 +375,15 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             product_type,
         )
-        outputs_extension = getattr(
-            product.downloader.config, "outputs_extension", ".zip"
+        output_extension = getattr(
+            product.downloader.config, "output_extension", ".zip"
         )
         path = product.download()
 
         self.assertTrue(
             path == os.path.join(self.output_dir, product.properties["title"] + ".tar")
             and os.path.isfile(path)
-            and outputs_extension == ".zip"
+            and output_extension == ".zip"
             and tarfile.is_tarfile(path)
         )
 
@@ -411,7 +411,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         when the result is a non-zip file with a '.zip' outputs extension"""
 
         plugin = self.get_download_plugin(self.product)
-        outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
+        output_extension = getattr(plugin.config, "output_extension", ".zip")
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         mock_stream_download.return_value = chain(iter([b"a"]))
@@ -426,7 +426,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertTrue(
             path == os.path.join(self.output_dir, "dummy_product")
             and os.path.isdir(path)
-            and outputs_extension == ".zip"
+            and output_extension == ".zip"
         )
 
         file_path = os.path.join(path, os.listdir(path)[0])
@@ -446,7 +446,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             None,
             progress_callback,
             output_dir=self.output_dir,
-            outputs_extension=outputs_extension,
+            output_extension=output_extension,
         )
 
     @mock.patch(
@@ -471,7 +471,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_stream_download.return_value = chain(iter([b"a"]))
 
         plugin = self.get_download_plugin(product)
-        outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
+        output_extension = getattr(plugin.config, "output_extension", ".zip")
         product.location = product.remote_location = "http://somewhere"
         product.properties["id"] = "someproduct"
         progress_callback = ProgressCallback(disable=True)
@@ -483,7 +483,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.assertTrue(
             path == os.path.join(self.output_dir, "dummy_product")
             and os.path.isdir(path)
-            and not outputs_extension == ".zip"
+            and not output_extension == ".zip"
         )
 
         file_path = os.path.join(path, os.listdir(path)[0])
@@ -503,7 +503,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             None,
             progress_callback,
             output_dir=self.output_dir,
-            outputs_extension=outputs_extension,
+            output_extension=output_extension,
         )
 
     @mock.patch(

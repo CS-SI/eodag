@@ -56,31 +56,31 @@
     # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
     LANDSAT_C2L1:
       dataset: landsat_ot_c2_l1
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_C2L2:
       dataset: landsat_ot_c2_l2
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_TM_C1:
       dataset: landsat_tm_c1
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_TM_C2L1:
       dataset: landsat_tm_c2_l1
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_TM_C2L2:
       dataset: landsat_tm_c2_l2
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_ETM_C1:
       dataset: landsat_etm_c1
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_ETM_C2L1:
       dataset: landsat_etm_c2_l1
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     LANDSAT_ETM_C2L2:
       dataset: landsat_etm_c2_l2
-      outputs_extension: .tar.gz
+      output_extension: .tar.gz
     S2_MSI_L1C:
       dataset: SENTINEL_2A
-      outputs_extension: .zip
+      output_extension: .zip
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 
@@ -2244,35 +2244,35 @@
           downloadLink: $.json.location
     products:
       CAMS_GAC_FORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_GFE_GFAS:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_EU_AIR_QUALITY_FORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_EU_AIR_QUALITY_RE:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       CAMS_GRF:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       CAMS_GRF_AUX:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       CAMS_SOLAR_RADIATION:
-        outputs_extension: .csv
+        output_extension: .csv
       CAMS_GREENHOUSE_EGG4_MONTHLY:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_GREENHOUSE_EGG4:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_GREENHOUSE_INVERSION:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_GLOBAL_EMISSIONS:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       CAMS_EAC4:
-        outputs_extension: .grib
+        output_extension: .grib
       CAMS_EAC4_MONTHLY:
-        outputs_extension: .grib
+        output_extension: .grib
   search: !plugin
     type: BuildSearchResult
     ssl_verify: true
@@ -2774,78 +2774,78 @@
           downloadLink: $.json.location
     products:
       AG_ERA5:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       ERA5_SL:
-        outputs_extension: .grib
+        output_extension: .grib
       ERA5_PL:
-        outputs_extension: .grib
+        output_extension: .grib
       ERA5_PL_MONTHLY:
-        outputs_extension: .grib
+        output_extension: .grib
       ERA5_LAND:
-        outputs_extension: .grib
+        output_extension: .grib
       ERA5_LAND_MONTHLY:
-        outputs_extension: .grib
+        output_extension: .grib
       ERA5_SL_MONTHLY:
-        outputs_extension: .grib
+        output_extension: .grib
       UERRA_EUROPE_SL:
-        outputs_extension: .grib
+        output_extension: .grib
       SATELLITE_SEA_LEVEL_BLACK_SEA:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       GLACIERS_DIST_RANDOLPH:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       FIRE_HISTORICAL:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_FORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_REFORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_HISTORICAL:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_SEASONAL:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_SEASONAL_REFORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       EFAS_FORECAST:
-        outputs_extension: .grib.zip
+        output_extension: .grib.zip
         extract: true
       EFAS_HISTORICAL:
-        outputs_extension: .grib.zip
+        output_extension: .grib.zip
         extract: true
       EFAS_REFORECAST:
-        outputs_extension: .grib.zip
+        output_extension: .grib.zip
         extract: true
       EFAS_SEASONAL:
-        outputs_extension: .grib.zip
+        output_extension: .grib.zip
         extract: true
       EFAS_SEASONAL_REFORECAST:
-        outputs_extension: .grib.zip
+        output_extension: .grib.zip
         extract: true
       SATELLITE_CARBON_DIOXIDE:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       SATELLITE_FIRE_BURNED_AREA:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       SATELLITE_METHANE:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
       SEASONAL_POSTPROCESSED_PL:
-        outputs_extension: .grib
+        output_extension: .grib
       SEASONAL_POSTPROCESSED_SL:
-        outputs_extension: .grib
+        output_extension: .grib
       SEASONAL_ORIGINAL_SL:
-        outputs_extension: .grib
+        output_extension: .grib
       SEASONAL_ORIGINAL_PL:
-        outputs_extension: .grib
+        output_extension: .grib
       SEASONAL_MONTHLY_PL:
-        outputs_extension: .grib
+        output_extension: .grib
       SEASONAL_MONTHLY_SL:
-        outputs_extension: .grib
+        output_extension: .grib
       SIS_HYDRO_MET_PROJ:
-        outputs_extension: .zip
+        output_extension: .zip
         extract: true
   search: !plugin
     type: BuildSearchResult
@@ -3848,7 +3848,7 @@
           orderId: '$.json.id'
           downloadLink: 'http://queueresults.meteoblue.com/{orderId}'
           downloadMethod: '{$.null#replace_str("Not Available","GET")}'
-    outputs_extension: .nc
+    output_extension: .nc
   auth: !plugin
     type: HttpQueryStringAuth
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
@@ -6025,17 +6025,17 @@
           downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
     products:
       GLOFAS_FORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_REFORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_HISTORICAL:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_SEASONAL:
-        outputs_extension: .grib
+        output_extension: .grib
       GLOFAS_SEASONAL_REFORECAST:
-        outputs_extension: .grib
+        output_extension: .grib
       FIRE_HISTORICAL:
-        outputs_extension: .grib
+        output_extension: .grib
 
 ---
 !provider  # wekeo_cmems
@@ -6649,9 +6649,9 @@
     no_auth_download: True
     products:
       DT_EXTREMES:
-        outputs_extension: .grib
+        output_extension: .grib
       DT_CLIMATE_ADAPTATION:
-        outputs_extension: .grib
+        output_extension: .grib
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
@@ -6739,9 +6739,9 @@
           downloadLink: '{orderStatusLink}'
     products:
       DT_EXTREMES:
-        outputs_extension: .grib
+        output_extension: .grib
       DT_CLIMATE_ADAPTATION:
-        outputs_extension: .grib
+        output_extension: .grib
   auth: !plugin
     type: OIDCTokenExchangeAuth
     subject:
