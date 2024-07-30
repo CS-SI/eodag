@@ -53,7 +53,6 @@ class AwsAuth(Authentication):
         """Authenticate
 
         :returns: dict containing AWS/boto3 non-empty credentials
-        :rtype: dict
         """
         credentials = getattr(self.config, "credentials", {}) or {}
         self.aws_access_key_id = credentials.get(

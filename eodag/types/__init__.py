@@ -308,9 +308,7 @@ class ProviderSortables(TypedDict):
     maximum number of used sortable(s) in a search request with the provider
 
     :param sortables: The list of sortable parameter(s) of a provider
-    :type sortables: list[str]
     :param max_sort_params: (optional) The allowed maximum number of sortable(s) in a search request with the provider
-    :type max_sort_params: int
     """
 
     sortables: List[str]

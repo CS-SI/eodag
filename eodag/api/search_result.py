@@ -39,9 +39,7 @@ class SearchResult(UserList):
     """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param products: A list of products resulting from a search
-    :type products: list(:class:`~eodag.api.product._product.EOProduct`)
     :param number_matched: (optional) the estimated total number of matching results
-    :type number_matched: Optional[int]
     """
 
     data: List[EOProduct]
@@ -56,11 +54,8 @@ class SearchResult(UserList):
         """Do some crunching with the underlying EO products.
 
         :param cruncher: The plugin instance to use to work on the products
-        :type cruncher: subclass of :class:`~eodag.plugins.crunch.base.Crunch`
         :param search_params: The criteria that have been used to produce this result
-        :type search_params: dict
         :returns: The result of the application of the crunching method to the EO products
-        :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         crunched_results = cruncher.proceed(self.data, **search_params)
         return SearchResult(crunched_results)
@@ -135,9 +130,7 @@ class SearchResult(UserList):
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
 
         :param feature_collection: A collection representing a search result.
-        :type feature_collection: dict
         :returns: An eodag representation of a search result
-        :rtype: :class:`~eodag.api.search_result.SearchResult`
         """
         return SearchResult(
             [
@@ -206,7 +199,6 @@ class RawSearchResult(UserList):
     """An object representing a collection of raw/unparsed search results obtained from a provider.
 
     :param results: A list of raw/unparsed search results
-    :type results: List[Any]
     """
 
     data: List[Any]

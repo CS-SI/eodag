@@ -98,7 +98,6 @@ class HTTPDownload(Download):
     """HTTPDownload plugin. Handles product download over HTTP protocol
 
     :param provider: provider name
-    :type provider: str
     :param config: Download plugin configuration:
 
         * ``config.base_uri`` (str) - (optional) default endpoint url
@@ -113,9 +112,6 @@ class HTTPDownload(Download):
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
         * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - (optional) Order status handling
-
-
-    :type config: :class:`~eodag.config.PluginConfig`
 
     """
 
@@ -148,13 +144,9 @@ class HTTPDownload(Download):
             - **orderLink**: order request URL
 
         :param product: The EO product to order
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
-        :type kwargs: Union[str, bool, dict]
         :returns: the returned json status response
-        :rtype: dict
         """
         product.properties["storageStatus"] = STAGING_STATUS
 
@@ -223,11 +215,8 @@ class HTTPDownload(Download):
         """Process order response
 
         :param response: The order response
-        :type response: :class:`~requests.Response`
         :param product: The orderd EO product
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :returns: the returned json status response
-        :rtype: dict
         """
         on_response_mm = getattr(self.config, "order_on_response", {}).get(
             "metadata_mapping", {}
@@ -274,11 +263,8 @@ class HTTPDownload(Download):
             - **orderStatusLink**: order status request URL
 
         :param product: The ordered EO product
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[AuthBase]
         :param kwargs: download additional kwargs
-        :type kwargs: Union[str, bool, dict]
         """
 
         status_config = getattr(self.config, "order_status", {})
@@ -757,23 +743,16 @@ class HTTPDownload(Download):
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
-        :rtype: dict
         """
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
@@ -912,17 +891,13 @@ class HTTPDownload(Download):
         fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
         :param product: product for which the assets should be downloaded
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: The configuration of a plugin of type Authentication
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param kwargs: additional arguments
-        :type kwargs: dict
         """
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")

@@ -238,10 +238,8 @@ class CopMarineSearch(StaticStacSearch):
         """
         Implementation of search for the Copernicus Marine provider
         :param prep: object containing search parameterds
-        :type prep: PreparedSearch
         :param kwargs: additional search arguments
         :returns: list of products and total number of products
-        :rtype: Tuple[List[EOProduct], Optional[int]]
         """
         page = prep.page
         items_per_page = prep.items_per_page

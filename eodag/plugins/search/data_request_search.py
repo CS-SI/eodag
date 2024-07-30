@@ -116,7 +116,6 @@ class DataRequestSearch(Search):
         """Fetch product types is disabled for `DataRequestSearch`
 
         :returns: empty dict
-        :rtype: (optional) dict
         """
         return None
 

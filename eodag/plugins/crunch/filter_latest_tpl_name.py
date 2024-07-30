@@ -38,8 +38,6 @@ class FilterLatestByName(Crunch):
     :param config: Crunch configuration, must contain :
 
                    - `name_pattern` : product name pattern
-
-    :type config: dict
     """
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
@@ -61,9 +59,7 @@ class FilterLatestByName(Crunch):
         """Execute crunch: Filter Search results to get only the latest product, based on the name of the product
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Starting products filtering")
         processed: List[str] = []

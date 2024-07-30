@@ -41,8 +41,6 @@ class FilterDate(Crunch):
 
                    - `start`: (optional) start sensing time in iso format
                    - `end`: (optional) end sensing time in iso format
-
-    :type config: dict
     """
 
     @staticmethod
@@ -61,9 +59,7 @@ class FilterDate(Crunch):
         """Execute crunch: Filter products between start and end dates.
 
         :param products: A list of products resulting from a search
-        :type products: list(:class:`~eodag.api.product._product.EOProduct`)
         :returns: The filtered products
-        :rtype: list(:class:`~eodag.api.product._product.EOProduct`)
         """
         logger.debug("Start filtering by date")
         if not products:

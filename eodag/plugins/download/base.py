@@ -100,9 +100,7 @@ class Download(PluginTopic):
       (it certainly indicates that the download didn't complete)
 
     :param provider: An eodag providers configuration dictionary
-    :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -122,25 +120,18 @@ class Download(PluginTopic):
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
             (e.g. '/tmp/product.zip' on Linux or
             'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
-        :rtype: str
         """
         raise NotImplementedError(
             "A Download plugin must implement a method named download"
@@ -159,23 +150,16 @@ class Download(PluginTopic):
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
-        :rtype: dict
         """
         raise NotImplementedError(
             "Download streaming must be implemented using a method named _stream_download_dict"
@@ -190,11 +174,8 @@ class Download(PluginTopic):
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: fs_path, record_filename
-        :rtype: Tuple[Optional[str], Optional[str]]
         """
         if product.location != product.remote_location:
             fs_path = uri_to_path(product.location)
@@ -292,9 +273,7 @@ class Download(PluginTopic):
         (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
 
         :param product: The product to calculate the record hash
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :returns: The MD5 hash
-        :rtype: str
         """
         # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
         product_hash = str(product.product_type) + "-" + str(product.properties["id"])
@@ -309,9 +288,7 @@ class Download(PluginTopic):
         WARNING: A strong assumption is made here: there is only one subdirectory per level
 
         :param product_path: The path to the extracted product
-        :type product_path: str
         :returns: The path to the extracted product with the right depth
-        :rtype: str
         """
         archive_depth = getattr(self.config, "archive_depth", 1)
         count = 1
@@ -329,11 +306,8 @@ class Download(PluginTopic):
         """Finalize the download process.
 
         :param fs_path: The path to the local zip archive downloaded or already present
-        :type fs_path: str
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the product
-        :rtype: str
         """
         # progress bar init
         if progress_callback is None:
@@ -483,32 +457,23 @@ class Download(PluginTopic):
         implemented by the plugin to **sequentially** attempt to download products.
 
         :param products: Products to download
-        :type products: :class:`~eodag.api.search_result.SearchResult`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
                                     :class:`~eodag.api.product.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
-        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
-                                   or None
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
-        :rtype: list
         """
         # Products are going to be removed one by one from this sequence once
         # downloaded.
@@ -632,14 +597,10 @@ class Download(PluginTopic):
         exception is thrown until `timeout` minutes.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :returns: decorator
-        :rtype: Callable[[Callable[..., T]], Callable[..., T]]
         """
 
         def decorator(download: Callable[..., T]) -> Callable[..., T]:

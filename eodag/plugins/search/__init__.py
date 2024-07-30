@@ -45,10 +45,10 @@ class PreparedSearch:
     info_message: Optional[str] = None
     exception_message: Optional[str] = None
 
-    need_count: bool = field(init=False)
-    query_params: Dict[str, Any] = field(init=False)
-    query_string: str = field(init=False)
-    search_urls: List[str] = field(init=False)
-    product_type_def_params: Dict[str, Any] = field(init=False)
-    total_items_nb: int = field(init=False)
-    sort_by_qs: str = field(init=False)
+    need_count: bool = field(init=False, repr=False)
+    query_params: Dict[str, Any] = field(init=False, repr=False)
+    query_string: str = field(init=False, repr=False)
+    search_urls: List[str] = field(init=False, repr=False)
+    product_type_def_params: Dict[str, Any] = field(init=False, repr=False)
+    total_items_nb: int = field(init=False, repr=False)
+    sort_by_qs: str = field(init=False, repr=False)

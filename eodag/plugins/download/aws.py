@@ -214,7 +214,6 @@ class AwsDownload(Download):
     """Download on AWS using S3 protocol.
 
     :param provider: provider name
-    :type provider: str
     :param config: Download plugin configuration:
 
         * ``config.base_uri`` (str) - s3 endpoint url
@@ -223,8 +222,6 @@ class AwsDownload(Download):
         * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
         * ``config.products`` (dict) - (optional) product_type specific configuration
         * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
-
-    :type config: :class:`~eodag.config.PluginConfig`
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -250,22 +247,17 @@ class AwsDownload(Download):
         `{outputs_prefix}/{title}`
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Union[AuthBase, Dict[str, str]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
-        :rtype: str
         """
         if auth is None:
             auth = {}
@@ -405,13 +397,9 @@ class AwsDownload(Download):
         - get file path
         - create directories
         :param product: product to be downloaded
-        :type product: EOProduct
         :param progress_callback: progress callback to be used
-        :type progress_callback: ProgressCallback
         :param kwargs: additional arguments
-        :type kwargs: Any
         :return: local path and file name
-        :rtype: Tuple[str, Optional[str]]
         """
         product_local_path, record_filename = self._prepare_download(
             product, progress_callback=progress_callback, **kwargs
@@ -433,9 +421,7 @@ class AwsDownload(Download):
         """
         updates the product properties with fetch metadata if safe build is enabled
         :param build_safe: if safe build is enabled
-        :type build_safe: bool
         :param product: product to be updated
-        :type product: EOProduct
         """
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
@@ -481,13 +467,9 @@ class AwsDownload(Download):
         """
         retrieves the bucket names and path prefixes for the assets
         :param product: product for which the assets shall be downloaded
-        :type product: EOProduct
         :param asset_filter: text for which the assets should be filtered
-        :type asset_filter: str
         :param ignore_assets: if product instead of individual assets should be used
-        :type ignore_assets: bool
         :return: tuples of bucket names and prefixes
-        :rtype: List[Tuple[str, Optional[str]]]
         """
         # if assets are defined, use them instead of scanning product.location
         if len(product.assets) > 0 and not ignore_assets:
@@ -529,11 +511,8 @@ class AwsDownload(Download):
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
-        :type bucket_names_and_prefixes: List[Tuple[str, Optional[str]]]
         :param auth: authentication information
-        :type auth: Dict[str, str]
         :return: authenticated objects per bucket, list of available objects
-        :rtype: Tuple[Dict[str, Any], ResourceCollection[Any]]
         """
         if not isinstance(auth, (dict, type(None))):
             raise AuthenticationError(
@@ -603,17 +582,11 @@ class AwsDownload(Download):
         """
         retrieve unique product chunks based on authenticated objects and asset filters
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
-        :type bucket_names_and_prefixes: List[Tuple[str, Optional[str]]]
         :param authenticated_objects: available objects per bucket
-        :type authenticated_objects: Dict[str, Any]
         :param asset_filter: text for which assets should be filtered
-        :type asset_filter: str
         :param ignore_assets: if product instead of individual assets should be used
-        :type ignore_assets: bool
         :param product: product that shall be downloaded
-        :type product: EOProduct
         :return: set of product chunks that can be downloaded
-        :rtype: Set[Any]
         """
         product_chunks: List[Any] = []
         for bucket_name, prefix in bucket_names_and_prefixes:
@@ -667,23 +640,16 @@ class AwsDownload(Download):
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) The configuration of a plugin of type Authentication
-        :type auth: :class:`~eodag.config.PluginConfig`
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
-        :rtype: dict
         """
         if progress_callback is None:
             logger.info(
@@ -862,13 +828,9 @@ class AwsDownload(Download):
         """Get rasterio environment variables needed for data access authentication.
 
         :param bucket_name: Bucket containg objects
-        :type bucket_name: str
         :param prefix: Prefix used to try auth
-        :type prefix: str
         :param auth_dict: Dictionnary containing authentication keys
-        :type auth_dict: dict
         :returns: The rasterio environement variables
-        :rtype: dict
         """
         if self.s3_session is not None:
             if self.requester_pays:
@@ -893,14 +855,10 @@ class AwsDownload(Download):
         Also expose ``s3_session`` as class variable if available.
 
         :param bucket_name: Bucket containg objects
-        :type bucket_name: str
         :param prefix: Prefix used to filter objects on auth try
                        (not used to filter returned objects)
-        :type prefix: str
         :param auth_dict: Dictionnary containing authentication keys
-        :type auth_dict: dict
         :returns: The boto3 authenticated objects
-        :rtype: :class:`~boto3.resources.collection.s3.Bucket.objectsCollection`
         """
         auth_methods: List[
             Callable[[str, str, Dict[str, str]], Optional[ResourceCollection]]
@@ -1039,11 +997,8 @@ class AwsDownload(Download):
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param url: (optional) URL to use as product.location
-        :type url: str
         :returns: bucket_name and prefix as str
-        :rtype: tuple
         """
         if url is None:
             url = product.location

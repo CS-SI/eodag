@@ -32,9 +32,7 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
                     * 1: no logging but still displays progress bars
                     * 2: INFO level
                     * 3: DEBUG level
-    :type verbose: int
     :param no_progress_bar: (optional) Disable progress bars
-    :type no_progress_bar: bool
     """
     global disable_tqdm
     disable_tqdm = no_progress_bar
@@ -142,7 +140,6 @@ def get_logging_verbose() -> Optional[int]:
     3
 
     :returns: Verbose level in ``[0, 1, 2, 3]`` or None if not set
-    :rtype: int or None
     """
     global disable_tqdm
     logger = logging.getLogger("eodag")

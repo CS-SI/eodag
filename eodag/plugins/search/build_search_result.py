@@ -85,9 +85,7 @@ class BuildPostSearchResult(PostJsonSearch):
             method before being loaded as json.
 
     :param provider: An eodag providers configuration dictionary
-    :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str
     """
 
     def count_hits(
@@ -125,11 +123,8 @@ class BuildPostSearchResult(PostJsonSearch):
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list
-        :type results: list
         :param kwargs: Search arguments
-        :type kwargs: Union[int, str, bool, dict, list]
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
-        :rtype: list
         """
         product_type = kwargs.get("productType")
 
@@ -256,9 +251,7 @@ class BuildSearchResult(BuildPostSearchResult):
         - **constraints_file_url**: url of the constraint file used to build queryables
 
     :param provider: An eodag providers configuration dictionary
-    :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -355,12 +348,9 @@ class BuildSearchResult(BuildPostSearchResult):
         default value is returned.
 
         :param key: The configuration option key.
-        :type key: str
         :param default: The default value to be returned if the option is not found (default is None).
-        :type default: Any
 
         :return: The value of the specified configuration option or the default value.
-        :rtype: Any
         """
         product_type_cfg = getattr(self.config, "product_type_config", {})
         non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
@@ -376,7 +366,6 @@ class BuildSearchResult(BuildPostSearchResult):
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
-        :type params: dict
         """
         _dc_qs = params.get("_dc_qs", None)
         if _dc_qs is not None:
@@ -454,9 +443,7 @@ class BuildSearchResult(BuildPostSearchResult):
 
         :param kwargs: additional filters for queryables (`productType` and other search
                        arguments)
-        :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
         constraints_file_url = getattr(self.config, "constraints_file_url", "")
         if not constraints_file_url:

@@ -519,11 +519,8 @@ async def list_collection_queryables(
     that can be filtered using comparison operators.
 
     :param request: The incoming request object.
-    :type request: fastapi.Request
     :param collection_id: The identifier of the collection for which to retrieve queryable properties.
-    :type collection_id: str
     :returns: A json object containing the list of available queryable properties for the specified collection.
-    :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
     additional_params = dict(request.query_params)
@@ -757,9 +754,7 @@ async def list_queryables(request: Request) -> ORJSONResponse:
     operators.
 
     :param request: The incoming request object.
-    :type request: fastapi.Request
     :returns: A json object containing the list of available queryable terms.
-    :rtype: Any
     """
     logger.debug(f"URL: {request.url}")
     additional_params = dict(request.query_params.items())

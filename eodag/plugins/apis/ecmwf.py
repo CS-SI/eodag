@@ -128,7 +128,6 @@ class EcmwfApi(Api, BuildPostSearchResult):
         """Check credentials and returns information needed for auth
 
         :returns: {key, url, email} dictionary
-        :rtype: dict
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
         """
         # Get credentials from eodag or using ecmwf conf

@@ -59,9 +59,7 @@ class Search(PluginTopic):
     """Base Search Plugin.
 
     :param provider: An EODAG provider name
-    :type provider: str
     :param config: An EODAG plugin configuration
-    :type config: :class:`~eodag.config.PluginConfig`
     """
 
     auth: Union[AuthBase, Dict[str, str]]
@@ -114,9 +112,7 @@ class Search(PluginTopic):
 
         :param kwargs: additional filters for queryables (`productType` and other search
                        arguments)
-        :type kwargs: Any
         :returns: fetched queryable parameters dict
-        :rtype: Optional[Dict[str, Annotated[Any, FieldInfo]]]
         """
         raise NotImplementedError(
             f"discover_queryables is not implemeted for plugin {self.__class__.__name__}"
@@ -129,9 +125,7 @@ class Search(PluginTopic):
         Return given product type default settings as queryables
 
         :param product_type: given product type
-        :type product_type: str
         :returns: queryable parameters dict
-        :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         defaults = deepcopy(self.config.products.get(product_type, {}))
         defaults.pop("metadata_mapping", None)
@@ -147,9 +141,7 @@ class Search(PluginTopic):
         """Get the provider product type from eodag product type
 
         :param product_type: eodag product type
-        :type product_type: str
         :returns: provider product type
-        :rtype: str
         """
         if product_type is None:
             return None
@@ -164,9 +156,7 @@ class Search(PluginTopic):
         """Get the provider product type definition parameters and specific settings
 
         :param product_type: the desired product type
-        :type product_type: str
         :returns: The product type definition parameters
-        :rtype: dict
         """
         if product_type in self.config.products.keys():
             logger.debug(
@@ -195,9 +185,7 @@ class Search(PluginTopic):
         """Get the plugin metadata mapping configuration (product type specific if exists)
 
         :param product_type: the desired product type
-        :type product_type: str
         :returns: The product type specific metadata-mapping
-        :rtype: dict
         """
         if product_type:
             return self.config.products.get(product_type, {}).get(
@@ -209,9 +197,7 @@ class Search(PluginTopic):
         """Extract the "sort_by" argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
-        :type kwargs: Dict[str, Any]
         :returns: The "sort_by" argument from the kwargs or the provider default sort configuration
-        :rtype: :class:`~eodag.types.search_args.SortByList`
         """
         # remove "sort_by" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string or body once metadata mapping will be done
@@ -233,9 +219,7 @@ class Search(PluginTopic):
         the "sort_by" argument into a provider-specific string or dictionnary
 
         :param sort_by_arg: the "sort_by" argument in EODAG format
-        :type sort_by_arg: :class:`~eodag.types.search_args.SortByList`
         :returns: The "sort_by" argument in provider-specific format
-        :rtype: Union[str, Dict[str, List[Dict[str, str]]]]
         """
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
@@ -331,13 +315,10 @@ class Search(PluginTopic):
         Get queryables
 
         :param filters: Additional filters for queryables.
-        :type filters: Dict[str, Any]
         :param product_type: (optional) The product type.
-        :type product_type: Optional[str]
 
         :return: A dictionary containing the queryable properties, associating parameters to their
                 annotated type.
-        :rtype: Dict[str, Annotated[Any, FieldInfo]]
         """
         default_values: Dict[str, Any] = deepcopy(
             getattr(self.config, "products", {}).get(product_type, {})

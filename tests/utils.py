@@ -32,7 +32,6 @@ def no_blanks(string):
     """Removes all the blanks in string
 
     :param string: A string to remove blanks from
-    :type string: str
 
     :returns the same string with all blank characters removed
     """
@@ -46,7 +45,6 @@ def write_eodag_conf_with_fake_credentials(config_file):
     credentials for search.
 
     :param config_file: path to the file where the conf must be written
-    :type config_file: str
     """
     empty_conf_file_path = resource_filename(
         "eodag", os.path.join("resources", "user_conf_template.yml")

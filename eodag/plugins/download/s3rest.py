@@ -68,7 +68,6 @@ class S3RestDownload(Download):
     Re-use AwsDownload bucket some handling methods
 
     :param provider: provider name
-    :type provider: str
     :param config: Download plugin configuration:
 
         * ``config.base_uri`` (str) - default endpoint url
@@ -80,8 +79,6 @@ class S3RestDownload(Download):
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
         * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
-
-    :type config: :class:`~eodag.config.PluginConfig`
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -100,22 +97,17 @@ class S3RestDownload(Download):
         """Download method for S3 REST API.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
-        :rtype: str
         """
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")

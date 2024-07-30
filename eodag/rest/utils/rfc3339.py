@@ -33,7 +33,6 @@ def str_to_interval(
 
     :param interval: The interval string to convert to a :class:`datetime.datetime`
         tuple.
-    :type interval: str
 
     :raises: :class:`ValueError`
     """

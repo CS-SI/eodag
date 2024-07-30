@@ -56,9 +56,7 @@ class EODAGQueryParser(QueryParser):
         EODAG QueryParser initialization
 
         :param filters: list of fieldnames to filter on
-        :type filters: List[str]
         :param schema: Whoosh Schema
-        :type schma: :class:whoosh.fields.Schema
         """
         super().__init__(
             None,

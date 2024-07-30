@@ -39,15 +39,10 @@ def fetch_json(
     Fetches http/distant or local json file
 
     :param file_url: url from which the file can be fetched
-    :type file_url: str
     :param req_session: (optional) requests session
-    :type req_session: requests.Session
     :param auth: (optional) authenticated object if request needs authentication
-    :type auth: Optional[requests.AuthBase]
     :param timeout: (optional) authenticated object
-    :type timeout: float
     :returns: json file content
-    :rtype: Any
     """
     if req_session is None:
         req_session = requests.Session()
@@ -86,11 +81,8 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
         """Return an HTTP status for the given filesystem path.
 
         :param method: method of the request
-        :type method: str
         :param path: path of the given file
-        :type path: str
         :returns: HTTP status and its associated message
-        :rtype: Tuple[int, str]
         """
         if method.lower() in ("put", "delete"):
             return 501, "Not Implemented"  # TODO
@@ -111,11 +103,8 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
         """Wraps a file, described in request, in a Response object.
 
         :param req: The PreparedRequest being "sent".
-        :type req: :class:`~requests.PreparedRequest`
         :param kwargs: (not used) additionnal arguments of the request
-        :type kwargs: Any
         :returns: a Response object containing the file
-        :rtype: :class:`~requests.Response`
         """
         response = requests.Response()
 
