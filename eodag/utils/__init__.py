@@ -1100,7 +1100,7 @@ def get_geometry_from_various(
             attr = locations_dict[arg]["attr"]
             with shapefile.Reader(locations_dict[arg]["path"]) as shp:
                 for shaperec in shp.shapeRecords():
-                    if re.search(pattern, shaperec.record[attr]):
+                    if re.search(pattern, str(shaperec.record[attr])):
                         found = True
                         new_geom = shape(shaperec.shape)
                         # get geoms union
