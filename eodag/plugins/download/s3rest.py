@@ -133,7 +133,7 @@ class S3RestDownload(Download):
             and "storageStatus" in product.properties
             and product.properties["storageStatus"] != ONLINE_STATUS
         ):
-            self.http_download_plugin.orderDownload(product=product, auth=auth)
+            self.http_download_plugin.order_download(product=product, auth=auth)
 
         @self._download_retry(product, wait, timeout)
         def download_request(
@@ -145,7 +145,7 @@ class S3RestDownload(Download):
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):
-                self.http_download_plugin.orderDownloadStatus(
+                self.http_download_plugin.order_download_status(
                     product=product, auth=auth
                 )
 

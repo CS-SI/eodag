@@ -51,7 +51,7 @@ class SearchArgs(BaseModel):
     locations: Optional[Dict[str, str]] = Field(None)
     page: Optional[int] = Field(DEFAULT_PAGE, gt=0)  # type: ignore
     items_per_page: Optional[PositiveInt] = Field(DEFAULT_ITEMS_PER_PAGE)  # type: ignore
-    sortBy: Optional[SortByList] = Field(None)  # type: ignore
+    sort_by: Optional[SortByList] = Field(None)  # type: ignore
 
     @field_validator("start", "end", mode="before")
     @classmethod
@@ -87,16 +87,17 @@ class SearchArgs(BaseModel):
 
         raise TypeError(f"Invalid geometry type: {type(v)}")
 
-    @field_validator("sortBy", mode="before")
+    @field_validator("sort_by", mode="before")
     @classmethod
     def check_sort_by_arg(
-        cls, sort_by_arg: Optional[SortByList]  # type: ignore
+        cls,
+        sort_by_arg: Optional[SortByList],  # type: ignore
     ) -> Optional[SortByList]:  # type: ignore
-        """Check if the sortBy argument is correct
+        """Check if the sort_by argument is correct
 
-        :param sort_by_arg: The sortBy argument
+        :param sort_by_arg: The sort_by argument
         :type sort_by_arg: str
-        :returns: The sortBy argument with sorting order parsed (whitespace(s) are
+        :returns: The sort_by argument with sorting order parsed (whitespace(s) are
                   removed and only the 3 first letters in uppercase are kept)
         :rtype: str
         """

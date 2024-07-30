@@ -122,7 +122,7 @@ class HTTPDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(HTTPDownload, self).__init__(provider, config)
 
-    def orderDownload(
+    def order_download(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -257,7 +257,7 @@ class HTTPDownload(Download):
 
         return json_response
 
-    def orderDownloadStatus(
+    def order_download_status(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -934,13 +934,13 @@ class HTTPDownload(Download):
             and product.properties.get("storageStatus") == OFFLINE_STATUS
             and not product.properties.get("orderStatus")
         ):
-            self.orderDownload(product=product, auth=auth)
+            self.order_download(product=product, auth=auth)
 
         if (
             product.properties.get("orderStatusLink", None)
             and product.properties.get("storageStatus") != ONLINE_STATUS
         ):
-            self.orderDownloadStatus(product=product, auth=auth)
+            self.order_download_status(product=product, auth=auth)
 
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
@@ -1083,7 +1083,6 @@ class HTTPDownload(Download):
 
         # loop for assets download
         for asset in assets_values:
-
             if not asset["href"] or asset["href"].startswith("file:"):
                 logger.info(
                     f"Local asset detected. Download skipped for {asset['href']}"

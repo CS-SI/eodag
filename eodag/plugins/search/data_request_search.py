@@ -133,7 +133,7 @@ class DataRequestSearch(Search):
         """
         performs the search for a provider where several steps are required to fetch the data
         """
-        if kwargs.get("sortBy"):
+        if kwargs.get("sort_by"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
 
         product_type = kwargs.get("productType", None)

@@ -2669,7 +2669,7 @@ class TestCoreSearch(TestCoreBase):
         mock_postjsonsearch__request,
     ):
         """search must sort results by sorting parameter(s) in their sorting order
-        from the "sortBy" argument or by default sorting parameter if exists"""
+        from the "sort_by" argument or by default sorting parameter if exists"""
         mock_qssearch__request.return_value.json.return_value = {
             "properties": {"totalResults": 2},
             "features": [],
@@ -2720,7 +2720,7 @@ class TestCoreSearch(TestCoreBase):
         dag.search(
             provider="dummy_provider",
             productType="S2_MSI_L1C",
-            sortBy=[("eodagSortParam", "DESC")],
+            sort_by=[("eodagSortParam", "DESC")],
         )
 
         # a provider-specific string has been created to sort by
@@ -2739,7 +2739,7 @@ class TestCoreSearch(TestCoreBase):
                     next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
                     total_items_nb_key_path: '$.meta.found'
                 sort:
-                    sort_by_tpl: '{{"sortby": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+                    sort_by_tpl: '{{"sort_by": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
                     sort_param_mapping:
                         eodagSortParam: providerSortParam
                     sort_order_mapping:
@@ -2755,22 +2755,22 @@ class TestCoreSearch(TestCoreBase):
         dag.search(
             provider="other_dummy_provider",
             productType="S2_MSI_L1C",
-            sortBy=[("eodagSortParam", "DESC")],
+            sort_by=[("eodagSortParam", "DESC")],
         )
 
         # a provider-specific dictionnary has been created to sort by
         self.assertIn(
-            "sortby", mock_postjsonsearch__request.call_args[0][1].query_params.keys()
+            "sort_by", mock_postjsonsearch__request.call_args[0][1].query_params.keys()
         )
         self.assertEqual(
             [{"field": "providerSortParam", "direction": "desc"}],
-            mock_postjsonsearch__request.call_args[0][1].query_params["sortby"],
+            mock_postjsonsearch__request.call_args[0][1].query_params["sort_by"],
         )
 
         # TODO: sort by default sorting parameter and sorting order
 
     def test_search_sort_by_raise_errors(self):
-        """search used with "sortBy" argument must raise errors if the argument is incorrect or if the provider does
+        """search used with "sort_by" argument must raise errors if the argument is incorrect or if the provider does
         not support a maximum number of sorting parameter, one sorting parameter or the sorting feature
         """
         dag = EODataAccessGateway()
@@ -2794,7 +2794,7 @@ class TestCoreSearch(TestCoreBase):
             dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
-                sortBy=[("eodagSortParam", "ASC")],
+                sort_by=[("eodagSortParam", "ASC")],
             )
             self.assertIn(
                 "dummy_provider does not support sorting feature", str(cm_logs.output)
@@ -2827,7 +2827,7 @@ class TestCoreSearch(TestCoreBase):
             dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
-                sortBy=[("otherEodagSortParam", "ASC")],
+                sort_by=[("otherEodagSortParam", "ASC")],
             )
             self.assertIn(
                 "\\'otherEodagSortParam\\' parameter is not sortable with dummy_provider. "
@@ -2864,7 +2864,7 @@ class TestCoreSearch(TestCoreBase):
             dag.search(
                 provider="dummy_provider",
                 productType="S2_MSI_L1C",
-                sortBy=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],
+                sort_by=[("eodagSortParam", "ASC"), ("otherEodagSortParam", "ASC")],
             )
             self.assertIn(
                 "Search results can be sorted by only 1 parameter(s) with dummy_provider",

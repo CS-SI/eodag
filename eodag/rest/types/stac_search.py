@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Model describing a STAC search POST request"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
@@ -71,7 +72,7 @@ Geometry = Union[
 Direction = Annotated[Literal["asc", "desc"], StringConstraints(min_length=1)]
 
 
-class Sortby(BaseModel):
+class SortBy(BaseModel):
     """
     A class representing a parameter with which we want to sort results and its sorting order in a
     POST search
@@ -117,7 +118,7 @@ class SearchPostRequest(BaseModel):
         description="The language used for filtering.",
         validate_default=True,
     )
-    sortby: Optional[List[Sortby]] = None
+    sortby: Optional[List[SortBy]] = None
     crunch: Optional[str] = None
 
     @field_serializer("intersects")
@@ -259,16 +260,16 @@ class SearchPostRequest(BaseModel):
 
 def sortby2list(
     v: Optional[str],
-) -> Optional[List[Sortby]]:
+) -> Optional[List[SortBy]]:
     """
     Convert sortby filter parameter GET syntax to POST syntax
     """
     if not v:
         return None
-    sortby: List[Sortby] = []
+    sortby: List[SortBy] = []
     for sortby_param in v.split(","):
         sortby_param = sortby_param.strip()
         direction: Direction = "desc" if sortby_param.startswith("-") else "asc"
         field = sortby_param.lstrip("+-")
-        sortby.append(Sortby(field=field, direction=direction))
+        sortby.append(SortBy(field=field, direction=direction))
     return sortby

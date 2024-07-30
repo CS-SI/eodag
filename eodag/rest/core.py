@@ -350,11 +350,13 @@ def _order_and_update(
     if (
         product.properties.get("storageStatus") != ONLINE_STATUS
         and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
-        and hasattr(product.downloader, "orderDownload")
+        and hasattr(product.downloader, "order_download")
     ):
         # first order
         logger.debug("Order product")
-        order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
+        order_status_dict = product.downloader.order_download(
+            product=product, auth=auth
+        )
         query_args.update(order_status_dict or {})
 
     if (
@@ -365,11 +367,11 @@ def _order_and_update(
         product.properties["storageStatus"] = STAGING_STATUS
 
     if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
-        product.downloader, "orderDownloadStatus"
+        product.downloader, "order_download_status"
     ):
         # check order status if needed
         logger.debug("Checking product order status")
-        product.downloader.orderDownloadStatus(product=product, auth=auth)
+        product.downloader.order_download_status(product=product, auth=auth)
 
     if product.properties.get("storageStatus") != ONLINE_STATUS:
         raise NotAvailableError("Product is not available yet")
