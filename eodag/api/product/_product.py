@@ -373,7 +373,7 @@ class EOProduct:
     def get_quicklook(
         self,
         filename: Optional[str] = None,
-        base_dir: Optional[str] = None,
+        output_dir: Optional[str] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> str:
         """Download the quicklook image of a given EOProduct from its provider if it
@@ -381,7 +381,7 @@ class EOProduct:
 
         :param filename: (optional) The name to give to the downloaded quicklook. If not
                          given, it defaults to the product's ID (without file extension).
-        :param base_dir: (optional) The absolute path of the directory where to store
+        :param output_dir: (optional) The absolute path of the directory where to store
                          the quicklooks in the filesystem. If not given, it defaults to the
                          `quicklooks` directory under this EO product downloader's ``output_dir``
                          config param (e.g. '/tmp/quicklooks/')
@@ -425,20 +425,20 @@ class EOProduct:
 
         format_quicklook_address()
 
-        if base_dir is not None:
-            quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
+        if output_dir is not None:
+            quicklooks_output_dir = os.path.abspath(os.path.realpath(output_dir))
         else:
             tempdir = tempfile.gettempdir()
-            output_dir = (
+            downloader_output_dir = (
                 getattr(self.downloader.config, "output_dir", tempdir)
                 if self.downloader
                 else tempdir
             )
-            quicklooks_base_dir = os.path.join(output_dir, "quicklooks")
-        if not os.path.isdir(quicklooks_base_dir):
-            os.makedirs(quicklooks_base_dir)
+            quicklooks_output_dir = os.path.join(downloader_output_dir, "quicklooks")
+        if not os.path.isdir(quicklooks_output_dir):
+            os.makedirs(quicklooks_output_dir)
         quicklook_file = os.path.join(
-            quicklooks_base_dir,
+            quicklooks_output_dir,
             filename if filename is not None else self.properties["id"],
         )
 
