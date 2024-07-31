@@ -2698,7 +2698,7 @@
   description: Copernicus Climate Data Store
   roles:
     - host
-  url: https://cds.climate.copernicus.eu/
+  url: https://cds-beta.climate.copernicus.eu
   # anchors to avoid duplications
   anchor_day_month_year: &day_month_year
     completionTimeFromAscendingNode:
@@ -2726,13 +2726,11 @@
         "hday": {_date#interval_to_datetime_dict}["day"]
       }}
     - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  anchor_hdate: &hdate
-    completionTimeFromAscendingNode:
-    - 'hdate={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
-    - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
-    type: GenericAuth
-    method: basic
+    type: HTTPHeaderAuth
+    ssl_verify: true
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
   download: !plugin
     type: HTTPDownload
     timeout: 30
@@ -2743,22 +2741,22 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: $.json.request_id
-        orderStatusLink: https://cds.climate.copernicus.eu/api/v2/tasks/{orderId}
+        orderId: $.json.jobID
+        orderStatusLink: https://cds-beta.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        searchLink: https://cds-beta.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
       metadata_mapping:
-        status: $.json.state
-        message: $.json.message
-        error_message: $.json.error.reason
+        status: $.json.status
       error:
         status: failed
       success:
-        status: completed
+        status: successful
       on_success:
+        need_search: true
         metadata_mapping:
-          downloadLink: $.json.location
+          downloadLink: $.json.asset.value.href
     products:
       AG_ERA5:
         output_extension: .zip
@@ -2840,6 +2838,7 @@
     end_date_excluded: false
     remove_from_query:
       - dataset
+      - date
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -2861,7 +2860,7 @@
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: $.null
       qs: $.qs
-      orderLink: https://cds.climate.copernicus.eu/api/v2/resources/{dataset}?{qs#to_geojson}
+      orderLink: 'https://cds-beta.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
       # Copernicus CDS specific parameters
       accuracy:
         - accuracy
@@ -2936,7 +2935,7 @@
         - filter
         - $.filter
       format:
-        - format
+        - data_format
         - $.format
       frequency:
         - frequency
