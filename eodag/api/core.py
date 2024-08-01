@@ -1994,7 +1994,7 @@ class EODataAccessGateway:
                      two download tries of the same product
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: Additional kwargs from the download plugin configuration class that can
+        :param kwargs: Additional keyword arguments from the download plugin configuration class that can
                        be provided to override any other values defined in a configuration file
                        or with environment variables:
 
@@ -2170,7 +2170,7 @@ class EODataAccessGateway:
                     two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: Additional kwargs from the download plugin configuration class that can
+        :param kwargs: Additional keyword arguments from the download plugin configuration class that can
                        be provided to override any other values defined in a configuration file
                        or with environment variables:
 
