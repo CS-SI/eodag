@@ -1994,10 +1994,17 @@ class EODataAccessGateway:
                      two download tries of the same product
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
-                        and `dl_url_params` (dict) can be provided as additional kwargs
-                        and will override any other values defined in a configuration
-                        file or with environment variables.
+        :param kwargs: Additional keyword arguments from the download plugin configuration class that can
+                       be provided to override any other values defined in a configuration file
+                       or with environment variables:
+
+                       * ``output_dir`` - where to store downloaded products, as an absolute file path
+                         (Default: local temporary directory)
+                       * ``output_extension`` - downloaded file extension
+                       * ``extract`` - whether to extract the downloaded products, only applies to archived products
+                       * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
+                       * ``delete_archive`` - whether to delete the downloaded archives
+                       * ``asset`` - regex filter to identify assets to download
         :returns: A collection of the absolute paths to the downloaded products
         """
         paths = []
@@ -2163,10 +2170,17 @@ class EODataAccessGateway:
                     two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
-                        and `dl_url_params` (dict) can be provided as additional kwargs
-                        and will override any other values defined in a configuration
-                        file or with environment variables.
+        :param kwargs: Additional keyword arguments from the download plugin configuration class that can
+                       be provided to override any other values defined in a configuration file
+                       or with environment variables:
+
+                       * ``output_dir`` - where to store downloaded products, as an absolute file path
+                         (Default: local temporary directory)
+                       * ``output_extension`` - downloaded file extension
+                       * ``extract`` - whether to extract the downloaded products, only applies to archived products
+                       * ``dl_url_params`` - additional parameters to pass over to the download url as an url parameter
+                       * ``delete_archive`` - whether to delete the downloaded archives
+                       * ``asset`` - regex filter to identify assets to download
         :returns: The absolute path to the downloaded product in the local filesystem
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
