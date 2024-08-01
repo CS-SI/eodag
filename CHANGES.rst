@@ -1,6 +1,50 @@
 Release history
 ---------------
 
+3.0.0b3 (2024-08-01)
+++++++++++++++++++++
+
+Breaking changes
+^^^^^^^^^^^^^^^^
+
+* :meth:`~eodag.api.core.EODataAccessGateway.download` / :class:`~eodag.types.download_args.DownloadConf` parameters
+ ``outputs_prefix`` and ``outputs_extension`` renamed to ``output_dir`` and ``output_extension`` (:pull:`1279`)
+
+Core features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* New :meth:`~eodag.api.core.EODataAccessGateway.add_provider` method (:pull:`1260`)
+* Handle integers as ``locations`` shapefile attributes (:pull:`1280`)
+* Renames some parameters and methods to snake_case (:pull:`1271`)
+* Sorted discovered product types (:pull:`1250`)
+
+Providers and product types updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Fixes ``usgs`` search by id (:pull:`1262`)
+* Adds ``S1_SAR_GRD_COG`` and new odata query parameters for ``cop_dataspace`` (:pull:`1277`, thanks
+  `@ninsbl <https://github.com/ninsbl>`_)
+* Adds ``GRIDDED_GLACIERS_MASS_CHANGE`` on provider ``cop_cds`` (:pull:`1255`)
+* Removes ``cacheable`` parameter for ``wekeo`` order requests (:pull:`1239`)
+
+Plugins new features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``aws_session_token`` support in :class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (:pull:`1267`)
+* :class:`~eodag.plugins.download.http.HTTPDownload` asset ``HEAD`` check and ``ssl_verify`` (:pull:`1266`)
+* Product types discovery disabled by default on :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+  (:pull:`1259`)
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+* **[style]** type hints fixes and ``mypy`` in ``tox`` (:pull:`1253`)(:pull:`1269`)
+* **[docs]** v3 breaking changes (:pull:`1281`), :meth:`~eodag.api.core.EODataAccessGateway.download` kwargs
+  (:pull:`1282`), autosummary fixes (:pull:`1264`) and changelog update (:pull:`1254`)
+* **[ci]** Github actions updates (:pull:`1249`)
+* **[test]** Fixed end-to-end tests (:pull:`1236`)
+* External product types reference updates (:pull:`1244`)(:pull:`1246`)(:pull:`1251`)
+
 3.0.0b2 (2024-06-29)
 ++++++++++++++++++++
 
@@ -282,7 +326,7 @@ Miscellaneous
 * `Product types catalog\
   <https://eodag.readthedocs.io/en/latest/getting_started_guide/product_types.html#product-types-information-csv>`_
   more visible in documentation (:pull:`603`)
-* Metadata mapping `to_geo_interface()` renammed to `to_geojson()`
+* Metadata mapping `to_geo_interface()` renamed to `to_geojson()`
   (`d7565a4 <https://github.com/CS-SI/eodag/pull/604/commits/d7565a4984d356aca20310a87c02692cb879427e>`_)
 * Added support for `python3.11` (:pull:`552`)
 * Improved http asset size discovery in :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`566`)
