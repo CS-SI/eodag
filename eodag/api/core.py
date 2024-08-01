@@ -1123,6 +1123,10 @@ class EODataAccessGateway:
                        using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria
 
+        .. versionchanged:: v3.0.0b1
+            ``search()`` method now returns only a single :class:`~eodag.api.search_result.SearchResult`
+            instead of a 2 values tuple.
+
         .. note::
             The search interfaces, which are implemented as plugins, are required to
             return a list as a result of their processing. This requirement is

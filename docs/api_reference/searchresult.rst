@@ -11,6 +11,8 @@ Constructor
 
    SearchResult
 
+   .. members::
+
 Crunch
 ------
 
