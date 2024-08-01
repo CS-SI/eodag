@@ -560,12 +560,12 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        outputs_extension = getattr(self.config, "products", {}).get(
+        output_extension = getattr(self.config, "products", {}).get(
             product.product_type, {}
-        ).get("outputs_extension", None) or getattr(
-            self.config, "outputs_extension", ".zip"
+        ).get("output_extension", None) or getattr(
+            self.config, "output_extension", ".zip"
         )
-        kwargs["outputs_extension"] = kwargs.get("outputs_extension", outputs_extension)
+        kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
 
         fs_path, record_filename = self._prepare_download(
             product,
@@ -629,7 +629,7 @@ class HTTPDownload(Download):
         logger.debug("Download recorded in %s", record_filename)
 
         # Check that the downloaded file is really a zip file
-        if not zipfile.is_zipfile(fs_path) and outputs_extension == ".zip":
+        if not zipfile.is_zipfile(fs_path) and output_extension == ".zip":
             logger.warning(
                 "Downloaded product is not a Zip File. Please check its file type before using it"
             )
@@ -650,7 +650,7 @@ class HTTPDownload(Download):
                 if not new_fs_path.endswith(".tar"):
                     new_fs_path += ".tar"
                 shutil.move(fs_path, new_fs_path)
-                kwargs["outputs_extension"] = ".tar"
+                kwargs["output_extension"] = ".tar"
                 product_path = self._finalize(
                     new_fs_path,
                     progress_callback=progress_callback,
@@ -719,13 +719,13 @@ class HTTPDownload(Download):
                     if ext:
                         filename += ext
                 else:
-                    outputs_extension: Optional[str] = (
+                    output_extension: Optional[str] = (
                         getattr(self.config, "products", {})
                         .get(product.product_type, {})
-                        .get("outputs_extension")
+                        .get("output_extension")
                     )
-                    if outputs_extension:
-                        filename += outputs_extension
+                    if output_extension:
+                        filename += output_extension
 
         return filename
 
@@ -748,7 +748,7 @@ class HTTPDownload(Download):
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.

@@ -32,8 +32,8 @@ class DownloadConf(TypedDict, total=False):
     :cvar asset: regex filter to identify assets to download
     """
 
-    outputs_prefix: str
-    outputs_extension: str
+    output_dir: str
+    output_extension: str
     extract: bool
     dl_url_params: Dict[str, str]
     delete_archive: bool

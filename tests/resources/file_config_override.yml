@@ -17,11 +17,11 @@ aws_eos:
 
 peps:
   download:
-    outputs_prefix: /data
+    output_dir: /data
 
 theia:
   download:
-    outputs_prefix:
+    output_dir:
 
 my_new_provider:
     priority: 4

@@ -103,7 +103,7 @@ class S3RestDownload(Download):
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
@@ -237,14 +237,12 @@ class S3RestDownload(Download):
                 logger.warning("Could not load any content from %s", nodes_list_url)
 
             # destination product path
-            outputs_prefix = (
-                kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
-            )
-            abs_outputs_prefix = os.path.abspath(outputs_prefix)
-            product_local_path = os.path.join(abs_outputs_prefix, prefix.split("/")[-1])
+            output_dir = kwargs.pop("output_dir", None) or self.config.output_dir
+            abs_output_dir = os.path.abspath(output_dir)
+            product_local_path = os.path.join(abs_output_dir, prefix.split("/")[-1])
 
             # .downloaded cache record directory
-            download_records_dir = os.path.join(abs_outputs_prefix, ".downloaded")
+            download_records_dir = os.path.join(abs_output_dir, ".downloaded")
             try:
                 os.makedirs(download_records_dir)
             except OSError as exc:

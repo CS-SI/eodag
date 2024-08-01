@@ -301,7 +301,7 @@ class EOProduct:
                      two download tries
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
@@ -373,7 +373,7 @@ class EOProduct:
     def get_quicklook(
         self,
         filename: Optional[str] = None,
-        base_dir: Optional[str] = None,
+        output_dir: Optional[str] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> str:
         """Download the quicklook image of a given EOProduct from its provider if it
@@ -381,9 +381,9 @@ class EOProduct:
 
         :param filename: (optional) The name to give to the downloaded quicklook. If not
                          given, it defaults to the product's ID (without file extension).
-        :param base_dir: (optional) The absolute path of the directory where to store
+        :param output_dir: (optional) The absolute path of the directory where to store
                          the quicklooks in the filesystem. If not given, it defaults to the
-                         `quicklooks` directory under this EO product downloader's ``outputs_prefix``
+                         `quicklooks` directory under this EO product downloader's ``output_dir``
                          config param (e.g. '/tmp/quicklooks/')
         :param progress_callback: (optional) A method or a callable object which takes
                                    a current size and a maximum size as inputs and handle progress bar
@@ -425,20 +425,20 @@ class EOProduct:
 
         format_quicklook_address()
 
-        if base_dir is not None:
-            quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
+        if output_dir is not None:
+            quicklooks_output_dir = os.path.abspath(os.path.realpath(output_dir))
         else:
             tempdir = tempfile.gettempdir()
-            outputs_prefix = (
-                getattr(self.downloader.config, "outputs_prefix", tempdir)
+            downloader_output_dir = (
+                getattr(self.downloader.config, "output_dir", tempdir)
                 if self.downloader
                 else tempdir
             )
-            quicklooks_base_dir = os.path.join(outputs_prefix, "quicklooks")
-        if not os.path.isdir(quicklooks_base_dir):
-            os.makedirs(quicklooks_base_dir)
+            quicklooks_output_dir = os.path.join(downloader_output_dir, "quicklooks")
+        if not os.path.isdir(quicklooks_output_dir):
+            os.makedirs(quicklooks_output_dir)
         quicklook_file = os.path.join(
-            quicklooks_base_dir,
+            quicklooks_output_dir,
             filename if filename is not None else self.properties["id"],
         )
 

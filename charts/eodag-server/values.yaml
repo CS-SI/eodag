@@ -455,13 +455,13 @@ providers: ""
 #       # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
 #       LANDSAT_C2L1:
 #         dataset: landsat_ot_c2_l1
-#         outputs_extension: .tar.gz
+#         output_extension: .tar.gz
 #       LANDSAT_C2L2:
 #         dataset: landsat_ot_c2_l2
-#         outputs_extension: .tar.gz
+#         output_extension: .tar.gz
 #       S2_MSI_L1C:
 #         dataset: SENTINEL_2A
-#         outputs_extension: .zip
+#         output_extension: .zip
 #       GENERIC_PRODUCT_TYPE:
 #         dataset: '{productType}'
 
@@ -474,7 +474,7 @@ config:
   #   search:  # Search parameters configuration
   #   download:
   #       extract:  # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
-  #       outputs_prefix: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
+  #       output_dir: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
   #       dl_url_params:  # additional parameters to pass over to the download url as an url parameter
   #       delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
   #   auth:
@@ -484,7 +484,7 @@ config:
   # usgs:
   #     priority: # Lower value means lower priority (Default: 0)
   #     api:
-  #         outputs_prefix:
+  #         output_dir:
   #         credentials:
   #             username:
   #             password:
@@ -493,7 +493,7 @@ config:
   #     search:   # Search parameters configuration
   #     download:
   #         extract:
-  #         outputs_prefix:
+  #         output_dir:
   #     auth:
   #         credentials:
   #             username:

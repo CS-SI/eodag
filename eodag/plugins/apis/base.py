@@ -33,17 +33,17 @@ class Api(Search, Download):
 
     The download methods must:
 
-    - download data in the ``outputs_prefix`` folder defined in the plugin's
+    - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
     - extract products from their archive (if relevant) if ``extract`` is set to True
       (True by default)
-    - save a product in an archive/directory (in ``outputs_prefix``) whose name must be
+    - save a product in an archive/directory (in ``output_dir``) whose name must be
       the product's ``title`` property
     - update the product's ``location`` attribute once its data is downloaded (and
       eventually after it's extracted) to the product's location given as a file URI
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
-    - save a *record* file in the directory ``outputs_prefix/.downloaded`` whose name
+    - save a *record* file in the directory ``output_dir/.downloaded`` whose name
       is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
       attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
