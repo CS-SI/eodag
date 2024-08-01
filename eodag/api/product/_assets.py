@@ -35,11 +35,8 @@ class AssetsDict(UserDict):
     :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param product: Product resulting from a search
-    :type product: :class:`~eodag.api.product._product.EOProduct`
     :param args: (optional) Arguments used to init the dictionary
-    :type args: Any
     :param kwargs: (optional) Additional named-arguments used to init the dictionary
-    :type kwargs: Any
     """
 
     product: EOProduct
@@ -56,17 +53,15 @@ class AssetsDict(UserDict):
 
         :returns: The representation of a :class:`~eodag.api.product._assets.AssetsDict`
                   as a Python dict
-        :rtype: dict
         """
         return {k: v.as_dict() for k, v in self.data.items()}
 
     def get_values(self, asset_filter: str = "") -> List[Asset]:
         """
         retrieves the assets matching the given filter
-        :param asset_filter: filter with which the assets should be matched
-        :type asset_filter: str
+
+        :param asset_filter: regex filter with which the assets should be matched
         :return: list of assets
-        :rtype: List[Asset]
         """
         if asset_filter:
             filter_regex = re.compile(asset_filter)
@@ -128,13 +123,9 @@ class Asset(UserDict):
     :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param product: Product resulting from a search
-    :type product: :class:`~eodag.api.product._product.EOProduct`
     :param key: asset key
-    :type key: str
     :param args: (optional) Arguments used to init the dictionary
-    :type args: Any
     :param kwargs: (optional) Additional named-arguments used to init the dictionary
-    :type kwargs: Any
     """
 
     product: EOProduct
@@ -152,7 +143,6 @@ class Asset(UserDict):
 
         :returns: The representation of a :class:`~eodag.api.product._assets.Asset` as a
                   Python dict
-        :rtype: dict
         """
         return self.data
 
@@ -160,9 +150,7 @@ class Asset(UserDict):
         """Downloads a single asset
 
         :param kwargs: (optional) Additional named-arguments passed to `plugin.download()`
-        :type kwargs: Any
         :returns: The absolute path to the downloaded product on the local filesystem
-        :rtype: str
         """
         return self.product.download(asset=self.key, **kwargs)
 

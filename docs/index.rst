@@ -80,6 +80,12 @@ downloading *Sentinel 2 Level-1C* products from any provider's catalog is as sim
 
    product_paths = dag.download_all(search_results)
 
+.. admonition:: `Breaking change <breaking_changes.html>`_ in v3.0.0
+   :class: important
+
+   :meth:`~eodag.api.core.EODataAccessGateway.search` method now returns only a single
+   :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple.
+
 Or:
 
 .. code-block:: bash
@@ -105,6 +111,7 @@ Site contents
    getting_started_guide/index
    api_user_guide
    api_reference/index
+   breaking_changes
    cli_user_guide
    stac
    tutos

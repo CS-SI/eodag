@@ -27,11 +27,22 @@ Since ``v3.0``, EODAG comes with a minimal set of dependencies. If you want more
 the following extras:
 
 * ``eodag[all]``, includes everything that would be needed to run EODAG and associated tutorials with all features
-* ``eodag[all-providers]``, includes dependencies required to have all providers available
+  (`== eodag[all-providers,csw,server,tutorials]`)
+* ``eodag[all-providers]``, includes dependencies required to have all providers available (`== eodag[ecmwf,usgs]`)
 * ``eodag[csw]``, includes dependencies for plugins using CSW
 * ``eodag[ecmwf]``, includes dependencies for :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` (`ecmwf` provider)
 * ``eodag[usgs]``, includes dependencies for :class:`~eodag.plugins.apis.usgs.UsgsApi` (`usgs` provider)
 * ``eodag[server]``, includes dependencies for server-mode
+
+Also available:
+
+* ``eodag[notebook]``, includes notebook adapted progress bars
+* ``eodag[tutorials]``, includes dependencies to run notebooks (`eodag[ecmwf,notebook]`, visualisation and
+  jupyter-related stuff)
+* ``eodag[stubs]``, includes dependencies stubs
+* ``eodag[dev]``, includes dependencies required for contributing (`eodag[all-providers,csw,server,stubs]`, testing
+  and linting tools)
+* ``eodag[docs]``, includes dependencies required to build documentation
 
 .. _install_notebooks:
 

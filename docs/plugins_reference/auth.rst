@@ -14,12 +14,12 @@ This table lists all the authentication plugins currently available:
 .. autosummary::
    :toctree: generated/
 
-   eodag.plugins.authentication.generic.GenericAuth
-   eodag.plugins.authentication.token.TokenAuth
-   eodag.plugins.authentication.header.HTTPHeaderAuth
-   eodag.plugins.authentication.aws_auth.AwsAuth
-   eodag.plugins.authentication.oauth.OAuth
-   eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth
-   eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth
-   eodag.plugins.authentication.qsauth.HttpQueryStringAuth
-   eodag.plugins.authentication.sas_auth.SASAuth
+   generic.GenericAuth
+   token.TokenAuth
+   header.HTTPHeaderAuth
+   aws_auth.AwsAuth
+   oauth.OAuth
+   openid_connect.OIDCAuthorizationCodeFlowAuth
+   keycloak.KeycloakOIDCPasswordAuth
+   qsauth.HttpQueryStringAuth
+   sas_auth.SASAuth

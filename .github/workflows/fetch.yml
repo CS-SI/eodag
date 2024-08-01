@@ -3,7 +3,7 @@ name: Fetch product types
 on:
   workflow_dispatch:
   push:
-    branches: [master, develop]
+    branches: [develop]
   schedule:
     - cron: "0 6 * * *"
 
@@ -13,13 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Get history and tags for SCM versioning to work
       run: |
         git fetch --prune --unshallow
         git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: "3.8"
     - name: Update pip
@@ -33,7 +33,7 @@ jobs:
       shell: bash
       run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
     - name: Pip cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.pip-cache.outputs.DIR }}
         key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
@@ -59,7 +59,7 @@ jobs:
         echo "commit [${COMMIT_SHA}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '```diff' >> $GITHUB_STEP_SUMMARY
         git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
-        (diff <(curl ${JSON_REF_FILE} | jq --sort-keys) <(cat ${JSON_OUTPUT_FILE} | jq --sort-keys) || true) >> $GITHUB_STEP_SUMMARY
+        (diff <(curl ${JSON_REF_FILE}) <(cat ${JSON_OUTPUT_FILE}) || true) >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         # truncated PR body (too long causes error)
         full_update_summary=$(cat $GITHUB_STEP_SUMMARY)

@@ -128,13 +128,14 @@ class UsgsApi(Api):
             raise NoMatchingProductType(
                 "Cannot search on USGS without productType specified"
             )
-        if kwargs.get("sortBy"):
+        if kwargs.get("sort_by"):
             raise ValidationError("USGS does not support sorting feature")
 
         self.authenticate()
 
         product_type_def_params = self.config.products.get(  # type: ignore
-            product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
+            product_type,
+            self.config.products[GENERIC_PRODUCT_TYPE],  # type: ignore
         )
         usgs_dataset = format_dict_items(product_type_def_params, **kwargs)["dataset"]
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
@@ -172,11 +173,39 @@ class UsgsApi(Api):
                 max_results=items_per_page,
                 starting_number=(1 + (page - 1) * items_per_page),
             )
-            logger.info(
-                f"Sending search request for {usgs_dataset} with {api_search_kwargs}"
-            )
 
-            results = api.scene_search(usgs_dataset, **api_search_kwargs)
+            # search by id
+            if searched_id := kwargs.get("id"):
+                dataset_filters = api.dataset_filters(usgs_dataset)
+                # ip pattern set as parameter queryable (first element of param conf list)
+                id_pattern = self.config.metadata_mapping["id"][0]
+                # loop on matching dataset_filters until one returns expected results
+                for dataset_filter in dataset_filters["data"]:
+                    if id_pattern in dataset_filter["searchSql"]:
+                        logger.debug(
+                            f"Try using {dataset_filter['searchSql']} dataset filter to search by id on {usgs_dataset}"
+                        )
+                        full_api_search_kwargs = {
+                            "where": {
+                                "filter_id": dataset_filter["id"],
+                                "value": searched_id,
+                            },
+                            **api_search_kwargs,
+                        }
+                        logger.info(
+                            f"Sending search request for {usgs_dataset} with {full_api_search_kwargs}"
+                        )
+                        results = api.scene_search(
+                            usgs_dataset, **full_api_search_kwargs
+                        )
+                        if len(results["data"]["results"]) == 1:
+                            # search by id using this dataset_filter succeeded
+                            break
+            else:
+                logger.info(
+                    f"Sending search request for {usgs_dataset} with {api_search_kwargs}"
+                )
+                results = api.scene_search(usgs_dataset, **api_search_kwargs)
 
             # update results with storage info from download_options()
             results_by_entity_id = {
@@ -257,13 +286,13 @@ class UsgsApi(Api):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        outputs_extension = cast(
+        output_extension = cast(
             str,
             self.config.products.get(  # type: ignore
                 product.product_type, self.config.products[GENERIC_PRODUCT_TYPE]  # type: ignore
-            ).get("outputs_extension", ".tar.gz"),
+            ).get("output_extension", ".tar.gz"),
         )
-        kwargs["outputs_extension"] = kwargs.get("outputs_extension", outputs_extension)
+        kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
 
         fs_path, record_filename = self._prepare_download(
             product,
@@ -375,8 +404,8 @@ class UsgsApi(Api):
 
         # Check downloaded file format
         if (
-            kwargs["outputs_extension"] == ".tar.gz" and tarfile.is_tarfile(fs_path)
-        ) or (kwargs["outputs_extension"] == ".zip" and zipfile.is_zipfile(fs_path)):
+            kwargs["output_extension"] == ".tar.gz" and tarfile.is_tarfile(fs_path)
+        ) or (kwargs["output_extension"] == ".zip" and zipfile.is_zipfile(fs_path)):
             product_path = self._finalize(
                 fs_path,
                 progress_callback=progress_callback,
@@ -388,7 +417,7 @@ class UsgsApi(Api):
             logger.info(
                 "Downloaded product detected as a tar File, but was was expected to be a zip file"
             )
-            new_fs_path = fs_path[: fs_path.index(outputs_extension)] + ".tar.gz"
+            new_fs_path = fs_path[: fs_path.index(output_extension)] + ".tar.gz"
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
@@ -396,7 +425,7 @@ class UsgsApi(Api):
             logger.info(
                 "Downloaded product detected as a zip File, but was was expected to be a tar file"
             )
-            new_fs_path = fs_path[: fs_path.index(outputs_extension)] + ".zip"
+            new_fs_path = fs_path[: fs_path.index(output_extension)] + ".zip"
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
@@ -404,7 +433,7 @@ class UsgsApi(Api):
             logger.warning(
                 "Downloaded product is not a tar or a zip File. Please check its file type before using it"
             )
-            new_fs_path = fs_path[: fs_path.index(outputs_extension)]
+            new_fs_path = fs_path[: fs_path.index(output_extension)]
             shutil.move(fs_path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path

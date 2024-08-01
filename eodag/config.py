@@ -47,6 +47,7 @@ from pkg_resources import resource_filename
 from requests.auth import AuthBase
 from typing_extensions import Doc
 
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -110,22 +111,14 @@ class ProviderConfig(yaml.YAMLObject):
     """Representation of eodag configuration.
 
     :param name: The name of the provider
-    :type name: str
     :param priority: (optional) The priority of the provider while searching a product.
                      Lower value means lower priority. (Default: 0)
-    :type priority: int
     :param api: (optional) The configuration of a plugin of type Api
-    :type api: :class:`~eodag.config.PluginConfig`
     :param search: (optional) The configuration of a plugin of type Search
-    :type search: :class:`~eodag.config.PluginConfig`
     :param products: (optional) The products types supported by the provider
-    :type products: dict
     :param download: (optional) The configuration of a plugin of type Download
-    :type download: :class:`~eodag.config.PluginConfig`
     :param auth: (optional) The configuration of a plugin of type Authentication
-    :type auth: :class:`~eodag.config.PluginConfig`
     :param kwargs: Additional configuration variables for this provider
-    :type kwargs: Any
     """
 
     name: str
@@ -171,7 +164,6 @@ class ProviderConfig(yaml.YAMLObject):
         """Validate a :class:`~eodag.config.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
-        :type config_keys: dict
         """
         if "name" not in config_keys:
             raise ValidationError("Provider config must have name key")
@@ -189,7 +181,6 @@ class ProviderConfig(yaml.YAMLObject):
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
-        :type mapping: dict
         """
         if mapping is None:
             mapping = {}
@@ -215,12 +206,9 @@ class PluginConfig(yaml.YAMLObject):
     """Representation of a plugin config
 
     :param name: The name of the plugin class to use to instantiate the plugin object
-    :type name: str
     :param metadata_mapping: (optional) The mapping between eodag metadata and
                                   the plugin specific metadata
-    :type metadata_mapping: dict
     :param free_params: (optional) Additional configuration parameters
-    :type free_params: dict
     """
 
     class Pagination(TypedDict):
@@ -245,6 +233,14 @@ class PluginConfig(yaml.YAMLObject):
         sort_param_mapping: Dict[str, str]
         sort_order_mapping: Dict[Literal["ascending", "descending"], str]
         max_sort_params: Annotated[int, Gt(0)]
+
+    class DiscoverMetadata(TypedDict):
+        """Configuration for metadata discovery"""
+
+        auto_discovery: bool
+        metadata_pattern: str
+        search_param: str
+        metadata_path: str
 
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
@@ -319,7 +315,7 @@ class PluginConfig(yaml.YAMLObject):
     pagination: PluginConfig.Pagination
     sort: PluginConfig.Sort
     query_params_key: str
-    discover_metadata: Dict[str, Union[str, bool]]
+    discover_metadata: PluginConfig.DiscoverMetadata
     discover_product_types: Dict[str, Any]
     discover_queryables: Dict[str, Any]
     metadata_mapping: Dict[str, Union[str, List[str]]]
@@ -343,9 +339,9 @@ class PluginConfig(yaml.YAMLObject):
 
     # download -------------------------------------------------------------------------
     base_uri: str
-    outputs_prefix: str
+    output_dir: str
     extract: bool
-    outputs_extension: str
+    output_extension: str
     order_enabled: bool  # HTTPDownload
     order_method: str  # HTTPDownload
     order_headers: Dict[str, str]  # HTTPDownload
@@ -419,7 +415,6 @@ class PluginConfig(yaml.YAMLObject):
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
-        :type mapping: dict
         """
         if mapping is None:
             mapping = {}
@@ -435,7 +430,6 @@ def load_default_config() -> Dict[str, ProviderConfig]:
     variable if exists.
 
     :returns: The default provider's configuration
-    :rtype: dict
     """
     eodag_providers_cfg_file = os.getenv(
         "EODAG_PROVIDERS_CFG_FILE"
@@ -447,9 +441,7 @@ def load_config(config_path: str) -> Dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionnary from a given file
 
     :param config_path: The path to the provider config file
-    :type config_path: str
     :returns: The default provider's configuration
-    :rtype: dict
     """
     logger.debug("Loading configuration from %s", config_path)
     config: Dict[str, ProviderConfig] = {}
@@ -475,17 +467,15 @@ def provider_config_init(
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
-    :type provider_config: :class:`~eodag.config.ProviderConfig`
     :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
-    :type stac_search_default_conf: dict
     """
-    # For the provider, set the default outputs_prefix of its download plugin
+    # For the provider, set the default output_dir of its download plugin
     # as tempdir in a portable way
     for param_name in ("download", "api"):
         if param_name in vars(provider_config):
             param_value = getattr(provider_config, param_name)
-            if not getattr(param_value, "outputs_prefix", None):
-                param_value.outputs_prefix = tempfile.gettempdir()
+            if not getattr(param_value, "output_dir", None):
+                param_value.output_dir = tempfile.gettempdir()
             if not getattr(param_value, "delete_archive", None):
                 param_value.delete_archive = True
 
@@ -514,9 +504,7 @@ def override_config_from_file(config: Dict[str, Any], file_path: str) -> None:
     """Override a configuration with the values in a file
 
     :param config: An eodag providers configuration dictionary
-    :type config: dict
     :param file_path: The path to the file from where the new values will be read
-    :type file_path: str
     """
     logger.info("Loading user configuration from: %s", os.path.abspath(file_path))
     with open(os.path.abspath(os.path.realpath(file_path)), "r") as fh:
@@ -534,7 +522,6 @@ def override_config_from_env(config: Dict[str, Any]) -> None:
     """Override a configuration with environment variables values
 
     :param config: An eodag providers configuration dictionary
-    :type config: dict
     """
 
     def build_mapping_from_env(
@@ -554,11 +541,8 @@ def override_config_from_env(config: Dict[str, Any]) -> None:
             }
 
         :param env_var: The environment variable to be transformed into a dictionary
-        :type env_var: str
         :param env_value: The value from environment variable
-        :type env_value: str
         :param mapping: The mapping in which the value will be created
-        :type mapping: dict
         """
         parts = env_var.split("__")
         iter_parts = iter(parts)
@@ -610,11 +594,39 @@ def override_config_from_mapping(
     """Override a configuration with the values in a mapping
 
     :param config: An eodag providers configuration dictionary
-    :type config: dict
     :param mapping: The mapping containing the values to be overriden
-    :type mapping: dict
     """
     for provider, new_conf in mapping.items():
+        # check if metada-mapping as already been built as jsonpath in providers_config
+        if not isinstance(new_conf, dict):
+            continue
+        new_conf_search = new_conf.get("search", {}) or {}
+        new_conf_api = new_conf.get("api", {}) or {}
+        if provider in config and "metadata_mapping" in {
+            **new_conf_search,
+            **new_conf_api,
+        }:
+            search_plugin_key = (
+                "search" if "metadata_mapping" in new_conf_search else "api"
+            )
+            # get some already configured value
+            configured_metadata_mapping = getattr(
+                config[provider], search_plugin_key
+            ).metadata_mapping
+            some_configured_value = next(iter(configured_metadata_mapping.values()))
+            # check if the configured value has already been built as jsonpath
+            if (
+                isinstance(some_configured_value, list)
+                and isinstance(some_configured_value[1], tuple)
+                or isinstance(some_configured_value, tuple)
+            ):
+                # also build as jsonpath the incoming conf
+                mtd_cfg_as_conversion_and_querypath(
+                    deepcopy(mapping[provider][search_plugin_key]["metadata_mapping"]),
+                    mapping[provider][search_plugin_key]["metadata_mapping"],
+                )
+
+        # try overriding conf
         old_conf: Optional[Dict[str, Any]] = config.get(provider)
         if old_conf is not None:
             old_conf.update(new_conf)
@@ -640,9 +652,7 @@ def merge_configs(config: Dict[str, Any], other_config: Dict[str, Any]) -> None:
     """Override a configuration with the values of another configuration
 
     :param config: An eodag providers configuration dictionary
-    :type config: dict
     :param other_config: An eodag providers configuration dictionary
-    :type other_config: dict
     """
     # configs union with other_config values as default
     other_config = dict(config, **other_config)
@@ -674,7 +684,6 @@ def load_yml_config(yml_path: str) -> Dict[Any, Any]:
     """Load a conf dictionnary from given yml absolute path
 
     :returns: The yml configuration file
-    :rtype: dict
     """
     config = SimpleYamlProxyConfig(yml_path)
     return dict_items_recursive_apply(config.source, string_to_jsonpath)
@@ -684,7 +693,6 @@ def load_stac_config() -> Dict[str, Any]:
     """Load the stac configuration into a dictionnary
 
     :returns: The stac configuration
-    :rtype: dict
     """
     return load_yml_config(
         resource_filename("eodag", os.path.join("resources/", "stac.yml"))
@@ -695,7 +703,6 @@ def load_stac_api_config() -> Dict[str, Any]:
     """Load the stac API configuration into a dictionnary
 
     :returns: The stac API configuration
-    :rtype: dict
     """
     return load_yml_config(
         resource_filename("eodag", os.path.join("resources/", "stac_api.yml"))
@@ -706,7 +713,6 @@ def load_stac_provider_config() -> Dict[str, Any]:
     """Load the stac provider configuration into a dictionnary
 
     :returns: The stac provider configuration
-    :rtype: dict
     """
     return SimpleYamlProxyConfig(
         resource_filename("eodag", os.path.join("resources/", "stac_provider.yml"))
@@ -719,9 +725,7 @@ def get_ext_product_types_conf(
     """Read external product types conf
 
     :param conf_uri: URI to local or remote configuration file
-    :type conf_uri: str
     :returns: The external product types configuration
-    :rtype: dict
     """
     logger.info("Fetching external product types from %s", conf_uri)
     if conf_uri.lower().startswith("http"):

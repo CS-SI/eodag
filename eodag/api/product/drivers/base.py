@@ -30,11 +30,8 @@ class DatasetDriver(metaclass=type):
         """Retrieve the address of the dataset represented by `eo_product`.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved
-        :type eo_product: :class:`~eodag.api.product._product.EOProduct`
         :param band: The band to retrieve (e.g: 'B01')
-        :type band: str
         :returns: An address for the dataset
-        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """

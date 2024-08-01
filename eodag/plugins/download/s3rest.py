@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -68,7 +68,6 @@ class S3RestDownload(Download):
     Re-use AwsDownload bucket some handling methods
 
     :param provider: provider name
-    :type provider: str
     :param config: Download plugin configuration:
 
         * ``config.base_uri`` (str) - default endpoint url
@@ -80,8 +79,6 @@ class S3RestDownload(Download):
         * ``config.order_headers`` (dict) - (optional) order request headers
         * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
         * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
-
-    :type config: :class:`~eodag.config.PluginConfig`
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -100,22 +97,17 @@ class S3RestDownload(Download):
         """Download method for S3 REST API.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A method or a callable object
                                   which takes a current size and a maximum
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
-        :rtype: str
         """
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
@@ -133,7 +125,7 @@ class S3RestDownload(Download):
             and "storageStatus" in product.properties
             and product.properties["storageStatus"] != ONLINE_STATUS
         ):
-            self.http_download_plugin.orderDownload(product=product, auth=auth)
+            self.http_download_plugin.order_download(product=product, auth=auth)
 
         @self._download_retry(product, wait, timeout)
         def download_request(
@@ -145,7 +137,7 @@ class S3RestDownload(Download):
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):
-                self.http_download_plugin.orderDownloadStatus(
+                self.http_download_plugin.order_download_status(
                     product=product, auth=auth
                 )
 
@@ -153,6 +145,8 @@ class S3RestDownload(Download):
             bucket_name, prefix = get_bucket_name_and_prefix(
                 url=product.location, bucket_path_level=self.config.bucket_path_level
             )
+            if prefix is None:
+                raise DownloadError(f"Could not extract prefix from {product.location}")
 
             if (
                 bucket_name is None
@@ -243,14 +237,12 @@ class S3RestDownload(Download):
                 logger.warning("Could not load any content from %s", nodes_list_url)
 
             # destination product path
-            outputs_prefix = (
-                kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
-            )
-            abs_outputs_prefix = os.path.abspath(outputs_prefix)
-            product_local_path = os.path.join(abs_outputs_prefix, prefix.split("/")[-1])
+            output_dir = kwargs.pop("output_dir", None) or self.config.output_dir
+            abs_output_dir = os.path.abspath(output_dir)
+            product_local_path = os.path.join(abs_output_dir, prefix.split("/")[-1])
 
             # .downloaded cache record directory
-            download_records_dir = os.path.join(abs_outputs_prefix, ".downloaded")
+            download_records_dir = os.path.join(abs_output_dir, ".downloaded")
             try:
                 os.makedirs(download_records_dir)
             except OSError as exc:
@@ -278,18 +270,18 @@ class S3RestDownload(Download):
                 os.remove(record_filename)
 
             # total size for progress_callback
-            total_size = sum(
-                [
-                    int(node.firstChild.nodeValue)
-                    for node in xmldoc.getElementsByTagName("Size")
-                ]
-            )
+            size_list: List[int] = [
+                int(node.firstChild.nodeValue)  # type: ignore[attr-defined]
+                for node in xmldoc.getElementsByTagName("Size")
+                if node.firstChild is not None
+            ]
+            total_size = sum(size_list)
             progress_callback.reset(total=total_size)
 
             # download each node key
             for node_xml in nodes_xml_list:
                 node_key = unquote(
-                    node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue
+                    node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue  # type: ignore[union-attr]
                 )
                 # As "Key", "Size" and "ETag" (md5 hash) can also be retrieved from node_xml
                 node_url = urljoin(bucket_url.strip("/") + "/", node_key.strip("/"))

@@ -764,9 +764,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.assertEqual(len(products), number_of_products)
         self.assertIsInstance(products[0], EOProduct)
 
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
-    )
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
     def test_plugins_search_postjsonsearch_count_and_search_awseos_s2l2a(
         self, mock__request
     ):

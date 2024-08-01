@@ -200,7 +200,7 @@ def python_field_definition_to_json(
             "%s must be an instance of Annotated" % python_field_definition
         )
 
-    json_field_definition = dict()
+    json_field_definition: Dict[str, Any] = dict()
 
     python_field_args = get_args(python_field_definition)
 
@@ -210,6 +210,10 @@ def python_field_definition_to_json(
         type_data = python_type_to_json(type(enum_args[0]))
         if isinstance(type_data, str):
             json_field_definition["type"] = type_data
+        elif type_data is None:
+            json_field_definition["type"] = json_field_definition[
+                "min"
+            ] = json_field_definition["max"] = None
         else:
             json_field_definition["type"] = [row["type"] for row in type_data]
             json_field_definition["min"] = [
@@ -224,6 +228,10 @@ def python_field_definition_to_json(
         field_type = python_type_to_json(python_field_args[0])
         if isinstance(field_type, str):
             json_field_definition["type"] = field_type
+        elif field_type is None:
+            json_field_definition["type"] = json_field_definition[
+                "min"
+            ] = json_field_definition["max"] = None
         else:
             json_field_definition["type"] = [row["type"] for row in field_type]
             json_field_definition["min"] = [
@@ -300,9 +308,7 @@ class ProviderSortables(TypedDict):
     maximum number of used sortable(s) in a search request with the provider
 
     :param sortables: The list of sortable parameter(s) of a provider
-    :type sortables: list[str]
     :param max_sort_params: (optional) The allowed maximum number of sortable(s) in a search request with the provider
-    :type max_sort_params: int
     """
 
     sortables: List[str]

@@ -68,7 +68,6 @@ class PluginManager:
 
     :param providers_config: The configuration with all information about the providers
                              supported by ``eodag``
-    :type providers_config: dict[str, :class:`~eodag.config.ProviderConfig`]
     """
 
     supported_topics = {"search", "download", "crunch", "auth", "api"}
@@ -111,7 +110,11 @@ class PluginManager:
                         "Check that the plugin module (%s) is importable",
                         entry_point.module_name,
                     )
-                if entry_point.dist and entry_point.dist.key != "eodag":
+                if (
+                    entry_point.dist
+                    and entry_point.dist.key != "eodag"
+                    and entry_point.dist.location is not None
+                ):
                     # use plugin providers if any
                     plugin_providers_config_path = [
                         str(x)
@@ -172,13 +175,10 @@ class PluginManager:
 
         :param product_type: (optional) The product type that the constructed plugins
                              must support
-        :type product_type: str
         :param provider: (optional) The provider or the provider group on which to get
             the search plugins
-        :type provider: str
         :returns: All the plugins supporting the product type, one by one (a generator
                   object)
-        :rtype: types.GeneratorType(:class:`~eodag.plugins.search.Search`
             or :class:`~eodag.plugins.download.Api`)
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
@@ -230,9 +230,7 @@ class PluginManager:
         product.
 
         :param product: The product to get a download plugin for
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :returns: The download plugin capable of downloading the product
-        :rtype: :class:`~eodag.plugins.download.Download` or :class:`~eodag.plugins.download.Api`
         """
         plugin_conf = self.providers_config[product.provider]
         if download := getattr(plugin_conf, "download", None):
@@ -256,9 +254,7 @@ class PluginManager:
         provider
 
         :param provider: The provider for which to get the authentication plugin
-        :type provider: str
         :returns: The Authentication plugin for the provider
-        :rtype: :class:`~eodag.plugins.authentication.Authentication`
         """
         plugin_conf = self.providers_config[provider]
         auth: Optional[PluginConfig] = getattr(plugin_conf, "auth", None)
@@ -279,11 +275,8 @@ class PluginManager:
         it with the `options`
 
         :param name: The name of the Crunch plugin to instantiate
-        :type name: str
         :param options: The configuration parameters of the cruncher
-        :type options: dict
         :returns: The cruncher named `name`
-        :rtype: :class:`~eodag.plugins.crunch.Crunch`
         """
         klass = Crunch.get_plugin_by_class_name(name)
         return klass(options)
@@ -297,9 +290,7 @@ class PluginManager:
         """Set the priority of the given provider
 
         :param provider: The provider which is assigned the priority
-        :type provider: str
         :param priority: The priority to assign to the provider
-        :type priority: int
         """
         # Update the priority in the configurations so that it is taken into account
         # when a plugin of this provider is latterly built
@@ -327,13 +318,9 @@ class PluginManager:
         registered as the given provider
 
         :param provider: The provider for which to build the plugin
-        :type provider: str
         :param plugin_conf: The configuration of the plugin to be built
-        :type plugin_conf: :class:`~eodag.config.PluginConfig`
         :param topic_class: The type of plugin to build
-        :type topic_class: :class:`~eodag.plugin.base.PluginTopic`
         :returns: The built plugin
-        :rtype: :class:`~eodag.plugin.search.Search` or
                 :class:`~eodag.plugin.download.Download` or
                 :class:`~eodag.plugin.authentication.Authentication` or
                 :class:`~eodag.plugin.crunch.Crunch`

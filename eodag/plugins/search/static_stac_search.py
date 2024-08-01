@@ -60,9 +60,7 @@ class StaticStacSearch(StacSearch):
     Then it uses crunchers to only keep products matching query parameters.
 
     :param provider: An eodag providers configuration dictionary
-    :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -85,12 +83,17 @@ class StaticStacSearch(StacSearch):
             "total_items_nb_key_path", "$.null"
         )
         self.config.__dict__["pagination"].setdefault("max_items_per_page", -1)
+        # disable product types discovery by default (if endpoints equals to STAC API default)
+        if (
+            getattr(self.config, "discover_product_types", {}).get("fetch_url")
+            == "{api_endpoint}/../collections"
+        ):
+            self.config.discover_product_types = {"fetch_url": None}
 
     def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
 
         :returns: configuration dict containing fetched product types information
-        :rtype: Optional[Dict[str, Any]]
         """
         fetch_url = cast(
             str,

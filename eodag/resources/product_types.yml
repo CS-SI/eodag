@@ -554,6 +554,30 @@ S1_SAR_GRD_JP2:
   title: SENTINEL1 Level-1 Ground Range Detected
   missionStartDate: "2014-04-03T00:00:00Z"
 
+S1_SAR_GRD_COG:
+  abstract: |
+    Level-1 Ground Range Detected (GRD) products consist of focused SAR data that has been detected, multi-looked and
+    projected to ground range using an Earth ellipsoid model. Phase information is lost. The resulting product has
+    approximately square spatial resolution pixels and square pixel spacing with reduced speckle at the cost of worse
+    spatial resolution.
+    GRD products can be in one of three resolutions: |
+      Full Resolution (FR),
+      High Resolution (HR),
+      Medium Resolution (MR).
+    The resolution is dependent upon the amount of multi-looking performed. Level-1 GRD products are available in MR
+    and HR for IW and EW modes, MR for WV mode and MR, HR and FR for SM mode.
+    Product containing Cloud Optimized GeoTIFF images, without SAFE formatting.
+    https://sentinel.esa.int/web/sentinel/user-guides/sentinel-1-sar/data-formats/safe-specification
+  instrument: SAR
+  platform: SENTINEL1
+  platformSerialIdentifier: S1A,S1B
+  processingLevel: L1
+  keywords: SAR,SENTINEL,SENTINEL1,S1,S1A,S1B,L1,GRD,COG
+  sensorType: RADAR
+  license: proprietary
+  title: SENTINEL1 Level-1 Ground Range Detected
+  missionStartDate: "2014-04-03T00:00:00Z"
+
 S1_SAR_SLC:
   abstract: |
     Level-1 Single Look Complex (SLC) products consist of focused SAR data geo-referenced using orbit and attitude

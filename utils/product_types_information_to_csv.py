@@ -37,7 +37,6 @@ def product_types_info_to_csv(
     """Get product types metadata and their availability for providers, and writes it to a csv file
 
     :param product_types_csv_file_path: (optional) Path to product types information csv output file
-    :type product_types_csv_file_path: str
     """
     config = {}
     for provider_config in load_default_config().values():

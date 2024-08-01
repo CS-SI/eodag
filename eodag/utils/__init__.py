@@ -55,6 +55,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -321,9 +322,7 @@ def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) ->
     mapping.
 
     :param func: A function to apply to each value of mapping which is not a dict object
-    :type func: func
     :param mapping: A Python dict object
-    :type mapping: dict
     :returns: None
     """
     for key, value in mapping.items():
@@ -349,10 +348,8 @@ def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
     to mapping1 as is.
 
     :param mapping1: The mapping containing values to be overridden
-    :type mapping1: dict
     :param mapping2: The mapping containing values that will override the
                      first mapping
-    :type mapping2: dict
     """
     # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
     m1_keys_lowercase = {key.lower(): key for key in mapping1}
@@ -419,9 +416,7 @@ def get_timestamp(date_time: str) -> float:
     If the datetime has no offset, it is assumed to be an UTC datetime.
 
     :param date_time: The datetime string to return as timestamp
-    :type date_time: str
     :returns: The timestamp corresponding to the date_time string in seconds
-    :rtype: float
     """
     dt = isoparse(date_time)
     if not dt.tzinfo:
@@ -443,7 +438,6 @@ class DownloadedCallback:
         """Callback
 
         :param product: The downloaded EO product
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         """
         logger.debug("Download finished for the product %s", product)
 
@@ -483,9 +477,7 @@ class ProgressCallback(tqdm):
         """Update the progress bar.
 
         :param increment: Amount of data already processed
-        :type increment: int
         :param total: (optional) Maximum amount of data to be processed
-        :type total: int
         """
         if total is not None and total != self.total:
             self.reset(total=total)
@@ -538,9 +530,7 @@ def rename_subfolder(dirpath: str, name: str) -> None:
     raise RuntimeError if no subfolder can be found
 
     :param dirpath: path to the directory containing the subfolder
-    :type dirpath: str
     :param name: new name of the subfolder
-    :type name: str
     :raises: RuntimeError
 
     Example:
@@ -589,11 +579,8 @@ def format_dict_items(
     True
 
     :param config_dict: Dictionnary having values that need to be parsed
-    :type config_dict: dict
     :param format_variables: Variables used as args for parsing
-    :type format_variables: dict
     :returns: Updated dict
-    :rtype: dict
     """
     return dict_items_recursive_apply(config_dict, format_string, **format_variables)
 
@@ -611,11 +598,8 @@ def jsonpath_parse_dict_items(
     True
 
     :param jsonpath_dict: Dictionnary having values that need to be parsed
-    :type jsonpath_dict: dict
     :param values_dict: Values dict used as args for parsing
-    :type values_dict: dict
     :returns: Updated dict
-    :rtype: dict
     """
     return dict_items_recursive_apply(jsonpath_dict, parse_jsonpath, **values_dict)
 
@@ -661,15 +645,10 @@ def update_nested_dict(
     True
 
     :param old_dict: Dict to be updated
-    :type old_dict: dict
     :param new_dict: Incomming dict
-    :type new_dict: dict
     :param extend_list_values: (optional) Extend old_dict value if both old/new values are lists
-    :type extend_list_values: bool
     :param allow_empty_values: (optional) Allow update with empty values
-    :type allow_empty_values: bool
     :returns: Updated dict
-    :rtype: dict
     """
     for k, v in new_dict.items():
         if k in old_dict.keys():
@@ -734,13 +713,9 @@ def items_recursive_apply(
     'foo'
 
     :param input_obj: Input object (dict or list)
-    :type input_obj: Union[dict,list]
     :param apply_method: Method to be applied to dict elements
-    :type apply_method: :func:`apply_method`
     :param apply_method_parameters: Optional parameters passed to the method
-    :type apply_method_parameters: dict
     :returns: Updated object
-    :rtype: Union[dict, list]
     """
     if isinstance(input_obj, dict):
         return dict_items_recursive_apply(
@@ -769,13 +744,9 @@ def dict_items_recursive_apply(
     True
 
     :param config_dict: Input nested dictionnary
-    :type config_dict: dict
     :param apply_method: Method to be applied to dict elements
-    :type apply_method: :func:`apply_method`
     :param apply_method_parameters: Optional parameters passed to the method
-    :type apply_method_parameters: dict
     :returns: Updated dict
-    :rtype: dict
     """
     result_dict: Dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
@@ -809,13 +780,9 @@ def list_items_recursive_apply(
     [{'foo': {'bar': 'BAZ!'}}, 'QUX!']
 
     :param config_list: Input list containing nested lists/dicts
-    :type config_list: list
     :param apply_method: Method to be applied to list elements
-    :type apply_method: :func:`apply_method`
     :param apply_method_parameters: Optional parameters passed to the method
-    :type apply_method_parameters: dict
     :returns: Updated list
-    :rtype: list
     """
     result_list = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
@@ -850,9 +817,7 @@ def items_recursive_sort(
     'foo'
 
     :param input_obj: Input object (dict or list)
-    :type input_obj: Union[dict,list]
     :returns: Updated object
-    :rtype: Union[dict, list]
     """
     if isinstance(input_obj, dict):
         return dict_items_recursive_sort(input_obj)
@@ -872,9 +837,7 @@ def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     True
 
     :param config_dict: Input nested dictionnary
-    :type config_dict: dict
     :returns: Updated dict
-    :rtype: dict
     """
     result_dict: Dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
@@ -895,9 +858,7 @@ def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
     ['b', {0: 1, 1: 2, 2: 0}]
 
     :param config_list: Input list containing nested lists/dicts
-    :type config_list: list
     :returns: Updated list
-    :rtype: list
     """
     result_list: List[Any] = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
@@ -926,11 +887,8 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     Fields('foo')
 
     :param args: Last arg as input string value, to be converted
-    :type args: str
     :param force: force conversion even if input string is not detected as a jsonpath
-    :type force: bool
     :returns: Parsed value
-    :rtype: str or Child or Root
     """
     path_str: str = args[-1]
     if JSONPATH_MATCH.match(str(path_str)) or force:
@@ -998,11 +956,8 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
     'foo qux, quux ?'
 
     :param key: Input item key
-    :type key: str
     :param str_to_format: Input item value, to be parsed
-    :type str_to_format: str
     :returns: Parsed value
-    :rtype: str
     """
     if not isinstance(str_to_format, str):
         return str_to_format
@@ -1040,13 +995,9 @@ def parse_jsonpath(
     'baz'
 
     :param key: Input item key
-    :type key: str
     :param jsonpath_obj: Input item value, to be parsed
-    :type jsonpath_obj: str or jsonpath.Child
     :param values_dict: Values used as args for parsing
-    :type values_dict: dict
     :returns: Parsed value
-    :rtype: str
     """
     if isinstance(jsonpath_obj, jsonpath.Child):
         match = jsonpath_obj.find(values_dict)
@@ -1062,9 +1013,7 @@ def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]
     {'foo': {'bar': 'baz'}}
 
     :param pairs: Pairs of key / value
-    :type pairs: list or Any
     :returns: Created dict
-    :rtype: dict or Any
     """
     d = {}
     try:
@@ -1084,11 +1033,8 @@ def get_geometry_from_various(
     """Creates a shapely geometry using given query kwargs arguments
 
     :param locations_config: (optional) EODAG locations configuration
-    :type locations_config: list
     :param query_args: Query kwargs arguments from core.search() method
-    :type query_args: dict
     :returns: shapely Geometry found
-    :rtype: :class:`shapely.geometry.BaseGeometry`
     :raises: :class:`ValueError`
     """
     geom = None
@@ -1150,11 +1096,11 @@ def get_geometry_from_various(
     for arg in query_locations.keys():
         if arg in locations_dict.keys():
             found = False
-            pattern = query_locations[arg]
+            pattern = rf"{query_locations[arg]}"
             attr = locations_dict[arg]["attr"]
             with shapefile.Reader(locations_dict[arg]["path"]) as shp:
                 for shaperec in shp.shapeRecords():
-                    if re.search(pattern, shaperec.record[attr]):
+                    if re.search(pattern, str(shaperec.record[attr])):
                         found = True
                         new_geom = shape(shaperec.shape)
                         # get geoms union
@@ -1194,9 +1140,7 @@ def md5sum(file_path: str) -> str:
     'd41d8cd98f00b204e9800998ecf8427e'
 
     :param file_path: input file path
-    :type file_path: str
     :returns: MD5 checksum
-    :rtype: str
     """
     hash_md5 = hashlib.md5()
     with open(file_path, "rb") as f:
@@ -1212,9 +1156,7 @@ def obj_md5sum(data: Any) -> str:
     '37a6259cc0c1dae299a7866489dff0bd'
 
     :param data: JSON serializable input object
-    :type data: Any
     :returns: MD5 checksum
-    :rtype: str
     """
     return hashlib.md5(orjson.dumps(data, option=orjson.OPT_SORT_KEYS)).hexdigest()
 
@@ -1238,9 +1180,7 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     CacheInfo(hits=1, misses=2, maxsize=128, currsize=2)
 
     :param str_to_parse: string to parse as jsonpath
-    :type str_to_parse: str
     :returns: parsed jsonpath
-    :rtype: :class:`jsonpath_ng.JSONPath`
     """
     return parse(str_to_parse)
 
@@ -1257,9 +1197,7 @@ def cached_yaml_load(config_path: str) -> Dict[str, Any]:
     """Cached yaml.load
 
     :param config_path: path to the yaml configuration file
-    :type config_path: str
     :returns: loaded yaml configuration
-    :rtype: dict
     """
     return copy_deepcopy(_mutable_cached_yaml_load(config_path))
 
@@ -1276,9 +1214,7 @@ def cached_yaml_load_all(config_path: str) -> List[Any]:
     Load all configurations stored in the configuration file as separated yaml documents
 
     :param config_path: path to the yaml configuration file
-    :type config_path: str
     :returns: list of configurations
-    :rtype: list
     """
     return copy_deepcopy(_mutable_cached_yaml_load_all(config_path))
 
@@ -1289,11 +1225,8 @@ def get_bucket_name_and_prefix(
     """Extract bucket name and prefix from URL
 
     :param url: (optional) URL to use as product.location
-    :type url: str
     :param bucket_path_level: (optional) bucket location index in path.split('/')
-    :type bucket_path_level: int
     :returns: bucket_name and prefix as str
-    :rtype: tuple
     """
     bucket, prefix = None, None
 
@@ -1322,9 +1255,7 @@ def flatten_top_directories(
     """Flatten directory structure, removing common empty sub-directories
 
     :param nested_dir_root: Absolute path of the directory structure to flatten
-    :type nested_dir_root: str
     :param common_subdirs_path: (optional) Absolute path of the desired subdirectory to remove
-    :type common_subdirs_path: str
     """
     if not common_subdirs_path:
         subpaths_list = [p for p in Path(nested_dir_root).glob("**/*") if p.is_file()]
@@ -1346,9 +1277,7 @@ def deepcopy(sth: Any) -> Any:
     `_copy_list` and `_copy_dict` available for the moment
 
     :param sth: Object to copy
-    :type sth: Any
     :returns: Copied object
-    :rtype: Any
     """
     _dispatcher: Dict[Type[Any], Callable[..., Any]] = {}
 
@@ -1391,9 +1320,7 @@ def parse_header(header: str) -> Message:
     'example.txt'
 
     :param header: header to parse
-    :type header: str
     :returns: parsed header
-    :rtype: :class:`~email.message.Message`
     """
     m = Message()
     m["content-type"] = header
@@ -1435,7 +1362,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
 class StreamResponse:
     """Represents a streaming response"""
 
-    content: Iterator[bytes]
+    content: Iterable[bytes]
     headers: Optional[Mapping[str, str]] = None
     media_type: Optional[str] = None
     status_code: Optional[int] = None
@@ -1460,9 +1387,7 @@ def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     """
     Returns an SSL context based on ssl_verify argument.
     :param ssl_verify: ssl_verify parameter
-    :type ssl_verify: bool
     :returns: An SSL context object.
-    :rtype: ssl.SSLContext
     """
     ctx = ssl.create_default_context()
     if not ssl_verify:
@@ -1472,3 +1397,19 @@ def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
         ctx.check_hostname = True
         ctx.verify_mode = ssl.CERT_REQUIRED
     return ctx
+
+
+def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively sorts a dict by keys.
+
+    :param input_dict: input dict
+    :returns: sorted dict
+
+    >>> sort_dict({"b": {"c": 1, "a": 2, "b": 3}, "a": 4})
+    {'a': 4, 'b': {'a': 2, 'b': 3, 'c': 1}}
+    """
+    return {
+        k: sort_dict(v) if isinstance(v, dict) else v
+        for k, v in sorted(input_dict.items())
+    }

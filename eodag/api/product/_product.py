@@ -32,9 +32,11 @@ from shapely.errors import ShapelyError
 
 try:
     # import from eodag-cube if installed
-    from eodag_cube.api.product import AssetsDict  # type: ignore # noqa
+    from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
+        AssetsDict,
+    )
 except ImportError:
-    from eodag.api.product._assets import AssetsDict  # type: ignore # noqa
+    from eodag.api.product._assets import AssetsDict
 
 from eodag.api.product.drivers import DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import (
@@ -86,9 +88,7 @@ class EOProduct:
     parameters that led to its creation.
 
     :param provider: The provider from which the product originates
-    :type provider: str
     :param properties: The metadata of the product
-    :type properties: dict
     :ivar product_type: The product type
     :vartype product_type: str
     :ivar location: The path to the product, either remote or local if downloaded
@@ -180,7 +180,6 @@ class EOProduct:
 
         :returns: The representation of a :class:`~eodag.api.product._product.EOProduct` as a
                   Python dict
-        :rtype: dict
         """
         search_intersection = None
         if self.search_intersection is not None:
@@ -212,9 +211,7 @@ class EOProduct:
 
         :param feature: The representation of a :class:`~eodag.api.product._product.EOProduct`
                         as a Python dict
-        :type feature: dict
         :returns: An instance of :class:`~eodag.api.product._product.EOProduct`
-        :rtype: :class:`~eodag.api.product._product.EOProduct`
         """
         properties = feature["properties"]
         properties["geometry"] = feature["geometry"]
@@ -248,11 +245,9 @@ class EOProduct:
         """Give to the product the information needed to download itself.
 
         :param downloader: The download method that it can use
-        :type downloader: Concrete subclass of
                           :class:`~eodag.plugins.download.base.Download` or
                           :class:`~eodag.plugins.api.base.Api`
         :param authenticator: The authentication method needed to perform the download
-        :type authenticator: Concrete subclass of
                              :class:`~eodag.plugins.authentication.base.Authentication`
         """
         self.downloader = downloader
@@ -302,20 +297,15 @@ class EOProduct:
                                   size as inputs and handle progress bar
                                   creation and update to give the user a
                                   feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :param wait: (optional) If download fails, wait time in minutes between
                      two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes
                         before stop retrying to download
-        :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product on the local filesystem
-        :rtype: str
         :raises: :class:`~eodag.utils.exceptions.PluginImplementationError`
         :raises: :class:`RuntimeError`
         """
@@ -383,7 +373,7 @@ class EOProduct:
     def get_quicklook(
         self,
         filename: Optional[str] = None,
-        base_dir: Optional[str] = None,
+        output_dir: Optional[str] = None,
         progress_callback: Optional[ProgressCallback] = None,
     ) -> str:
         """Download the quicklook image of a given EOProduct from its provider if it
@@ -391,18 +381,14 @@ class EOProduct:
 
         :param filename: (optional) The name to give to the downloaded quicklook. If not
                          given, it defaults to the product's ID (without file extension).
-        :type filename: str
-        :param base_dir: (optional) The absolute path of the directory where to store
+        :param output_dir: (optional) The absolute path of the directory where to store
                          the quicklooks in the filesystem. If not given, it defaults to the
-                         `quicklooks` directory under this EO product downloader's ``outputs_prefix``
+                         `quicklooks` directory under this EO product downloader's ``output_dir``
                          config param (e.g. '/tmp/quicklooks/')
-        :type base_dir: str
         :param progress_callback: (optional) A method or a callable object which takes
                                    a current size and a maximum size as inputs and handle progress bar
                                    creation and update to give the user a feedback on the download progress
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path of the downloaded quicklook
-        :rtype: str
         """
 
         def format_quicklook_address() -> None:
@@ -439,20 +425,20 @@ class EOProduct:
 
         format_quicklook_address()
 
-        if base_dir is not None:
-            quicklooks_base_dir = os.path.abspath(os.path.realpath(base_dir))
+        if output_dir is not None:
+            quicklooks_output_dir = os.path.abspath(os.path.realpath(output_dir))
         else:
             tempdir = tempfile.gettempdir()
-            outputs_prefix = (
-                getattr(self.downloader.config, "outputs_prefix", tempdir)
+            downloader_output_dir = (
+                getattr(self.downloader.config, "output_dir", tempdir)
                 if self.downloader
                 else tempdir
             )
-            quicklooks_base_dir = os.path.join(outputs_prefix, "quicklooks")
-        if not os.path.isdir(quicklooks_base_dir):
-            os.makedirs(quicklooks_base_dir)
+            quicklooks_output_dir = os.path.join(downloader_output_dir, "quicklooks")
+        if not os.path.isdir(quicklooks_output_dir):
+            os.makedirs(quicklooks_output_dir)
         quicklook_file = os.path.join(
-            quicklooks_base_dir,
+            quicklooks_output_dir,
             filename if filename is not None else self.properties["id"],
         )
 

@@ -17,15 +17,24 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import Dict, Optional, TypedDict
 
 
 class DownloadConf(TypedDict, total=False):
-    """Download configuration"""
+    """Download configuration
 
-    outputs_prefix: str
-    outputs_extension: str
+    :cvar output_prefix: where to store downloaded products, as an absolute file path
+                         (Default: local temporary directory)
+    :cvar output_extension: downloaded file extension
+    :cvar extract: whether to extract the downloaded products, only applies to archived products
+    :cvar dl_url_params: additional parameters to pass over to the download url as an url parameter
+    :cvar delete_archive: whether to delete the downloaded archives
+    :cvar asset: regex filter to identify assets to download
+    """
+
+    output_dir: str
+    output_extension: str
     extract: bool
     dl_url_params: Dict[str, str]
     delete_archive: bool
-    asset: str
+    asset: Optional[str]

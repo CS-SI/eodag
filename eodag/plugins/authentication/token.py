@@ -197,7 +197,8 @@ class RequestsTokenAuth(AuthBase):
         if self.where == "qs":
             parts = urlparse(str(request.url))
             qs = parse_qs(parts.query)
-            qs[self.qs_key] = self.token  # type: ignore
+            if self.qs_key is not None:
+                qs[self.qs_key] = [self.token]
             request.url = urlunparse(
                 (
                     parts.scheme,

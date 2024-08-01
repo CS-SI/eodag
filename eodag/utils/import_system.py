@@ -52,12 +52,9 @@ def import_all_modules(
         import_all_modules(base_package)
 
     :param base_package: The package from where we must import all the modules
-    :type base_package: `module`
     :param depth: (optional) If `base_package` has sub packages, import all the modules recursively up to this level.
                   Defaults to 1 (limits to the level of `base_package`)
-    :type depth: int
     :param exclude: (optional) The sub packages and modules to ignore while importing. Empty by default
-    :type exclude: tuple(str, ...)
 
     .. note::
         if `package` and `subpackage` have a module of the same name and this name is included in the exclude
@@ -88,7 +85,6 @@ def patch_owslib_requests(verify: bool = True) -> Generator[None, Any, None]:
     these functions in `owslib <https://geopython.github.io/OWSLib/>`_.
 
     :param verify: (optional) Whether to verify the use of https or not
-    :type verify: bool
     """
     from owslib.util import requests
 

@@ -16,11 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# type: ignore
 """EODAG product package"""
 try:
     # import from eodag-cube if installed
-    from eodag_cube.api.product import Asset, AssetsDict, EOProduct  # noqa
+    from eodag_cube.api.product import (  # pyright: ignore[reportMissingImports]
+        Asset,
+        AssetsDict,
+        EOProduct,
+    )
 except ImportError:
-    from ._assets import Asset, AssetsDict  # noqa
-    from ._product import EOProduct  # noqa
+    from ._assets import Asset, AssetsDict  # type: ignore[assignment]
+    from ._product import EOProduct  # type: ignore[assignment]
+
+# exportable content
+__all__ = ["Asset", "AssetsDict", "EOProduct"]

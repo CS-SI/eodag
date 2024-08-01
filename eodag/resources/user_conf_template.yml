@@ -20,7 +20,7 @@ peps:
     search:  # Search parameters configuration
     download:
         extract:  # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
-        outputs_prefix: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
+        output_dir: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
         dl_url_params:  # additional parameters to pass over to the download url as an url parameter
         delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
     auth:
@@ -32,7 +32,7 @@ theia:
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
         dl_url_params:
     auth:
         credentials:
@@ -42,7 +42,7 @@ usgs:
     priority: # Lower value means lower priority (Default: 0)
     api:
         extract:
-        outputs_prefix:
+        output_dir:
         dl_url_params:
         product_location_scheme:
         credentials:
@@ -58,13 +58,13 @@ aws_eos:
             aws_secret_access_key:
             aws_profile:
     download:
-        outputs_prefix:
+        output_dir:
 creodias:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -75,7 +75,7 @@ onda:
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -89,7 +89,7 @@ astraea_eod:
             aws_secret_access_key:
             aws_profile:
     download:
-        outputs_prefix:
+        output_dir:
 usgs_satapi_aws:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -99,7 +99,7 @@ usgs_satapi_aws:
             aws_secret_access_key:
             aws_profile:
     download:
-        outputs_prefix:
+        output_dir:
 earth_search:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -109,12 +109,12 @@ earth_search:
             aws_secret_access_key:
             aws_profile:
     download:
-        outputs_prefix:
+        output_dir:
 earth_search_cog:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
-        outputs_prefix:
+        output_dir:
 earth_search_gcs:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -123,11 +123,11 @@ earth_search_gcs:
             aws_access_key_id:
             aws_secret_access_key:
     download:
-        outputs_prefix:
+        output_dir:
 ecmwf:
     priority: # Lower value means lower priority (Default: 0)
     api:
-        outputs_prefix:
+        output_dir:
         credentials:
             username:
             password:
@@ -136,7 +136,7 @@ cop_ads:
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -146,7 +146,7 @@ cop_cds:
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -156,7 +156,7 @@ sara:
     search:  # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
         delete_archive:
     auth:
         credentials:
@@ -169,13 +169,13 @@ meteoblue:
         credentials:
             apikey:
     download:
-        outputs_prefix:
+        output_dir:
 cop_dataspace:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -187,7 +187,7 @@ planetary_computer:
         credentials:
             apikey:
     download:
-        outputs_prefix:
+        output_dir:
 hydroweb_next:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -195,12 +195,12 @@ hydroweb_next:
         credentials:
             apikey:
     download:
-        outputs_prefix:
+        output_dir:
 wekeo:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -209,7 +209,7 @@ wekeo_cmems:
     priority: # Lower value means lower priority (Default: 0)
     search:
     download:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -218,7 +218,7 @@ creodias_s3:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
           aws_access_key_id:
@@ -227,7 +227,7 @@ dedt_lumi:
     priority: # Lower value means lower priority (Default: 0)
     search:
     download:
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
@@ -236,7 +236,7 @@ dedl:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
-        outputs_prefix:
+        output_dir:
     auth:
       credentials:
         username:
@@ -244,16 +244,16 @@ dedl:
 eumetsat_ds:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
-        outputs_prefix:
+        output_dir:
     auth:
         credentials:
             username:
             password:
     download:
-        outputs_prefix:
+        output_dir:
 cop_marine:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
     download:
         extract:
-        outputs_prefix:
+        output_dir:

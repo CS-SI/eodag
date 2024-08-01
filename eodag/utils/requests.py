@@ -32,22 +32,17 @@ logger = logging.getLogger("eodag.utils.requests")
 def fetch_json(
     file_url: str,
     req_session: Optional[requests.Session] = None,
-    auth: Optional[requests.AuthBase] = None,
+    auth: Optional[requests.auth.AuthBase] = None,
     timeout: float = HTTP_REQ_TIMEOUT,
 ) -> Any:
     """
     Fetches http/distant or local json file
 
     :param file_url: url from which the file can be fetched
-    :type file_url: str
     :param req_session: (optional) requests session
-    :type req_session: requests.Session
     :param auth: (optional) authenticated object if request needs authentication
-    :type auth: Optional[requests.AuthBase]
     :param timeout: (optional) authenticated object
-    :type timeout: float
     :returns: json file content
-    :rtype: Any
     """
     if req_session is None:
         req_session = requests.Session()
@@ -86,11 +81,8 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
         """Return an HTTP status for the given filesystem path.
 
         :param method: method of the request
-        :type method: str
         :param path: path of the given file
-        :type path: str
         :returns: HTTP status and its associated message
-        :rtype: Tuple[int, str]
         """
         if method.lower() in ("put", "delete"):
             return 501, "Not Implemented"  # TODO
@@ -105,31 +97,31 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
         else:
             return 200, "OK"
 
-    def send(self, req: requests.PreparedRequest, **kwargs: Any) -> requests.Response:
+    def send(
+        self, request: requests.PreparedRequest, *args: Any, **kwargs: Any
+    ) -> requests.Response:
         """Wraps a file, described in request, in a Response object.
 
         :param req: The PreparedRequest being "sent".
-        :type req: :class:`~requests.PreparedRequest`
         :param kwargs: (not used) additionnal arguments of the request
-        :type kwargs: Any
         :returns: a Response object containing the file
-        :rtype: :class:`~requests.Response`
         """
         response = requests.Response()
 
-        path_url = uri_to_path(req.url)
-
-        if req.method is None or req.url is None:
+        if request.method is None or request.url is None:
             raise RequestError("Method or url of the request is missing")
-        response.status_code, response.reason = self._chkpath(req.method, path_url)
-        if response.status_code == 200 and req.method.lower() != "head":
+
+        path_url = uri_to_path(request.url)
+
+        response.status_code, response.reason = self._chkpath(request.method, path_url)
+        if response.status_code == 200 and request.method.lower() != "head":
             try:
                 response.raw = open(path_url, "rb")
             except (OSError, IOError) as err:
                 response.status_code = 500
                 response.reason = str(err)
-        response.url = req.url
-        response.request = req
+        response.url = request.url
+        response.request = request
 
         return response
 

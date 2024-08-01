@@ -35,6 +35,7 @@ class AwsAuth(Authentication):
     - auth anonymously using no-sign-request
     - auth using ``aws_profile``
     - auth using ``aws_access_key_id`` and ``aws_secret_access_key``
+      (optionally ``aws_session_token``)
     - auth using current environment (AWS environment variables and/or ``~/aws/*``),
       will be skipped if AWS credentials are filled in eodag conf
     """
@@ -45,13 +46,13 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.aws_access_key_id = None
         self.aws_secret_access_key = None
+        self.aws_session_token = None
         self.profile_name = None
 
     def authenticate(self) -> Dict[str, str]:
         """Authenticate
 
         :returns: dict containing AWS/boto3 non-empty credentials
-        :rtype: dict
         """
         credentials = getattr(self.config, "credentials", {}) or {}
         self.aws_access_key_id = credentials.get(
@@ -60,7 +61,15 @@ class AwsAuth(Authentication):
         self.aws_secret_access_key = credentials.get(
             "aws_secret_access_key", self.aws_secret_access_key
         )
+        self.aws_session_token = credentials.get(
+            "aws_session_token", self.aws_session_token
+        )
         self.profile_name = credentials.get("aws_profile", self.profile_name)
 
-        auth_keys = ["aws_access_key_id", "aws_secret_access_key", "profile_name"]
+        auth_keys = [
+            "aws_access_key_id",
+            "aws_secret_access_key",
+            "aws_session_token",
+            "profile_name",
+        ]
         return {k: getattr(self, k) for k in auth_keys if getattr(self, k)}

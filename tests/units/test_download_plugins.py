@@ -157,9 +157,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         os.chmod(outdir.name, stat.S_IREAD)
 
         with self.assertLogs(level="WARNING") as cm:
-            fs_path, _ = plugin._prepare_download(
-                self.product, outputs_prefix=outdir.name
-            )
+            fs_path, _ = plugin._prepare_download(self.product, output_dir=outdir.name)
             self.assertIn("Unable to create records directory", str(cm.output))
 
 
@@ -227,7 +225,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         dl_config = config.PluginConfig.from_mapping(
             {
                 "base_uri": "fake_base_uri",
-                "outputs_prefix": self.output_dir,
+                "output_dir": self.output_dir,
                 "extract": False,
                 "delete_archive": False,
             }
@@ -292,15 +290,15 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             product_type,
         )
-        outputs_extension = getattr(
-            product.downloader.config, "outputs_extension", ".zip"
+        output_extension = getattr(
+            product.downloader.config, "output_extension", ".zip"
         )
         path = product.download()
 
         self.assertTrue(
             path == os.path.join(self.output_dir, product.properties["title"] + ".zip")
             and os.path.isfile(path)
-            and outputs_extension == ".zip"
+            and output_extension == ".zip"
             and zipfile.is_zipfile(path)
         )
 
@@ -377,15 +375,15 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             product_type,
         )
-        outputs_extension = getattr(
-            product.downloader.config, "outputs_extension", ".zip"
+        output_extension = getattr(
+            product.downloader.config, "output_extension", ".zip"
         )
         path = product.download()
 
         self.assertTrue(
             path == os.path.join(self.output_dir, product.properties["title"] + ".tar")
             and os.path.isfile(path)
-            and outputs_extension == ".zip"
+            and output_extension == ".zip"
             and tarfile.is_tarfile(path)
         )
 
@@ -413,7 +411,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         when the result is a non-zip file with a '.zip' outputs extension"""
 
         plugin = self.get_download_plugin(self.product)
-        outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
+        output_extension = getattr(plugin.config, "output_extension", ".zip")
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
         mock_stream_download.return_value = chain(iter([b"a"]))
@@ -421,14 +419,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         path = plugin.download(
             self.product,
-            outputs_prefix=self.output_dir,
+            output_dir=self.output_dir,
             progress_callback=progress_callback,
         )
 
         self.assertTrue(
             path == os.path.join(self.output_dir, "dummy_product")
             and os.path.isdir(path)
-            and outputs_extension == ".zip"
+            and output_extension == ".zip"
         )
 
         file_path = os.path.join(path, os.listdir(path)[0])
@@ -447,8 +445,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.product,
             None,
             progress_callback,
-            outputs_prefix=self.output_dir,
-            outputs_extension=outputs_extension,
+            output_dir=self.output_dir,
+            output_extension=output_extension,
         )
 
     @mock.patch(
@@ -473,19 +471,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_stream_download.return_value = chain(iter([b"a"]))
 
         plugin = self.get_download_plugin(product)
-        outputs_extension = getattr(plugin.config, "outputs_extension", ".zip")
+        output_extension = getattr(plugin.config, "output_extension", ".zip")
         product.location = product.remote_location = "http://somewhere"
         product.properties["id"] = "someproduct"
         progress_callback = ProgressCallback(disable=True)
 
         path = plugin.download(
-            product, outputs_prefix=self.output_dir, progress_callback=progress_callback
+            product, output_dir=self.output_dir, progress_callback=progress_callback
         )
 
         self.assertTrue(
             path == os.path.join(self.output_dir, "dummy_product")
             and os.path.isdir(path)
-            and not outputs_extension == ".zip"
+            and not output_extension == ".zip"
         )
 
         file_path = os.path.join(path, os.listdir(path)[0])
@@ -504,8 +502,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             product,
             None,
             progress_callback,
-            outputs_prefix=self.output_dir,
-            outputs_extension=outputs_extension,
+            output_dir=self.output_dir,
+            output_extension=output_extension,
         )
 
     @mock.patch(
@@ -532,7 +530,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # download asset if ignore_assets = False
         plugin.config.ignore_assets = False
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -551,7 +549,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # download using remote_location if ignore_assets = True
         plugin.config.ignore_assets = True
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_not_called()
         mock_stream_download.assert_called_once()
         # re-enable product download
@@ -562,7 +560,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # download asset if ignore_assets unset
         del plugin.config.ignore_assets
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -594,7 +592,15 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # download asset if ssl_verify = False
         plugin.config.ssl_verify = False
 
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
+        mock_requests_head.assert_called_once_with(
+            self.product.assets["foo"]["href"],
+            auth=None,
+            params=plugin.config.dl_url_params,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            verify=False,
+        )
         mock_requests_get.assert_called_once_with(
             self.product.assets["foo"]["href"],
             stream=True,
@@ -628,7 +634,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -651,8 +657,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_head.assert_called_once_with(
             self.product.assets["foo"]["href"],
             auth=None,
+            params=plugin.config.dl_url_params,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -675,7 +683,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -716,7 +724,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 progress_callback_exception,
             ]
             with self.assertRaises(Exception) as cm:
-                plugin.download(self.product, outputs_prefix=self.output_dir)
+                plugin.download(self.product, output_dir=self.output_dir)
             # Interrupted download
             self.assertEqual(progress_callback_exception, cm.exception)
             # Product location not changed
@@ -761,7 +769,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "w",
         ):
             pass
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
         # Product directory created
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -803,9 +811,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         mock_requests_head.return_value.headers = {"content-disposition": ""}
 
-        path = plugin.download(
-            self.product, outputs_prefix=self.output_dir, asset="else.*"
-        )
+        path = plugin.download(self.product, output_dir=self.output_dir, asset="else.*")
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -816,7 +822,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         self.assertEqual(2, mock_requests_get.call_count)
         self.product.location = self.product.remote_location = "http://elsewhere"
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
         self.assertEqual(6, mock_requests_get.call_count)
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
@@ -841,7 +847,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "content-disposition": '; filename = "anotherthing"'
         }
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
         self.assertTrue(os.path.isdir(path))
@@ -883,7 +889,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # size from HEAD / Content-length
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=1 + 1)
 
         # size from HEAD / content-disposition
@@ -898,7 +904,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=2 + 2)
 
         # size from GET / Content-length
@@ -913,7 +919,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=3 + 3)
 
         # size from GET / content-disposition
@@ -933,7 +939,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=4 + 4)
 
         # unknown size
@@ -950,7 +956,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
         with TemporaryDirectory() as temp_dir:
-            plugin.download(self.product, outputs_prefix=temp_dir)
+            plugin.download(self.product, output_dir=temp_dir)
         mock_progress_callback_reset.assert_called_once_with(mock.ANY, total=None)
 
     def test_plugins_download_http_one_local_asset(
@@ -972,7 +978,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         self.assertEqual(path, uri_to_path(self.product.assets["foo"]["href"]))
         # empty product download directory should have been removed
@@ -1011,7 +1017,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             }
         )
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         # assets common path
         self.assertEqual(
@@ -1094,7 +1100,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             # download
             path = self.product.download(
-                outputs_prefix=output_data_path,
+                output_dir=output_data_path,
                 wait=0.001 / 60,
                 timeout=0.2 / 60,
             )
@@ -1112,7 +1118,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get(self, mock_request):
-        """HTTPDownload.orderDownload() must request using orderLink and GET protocol"""
+        """HTTPDownload.order_download() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["orderLink"] = "http://somewhere/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
@@ -1125,7 +1131,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
             auth = auth_plugin.authenticate()
 
-            plugin.orderDownload(self.product, auth=auth)
+            plugin.order_download(self.product, auth=auth)
 
             mock_request.assert_called_once_with(
                 method="GET",
@@ -1143,7 +1149,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
-        """HTTPDownload.orderDownload() must request using orderLink and POST protocol"""
+        """HTTPDownload.order_download() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["storageStatus"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
@@ -1154,7 +1160,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # orderLink without query query args
         self.product.properties["orderLink"] = "http://somewhere/order"
-        plugin.orderDownload(self.product, auth=auth)
+        plugin.order_download(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url=self.product.properties["orderLink"],
@@ -1166,7 +1172,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # orderLink with query query args
         mock_request.reset_mock()
         self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
-        plugin.orderDownload(self.product, auth=auth)
+        plugin.order_download(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url="http://somewhere/order",
@@ -1177,8 +1183,27 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             verify=True,
         )
 
+        # orderLink with JSON data containing a query string
+        mock_request.reset_mock()
+        self.product.properties[
+            "orderLink"
+        ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
+        plugin.order_download(self.product, auth=auth)
+        mock_request.assert_called_once_with(
+            method="POST",
+            url="http://somewhere/order",
+            auth=auth,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            json={
+                "location": "dataset_id=lorem&data_version=202211",
+                "cacheable": "true",
+            },
+            verify=True,
+        )
+
     def test_plugins_download_http_order_status(self):
-        """HTTPDownload.orderDownloadStatus() must request status using orderStatusLink"""
+        """HTTPDownload.order_download_status() must request status using orderStatusLink"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {
@@ -1204,7 +1229,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
             with self.assertRaises(DownloadError):
-                plugin.orderDownloadStatus(self.product, auth=auth)
+                plugin.order_download_status(self.product, auth=auth)
 
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
@@ -1214,7 +1239,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         run()
 
     def test_plugins_download_http_order_status_search_again(self):
-        """HTTPDownload.orderDownloadStatus() must search again after success if needed"""
+        """HTTPDownload.order_download_status() must search again after success if needed"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {"status": "$.json.status"},
@@ -1255,7 +1280,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 ),
             )
 
-            plugin.orderDownloadStatus(self.product, auth=auth)
+            plugin.order_download_status(self.product, auth=auth)
 
             self.assertEqual(
                 self.product.properties["downloadLink"], "http://new-download-link"
@@ -1285,7 +1310,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.001 / 60,
                     timeout=0.2 / 60,
                 )
@@ -1299,7 +1324,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.09 / 60,
                     timeout=0.2 / 60,
                 )
@@ -1321,7 +1346,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.001 / 60,
                     timeout=0.2 / 60,
                 )
@@ -1351,7 +1376,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
             self.plugin.download(
                 self.product,
-                outputs_prefix=self.output_dir,
+                output_dir=self.output_dir,
                 wait=0.001 / 60,
                 timeout=0.2 / 60,
             )
@@ -1372,7 +1397,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.1 / 60,
                     timeout=1e-9 / 60,
                 )
@@ -1393,7 +1418,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
             with self.assertRaisesRegex(NotAvailableError, r".*timeout reached"):
                 self.plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=0.1 / 60,
                     timeout=0.1 / 60,
                 )
@@ -1413,7 +1438,7 @@ class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
 
             with self.assertRaisesRegex(NotAvailableError, r"^((?!timeout).)*$"):
                 self.plugin.download(
-                    self.product, outputs_prefix=self.output_dir, wait=-1, timeout=-1
+                    self.product, output_dir=self.output_dir, wait=-1, timeout=-1
                 )
 
             # there must have been only one try
@@ -1490,7 +1515,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.products[self.product.product_type]["build_safe"] = False
         plugin.config.flatten_top_dirs = False
 
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
 
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "somebucket", "path/to/some", {}
@@ -1533,7 +1558,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.products[self.product.product_type]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
 
-        plugin.download(self.product, outputs_prefix=self.output_dir)
+        plugin.download(self.product, output_dir=self.output_dir)
 
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "somebucket", "path/to/some", {}
@@ -1595,7 +1620,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # SAFE build
         plugin.config.products[self.product.product_type]["build_safe"] = True
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
             self.product.properties["tileInfo"],
@@ -1676,7 +1701,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # SAFE build
         plugin.config.products[self.product.product_type]["build_safe"] = True
 
-        path = plugin.download(self.product, outputs_prefix=self.output_dir)
+        path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
             self.product.properties["tileInfo"],
@@ -1700,7 +1725,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # with filter for assets
         self.product.properties["title"] = "newTitle"
         setattr(self.product, "location", "file://path/to/file")
-        plugin.download(self.product, outputs_prefix=self.output_dir, asset="file1")
+        plugin.download(self.product, output_dir=self.output_dir, asset="file1")
         # 3 additional calls
         self.assertEqual(7, mock_get_chunk_dest_path.call_count)
 
@@ -1764,9 +1789,11 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         )
 
     @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload.orderDownloadStatus", autospec=True
+        "eodag.plugins.download.http.HTTPDownload.order_download_status", autospec=True
     )
-    @mock.patch("eodag.plugins.download.http.HTTPDownload.orderDownload", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload.order_download", autospec=True
+    )
     def test_plugins_download_s3rest_online(self, mock_order, mock_order_status):
         """S3RestDownload.download() must create outputfiles"""
 
@@ -1809,7 +1836,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
                 body=b"something else",
                 auto_calculate_content_length=True,
             )
-            path = plugin.download(self.product, outputs_prefix=self.output_dir)
+            path = plugin.download(self.product, output_dir=self.output_dir)
 
             # there must have been 3 calls (list, 1st download, 2nd download)
             self.assertEqual(len(responses.calls), 3)
@@ -1834,9 +1861,11 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         mock_order_status.assert_not_called()
 
     @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload.orderDownloadStatus", autospec=True
+        "eodag.plugins.download.http.HTTPDownload.order_download_status", autospec=True
     )
-    @mock.patch("eodag.plugins.download.http.HTTPDownload.orderDownload", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload.order_download", autospec=True
+    )
     def test_plugins_download_s3rest_offline(self, mock_order, mock_order_status):
         """S3RestDownload.download() must order offline products"""
 
@@ -1864,7 +1893,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
             with self.assertRaises(NotAvailableError):
                 plugin.download(
                     self.product,
-                    outputs_prefix=self.output_dir,
+                    output_dir=self.output_dir,
                     wait=-1,
                     timeout=-1,
                 )
@@ -1923,7 +1952,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
             )
             path = plugin.download(
                 self.product,
-                outputs_prefix=self.output_dir,
+                output_dir=self.output_dir,
                 wait=0.001 / 60,
                 timeout=0.2 / 60,
             )
@@ -1990,7 +2019,7 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
             lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
         )
 
-        plugin.download(product, outputs_prefix=self.output_dir, auth={})
+        plugin.download(product, output_dir=self.output_dir, auth={})
 
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "eodata", "a", {}

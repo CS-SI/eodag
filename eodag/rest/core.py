@@ -80,7 +80,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+    from typing import Any, Dict, List, Optional, Tuple, Union
 
     from fastapi import Request
     from requests.auth import AuthBase
@@ -105,9 +105,7 @@ def get_home_page_content(base_url: str, ipp: Optional[int] = None) -> str:
     """Compute eodag service home page content
 
     :param base_url: The service root URL
-    :type base_url: str
     :param ipp: (optional) Items per page number
-    :type ipp: int
     """
     base_url = base_url.rstrip("/") + "/"
     content = f"""<h1>EODAG Server</h1><br />
@@ -125,7 +123,6 @@ def format_product_types(product_types: List[Dict[str, Any]]) -> str:
     """Format product_types
 
     :param product_types: A list of EODAG product types as returned by the core api
-    :type product_types: list
     """
     result: List[str] = []
     for pt in product_types:
@@ -145,13 +142,9 @@ def search_stac_items(
     dictionary of STAC items.
 
     :param request: The incoming HTTP request with state information.
-    :type request: Request
     :param search_request: The search criteria for STAC items.
-    :type search_request: SearchPostRequest
     :param catalogs: (optional) A list of catalogs to search within. Defaults to None.
-    :type catalogs: Optional[List[str]]
     :returns: A dictionary containing the STAC items and related metadata.
-    :rtype: Dict[str, Any]
 
     The function handles the conversion of search criteria into STAC and EODAG compatible formats, validates the input
     using pydantic, and constructs the appropriate URLs for querying the STAC API. It also manages pagination and the
@@ -215,7 +208,7 @@ def search_stac_items(
         }
 
         search_results = eodag_api.search(count=True, **criteria)
-        total = search_results.number_matched
+        total = search_results.number_matched or 0
         if search_request.crunch:
             search_results = crunch_products(
                 search_results, search_request.crunch, **criteria
@@ -259,15 +252,10 @@ def download_stac_item(
     """Download item
 
     :param catalogs: Catalogs list (only first is used as product_type)
-    :type catalogs: list
     :param item_id: Product ID
-    :type item_id: str
     :param provider: (optional) Chosen provider
-    :type provider: str
     :param kwargs: additional download parameters
-    :type kwargs: Any
     :returns: a stream of the downloaded data (zip file)
-    :rtype: Response
     """
     product_type = catalogs[0]
 
@@ -350,11 +338,13 @@ def _order_and_update(
     if (
         product.properties.get("storageStatus") != ONLINE_STATUS
         and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
-        and hasattr(product.downloader, "orderDownload")
+        and hasattr(product.downloader, "order_download")
     ):
         # first order
         logger.debug("Order product")
-        order_status_dict = product.downloader.orderDownload(product=product, auth=auth)
+        order_status_dict = product.downloader.order_download(
+            product=product, auth=auth
+        )
         query_args.update(order_status_dict or {})
 
     if (
@@ -365,11 +355,11 @@ def _order_and_update(
         product.properties["storageStatus"] = STAGING_STATUS
 
     if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
-        product.downloader, "orderDownloadStatus"
+        product.downloader, "order_download_status"
     ):
         # check order status if needed
         logger.debug("Checking product order status")
-        product.downloader.orderDownloadStatus(product=product, auth=auth)
+        product.downloader.order_download_status(product=product, auth=auth)
 
     if product.properties.get("storageStatus") != ONLINE_STATUS:
         raise NotAvailableError("Product is not available yet")
@@ -381,7 +371,6 @@ def get_detailled_collections_list() -> List[Dict[str, Any]]:
     config dicts
 
     :returns: List of config dicts
-    :rtype: list
     """
     return eodag_api.list_product_types(fetch_providers=False)
 
@@ -398,15 +387,10 @@ async def all_collections(
     """Build STAC collections
 
     :param url: Requested URL
-    :type url: str
     :param root: The API root
-    :type root: str
     :param filters: Search collections filters
-    :type filters: CollectionsSearchRequest
     :param provider: (optional) Chosen provider
-    :type provider: str
     :returns: Collections dictionnary
-    :rtype: dict
     """
 
     async def _fetch() -> Dict[str, Any]:
@@ -450,15 +434,10 @@ async def get_collection(
     """Build STAC collection by id
 
     :param url: Requested URL
-    :type url: str
     :param root: API root
-    :type root: str
     :param collection_id: Product_type as ID of the collection
-    :type collection_id: str
     :param provider: (optional) Chosen provider
-    :type provider: str
     :returns: Collection dictionary
-    :rtype: dict
     """
 
     async def _fetch() -> Dict[str, Any]:
@@ -489,15 +468,10 @@ async def get_stac_catalogs(
     """Build STAC catalog
 
     :param url: Requested URL
-    :type url: str
     :param root: (optional) API root
-    :type root: str
     :param catalogs: (optional) Catalogs list
-    :type catalogs: list
     :param provider: (optional) Chosen provider
-    :type provider: str
     :returns: Catalog dictionary
-    :rtype: dict
     """
 
     async def _fetch() -> Dict[str, Any]:
@@ -564,7 +538,6 @@ def get_stac_conformance() -> Dict[str, str]:
     """Build STAC conformance
 
     :returns: conformance dictionnary
-    :rtype: dict
     """
     return stac_config["conformance"]
 
@@ -573,7 +546,6 @@ def get_stac_api_version() -> str:
     """Get STAC API version
 
     :returns: STAC API version
-    :rtype: str
     """
     return stac_config["stac_api_version"]
 
@@ -583,14 +555,12 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     """Build STAC OGC / OpenSearch Extension for EO
 
     :param url: Requested URL
-    :type url: str
     :returns: Catalog dictionnary
-    :rtype: dict
     """
 
-    apply_method: Callable[[str, str], str] = lambda _, x: str(x).replace(
-        "$.product.", "$."
-    )
+    def apply_method(_: str, x: str) -> str:
+        return str(x).replace("$.product.", "$.")
+
     item_mapping = dict_items_recursive_apply(stac_config["item"], apply_method)
 
     # all properties as string type by default
@@ -616,9 +586,7 @@ async def get_queryables(
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
-    :type collection_id: str
     :returns: A set containing the STAC standardized queryable properties for a collection.
-    :rtype Dict[str, StacQueryableProperty]: set
     """
 
     async def _fetch() -> Dict[str, Any]:

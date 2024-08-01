@@ -14,10 +14,10 @@ This table lists all the download plugins currently available:
 .. autosummary::
    :toctree: generated/
 
-   eodag.plugins.download.http.HTTPDownload
-   eodag.plugins.download.aws.AwsDownload
-   eodag.plugins.download.s3rest.S3RestDownload
-   eodag.plugins.download.creodias_s3.CreodiasS3Download
+   http.HTTPDownload
+   aws.AwsDownload
+   s3rest.S3RestDownload
+   creodias_s3.CreodiasS3Download
 
 ---------------------------
 Download methods call graph

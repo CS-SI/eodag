@@ -39,9 +39,7 @@ def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str
     """Get start and end dates from a dict containing `/` separated dates in `datetime` item
 
     :param arguments: dict containing a single date or `/` separated dates in `datetime` item
-    :type arguments: dict
     :returns: Start date and end date from datetime string (duplicate value if only one date as input)
-    :rtype: Tuple[Optional[str], Optional[str]]
     """
     datetime_str = arguments.pop("datetime", None)
 
@@ -86,10 +84,8 @@ def rfc3339_str_to_datetime(s: str) -> datetime.datetime:
     """Convert a string conforming to RFC 3339 to a :class:`datetime.datetime`.
 
     :param s: The string to convert to :class:`datetime.datetime`
-    :type s: str
 
     :returns: The datetime represented by the ISO8601 (RFC 3339) formatted string
-    :rtype: :class:`datetime.datetime`
 
     raises: :class:`ValidationError`
     """

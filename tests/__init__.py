@@ -298,7 +298,7 @@ class EODagTestCase(unittest.TestCase):
         self,
         product=None,
         base_uri=None,
-        outputs_prefix=None,
+        output_dir=None,
         extract=None,
         delete_archive=None,
     ):
@@ -307,9 +307,9 @@ class EODagTestCase(unittest.TestCase):
         dl_config = config.PluginConfig.from_mapping(
             {
                 "base_uri": "fake_base_uri" if base_uri is None else base_uri,
-                "outputs_prefix": self.tmp_download_dir.name
-                if outputs_prefix is None
-                else outputs_prefix,
+                "output_dir": self.tmp_download_dir.name
+                if output_dir is None
+                else output_dir,
                 "extract": True if extract is None else extract,
                 "delete_archive": False if delete_archive is None else delete_archive,
             }

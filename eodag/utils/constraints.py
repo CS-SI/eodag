@@ -41,15 +41,10 @@ def get_constraint_queryables_with_additional_params(
     gets the queryables from the constraints using the given parameters
     For all queryables only values matching the given parameters based on the constraints will be returned
     :param constraints: list of constraints fetched from the provider
-    :type constraints: List[Any]
     :param input_params: conditions the constraints should fulfil
-    :type input_params: dict
     :param plugin: search or api plugin that is used
-    :type plugin: Union[Search, Api]
     :param product_type: product type for which the data should be fetched
-    :type product_type: str
     :returns: dict containing queryable data
-    :rtype: Dict[str, Dict[str, Set[Any]]]
     """
     defaults = copy.deepcopy(input_params)
     constraint_matches = {}
@@ -174,11 +169,8 @@ def fetch_constraints(
     """
     fetches the constraints from a provider
     :param constraints_url: url from which the constraints can be fetched
-    :type constraints_url: str
     :param plugin: api or search plugin of the provider
-    :type plugin: Union[Search, Api]
     :returns: list of constraints fetched from the provider
-    :rtype: List[Dict[Any, Any]]
     """
     auth = (
         plugin.auth

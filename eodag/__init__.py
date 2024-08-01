@@ -22,19 +22,17 @@
 # depends on numpy and ship with a pre-built version of numpy that is older than 1.15.1 (where the warning is silenced
 # exactly as below)
 """EODAG package"""
-import warnings
 from importlib.metadata import PackageNotFoundError, version
 
-from .api.core import EODataAccessGateway  # noqa
-from .api.product import EOProduct  # noqa
-from .api.search_result import SearchResult  # noqa
-from .utils.logging import setup_logging  # noqa
+from .api.core import EODataAccessGateway
+from .api.product import EOProduct
+from .api.search_result import SearchResult
+from .utils.logging import setup_logging
 
 try:
     __version__ = version(__name__)
 except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
 
-
-warnings.filterwarnings("ignore", message="numpy.dtype size changed")
-warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+# exportable content
+__all__ = ["EODataAccessGateway", "EOProduct", "SearchResult", "setup_logging"]

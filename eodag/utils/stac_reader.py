@@ -112,23 +112,17 @@ def fetch_stac_items(
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
-    :type stac_path: str
     :param recursive: (optional) Browse recursively in child nodes if True
-    :type recursive: bool
     :param max_connections: (optional) Maximum number of connections for HTTP requests
-    :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
-    :type timeout: int
     :param ssl_verify: (optional) SSL Verification for HTTP request
-    :type ssl_verify: bool
     :returns: The items found in `stac_path`
-    :rtype: :class:`list`
     """
 
     # URI opener used by PySTAC internally, instantiated here
     # to retrieve the timeout.
     _text_opener = _TextOpener(timeout, ssl_verify)
-    pystac.StacIO.read_text = _text_opener
+    pystac.StacIO.read_text = _text_opener  # type: ignore[assignment]
 
     stac_obj = pystac.read_file(stac_path)
     # Single STAC item
@@ -198,22 +192,16 @@ def fetch_stac_collections(
     """Fetch STAC collection(s) from a catalog.
 
     :param stac_path: A STAC object filepath
-    :type stac_path: str
     :param collection: the collection to fetch
-    :type collection: Optional[str]
     :param max_connections: (optional) Maximum number of connections for HTTP requests
-    :type max_connections: int
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
-    :type timeout: int
     :param ssl_verify: (optional) SSL Verification for HTTP request
-    :type ssl_verify: bool
     :returns: The collection(s) found in `stac_path`
-    :rtype: :class:`list`
     """
 
     # URI opener used by PySTAC internally, instantiated here to retrieve the timeout.
     _text_opener = _TextOpener(timeout, ssl_verify)
-    pystac.StacIO.read_text = _text_opener
+    pystac.StacIO.read_text = _text_opener  # type: ignore[assignment]
 
     stac_obj = pystac.read_file(stac_path)
     if isinstance(stac_obj, pystac.Catalog):

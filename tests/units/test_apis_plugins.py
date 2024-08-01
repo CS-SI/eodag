@@ -292,7 +292,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "%s" % eoproduct.properties["title"],
             "%s.grib" % eoproduct.properties["title"],
         )
-        path = eoproduct.download(outputs_prefix=output_data_path)
+        path = eoproduct.download(output_dir=output_data_path)
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_called_once_with(
             mock.ANY,  # ECMWFDataServer instance
@@ -329,7 +329,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "%s" % eoproduct.properties["title"],
             "%s.nc" % eoproduct.properties["title"],
         )
-        path = eoproduct.download(outputs_prefix=output_data_path)
+        path = eoproduct.download(output_dir=output_data_path)
         download_request = geojson.loads(urlsplit(eoproduct.remote_location).query)
         download_request.pop("dataset", None)
         mock_ecmwfservice_execute.assert_called_once_with(
@@ -347,7 +347,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.reset_mock()
 
         # download again
-        eoproduct.download(outputs_prefix=output_data_path)
+        eoproduct.download(output_dir=output_data_path)
         mock_ecmwfservice_execute.assert_not_called()
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
@@ -385,13 +385,72 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert len(eoproducts) == 2
 
         paths = dag.download_all(
-            eoproducts, outputs_prefix=os.path.join(os.path.expanduser("~"), "data")
+            eoproducts, output_dir=os.path.join(os.path.expanduser("~"), "data")
         )
         assert mock_ecmwfdataserver_retrieve.call_count == 2
         assert len(paths) == 2
 
 
 class TestApisPluginUsgsApi(BaseApisPluginTest):
+    SCENE_SEARCH_RETURN = {
+        "data": {
+            "results": [
+                {
+                    "browse": [
+                        {
+                            "browsePath": "https://path/to/quicklook.jpg",
+                            "thumbnailPath": "https://path/to/thumbnail.jpg",
+                        },
+                        {},
+                        {},
+                    ],
+                    "cloudCover": "77.46",
+                    "entityId": "LC81780382020041LGN00",
+                    "displayId": "LC08_L1GT_178038_20200210_20200224_01_T2",
+                    "spatialBounds": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [28.03905, 30.68073],
+                                [28.03905, 32.79057],
+                                [30.46294, 32.79057],
+                                [30.46294, 30.68073],
+                                [28.03905, 30.68073],
+                            ]
+                        ],
+                    },
+                    "temporalCoverage": {
+                        "endDate": "2020-02-10 00:00:00",
+                        "startDate": "2020-02-10 00:00:00",
+                    },
+                    "publishDate": "2020-02-10 08:24:46",
+                },
+            ],
+            "recordsReturned": 5,
+            "totalHits": 139,
+            "startingNumber": 6,
+            "nextRecord": 11,
+        }
+    }
+
+    DOWNLOAD_OPTION_RETURN = {
+        "data": [
+            {
+                "id": "5e83d0b8e7f6734c",
+                "entityId": "LC81780382020041LGN00",
+                "available": True,
+                "filesize": 9186067,
+                "productName": "LandsatLook Natural Color Image",
+                "downloadSystem": "dds",
+            },
+            {
+                "entityId": "LC81780382020041LGN00",
+                "available": False,
+                "downloadSystem": "wms",
+            },
+        ]
+    }
+
     def setUp(self):
         self.provider = "usgs"
         self.api_plugin = self.get_search_plugin(provider=self.provider)
@@ -450,67 +509,12 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
     @mock.patch(
         "usgs.api.scene_search",
         autospec=True,
-        return_value={
-            "data": {
-                "results": [
-                    {
-                        "browse": [
-                            {
-                                "browsePath": "https://path/to/quicklook.jpg",
-                                "thumbnailPath": "https://path/to/thumbnail.jpg",
-                            },
-                            {},
-                            {},
-                        ],
-                        "cloudCover": "77.46",
-                        "entityId": "LC81780382020041LGN00",
-                        "displayId": "LC08_L1GT_178038_20200210_20200224_01_T2",
-                        "spatialBounds": {
-                            "type": "Polygon",
-                            "coordinates": [
-                                [
-                                    [28.03905, 30.68073],
-                                    [28.03905, 32.79057],
-                                    [30.46294, 32.79057],
-                                    [30.46294, 30.68073],
-                                    [28.03905, 30.68073],
-                                ]
-                            ],
-                        },
-                        "temporalCoverage": {
-                            "endDate": "2020-02-10 00:00:00",
-                            "startDate": "2020-02-10 00:00:00",
-                        },
-                        "publishDate": "2020-02-10 08:24:46",
-                    },
-                ],
-                "recordsReturned": 5,
-                "totalHits": 139,
-                "startingNumber": 6,
-                "nextRecord": 11,
-            }
-        },
+        return_value=SCENE_SEARCH_RETURN,
     )
     @mock.patch(
         "usgs.api.download_options",
         autospec=True,
-        return_value={
-            "data": [
-                {
-                    "id": "5e83d0b8e7f6734c",
-                    "entityId": "LC81780382020041LGN00",
-                    "available": True,
-                    "filesize": 9186067,
-                    "productName": "LandsatLook Natural Color Image",
-                    "downloadSystem": "dds",
-                },
-                {
-                    "entityId": "LC81780382020041LGN00",
-                    "available": False,
-                    "downloadSystem": "wms",
-                },
-            ]
-        },
+        return_value=DOWNLOAD_OPTION_RETURN,
     )
     def test_plugins_apis_usgs_query(
         self,
@@ -568,6 +572,61 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)
+    @mock.patch(
+        "usgs.api.scene_search",
+        autospec=True,
+        return_value=SCENE_SEARCH_RETURN,
+    )
+    @mock.patch(
+        "usgs.api.download_options",
+        autospec=True,
+        return_value=DOWNLOAD_OPTION_RETURN,
+    )
+    @mock.patch(
+        "usgs.api.dataset_filters",
+        autospec=True,
+        return_value={
+            "data": [
+                {"id": "foo_id", "searchSql": "DONT_USE_THIS !"},
+                {"id": "bar_id", "searchSql": "USE_THIS_ID !"},
+            ]
+        },
+    )
+    def test_plugins_apis_usgs_query_by_id(
+        self,
+        mock_dataset_filters,
+        mock_api_download_options,
+        mock_api_scene_search,
+        mock_api_logout,
+        mock_api_login,
+    ):
+        """UsgsApi.query by id must search using usgs api"""
+
+        search_kwargs = {
+            "productType": "LANDSAT_C2L1",
+            "id": "SOME_PRODUCT_ID",
+            "prep": PreparedSearch(
+                items_per_page=500,
+                page=1,
+            ),
+        }
+        search_results, total_count = self.api_plugin.query(**search_kwargs)
+        mock_api_scene_search.assert_called_once_with(
+            "landsat_ot_c2_l1",
+            where={"filter_id": "bar_id", "value": "SOME_PRODUCT_ID"},
+            start_date=None,
+            end_date=None,
+            ll=None,
+            ur=None,
+            max_results=500,
+            starting_number=1,
+        )
+        self.assertEqual(search_results[0].provider, "usgs")
+        self.assertEqual(search_results[0].product_type, "LANDSAT_C2L1")
+        self.assertEqual(len(search_results), 1)
+
+    @mock.patch("usgs.api.login", autospec=True)
+    @mock.patch("usgs.api.logout", autospec=True)
     @mock.patch("usgs.api.download_request", autospec=True)
     def test_plugins_apis_usgs_download(
         self,
@@ -612,16 +671,14 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
             # missing download_request return value
             with self.assertRaises(NotAvailableError):
-                self.api_plugin.download(product, outputs_prefix=self.tmp_home_dir.name)
+                self.api_plugin.download(product, output_dir=self.tmp_home_dir.name)
 
             # download 1 available product
             mock_api_download_request.return_value = {
                 "data": {"preparingDownloads": [{"url": "http://path/to/product"}]}
             }
 
-            path = self.api_plugin.download(
-                product, outputs_prefix=self.tmp_home_dir.name
-            )
+            path = self.api_plugin.download(product, output_dir=self.tmp_home_dir.name)
 
             self.assertEqual(len(responses.calls), 1)
             self.assertIn(
@@ -639,7 +696,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             os.remove(path)
             with mock.patch("tarfile.is_tarfile", return_value=True, autospec=True):
                 path = self.api_plugin.download(
-                    product, outputs_prefix=self.tmp_home_dir.name, extract=False
+                    product, output_dir=self.tmp_home_dir.name, extract=False
                 )
                 self.assertEqual(
                     path, os.path.join(self.tmp_home_dir.name, "dummy_product.tar.gz")
@@ -649,7 +706,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             product.product_type = "S2_MSI_L1C"
             with mock.patch("zipfile.is_zipfile", return_value=True, autospec=True):
                 path = self.api_plugin.download(
-                    product, outputs_prefix=self.tmp_home_dir.name, extract=False
+                    product, output_dir=self.tmp_home_dir.name, extract=False
                 )
                 self.assertEqual(
                     path, os.path.join(self.tmp_home_dir.name, "dummy_product.zip")

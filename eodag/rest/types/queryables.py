@@ -51,14 +51,16 @@ class QueryablesGetParams(BaseModel):
         dumped: Dict[str, Any] = handler(self)
         return {EODAGSearch.to_eodag(k): v for k, v in dumped.items()}
 
-    @computed_field
+    # use [prop-decorator] mypy error code when mypy==1.12 is released
+    @computed_field  # type: ignore[misc]
     @property
     def start_datetime(self) -> Optional[str]:
         """Extract start_datetime property from datetime"""
         start = str_to_interval(self.datetime)[0]
         return start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else None
 
-    @computed_field
+    # use [prop-decorator] mypy error code when mypy==1.12 is released
+    @computed_field  # type: ignore[misc]
     @property
     def end_datetime(self) -> Optional[str]:
         """Extract end_datetime property from datetime"""
@@ -70,11 +72,8 @@ class StacQueryableProperty(BaseModel):
     """A class representing a queryable property.
 
     :param description: The description of the queryables property
-    :type description: str
     :param ref: (optional) A reference link to the schema of the property.
-    :type ref: str
     :param type: (optional) possible types of the property
-    :type type: list[str]
     """
 
     description: str
@@ -114,19 +113,12 @@ class StacQueryables(BaseModel):
     """A class representing queryable properties for the STAC API.
 
     :param json_schema: The URL of the JSON schema.
-    :type json_schema: str
     :param q_id: (optional) The identifier of the queryables.
-    :type q_id: str
     :param q_type: The type of the object.
-    :type q_type: str
     :param title: The title of the queryables.
-    :type title: str
     :param description: The description of the queryables
-    :type description: str
     :param properties: A dictionary of queryable properties.
-    :type properties: dict
     :param additional_properties: Whether additional properties are allowed.
-    :type additional_properties: bool
     """
 
     json_schema: str = Field(

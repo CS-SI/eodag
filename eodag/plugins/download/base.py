@@ -79,17 +79,17 @@ class Download(PluginTopic):
 
     They must:
 
-    - download data in the ``outputs_prefix`` folder defined in the plugin's
+    - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
     - extract products from their archive (if relevant) if ``extract`` is set to True
       (True by default)
-    - save a product in an archive/directory (in ``outputs_prefix``) whose name must be
+    - save a product in an archive/directory (in ``output_dir``) whose name must be
       the product's ``title`` property
     - update the product's ``location`` attribute once its data is downloaded (and
       eventually after it's extracted) to the product's location given as a file URI
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
-    - save a *record* file in the directory ``outputs_prefix/.downloaded`` whose name
+    - save a *record* file in the directory ``output_dir/.downloaded`` whose name
       is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
       attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
@@ -100,9 +100,7 @@ class Download(PluginTopic):
       (it certainly indicates that the download didn't complete)
 
     :param provider: An eodag providers configuration dictionary
-    :type provider: dict
     :param config: Path to the user configuration file
-    :type config: str
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -122,25 +120,18 @@ class Download(PluginTopic):
         Base download method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: The absolute path to the downloaded product in the local filesystem
             (e.g. '/tmp/product.zip' on Linux or
             'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
-        :rtype: str
         """
         raise NotImplementedError(
             "A Download plugin must implement a method named download"
@@ -159,23 +150,16 @@ class Download(PluginTopic):
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
-        :rtype: dict
         """
         raise NotImplementedError(
             "Download streaming must be implemented using a method named _stream_download_dict"
@@ -190,11 +174,8 @@ class Download(PluginTopic):
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: fs_path, record_filename
-        :rtype: Tuple[Optional[str], Optional[str]]
         """
         if product.location != product.remote_location:
             fs_path = uri_to_path(product.location)
@@ -216,18 +197,18 @@ class Download(PluginTopic):
             f"Download url: {url}",
         )
 
-        outputs_prefix = (
-            kwargs.pop("outputs_prefix", None)
-            or getattr(self.config, "outputs_prefix", tempfile.gettempdir())
+        output_dir = (
+            kwargs.pop("output_dir", None)
+            or getattr(self.config, "output_dir", tempfile.gettempdir())
             or tempfile.gettempdir()
         )
-        outputs_extension = kwargs.get("outputs_extension", None) or getattr(
-            self.config, "outputs_extension", ".zip"
+        output_extension = kwargs.get("output_extension", None) or getattr(
+            self.config, "output_extension", ".zip"
         )
 
         # Strong asumption made here: all products downloaded will be zip files
         # If they are not, the '.zip' extension will be removed when they are downloaded and returned as is
-        prefix = os.path.abspath(outputs_prefix)
+        prefix = os.path.abspath(output_dir)
         sanitized_title = sanitize(product.properties["title"])
         if sanitized_title == product.properties["title"]:
             collision_avoidance_suffix = ""
@@ -235,10 +216,10 @@ class Download(PluginTopic):
             collision_avoidance_suffix = "-" + sanitize(product.properties["id"])
         fs_path = os.path.join(
             prefix,
-            f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{outputs_extension}",
+            f"{sanitize(product.properties['title'])}{collision_avoidance_suffix}{output_extension}",
         )
         fs_dir_path = (
-            fs_path.replace(outputs_extension, "") if outputs_extension else fs_path
+            fs_path.replace(output_extension, "") if output_extension else fs_path
         )
         download_records_dir = os.path.join(prefix, ".downloaded")
         try:
@@ -292,9 +273,7 @@ class Download(PluginTopic):
         (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
 
         :param product: The product to calculate the record hash
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :returns: The MD5 hash
-        :rtype: str
         """
         # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
         product_hash = str(product.product_type) + "-" + str(product.properties["id"])
@@ -309,9 +288,7 @@ class Download(PluginTopic):
         WARNING: A strong assumption is made here: there is only one subdirectory per level
 
         :param product_path: The path to the extracted product
-        :type product_path: str
         :returns: The path to the extracted product with the right depth
-        :rtype: str
         """
         archive_depth = getattr(self.config, "archive_depth", 1)
         count = 1
@@ -329,11 +306,8 @@ class Download(PluginTopic):
         """Finalize the download process.
 
         :param fs_path: The path to the local zip archive downloaded or already present
-        :type fs_path: str
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback` or None
         :returns: The absolute path to the product
-        :rtype: str
         """
         # progress bar init
         if progress_callback is None:
@@ -365,11 +339,11 @@ class Download(PluginTopic):
             if delete_archive is not None
             else getattr(self.config, "delete_archive", True)
         )
-        outputs_extension = kwargs.pop("outputs_extension", ".zip")
+        output_extension = kwargs.pop("output_extension", ".zip")
 
         product_path = (
-            fs_path[: fs_path.index(outputs_extension)]
-            if outputs_extension in fs_path
+            fs_path[: fs_path.index(output_extension)]
+            if output_extension in fs_path
             else fs_path
         )
         product_path_exists = os.path.exists(product_path)
@@ -396,9 +370,7 @@ class Download(PluginTopic):
             )
             progress_callback(1, total=1)
             return product_path
-        outputs_prefix = (
-            kwargs.pop("outputs_prefix", None) or self.config.outputs_prefix
-        )
+        output_dir = kwargs.pop("output_dir", None) or self.config.output_dir
 
         if not os.path.exists(product_path):
             logger.info("Extraction activated")
@@ -407,9 +379,9 @@ class Download(PluginTopic):
             )
             progress_callback.refresh()
 
-            outputs_dir = os.path.join(outputs_prefix, product_path)
+            product_dir = os.path.join(output_dir, product_path)
             tmp_dir = tempfile.TemporaryDirectory()
-            extraction_dir = os.path.join(tmp_dir.name, os.path.basename(outputs_dir))
+            extraction_dir = os.path.join(tmp_dir.name, os.path.basename(product_dir))
 
             if fs_path.endswith(".zip"):
                 with zipfile.ZipFile(fs_path, "r") as zfile:
@@ -427,10 +399,10 @@ class Download(PluginTopic):
                 # then, we create a directory in which we place this file
                 product_extraction_path = self._resolve_archive_depth(extraction_dir)
                 if os.path.isfile(product_extraction_path) and not os.path.isdir(
-                    outputs_dir
+                    product_dir
                 ):
-                    os.makedirs(outputs_dir)
-                shutil.move(product_extraction_path, outputs_dir)
+                    os.makedirs(product_dir)
+                shutil.move(product_extraction_path, product_dir)
 
             elif fs_path.endswith(".tar") or fs_path.endswith(".tar.gz"):
                 with tarfile.open(fs_path, "r") as zfile:
@@ -441,10 +413,10 @@ class Download(PluginTopic):
                 # then, we create a directory in which we place this file
                 product_extraction_path = self._resolve_archive_depth(extraction_dir)
                 if os.path.isfile(product_extraction_path) and not os.path.isdir(
-                    outputs_dir
+                    product_dir
                 ):
-                    os.makedirs(outputs_dir)
-                shutil.move(product_extraction_path, outputs_dir)
+                    os.makedirs(product_dir)
+                shutil.move(product_extraction_path, product_dir)
             else:
                 progress_callback(1, total=1)
 
@@ -483,32 +455,23 @@ class Download(PluginTopic):
         implemented by the plugin to **sequentially** attempt to download products.
 
         :param products: Products to download
-        :type products: :class:`~eodag.api.search_result.SearchResult`
         :param auth: (optional) authenticated object
-        :type auth: Optional[Union[AuthBase, Dict[str, str]]]
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
                                     :class:`~eodag.api.product.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
-        :type downloaded_callback: Callable[[:class:`~eodag.api.product._product.EOProduct`], None]
-                                   or None
         :param progress_callback: (optional) A progress callback
-        :type progress_callback: :class:`~eodag.utils.ProgressCallback`
         :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
-        :param kwargs: `outputs_prefix` (str), `extract` (bool), `delete_archive` (bool)
+        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :type kwargs: Union[str, bool, dict]
         :returns: List of absolute paths to the downloaded products in the local
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
-        :rtype: list
         """
         # Products are going to be removed one by one from this sequence once
         # downloaded.
@@ -632,14 +595,10 @@ class Download(PluginTopic):
         exception is thrown until `timeout` minutes.
 
         :param product: The EO product to download
-        :type product: :class:`~eodag.api.product._product.EOProduct`
         :param wait: If download fails, wait time in minutes between two download tries
-        :type wait: int
         :param timeout: If download fails, maximum time in minutes before stop retrying
                         to download
-        :type timeout: int
         :returns: decorator
-        :rtype: Callable[[Callable[..., T]], Callable[..., T]]
         """
 
         def decorator(download: Callable[..., T]) -> Callable[..., T]:
@@ -670,7 +629,7 @@ class Download(PluginTopic):
                             not_available_info = str(e)
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
-                        wait_seconds = (
+                        wait_seconds: Union[float, int] = (
                             datetime_now - product.next_try + timedelta(minutes=wait)
                         ).seconds
                         retry_count += 1
