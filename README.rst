@@ -23,8 +23,6 @@
 
 |pypi-badge| |conda-badge| |rtd-badge| |gha-badge| |ghi-badge| |binder-badge|
 
-|
-
 .. |license-badge| image:: https://img.shields.io/pypi/l/eodag.svg
     :target: https://pypi.org/project/eodag/
 
