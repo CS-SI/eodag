@@ -84,7 +84,7 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
    conda install -c conda-forge eodag
 
-**[`Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ in v3.0.0]** Please note that EODAG
+[`Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ **in v3.0.0**] Please note that EODAG
 comes with a minimal set of dependencies. If you want more features, please install using one of the
 `available extras <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_.
 
@@ -120,8 +120,9 @@ This will search for Sentinel 2 level-1C products on the default provider and re
 an estimated total number of products matching the search criteria. And then it will download these products. Please
 check the `Python API User Guide <https://eodag.readthedocs.io/en/latest/api_user_guide.html>`_ for more details.
 
-**[New in v3.0.0]** `search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_
-method now returns only a single ``SearchResult`` instead of a 2 values tuple.
+[`Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ **in v3.0.0**]
+`search() <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/4_search.html#search()>`_ method now returns
+only a single ``SearchResult`` instead of a 2 values tuple.
 
 STAC REST API
 -------------
