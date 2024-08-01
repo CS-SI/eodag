@@ -3,6 +3,12 @@ Breaking changes
 
 Full changelog available in `Release history <changelog.html>`_.
 
+3.0.0b3
++++++++
+
+* :meth:`~eodag.api.core.EODataAccessGateway.download` / :class:`~eodag.types.download_args.DownloadConf` parameters
+  ``outputs_prefix`` and ``outputs_extension`` renamed to ``output_dir`` and ``output_extension``.
+
 3.0.0b1
 +++++++
 
