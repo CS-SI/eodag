@@ -2881,87 +2881,36 @@
       qs: $.qs
       orderLink: 'https://cds-beta.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
       # Copernicus CDS specific parameters
-      accuracy:
-        - accuracy
-        - $.accuracy
-      anoffset:
-        - anoffset
-        - $.anoffset
       api_product_type:
         - product_type
         - $.api_product_type
-      bitmap:
-        - bitmap
-        - $.bitmap
-      block:
-        - block
-        - $.block
       cdr_type:
         - cdr_type
         - $.cdr_type
-      channel:
-        - channel
-        - $.channel
-      class:
-        - class
-        - $.class
-      database:
-        - database
-        - $.database
       dataset:
         - dataset
         - $.dataset
       dataset_type:
         - dataset_type
         - $.dataset_type
-      date_range:
-        - date_range
-        - $.date_range
       day:
         - day
         - $.day
-      diagnostic:
-        - diagnostic
-        - $.diagnostic
-      direction:
-        - direction
-        - $.direction
-      domain:
-        - domain
-        - $.domain
       download_format:
         - download_format
         - $.download_format
-      duplicates:
-        - duplicates
-        - $.duplicates
       ensemble_member:
         - ensemble_member
         - $.ensemble_member
-      expect:
-        - expect
-        - $.expect
       experiment:
         - experiment
         - $.experiment
-      expver:
-        - expver
-        - $.expver
-      fcperiod:
-        - fcperiod
-        - $.fcperiod
-      fieldset:
-        - fieldset
-        - $.fieldset
       filter:
         - filter
         - $.filter
       format:
         - data_format
         - $.format
-      frequency:
-        - frequency
-        - $.frequency
       gcm:
         - gcm
         - $.gcm
@@ -2977,69 +2926,33 @@
       hydrological_model:
         - hydrological_model
         - $.hydrological_model
-      ident:
-        - ident
-        - $.ident
-      interpolation:
-        - interpolation
-        - $.interpolation
-      intgrid:
-        - intgrid
-        - $.intgrid
-      iteration:
-        - iteration
-        - $.iteration
       latitude:
         - latitude
         - $.latitude
-      levelist:
-        - levelist
-        - $.levelist
       leadtime_hour:
         - leadtime_hour
         - $.leadtime_hour
       leadtime_month:
         - leadtime_month
         - $.leadtime_month
-      levtype:
-        - levtype
-        - $.levtype
       longitude:
         - longitude
         - $.longitude
-      lsm:
-        - lsm
-        - $.lsm
-      method:
-        - method
-        - $.method
       model_levels:
         - model_levels
         - $.model_levels
       month:
         - month
         - $.month
-      number:
-        - number
-        - $.number
-      obsgroup:
-        - obsgroup
-        - $.obsgroup
-      obstype:
-        - obstype
-        - $.obstype
+      nominal_day:
+        - nominal_day
+        - $.nominal_day
       origin:
         - origin
         - $.origin
       originating_centre:
         - originating_centre
         - $.originating_centre
-      packing:
-        - packing
-        - $.packing
-      padding:
-        - padding
-        - $.padding
       param:
         - param
         - $.param
@@ -3049,9 +2962,6 @@
       pressure_level:
         - pressure_level
         - $.pressure_level
-      priority:
-        - priority
-        - $.priority
       processing_level:
         - processing_level
         - $.processing_level
@@ -3064,39 +2974,15 @@
       product_version:
         - product_version
         - $.product_version
-      range:
-        - range
-        - $.range
       rcm:
         - rcm
         - $.rcm
-      refdate:
-        - refdate
-        - $.refdate
-      reference:
-        - reference
-        - $.reference
       region:
         - region
         - $.region
-      reportype:
-        - reportype
-        - $.reportype
-      repres:
-        - repres
-        - $.repres
-      resol:
-        - resol
-        - $.resol
-      rotation:
-        - rotation
-        - $.rotation
       satellite:
         - satellite
         - $.satellite
-      section:
-        - section
-        - $.section
       sensor:
         - sensor
         - $.sensor
@@ -3112,9 +2998,6 @@
       step:
         - step
         - $.step
-      stream:
-        - stream
-        - $.stream
       system:
         - system
         - $.system
@@ -3133,15 +3016,9 @@
       time_aggregation:
         - time_aggregation
         - $.time_aggregation
-      truncation:
-        - truncation
-        - $.truncation
       type:
         - type
         - $.type
-      use:
-        - use
-        - $.use
       variable:
         - variable
         - $.variable
@@ -3355,42 +3232,32 @@
           - '{$.completionTimeFromAscendingNode#to_iso_date}'
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
-      format: zip
       processing_level: level_2
       variable: xco2
-      sensor_and_algorithm: sciamachy_wfmd
-      version: '4.0'
+      sensor_and_algorithm: merged_emma
+      version: '4_5'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
       dataset: satellite-fire-burned-area
-      format: zip
       origin: esa_cci
       sensor: modis
       variable: grid_variables
-      version: 5_1_1cds
+      version: '5_1_1cds'
+      nominal_day: '01'
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "nominal_day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     SATELLITE_METHANE:
       dataset: satellite-methane
-      format: zip
       processing_level: level_2
       variable: xch4
-      sensor_and_algorithm: sciamachy_wfmd
-      version: '4.0'
+      sensor_and_algorithm: merged_emma
+      version: '4_5'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
       cdr_type: cdr
       dataset: satellite-sea-ice-edge-type
-      format: zip
       region: northern_hemisphere
       variable:
         - sea_ice_edge
@@ -3401,7 +3268,6 @@
     SATELLITE_SEA_ICE_THICKNESS:
       cdr_type: cdr
       dataset: satellite-sea-ice-thickness
-      format: zip
       satellite: envisat
       variable: all
       version: '3_0'
@@ -3410,8 +3276,7 @@
     SATELLITE_SEA_ICE_CONCENTRATION:
       cdr_type: cdr
       dataset: satellite-sea-ice-concentration
-      format: zip
-      origin: EUMETSAT OSI SAF
+      origin: eumetsat_osi_saf
       region:
         - northern_hemisphere
         - southern_hemisphere
@@ -3421,46 +3286,34 @@
       version: v3
       metadata_mapping:
         <<: *day_month_year
-    SATELLITE_SEA_LEVEL_BLACK_SEA:
-      dataset: satellite-sea-level-black-sea
-      format: zip
-      metadata_mapping:
-        <<: *day_month_year
     SATELLITE_SEA_LEVEL_GLOBAL:
       dataset: satellite-sea-level-global
-      format: zip
       variable:
         - daily
-      version: vDT2021
-      metadata_mapping:
-        <<: *day_month_year
-    SATELLITE_SEA_LEVEL_MEDITERRANEAN:
-      dataset: satellite-sea-level-mediterranean
-      variable: all
-      format: zip
+      version: vdt2021
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_PL:
       dataset: seasonal-postprocessed-pressure-levels
       format: grib
       originating_centre: ecmwf
-      system: '4'
+      system: '5'
       variable: geopotential_anomaly
       pressure_level: '10'
       api_product_type: ensemble_mean
       leadtime_month: '1'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *month_year
     SEASONAL_POSTPROCESSED_SL:
       dataset: seasonal-postprocessed-single-levels
       format: grib
       originating_centre: ecmwf
-      system: '4'
+      system: '5'
       variable: 2m_dewpoint_temperature_anomaly
       api_product_type: ensemble_mean
       leadtime_month: '1'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *month_year
     SEASONAL_ORIGINAL_SL:
       dataset: seasonal-original-single-levels
       format: grib
@@ -3468,6 +3321,9 @@
       system: '5'
       variable: 10m_u_component_of_wind
       leadtime_hour: '6'
+      day: '01'
+      metadata_mapping:
+        <<: *month_year
     SEASONAL_ORIGINAL_PL:
       dataset: seasonal-original-pressure-levels
       format: grib
@@ -3476,6 +3332,9 @@
       variable: geopotential
       pressure_level: '10'
       leadtime_hour: '12'
+      day: '01'
+      metadata_mapping:
+        <<: *month_year
     SEASONAL_MONTHLY_PL:
       dataset: seasonal-monthly-pressure-levels
       format: grib
@@ -3486,7 +3345,7 @@
       api_product_type: monthly_mean
       leadtime_month: '1'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *month_year
     SEASONAL_MONTHLY_SL:
       dataset: seasonal-monthly-single-levels
       format: grib
@@ -3496,7 +3355,7 @@
       api_product_type: monthly_mean
       leadtime_month: '1'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *month_year
     SIS_HYDRO_MET_PROJ:
       dataset: sis-hydrology-meteorology-derived-projections
       format: zip
