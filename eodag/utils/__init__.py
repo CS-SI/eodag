@@ -1096,7 +1096,7 @@ def get_geometry_from_various(
     for arg in query_locations.keys():
         if arg in locations_dict.keys():
             found = False
-            pattern = query_locations[arg]
+            pattern = rf"{query_locations[arg]}"
             attr = locations_dict[arg]["attr"]
             with shapefile.Reader(locations_dict[arg]["path"]) as shp:
                 for shaperec in shp.shapeRecords():
