@@ -8,7 +8,7 @@ Breaking changes
 ^^^^^^^^^^^^^^^^
 
 * :meth:`~eodag.api.core.EODataAccessGateway.download` / :class:`~eodag.types.download_args.DownloadConf` parameters
- ``outputs_prefix`` and ``outputs_extension`` renamed to ``output_dir`` and ``output_extension`` (:pull:`1279`)
+  ``outputs_prefix`` and ``outputs_extension`` renamed to ``output_dir`` and ``output_extension`` (:pull:`1279`)
 
 Core features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^
