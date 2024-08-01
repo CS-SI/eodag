@@ -84,8 +84,9 @@ And with ``conda`` from the `conda-forge channel <https://anaconda.org/conda-for
 
    conda install -c conda-forge eodag
 
-**[New in v3.0.0]** Please note that EODAG comes with a minimal set of dependencies. If you want more features, please install using one of
-the `available extras <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_.
+**[`Breaking change <https://eodag.readthedocs.io/en/latest/breaking_changes.html>`_ in v3.0.0]** Please note that EODAG
+comes with a minimal set of dependencies. If you want more features, please install using one of the
+`available extras <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#optional-dependencies>`_.
 
 Usage
 =====

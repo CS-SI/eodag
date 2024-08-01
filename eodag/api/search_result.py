@@ -40,6 +40,9 @@ class SearchResult(UserList):
 
     :param products: A list of products resulting from a search
     :param number_matched: (optional) the estimated total number of matching results
+
+    :cvar data: List of products
+    :ivar number_matched: Estimated total number of matching results
     """
 
     data: List[EOProduct]
@@ -147,7 +150,7 @@ class SearchResult(UserList):
         }
 
     def as_shapely_geometry_object(self) -> GeometryCollection:
-        """:class:`shapely.geometry.GeometryCollection` representation of SearchResult"""
+        """:class:`shapely.GeometryCollection` representation of SearchResult"""
         return GeometryCollection(
             [
                 shape(feature["geometry"]).buffer(0)
