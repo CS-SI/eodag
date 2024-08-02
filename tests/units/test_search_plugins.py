@@ -2124,7 +2124,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             timeout=5,
         )
 
-        self.assertEqual(9, len(queryables))
+        self.assertEqual(11, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:
@@ -2203,7 +2203,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        self.assertEqual(9, len(queryables))
+        self.assertEqual(11, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:

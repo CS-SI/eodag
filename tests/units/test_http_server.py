@@ -1708,6 +1708,8 @@ class RequestTestCase(unittest.TestCase):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
+        for const in constraints:
+            const["variable"].append("10m_u_component_of_wind")
         mock_requests_session_constraints.return_value = MockResponse(
             constraints, status_code=200
         )
@@ -1732,7 +1734,7 @@ class RequestTestCase(unittest.TestCase):
             for properties in provider_queryables_from_constraints_file
             if properties not in not_shared_properties
         ]
-        default_provider_stac_properties = ["api_product_type", "time", "format"]
+        default_provider_stac_properties = ["api_product_type", "format"]
 
         res = self._request_valid(
             "collections/ERA5_SL/queryables?provider=cop_cds",

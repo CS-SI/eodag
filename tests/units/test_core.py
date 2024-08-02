@@ -1469,7 +1469,7 @@ class TestCore(TestCoreBase):
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "format": "grib",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
@@ -1480,7 +1480,7 @@ class TestCore(TestCoreBase):
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "format": "grib",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
             "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
@@ -1492,7 +1492,7 @@ class TestCore(TestCoreBase):
             "productType": "ERA5_SL",
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
             "format": None,
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
