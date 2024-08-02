@@ -36,9 +36,18 @@ to each provider supported by ``eodag``:
   Then go to your profile and use from the section named "API key" the *UID* as *username* and *API Key* as *password* in eodag credentials.
   EODAG can be used to request for public datasets, you can browse them `here <https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset>`__.
 
-* ``cop_cds``: create an account `here <https://cds.climate.copernicus.eu/user/register>`__.
-  Then go to your profile and use from the section named "API key" use *UID* as *username* and *API Key* as *password* in eodag credentials.
-  EODAG can be used to request for public datasets, you can browse them `here <https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset>`__.
+* ``cop_cds``: create an ecmwf account `here <https://accounts.ecmwf.int/auth/realms/ecmwf/login-actions/registration?client_id=cms-www&tab_id=1TPxB0N2QVA>`__.
+  Then go to your user profile and use your *Personal Access Token* as *apikey* in eodag credentials.
+  To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence whereas other licences are valid for a group of datasets.
+  For example after accepting the `Licence to use Copernicus Products` you can use all `ERA5` datasets and the `CEMS-FLOODS datasets licence` is valid for all `GLOFAS` and `EFAS` datasets.
+
+  To accept a licence:
+
+  * Search for the dataset you want to download `here <https://cds-beta.climate.copernicus.eu/datasets>`__ while being logged in.
+  * Open the dataset details and go to the download tab.
+  * Scroll down and accept the licence in the section `Terms of use`.
+  * You can check which licences you have accepted in your user profile.
+
 
 * ``cop_marine``: no account is required
 
