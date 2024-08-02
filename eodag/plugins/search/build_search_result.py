@@ -466,8 +466,6 @@ class BuildSearchResult(BuildPostSearchResult):
 
         # defaults
         default_queryables = self._get_defaults_as_queryables(product_type)
-        # remove dataset from queryables
-        default_queryables.pop("dataset", None)
 
         non_empty_kwargs = {k: v for k, v in kwargs.items() if v}
 
@@ -535,4 +533,17 @@ class BuildSearchResult(BuildPostSearchResult):
             field_definitions[param] = get_args(annotated_def)
 
         python_queryables = create_model("m", **field_definitions).model_fields
-        return {**default_queryables, **model_fields_to_annotated(python_queryables)}
+        queryables = {
+            **default_queryables,
+            **model_fields_to_annotated(python_queryables),
+        }
+        # remove fixed params from queryables
+        for param in getattr(self.config, "remove_from_queryables", {}).get(
+            "shared_queryables", []
+        ):
+            queryables.pop(param)
+        for param in getattr(self.config, "remove_from_queryables", {}).get(
+            product_type, []
+        ):
+            queryables.pop(param)
+        return queryables

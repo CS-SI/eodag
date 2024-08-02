@@ -645,7 +645,20 @@ class QueryStringSearch(Search):
             field_definitions[param] = get_args(annotated_def)
 
         python_queryables = create_model("m", **field_definitions).model_fields
-        return dict(default_queryables, **model_fields_to_annotated(python_queryables))
+        queryables = {
+            **default_queryables,
+            **model_fields_to_annotated(python_queryables),
+        }
+        # remove fixed params from queryables
+        for param in getattr(self.config, "remove_from_queryables", {}).get(
+            "shared_queryables", []
+        ):
+            queryables.pop(param)
+        for param in getattr(self.config, "remove_from_queryables", {}).get(
+            product_type, []
+        ):
+            queryables.pop(param)
+        return queryables
 
     def query(
         self,
@@ -1699,8 +1712,18 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-
-                default = kwargs.get(param, None)
+                # prevent fixed params from being in queryables python model
+                if param in getattr(self.config, "remove_from_queryables", {}).get(
+                    "shared_queryables", []
+                ):
+                    continue
+                if param in getattr(self.config, "remove_from_queryables", {}).get(
+                    product_type, []
+                ):
+                    continue
+                default = kwargs.get(param, None) or self.config.products.get(
+                    product_type, {}
+                ).get(param, None)
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
