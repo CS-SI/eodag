@@ -1,2 +1,5 @@
 # for all paths end-of-line normalization should not be attempted
 * -text
+eodag/resources/constraints/climate-dt.json filter=lfs diff=lfs merge=lfs -text
+eodag/resources/constraints/extremes-dt.json filter=lfs diff=lfs merge=lfs -text
+eodag/resources/ext_product_types.json filter=lfs diff=lfs merge=lfs -text
