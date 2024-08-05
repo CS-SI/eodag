@@ -43,13 +43,15 @@ class SearchResult(UserList):
 
     :param products: A list of products resulting from a search
     :param number_matched: (optional) the estimated total number of matching results
+
     :cvar data: List of products
+    :vartype data: List[EOProduct]
     :ivar number_matched: Estimated total number of matching results
     :vartype number_matched: Optional[int]
     :ivar search_kwargs: (optional) The search kwargs used by eodag to search for the product
     :vartype search_kwargs: Optional[Dict[str, Any]]
     :ivar crunchers: The list of crunchers used to filter these products
-    :vartype crunchers: List[Crunch]
+    :vartype crunchers: Set[Crunch]
     """
 
     data: List[EOProduct]
@@ -58,7 +60,7 @@ class SearchResult(UserList):
         self, products: List[EOProduct], number_matched: Optional[int] = None
     ) -> None:
         super(SearchResult, self).__init__(products)
-        self.number_matched = number_matched
+        self.number_matched: Optional[int] = number_matched
         self.search_kwargs: Optional[Dict[str, Any]] = None
         self.crunchers: Set[Crunch] = set()
 
