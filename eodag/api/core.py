@@ -41,6 +41,7 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     PluginConfig,
     SimpleYamlProxyConfig,
+    credentials_in_auth,
     get_ext_product_types_conf,
     load_default_config,
     load_stac_provider_config,
@@ -453,12 +454,7 @@ class EODataAccessGateway:
 
             # check authentication
             if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
-                credentials_exist = any(
-                    [
-                        cred is not None
-                        for cred in getattr(conf.api, "credentials", {}).values()
-                    ]
-                )
+                credentials_exist = credentials_in_auth(conf.api)
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider] = self.providers_config.pop(

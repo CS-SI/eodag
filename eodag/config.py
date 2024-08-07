@@ -590,10 +590,18 @@ def load_config(config_path: str) -> Dict[str, ProviderConfig]:
         raise e
     stac_provider_config = load_stac_provider_config()
     for provider_config in providers_configs:
-        # for provider_config in copy.deepcopy(providers_configs):
         provider_config_init(provider_config, stac_provider_config)
         config[provider_config.name] = provider_config
     return config
+
+
+def credentials_in_auth(auth_conf: PluginConfig) -> bool:
+    """Checks if credentials are set for this Authentication plugin configuration
+
+    :param auth_conf: Authentication plugin configuration
+    :returns: True if credentials are set, else False
+    """
+    return any(c is not None for c in getattr(auth_conf, "credentials", {}).values())
 
 
 def provider_config_init(
