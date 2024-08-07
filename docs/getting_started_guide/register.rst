@@ -36,8 +36,8 @@ to each provider supported by ``eodag``:
   Then go to your profile and use from the section named "API key" the *UID* as *username* and *API Key* as *password* in eodag credentials.
   EODAG can be used to request for public datasets, you can browse them `here <https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset>`__.
 
-* ``cop_cds``: create an ecmwf account `here <https://accounts.ecmwf.int/auth/realms/ecmwf/login-actions/registration?client_id=cms-www&tab_id=1TPxB0N2QVA>`__.
-  Then go to your user profile and use your *Personal Access Token* as *apikey* in eodag credentials.
+* ``cop_cds``: Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
+  Then log in and go to your user profile on `Climate Data Store <https://cds-beta.climate.copernicus.eu/>`__ and use your *Personal Access Token* as *apikey* in eodag credentials.
   To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence whereas other licences are valid for a group of datasets.
   For example after accepting the `Licence to use Copernicus Products` you can use all `ERA5` datasets and the `CEMS-FLOODS datasets licence` is valid for all `GLOFAS` and `EFAS` datasets.
 
