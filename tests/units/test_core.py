@@ -526,10 +526,10 @@ class TestCore(TestCoreBase):
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo"],
         "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo"],
         "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["dedl", "wekeo"],
         "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo"],
         "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["dedl", "wekeo"],
         "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo"],
         "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo"],
         "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo"],
@@ -1426,7 +1426,7 @@ class TestCore(TestCoreBase):
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "format": "grib",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
@@ -1437,7 +1437,7 @@ class TestCore(TestCoreBase):
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "format": "grib",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
             "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
@@ -1449,7 +1449,7 @@ class TestCore(TestCoreBase):
             "productType": "ERA5_SL",
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
             "format": None,
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)

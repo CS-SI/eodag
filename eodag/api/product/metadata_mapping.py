@@ -1462,6 +1462,14 @@ def get_queryable_from_provider(
     :returns: EODAG configured queryable parameter or None
     """
     pattern = rf"\b{provider_queryable}\b"
+    # if 1:1 mapping exists privilege this one instead of other mapping
+    # e.g. provider queryable = year -> use year and not date in which year also appears
+    mapping_values = [
+        v[0] if isinstance(v, list) else "" for v in metadata_mapping.values()
+    ]
+    if provider_queryable in mapping_values:
+        ind = mapping_values.index(provider_queryable)
+        return Queryables.get_queryable_from_alias(list(metadata_mapping.keys())[ind])
     for param, param_conf in metadata_mapping.items():
         if isinstance(param_conf, list) and re.search(pattern, param_conf[0]):
             return Queryables.get_queryable_from_alias(param)
