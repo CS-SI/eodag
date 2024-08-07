@@ -1419,6 +1419,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             mock.ANY,
             auth_plugin.config.token_uri,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
             **post_request_kwargs,
         )
         mock_request_new_token.assert_not_called()
@@ -1475,6 +1476,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             data={"const_key": "const_value", "xpath_key": "additional value"},
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch(
@@ -1526,6 +1528,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch(
@@ -1576,6 +1579,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch(
@@ -1627,6 +1631,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         # Second request: post to the authentication URI
         mock_requests_post.assert_called_once_with(
@@ -1639,6 +1644,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=True,
         )
         # authenticate_user returns the authentication response
         self.assertEqual(mock_requests_post.return_value, auth_response)
@@ -1699,6 +1705,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "state": state,
                 "grant_type": "authorization_code",
             },
+            verify=True,
         )
 
     @mock.patch(
@@ -1745,6 +1752,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "state": state,
                 "grant_type": "authorization_code",
             },
+            verify=True,
         )
 
     @mock.patch(
@@ -1790,4 +1798,5 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "state": state,
                 "grant_type": "authorization_code",
             },
+            verify=True,
         )

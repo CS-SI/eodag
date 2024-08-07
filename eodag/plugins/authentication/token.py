@@ -126,6 +126,7 @@ class TokenAuth(Authentication):
         req_kwargs: Dict[str, Any] = {
             "headers": dict(self.config.headers, **USER_AGENT)
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         if self.refresh_token:
             logger.debug("fetching access token with refresh token")
@@ -135,6 +136,7 @@ class TokenAuth(Authentication):
                     self.config.refresh_uri,
                     data={"refresh_token": self.refresh_token},
                     timeout=HTTP_REQ_TIMEOUT,
+                    verify=ssl_verify,
                     **req_kwargs,
                 )
                 response.raise_for_status()
@@ -170,6 +172,7 @@ class TokenAuth(Authentication):
             method=method,
             url=self.config.auth_uri,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=ssl_verify,
             **req_kwargs,
         )
 
