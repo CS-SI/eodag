@@ -68,6 +68,8 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
+AUTH_CONF_KEYS = ("auth", "search_auth", "download_auth")
+PLUGINS_CONF_KEYS = ("api", "search", "download") + AUTH_CONF_KEYS
 
 
 class SimpleYamlProxyConfig:
@@ -191,27 +193,10 @@ class ProviderConfig(yaml.YAMLObject):
             {
                 key: value
                 for key, value in mapping.items()
-                if key
-                not in (
-                    "name",
-                    "api",
-                    "search",
-                    "download",
-                    "auth",
-                    "search_auth",
-                    "download_auth",
-                )
-                and value is not None
+                if key not in PLUGINS_CONF_KEYS and value is not None
             },
         )
-        for key in (
-            "api",
-            "search",
-            "download",
-            "auth",
-            "search_auth",
-            "download_auth",
-        ):
+        for key in PLUGINS_CONF_KEYS:
             current_value: Optional[Dict[str, Any]] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
@@ -601,12 +586,15 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     :param auth_conf: Authentication plugin configuration
     :returns: True if credentials are set, else False
     """
-    return any(c is not None for c in getattr(auth_conf, "credentials", {}).values())
+    return any(
+        c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
+    )
 
 
 def provider_config_init(
     provider_config: ProviderConfig,
     stac_search_default_conf: Optional[Dict[str, Any]] = None,
+    auth_configs: Optional[List[PluginConfig]] = None,
 ) -> None:
     """Applies some default values to provider config
 
@@ -622,6 +610,31 @@ def provider_config_init(
                 param_value.output_dir = tempfile.gettempdir()
             if not getattr(param_value, "delete_archive", None):
                 param_value.delete_archive = True
+
+    # share credentials across compatible auth plugins
+    if auth_configs:
+        for param_name in AUTH_CONF_KEYS:
+            provider_config_auth = getattr(provider_config, param_name, None)
+            if provider_config_auth and not credentials_in_auth(provider_config_auth):
+                # no credentials set for this provider
+                provider_matching_conf = getattr(
+                    provider_config_auth, "matching_conf", {}
+                )
+                provider_matching_url = getattr(
+                    provider_config_auth, "matching_url", None
+                )
+                for conf_with_creds in auth_configs:
+                    # copy credentials between plugins if `matching_conf` or `matching_url` are matching
+                    if (
+                        provider_matching_conf
+                        and provider_matching_conf
+                        == getattr(conf_with_creds, "matching_conf", {})
+                    ) or (
+                        provider_matching_url
+                        and provider_matching_url
+                        == getattr(conf_with_creds, "matching_url", None)
+                    ):
+                        provider_config_auth.credentials = conf_with_creds.credentials
 
     try:
         if (
