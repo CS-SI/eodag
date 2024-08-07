@@ -116,6 +116,8 @@ class ProviderConfig(yaml.YAMLObject):
     :param products: (optional) The products types supported by the provider
     :param download: (optional) The configuration of a plugin of type Download
     :param auth: (optional) The configuration of a plugin of type Authentication
+    :param search_auth: (optional) The configuration of a plugin of type Authentication for search
+    :param download_auth: (optional) The configuration of a plugin of type Authentication for download
     :param kwargs: Additional configuration variables for this provider
     """
 
@@ -130,6 +132,8 @@ class ProviderConfig(yaml.YAMLObject):
     products: Dict[str, Any]
     download: PluginConfig
     auth: PluginConfig
+    search_auth: PluginConfig
+    download_auth: PluginConfig
     product_types_fetched: bool  # set in core.update_product_types_list
 
     yaml_loader = yaml.Loader
@@ -187,11 +191,27 @@ class ProviderConfig(yaml.YAMLObject):
             {
                 key: value
                 for key, value in mapping.items()
-                if key not in ("name", "api", "search", "download", "auth")
+                if key
+                not in (
+                    "name",
+                    "api",
+                    "search",
+                    "download",
+                    "auth",
+                    "search_auth",
+                    "download_auth",
+                )
                 and value is not None
             },
         )
-        for key in ("api", "search", "download", "auth"):
+        for key in (
+            "api",
+            "search",
+            "download",
+            "auth",
+            "search_auth",
+            "download_auth",
+        ):
             current_value: Optional[Dict[str, Any]] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
