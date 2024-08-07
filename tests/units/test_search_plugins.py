@@ -33,9 +33,11 @@ import requests
 import responses
 import yaml
 from botocore.stub import Stubber
+from dateutil.utils import today
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 
+from eodag import EODataAccessGateway
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import TimeOutError
@@ -919,6 +921,126 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             productType="S2_MSI_L1C",
         )
         self.assertNotIn("bar", products[0].properties)
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch.normalize_results", autospec=True
+    )
+    def test_plugins_search_postjsonsearch_default_dates(
+        self, mock_normalize, mock_request
+    ):
+        provider = "wekeo_ecmwf"
+        search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
+        search_plugin = next(search_plugins)
+        # year, month, day, time given -> don't use default dates
+        search_plugin.query(
+            prep=PreparedSearch(),
+            productType="ERA5_SL",
+            year=2020,
+            month=["02"],
+            day=["20", "21"],
+            time=["01:00"],
+        )
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "year": 2020,
+                "month": ["02"],
+                "day": ["20", "21"],
+                "time": ["01:00"],
+                "product_type": ["ensemble_mean"],
+                "variable": ["10m_u_component_of_wind"],
+                "format": "grib",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            timeout=60,
+            verify=True,
+        )
+        # start date given and converted to year, month, day, time
+        search_plugin.query(
+            prep=PreparedSearch(),
+            productType="ERA5_SL",
+            startTimeFromAscendingNode="2021-02-01T03:00:00Z",
+        )
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "year": "2021",
+                "month": ["02"],
+                "day": ["01"],
+                "time": ["03:00"],
+                "product_type": ["ensemble_mean"],
+                "variable": ["10m_u_component_of_wind"],
+                "format": "grib",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            timeout=60,
+            verify=True,
+        )
+        # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
+        search_plugin.config.product_type_config = dict(
+            [
+                p
+                for p in EODataAccessGateway().list_product_types(
+                    provider, fetch_providers=False
+                )
+                if p["_id"] == "ERA5_SL"
+            ][0],
+            **{"productType": "ERA5_SL"},
+        )
+        search_plugin.query(productType="ERA5_SL", prep=PreparedSearch())
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "year": "1940",
+                "month": ["01"],
+                "day": ["01"],
+                "time": ["00:00"],
+                "product_type": ["ensemble_mean"],
+                "variable": ["10m_u_component_of_wind"],
+                "format": "grib",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            timeout=60,
+            verify=True,
+        )
+        # product type with dates are query params -> use missionStartDate and today
+        search_plugin.config.product_type_config = dict(
+            [
+                p
+                for p in EODataAccessGateway().list_product_types(
+                    provider, fetch_providers=False
+                )
+                if p["_id"] == "CAMS_EAC4"
+            ][0],
+            **{"productType": "CAMS_EAC4"},
+        )
+        search_plugin.query(productType="CAMS_EAC4", prep=PreparedSearch())
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
+                "format": "grib",
+                "variable": ["2m_dewpoint_temperature"],
+                "time": ["00:00"],
+                "dtstart": "2003-01-01T00:00:00.000Z",
+                "dtend": today().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            timeout=60,
+            verify=True,
+        )
 
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
