@@ -189,12 +189,9 @@ class S3RestDownload(Download):
                     auth_errors = [auth_errors]
                 if err.response and err.response.status_code in auth_errors:
                     raise AuthenticationError(
-                        "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                        % (
-                            err.response.status_code,
-                            err.response.text.strip(),
-                            self.provider,
-                        )
+                        f"Please check your credentials for {self.provider}.",
+                        f"HTTP Error {err.response.status_code} returned.",
+                        err.response.text.strip(),
                     )
                 # product not available
                 elif (

@@ -837,12 +837,9 @@ class HTTPDownload(Download):
             and e.response.status_code in auth_errors
         ):
             raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (
-                    e.response.status_code,
-                    response_text,
-                    self.provider,
-                )
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {e.response.status_code} returned.",
+                response_text,
             )
 
     def _process_exception(
@@ -1248,12 +1245,9 @@ class HTTPDownload(Download):
             auth_errors = [auth_errors]
         if e.response is not None and e.response.status_code in auth_errors:
             raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (
-                    e.response.status_code,
-                    e.response.text.strip(),
-                    self.provider,
-                )
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {e.response.status_code} returned.",
+                e.response.text.strip(),
             )
         elif raise_errors:
             raise DownloadError(e)

@@ -1639,11 +1639,9 @@ class PostJsonSearch(QueryStringSearch):
                 auth_errors = [auth_errors]
             if response.status_code and response.status_code in auth_errors:
                 raise AuthenticationError(
-                    "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
-                        response.status_code,
-                        response.text.strip(),
-                        self.provider,
-                    )
+                    f"Please check your credentials for {self.provider}.",
+                    f"HTTP Error {response.status_code} returned.",
+                    response.text.strip(),
                 )
             if exception_message:
                 logger.exception(exception_message)

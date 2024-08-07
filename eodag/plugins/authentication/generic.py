@@ -48,6 +48,6 @@ class GenericAuth(Authentication):
             )
         else:
             raise MisconfiguredError(
-                f"Cannot authenticate with {self.provider}:",
-                f"method {method} is not supported. Must be one of digest or basic",
+                f"Cannot authenticate with {self.provider}",
+                f"Method {method} is not supported; it must be one of 'digest' or 'basic'.",
             )
