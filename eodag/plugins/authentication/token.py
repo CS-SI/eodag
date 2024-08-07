@@ -89,8 +89,8 @@ class TokenAuth(Authentication):
                 and e.response.status_code in auth_errors
             ):
                 raise AuthenticationError(
-                    f"Please check your credentials for {self.provider}",
-                    f"HTTP Error {e.response.status_code} returned",
+                    f"Please check your credentials for {self.provider}.",
+                    f"HTTP Error {e.response.status_code} returned.",
                     response_text,
                 ) from e
             # other error

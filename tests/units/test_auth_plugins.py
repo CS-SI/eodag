@@ -310,7 +310,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            f"('Please check your credentials for {provider}', 'HTTP Error 401 returned', 'test error message')",
+            f"('Please check your credentials for {provider}.', 'HTTP Error 401 returned.', 'test error message')",
         ):
             # mock token post request response with the same status code as the one in the provider auth config
             with responses.RequestsMock(
