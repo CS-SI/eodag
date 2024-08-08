@@ -68,7 +68,21 @@ logger = logging.getLogger("eodag.apis.usgs")
 
 
 class UsgsApi(Api):
-    """A plugin that enables to query and download data on the USGS catalogues"""
+    """A plugin that enables to query and download data on the USGS catalogues
+
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): UsgsApi
+    * **pagination** [Dict[str, Any]] (mandatory): dict containing parameters for pagination; should contain the
+      key total_items_nb_key_path which is indicating the key for the number of total items in the provider result
+    * **ssl_verify** [bool]: if the ssl certificates should be verified in the download request; default: True
+    * **extract** [bool]: if the content of the downloaded file should be extracted; default: True
+    * **order_enabled** [bool]: if the product has to be ordered to download it; default: False
+    * **metadata_mapping** [Dict[str, Union[str, list]]]: how parameters should be mapped between the provider and eodag
+      If a string is given, this is the mapping parameter returned by provider -> eodag parameter. If a list with
+      2 elements is given, the first one is the mapping eodag parameter -> provider query parameters and the second one
+      the mapping provider result parameter -> eodag parameter
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(UsgsApi, self).__init__(provider, config)
