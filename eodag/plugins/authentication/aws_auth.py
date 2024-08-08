@@ -30,14 +30,22 @@ if TYPE_CHECKING:
 class AwsAuth(Authentication):
     """AWS authentication plugin
 
-    Authentication will use the first valid method within the following ones:
+    Authentication will use the first valid method within the following ones depending on which
+    parameters are available in the configuration:
 
-    - auth anonymously using no-sign-request
-    - auth using ``aws_profile``
-    - auth using ``aws_access_key_id`` and ``aws_secret_access_key``
+    * auth anonymously using no-sign-request
+    * auth using ``aws_profile``
+    * auth using ``aws_access_key_id`` and ``aws_secret_access_key``
       (optionally ``aws_session_token``)
-    - auth using current environment (AWS environment variables and/or ``~/aws/*``),
+    * auth using current environment (AWS environment variables and/or ``~/aws/*``),
       will be skipped if AWS credentials are filled in eodag conf
+
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): AwsAuth
+    * **auth_error_code** [int] (mandatory for creodias_s3): which error code is returned
+    in case of an authentication error
+
     """
 
     s3_client: S3Client

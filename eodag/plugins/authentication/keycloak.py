@@ -41,7 +41,19 @@ logger = logging.getLogger("eodag.auth.keycloak")
 class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """Authentication plugin using Keycloak and OpenId Connect.
 
-    This plugin request a token and use it through a query-string or a header.
+    This plugin requests a token which is added to a query-string or a header for authentication.
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): KeycloakOIDCPasswordAuth
+    * **auth_base_uri** [str] (mandatory): base url used in the request to fetch the token
+    * **realm** [str] (mandatory): keycloak realm
+    * **client_id** [str] (mandatory): keycloak client id
+    * **client_secret** [str] (mandatory): keycloak client secret, set to null if no secret is used
+    * **token_provision** [str] (mandatory): if the token should be added to the query string (qs)
+      or to the header (header)
+    * **token_qs_key** [str] (mandatory if token_provision=qs): key of the param added to the query string
+    * **auth_error_code** [int]: which error code is returned in case of an authentication error
+    * **ssl_verify** [bool]: if the ssl certificates should be verified in the token request; default: True
 
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
     `http://example.com?foo=bar` will become
