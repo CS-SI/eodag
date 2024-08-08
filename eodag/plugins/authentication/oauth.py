@@ -26,7 +26,14 @@ if TYPE_CHECKING:
 
 
 class OAuth(Authentication):
-    """OAuth authentication plugin"""
+    """OAuth authentication plugin
+
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): OAuth
+
+    The mandatory parameters that have to be added in the eodag config are aws_access_key_id and aws_secret_access_key.
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OAuth, self).__init__(provider, config)

@@ -34,7 +34,12 @@ class HTTPHeaderAuth(Authentication):
     This plugin enables implementation of custom HTTP authentication scheme (other than Basic, Digest, Token
     negotiation et al.) using HTTP headers.
 
-    The plugin is configured as follows in the providers config file::
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): HTTPHeaderAuth
+    * **headers** [Dict[str, str]]: dictionary containing all keys/value pairs that should be added to the headers
+
+    Below an example for the configuration in the providers config file is shown::
 
         provider:
             ...
