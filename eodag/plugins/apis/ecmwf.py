@@ -68,10 +68,19 @@ class EcmwfApi(Api, BuildPostSearchResult):
     is in query), or on MARS Operational Archive (if ``dataset`` parameter is not in
     query).
 
-    This class inherits from :class:`~eodag.plugins.apis.base.Api` for compatibility,
-    :class:`~eodag.plugins.download.base.Download` for download methods, and
-    :class:`~eodag.plugins.search.qssearch.QueryStringSearch` for metadata-mapping and
-    query build methods.
+    This class inherits from :class:`~eodag.plugins.apis.base.Api` for compatibility and
+    :class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult` for the creation
+    of the search result.
+
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): EcmwfApi
+    * **api_endpoint** [str] (mandatory): url of the ecmwf api
+    * **metadata_mapping** [Dict[str, Union[str, list]]]: how parameters should be mapped between
+      the provider and eodag; If a string is given, this is the mapping parameter returned by
+      provider -> eodag parameter. If a list with 2 elements is given, the first one is the mapping
+      eodag parameter -> provider query parameters and the second one the mapping provider result
+      parameter -> eodag parameter
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
