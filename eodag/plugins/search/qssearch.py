@@ -1661,7 +1661,7 @@ class StacSearch(PostJsonSearch):
             and not self.config.discover_queryables["fetch_url"]
         ):
             logger.info(
-                f"Cannot fetch general queryables with {self.provider}. A product type must be specified"
+                f"Cannot fetch global queryables with {self.provider}. A product type must be specified"
             )
             return None
 
@@ -1739,7 +1739,9 @@ class StacSearch(PostJsonSearch):
 
 
 class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
-    """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that
+    uses generic STAC configuration for queryables.
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         PostJsonSearch.__init__(self, provider, config)

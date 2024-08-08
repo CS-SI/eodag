@@ -2551,13 +2551,13 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain(
         self,
         mock__request,
-        mock_query_string_postjsonsearch,
-        mock_query_string_stacsearch,
+        mock_build_qs_postjsonsearch,
+        mock_build_qs_stacsearch,
         mock_normalize_results,
     ):
         """A query with a PostJsonSearchWithStacQueryables (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
-        mock_query_string_postjsonsearch.return_value = (
-            mock_query_string_stacsearch.return_value
+        mock_build_qs_postjsonsearch.return_value = (
+            mock_build_qs_stacsearch.return_value
         ) = (
             {
                 "dataset_id": "EO:ESA:DAT:SENTINEL-2",
@@ -2579,8 +2579,8 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         )
 
         mock__request.assert_called()
-        mock_query_string_postjsonsearch.assert_called()
-        mock_query_string_stacsearch.assert_not_called()
+        mock_build_qs_postjsonsearch.assert_called()
+        mock_build_qs_stacsearch.assert_not_called()
 
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch.discover_queryables",
