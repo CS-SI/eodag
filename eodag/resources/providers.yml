@@ -25,6 +25,7 @@
   url: https://earthexplorer.usgs.gov/
   api: !plugin
     type: UsgsApi
+    need_auth: true
     pagination:
       max_items_per_page: 5000
       total_items_nb_key_path: '$.totalHits'
