@@ -599,38 +599,32 @@ class EODataAccessGateway:
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
 
-        :param provider: (optional) The name of a provider for which product types list
-                         should be updated. Defaults to all providers (None value).
+        :param provider: The name of a provider or provider-group for which product types
+                         list should be updated. Defaults to all providers (None value).
         """
+        providers_to_fetch = list(self.providers_config.keys())
         # check if some providers are grouped under a group name which is not a provider name
         if provider is not None and provider not in self.providers_config:
-            grouped_providers = [
-                provider_to_fetch
-                for provider_to_fetch, provider_config in self.providers_config.items()
-                if provider == getattr(provider_config, "group", None)
+            providers_to_fetch = [
+                p
+                for p, pconf in self.providers_config.items()
+                if provider == getattr(pconf, "group", None)
             ]
-            if grouped_providers:
+            if providers_to_fetch:
                 logger.info(
-                    f"The requested provider {provider} is actually a group of providers. "
-                    f"Fetch product types of {', '.join(grouped_providers)}"
+                    f"Fetch product types for {provider} group: {', '.join(providers_to_fetch)}"
                 )
             else:
                 return None
+        elif provider is not None:
+            providers_to_fetch = [provider]
 
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: Dict[str, Any] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
-        for provider_to_fetch, provider_config in (
-            {
-                provider_to_fetch: provider_config
-                for provider_to_fetch, provider_config in self.providers_config.items()
-                if provider
-                in [provider_to_fetch, getattr(provider_config, "group", None)]
-            }.items()
-            if provider
-            else self.providers_config.items()
-        ):
+        for provider_to_fetch in providers_to_fetch:
+            provider_config = self.providers_config[provider_to_fetch]
             # get discovery conf
             if hasattr(provider_config, "search"):
                 provider_search_config = provider_config.search
@@ -752,8 +746,8 @@ class EODataAccessGateway:
     ) -> Optional[Dict[str, Any]]:
         """Fetch providers for product types
 
-        :param provider: (optional) The name of a provider to fetch. Defaults to all
-                         providers (None value).
+        :param provider: The name of a provider or provider-group to fetch. Defaults to
+                         all providers (None value).
         :returns: external product types configuration
         """
         grouped_providers = [
@@ -763,8 +757,7 @@ class EODataAccessGateway:
         ]
         if provider and provider not in self.providers_config and grouped_providers:
             logger.info(
-                f"The requested provider {provider} is actually a group of providers. "
-                f"Discover product types of {', '.join(grouped_providers)}"
+                f"Discover product types for {provider} group: {', '.join(grouped_providers)}"
             )
         elif provider and provider not in self.providers_config:
             raise UnsupportedProvider(

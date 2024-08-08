@@ -3183,8 +3183,7 @@ class TestCoreProviderGroup(TestCoreBase):
         with self.assertLogs(level="INFO") as cm:
             self.dag.fetch_product_types_list(provider=self.group_name)
             self.assertIn(
-                f"The requested provider {self.group_name} is actually a group of providers. "
-                f"Fetch product types of {', '.join(self.group)}",
+                f"Fetch product types for {self.group_name} group: {', '.join(self.group)}",
                 str(cm.output),
             )
 
@@ -3245,8 +3244,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 provider=self.group_name
             )
             self.assertIn(
-                f"The requested provider {self.group_name} is actually a group of providers. "
-                f"Discover product types of {', '.join(self.group)}",
+                f"Discover product types for {self.group_name} group: {', '.join(self.group)}",
                 str(cm.output),
             )
 
