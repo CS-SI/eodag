@@ -85,7 +85,18 @@ class RequestsSASAuth(AuthBase):
 
 
 class SASAuth(Authentication):
-    """SASAuth authentication plugin"""
+    """SASAuth authentication plugin
+
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): SASAuth
+    * **auth_uri** [str] (mandatory): url used to get the signed url
+    * **signed_url_key** [str] (mandatory): key to get the signed url
+    * **headers** [Dict[str, str]] (mandatory if apiKey is used): headers to be added to the requests
+    * **ssl_verify** [bool]: if the ssl certificates should be verified in the requests; default: True
+
+    An apiKey that is added in the headers can be given in the credentials in the config file.
+    """
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""

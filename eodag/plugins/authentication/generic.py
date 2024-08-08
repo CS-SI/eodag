@@ -29,7 +29,16 @@ if TYPE_CHECKING:
 
 
 class GenericAuth(Authentication):
-    """GenericAuth authentication plugin"""
+    """GenericAuth authentication plugin (authentication using username and password)
+
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): GenericAuth
+    * **method** [str]: specifies if digest authentication (digest) or basic authentication
+      (basic) should be used; default: basic
+
+    The mandatory parameters that have to be added in the eodag config are username and password.
+    """
 
     def authenticate(self) -> AuthBase:
         """Authenticate"""
