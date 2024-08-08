@@ -1983,7 +1983,6 @@
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
     extract: false
-    ssl_verify: true
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
