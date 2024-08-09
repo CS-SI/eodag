@@ -75,7 +75,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
             if not getattr(auth, "s3_client", None):
                 auth.s3_client = boto3.client(
                     "s3",
-                    endpoint_url=config.base_uri,
+                    endpoint_url=config.s3_endpoint,
                     aws_access_key_id=auth_dict["aws_access_key_id"],
                     aws_secret_access_key=auth_dict["aws_secret_access_key"],
                 )

@@ -217,7 +217,7 @@ class AwsDownload(Download):
     :param provider: provider name
     :param config: Download plugin configuration:
 
-        * ``config.base_uri`` (str) - s3 endpoint url
+        * ``config.s3_endpoint`` (str) - s3 endpoint url
         * ``config.requester_pays`` (bool) - (optional) whether download is done from a
           requester-pays bucket or not
         * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
@@ -902,7 +902,7 @@ class AwsDownload(Download):
         """Auth strategy using no-sign-request"""
 
         s3_resource = boto3.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
+            service_name="s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
@@ -920,7 +920,7 @@ class AwsDownload(Download):
             s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
             s3_resource = s3_session.resource(
                 service_name="s3",
-                endpoint_url=getattr(self.config, "base_uri", None),
+                endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -959,7 +959,7 @@ class AwsDownload(Download):
             s3_session = boto3.session.Session(**s3_session_kwargs)
             s3_resource = s3_session.resource(
                 service_name="s3",
-                endpoint_url=getattr(self.config, "base_uri", None),
+                endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -980,7 +980,7 @@ class AwsDownload(Download):
 
         s3_session = boto3.session.Session()
         s3_resource = s3_session.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
+            service_name="s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
         if self.requester_pays:
             objects = s3_resource.Bucket(bucket_name).objects.filter(

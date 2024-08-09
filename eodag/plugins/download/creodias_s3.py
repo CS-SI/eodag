@@ -50,7 +50,7 @@ class CreodiasS3Download(AwsDownload):
 
         s3_session = boto3.session.Session(**auth_dict)
         s3_resource = s3_session.resource(
-            "s3", endpoint_url=getattr(self.config, "base_uri", None)
+            "s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
         objects = s3_resource.Bucket(bucket_name).objects.filter()
         list(objects.filter(Prefix=prefix).limit(1))

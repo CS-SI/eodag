@@ -435,6 +435,8 @@ class PluginConfig(yaml.YAMLObject):
     bucket_path_level: int
     #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
     requester_pays: bool
+    #: :class:`~eodag.plugins.download.aws.AwsDownload` S3 endpoint
+    s3_endpoint: str
 
     # auth -------------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication credentials dictionary
