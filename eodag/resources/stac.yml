@@ -126,7 +126,6 @@ collection:
       interval:
         - - '$.product_type.missionStartDate'
           - '$.product_type.missionEndDate'
-  properties:
   crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
   stac_version: "{stac_version}"
   keywords:
@@ -144,7 +143,8 @@ collection:
       - '$.product_type.platformSerialIdentifier'
     intruments:
       - '$.product_type.instrument'
-    processing:level: '$.product_type.processingLevel'
+    processing:level:
+      - '$.product_type.processingLevel'
 
 # Data ------------------------------------------------------------------------
 
@@ -298,7 +298,6 @@ catalogs:
       crs: http://www.opengis.net/def/crs/OGC/1.3/CRS84
       keywords: "{collection[keywords]}"
       license: "{collection[license]}"
-      properties: "{collection[properties]}"
       providers: "{collection[providers]}"
       summaries: "{collection[summaries]}"
 

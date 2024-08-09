@@ -767,25 +767,34 @@ class StacCollection(StacCommon):
             ]
             ext_stac_collection["links"].append(link)
 
+        # merge "summaries"
+        ext_stac_collection["summaries"] = {
+            k: v
+            for k, v in {
+                **ext_stac_collection.get("summaries", {}),
+                **product_type_collection["summaries"],
+            }.items()
+            if v and any(v)
+        }
+
         # merge "keywords" lists
-        if "keywords" in ext_stac_collection:
-            try:
-                ext_stac_collection["keywords"] = [
-                    k
-                    for k in set(
-                        ext_stac_collection["keywords"]
-                        + product_type_collection["keywords"]
-                    )
-                    if k is not None
-                ]
-            except TypeError as e:
-                logger.warning(
-                    f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
+        try:
+            ext_stac_collection["keywords"] = [
+                k
+                for k in set(
+                    ext_stac_collection.get("keywords", [])
+                    + product_type_collection["keywords"]
                 )
-                logger.debug(
-                    f"External collection keywords: {str(ext_stac_collection['keywords'])}, ",
-                    f"Product type keywords: {str(product_type_collection['keywords'])}",
-                )
+                if k is not None
+            ]
+        except TypeError as e:
+            logger.warning(
+                f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
+            )
+            logger.debug(
+                f"External collection keywords: {str(ext_stac_collection.get('keywords'))}, ",
+                f"Product type keywords: {str(product_type_collection['keywords'])}",
+            )
 
         # merge providers
         if "providers" in ext_stac_collection:
