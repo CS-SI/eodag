@@ -344,6 +344,7 @@ class PluginConfig(yaml.YAMLObject):
 
     # download -------------------------------------------------------------------------
     base_uri: str
+    s3_endpoint: str  # AwsDownload
     output_dir: str
     extract: bool
     output_extension: str
