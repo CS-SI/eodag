@@ -3906,6 +3906,7 @@
             - "ContentDate/Start lt {completionTimeFromAscendingNode#to_iso_utc_datetime}"
             - "ContentDate/End gt {startTimeFromAscendingNode#to_iso_utc_datetime}"
             - contains(Name,'{id}')
+    discover_assets: true
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
@@ -4028,7 +4029,7 @@
     realm: 'CDSE'
     client_id: 'cdse-public'
     client_secret: null
-    token_provision: qs
+    token_provision: header
     token_qs_key: 'token'
     auth_error_code: 401
     ssl_verify: true
