@@ -339,24 +339,6 @@ class BuildSearchResult(BuildPostSearchResult):
             self, product_type=product_type, **available_properties
         )
 
-    def get_product_type_cfg(self, key: str, default: Any = None) -> Any:
-        """
-        Get the value of a configuration option specific to the current product type.
-
-        This method retrieves the value of a configuration option from the
-        `_product_type_config` attribute. If the option is not found, the provided
-        default value is returned.
-
-        :param key: The configuration option key.
-        :param default: The default value to be returned if the option is not found (default is None).
-
-        :return: The value of the specified configuration option or the default value.
-        """
-        product_type_cfg = getattr(self.config, "product_type_config", {})
-        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
-
-        return non_none_cfg.get(key, default)
-
     def _preprocess_search_params(self, params: Dict[str, Any]) -> None:
         """Preprocess search parameters before making a request to the CDS API.
 
