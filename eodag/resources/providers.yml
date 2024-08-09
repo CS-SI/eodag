@@ -26,7 +26,6 @@
   api: !plugin
     type: UsgsApi
     need_auth: true
-    google_base_url: 'http://storage.googleapis.com/earthengine-public/landsat/'
     pagination:
       max_items_per_page: 5000
       total_items_nb_key_path: '$.totalHits'
@@ -539,7 +538,6 @@
           - productPath
   auth: !plugin
     type: AwsAuth
-    ssl_verify: true
 
 ---
 !provider # MARK: theia
@@ -875,8 +873,6 @@
       issuerId: peps
   auth: !plugin
     type: GenericAuth
-    auth_uri: 'https://peps.cnes.fr/resto/api/users/connect'
-    ssl_verify: true
 ---
 !provider # MARK: creodias
   name: creodias
@@ -1562,7 +1558,6 @@
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
-    ssl_verify: true
 
 ---
 !provider # MARK: astraea_eod
@@ -1691,7 +1686,6 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
-    ssl_verify: true
 
 ---
 !provider # MARK: usgs_satapi_aws
@@ -1752,7 +1746,6 @@
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
-    ssl_verify: true
 
 ---
 !provider # MARK: earth_search
@@ -1855,7 +1848,6 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
-    ssl_verify: true
 
 ---
 !provider # MARK: earth_search_cog
@@ -1978,7 +1970,6 @@
         default_bucket: 'gcp-public-data-sentinel-2'
   auth: !plugin
     type: AwsAuth
-    ssl_verify: true
 ---
 !provider # MARK: ecmwf
   name: ecmwf
@@ -1990,8 +1981,6 @@
   api: !plugin
     type: EcmwfApi
     api_endpoint: https://api.ecmwf.int/v1
-    extract: false
-    ssl_verify: true
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2215,7 +2204,6 @@
   auth: !plugin
     type: GenericAuth
     method: basic
-    ssl_verify: true
   download: !plugin
     type: HTTPDownload
     timeout: 30
@@ -2745,7 +2733,6 @@
   auth: !plugin
     type: GenericAuth
     method: basic
-    ssl_verify: true
   download: !plugin
     type: HTTPDownload
     timeout: 30
@@ -3758,7 +3745,6 @@
   auth: !plugin
     type: GenericAuth
     method: basic
-    ssl_verify: true
 ---
 !provider # MARK: meteoblue
   name: meteoblue
@@ -4332,7 +4318,6 @@
     ssl_verify: true
   auth: !plugin
     type: HTTPHeaderAuth
-    ssl_verify: true
     headers:
       X-API-Key: "{apikey}"
 
@@ -6513,7 +6498,6 @@
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
-    ssl_verify: true
   products:
       # S1
     S1_SAR_RAW:
