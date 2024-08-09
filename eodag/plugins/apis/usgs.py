@@ -76,6 +76,7 @@ class UsgsApi(Api):
     * **pagination** [Dict[str, Any]] (mandatory): dict containing parameters for pagination; should contain the
       key total_items_nb_key_path which is indicating the key for the number of total items in the provider result
     * **ssl_verify** [bool]: if the ssl certificates should be verified in the download request; default: True
+    * **need_auth** [bool]: if authentication is required for search; default: False
     * **extract** [bool]: if the content of the downloaded file should be extracted; default: True
     * **order_enabled** [bool]: if the product has to be ordered to download it; default: False
     * **metadata_mapping** [Dict[str, Union[str, list]]]: how parameters should be mapped between the provider and eodag
