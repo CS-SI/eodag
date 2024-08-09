@@ -215,13 +215,6 @@ WEKEO_ECMWF_SEARCH_ARGS = [
     "2024-01-01",
     [-180, -90, 180, 90],
 ]
-WEKEO_ECMWF_SEARCH_ARGS = [
-    "wekeo_ecmwf",
-    "ERA5_SL_MONTHLY",
-    "2024-01-01",
-    "2024-01-01",
-    [-180, -90, 180, 90],
-]
 EUMETSAT_DS_SEARCH_ARGS = [
     "eumetsat_ds",
     "S3_OLCI_L2WFR",
@@ -541,11 +534,6 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_wekeo_main(self):
         product = self.execute_search(*WEKEO_MAIN_SEARCH_ARGS, page=2, items_per_page=4)
-        expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename, timeout_sec=40)
-
-    def test_end_to_end_search_download_wekeo_ecmwf(self):
-        product = self.execute_search(*WEKEO_ECMWF_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
 
