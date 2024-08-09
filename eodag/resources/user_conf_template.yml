@@ -51,9 +51,11 @@ usgs:
 aws_eos:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
-    auth:
+    search_auth:
         credentials:
-            apikey:
+            api_key:
+    download_auth:
+        credentials:
             aws_access_key_id:
             aws_secret_access_key:
             aws_profile:
