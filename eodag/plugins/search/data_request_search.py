@@ -275,9 +275,9 @@ class DataRequestSearch(Search):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            raise RequestError(
-                f"search job for product_type {product_type} could not be created: {str(e)}, {request_job.text}"
-            )
+            raise RequestError.from_error(
+                e, f"search job for product_type {product_type} could not be created"
+            ) from e
         else:
             logger.info("search job for product_type %s created", product_type)
             return request_job.json()["jobId"]
@@ -294,7 +294,7 @@ class DataRequestSearch(Search):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            raise RequestError(f"_cancel_request failed: {str(e)}")
+            raise RequestError.from_error(e, "_cancel_request failed") from e
 
     def _check_request_status(self, data_request_id: str) -> bool:
         logger.debug("checking status of request job %s", data_request_id)
@@ -313,7 +313,7 @@ class DataRequestSearch(Search):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
         except requests.RequestException as e:
-            raise RequestError(f"_check_request_status failed: {str(e)}")
+            raise RequestError.from_error(e, "_check_request_status failed") from e
         else:
             status_data = status_resp.json()
             if "status_code" in status_data and status_data["status_code"] in [
@@ -321,7 +321,9 @@ class DataRequestSearch(Search):
                 404,
             ]:
                 logger.error(f"_check_request_status failed: {status_data}")
-                raise RequestError("authentication token expired during request")
+                error = RequestError("authentication token expired during request")
+                error.status_code = status_data["status_code"]
+                raise error
             if status_data["status"] == "failed":
                 logger.error(f"_check_request_status failed: {status_data}")
                 raise RequestError(

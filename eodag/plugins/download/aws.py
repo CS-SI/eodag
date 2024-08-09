@@ -615,15 +615,12 @@ class AwsDownload(Download):
 
     def _raise_if_auth_error(self, exception: ClientError) -> None:
         """Raises an error if given exception is an authentication error"""
-        err = exception.response["Error"]
+        err = cast(Dict[str, str], exception.response["Error"])
         if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
             raise AuthenticationError(
-                "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                    exception.response["ResponseMetadata"]["HTTPStatusCode"],
-                    err["Code"],
-                    err["Message"],
-                    self.provider,
-                )
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {exception.response['ResponseMetadata']['HTTPStatusCode']} returned.",
+                err["Code"] + ": " + err["Message"],
             )
 
     def _stream_download_dict(
@@ -751,7 +748,6 @@ class AwsDownload(Download):
             product_chunk: Any, progress_callback: ProgressCallback
         ) -> Any:
             try:
-
                 chunk_start = 0
                 chunk_end = chunk_start + chunk_size - 1
 

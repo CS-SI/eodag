@@ -102,11 +102,12 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     PluginImplementationError,
     RequestError,
+    STACOpenerError,
+    TimeOutError,
     UnsupportedDatasetAddressScheme,
     UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
-    STACOpenerError,
 )
 from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH

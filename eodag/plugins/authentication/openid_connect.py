@@ -30,12 +30,7 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    MisconfiguredError,
-    RequestError,
-    TimeOutError,
-)
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
@@ -145,8 +140,9 @@ class OIDCRefreshTokenBase(Authentication):
             and e.response.status_code in auth_errors
         ):
             raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (e.response.status_code, response_text, self.provider)
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {e.response.status_code} returned.",
+                response_text,
             )
         # other error
         else:
@@ -396,7 +392,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )
             if not auth_uri or not auth_uri[0]:
-                raise RequestError(
+                raise MisconfiguredError(
                     f"Could not get auth_uri from {self.config.login_form_xpath}"
                 )
             auth_uri = auth_uri[0]
