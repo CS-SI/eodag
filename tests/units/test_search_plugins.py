@@ -37,7 +37,6 @@ from dateutil.utils import today
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 
-from eodag import EODataAccessGateway
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import TimeOutError
@@ -984,14 +983,22 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             verify=True,
         )
         # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
+        pt_conf = {
+            "ID": "ERA5_SL",
+            "abstract": "ERA5 abstract",
+            "instrument": None,
+            "platform": "ERA5",
+            "platformSerialIdentifier": "ERA5",
+            "processingLevel": None,
+            "keywords": "ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels",
+            "sensorType": "ATMOSPHERIC",
+            "license": "proprietary",
+            "title": "ERA5 hourly data on single levels from 1940 to present",
+            "missionStartDate": "1940-01-01T00:00:00Z",
+            "_id": "ERA5_SL",
+        }
         search_plugin.config.product_type_config = dict(
-            [
-                p
-                for p in EODataAccessGateway().list_product_types(
-                    provider, fetch_providers=False
-                )
-                if p["_id"] == "ERA5_SL"
-            ][0],
+            pt_conf,
             **{"productType": "ERA5_SL"},
         )
         search_plugin.query(productType="ERA5_SL", prep=PreparedSearch())
@@ -1014,14 +1021,22 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             verify=True,
         )
         # product type with dates are query params -> use missionStartDate and today
+        pt_conf = {
+            "ID": "CAMS_EAC4",
+            "abstract": "CAMS_EAC4 abstract",
+            "instrument": None,
+            "platform": "CAMS",
+            "platformSerialIdentifier": "CAMS",
+            "processingLevel": None,
+            "keywords": "Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4",
+            "sensorType": "ATMOSPHERIC",
+            "license": "proprietary",
+            "title": "CAMS global reanalysis (EAC4)",
+            "missionStartDate": "2003-01-01T00:00:00Z",
+            "_id": "CAMS_EAC4",
+        }
         search_plugin.config.product_type_config = dict(
-            [
-                p
-                for p in EODataAccessGateway().list_product_types(
-                    provider, fetch_providers=False
-                )
-                if p["_id"] == "CAMS_EAC4"
-            ][0],
+            pt_conf,
             **{"productType": "CAMS_EAC4"},
         )
         search_plugin.query(productType="CAMS_EAC4", prep=PreparedSearch())
