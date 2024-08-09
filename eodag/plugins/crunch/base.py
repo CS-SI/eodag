@@ -32,6 +32,24 @@ class Crunch(PluginTopic):
     def __init__(self, config: Optional[Dict[str, Any]]) -> None:
         self.config = PluginConfig()
         self.config.__dict__ = config if config is not None else {}
+        self.provider = None
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(provider=None, config={self.config}, "
+            f"topic={self.__class__.mro()[-3].__name__})"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Crunch):
+            raise NotImplementedError
+        return self.__class__.__name__ == other.__class__.__name__ and all(
+            self.config.__dict__.get(k) == v for k, v in other.config.__dict__.items()
+        )
+
+    def __hash__(self):
+        # necessary for instances to behave sanely in dicts and sets
+        return hash((str(self.config.__dict__),))
 
     def proceed(
         self, products: List[EOProduct], **search_params: Any

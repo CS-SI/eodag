@@ -59,6 +59,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from requests.auth import AuthBase
 
+    from eodag.api.core import EODataAccessGateway
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
@@ -441,6 +442,7 @@ class UsgsApi(Api):
     def download_all(
         self,
         products: SearchResult,
+        dag: EODataAccessGateway,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
@@ -453,6 +455,7 @@ class UsgsApi(Api):
         """
         return super(UsgsApi, self).download_all(
             products,
+            dag,
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,

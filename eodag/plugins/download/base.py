@@ -38,12 +38,14 @@ from typing import (
     Union,
 )
 
+from eodag.api.search_result import SearchResult
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
     ProgressCallback,
     StreamResponse,
+    deepcopy,
     sanitize,
     uri_to_path,
 )
@@ -57,8 +59,8 @@ from eodag.utils.notebook import NotebookWidgets
 if TYPE_CHECKING:
     from requests.auth import AuthBase
 
+    from eodag.api.core import EODataAccessGateway
     from eodag.api.product import EOProduct
-    from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
@@ -81,6 +83,8 @@ class Download(PluginTopic):
 
     - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
+    - download data from all pages of the search of results given in parameters
+      if ``exhaust`` is set to True (False by default) with ``download_all``
     - extract products from their archive (if relevant) if ``extract`` is set to True
       (True by default)
     - save a product in an archive/directory (in ``output_dir``) whose name must be
@@ -441,6 +445,7 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
+        dag: EODataAccessGateway,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
@@ -455,6 +460,7 @@ class Download(PluginTopic):
         implemented by the plugin to **sequentially** attempt to download products.
 
         :param products: Products to download
+        :param dag: The gateway to download products
         :param auth: (optional) authenticated object
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
@@ -473,6 +479,52 @@ class Download(PluginTopic):
             filesystem (e.g. ``['/tmp/product.zip']`` on Linux or
             ``['C:\\Users\\username\\AppData\\Local\\Temp\\product.zip']`` on Windows)
         """
+        if kwargs.pop("exhaust", False):
+            logger.info(
+                (
+                    "Searching other products from all pages of the same search request "
+                    "as the one used for these products to download all of them"
+                )
+            )
+            # record search kwargs of products in the dag to skip their search page during the new search with all pages
+            search_kwargs = dag.search_kwargs_for_exhaust = products.search_kwargs
+            if search_kwargs:
+                other_products = SearchResult([])
+                tmp_search_kwargs = deepcopy(search_kwargs)
+                # remove "page" parameter which is not used in the following search method
+                del tmp_search_kwargs["page"]
+                # search products from all pages of the same search request than the one of the previous products
+                # the provider must be the one with which products were found
+                for page_results in dag.search_iter_page(
+                    items_per_page=tmp_search_kwargs.pop("items_per_page", None),
+                    start=tmp_search_kwargs.pop("startTimeFromAscendingNode", None),
+                    end=tmp_search_kwargs.pop("completionTimeFromAscendingNode", None),
+                    geom=tmp_search_kwargs.pop("geometry", None),
+                    locations=tmp_search_kwargs.pop("locations", None),
+                    provider=products[0].provider,
+                    **tmp_search_kwargs,
+                ):
+                    other_products.data.extend(page_results.data)
+                # the dag does not need search kwargs record anymore
+                dag.search_kwargs_for_exhaust = None
+                logger.info(f"Found {len(other_products)} other result(s)")
+                if other_products:
+                    # apply on the new results the same cruncher(s) as the one(s) used to filter initial results
+                    if products.crunchers:
+                        logger.info("Apply the crunchers used on initial results")
+                    for cruncher in products.crunchers:
+                        other_products = other_products.crunch(
+                            cruncher, **search_kwargs
+                        )
+                    if products.crunchers:
+                        logger.info(f"{len(other_products.data)} result(s) crunched")
+                    # add the new results to the initial ones
+                    products.data.extend(other_products.data)
+            else:
+                logger.info(
+                    "Products from all pages have already been searched, then the 'exhaust' parameter is not used here"
+                )
+            logger.info(f"Downloading {len(products)} product(s)")
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]

@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from eodag.utils.exceptions import PluginNotFoundError
 
@@ -60,7 +60,7 @@ class EODAGPluginMount(type):
 class PluginTopic(metaclass=EODAGPluginMount):
     """Base of all plugin topics in eodag"""
 
-    def __init__(self, provider: str, config: PluginConfig) -> None:
+    def __init__(self, provider: Optional[str], config: PluginConfig) -> None:
         self.config = config
         self.provider = provider
 
