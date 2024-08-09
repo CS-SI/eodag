@@ -22,7 +22,15 @@ import os
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
-from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+from urllib.parse import (
+    parse_qs,
+    quote,
+    urlencode,
+    urlparse,
+    urlsplit,
+    urlunparse,
+    urlunsplit,
+)
 
 import dateutil.parser
 import geojson
@@ -100,6 +108,13 @@ IGNORED_ITEM_PROPERTIES = [
     "defaultGeometry",
     "_date",
 ]
+
+
+def _quote_url_path(url: str) -> str:
+    parsed = urlsplit(url)
+    path = quote(parsed.path)
+    components = (parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment)
+    return urlunsplit(components)
 
 
 class StacCommon:
@@ -342,6 +357,10 @@ class StacItem(StacCommon):
             # remove empty properties
             product_item = self.__filter_item_properties_values(product_item)
 
+            # quote invalid characters in links
+            for link in product_item["links"]:
+                link["href"] = _quote_url_path(link["href"])
+
             # update item link with datacube query-string
             if _dc_qs or self.provider:
                 url_parts = urlparse(str(product_item["links"][0]["href"]))
@@ -378,9 +397,12 @@ class StacItem(StacCommon):
             origin_href = product.remote_location
 
         # update download link with up-to-date query-args
+        quoted_href = _quote_url_path(
+            downloadlink_href
+        )  # quote invalid characters in url
         assets["downloadLink"] = {
             "title": "Download link",
-            "href": downloadlink_href,
+            "href": quoted_href,
             "type": "application/zip",
         }
 
@@ -424,6 +446,7 @@ class StacItem(StacCommon):
                     assets[asset_key]["type"] = asset_type
                     if origin := assets[asset_key].get("alternate", {}).get("origin"):
                         origin["type"] = asset_type
+                asset_value["href"] = _quote_url_path(asset_value["href"])
 
         if thumbnail_url := product.properties.get(
             "quicklook", product.properties.get("thumbnail", None)
