@@ -98,21 +98,32 @@ logger = logging.getLogger("eodag.download.http")
 class HTTPDownload(Download):
     """HTTPDownload plugin. Handles product download over HTTP protocol
 
-    :param provider: provider name
-    :param config: Download plugin configuration:
+    The configuration parameters for this plugin are:
 
-        * ``config.base_uri`` (str) - (optional) default endpoint url
-        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
-        * ``config.auth_error_code`` (int) - (optional) authentication error code
-        * ``config.dl_url_params`` (dict) - (optional) attitional parameters to send in the request
-        * ``config.archive_depth`` (int) - (optional) level in extracted path tree where to find data
-        * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
-        * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
-        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
-        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
-        * ``config.order_headers`` (dict) - (optional) order request headers
-        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - (optional) Order status handling
+    * **type** [str] (mandatory): HTTPDownload
+    * **base_uri** [str]: default endpoint url
+    * **method** [str]: HTTP request method for the download request (GET or POST); default: GET
+    * **extract** [bool]: if the content of the downloaded file should be extracted; default: True
+    * **auth_error_code** [int]: which error code is returned in case of an authentication error
+    * **dl_url_params** [Dict[str, Any]]: parameters to be added to the query params of the request
+    * **archive_depth** [int]: level in extracted path tree where to find data; default: 1
+    * **flatten_top_dirs** [bool]: if the directory structure should be flattened; default: True
+    * **ignore_assets** [bool]: ignore assets and download using downloadLink; default: False
+    * **timeout** [int]: time to wait until request timeout in seconds; default: 5
+    * **ssl_verify** [bool]: if the ssl certificates should be verified in requests; default: True
+    * **output_extension** [str]: which extension should be used for the downloaded file
+    * **no_auth_download** [bool]: if the download should be done without authentication; default: True
+    * **order_enabled** [bool]: if the product has to be ordered to download it; default: False
+    * **order_method** [str]: HTTP request method for the order request (GET or POST); default: GET
+    * **order_headers** [Dict[str, str]]: headers to be added to the order request
+    * **order_on_response** [Dict[str, Dict[str, Any]]: a dictionary containing the key 'metadata_mapping'
+      which can be used to add new product properties based on the data in response to the order request
+    * **order_status** [:class:`~eodag.config.PluginConfig.OrderStatus`]: configuration to handle
+      the order status; contains information which method to use, how the response data is interpreted,
+      which status corresponds to success, ordered and error and what should be done on success.
+    * **products** [Dict[str, Dict[str, Any]]: product type specific config; the keys are the product types,
+      the values are dictionaries which can contain the keys output_extension and extract to overwrite
+      the provider config for a specific product type
 
     """
 
