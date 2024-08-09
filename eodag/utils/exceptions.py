@@ -84,6 +84,10 @@ class RequestError(EodagError):
     """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""
 
+    def __init__(self, *args, **kwargs):
+        self.status_code = kwargs.pop("status_code", None)
+        super().__init__(*args, **kwargs)
+
     history: Set[Tuple[str, Exception]] = set()
     parameters: Set[str] = set()
 
