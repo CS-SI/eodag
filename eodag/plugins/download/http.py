@@ -577,28 +577,33 @@ class HTTPDownload(Download):
                 product.location = path_to_uri(fs_path)
             return fs_path
 
-        # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset", None) is not None
-        ):
+        try:
+            assets_values = product.assets.get_values(kwargs.get("asset", None))
+        except NotAvailableError as e:
+            if kwargs.get("asset", None) is not None:
+                raise NotAvailableError(e).with_traceback(e.__traceback__)
+
+        # download single assets if there is no the full product asset
+        if all([assets_val.key != "downloadLink" for assets_val in assets_values]):
             try:
                 fs_path = self._download_assets(
                     product,
-                    fs_path.replace(".zip", ""),
+                    fs_path.replace(kwargs["outputs_extension"], ""),
                     record_filename,
                     auth,
                     progress_callback,
                     **kwargs,
                 )
-                if kwargs.get("asset", None) is None:
-                    product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError as e:
                 if kwargs.get("asset", None) is not None:
                     raise NotAvailableError(e).with_traceback(e.__traceback__)
                 else:
                     pass
+
+        # download the full product asset
+        if len(assets_values) > 1 and kwargs.get("asset", None) is not None:
+            logger.info("Download only the full product asset, ignoring the other ones")
 
         url = product.remote_location
 
@@ -611,7 +616,9 @@ class HTTPDownload(Download):
             timeout: int,
             **kwargs: Unpack[DownloadConf],
         ) -> None:
-            chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+            chunks = self._stream_download_full_product_asset(
+                product, auth, progress_callback, **kwargs
+            )
             is_empty = True
 
             with open(fs_path, "wb") as fhandle:
@@ -809,7 +816,9 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+        chunks = self._stream_download_full_product_asset(
+            product, auth, progress_callback, **kwargs
+        )
         # start reading chunks to set product.headers
         try:
             first_chunk = next(chunks)
@@ -880,7 +889,7 @@ class HTTPDownload(Download):
             else:
                 logger.error("Error while getting resource :\n%s", tb.format_exc())
 
-    def _stream_download(
+    def _stream_download_full_product_asset(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -888,8 +897,9 @@ class HTTPDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         """
-        fetches a zip file containing the assets of a given product as a stream
-        and returns a generator yielding the chunks of the file
+        fetches the zip file of the full product asset containing the assets
+        of a given product as a stream and returns a generator yielding the
+        chunks of the file
         :param product: product for which the assets should be downloaded
         :param auth: The configuration of a plugin of type Authentication
         :param progress_callback: A method or a callable object
@@ -1008,13 +1018,6 @@ class HTTPDownload(Download):
         if progress_callback is None:
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
-
-        assets_urls = [
-            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
-        ]
-
-        if not assets_urls:
-            raise NotAvailableError("No assets available for %s" % product)
 
         # get extra parameters to pass to the query
         params = kwargs.pop("dl_url_params", None) or getattr(
@@ -1140,10 +1143,10 @@ class HTTPDownload(Download):
             progress_callback = ProgressCallback(disable=True)
 
         assets_urls = [
-            a["href"] for a in getattr(product, "assets", {}).values() if "href" in a
+            a["href"]
+            for a in getattr(product, "assets", {}).values()
+            if "href" in a and a.key != "downloadLink"
         ]
-        if not assets_urls:
-            raise NotAvailableError("No assets available for %s" % product)
 
         assets_values = product.assets.get_values(kwargs.get("asset", None))
 
