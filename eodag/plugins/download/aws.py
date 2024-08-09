@@ -214,15 +214,25 @@ AWS_AUTH_ERROR_MESSAGES = [
 class AwsDownload(Download):
     """Download on AWS using S3 protocol.
 
-    :param provider: provider name
-    :param config: Download plugin configuration:
+    The configuration parameters for this plugin are:
 
-        * ``config.s3_endpoint`` (str) - s3 endpoint url
-        * ``config.requester_pays`` (bool) - (optional) whether download is done from a
-          requester-pays bucket or not
-        * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
-        * ``config.products`` (dict) - (optional) product_type specific configuration
-        * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
+    * **type** [str] (mandatory): AwsDownload
+    * **base_uri** [str] (mandatory): s3 endpoint url
+    * **requester_pays** [bool]: whether download is done from a requester-pays bucket or not; default: False
+    * **flatten_top_dirs** [bool]: if the directory structure should be flattened; default: True
+    * **ignore_assets** [bool]: ignore assets and download using downloadLink; default: False
+    * **ssl_verify** [bool]: if the ssl certificates should be verified in requests; default: True
+    * **bucket_path_level** [int]: at which level of the path part of the url the bucket can be found;
+      If no bucket_path_level is given, the bucket is taken from the first element of the netloc part.
+    * **products** [Dict[str, Dict[str, Any]]: product type specific config; the keys are the product types,
+      the values are dictionaries which can contain the keys:
+
+        * **default_bucket** [str]: bucket where the product type can be found
+        * **complementary_url_key** [str]: keys to add additional urls
+        * **build_safe** [bool]: if a SAFE (Standard Archive Format for Europe) product should
+          be created; used for Sentinel products; default: False
+        * **fetch_metadata** [Dict[str, Any]: config for metadata to be fetched for the SAFE product
+
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

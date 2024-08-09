@@ -25,7 +25,13 @@ from eodag.utils.exceptions import MisconfiguredError
 
 class CreodiasS3Download(AwsDownload):
     """
-    Download on creodias s3 from their VMs
+    Download on creodias s3 from their VMs (extension of AwsDownload)
+    The configuration parameters for this plugin are:
+
+    * **type** [str] (mandatory): CreodiasS3Download
+    * **base_uri** [str] (mandatory): s3 endpoint url
+    * **s3_bucket** [str] (mandatory): bucket where the products can be found
+    * **ssl_verify** [bool]: if the ssl certificates should be verified in requests; default: True
     """
 
     def _get_authenticated_objects_unsigned(self, bucket_name, prefix, auth_dict):
