@@ -1305,7 +1305,10 @@ class PostJsonSearch(QueryStringSearch):
         )
         if default_end_date:
             return default_end_date
-        start_date = datetime.fromisoformat(start_datetime)
+        try:
+            start_date = datetime.fromisoformat(start_datetime)
+        except ValueError:
+            start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
         product_type_conf = self.config.products[product_type]
         if (
             "metadata_mapping" in product_type_conf
