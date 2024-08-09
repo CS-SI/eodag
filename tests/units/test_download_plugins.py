@@ -323,7 +323,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.download() must change the outputs extension from '.zip' to '.tar' and keep the content
         of the output as it is when it is a tar file and outputs extension is set to '.zip'"""
 
-        provider = "wekeo"
+        provider = "wekeo_main"
         download_url = (
             "https://prism-dem-open.copernicus.eu/pd-desk-open-access/prismDownload/"
             "COP-DEM_GLO-30-DGED__2022_1/Copernicus_DSM_10_S90_00_W141_00.tar"

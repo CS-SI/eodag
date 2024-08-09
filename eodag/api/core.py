@@ -599,21 +599,32 @@ class EODataAccessGateway:
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
 
-        :param provider: (optional) The name of a provider for which product types list
-                         should be updated. Defaults to all providers (None value).
+        :param provider: The name of a provider or provider-group for which product types
+                         list should be updated. Defaults to all providers (None value).
         """
+        providers_to_fetch = list(self.providers_config.keys())
+        # check if some providers are grouped under a group name which is not a provider name
         if provider is not None and provider not in self.providers_config:
-            return
+            providers_to_fetch = [
+                p
+                for p, pconf in self.providers_config.items()
+                if provider == getattr(pconf, "group", None)
+            ]
+            if providers_to_fetch:
+                logger.info(
+                    f"Fetch product types for {provider} group: {', '.join(providers_to_fetch)}"
+                )
+            else:
+                return None
+        elif provider is not None:
+            providers_to_fetch = [provider]
 
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: Dict[str, Any] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
-        for provider_to_fetch, provider_config in (
-            {provider: self.providers_config[provider]}.items()
-            if provider
-            else self.providers_config.items()
-        ):
+        for provider_to_fetch in providers_to_fetch:
+            provider_config = self.providers_config[provider_to_fetch]
             # get discovery conf
             if hasattr(provider_config, "search"):
                 provider_search_config = provider_config.search
@@ -735,11 +746,20 @@ class EODataAccessGateway:
     ) -> Optional[Dict[str, Any]]:
         """Fetch providers for product types
 
-        :param provider: (optional) The name of a provider to fetch. Defaults to all
-                         providers (None value).
+        :param provider: The name of a provider or provider-group to fetch. Defaults to
+                         all providers (None value).
         :returns: external product types configuration
         """
-        if provider and provider not in self.providers_config:
+        grouped_providers = [
+            p
+            for p, provider_config in self.providers_config.items()
+            if provider == getattr(provider_config, "group", None)
+        ]
+        if provider and provider not in self.providers_config and grouped_providers:
+            logger.info(
+                f"Discover product types for {provider} group: {', '.join(grouped_providers)}"
+            )
+        elif provider and provider not in self.providers_config:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
@@ -748,7 +768,9 @@ class EODataAccessGateway:
             p
             for p in (
                 [
-                    provider,
+                    p
+                    for p in self.providers_config
+                    if p in grouped_providers + [provider]
                 ]
                 if provider
                 else self.available_providers()
@@ -762,7 +784,9 @@ class EODataAccessGateway:
                 search_plugin_config = self.providers_config[provider].api
             else:
                 return None
-            if getattr(search_plugin_config, "discover_product_types", None):
+            if getattr(search_plugin_config, "discover_product_types", {}).get(
+                "fetch_url", None
+            ):
                 search_plugin: Union[Search, Api] = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
                 )
@@ -815,7 +839,9 @@ class EODataAccessGateway:
                     ) or getattr(self.providers_config[provider], "api", None)
                     if search_plugin_config is None:
                         continue
-                    if not hasattr(search_plugin_config, "discover_product_types"):
+                    if not getattr(
+                        search_plugin_config, "discover_product_types", {}
+                    ).get("fetch_url", None):
                         # conf has been updated and provider product types are no more discoverable
                         continue
                     provider_products_config = (

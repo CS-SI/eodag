@@ -538,9 +538,7 @@ class QueryStringSearch(Search):
             self,
             PreparedSearch(
                 url=single_collection_url,
-                info_message="Fetching data for product type product type: {}".format(
-                    product_type
-                ),
+                info_message=f"Fetching data for product type: {product_type}",
                 exception_message="Skipping error while fetching product types for "
                 "{} {} instance:".format(self.provider, self.__class__.__name__),
             ),
@@ -1637,12 +1635,35 @@ class StacSearch(PostJsonSearch):
                        arguments)
         :returns: fetched queryable parameters dict
         """
+        if (
+            not self.config.discover_queryables["fetch_url"]
+            and not self.config.discover_queryables["product_type_fetch_url"]
+        ):
+            logger.info(f"Cannot fetch queryables with {self.provider}")
+            return None
+
         product_type = kwargs.get("productType", None)
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)
             if product_type
             else None
         )
+        if (
+            provider_product_type
+            and not self.config.discover_queryables["product_type_fetch_url"]
+        ):
+            logger.info(
+                f"Cannot fetch queryables for a specific product type with {self.provider}"
+            )
+            return None
+        if (
+            not provider_product_type
+            and not self.config.discover_queryables["fetch_url"]
+        ):
+            logger.info(
+                f"Cannot fetch global queryables with {self.provider}. A product type must be specified"
+            )
+            return None
 
         try:
             unparsed_fetch_url = (
@@ -1654,10 +1675,16 @@ class StacSearch(PostJsonSearch):
             fetch_url = unparsed_fetch_url.format(
                 provider_product_type=provider_product_type, **self.config.__dict__
             )
+            auth = (
+                self.auth
+                if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
+                else None
+            )
             response = QueryStringSearch._request(
                 self,
                 PreparedSearch(
                     url=fetch_url,
+                    auth=auth,
                     info_message="Fetching queryables: {}".format(fetch_url),
                     exception_message="Skipping error while fetching queryables for "
                     "{} {} instance:".format(self.provider, self.__class__.__name__),
@@ -1709,3 +1736,18 @@ class StacSearch(PostJsonSearch):
             python_queryables = create_model("m", **field_definitions).model_fields
 
         return model_fields_to_annotated(python_queryables)
+
+
+class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that
+    uses generic STAC configuration for queryables.
+    """
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        PostJsonSearch.__init__(self, provider, config)
+
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters"""
+        return PostJsonSearch.build_query_string(self, product_type, **kwargs)

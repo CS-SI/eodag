@@ -448,9 +448,14 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        # One of the providers that has discover_product_types() configured with QueryStringSearch
         provider = "wekeo_cmems"
         search_plugin = self.get_search_plugin(provider=provider)
+        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "QueryStringSearch",
+            search_plugin.discover_product_types.__func__.__qualname__.split(".")[0],
+        )
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
@@ -580,13 +585,20 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_queryables(
         self, mock_requests_session_constraints
     ):
-        search_plugin = self.get_search_plugin(provider="wekeo")
+        # One of the providers that has discover_queryables() configured with QueryStringSearch
+        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "QueryStringSearch",
+            search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
+        )
+
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        wekeo_constraints = {"constraints": constraints}
+        wekeo_ecmwf_constraints = {"constraints": constraints}
         mock_requests_session_constraints.return_value = MockResponse(
-            wekeo_constraints, status_code=200
+            wekeo_ecmwf_constraints, status_code=200
         )
 
         provider_queryables_from_constraints_file = [
@@ -612,7 +624,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             timeout=5,
         )
 
-        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo)
+        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
         for provider_queryable in provider_queryables_from_constraints_file:
             provider_queryable = (
                 get_queryable_from_provider(
@@ -2510,3 +2522,79 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 "item_20200204_20200205_niznjvnqkrf_20210101",
                 result[0].properties["id"],
             )
+
+
+class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginPostJsonSearchWithStacQueryables, self).setUp()
+        # One of the providers that has a PostJsonSearchWithStacQueryables Search plugin
+        provider = "wekeo_main"
+        self.wekeomain_search_plugin = self.get_search_plugin(
+            self.product_type, provider
+        )
+        self.wekeomain_auth_plugin = self.get_auth_plugin(provider)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.build_query_string", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch.build_query_string", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables._request",
+        autospec=True,
+    )
+    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain(
+        self,
+        mock__request,
+        mock_build_qs_postjsonsearch,
+        mock_build_qs_stacsearch,
+        mock_normalize_results,
+    ):
+        """A query with a PostJsonSearchWithStacQueryables (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
+        mock_build_qs_postjsonsearch.return_value = (
+            mock_build_qs_stacsearch.return_value
+        ) = (
+            {
+                "dataset_id": "EO:ESA:DAT:SENTINEL-2",
+                "startDate": "2020-08-08",
+                "completionDate": "2020-08-16",
+                "bbox": [137.772897, 13.134202, 153.749135, 23.885986],
+                "processingLevel": "S2MSI1C",
+            },
+            mock.ANY,
+        )
+
+        self.wekeomain_search_plugin.query(
+            prep=PreparedSearch(
+                page=1,
+                items_per_page=2,
+                auth_plugin=self.wekeomain_auth_plugin,
+            ),
+            **self.search_criteria_s2_msi_l1c,
+        )
+
+        mock__request.assert_called()
+        mock_build_qs_postjsonsearch.assert_called()
+        mock_build_qs_stacsearch.assert_not_called()
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch.discover_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+    )
+    def test_plugins_search_postjsonsearch_discover_queryables(
+        self,
+        mock_stacsearch_discover_queryables,
+        mock_postjsonsearch_discover_queryables,
+    ):
+        """Queryables discovery with a PostJsonSearchWithStacQueryables (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
+        self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
+        mock_stacsearch_discover_queryables.assert_called()
+        mock_postjsonsearch_discover_queryables.assert_not_called()
