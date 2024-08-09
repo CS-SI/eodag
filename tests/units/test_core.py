@@ -760,6 +760,42 @@ class TestCore(TestCoreBase):
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(sorted(product_types_ids), ["foo"])
 
+    def test_guess_product_type_with_mission_dates(self):
+        """Testing the datetime interval"""
+
+        with open(
+            os.path.join(TEST_RESOURCES_PATH, "ext_product_types_free_text_search.json")
+        ) as f:
+            ext_product_types_conf = json.load(f)
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES",
+            missionStartDate="2013-02-01",
+            missionEndDate="2013-02-05",
+        )
+        self.assertListEqual(product_types_ids, ["interval_end"])
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES",
+            missionStartDate="2013-02-01",
+            missionEndDate="2013-02-15",
+        )
+        self.assertListEqual(
+            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+        )
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES", missionStartDate="2013-02-01"
+        )
+        self.assertListEqual(
+            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+        )
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES", missionEndDate="2013-02-20"
+        )
+        self.assertListEqual(
+            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+        )
+
     def test_update_product_types_list(self):
         """Core api.update_product_types_list must update eodag product types list"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
