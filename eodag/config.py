@@ -70,6 +70,8 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
+AUTH_CONF_KEYS = ("auth", "search_auth", "download_auth")
+PLUGINS_CONF_KEYS = ("api", "search", "download") + AUTH_CONF_KEYS
 
 
 class SimpleYamlProxyConfig:
@@ -118,6 +120,8 @@ class ProviderConfig(yaml.YAMLObject):
     :param products: (optional) The products types supported by the provider
     :param download: (optional) The configuration of a plugin of type Download
     :param auth: (optional) The configuration of a plugin of type Authentication
+    :param search_auth: (optional) The configuration of a plugin of type Authentication for search
+    :param download_auth: (optional) The configuration of a plugin of type Authentication for download
     :param kwargs: Additional configuration variables for this provider
     """
 
@@ -132,6 +136,8 @@ class ProviderConfig(yaml.YAMLObject):
     products: Dict[str, Any]
     download: PluginConfig
     auth: PluginConfig
+    search_auth: PluginConfig
+    download_auth: PluginConfig
     product_types_fetched: bool  # set in core.update_product_types_list
 
     yaml_loader = yaml.Loader
@@ -189,11 +195,10 @@ class ProviderConfig(yaml.YAMLObject):
             {
                 key: value
                 for key, value in mapping.items()
-                if key not in ("name", "api", "search", "download", "auth")
-                and value is not None
+                if key not in PLUGINS_CONF_KEYS and value is not None
             },
         )
-        for key in ("api", "search", "download", "auth"):
+        for key in PLUGINS_CONF_KEYS:
             current_value: Optional[Dict[str, Any]] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
@@ -339,6 +344,7 @@ class PluginConfig(yaml.YAMLObject):
 
     # download -------------------------------------------------------------------------
     base_uri: str
+    s3_endpoint: str  # AwsDownload
     output_dir: str
     extract: bool
     output_extension: str
@@ -454,15 +460,26 @@ def load_config(config_path: str) -> Dict[str, ProviderConfig]:
         raise e
     stac_provider_config = load_stac_provider_config()
     for provider_config in providers_configs:
-        # for provider_config in copy.deepcopy(providers_configs):
         provider_config_init(provider_config, stac_provider_config)
         config[provider_config.name] = provider_config
     return config
 
 
+def credentials_in_auth(auth_conf: PluginConfig) -> bool:
+    """Checks if credentials are set for this Authentication plugin configuration
+
+    :param auth_conf: Authentication plugin configuration
+    :returns: True if credentials are set, else False
+    """
+    return any(
+        c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
+    )
+
+
 def provider_config_init(
     provider_config: ProviderConfig,
     stac_search_default_conf: Optional[Dict[str, Any]] = None,
+    auth_configs: Optional[List[PluginConfig]] = None,
 ) -> None:
     """Applies some default values to provider config
 
@@ -478,6 +495,31 @@ def provider_config_init(
                 param_value.output_dir = tempfile.gettempdir()
             if not getattr(param_value, "delete_archive", None):
                 param_value.delete_archive = True
+
+    # share credentials across compatible auth plugins
+    if auth_configs:
+        for param_name in AUTH_CONF_KEYS:
+            provider_config_auth = getattr(provider_config, param_name, None)
+            if provider_config_auth and not credentials_in_auth(provider_config_auth):
+                # no credentials set for this provider
+                provider_matching_conf = getattr(
+                    provider_config_auth, "matching_conf", {}
+                )
+                provider_matching_url = getattr(
+                    provider_config_auth, "matching_url", None
+                )
+                for conf_with_creds in auth_configs:
+                    # copy credentials between plugins if `matching_conf` or `matching_url` are matching
+                    if (
+                        provider_matching_conf
+                        and provider_matching_conf
+                        == getattr(conf_with_creds, "matching_conf", {})
+                    ) or (
+                        provider_matching_url
+                        and provider_matching_url
+                        == getattr(conf_with_creds, "matching_url", None)
+                    ):
+                        provider_config_auth.credentials = conf_with_creds.credentials
 
     try:
         if (
