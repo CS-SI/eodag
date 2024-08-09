@@ -955,7 +955,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
-            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            headers=USER_AGENT,
             timeout=60,
             verify=True,
         )
@@ -979,7 +979,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
-            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            headers=USER_AGENT,
             timeout=60,
             verify=True,
         )
@@ -1009,7 +1009,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
-            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            headers=USER_AGENT,
             timeout=60,
             verify=True,
         )
@@ -1037,7 +1037,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
-            headers={"User-Agent": "eodag/3.0.0b3.dev30+ged5a4c8e.d20240806"},
+            headers=USER_AGENT,
             timeout=60,
             verify=True,
         )
