@@ -33,7 +33,7 @@ import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import ProgressCallback
-from eodag.utils.exceptions import DownloadError
+from eodag.utils.exceptions import DownloadError, NoMatchingProductType
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -96,7 +96,7 @@ class BaseDownloadPluginTest(unittest.TestCase):
         super(BaseDownloadPluginTest, self).tearDown()
         self.tmp_dir.cleanup()
 
-    def get_download_plugin(self, product):
+    def get_download_plugin(self, product: EOProduct):
         return self.plugins_manager.get_download_plugin(product)
 
     def get_auth_plugin(self, provider):
@@ -1482,6 +1482,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
         self.assertEqual((bucket, prefix), ("default_bucket", "somewhere/else"))
 
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload._get_unique_products", autospec=True
+    )
     @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
@@ -1499,12 +1502,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
     def test_plugins_download_aws_no_safe_build_no_flatten_top_dirs(
         self,
-        mock_requests_get,
-        mock_get_authenticated_objects,
-        mock_get_chunk_dest_path,
-        mock_finalize_s2_safe_product,
-        mock_check_manifest_file_list,
-        mock_flatten_top_directories,
+        mock_requests_get: mock.Mock,
+        mock_get_authenticated_objects: mock.Mock,
+        mock_get_chunk_dest_path: mock.Mock,
+        mock_finalize_s2_safe_product: mock.Mock,
+        mock_check_manifest_file_list: mock.Mock,
+        mock_flatten_top_directories: mock.Mock,
+        mock__get_unique_products: mock.Mock,
     ):
         """AwsDownload.download() must not call safe build methods if not needed"""
 
@@ -1525,6 +1529,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.assertEqual(mock_check_manifest_file_list.call_count, 0)
         self.assertEqual(mock_flatten_top_directories.call_count, 0)
 
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload._get_unique_products", autospec=True
+    )
     @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
@@ -1542,12 +1549,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
     def test_plugins_download_aws_no_safe_build_flatten_top_dirs(
         self,
-        mock_requests_get,
-        mock_get_authenticated_objects,
-        mock_get_chunk_dest_path,
-        mock_finalize_s2_safe_product,
-        mock_check_manifest_file_list,
-        mock_flatten_top_directories,
+        mock_requests_get: mock.Mock,
+        mock_get_authenticated_objects: mock.Mock,
+        mock_get_chunk_dest_path: mock.Mock,
+        mock_finalize_s2_safe_product: mock.Mock,
+        mock_check_manifest_file_list: mock.Mock,
+        mock_flatten_top_directories: mock.Mock,
+        mock__get_unique_products: mock.Mock,
     ):
         """AwsDownload.download() must not call safe build methods if not needed"""
 
@@ -1728,6 +1736,26 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.download(self.product, output_dir=self.output_dir, asset="file1")
         # 3 additional calls
         self.assertEqual(7, mock_get_chunk_dest_path.call_count)
+
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_download_aws_no_matching_product_type(
+        self,
+        mock_get_authenticated_objects: mock.Mock,
+    ):
+        """AwsDownload.download() must fail if no product chunk is available"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+
+        # no SAFE build and flatten_top_dirs
+        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.flatten_top_dirs = True
+
+        with self.assertRaises(NoMatchingProductType):
+            plugin.download(self.product, outputs_prefix=self.output_dir)
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
