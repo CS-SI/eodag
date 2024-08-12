@@ -44,7 +44,7 @@ class AwsAuth(Authentication):
 
     * **type** [str] (mandatory): AwsAuth
     * **auth_error_code** [int] (mandatory for creodias_s3): which error code is returned
-    in case of an authentication error
+      in case of an authentication error
 
     """
 

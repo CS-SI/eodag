@@ -116,8 +116,9 @@ class HTTPDownload(Download):
     * **order_enabled** [bool]: if the product has to be ordered to download it; default: False
     * **order_method** [str]: HTTP request method for the order request (GET or POST); default: GET
     * **order_headers** [Dict[str, str]]: headers to be added to the order request
-    * **order_on_response** [Dict[str, Dict[str, Any]]: a dictionary containing the key 'metadata_mapping'
-      which can be used to add new product properties based on the data in response to the order request
+    * **order_on_response** [:class:`~eodag.config.PluginConfig.OrderOnResponse`]: a typed dictionary
+      containing the key 'metadata_mapping' which can be used to add new product properties
+      based on the data in response to the order request
     * **order_status** [:class:`~eodag.config.PluginConfig.OrderStatus`]: configuration to handle
       the order status; contains information which method to use, how the response data is interpreted,
       which status corresponds to success, ordered and error and what should be done on success.
