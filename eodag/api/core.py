@@ -1570,9 +1570,10 @@ class EODataAccessGateway:
                     **kwargs,
                 ):
                     results.data.extend(page_results.data)
-            except Exception:
+            except Exception as e:
                 if kwargs.get("raise_errors"):
                     raise
+                logger.warning(e)
                 continue
 
             # try using crunch to get unique result
