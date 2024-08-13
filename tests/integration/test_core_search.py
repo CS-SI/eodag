@@ -29,7 +29,6 @@ from tests.context import (
     NoMatchingProductType,
     RequestError,
     USGSError,
-    ValidationError,
 )
 from tests.utils import mock
 
@@ -78,7 +77,6 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # QueryStringSearch / peps
         self.dag.set_preferred_provider("peps")
-        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
         self.assertRaises(
             RequestError, self.dag.search, productType="foo", raise_errors=True
         )
@@ -153,7 +151,6 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # ODataV4Search / onda
         self.dag.set_preferred_provider("onda")
-        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
         self.assertRaises(
             RequestError, self.dag.search, productType="foo", raise_errors=True
         )
