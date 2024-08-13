@@ -225,7 +225,7 @@ class Search(PluginTopic):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
         # remove duplicates
-        sort_by_arg = list(set(sort_by_arg))
+        sort_by_arg = list(dict.fromkeys(sort_by_arg))
 
         sort_by_qs: str = ""
         sort_by_qp: Dict[str, Any] = {}
