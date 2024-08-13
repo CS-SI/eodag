@@ -120,8 +120,11 @@ class QueryStringSearch(Search):
       result that gives access to the result entries
     * **api_endpoint** [str] (mandatory): The endpoint of the provider's search interface
     * **need_auth** [bool]: if authentication is needed for the search request; default: False
+    * **auth_error_code** [int]: which error code is returned in case of an authentication
+      error; only used if `need_auth=true`
     * **ssl_verify** [bool]: if the ssl certificates should be verified in requests; default: True
     * **dont_quote** [List[str]]: characters that should not be quoted in the url params
+    * **timeout** [int]: time to wait until request timeout in seconds; default: 5
     * **literal_search_params** [Dict[str, str]]: A mapping of (search_param => search_value) pairs
       giving search parameters to be passed as is in the search url query string. This is useful
       for example in situations where the user wants to add a fixed search query parameter exactly
@@ -146,11 +149,13 @@ class QueryStringSearch(Search):
             the URL of the next page in the response of the current page.
         * **max_items_per_page** [int]: The maximum number of items per page that the provider can
           handle; default: 50
+
     * **discover_product_types** [Dict[str, Any]]: configuration for product type discovery
       based on information from the provider; It contains the keys:
 
         * **fetch_url** [str] (mandatory): url from which the product types can be fetched
-        * **result_type** [str]: type of the provider result; currently only "json" supported
+        * **result_type** [str]: type of the provider result; currently only "json" is supported,
+          (other types could be used in an extension of this plugin)
         * **results_entry** [str] (mandatory): json path to the list of product types
         * **generic_product_type_id** [str]: mapping for the product type id
         * **generic_product_type_parsable_metadata** [Dict[str, str]]: mapping for product type
@@ -183,9 +188,9 @@ class QueryStringSearch(Search):
         * **sort_param_mapping** [Dict [str, str]]: mapping for the parameters available for sorting
         * **sort_order_mapping** [Dict[Literal["ascending", "descending"], str]]: mapping for
           the sort order
-        * **max_sort_params** [int]: maximum number of sort parameters; used to validate the user
-          input; The tuples given by the user will be concatenated so, if no max is given and
-          the user input has more parameters than allowed by the provider, an invalid request is created.
+        * **max_sort_params** [int]: maximum number of sort parameters supported by the provider;
+          used to validate the user input to avoid failed requests or unexpected behaviour
+          (not all parameters are used in the request)
 
     * **metadata_mapping** [Dict[str, Any]]: The search plugins of this kind can detect when a
       metadata mapping is "query-able", and get the semantics of how to format the query string
@@ -247,6 +252,24 @@ class QueryStringSearch(Search):
           '(<op1> <opname> <op2>)', then the operations will be joined together using
           the union string and finally if the number of operations is greater than 1,
           they will be wrapped as specified by the wrapper config key.
+
+    * **discover_queryables** [Dict[str, Any]]: configuration to fetch the queryables from a
+      provider queryables endpoint; It has the following keys:
+
+        * **fetch_url** [str]: url to fetch the queryables valid for all product types
+        * **product_type_fetch_url** [str]: url to fetch the queryables for a specific product type
+        * **result_type** [str]: type of the result (currently only json is used)
+        * **results_entry** [str]: json path to retrieve the queryables from the provider result
+
+    * **constraints_file_url** [str]: url to fetch the constraints for a specific product type,
+      can be an http url or a path to a file; the constraints are used to build queryables
+    * **constraints_file_dataset_key** [str]: key which is used in the eodag configuration to
+      map the eodag product type to the provider product type; default: dataset
+    * **constraints_entry** [str]: key in the json result where the constraints can be found;
+      if not given, it is assumed that the constraints are on tope level of the result, i.e.
+      the result is an array of constraints
+    * **stop_without_constraints_entry_key** [bool]: if true only a provider result containing
+      `constraints_entry` is accepted as valid and used to create constraints; default: false
 
     """
 
@@ -1229,7 +1252,20 @@ class QueryStringSearch(Search):
 
 class ODataV4Search(QueryStringSearch):
     """A specialisation of a QueryStringSearch that does a two step search to retrieve
-    all products metadata"""
+    all products metadata. All configuration parameters of QueryStringSearch are also available
+    for this plugin. In addition, the following parameters can be configured:
+
+    * **per_product_metadata_query** [bool]: should be set to true if the metadata is not given
+      in the search result and a two step search has to be performed; default: false
+    * **metadata_pre_mapping** [Dict[str, str]]: a dictionary which can be used to simplify
+      further metadata extraction. For example, going from '$.Metadata[?(@.id="foo")].value'
+      to '$.Metadata.foo.value'. It has the keys:
+
+        * **metadata_path** [str]: json path of the metadata entry
+        * **metadata_path_id** [str]: key to get the metadata id
+        * **metadata_path_value** [str]: key to get the metadata value
+
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(ODataV4Search, self).__init__(provider, config)
@@ -1320,7 +1356,26 @@ class ODataV4Search(QueryStringSearch):
 
 
 class PostJsonSearch(QueryStringSearch):
-    """A specialisation of a QueryStringSearch that uses POST method"""
+    """A specialisation of a QueryStringSearch that uses POST method
+    All configuration parameters available for QueryStringSearch are also available for PostJsonSearch.
+    The mappings given in metadata_mapping are used to construct a (json) body for the
+    POST request that is sent to the provider. Due to the fact that we sent a POST request and
+    not a get request, the pagination configuration will look slightly different. It has the
+    following parameters:
+
+    * **next_page_query_obj**: The additional parameters needed to add pagination information to
+      the search request. These parameters won't be included in result. This must be a json dict
+      formatted like `{{"foo":"bar"}}` because it will be passed to a `.format()` method
+      before being loaded as json.
+    * **total_items_nb_key_path** [str]:  An XPath or JsonPath leading to the total number of
+      results satisfying a request. This is used for providers which provides the total results
+      metadata along with the result of the query and don't have an endpoint for querying
+      the number of items satisfying a request, or for providers for which the count endpoint
+      returns a json or xml document
+    * **max_items_per_page** [int]: The maximum number of items per page that the provider can
+      handle; default: 50
+
+    """
 
     def _get_default_end_date_from_start_date(
         self, start_datetime: str, product_type: str
@@ -1704,7 +1759,15 @@ class PostJsonSearch(QueryStringSearch):
 
 
 class StacSearch(PostJsonSearch):
-    """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
+    """A specialisation of PostJsonSearch that uses generic STAC configuration, it therefore
+    has the same configuration parameters (those inherited from QuerySTringSearch)
+    For providers using StacSearch default values are defined for most of the parameters
+    (see :doc:`eodag/resources/stac_provider.yml`). If some parameters are different for a
+    specific provider, they have to be overwritten. If certain functionalities are not available,
+    their configuration parameters have to be overwritten with `null`. E.g. if there is no queryables
+    endpoint, the `fetch_url` and `product_type_fetch_url` in the `discover_queryables` config have
+    to be set to `null`.
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         # backup results_entry overwritten by init
@@ -1855,7 +1918,7 @@ class StacSearch(PostJsonSearch):
 
 class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
     """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that
-    uses generic STAC configuration for queryables.
+    uses generic STAC configuration for queryables (inherited from StacSearch).
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

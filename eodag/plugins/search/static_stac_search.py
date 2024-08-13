@@ -43,24 +43,18 @@ logger = logging.getLogger("eodag.search.static_stac_search")
 
 class StaticStacSearch(StacSearch):
     """Static STAC Catalog search plugin
-
-    The available configuration parameters for this plugin are
-    (to be set in provider configuration):
-
-        - **api_endpoint**: (mandatory) path to the catalog (url or local system path)
-
-        - **max_connections**: (optional) Maximum number of connections for HTTP requests,
-          defaut is 100.
-
-        - **timeout**: (mandatory) Timeout in seconds for each internal HTTP request,
-          default is 5.
-
     This plugin first loads all STAC items found in the catalog, and converts them to
     EOProducts using StacSearch.
     Then it uses crunchers to only keep products matching query parameters.
 
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
+    The plugin inherits the configuration parameters from PostJsonSearch (via the StacSearch
+    inheritance) with the following particularities:
+
+    * **api_endpoint** [str] (mandatory): path to the catalog; in contrast to the api_endpoint for
+     other plugin types this can be a url or local system path.
+    * **max_connections** [int]: Maximum number of connections for HTTP requests; default: 100.
+    * **timeout** [int]: Timeout in seconds for each internal HTTP request; default: 5
+
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

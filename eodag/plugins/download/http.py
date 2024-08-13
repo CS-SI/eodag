@@ -113,7 +113,9 @@ class HTTPDownload(Download):
     * **ssl_verify** [bool]: if the ssl certificates should be verified in requests; default: True
     * **output_extension** [str]: which extension should be used for the downloaded file
     * **no_auth_download** [bool]: if the download should be done without authentication; default: True
-    * **order_enabled** [bool]: if the product has to be ordered to download it; default: False
+    * **order_enabled** [bool]: if the product has to be ordered to download it; if this paramter
+      is set to true, a mapping for the orderLink has to be added to the metadata mapping of
+      the search plugin used for the provider; default: False
     * **order_method** [str]: HTTP request method for the order request (GET or POST); default: GET
     * **order_headers** [Dict[str, str]]: headers to be added to the order request
     * **order_on_response** [:class:`~eodag.config.PluginConfig.OrderOnResponse`]: a typed dictionary

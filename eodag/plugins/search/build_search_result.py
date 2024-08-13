@@ -81,21 +81,12 @@ class BuildPostSearchResult(PostJsonSearch):
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
     object.
 
-    The available configuration parameters inherits from parent classes, with particularly
-    for this plugin:
+    The available configuration parameters inherits from parent classes (PostJsonSearch and
+    QueryStringSearch), with particularly for this plugin:
 
-        - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
+    * **remove_from_query** [List[str]]: List of parameters used to parse metadata but that must
+      not be included to the query
 
-        - **pagination**: The configuration of how the pagination is done
-          on the provider. It is a tree with the following nodes:
-
-          - *next_page_query_obj*: (optional) The additional parameters needed to perform
-            search. These paramaters won't be included in result. This must be a json dict
-            formatted like `{{"foo":"bar"}}` because it will be passed to a `.format()`
-            method before being loaded as json.
-
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
     """
 
     def count_hits(
@@ -188,7 +179,7 @@ class BuildPostSearchResult(PostJsonSearch):
         result.update(results.product_type_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
-        # parse porperties
+        # parse properties
         parsed_properties = properties_from_json(
             result,
             self.config.metadata_mapping,
@@ -249,19 +240,13 @@ class BuildSearchResult(BuildPostSearchResult):
     This plugin builds a single :class:`~eodag.api.search_result.SearchResult` object
     using given query parameters as product properties.
 
-    The available configuration parameters inherits from parent classes, with particularly
-    for this plugin:
+    The available configuration parameters inherits from parent classes (BuildPostSearchResult,
+    PostJsonSearch and QueryStringSearch), with particularly for this plugin:
 
-        - **end_date_excluded**: Set to `False` if provider does not include end date to
-          search
+    * **end_date_excluded** [bool]: Set to `False` if provider does not include end date in
+      the search request; In this case, if the end date is at midnight, the previous day will be
+      used. default: true
 
-        - **remove_from_query**: List of parameters used to parse metadata but that must
-          not be included to the query
-
-        - **constraints_file_url**: url of the constraint file used to build queryables
-
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

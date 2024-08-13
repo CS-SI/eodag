@@ -109,7 +109,16 @@ def _check_int_values_properties(properties: Dict[str, Any]):
 
 
 class CopMarineSearch(StaticStacSearch):
-    """class that implements search for the Copernicus Marine provider"""
+    """class that implements search for the Copernicus Marine provider
+    It calls discover_product_types inherited from StaticStacSearch but for the actual search
+    a special method which fetches the urls of the available products from an S3 storage and
+    filters them has been written.
+    The configuration parameters are inherited from the parent and grand-parent classes. The
+    `auto_discovery` parameter in the `discover_metadata` section has to be set to `false` and the
+    `fetch_url` in the `discover_queryables` queryables section has to be set to `null` to
+    overwrite the default config from the stac provider configuration because those functionalities
+    are not available.
+    """
 
     def __init__(self, provider: str, config: PluginConfig):
         original_metadata_mapping = copy.deepcopy(config.metadata_mapping)
