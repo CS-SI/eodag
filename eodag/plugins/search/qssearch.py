@@ -820,7 +820,7 @@ class QueryStringSearch(Search):
             else:
                 next_url = "{}?{}".format(search_endpoint, qs_with_sort)
             urls.append(next_url)
-        return list(set(urls)), total_results
+        return list(dict.fromkeys(urls)), total_results
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
@@ -1498,7 +1498,7 @@ class PostJsonSearch(QueryStringSearch):
                     )
 
             urls.append(search_endpoint)
-        return list(set(urls)), total_results
+        return list(dict.fromkeys(urls)), total_results
 
     def _request(
         self,

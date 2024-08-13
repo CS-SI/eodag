@@ -1225,7 +1225,7 @@ class StacCatalog(StacCommon):
             countries_list: List[str] = [rec[attr] for rec in shp.records()]  # type: ignore
 
         # remove duplicates
-        countries_list = list(set(countries_list))
+        countries_list = list(dict.fromkeys(countries_list))
 
         countries_list.sort()
 
