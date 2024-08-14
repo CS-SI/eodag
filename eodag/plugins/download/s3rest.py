@@ -67,18 +67,19 @@ class S3RestDownload(Download):
 
     Re-use AwsDownload bucket some handling methods
 
-    :param provider: provider name
-    :param config: Download plugin configuration:
+    Download plugin configuration:
 
-        * ``config.base_uri`` (str) - default endpoint url
-        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
-        * ``config.auth_error_code`` (int) - (optional) authentication error code
-        * ``config.bucket_path_level`` (int) - (optional) bucket location index in path.split('/')
-        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
-        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
-        * ``config.order_headers`` (dict) - (optional) order request headers
-        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
+    * **config.base_uri** [str] (mandatory):  default endpoint url
+    * **config.extract** [bool]: extract downloaded archive or not
+    * **config.auth_error_code** [int]: authentication error code
+    * **config.bucket_path_level** [int]: bucket location index in path.split('/')
+    * **config.order_enabled** [bool]: whether order is enabled or not if product is `OFFLINE`
+    * **config.order_method** [str]: HTTP request method, GET (default) or POST
+    * **config.order_headers** [dict]: order request headers
+    * **order_on_response** [:class:`~eodag.config.PluginConfig.OrderOnResponse`]: a typed dictionary
+      containing the key 'metadata_mapping' which can be used to add new product properties
+      based on the data in response to the order request
+    * **config.order_status** [:class:`~eodag.config.PluginConfig.OrderStatus`]: Order status handling
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

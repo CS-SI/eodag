@@ -42,9 +42,12 @@ logger = logging.getLogger("eodag.auth.openid_connect")
 
 
 class OIDCRefreshTokenBase(Authentication):
-    """OIDC refresh token base class, to be used through specific OIDC flows plugins.
+    """OIDC refresh token base class, to be used through specific OIDC flows plugins;
+    Common mechanism to handle refresh token from all OIDC auth plugins;
+    Plugins inheriting from this base class must implement the methods _request_new_token and
+    _get_token_with_refresh_token. Depending oh the implementation of these methods they can have
+    different configuration parameters.
 
-    Common mechanism to handle refresh token from all OIDC auth plugins.
     """
 
     class TokenInfo(TypedDict, total=False):
@@ -186,7 +189,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         * **authorization_uri** [str] (mandatory): The authorization url of the server (where to query for grants)
         * **redirect_uri** [str] (mandatory): The callback url that will handle the code given by the OIDC provider
         * **token_uri** [str] (mandatory): The url to query to exchange the authorization
-          code obtained from the OIDC providerfor an authorized token
+          code obtained from the OIDC provider for an authorized token
         * **client_id** [str] (mandatory): The OIDC provider's client ID of the eodag provider
         * **user_consent_needed** [bool] (mandatory): Whether a user consent is needed
           during the authentication

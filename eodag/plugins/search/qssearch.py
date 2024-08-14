@@ -149,6 +149,7 @@ class QueryStringSearch(Search):
             the URL of the next page in the response of the current page.
         * **max_items_per_page** [int]: The maximum number of items per page that the provider can
           handle; default: 50
+        * **start_page** [int]: number of the first page; default: 1
 
     * **discover_product_types** [Dict[str, Any]]: configuration for product type discovery
       based on information from the provider; It contains the keys:

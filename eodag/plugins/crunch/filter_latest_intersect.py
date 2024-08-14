@@ -39,7 +39,8 @@ logger = logging.getLogger("eodag.crunch.latest_intersect")
 class FilterLatestIntersect(Crunch):
     """FilterLatestIntersect cruncher
 
-    Filter latest products (the ones with a the highest start date) that intersect search extent
+    Filter latest products (the ones with a the highest start date) that intersect search extent;
+    The configuration for this plugin is an empty dict
     """
 
     @staticmethod
