@@ -1926,13 +1926,16 @@ class EODataAccessGateway:
                         if len(eo_product.assets) > 0
                         else eo_product.properties.get("downloadLink")
                     )
-                    auth_plugin = next(
-                        self._plugins_manager.get_auth_plugins(
-                            search_plugin.provider,
-                            matching_url=matching_url,
-                            matching_conf=download_plugin.config,
+                    try:
+                        auth_plugin = next(
+                            self._plugins_manager.get_auth_plugins(
+                                search_plugin.provider,
+                                matching_url=matching_url,
+                                matching_conf=download_plugin.config,
+                            )
                         )
-                    )
+                    except StopIteration:
+                        auth_plugin = None
                     eo_product.register_downloader(download_plugin, auth_plugin)
 
             results.extend(res)
