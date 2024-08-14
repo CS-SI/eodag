@@ -1761,12 +1761,12 @@ class PostJsonSearch(QueryStringSearch):
 
 class StacSearch(PostJsonSearch):
     """A specialisation of PostJsonSearch that uses generic STAC configuration, it therefore
-    has the same configuration parameters (those inherited from QuerySTringSearch)
+    has the same configuration parameters (those inherited from QueryStringSearch)
     For providers using StacSearch default values are defined for most of the parameters
-    (see :doc:`eodag/resources/stac_provider.yml`). If some parameters are different for a
-    specific provider, they have to be overwritten. If certain functionalities are not available,
-    their configuration parameters have to be overwritten with `null`. E.g. if there is no queryables
-    endpoint, the `fetch_url` and `product_type_fetch_url` in the `discover_queryables` config have
+    (see stac_provider.yml). If some parameters are different for a specific provider, they
+    have to be overwritten. If certain functionalities are not available, their configuration
+    parameters have to be overwritten with `null`. E.g. if there is no queryables endpoint,
+    the `fetch_url` and `product_type_fetch_url` in the `discover_queryables` config have
     to be set to `null`.
     """
 

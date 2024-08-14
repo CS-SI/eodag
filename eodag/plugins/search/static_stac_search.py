@@ -51,7 +51,7 @@ class StaticStacSearch(StacSearch):
     inheritance) with the following particularities:
 
     * **api_endpoint** [str] (mandatory): path to the catalog; in contrast to the api_endpoint for
-     other plugin types this can be a url or local system path.
+      other plugin types this can be a url or local system path.
     * **max_connections** [int]: Maximum number of connections for HTTP requests; default: 100.
     * **timeout** [int]: Timeout in seconds for each internal HTTP request; default: 5
 
