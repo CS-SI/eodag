@@ -52,7 +52,43 @@ SUPPORTED_REFERENCE_SCHEMES = ["WWW:DOWNLOAD-1.0-http--download"]
 
 
 class CSWSearch(Search):
-    """A plugin for implementing search based on OGC CSW"""
+    """A plugin for implementing search based on OGC CSW
+    It has the following configuration parameters:
+
+    * **api_endpoint** [str] (mandatory): The endpoint of the provider's search interface
+    * **version** [str]: OGC Catalogue Service version; default: 2.0.2
+    * **search_definition** [Dict[str, Any]] (mandatory):
+
+        * **product_type_tags** [List[Dict[str, Any]]: dict of product type tags
+        * **resource_location_filter** [str]: regex string
+        * **date_tags** [Dict[str, Any]]: tags for start and end
+
+    * **metadata_mapping** [Dict[str, Any]]: The search plugins of this kind can detect when a
+      metadata mapping is "query-able", and get the semantics of how to format the query string
+      parameter that enables to make a query on the corresponding metadata. To make a metadata query-able,
+      just configure it in the metadata mapping to be a list of 2 items, the first one being the
+      specification of the query string search formatting. The later is a string following the
+      specification of Python string formatting, with a special behaviour added to it. For example,
+      an entry in the metadata mapping of this kind::
+
+        completionTimeFromAscendingNode:
+            - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
+            - '$.properties.acquisition.endViewingDate'
+
+      means that the search url will have a query string parameter named *"f"* with a value of
+      *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done with the value
+      of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
+      ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
+      of ``completionTimeFromAscendingNode``. This example shows all there is to know about the
+      semantics of the query string formatting introduced by this plugin: any eodag search parameter
+      can be referenced in the query string with an additional optional conversion function that
+      is separated from it by a ``#`` (see :func:`~eodag.utils.format_metadata` for further details
+      on the available converters). Note that for the values in the ``free_text_search_operations``
+      configuration parameter follow the same rule. If the metadata_mapping is not a list but
+      only a string, this means that the parameters is not queryable but it is included in the
+      result obtained from the provider. The string indicates how the provider result should be
+      mapped to the eodag parameter.
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(CSWSearch, self).__init__(provider, config)
