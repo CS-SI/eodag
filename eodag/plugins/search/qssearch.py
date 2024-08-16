@@ -517,6 +517,12 @@ class QueryStringSearch(Search):
                     e,
                 )
                 return None
+            except requests.RequestException as e:
+                logger.debug(
+                    "Could not parse discovered product types response from "
+                    f"{self.provider}, {type(e).__name__}: {e.args}"
+                )
+                return None
         conf_update_dict["product_types_config"] = dict_items_recursive_apply(
             conf_update_dict["product_types_config"],
             lambda k, v: v if v != NOT_AVAILABLE else None,
