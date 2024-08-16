@@ -5518,7 +5518,7 @@ MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
   platformSerialIdentifier:
   processingLevel: Level 3
   keywords: CMEMS,Mercator,ocean,global,L3,bio-geo-chemical,BGC,chlorophyll,phytoplankton,reflectance
-  sensorType:
+  sensorType: multi
   license: proprietary
   title: Global Ocean Colour Plankton and Reflectances MY L3 daily observations
   missionStartDate: "1997-09-04T00:00:00Z"
@@ -5622,7 +5622,7 @@ MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
   platformSerialIdentifier:
   processingLevel: L4
   keywords: CMEMS,Mercator,ocean,global,colour,L4,bio-geo-chemical,BGC,chlorophyll,MY,multi-years,monthly
-  sensorType:
+  sensorType: multi
   license: proprietary
   title: Global Ocean Colour Plankton MY L4 monthly observations
   missionStartDate: "1997-09-01T00:00:00Z"

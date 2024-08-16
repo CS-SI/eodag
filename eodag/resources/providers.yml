@@ -7249,10 +7249,19 @@
       productType: GLOBAL_MULTIYEAR_PHY_ENS_001_031
     MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
       productType: INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
+      code_mapping:
+        param: platformSerialIdentifier
+        index: 3
     MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
       productType: INSITU_GLO_PHY_TS_OA_NRT_013_002
+      code_mapping:
+        param: analysis_name
+        index: 1
     MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
       productType: INSITU_GLO_PHY_TS_OA_MY_013_052
+      code_mapping:
+        param: analysis_name
+        index: 1
     MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
       productType: MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
     MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
@@ -7279,6 +7288,10 @@
       productType: SEALEVEL_GLO_PHY_MDT_008_063
     MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
       productType: SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010
+      code_mapping:
+        param: sensorType
+        index: 3
+        pattern: '[A-Z]{3}'
     MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
       productType: SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001
     MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
@@ -7287,8 +7300,15 @@
       productType: SST_GLO_SST_L4_REP_OBSERVATIONS_010_024
     MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
       productType: WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002
+      code_mapping:
+        param: platformSerialIdentifier
+        index: 0
+        pattern: 's1a|s1b|cfo'
     MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
       productType: WAVE_GLO_PHY_SWH_L3_NRT_014_001
+      code_mapping:
+        param: platformSerialIdentifier
+        index: 4
     MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
       productType: WAVE_GLO_PHY_SWH_L4_NRT_014_003
     MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
@@ -7305,12 +7325,28 @@
       productType: OCEANCOLOUR_GLO_BGC_L3_MY_009_107
     MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
       productType: OCEANCOLOUR_GLO_BGC_L3_NRT_009_101
+      code_mapping:
+        param: sensorType
+        index: 6
+        pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
       productType: OCEANCOLOUR_GLO_BGC_L3_MY_009_103
+      code_mapping:
+        param: sensorType
+        index: 6
+        pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
       productType: OCEANCOLOUR_GLO_BGC_L4_NRT_009_102
+      code_mapping:
+        param: sensorType
+        index: 6
+        pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
       productType: OCEANCOLOUR_GLO_BGC_L4_MY_009_104
+      code_mapping:
+        param: sensorType
+        index: 6
+        pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
       productType: OCEANCOLOUR_GLO_BGC_L4_MY_009_108
     GENERIC_PRODUCT_TYPE:
