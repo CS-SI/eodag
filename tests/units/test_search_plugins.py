@@ -2694,6 +2694,16 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 },
             ]
         }
+        self.list_objects_response3 = {
+            "Contents": [
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_15325642_fizncnqijei.nc"
+                },
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_846282_niznjvnqkrf.nc"
+                },
+            ]
+        }
         self.s3 = boto3.client(
             "s3",
             config=botocore.config.Config(
@@ -2769,6 +2779,86 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(
                 "2020-01-03T00:00:00Z",
                 products_dataset2[0].properties["completionTimeFromAscendingNode"],
+            )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_query_no_dates_in_id(self, mock_requests_get):
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        search_plugin.config.products = {
+            "PRODUCT_A": {
+                "productType": "PRODUCT_A",
+                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+            }
+        }
+
+        with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
+            s3_stub.return_value = self.s3
+            stubber = Stubber(self.s3)
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response1,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+            )
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response3,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-two",
+                    "Marker": "native/PRODUCT_A/dataset-number-two/item_846282_niznjvnqkrf.nc",
+                },
+            )
+            stubber.activate()
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A",
+                startTimeFromAscendingNode="1969-01-01T01:00:00Z",
+                completionTimeFromAscendingNode="1970-02-01T01:00:00Z",
+            )
+            mock_requests_get.assert_has_calls(
+                calls=[
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                    ),
+                    call().json(),
+                ]
+            )
+            self.assertEqual(2, num_total)
+            products_dataset2 = [
+                product
+                for product in result
+                if product.properties["dataset"] == "dataset-number-two"
+            ]
+            self.assertEqual(2, len(products_dataset2))
+            self.assertEqual(
+                "1970-01-01T00:00:00.000000Z",
+                products_dataset2[0].properties["startTimeFromAscendingNode"],
+            )
+            self.assertEqual(
+                "1970-01-01T00:00:00.000000Z",
+                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+            )
+            self.assertEqual(
+                "15325642",
+                products_dataset2[0].properties["platformSerialIdentifier"],
             )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
