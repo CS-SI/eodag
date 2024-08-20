@@ -109,7 +109,7 @@ class DataRequestSearch(Search):
     * **constraints_file_url** [str]: url to fetch the constraints for a specific product type,
       can be an http url or a path to a file; the constraints are used to build queryables
     * **constraints_entry** [str]: key in the json result where the constraints can be found;
-      if not given, it is assumed that the constraints are on tope level of the result, i.e.
+      if not given, it is assumed that the constraints are on top level of the result, i.e.
       the result is an array of constraints
     * **metadata_mapping** [Dict[str, Any]]: The search plugins of this kind can detect when a
       metadata mapping is "query-able", and get the semantics of how to format the query string
