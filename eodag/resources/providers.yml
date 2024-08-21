@@ -2284,11 +2284,11 @@
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
-      _date: '{startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      _date: '{startTimeFromAscendingNode}/{completionTimeFromAscendingNode}'
       id: '$.id'
       # The geographic extent of the product
       geometry:
@@ -2300,114 +2300,39 @@
       qs: $.qs
       orderLink: 'https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
       # Copernicus ADS specific parameters
-      accuracy:
-        - accuracy
-        - '$.accuracy'
       aerosol_type:
         - aerosol_type
         - '$.aerosol_type'
       altitude:
         - altitude
         - '$.altitude'
-      anoffset:
-        - anoffset
-        - '$.anoffset'
       api_product_type:
         - product_type
         - '$.api_product_type'
       band:
         - band
         - '$.band'
-      bitmap:
-        - bitmap
-        - '$.bitmap'
-      block:
-        - block
-        - '$.block'
-      channel:
-        - channel
-        - '$.channel'
-      class:
-        - class
-        - '$.class'
-      database:
-        - database
-        - '$.database'
       dataset:
         - dataset
         - '$.dataset'
-      date_range:
-        - date_range
-        - '$.date_range'
       day:
         - day
         - '$.day'
-      diagnostic:
-        - diagnostic
-        - '$.diagnostic'
-      direction:
-        - direction
-        - '$.direction'
-      domain:
-        - domain
-        - '$.domain'
-      duplicates:
-        - duplicates
-        - '$.duplicates'
-      expect:
-        - expect
-        - '$.expect'
-      expver:
-        - expver
-        - '$.expver'
-      fcperiod:
-        - fcperiod
-        - '$.fcperiod'
-      fieldset:
-        - fieldset
-        - '$.fieldset'
-      filter:
-        - filter
-        - '$.filter'
       forcing_type:
         - forcing_type
         - '$.forcing_type'
       format:
         - data_format
         - '$.format'
-      frequency:
-        - frequency
-        - '$.frequency'
-      grid:
-        - grid
-        - '$.grid'
-      hdate:
-        - hdate
-        - '$.hdate'
-      ident:
-        - ident
-        - '$.ident'
       input_observations:
         - input_observations
         - '$.input_observations'
-      interpolation:
-        - interpolation
-        - '$.interpolation'
-      intgrid:
-        - intgrid
-        - '$.intgrid'
-      iteration:
-        - iteration
-        - '$.iteration'
       latitude:
         - '{{"location": {{"latitude": {latitude}, "longitude": {longitude}}}}}'
         - '$.latitude'
       level:
         - level
         - '$.level'
-      levelist:
-        - levelist
-        - '$.levelist'
       leadtime_hour:
         - leadtime_hour
         - '$.leadtime_hour'
@@ -2420,12 +2345,6 @@
       longitude:
         - '{{"location": {{"latitude": {latitude}, "longitude": {longitude}}}}}'
         - '$.longitude'
-      lsm:
-        - lsm
-        - '$.lsm'
-      method:
-        - method
-        - '$.method'
       model:
         - model
         - '$.model'
@@ -2435,60 +2354,15 @@
       month:
         - month
         - '$.month'
-      number:
-        - number
-        - '$.number'
-      obsgroup:
-        - obsgroup
-        - '$.obsgroup'
-      obstype:
-        - obstype
-        - '$.obstype'
-      origin:
-        - origin
-        - '$.origin'
-      packing:
-        - packing
-        - '$.packing'
-      padding:
-        - padding
-        - '$.padding'
       param:
         - param
         - '$.param'
       pressure_level:
         - pressure_level
         - '$.pressure_level'
-      priority:
-        - priority
-        - '$.priority'
       product:
         - product
         - '$.product'
-      range:
-        - range
-        - '$.range'
-      refdate:
-        - refdate
-        - '$.refdate'
-      reference:
-        - reference
-        - '$.reference'
-      reportype:
-        - reportype
-        - '$.reportype'
-      repres:
-        - repres
-        - '$.repres'
-      resol:
-        - resol
-        - '$.resol'
-      rotation:
-        - rotation
-        - '$.rotation'
-      section:
-        - section
-        - '$.section'
       sky_type:
         - sky_type
         - '$.sky_type'
@@ -2498,12 +2372,6 @@
       step:
         - step
         - '$.step'
-      stream:
-        - stream
-        - '$.stream'
-      system:
-        - system
-        - '$.system'
       target:
         - target
         - '$.target'
@@ -2519,15 +2387,9 @@
       time_step:
         - time_step
         - '$.time_step'
-      truncation:
-        - truncation
-        - '$.truncation'
       type:
         - type
         - '$.type'
-      use:
-        - use
-        - '$.use'
       variable:
         - variable
         - '$.variable'
