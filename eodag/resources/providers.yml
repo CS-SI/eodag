@@ -2201,9 +2201,19 @@
   roles:
     - host
   url: https://ads.atmosphere.copernicus.eu/
+  anchor_month_year: &month_year
+    completionTimeFromAscendingNode:
+      - |
+        {{
+          "year": {_date#interval_to_datetime_dict}["year"],
+          "month": {_date#interval_to_datetime_dict}["month"]
+        }}
+      - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
-    type: GenericAuth
-    method: basic
+    type: HTTPHeaderAuth
+    ssl_verify: true
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
   download: !plugin
     type: HTTPDownload
     timeout: 30
@@ -2214,22 +2224,22 @@
     order_method: POST
     order_on_response:
       metadata_mapping:
-        orderId: $.json.request_id
-        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/v2/tasks/{orderId}
+        orderId: $.json.jobID
+        orderStatusLink: https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        searchLink: https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
       metadata_mapping:
-        status: $.json.state
-        message: $.json.message
-        error_message: $.json.error.reason
+        status: $.json.status
       error:
         status: failed
       success:
-        status: completed
+        status: successful
       on_success:
+        need_search: true
         metadata_mapping:
-          downloadLink: $.json.location
+          downloadLink: $.json.asset.value.href
     products:
       CAMS_GAC_FORECAST:
         output_extension: .grib
@@ -2274,21 +2284,21 @@
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      _date: '{startTimeFromAscendingNode}/{completionTimeFromAscendingNode}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      _date: '{startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
       id: '$.id'
       # The geographic extent of the product
       geometry:
-        - 'area={geometry#to_nwse_bounds_str(/)}'
+        - '{{"area": {geometry#to_nwse_bounds}}}'
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
       downloadLink: '$.null'
       qs: $.qs
-      orderLink: 'https://ads.atmosphere.copernicus.eu/api/v2/resources/{dataset}?{qs#to_geojson}'
+      orderLink: 'https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
       # Copernicus ADS specific parameters
       accuracy:
         - accuracy
@@ -2363,7 +2373,7 @@
         - forcing_type
         - '$.forcing_type'
       format:
-        - format
+        - data_format
         - '$.format'
       frequency:
         - frequency
@@ -2390,7 +2400,7 @@
         - iteration
         - '$.iteration'
       latitude:
-        - latitude
+        - '{{"location": {{"latitude": {latitude}, "longitude": {longitude}}}}}'
         - '$.latitude'
       level:
         - level
@@ -2408,7 +2418,7 @@
         - location
         - '$.location'
       longitude:
-        - longitude
+        - '{{"location": {{"latitude": {latitude}, "longitude": {longitude}}}}}'
         - '$.longitude'
       lsm:
         - lsm
@@ -2539,13 +2549,11 @@
       variable: ammonium_aerosol_optical_depth_550nm
       time: '00:00'
       leadtime_hour: '0'
-      _default_end_date: '2019-07-12T00:00Z'
     CAMS_GFE_GFAS:
       dataset: cams-global-fire-emissions-gfas
       format: grib
       variable: altitude_of_plume_bottom
-      _default_end_date: '2018-07-03T00:00Z'
-    CAMS_EU_AIR_QUALITY_FORECAST:
+    CAMS_EU_AIR_QUALITY_FORECAST: # not available yet with ads-beta
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
       format: grib
@@ -2566,14 +2574,7 @@
       model: ensemble
       level: '0'
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     CAMS_GRF:
       dataset: cams-global-radiative-forcings
       format: zip
@@ -2584,14 +2585,7 @@
       level: surface
       version: '2'
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     CAMS_GRF_AUX:
       dataset: cams-global-radiative-forcing-auxilliary-variables
       band: short_wave
@@ -2602,14 +2596,7 @@
       aerosol_type: marine
       level: surface
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
       sky_type: clear
@@ -2626,14 +2613,7 @@
       variable: snow_albedo
       api_product_type: monthly_mean
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     CAMS_GREENHOUSE_EGG4:
       dataset: cams-global-ghg-reanalysis-egg4
       format: grib
@@ -2647,14 +2627,7 @@
       input_observations: surface
       time_aggregation: instantaneous
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     CAMS_GLOBAL_EMISSIONS:
       dataset: cams-global-emission-inventories
       version: latest
@@ -2665,9 +2638,7 @@
         completionTimeFromAscendingNode:
           - |
             {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
+              "year": {_date#interval_to_datetime_dict}["year"]
             }}
           - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_EAC4:
@@ -2681,14 +2652,7 @@
       variable: 2m_dewpoint_temperature
       api_product_type: monthly_mean
       metadata_mapping:
-        completionTimeFromAscendingNode:
-          - |
-            {{
-              "year": {_date#interval_to_datetime_dict}["year"],
-              "month": {_date#interval_to_datetime_dict}["month"],
-              "day": {_date#interval_to_datetime_dict}["day"]
-            }}
-          - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        <<: *month_year
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---
@@ -2873,7 +2837,7 @@
       id: $.id
       # The geographic extent of the product
       geometry:
-        - area={geometry#to_nwse_bounds_str(/)}
+        - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       defaultGeometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
