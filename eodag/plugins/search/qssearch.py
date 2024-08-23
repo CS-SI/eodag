@@ -1299,7 +1299,7 @@ class PostJsonSearch(QueryStringSearch):
 
     def _get_default_end_date_from_start_date(
         self, start_datetime: str, product_type: str
-    ):
+    ) -> str:
         default_end_date = self.config.products.get(product_type, {}).get(
             "_default_end_date", None
         )
@@ -1323,12 +1323,14 @@ class PostJsonSearch(QueryStringSearch):
                 return end_date.isoformat()
         return self.get_product_type_cfg("missionEndDate", today().isoformat())
 
-    def _check_date_params(self, keywords: Dict[str, Any], product_type: str):
+    def _check_date_params(self, keywords: Dict[str, Any], product_type: str) -> None:
+        """checks if start and end date are present in the keywords and adds them if not"""
         if (
             "startTimeFromAscendingNode"
             and "completionTimeFromAscendingNode" in keywords
         ):
             return
+        # start time given, end time missing
         if "startTimeFromAscendingNode" in keywords:
             keywords[
                 "completionTimeFromAscendingNode"
@@ -1345,6 +1347,7 @@ class PostJsonSearch(QueryStringSearch):
                 "startTimeFromAscendingNode"
             ]
             if isinstance(mapping, list):
+                # get time parameters (date, year, month, ...) from metadata mapping
                 input_mapping = mapping[0].replace("{{", "").replace("}}", "")
                 time_params = [
                     values.split(":")[0].strip() for values in input_mapping.split(",")
@@ -1352,7 +1355,8 @@ class PostJsonSearch(QueryStringSearch):
                 time_params = [
                     tp.replace('"', "").replace("'", "") for tp in time_params
                 ]
-                # if startTime is not given but year/month/(day) are given, no default date is required
+                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
+                # no default date is required
                 in_keywords = True
                 for tp in time_params:
                     if tp not in keywords:
