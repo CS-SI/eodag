@@ -26,6 +26,7 @@ from urllib.parse import quote_plus, unquote_plus
 import geojson
 import orjson
 from dateutil.parser import isoparse
+from dateutil.tz import tzutc
 from jsonpath_ng import Child, Fields, Root
 from pydantic import create_model
 from pydantic.fields import FieldInfo
@@ -423,11 +424,29 @@ class BuildSearchResult(BuildPostSearchResult):
             "completionTimeFromAscendingNode", default_end_str
         )
 
-        # temporary _date parameter mixing start & end
+        # adapt end date if it is midnight
         end_date_excluded = getattr(self.config, "end_date_excluded", True)
-        end_date = isoparse(params["completionTimeFromAscendingNode"])
-        if not end_date_excluded and end_date == end_date.replace(
-            hour=0, minute=0, second=0, microsecond=0
+        is_datetime = True
+        try:
+            end_date = datetime.strptime(
+                params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%SZ"
+            )
+            end_date = end_date.replace(tzinfo=tzutc())
+        except ValueError:
+            try:
+                end_date = datetime.strptime(
+                    params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%S.%fZ"
+                )
+                end_date = end_date.replace(tzinfo=tzutc())
+            except ValueError:
+                end_date = isoparse(params["completionTimeFromAscendingNode"])
+                is_datetime = False
+        start_date = isoparse(params["startTimeFromAscendingNode"])
+        if (
+            not end_date_excluded
+            and is_datetime
+            and end_date > start_date
+            and end_date == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
         ):
             end_date += timedelta(days=-1)
             params["completionTimeFromAscendingNode"] = end_date.isoformat()
