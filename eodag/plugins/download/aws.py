@@ -77,6 +77,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from boto3.resources.collection import ResourceCollection
 
+    from eodag.api.core import EODataAccessGateway
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
@@ -1310,6 +1311,7 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
+        dag: EODataAccessGateway,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
@@ -1322,6 +1324,7 @@ class AwsDownload(Download):
         """
         return super(AwsDownload, self).download_all(
             products,
+            dag,
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,

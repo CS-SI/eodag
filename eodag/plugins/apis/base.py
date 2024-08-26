@@ -35,6 +35,8 @@ class Api(Search, Download):
 
     - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
+    - download data from all pages of the search of results given in parameters
+      if ``exhaust`` is set to True (False by default) with ``download_all``
     - extract products from their archive (if relevant) if ``extract`` is set to True
       (True by default)
     - save a product in an archive/directory (in ``output_dir``) whose name must be

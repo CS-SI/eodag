@@ -85,6 +85,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from requests import Response
 
+    from eodag.api.core import EODataAccessGateway
     from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
@@ -1338,6 +1339,7 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products: SearchResult,
+        dag: EODataAccessGateway,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
@@ -1350,6 +1352,7 @@ class HTTPDownload(Download):
         """
         return super(HTTPDownload, self).download_all(
             products,
+            dag,
             auth=auth,
             downloaded_callback=downloaded_callback,
             progress_callback=progress_callback,

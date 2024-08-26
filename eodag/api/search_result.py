@@ -17,8 +17,9 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Union
 
 from shapely.geometry import GeometryCollection, shape
 
@@ -34,6 +35,8 @@ if TYPE_CHECKING:
 
     from eodag.plugins.crunch.base import Crunch
 
+logger = logging.getLogger("eodag.search_result")
+
 
 class SearchResult(UserList):
     """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
@@ -42,7 +45,13 @@ class SearchResult(UserList):
     :param number_matched: (optional) the estimated total number of matching results
 
     :cvar data: List of products
+    :vartype data: List[EOProduct]
     :ivar number_matched: Estimated total number of matching results
+    :vartype number_matched: Optional[int]
+    :ivar search_kwargs: (optional) The search kwargs used by eodag to search for the product
+    :vartype search_kwargs: Optional[Dict[str, Any]]
+    :ivar crunchers: The list of crunchers used to filter these products
+    :vartype crunchers: Set[Crunch]
     """
 
     data: List[EOProduct]
@@ -51,7 +60,16 @@ class SearchResult(UserList):
         self, products: List[EOProduct], number_matched: Optional[int] = None
     ) -> None:
         super(SearchResult, self).__init__(products)
-        self.number_matched = number_matched
+        self.number_matched: Optional[int] = number_matched
+        self.search_kwargs: Optional[Dict[str, Any]] = None
+        self.crunchers: Set[Crunch] = set()
+
+    def clear(self) -> None:
+        """Clear search result"""
+        super().clear()
+        self.number_matched = None
+        self.search_kwargs = None
+        self.crunchers.clear()
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -60,8 +78,12 @@ class SearchResult(UserList):
         :param search_params: The criteria that have been used to produce this result
         :returns: The result of the application of the crunching method to the EO products
         """
-        crunched_results = cruncher.proceed(self.data, **search_params)
-        return SearchResult(crunched_results)
+        crunched_results_list = cruncher.proceed(self.data, **search_params)
+        crunched_results = SearchResult(crunched_results_list)
+        crunched_results.search_kwargs = self.search_kwargs
+        self.crunchers.add(cruncher)
+        crunched_results.crunchers = self.crunchers
+        return crunched_results
 
     def filter_date(
         self, start: Optional[str] = None, end: Optional[str] = None
