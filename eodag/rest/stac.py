@@ -77,7 +77,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("eodag.rest.stac")
 
-STAC_CATALOGS_PREFIX = "catalogs"
+STAC_CATALOGS_PREFIX = "collections"
 
 # fields not to put in item properties
 COLLECTION_PROPERTIES = [
