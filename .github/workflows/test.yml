@@ -66,7 +66,7 @@ jobs:
       run: tox
     - name: Upload Unit Test Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: unit-test-results-python${{ matrix.python-version }}-${{ matrix.os }}
         path: |
