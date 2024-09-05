@@ -4886,6 +4886,9 @@
       statistic:
         - '{{"statistic": {statistic}}}'
         - '$.null'
+      hydrological_year:
+        - hydrological_year
+        - $.hydrological_year
   products:
     SATELLITE_CARBON_DIOXIDE:
       productType: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
