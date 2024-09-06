@@ -4382,10 +4382,6 @@
           "end": "{id#replace_str(r'^.*_([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])([0-9][0-9])_.*$',r'\1-\2-\3T\4%3A\5%3A00Z')}"
         }}
       - '$.id'
-  anchor_variable_list: &variable_list
-    variable:
-      - '{{"variable": {variable}}}'
-      - '$.null'
   search: !plugin
     type: PostJsonSearchWithStacQueryables
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
@@ -4988,6 +4984,10 @@
         }}
       - $.properties.startDate
     completionTimeFromAscendingNode: $.properties.endDate
+  anchor_variable_list: &variable_list
+    variable:
+      - '{{"variable": {variable}}}'
+      - '$.null'
   search: !plugin
     type: PostJsonSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
