@@ -53,6 +53,7 @@ from eodag.config import (
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.types.whoosh import EODAGQueryParser
@@ -1561,7 +1562,7 @@ class EODataAccessGateway:
                 "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
             )
             kwargs.update(items_per_page=items_per_page)
-            if isinstance(plugin, BuildPostSearchResult):
+            if isinstance(plugin, PostJsonSearch):
                 kwargs.update(
                     items_per_page=items_per_page,
                     _dc_qs=_dc_qs,
