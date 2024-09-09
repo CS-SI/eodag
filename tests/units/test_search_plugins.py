@@ -1057,6 +1057,105 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             verify=True,
         )
 
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_plugins_search_postjsonsearch_query_params_wekeo(self, mock__request):
+        """A query with PostJsonSearch (here wekeo) must generate query params corresponding to the
+        search criteria"""
+        provider = "wekeo_ecmwf"
+        product_type = "GRIDDED_GLACIERS_MASS_CHANGE"
+        search_plugin = self.get_search_plugin(product_type, provider)
+        auth_plugin = self.get_auth_plugin(provider)
+
+        mock__request.return_value = mock.Mock()
+
+        def _test_query_params(search_criteria, raw_result, expected_query_params):
+            mock__request.reset_mock()
+            mock__request.return_value.json.side_effect = [raw_result]
+            results, _ = search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=10,
+                    auth_plugin=auth_plugin,
+                ),
+                **search_criteria,
+            )
+            self.assertDictEqual(
+                mock__request.call_args_list[0].args[1].query_params,
+                expected_query_params,
+            )
+
+        raw_result = {
+            "properties": {"itemsPerPage": 1, "startIndex": 0, "totalResults": 1},
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "startdate": "1975-01-01T00:00:00Z",
+                        "enddate": "2024-09-30T00:00:00Z",
+                    },
+                    "id": "derived-gridded-glacier-mass-change-576f8a153a25a83d9d3a5cfb03c4a759",
+                }
+            ],
+        }
+
+        # Test #1: using the datetime
+        search_criteria = {
+            "productType": product_type,
+            "startTimeFromAscendingNode": "1980-01-01",
+            "completionTimeFromAscendingNode": "1981-12-31",
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "version": "wgms_fog_2022_09",
+        }
+        expected_query_params = {
+            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "hydrological_year": ["1980_81"],
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "product_version": "wgms_fog_2022_09",
+            "itemsPerPage": 10,
+            "startIndex": 0,
+        }
+        _test_query_params(search_criteria, raw_result, expected_query_params)
+
+        # Test #2: using parameter hydrological_year (single value)
+        search_criteria = {
+            "productType": product_type,
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "version": "wgms_fog_2022_09",
+            "hydrological_year": ["2020_21"],
+        }
+        expected_query_params = {
+            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "hydrological_year": ["2020_21"],
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "product_version": "wgms_fog_2022_09",
+            "itemsPerPage": 10,
+            "startIndex": 0,
+        }
+        _test_query_params(search_criteria, raw_result, expected_query_params)
+
+        # Test #3: using parameter hydrological_year (multiple values)
+        search_criteria = {
+            "productType": product_type,
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "version": "wgms_fog_2022_09",
+            "hydrological_year": ["1990_91", "2020_21"],
+        }
+        expected_query_params = {
+            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "hydrological_year": ["1990_91", "2020_21"],
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "product_version": "wgms_fog_2022_09",
+            "itemsPerPage": 10,
+            "startIndex": 0,
+        }
+        _test_query_params(search_criteria, raw_result, expected_query_params)
+
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
