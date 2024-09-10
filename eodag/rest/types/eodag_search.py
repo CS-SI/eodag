@@ -367,9 +367,11 @@ class EODAGSearch(BaseModel):
         return cls._to_eodag_map.get(value, value)
 
     @classmethod
-    def to_stac(cls, field_name: str) -> str:
+    def to_stac(cls, field_name: str, stac_item_properties: List[str] = None) -> str:
         """Get the alias of a field in a Pydantic model"""
         field = cls.model_fields.get(field_name)
         if field is not None and field.alias is not None:
             return field.alias
+        if stac_item_properties and field_name not in stac_item_properties:
+            return f"oseo:{field_name}"
         return field_name

@@ -605,8 +605,12 @@ async def get_queryables(
         stac_queryables: Dict[str, StacQueryableProperty] = deepcopy(
             StacQueryables.default_properties
         )
+        stac_item_properties = list(stac_config["item"]["properties"].keys())
+        stac_item_properties.extend(list(stac_queryables.keys()))
+        ignore = stac_config["metadata_ignore"]
+        stac_item_properties.extend(ignore)
         for param, queryable in python_queryables.items():
-            stac_param = EODAGSearch.to_stac(param)
+            stac_param = EODAGSearch.to_stac(param, stac_item_properties)
             # only keep "datetime" queryable for dates
             if stac_param in stac_queryables or stac_param in (
                 "start_datetime",
