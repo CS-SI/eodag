@@ -1730,11 +1730,14 @@ class RequestTestCase(unittest.TestCase):
         # queryables properties not shared by all constraints must be removed
         not_shared_properties = ["leadtime_hour", "type"]
         provider_queryables_from_constraints_file = [
-            properties
+            f"cop_cds:{properties}"
             for properties in provider_queryables_from_constraints_file
             if properties not in not_shared_properties
         ]
-        default_provider_stac_properties = ["api_product_type", "format"]
+        default_provider_stac_properties = [
+            "cop_cds:api_product_type",
+            "cop_cds:format",
+        ]
 
         res = self._request_valid(
             "collections/ERA5_SL/queryables?provider=cop_cds",
