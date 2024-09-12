@@ -314,7 +314,6 @@ class PluginConfig(yaml.YAMLObject):
     results_entry: str
     pagination: PluginConfig.Pagination
     sort: PluginConfig.Sort
-    query_params_key: str
     discover_metadata: PluginConfig.DiscoverMetadata
     discover_product_types: Dict[str, Any]
     discover_queryables: Dict[str, Any]
