@@ -379,7 +379,7 @@ class BuildSearchResult(BuildPostSearchResult):
 
         # dates
         mission_start_dt = datetime.fromisoformat(
-            self.get_product_type_cfg(
+            self.get_product_type_cfg_value(
                 "missionStartDate", DEFAULT_MISSION_START_DATE
             ).replace(
                 "Z", "+00:00"

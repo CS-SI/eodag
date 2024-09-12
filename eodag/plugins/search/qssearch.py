@@ -1276,27 +1276,6 @@ class ODataV4Search(QueryStringSearch):
 class PostJsonSearch(QueryStringSearch):
     """A specialisation of a QueryStringSearch that uses POST method"""
 
-    def get_product_type_cfg(self, key: str, default: Any = None) -> Any:
-        """
-        Get the value of a configuration option specific to the current product type.
-
-        This method retrieves the value of a configuration option from the
-        `_product_type_config` attribute. If the option is not found, the provided
-        default value is returned.
-
-        :param key: The configuration option key.
-        :type key: str
-        :param default: The default value to be returned if the option is not found (default is None).
-        :type default: Any
-
-        :return: The value of the specified configuration option or the default value.
-        :rtype: Any
-        """
-        product_type_cfg = getattr(self.config, "product_type_config", {})
-        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
-
-        return non_none_cfg.get(key, default)
-
     def _get_default_end_date_from_start_date(
         self, start_datetime: str, product_type: str
     ) -> str:
@@ -1321,7 +1300,7 @@ class PostJsonSearch(QueryStringSearch):
                 # if date is mapped to year/month/(day), use end_date = start_date to avoid large requests
                 end_date = start_date
                 return end_date.isoformat()
-        return self.get_product_type_cfg("missionEndDate", today().isoformat())
+        return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
 
     def _check_date_params(self, keywords: Dict[str, Any], product_type: str) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
@@ -1362,7 +1341,9 @@ class PostJsonSearch(QueryStringSearch):
                     if tp not in keywords:
                         in_keywords = False
                 if not in_keywords:
-                    keywords["startTimeFromAscendingNode"] = self.get_product_type_cfg(
+                    keywords[
+                        "startTimeFromAscendingNode"
+                    ] = self.get_product_type_cfg_value(
                         "missionStartDate", today().isoformat()
                     )
                     keywords[
