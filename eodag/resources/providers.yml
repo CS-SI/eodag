@@ -2280,7 +2280,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_file_url: "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/{dataset}/constraints.json"
+    constraints_file_url: "https://ads-beta.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2415,7 +2415,7 @@
       dataset: cams-global-fire-emissions-gfas
       format: grib
       variable: altitude_of_plume_bottom
-    CAMS_EU_AIR_QUALITY_FORECAST: # not available yet with ads-beta
+    CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
       format: grib
@@ -2424,10 +2424,6 @@
       time: '00:00'
       level: '0'
       leadtime_hour: '0'
-      metadata_mapping:
-        geometry:
-          - '{{"area": {geometry#to_nwse_bounds} }}'
-          - '$.geometry'
     CAMS_EU_AIR_QUALITY_RE:
       dataset: cams-europe-air-quality-reanalyses
       type: validated_reanalysis
@@ -2687,7 +2683,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_file_url: http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/{dataset}/constraints.json
+    constraints_file_url: http://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
     metadata_mapping:
       productType: $.productType
       title: $.id
