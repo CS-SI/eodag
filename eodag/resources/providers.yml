@@ -2683,7 +2683,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_file_url: http://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
+    constraints_file_url: https://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
     metadata_mapping:
       productType: $.productType
       title: $.id

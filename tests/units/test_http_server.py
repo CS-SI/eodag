@@ -1743,7 +1743,7 @@ class RequestTestCase(unittest.TestCase):
 
         mock_requests_session_constraints.assert_called_once_with(
             mock.ANY,
-            "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
+            "https://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/"
             "reanalysis-era5-single-levels/constraints.json",
             headers=USER_AGENT,
             auth=None,
