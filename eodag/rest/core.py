@@ -173,7 +173,6 @@ def search_stac_items(
         raise ValidationError(format_pydantic_error(e)) from e
 
     catalog_url = re.sub("/items.*", "", request.state.url)
-
     catalog = StacCatalog(
         url=(
             catalog_url
@@ -207,6 +206,16 @@ def search_stac_items(
             **catalog.search_args,
             **eodag_args.model_dump(exclude_none=True),
         }
+        # remove provider prefixes
+        stac_extensions = stac_config["extensions"]
+        keys_to_update = {}
+        for key in criteria:
+            if ":" in key and key.split(":")[0] not in stac_extensions:
+                new_key = key.split(":")[1]
+                keys_to_update[key] = new_key
+        for key, new_key in keys_to_update.items():
+            criteria[new_key] = criteria[key]
+            criteria.pop(key)
 
         search_results = eodag_api.search(count=True, **criteria)
         total = search_results.number_matched or 0
