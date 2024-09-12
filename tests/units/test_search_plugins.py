@@ -2057,6 +2057,61 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             )
         )
 
+    def test_plugins_search_buildsearchresult_exclude_end_date(self):
+        """BuildSearchResult.query must adapt end date in certain cases"""
+        # start & stop as dates -> keep end date as it is
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-02", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+        # start & stop as datetimes, not midnight -> keep and dates as it is
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01T02:00:00Z",
+            completionTimeFromAscendingNode="2020-01-02T03:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-02", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+        # start & stop as datetimes, midnight -> exclude end date
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
+            completionTimeFromAscendingNode="2020-01-02T00:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+        # start & stop same date -> keep end date
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
+            completionTimeFromAscendingNode="2020-01-01T00:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+
     def test_plugins_search_buildsearchresult_dates_missing(self):
         """BuildSearchResult.query must use default dates if missing"""
         # given start & stop
@@ -2070,7 +2125,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-01"
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
         )
 
         # missing start & stop
@@ -2084,7 +2139,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            "2015-01-01",
+            "2015-01-02",
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -2101,7 +2156,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-26"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
         )
 
     def test_plugins_search_buildsearchresult_without_producttype(self):
@@ -2118,7 +2173,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert eoproduct.properties["startTimeFromAscendingNode"] == "2020-01-01"
-        assert eoproduct.properties["completionTimeFromAscendingNode"] == "2020-01-01"
+        assert eoproduct.properties["completionTimeFromAscendingNode"] == "2020-01-02"
         assert eoproduct.properties["title"] == eoproduct.properties["id"]
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
