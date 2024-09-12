@@ -2058,7 +2058,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
 
         mock_requests_session_constraints.assert_called_once_with(
             mock.ANY,
-            "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
+            "https://ads-beta.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
             "cams-europe-air-quality-reanalyses/constraints.json",
             headers=USER_AGENT,
             auth=None,
@@ -2117,14 +2117,14 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
 
         mock_requests_session_constraints.assert_called_once_with(
             mock.ANY,
-            "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
+            "https://ads-beta.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
             "cams-europe-air-quality-reanalyses/constraints.json",
             headers=USER_AGENT,
             auth=None,
             timeout=5,
         )
 
-        self.assertEqual(9, len(queryables))
+        self.assertEqual(11, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:
@@ -2203,7 +2203,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        self.assertEqual(9, len(queryables))
+        self.assertEqual(11, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:

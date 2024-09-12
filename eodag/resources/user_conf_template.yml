@@ -138,9 +138,8 @@ cop_ads:
         extract:
         output_dir:
     auth:
-        credentials:
-            username:
-            password:
+      credentials:
+        apikey:
 cop_cds:
     priority: # Lower value means lower priority (Default: 0)
     search:   # Search parameters configuration
@@ -149,8 +148,7 @@ cop_cds:
         output_dir:
     auth:
         credentials:
-            username:
-            password:
+            apikey:
 sara:
     priority: # Lower value means lower priority (Default: 0)
     search:  # Search parameters configuration

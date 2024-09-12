@@ -1038,12 +1038,12 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         auth = self.get_auth_plugin(self.product.provider)
-        auth.config.credentials = {"username": "john", "password": "doe"}
+        auth.config.credentials = {"apikey": "anicekey"}
         self.product.register_downloader(plugin, auth)
 
-        endpoint = "https://ads.atmosphere.copernicus.eu/api/v2"
+        endpoint = "https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1"
         self.product.properties["orderLink"] = (
-            f"{endpoint}/resources/{product_dataset}" + '?{"foo": "bar"}'
+            f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
         self.product.properties["storageStatus"] = "OFFLINE"
         self.product.location = self.product.remote_location = (
@@ -1054,29 +1054,35 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         def run():
             responses.add(
                 responses.POST,
-                f"{endpoint}/resources/{product_dataset}",
+                f"{endpoint}/processes/{product_dataset}/execution",
                 status=200,
                 content_type="application/json",
-                body=b'{"state": "queued", "request_id": "dummy_request_id"}',
+                body=b'{"status": "accepted", "jobID": "dummy_request_id"}',
                 auto_calculate_content_length=True,
             )
             responses.add(
                 responses.GET,
-                f"{endpoint}/tasks/dummy_request_id",
+                f"{endpoint}/jobs/dummy_request_id",
                 status=200,
                 content_type="application/json",
-                body=b'{"state": "running", "request_id": "dummy_request_id"}',
+                body=b'{"status": "running", "jobID": "dummy_request_id"}',
                 auto_calculate_content_length=True,
             )
             responses.add(
                 responses.GET,
-                f"{endpoint}/tasks/dummy_request_id",
+                f"{endpoint}/jobs/dummy_request_id",
+                status=200,
+                content_type="application/json",
+                body=(b'{"status": "successful", ' b'"jobID": "dummy_request_id"}'),
+                auto_calculate_content_length=True,
+            )
+            responses.add(
+                responses.GET,
+                f"{endpoint}/jobs/dummy_request_id/results",
                 status=200,
                 content_type="application/json",
                 body=(
-                    b'{"state": "completed", '
-                    b'"request_id": "dummy_request_id", '
-                    b'"location": "http://somewhere/download/dummy_request_id"}'
+                    b'{"asset": {"value": {"href": "http://somewhere/download/dummy_request_id"}}}'
                 ),
                 auto_calculate_content_length=True,
             )
@@ -1085,7 +1091,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 "http://somewhere/download/dummy_request_id",
                 status=200,
                 content_type="application/octet-stream",
-                adding_headers={"content-disposition": ""},
+                adding_headers={"content-disposition": "", "PRIVATE-TOKEN": "anicekey"},
                 body=b"some content",
                 auto_calculate_content_length=True,
             )
@@ -1094,7 +1100,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
             # expected values
             expected_remote_location = "http://somewhere/download/dummy_request_id"
-            expected_order_status_link = f"{endpoint}/tasks/dummy_request_id"
+            expected_order_status_link = f"{endpoint}/jobs/dummy_request_id"
             expected_path = os.path.join(
                 output_data_path, self.product.properties["title"]
             )
