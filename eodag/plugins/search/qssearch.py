@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from copy import copy as copy_copy
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -48,6 +49,7 @@ import geojson
 import orjson
 import requests
 import yaml
+from dateutil.utils import today
 from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import create_model
@@ -1274,6 +1276,82 @@ class ODataV4Search(QueryStringSearch):
 class PostJsonSearch(QueryStringSearch):
     """A specialisation of a QueryStringSearch that uses POST method"""
 
+    def _get_default_end_date_from_start_date(
+        self, start_datetime: str, product_type: str
+    ) -> str:
+        default_end_date = self.config.products.get(product_type, {}).get(
+            "_default_end_date", None
+        )
+        if default_end_date:
+            return default_end_date
+        try:
+            start_date = datetime.fromisoformat(start_datetime)
+        except ValueError:
+            start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
+        product_type_conf = self.config.products[product_type]
+        if (
+            "metadata_mapping" in product_type_conf
+            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
+        ):
+            mapping = product_type_conf["metadata_mapping"][
+                "startTimeFromAscendingNode"
+            ]
+            if isinstance(mapping, list) and "year" in mapping[0]:
+                # if date is mapped to year/month/(day), use end_date = start_date to avoid large requests
+                end_date = start_date
+                return end_date.isoformat()
+        return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
+
+    def _check_date_params(self, keywords: Dict[str, Any], product_type: str) -> None:
+        """checks if start and end date are present in the keywords and adds them if not"""
+        if (
+            "startTimeFromAscendingNode"
+            and "completionTimeFromAscendingNode" in keywords
+        ):
+            return
+        # start time given, end time missing
+        if "startTimeFromAscendingNode" in keywords:
+            keywords[
+                "completionTimeFromAscendingNode"
+            ] = self._get_default_end_date_from_start_date(
+                keywords["startTimeFromAscendingNode"], product_type
+            )
+            return
+        product_type_conf = self.config.products[product_type]
+        if (
+            "metadata_mapping" in product_type_conf
+            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
+        ):
+            mapping = product_type_conf["metadata_mapping"][
+                "startTimeFromAscendingNode"
+            ]
+            if isinstance(mapping, list):
+                # get time parameters (date, year, month, ...) from metadata mapping
+                input_mapping = mapping[0].replace("{{", "").replace("}}", "")
+                time_params = [
+                    values.split(":")[0].strip() for values in input_mapping.split(",")
+                ]
+                time_params = [
+                    tp.replace('"', "").replace("'", "") for tp in time_params
+                ]
+                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
+                # no default date is required
+                in_keywords = True
+                for tp in time_params:
+                    if tp not in keywords:
+                        in_keywords = False
+                if not in_keywords:
+                    keywords[
+                        "startTimeFromAscendingNode"
+                    ] = self.get_product_type_cfg_value(
+                        "missionStartDate", today().isoformat()
+                    )
+                    keywords[
+                        "completionTimeFromAscendingNode"
+                    ] = self._get_default_end_date_from_start_date(
+                        keywords["startTimeFromAscendingNode"], product_type
+                    )
+
     def query(
         self,
         prep: PreparedSearch = PreparedSearch(),
@@ -1323,6 +1401,8 @@ class PostJsonSearch(QueryStringSearch):
                     and isinstance(self.config.metadata_mapping[k], list)
                 }
             )
+            if getattr(self.config, "dates_required", False):
+                self._check_date_params(keywords, product_type)
 
             qp, _ = self.build_query_string(product_type, **keywords)
 

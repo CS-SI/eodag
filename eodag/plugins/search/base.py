@@ -179,6 +179,27 @@ class Search(PluginTopic):
         else:
             return {}
 
+    def get_product_type_cfg_value(self, key: str, default: Any = None) -> Any:
+        """
+        Get the value of a configuration option specific to the current product type.
+
+        This method retrieves the value of a configuration option from the
+        `product_type_config` attribute. If the option is not found, the provided
+        default value is returned.
+
+        :param key: The configuration option key.
+        :type key: str
+        :param default: The default value to be returned if the option is not found (default is None).
+        :type default: Any
+
+        :return: The value of the specified configuration option or the default value.
+        :rtype: Any
+        """
+        product_type_cfg = getattr(self.config, "product_type_config", {})
+        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
+
+        return non_none_cfg.get(key, default)
+
     def get_metadata_mapping(
         self, product_type: Optional[str] = None
     ) -> Dict[str, Union[str, List[str]]]:

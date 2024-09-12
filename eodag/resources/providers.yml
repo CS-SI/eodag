@@ -4725,7 +4725,7 @@
     need_auth: true
     auth_error_code: 401
     results_entry: 'features'
-    two_passes_id_search: true
+    dates_required: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
@@ -4736,6 +4736,7 @@
     constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
     constraints_file_dataset_key: productType
     constraints_entry: constraints
+    stop_without_constraints_entry_key: true
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'
@@ -4748,10 +4749,10 @@
         - '{{"productIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
       startTimeFromAscendingNode:
-        - '{{"startDate": "{startTimeFromAscendingNode}"}}'
+        - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.startdate'
       completionTimeFromAscendingNode:
-        - '{{"completionDate": "{completionTimeFromAscendingNode}"}}'
+        - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.enddate'
       downloadLink: '$.properties.location'
       title: '$.id'
@@ -4867,6 +4868,15 @@
       day:
         - '{{"day": {day}}}'
         - '$.null'
+      hyear:
+        - '{{"year": {hyear}}}'
+        - '$.null'
+      hmonth:
+        - '{{"month": {hmonth}}}'
+        - '$.null'
+      hday:
+        - '{{"day": {hday}}}'
+        - '$.null'
       satellite:
         - '{{"satellite": {satellite}}}'
         - '$.null'
@@ -4967,13 +4977,18 @@
       productType: EO:ECMWF:DAT:SATELLITE_SEA_ICE_THICKNESS
       satellite:
         - envisat
-      cdr_type:
-        - cdr
+      cdr_type: cdr
       variable: all
       version: '3_0'
       format: zip
       metadata_mapping:
         id: '$.id'
+        variable:
+          - '{{"variable": "{variable}"}}'
+          - '$.null'
+        version:
+          - '{{"version": "{version}"}}'
+          - '$.null'
         <<: *month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_ICE_THICKNESS"}}'
@@ -5195,6 +5210,9 @@
       version: "wgms_fog_2022_09"
       metadata_mapping:
         id: '$.id'
+        hydrological_year:
+          - '{{"hydrological_year": {hydrological_year}}}'
+          - '$.null'
         startTimeFromAscendingNode:
           - |
             {{
@@ -5401,12 +5419,6 @@
         - '00:00'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.enddate'
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4"}}'
@@ -5538,12 +5550,6 @@
         - '0'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.enddate'
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4"}}'
@@ -5584,12 +5590,6 @@
         - '0'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.enddate'
         type:
           - '{{"type": {type}}}'
           - '$.null'
@@ -5609,12 +5609,6 @@
         - '0'
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.enddate'
         type:
           - '{{"type": {type}}}'
           - '$.null'
@@ -5630,12 +5624,6 @@
       format: csv
       metadata_mapping:
         id: '$.id'
-        startTimeFromAscendingNode:
-          - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.startdate'
-        completionTimeFromAscendingNode:
-          - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
-          - '$.properties.enddate'
         step:
           - '{{"time_step": "{step}"}}'
           - '$.null'
