@@ -70,6 +70,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
+    NoMatchingProductType,
     NotAvailableError,
     TimeOutError,
 )
@@ -611,6 +612,10 @@ class AwsDownload(Download):
                 raise NotAvailableError(
                     rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
                 )
+
+        if not unique_product_chunks:
+            raise NoMatchingProductType("No product found to download.")
+
         return unique_product_chunks
 
     def _raise_if_auth_error(self, exception: ClientError) -> None:
@@ -751,7 +756,6 @@ class AwsDownload(Download):
             product_chunk: Any, progress_callback: ProgressCallback
         ) -> Any:
             try:
-
                 chunk_start = 0
                 chunk_end = chunk_start + chunk_size - 1
 
