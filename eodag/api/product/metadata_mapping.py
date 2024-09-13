@@ -41,6 +41,7 @@ import geojson
 import orjson
 import pyproj
 from dateutil.parser import isoparse
+from dateutil.relativedelta import relativedelta
 from dateutil.tz import UTC, tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
@@ -831,7 +832,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_get_hydrological_year(date: str):
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-            date_object_second_year = date_object + timedelta(days=365)
+            date_object_second_year = date_object + relativedelta(years=1)
             return [
                 f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
             ]
