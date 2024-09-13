@@ -293,7 +293,11 @@ class PluginManager:
         """
         auth_conf: Optional[PluginConfig] = None
 
-        def _is_auth_plugin_matching(auth_conf, matching_url, matching_conf) -> bool:
+        def _is_auth_plugin_matching(
+            auth_conf: PluginConfig,
+            matching_url: Optional[str],
+            matching_conf: Optional[PluginConfig],
+        ) -> bool:
             if matching_conf:
                 plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
                 if (
