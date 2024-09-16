@@ -75,43 +75,6 @@ Example URL:
 
 * http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20
 
-Browsing
---------
-
-EODAG provides additional catalogs that extend browsing/filtering capabilities:
-
-* ``country`` -> filters items on a specific area defined by selected country
-* ``year``
-        * ``month``
-                * ``day`` -> filters items using specified time interval
-* ``cloud_cover`` -> filters items with specified maximum cloud cover
-
-Example URLs:
-
-* http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country : lists available countries
-* http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2019/month/10/cloud_cover/10 : catalog referencing S2_MSI_L1C
-  products over France, aquired during October 2019, and having 10% maximum cloud cover
-
-Browsing over catalogs can be experienced connecting EODAG STAC API to
-`STAC-Browser <https://github.com/radiantearth/stac-browser>`_. Simply run:
-
-.. code-block:: bash
-
-    git clone https://github.com/CS-SI/eodag.git
-    cd eodag
-    docker-compose up
-    # or for a more verbose logging:
-    EODAG_LOGGING=3 docker-compose up
-
-(``EODAG_LOGGING`` environment variable definition will increase ``eodag``
-logging level, and accepts values: 1, 2, or 3 for maximum level)
-
-And browse http://127.0.0.1:5001:
-
-.. image:: _static/stac_browser_example.png
-   :width: 800
-   :alt: STAC browser example
-
 docker
 ------
 
