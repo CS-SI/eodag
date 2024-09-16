@@ -82,7 +82,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Tuple, Union
+    from typing import Any, Dict, List, Optional, Union
 
     from fastapi import Request
     from requests.auth import AuthBase
@@ -135,7 +135,6 @@ def format_product_types(product_types: List[Dict[str, Any]]) -> str:
 def search_stac_items(
     request: Request,
     search_request: SearchPostRequest,
-    catalogs: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Search and retrieve STAC items from the given catalogs.
@@ -144,8 +143,7 @@ def search_stac_items(
     dictionary of STAC items.
 
     :param request: The incoming HTTP request with state information.
-    :param search_request: The search criteria for STAC items.
-    :param catalogs: (optional) A list of catalogs to search within. Defaults to None.
+    :param search_request: The search criteria for STAC items
     :returns: A dictionary containing the STAC items and related metadata.
 
     The function handles the conversion of search criteria into STAC and EODAG compatible formats, validates the input
@@ -167,26 +165,18 @@ def search_stac_items(
     if search_request.spatial_filter:
         stac_args["geometry"] = search_request.spatial_filter
     try:
-        eodag_args = EODAGSearch.model_validate(
-            stac_args, context={"isCatalog": bool(catalogs)}
-        )
+        eodag_args = EODAGSearch.model_validate(stac_args)
     except pydanticValidationError as e:
         raise ValidationError(format_pydantic_error(e)) from e
 
     catalog_url = re.sub("/items.*", "", request.state.url)
     catalog = StacCatalog(
-        url=(
-            catalog_url
-            if catalogs
-            else catalog_url.replace(
-                "/search", f"/collections/{eodag_args.productType}"
-            )
-        ),
+        url=catalog_url.replace("/search", f"/collections/{eodag_args.productType}"),
         stac_config=stac_config,
         root=request.state.url_root,
         provider=eodag_args.provider,
         eodag_api=eodag_api,
-        catalogs=catalogs or [eodag_args.productType],  # type: ignore
+        collection=eodag_args.productType,  # type: ignore
     )
 
     # get products by ids
@@ -196,7 +186,7 @@ def search_stac_items(
             results.extend(
                 eodag_api.search(
                     id=item_id,
-                    productType=catalogs[0] if catalogs else eodag_args.productType,
+                    productType=eodag_args.productType,
                     provider=eodag_args.provider,
                 )
             )
@@ -478,14 +468,12 @@ async def get_collection(
 async def get_stac_catalogs(
     request: Request,
     url: str,
-    catalogs: Optional[Tuple[str, ...]] = None,
     provider: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Build STAC catalog
 
     :param url: Requested URL
     :param root: (optional) API root
-    :param catalogs: (optional) Catalogs list
     :param provider: (optional) Chosen provider
     :returns: Catalog dictionary
     """
@@ -497,13 +485,9 @@ async def get_stac_catalogs(
             root=request.state.url_root,
             provider=provider,
             eodag_api=eodag_api,
-            catalogs=list(catalogs) if catalogs else None,
         ).data
 
-    hashed_catalogs = hash(":".join(catalogs) if catalogs else None)
-    return await cached(
-        _fetch, f"{CACHE_KEY_COLLECTION}:{provider}:{hashed_catalogs}", request
-    )
+    return await cached(_fetch, f"{CACHE_KEY_COLLECTION}:{provider}", request)
 
 
 def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool:
