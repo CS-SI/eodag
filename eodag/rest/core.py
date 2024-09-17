@@ -226,7 +226,7 @@ def search_stac_items(
         results = SearchResult([], 0)
         total = 0
 
-    if results.errors:
+    if len(results) == 0 and results.errors:
         raise ResponseSearchError(results.errors)
 
     if search_request.crunch:
