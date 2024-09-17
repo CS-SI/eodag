@@ -39,7 +39,7 @@ from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import NotAvailableError, TimeOutError
+from eodag.utils.exceptions import NotAvailableError, RequestError, TimeOutError
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -1132,10 +1132,44 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_search_no_results_with_errors(self, mock_search):
         """Search through eodag server must display provider's error if it's empty result"""
+        # TODO add test for an exception with `parameters` attribute
+        req_err = RequestError("Request error message with status code")
+        req_err.status_code = 418
         errors = [
-            ("usgs", Exception("foo error")),
-            ("aws_eos", Exception("boo error")),
+            ("usgs", Exception("Generic exception", "Details of the error")),
+            ("theia", TimeOutError("Timeout message")),
+            ("peps", req_err),
+            ("creodias", AuthenticationError("Authentication message")),
         ]
+        expected_response = {
+            "errors": [
+                {
+                    "provider": "usgs",
+                    "error": "Exception",
+                    "message": "Generic exception",
+                    "detail": "Details of the error",
+                    "status_code": 500,
+                },
+                {
+                    "provider": "theia",
+                    "error": "TimeOutError",
+                    "message": "Timeout message",
+                    "status_code": 504,
+                },
+                {
+                    "provider": "peps",
+                    "error": "RequestError",
+                    "message": "Request error message with status code",
+                    "status_code": 418,
+                },
+                {
+                    "provider": "creodias",
+                    "error": "AuthenticationError",
+                    "message": "Internal server error: please contact the administrator",
+                    "status_code": 500,
+                },
+            ]
+        }
         mock_search.return_value = SearchResult([], 0, errors)
 
         response = self.app.request(
@@ -1148,7 +1182,7 @@ class RequestTestCase(unittest.TestCase):
         response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
-        self.assertIn("errors", response_content)
+        self.assertDictEqual(expected_response, response_content)
 
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
