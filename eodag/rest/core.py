@@ -137,9 +137,9 @@ def search_stac_items(
     search_request: SearchPostRequest,
 ) -> Dict[str, Any]:
     """
-    Search and retrieve STAC items from the given catalogs.
+    Search and retrieve STAC items based on the given search request.
 
-    This function takes a search request and optional catalogs list, performs a search using EODAG API, and returns a
+    This function takes a search request, performs a search using EODAG API, and returns a
     dictionary of STAC items.
 
     :param request: The incoming HTTP request with state information.
@@ -247,7 +247,7 @@ def search_stac_items(
 
 def download_stac_item(
     request: Request,
-    catalogs: List[str],
+    collection_id: str,
     item_id: str,
     provider: Optional[str] = None,
     asset: Optional[str] = None,
@@ -255,13 +255,13 @@ def download_stac_item(
 ) -> Response:
     """Download item
 
-    :param catalogs: Catalogs list (only first is used as product_type)
+    :param collection_id: id of the product type
     :param item_id: Product ID
     :param provider: (optional) Chosen provider
     :param kwargs: additional download parameters
     :returns: a stream of the downloaded data (zip file)
     """
-    product_type = catalogs[0]
+    product_type = collection_id
 
     search_results = eodag_api.search(
         id=item_id, productType=product_type, provider=provider, **kwargs

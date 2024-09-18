@@ -257,7 +257,7 @@ def stac_collections_item_download(
 
     return download_stac_item(
         request=request,
-        catalogs=[collection_id],
+        collection_id=collection_id,
         item_id=item_id,
         provider=provider,
         **arguments,
@@ -281,7 +281,7 @@ def stac_collections_item_download_asset(
 
     return download_stac_item(
         request=request,
-        catalogs=[collection_id],
+        collection_id=collection_id,
         item_id=item_id,
         provider=provider,
         asset=asset,

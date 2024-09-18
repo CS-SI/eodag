@@ -111,14 +111,14 @@ Example
     6
 
     # browse for items
-    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/collections/S2_MSI_L1C/items" \
     | jq ".numberMatched"
     9
 
     # get download link
-    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/collections/S2_MSI_L1C/items" \
     | jq ".features[0].assets.downloadLink.href"
-    "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    "http://127.0.0.1:5002/collections/S2_MSI_L1C/items/S2B_MSIL1C_20240917T115259_N0511_R137_T21CWS_20240917T145134/download"
 
     # download
-    $ wget "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    $ wget "http://127.0.0.1:5002/collections/S2_MSI_L1C/items/S2B_MSIL1C_20240917T115259_N0511_R137_T21CWS_20240917T145134/download"
