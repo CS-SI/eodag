@@ -868,7 +868,7 @@ class StacCatalog(StacCommon):
     :param provider: Chosen provider
     :param eodag_api: EODAG python API instance
     :param root: (optional) API root
-    :param catalogs: (optional) Catalogs list
+    :param collection: (optional) product type id
     """
 
     def __init__(
