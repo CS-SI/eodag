@@ -75,6 +75,23 @@ Example URL:
 
 * http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20
 
+
+STAC Browser
+-------------
+
+The STAC Browser can be used to browse data in a graphic user interface.
+
+Start the eodag server with
+
+``EODAG_CORS_ALLOWED_ORIGINS=https://radiantearth.github.io eodag -vvv serve-rest``
+
+and then open https://radiantearth.github.io/stac-browser/#/external/http:/127.0.0.1:5000.
+
+.. image:: _static/stac_browser_start.png
+   :width: 800
+   :alt: STAC browser example
+
+
 docker
 ------
 
