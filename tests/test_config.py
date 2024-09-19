@@ -326,9 +326,11 @@ class TestConfigFunctions(unittest.TestCase):
         aws_eos:
           search:
               product_location_scheme: file
-          auth:
+          search_auth:
               credentials:
                   apikey: api-key
+          download_auth:
+              credentials:
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
 
@@ -374,12 +376,13 @@ class TestConfigFunctions(unittest.TestCase):
 
         aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
-        self.assertEqual(aws_conf.auth.credentials["apikey"], "api-key")
+        self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
-            aws_conf.auth.credentials["aws_access_key_id"], "access-key-id"
+            aws_conf.download_auth.credentials["aws_access_key_id"], "access-key-id"
         )
         self.assertEqual(
-            aws_conf.auth.credentials["aws_secret_access_key"], "secret-access-key"
+            aws_conf.download_auth.credentials["aws_secret_access_key"],
+            "secret-access-key",
         )
 
         peps_conf = default_config["peps"]

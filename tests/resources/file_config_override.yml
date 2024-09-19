@@ -9,9 +9,11 @@ usgs:
 aws_eos:
   search:
     product_location_scheme: 'file'
-  auth:
+  search_auth:
     credentials:
       apikey: api-key
+  download_auth:
+    credentials:
       aws_access_key_id: access-key-id
       aws_secret_access_key: secret-access-key
 

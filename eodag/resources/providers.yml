@@ -95,7 +95,9 @@
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}'
     need_auth: true
-    auth_error_code: 403
+    auth_error_code:
+      - 402
+      - 403
     results_entry: 'results'
     ssl_verify: true
     pagination:
@@ -3584,7 +3586,7 @@
     output_extension: .nc
   auth: !plugin
     type: HttpQueryStringAuth
-    matching_url: http?://[-\w]+.meteoblue.com
+    matching_url: https?://[a-z]+.meteoblue.com
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
     ssl_verify: true
 ---
@@ -4653,6 +4655,7 @@
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
   auth: !plugin
     type: TokenAuth
+    matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
     refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
     token_type: json
