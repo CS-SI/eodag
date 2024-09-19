@@ -109,17 +109,23 @@ class ResponseSearchError(Exception):
 
 
 async def response_search_error_handler(
-    request: Request, exc: ResponseSearchError
+    request: Request, exc: Exception
 ) -> ORJSONResponse:
     """Handle ResponseSearchError exceptions"""
+    if not isinstance(exc, ResponseSearchError):
+        return starlette_exception_handler(request, exc)
+
     return ORJSONResponse(
         status_code=exc.status_code,
         content={"errors": exc.errors},
     )
 
 
-async def eodag_errors_handler(request: Request, exc: EodagError) -> ORJSONResponse:
+async def eodag_errors_handler(request: Request, exc: Exception) -> ORJSONResponse:
     """Handler for EODAG errors"""
+    if not isinstance(exc, EodagError):
+        return starlette_exception_handler(request, exc)
+
     code = EODAG_DEFAULT_STATUS_CODES.get(type(exc), getattr(exc, "status_code", 500))
     detail = f"{type(exc).__name__}: {str(exc)}"
 

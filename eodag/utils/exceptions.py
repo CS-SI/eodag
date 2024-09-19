@@ -94,9 +94,9 @@ class RequestError(EodagError):
         status_code = getattr(error, "code", None)
         text = getattr(error, "msg", None)
 
-        if getattr(error, "response", None):
-            status_code = error.response.status_code
-            text = error.response.text
+        if response := getattr(error, "response", None):
+            status_code = response.status_code
+            text = response.text
 
         text = text or str(error)
 
