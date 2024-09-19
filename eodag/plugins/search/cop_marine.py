@@ -196,6 +196,8 @@ class CopMarineSearch(StaticStacSearch):
         }
         if use_dataset_dates:
             dates = _get_dates_from_dataset_data(dataset_item)
+            if not dates:
+                return None
             properties["startTimeFromAscendingNode"] = dates["start"]
             properties["completionTimeFromAscendingNode"] = dates["end"]
         else:
@@ -392,21 +394,21 @@ class CopMarineSearch(StaticStacSearch):
                         use_dataset_dates = True
                         dates = _get_dates_from_dataset_data(dataset_item)
                         if dates:
-                            item_start = dates["start"].replace("Z", "+0000")
-                            item_end = dates["end"].replace("Z", "+0000")
+                            item_start_str = dates["start"].replace("Z", "+0000")
+                            item_end_str = dates["end"].replace("Z", "+0000")
                             try:
                                 item_start = datetime.strptime(
-                                    item_start, "%Y-%m-%dT%H:%M:%S.%f%z"
+                                    item_start_str, "%Y-%m-%dT%H:%M:%S.%f%z"
                                 )
                                 item_end = datetime.strptime(
-                                    item_end, "%Y-%m-%dT%H:%M:%S.%f%z"
+                                    item_end_str, "%Y-%m-%dT%H:%M:%S.%f%z"
                                 )
                             except ValueError:
                                 item_start = datetime.strptime(
-                                    item_start, "%Y-%m-%dT%H:%M:%S%z"
+                                    item_start_str, "%Y-%m-%dT%H:%M:%S%z"
                                 )
                                 item_end = datetime.strptime(
-                                    item_end, "%Y-%m-%dT%H:%M:%S%z"
+                                    item_end_str, "%Y-%m-%dT%H:%M:%S%z"
                                 )
                     if not item_start:
                         # no valid datetime in id and dataset data
