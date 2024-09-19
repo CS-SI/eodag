@@ -1017,6 +1017,41 @@ class RequestTestCase(unittest.TestCase):
             ],
         )
 
+    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
+    def test_provider_prefix_post_search(self, mock_search):
+        """provider prefixes should be removed from query parameters"""
+        post_data = {
+            "collections": ["ERA5_SL"],
+            "provider": "cop_cds",
+            "query": {
+                "cop_cds:month": {"eq": "10"},
+                "cop_cds:year": {"eq": "2010"},
+                "cop_cds:day": {"eq": "10"},
+            },
+        }
+        mock_search.return_value = SearchResult.from_geojson(
+            {"features": [], "type": "FeatureCollection"}
+        )
+        self.app.request(
+            method="POST",
+            url="search",
+            json=post_data,
+            follow_redirects=True,
+            headers={"Content-Type": "application/json"},
+        )
+        expected_search_kwargs = dict(
+            productType="ERA5_SL",
+            page=1,
+            items_per_page=DEFAULT_ITEMS_PER_PAGE,
+            month="10",
+            year="2010",
+            day="10",
+            raise_errors=True,
+            count=True,
+            provider="cop_cds",
+        )
+        mock_search.assert_called_once_with(**expected_search_kwargs)
+
     def test_search_response_contains_pagination_info(self):
         """Responses to valid search requests must return a geojson with pagination info in properties"""
         response = self._request_valid(f"search?collections={self.tested_product_type}")
@@ -1730,11 +1765,14 @@ class RequestTestCase(unittest.TestCase):
         # queryables properties not shared by all constraints must be removed
         not_shared_properties = ["leadtime_hour", "type"]
         provider_queryables_from_constraints_file = [
-            properties
+            f"cop_cds:{properties}"
             for properties in provider_queryables_from_constraints_file
             if properties not in not_shared_properties
         ]
-        default_provider_stac_properties = ["api_product_type", "format"]
+        default_provider_stac_properties = [
+            "cop_cds:api_product_type",
+            "cop_cds:format",
+        ]
 
         res = self._request_valid(
             "collections/ERA5_SL/queryables?provider=cop_cds",

@@ -33,6 +33,7 @@ from requests.models import Response as RequestsResponse
 import eodag
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
+    DEFAULT_METADATA_MAPPING,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -172,7 +173,6 @@ def search_stac_items(
         raise ValidationError(format_pydantic_error(e)) from e
 
     catalog_url = re.sub("/items.*", "", request.state.url)
-
     catalog = StacCatalog(
         url=(
             catalog_url
@@ -206,6 +206,16 @@ def search_stac_items(
             **catalog.search_args,
             **eodag_args.model_dump(exclude_none=True),
         }
+        # remove provider prefixes
+        stac_extensions = stac_config["extensions"]
+        keys_to_update = {}
+        for key in criteria:
+            if ":" in key and key.split(":")[0] not in stac_extensions:
+                new_key = key.split(":")[1]
+                keys_to_update[key] = new_key
+        for key, new_key in keys_to_update.items():
+            criteria[new_key] = criteria[key]
+            criteria.pop(key)
 
         search_results = eodag_api.search(count=True, **criteria)
         total = search_results.number_matched or 0
@@ -605,8 +615,18 @@ async def get_queryables(
         stac_queryables: Dict[str, StacQueryableProperty] = deepcopy(
             StacQueryables.default_properties
         )
+        # get stac default properties to set prefixes
+        stac_item_properties = list(stac_config["item"]["properties"].values())
+        stac_item_properties.extend(list(stac_queryables.keys()))
+        ignore = stac_config["metadata_ignore"]
+        stac_item_properties.extend(ignore)
+        default_mapping = DEFAULT_METADATA_MAPPING.keys()
         for param, queryable in python_queryables.items():
-            stac_param = EODAGSearch.to_stac(param)
+            if param in default_mapping and not any(
+                param in str(prop) for prop in stac_item_properties
+            ):
+                param = f"oseo:{param}"
+            stac_param = EODAGSearch.to_stac(param, stac_item_properties, provider)
             # only keep "datetime" queryable for dates
             if stac_param in stac_queryables or stac_param in (
                 "start_datetime",

@@ -6909,6 +6909,29 @@
   roles:
     - host
   url: https://data.eumetsat.int
+  anchor_sentinel: &sentinel_params
+    orbitDirection:
+      - orbitdir
+      - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection'
+    relativeOrbitNumber:
+      - relorbit
+      - '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
+    timeliness:
+      - timeliness
+      - '$.properties.productInformation.timeliness'
+    cycleNumber:
+      - cycle
+      - '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'
+  anchor_orbit_zone_tile: &orbit_zone_tile
+    orbitNumber:
+      - orbit
+      - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
+    utmZone:
+      - zone
+      - '$.null'
+    tileIdentifier:
+      - t6
+      - '$.null'
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
@@ -6970,7 +6993,6 @@
         - sat
         - '$.properties.acquisitionInformation[0].platform.platformShortName'
       instrument: '$.properties.acquisitionInformation[0].instrument.instrumentShortName'
-
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title:
         - title
@@ -6978,19 +7000,11 @@
       publicationDate:
         - publication
         - '$.null'
-
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier:
         - pi
         - '$.properties.parentIdentifier'
-      orbitNumber:
-        - orbit
-        - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
-      orbitDirection:
-        - orbitdir
-        - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection'
       modificationDate: '$.properties.updated'
-
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
         - dtstart
@@ -7002,12 +7016,6 @@
       id:
         - id
         - $.properties.identifier
-      utmZone:
-        - zone
-        - '$.null'
-      tileIdentifier:
-        - t6
-        - '$.null'
       # The geographic extent of the product
       geometry:
         - 'geo={geometry#to_rounded_wkt}'
@@ -7021,25 +7029,11 @@
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
-
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      timeliness:
-        - timeliness
-        - '$.properties.productInformation.timeliness'
-      relativeOrbitNumber:
-        - relorbit
-        - '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
-      cycleNumber:
-        - cycle
-        - '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'
-      fire:
-        - fire
-        - '$.properties.extraInformation.fireDetected'
       size:
         - size
         - '$.properties.productInformation.size'
       type: '$.null'
-
       # set duplicate metadata due to metadata discovery to null
       acquisitionInformation: '$.null'
       productInformation: '$.null'
@@ -7049,113 +7043,223 @@
     S3_SRA:
       productType: SR_1_SRA___
       parentIdentifier: EO:EUM:DAT:0406
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_A:
       productType: SR_1_SRA_A_
       parentIdentifier: EO:EUM:DAT:0413
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_1A_BC004:
       productType: SR_1_SRA_A_
       parentIdentifier: EO:EUM:DAT:0583
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_1A_BC005:
       productType: SR_1_SRA_A_
       parentIdentifier: EO:EUM:DAT:0836
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_1B_BC004:
       productType: SR_1_SRA___
       parentIdentifier: EO:EUM:DAT:0584
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_1B_BC005:
       productType: SR_1_SRA___
       parentIdentifier: EO:EUM:DAT:0833
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_BS:
       productType: SR_1_SRA_BS
       parentIdentifier: EO:EUM:DAT:0414
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_BS_BC004:
       productType: SR_1_SRA_BS
       parentIdentifier: EO:EUM:DAT:0585
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SRA_BS_BC005:
       productType: SR_1_SRA_BS
       parentIdentifier: EO:EUM:DAT:0835
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_WAT:
       productType: SR_2_WAT___
       parentIdentifier: EO:EUM:DAT:0415
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_WAT_BC004:
       productType: SR_2_WAT___
       parentIdentifier: EO:EUM:DAT:0586
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_WAT_BC005:
       productType: SR_2_WAT___
       parentIdentifier: EO:EUM:DAT:0834
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     # S3 OLCI
     S3_EFR:
       productType: OL_1_EFR___
       parentIdentifier: EO:EUM:DAT:0409
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_EFR_BC002:
       productType: OL_1_EFR___
       parentIdentifier: EO:EUM:DAT:0577
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_ERR:
       productType: OL_1_ERR___
       parentIdentifier: EO:EUM:DAT:0410
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_ERR_BC002:
       productType: OL_1_ERR___
       parentIdentifier: EO:EUM:DAT:0578
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_OLCI_L2WRR:
       productType: OL_2_WRR___
       parentIdentifier: EO:EUM:DAT:0408
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_OLCI_L2WRR_BC003:
       productType: OL_2_WRR___
       parentIdentifier: EO:EUM:DAT:0557
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_OLCI_L2WFR:
       productType: OL_2_WFR___
       parentIdentifier: EO:EUM:DAT:0407
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_OLCI_L2WFR_BC003:
       productType: OL_2_WFR___
       parentIdentifier: EO:EUM:DAT:0556
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     # S3 SLSTR
     S3_SLSTR_L1RBT:
       productType: SL_1_RBT___
       parentIdentifier: EO:EUM:DAT:0411
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SLSTR_L1RBT_BC003:
       productType: SL_1_RBT___
       parentIdentifier: EO:EUM:DAT:0581
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SLSTR_L1RBT_BC004:
       productType: SL_1_RBT___
       parentIdentifier: EO:EUM:DAT:0615
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SLSTR_L2WST:
       productType: SL_2_WST___
       parentIdentifier: EO:EUM:DAT:0412
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SLSTR_L2WST_BC003:
       productType: SL_2_WST___
       parentIdentifier: EO:EUM:DAT:0582
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SLSTR_L2AOD:
       productType: SL_2_AOD___
       parentIdentifier: EO:EUM:DAT:0416
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
     S3_SLSTR_L2FRP:
       productType: SL_2_FRP___
       parentIdentifier: EO:EUM:DAT:0417
+      metadata_mapping:
+        <<: *orbit_zone_tile
+        <<: *sentinel_params
+        fire:
+          - fire
+          - '$.properties.extraInformation.fireDetected'
     # METOP
     METOP_AMSU_L1:
       parentIdentifier: EO:EUM:DAT:METOP:AMSUL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_OSI_104:
       parentIdentifier: EO:EUM:DAT:METOP:OSI-104
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_OSI_150A:
       parentIdentifier: EO:EUM:DAT:METOP:OSI-150-A
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_OSI_150B:
       parentIdentifier: EO:EUM:DAT:METOP:OSI-150-B
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_ASCSZF1B:
       parentIdentifier: EO:EUM:DAT:METOP:ASCSZF1B
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_ASCSZR1B:
       parentIdentifier: EO:EUM:DAT:METOP:ASCSZR1B
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_ASCSZO1B:
       parentIdentifier: EO:EUM:DAT:METOP:ASCSZO1B
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_ASCSZFR02:
       parentIdentifier: EO:EUM:CM:METOP:ASCSZFR02
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_ASCSZOR02:
       parentIdentifier: EO:EUM:CM:METOP:ASCSZOR02
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_ASCSZRR02:
       parentIdentifier: EO:EUM:CM:METOP:ASCSZRR02
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_AVHRRL1:
       parentIdentifier: EO:EUM:DAT:METOP:AVHRRL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_SOMO12:
       parentIdentifier: EO:EUM:DAT:METOP:SOMO12
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_SOMO25:
       parentIdentifier: EO:EUM:DAT:METOP:SOMO25
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_AVHRRGACR02:
       parentIdentifier: EO:EUM:DAT:0558
     METOP_LSA_002:
@@ -7164,18 +7268,32 @@
       parentIdentifier: EO:EUM:DAT:METOP:GLB-SST-NC
     METOP_GOMEL1:
       parentIdentifier: EO:EUM:DAT:METOP:GOMEL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_GOMEL1R03:
       parentIdentifier: EO:EUM:DAT:0533
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_IASTHR011:
       parentIdentifier: EO:EUM:DAT:0576
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_IASSND02:
       parentIdentifier: EO:EUM:DAT:METOP:IASSND02
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_IASIL1C_ALL:
       parentIdentifier: EO:EUM:DAT:METOP:IASIL1C-ALL
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_MHSL1:
       parentIdentifier: EO:EUM:DAT:METOP:MHSL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
     METOP_HIRSL1:
       parentIdentifier: EO:EUM:DAT:MULT:HIRSL1
+      metadata_mapping:
+        <<: *orbit_zone_tile
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
