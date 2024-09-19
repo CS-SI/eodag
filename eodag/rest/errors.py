@@ -74,7 +74,7 @@ class ResponseSearchError(Exception):
                 error_dict["message"] = exception.args[0]
 
             if len(exception.args) > 1:
-                error_dict["detail"] = " ".join(exception.args[1:])
+                error_dict["detail"] = " ".join([str(i) for i in exception.args[1:]])
 
             error_dict["status_code"] = EODAG_DEFAULT_STATUS_CODES.get(
                 type(exception), getattr(exception, "status_code", 500)

@@ -39,7 +39,12 @@ from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import NotAvailableError, RequestError, TimeOutError
+from eodag.utils.exceptions import (
+    NotAvailableError,
+    RequestError,
+    TimeOutError,
+    ValidationError,
+)
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -1132,7 +1137,6 @@ class RequestTestCase(unittest.TestCase):
     )
     def test_search_no_results_with_errors(self, mock_search):
         """Search through eodag server must display provider's error if it's empty result"""
-        # TODO add test for an exception with `parameters` attribute
         req_err = RequestError("Request error message with status code")
         req_err.status_code = 418
         errors = [
@@ -1140,6 +1144,13 @@ class RequestTestCase(unittest.TestCase):
             ("theia", TimeOutError("Timeout message")),
             ("peps", req_err),
             ("creodias", AuthenticationError("Authentication message")),
+            (
+                "onda",
+                ValidationError(
+                    "Validation message: startTimeFromAscendingNode, modificationDate",
+                    {"startTimeFromAscendingNode", "modificationDate"},
+                ),
+            ),
         ]
         expected_response = {
             "errors": [
@@ -1167,6 +1178,13 @@ class RequestTestCase(unittest.TestCase):
                     "error": "AuthenticationError",
                     "message": "Internal server error: please contact the administrator",
                     "status_code": 500,
+                },
+                {
+                    "provider": "onda",
+                    "error": "ValidationError",
+                    "message": "Validation message: start_datetime, updated",
+                    "detail": "{'modificationDate', 'startTimeFromAscendingNode'}",
+                    "status_code": 400,
                 },
             ]
         }
