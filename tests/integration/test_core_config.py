@@ -338,13 +338,13 @@ class TestCoreProductTypesConfig(TestCase):
                         productType: '{productType}'
             """
         )
-        with self.assertLogs(level="WARNING") as cm:
+        with self.assertLogs(level="DEBUG") as cm:
             ext_product_types_conf = self.dag.discover_product_types(
                 provider="foo_provider"
             )
             self.assertIsNone(ext_product_types_conf["foo_provider"])
             self.assertIn(
-                "Could not authenticate on foo_provider using None plugin",
+                "Could not authenticate on foo_provider for product types discovery",
                 str(cm.output),
             )
 
@@ -354,11 +354,12 @@ class TestCoreProductTypesConfig(TestCase):
             foo_provider:
                 auth:
                     type: HTTPHeaderAuth
+                    matching_url: https://foo.bar
                     headers:
                         Authorization: "Apikey {apikey}"
             """
         )
-        with self.assertLogs(level="WARNING") as cm:
+        with self.assertLogs(level="DEBUG") as cm:
             ext_product_types_conf = self.dag.discover_product_types(
                 provider="foo_provider"
             )
@@ -418,12 +419,15 @@ class TestCoreProductTypesConfig(TestCase):
 
         # warning if another AuthenticationError
         with mock.patch(
-            "eodag.plugins.manager.PluginManager.get_auth_plugin",
-        ) as mock_get_auth_plugin:
-            mock_get_auth_plugin.return_value.authenticate.side_effect = (
-                AuthenticationError("cannot auth for test")
+            "eodag.plugins.manager.PluginManager.get_auth_plugins",
+        ) as mock_get_auth_plugins:
+            mock_auth_plugin = mock.MagicMock()
+            mock_auth_plugin.authenticate = mock.MagicMock(
+                side_effect=AuthenticationError("cannot auth for test")
             )
-            with self.assertLogs(level="WARNING") as cm:
+            mock_get_auth_plugins.return_value = iter([mock_auth_plugin])
+
+            with self.assertLogs(level="DEBUG") as cm:
                 ext_product_types_conf = self.dag.discover_product_types(
                     provider="foo_provider"
                 )

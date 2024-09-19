@@ -83,8 +83,8 @@ class BaseSearchPluginTest(unittest.TestCase):
             )
         )
 
-    def get_auth_plugin(self, provider):
-        return self.plugins_manager.get_auth_plugin(provider)
+    def get_auth_plugin(self, search_plugin):
+        return self.plugins_manager.get_auth_plugin(search_plugin)
 
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
@@ -169,7 +169,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         provider = "mundi"
         self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.mundi_auth_plugin = self.get_auth_plugin(provider)
+        self.mundi_auth_plugin = self.get_auth_plugin(self.mundi_search_plugin)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -295,7 +295,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # One of the providers that has a QueryStringSearch Search plugin
         provider = "peps"
         self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.peps_auth_plugin = self.get_auth_plugin(provider)
+        self.peps_auth_plugin = self.get_auth_plugin(self.peps_search_plugin)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -699,11 +699,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # One of the providers that has a PostJsonSearch Search plugin
         provider = "aws_eos"
         self.awseos_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.awseos_auth_plugin = self.get_auth_plugin(provider)
+        self.awseos_auth_plugin = self.get_auth_plugin(self.awseos_search_plugin)
         self.awseos_auth_plugin.config.credentials = dict(apikey="dummyapikey")
-        self.awseos_url = (
-            "https://gate.eos.com/api/lms/search/v2/sentinel2?api_key=dummyapikey"
-        )
+        self.awseos_url = "https://gate.eos.com/api/lms/search/v2/sentinel2"
 
     def test_plugins_search_postjsonsearch_request_error(self):
         """A query with a PostJsonSearch must handle requests errors"""
@@ -1065,7 +1063,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         provider = "wekeo_ecmwf"
         product_type = "GRIDDED_GLACIERS_MASS_CHANGE"
         search_plugin = self.get_search_plugin(product_type, provider)
-        auth_plugin = self.get_auth_plugin(provider)
+        auth_plugin = self.get_auth_plugin(search_plugin)
 
         mock__request.return_value = mock.Mock()
 
@@ -1164,7 +1162,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
         self.onda_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.onda_auth_plugin = self.get_auth_plugin(provider)
+        self.onda_auth_plugin = self.get_auth_plugin(self.onda_search_plugin)
         # Some expected results
         with open(self.provider_resp_dir / "onda_count.json") as f:
             self.onda_resp_count = json.load(f)
@@ -1748,7 +1746,7 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
         # One of the providers that has a BuildPostSearchResult Search plugin
         provider = "meteoblue"
         self.search_plugin = self.get_search_plugin(provider=provider)
-        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
         self.auth_plugin.config.credentials = {"cred": "entials"}
         self.auth = self.auth_plugin.authenticate()
 
@@ -1826,7 +1824,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         self.plugins_manager = PluginManager(providers_config)
         provider = "wekeo_old"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
         self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
         mock_requests_get.return_value = MockResponse({"access_token": "token"}, 200)
         self.search_plugin.auth = self.auth_plugin.authenticate()
@@ -2063,7 +2061,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         res = search_plugin.query(productType="S1_SAR_GRD")
         for product in res[0]:
             download_plugin = self.plugins_manager.get_download_plugin(product)
-            auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+            auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
             stubber.add_response("list_objects", list_objects_response)
             stubber.activate()
             setattr(auth_plugin, "s3_client", client)
@@ -2107,7 +2105,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             res = search_plugin.query(productType="S1_SAR_GRD")
             for product in res[0]:
                 download_plugin = self.plugins_manager.get_download_plugin(product)
-                auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+                auth_plugin = self.plugins_manager.get_auth_plugin(
+                    download_plugin, product
+                )
                 auth_plugin.config.credentials = {
                     "aws_access_key_id": "foo",
                     "aws_secret_access_key": "bar",
@@ -2914,7 +2914,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         self.wekeomain_search_plugin = self.get_search_plugin(
             self.product_type, provider
         )
-        self.wekeomain_auth_plugin = self.get_auth_plugin(provider)
+        self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",

@@ -43,7 +43,7 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE, _deprecated, deepcopy
+from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -256,26 +256,41 @@ class PluginManager:
             )
         return plugin
 
-    @_deprecated(reason="Use get_auth_plugins instead", version="3.0.0")
-    def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
-        """Build and return the authentication plugin for the given product_type and
-        provider
+    def get_auth_plugin(
+        self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
+    ) -> Optional[Authentication]:
+        """Build and return the authentication plugin associated to the given
+        search/download plugin
 
-        :param provider: The provider for which to get the authentication plugin
-        :returns: The Authentication plugin for the provider
+        .. versionchanged:: v3.0.0
+            ``get_auth_plugin()`` now needs ``associated_plugin`` instead of ``provider``
+            as argument.
+
+        :param associated_plugin: The search/download plugin to which the authentication
+                                  plugin is linked
+        :param product: The product to download. ``None`` for search authentication
+        :returns: The Authentication plugin
         """
-        plugin_conf = self.providers_config[provider]
-        auth: Optional[PluginConfig] = getattr(plugin_conf, "auth", None)
-        if not auth:
-            # We guess the plugin being built is of type Api, therefore no need
-            # for an Auth plugin.
-            return None
-        auth.priority = plugin_conf.priority
-        plugin = cast(
-            Authentication,
-            self._build_plugin(provider, auth, Authentication),
-        )
-        return plugin
+        # matching url from product to download
+        if product is not None and len(product.assets) > 0:
+            matching_url = next(iter(product.assets.values()))["href"]
+        elif product is not None:
+            matching_url = product.properties.get("downloadLink")
+        else:
+            # search auth
+            matching_url = getattr(associated_plugin.config, "api_endpoint", None)
+
+        try:
+            auth_plugin = next(
+                self.get_auth_plugins(
+                    associated_plugin.provider,
+                    matching_url=matching_url,
+                    matching_conf=associated_plugin.config,
+                )
+            )
+        except StopIteration:
+            auth_plugin = None
+        return auth_plugin
 
     def get_auth_plugins(
         self,
@@ -298,20 +313,27 @@ class PluginManager:
             matching_url: Optional[str],
             matching_conf: Optional[PluginConfig],
         ) -> bool:
+            plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
             if matching_conf:
-                plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
                 if (
                     plugin_matching_conf
                     and matching_conf.__dict__.items() >= plugin_matching_conf.items()
                 ):
+                    # conf matches
                     return True
             plugin_matching_url = getattr(auth_conf, "matching_url", None)
             if matching_url:
                 if plugin_matching_url and re.match(
                     rf"{plugin_matching_url}", matching_url
                 ):
+                    # url matches
                     return True
-            return False
+            if not plugin_matching_conf and not plugin_matching_url:
+                # plugin without match criteria
+                return True
+            else:
+                # no match
+                return False
 
         # providers configs with given provider at first
         sorted_providers_config = deepcopy(self.providers_config)

@@ -825,6 +825,12 @@ class EODataAccessGateway:
                         search_plugin.config,
                     ):
                         kwargs["auth"] = auth
+                    else:
+                        logger.debug(
+                            f"Could not authenticate on {provider} for product types discovery"
+                        )
+                        ext_product_types_conf[provider] = None
+                        continue
 
                 ext_product_types_conf[provider] = search_plugin.discover_product_types(
                     **kwargs
@@ -2108,12 +2114,12 @@ class EODataAccessGateway:
         products = self.deserialize(filename)
         for i, product in enumerate(products):
             if product.downloader is None:
+                downloader = self._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(product.provider)
-                products[i].register_downloader(
-                    self._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
+                products[i].register_downloader(downloader, auth)
+
         return products
 
     @_deprecated(
@@ -2244,12 +2250,11 @@ class EODataAccessGateway:
 
     def _setup_downloader(self, product: EOProduct) -> None:
         if product.downloader is None:
+            downloader = self._plugins_manager.get_download_plugin(product)
             auth = product.downloader_auth
             if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(product.provider)
-            product.register_downloader(
-                self._plugins_manager.get_download_plugin(product), auth
-            )
+                auth = self._plugins_manager.get_auth_plugin(downloader, product)
+            product.register_downloader(downloader, auth)
 
     def get_cruncher(self, name: str, **options: Any) -> Crunch:
         """Build a crunch plugin from a configuration
@@ -2301,7 +2306,7 @@ class EODataAccessGateway:
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             if getattr(plugin.config, "need_auth", False) and (
-                auth := self._plugins_manager.get_auth_plugin(plugin.provider)
+                auth := self._plugins_manager.get_auth_plugin(plugin)
             ):
                 plugin.auth = auth.authenticate()
             providers_queryables[plugin.provider] = plugin.list_queryables(

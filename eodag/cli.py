@@ -554,12 +554,13 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
         for idx, product in enumerate(search_results):
             if product.downloader is None:
+                downloader = satim_api._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
-                search_results[idx].register_downloader(
-                    satim_api._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = satim_api._plugins_manager.get_auth_plugin(
+                        downloader, product
+                    )
+                search_results[idx].register_downloader(downloader, auth)
 
             downloaded_file = product.get_quicklook()
             if not downloaded_file:
@@ -574,12 +575,13 @@ def download(ctx: Context, **kwargs: Any) -> None:
         # register downloader
         for idx, product in enumerate(search_results):
             if product.downloader is None:
+                downloader = satim_api._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
-                search_results[idx].register_downloader(
-                    satim_api._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = satim_api._plugins_manager.get_auth_plugin(
+                        downloader, product
+                    )
+                search_results[idx].register_downloader(downloader, auth)
 
         downloaded_files = satim_api.download_all(search_results)
         if downloaded_files and len(downloaded_files) > 0:
