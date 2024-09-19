@@ -65,7 +65,10 @@ class ResponseSearchError(Exception):
         error_list: List[Dict[str, Union[str, int]]] = []
         for name, exception in self._errors:
 
-            error_dict = {"provider": name, "error": exception.__class__.__name__}
+            error_dict: Dict[str, Union[str, int]] = {
+                "provider": name,
+                "error": exception.__class__.__name__,
+            }
 
             if exception.args:
                 error_dict["message"] = exception.args[0]
@@ -73,11 +76,8 @@ class ResponseSearchError(Exception):
             if len(exception.args) > 1:
                 error_dict["detail"] = " ".join(exception.args[1:])
 
-            error_dict["status_code"] = (
-                EODAG_DEFAULT_STATUS_CODES.get(
-                    type(exception), getattr(exception, "status_code", None)
-                )
-                or 500
+            error_dict["status_code"] = EODAG_DEFAULT_STATUS_CODES.get(
+                type(exception), getattr(exception, "status_code", 500)
             )
 
             if type(exception) in (MisconfiguredError, AuthenticationError):
@@ -87,8 +87,8 @@ class ResponseSearchError(Exception):
                 ] = "Internal server error: please contact the administrator"
                 error_dict.pop("detail", None)
 
-            if params := getattr(exception, "parameters", None):
-                for error_param in params:
+            if type(exception) is ValidationError:
+                for error_param in exception.parameters:
                     stac_param = EODAGSearch.to_stac(error_param)
                     exception.message = exception.message.replace(
                         error_param, stac_param
@@ -102,7 +102,7 @@ class ResponseSearchError(Exception):
     @property
     def status_code(self) -> int:
         """get global errors status code"""
-        if len(self._errors) == 1:
+        if len(self._errors) == 1 and type(self.errors[0]["status_code"]) is int:
             return self.errors[0]["status_code"]
 
         return 400
@@ -129,8 +129,8 @@ async def eodag_errors_handler(request: Request, exc: EodagError) -> ORJSONRespo
     if type(exc) in (MisconfiguredError, AuthenticationError):
         detail = "Internal server error: please contact the administrator"
 
-    if params := getattr(exc, "parameters", None):
-        for error_param in params:
+    if type(exc) is ValidationError:
+        for error_param in exc.parameters:
             stac_param = EODAGSearch.to_stac(error_param)
             exc.message = exc.message.replace(error_param, stac_param)
         detail = exc.message
@@ -149,7 +149,7 @@ def starlette_exception_handler(request: Request, error: Exception) -> ORJSONRes
         or str(error)
     )
     return ORJSONResponse(
-        status_code=error.status_code,
+        status_code=getattr(error, "status_code", 500),
         content={"description": description},
     )
 
