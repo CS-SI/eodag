@@ -36,6 +36,7 @@ from typing import (
 
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse
@@ -864,10 +865,12 @@ async def post_search(request: Request) -> ORJSONResponse:
 
     logger.debug("Body: %s", search_request.model_dump(exclude_none=True))
 
-    response = search_stac_items(
-        request=request,
-        search_request=search_request,
+    response = await run_in_threadpool(
+        search_stac_items,
+        request,
+        search_request,
     )
+
     return ORJSONResponse(content=response, media_type="application/json")
 
 
