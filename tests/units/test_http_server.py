@@ -1057,7 +1057,7 @@ class RequestTestCase(unittest.TestCase):
             month="10",
             year="2010",
             day="10",
-            raise_errors=True,
+            raise_errors=False,
             count=True,
             provider="cop_cds",
         )
