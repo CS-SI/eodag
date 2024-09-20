@@ -1183,7 +1183,7 @@ class RequestTestCase(unittest.TestCase):
                     "provider": "onda",
                     "error": "ValidationError",
                     "message": "Validation message: start_datetime, updated",
-                    "detail": "{'modificationDate', 'startTimeFromAscendingNode'}",
+                    "detail": "{'startTimeFromAscendingNode', 'modificationDate'}",
                     "status_code": 400,
                 },
             ]
