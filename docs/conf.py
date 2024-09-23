@@ -19,6 +19,8 @@
 #
 from __future__ import annotations
 
+import os
+import re
 from datetime import datetime
 from importlib.metadata import metadata
 from typing import Any, Dict, List
@@ -249,8 +251,41 @@ intersphinx_mapping = {
 }
 
 
+def _build_finished(app, exception):
+    """Post-build pages edit"""
+
+    if exception is not None:
+        return None
+
+    def _shorten_titles(dir_path):
+        """Shorten plugins titles from files in dir"""
+
+        # List files in dir
+        for file_name in os.listdir(dir_path):
+            file_path = os.path.join(dir_path, file_name)
+
+            # Recursively crawl files
+            if os.path.isdir(file_path):
+                _shorten_titles(file_path)
+            else:
+                with open(file_path, "r+") as file:
+                    file_content = file.read().rstrip()
+                    # remove long prefix from plugins titles
+                    file_content = re.sub(
+                        r"(\.html\">|\"#\">|<h1>)eodag\.plugins\.[a-z]+\.[a-z0-9_]+\.",
+                        r"\1",
+                        file_content,
+                    )
+                    # write
+                    file.seek(0)
+                    file.write(file_content)
+                print(f"Plugins titles shortened in {file_path}")
+
+    _shorten_titles(os.path.join(app.outdir, "plugins_reference"))
+
+
 def _html_page_context(app, pagename, templatename, context, doctree):
-    # Disable edit button for docstring generated pages
+    """Disable edit button for docstring generated pages"""
     if "generated" in pagename:
         context["theme_use_edit_page_button"] = False
 
@@ -258,3 +293,4 @@ def _html_page_context(app, pagename, templatename, context, doctree):
 def setup(app):
     """dummy docstring for pydocstyle"""
     app.connect("html-page-context", _html_page_context)
+    app.connect("build-finished", _build_finished)
