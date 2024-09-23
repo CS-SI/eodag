@@ -91,6 +91,21 @@ and then open https://radiantearth.github.io/stac-browser/#/external/http:/127.0
    :width: 800
    :alt: STAC browser example
 
+The STAC Browser can also be used with docker-compose:
+
+.. code-block:: bash
+
+    git clone https://github.com/CS-SI/eodag.git
+    cd eodag
+    docker-compose up
+    # or for a more verbose logging:
+    EODAG_LOGGING=3 docker-compose up
+
+(The definition of the ``EODAG_LOGGING`` environment variable will increase ``eodag``
+logging level and accepts the values 1, 2, or 3 (3=maximum level).)
+
+Browse http://127.0.0.1:5001
+
 
 docker
 ------
