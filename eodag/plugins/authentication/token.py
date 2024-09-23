@@ -89,14 +89,15 @@ class TokenAuth(Authentication):
                 and e.response.status_code in auth_errors
             ):
                 raise AuthenticationError(
-                    f"HTTP Error {e.response.status_code} returned, {response_text}\n"
-                    f"Please check your credentials for {self.provider}"
-                )
+                    f"Please check your credentials for {self.provider}.",
+                    f"HTTP Error {e.response.status_code} returned.",
+                    response_text,
+                ) from e
             # other error
             else:
                 raise AuthenticationError(
-                    f"Could no get authentication token: {str(e)}, {response_text}"
-                )
+                    "Could no get authentication token", str(e), response_text
+                ) from e
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]

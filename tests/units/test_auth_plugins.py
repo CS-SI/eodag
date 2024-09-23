@@ -28,7 +28,6 @@ from requests.exceptions import RequestException
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
-from eodag.utils.exceptions import RequestError
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -286,7 +285,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            "Could no get authentication token: 404 .* test error message",
+            "('Could no get authentication token', '404 .* 'test error message')",
         ):
             # mock token post request response with a different status code from the one in the provider auth config
             with responses.RequestsMock(
@@ -311,7 +310,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
 
         with self.assertRaisesRegex(
             AuthenticationError,
-            f"HTTP Error 401 returned, test error message\nPlease check your credentials for {provider}",
+            f"('Please check your credentials for {provider}.', 'HTTP Error 401 returned.', 'test error message')",
         ):
             # mock token post request response with the same status code as the one in the provider auth config
             with responses.RequestsMock(
@@ -1510,7 +1509,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         """
         state = "1234567890123456789012"
         self.assertRaises(
-            RequestError,
+            MisconfiguredError,
             auth_plugin.authenticate_user,
             state,
         )

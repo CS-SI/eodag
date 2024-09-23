@@ -217,7 +217,6 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
-        self.search_errors: Set = set()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -1191,7 +1190,7 @@ class EODataAccessGateway:
             items_per_page=items_per_page,
         )
 
-        self.search_errors = set()
+        errors: List[Tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1201,17 +1200,19 @@ class EODataAccessGateway:
                 raise_errors=raise_errors,
                 **search_kwargs,
             )
+            errors.extend(search_results.errors)
             if len(search_results) == 0 and i < len(search_plugins) - 1:
                 logger.warning(
                     f"No result could be obtained from provider {search_plugin.provider}, "
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
+                search_results.errors = errors
                 return search_results
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
-        return SearchResult([], 0) if count else SearchResult([])
+        return SearchResult([], 0, errors) if count else SearchResult([], errors=errors)
 
     def search_iter_page(
         self,
@@ -1471,7 +1472,7 @@ class EODataAccessGateway:
                 )
                 or DEFAULT_MAX_ITEMS_PER_PAGE
             )
-            logger.debug(
+            logger.info(
                 "Searching for all the products with provider %s and a maximum of %s "
                 "items per page.",
                 search_plugin.provider,
@@ -1769,12 +1770,10 @@ class EODataAccessGateway:
             provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
         if provider not in providers:
-            logger.warning(
-                "Product type '%s' is not available with provider '%s'. "
-                "Searching it on provider '%s' instead.",
+            logger.debug(
+                "Product type '%s' is not available with preferred provider '%s'.",
                 product_type,
                 provider,
-                search_plugins[0].provider,
             )
         else:
             provider_plugin = list(
@@ -1782,11 +1781,6 @@ class EODataAccessGateway:
             )[0]
             search_plugins.remove(provider_plugin)
             search_plugins.insert(0, provider_plugin)
-            logger.info(
-                "Searching product type '%s' on provider: %s",
-                product_type,
-                search_plugins[0].provider,
-            )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
@@ -1830,6 +1824,7 @@ class EODataAccessGateway:
         :param kwargs: Some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria
         """
+        logger.info("Searching on provider %s", search_plugin.provider)
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
         )
@@ -1853,6 +1848,8 @@ class EODataAccessGateway:
 
         results: List[EOProduct] = []
         total_results: Optional[int] = 0 if count else None
+
+        errors: List[Tuple[str, Exception]] = []
 
         try:
             prep = PreparedSearch(count=count)
@@ -1948,13 +1945,6 @@ class EODataAccessGateway:
                         "the total number of products matching the search criteria"
                     )
         except Exception as e:
-            log_msg = f"No result from provider '{search_plugin.provider}' due to an error during search."
-            if not raise_errors:
-                log_msg += " Raise verbosity of log messages for details"
-            logger.info(log_msg)
-            # keep only the message from exception args
-            if len(e.args) > 1:
-                e.args = (e.args[0],)
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next
@@ -1964,8 +1954,8 @@ class EODataAccessGateway:
                     "Error while searching on provider %s (ignored):",
                     search_plugin.provider,
                 )
-                self.search_errors.add((search_plugin.provider, e))
-        return SearchResult(results, total_results)
+                errors.append((search_plugin.provider, e))
+        return SearchResult(results, total_results, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results

@@ -39,7 +39,12 @@ from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
 from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import NotAvailableError, TimeOutError
+from eodag.utils.exceptions import (
+    NotAvailableError,
+    RequestError,
+    TimeOutError,
+    ValidationError,
+)
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -325,8 +330,12 @@ class RequestTestCase(unittest.TestCase):
         method: str = "GET",
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
+        search_result: SearchResult = None,
     ) -> httpx.Response:
-        mock_search.return_value = self.mock_search_result()
+        if search_result:
+            mock_search.return_value = search_result
+        else:
+            mock_search.return_value = self.mock_search_result()
         response = self.app.request(
             method,
             url,
@@ -367,6 +376,7 @@ class RequestTestCase(unittest.TestCase):
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
         check_links: bool = True,
+        search_result: SearchResult = None,
     ) -> Any:
         response = self._request_valid_raw(
             url,
@@ -374,6 +384,7 @@ class RequestTestCase(unittest.TestCase):
             method=method,
             post_data=post_data,
             search_call_count=search_call_count,
+            search_result=search_result,
         )
 
         # Assert response format is GeoJSON
@@ -836,7 +847,7 @@ class RequestTestCase(unittest.TestCase):
                 end="2018-02-01T00:00:00Z",
                 provider="peps",
                 geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=True,
+                raise_errors=False,
                 count=True,
             ),
         )
@@ -1046,7 +1057,7 @@ class RequestTestCase(unittest.TestCase):
             month="10",
             year="2010",
             day="10",
-            raise_errors=True,
+            raise_errors=False,
             count=True,
             provider="cop_cds",
         )
@@ -1105,6 +1116,91 @@ class RequestTestCase(unittest.TestCase):
                 ]
             )
         )
+
+    def test_search_results_with_errors(self):
+        """Search through eodag server must not display provider's error if it's not empty result"""
+        errors = [
+            ("usgs", Exception("foo error")),
+            ("aws_eos", Exception("boo error")),
+        ]
+        search_results = self.mock_search_result()
+        search_results.errors.extend(errors)
+
+        self._request_valid(
+            f"search?collections={self.tested_product_type}",
+            search_result=search_results,
+        )
+
+    @mock.patch(
+        "eodag.rest.core.eodag_api.search",
+        autospec=True,
+    )
+    def test_search_no_results_with_errors(self, mock_search):
+        """Search through eodag server must display provider's error if it's empty result"""
+        req_err = RequestError("Request error message with status code")
+        req_err.status_code = 418
+        errors = [
+            ("usgs", Exception("Generic exception", "Details of the error")),
+            ("theia", TimeOutError("Timeout message")),
+            ("peps", req_err),
+            ("creodias", AuthenticationError("Authentication message")),
+            (
+                "onda",
+                ValidationError(
+                    "Validation message: startTimeFromAscendingNode, modificationDate",
+                    {"startTimeFromAscendingNode", "modificationDate"},
+                ),
+            ),
+        ]
+        expected_response = {
+            "errors": [
+                {
+                    "provider": "usgs",
+                    "error": "Exception",
+                    "message": "Generic exception",
+                    "detail": "Details of the error",
+                    "status_code": 500,
+                },
+                {
+                    "provider": "theia",
+                    "error": "TimeOutError",
+                    "message": "Timeout message",
+                    "status_code": 504,
+                },
+                {
+                    "provider": "peps",
+                    "error": "RequestError",
+                    "message": "Request error message with status code",
+                    "status_code": 418,
+                },
+                {
+                    "provider": "creodias",
+                    "error": "AuthenticationError",
+                    "message": "Internal server error: please contact the administrator",
+                    "status_code": 500,
+                },
+                {
+                    "provider": "onda",
+                    "error": "ValidationError",
+                    "message": "Validation message: start_datetime, updated",
+                    "detail": "{'startTimeFromAscendingNode', 'modificationDate'}",
+                    "status_code": 400,
+                },
+            ]
+        }
+        mock_search.return_value = SearchResult([], 0, errors)
+
+        response = self.app.request(
+            "GET",
+            "search?collections=S2_MSI_L1C",
+            json=None,
+            follow_redirects=True,
+            headers={},
+        )
+        response_content = json.loads(response.content.decode("utf-8"))
+
+        self.assertEqual(400, response.status_code)
+        self.assertDictEqual(expected_response, response_content)
 
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
@@ -1500,7 +1596,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("UnsupportedProvider", response_content["description"])
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     def test_product_type_queryables(self, mock_requests_session_post):
@@ -1626,7 +1722,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("UnsupportedProductType", response_content["description"])
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):

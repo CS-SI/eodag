@@ -39,7 +39,6 @@ from requests import RequestException
 
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
-from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -49,9 +48,11 @@ from tests.context import (
     AuthenticationError,
     EOProduct,
     MisconfiguredError,
+    NotAvailableError,
     PluginManager,
     PreparedSearch,
     RequestError,
+    TimeOutError,
     cached_parse,
     get_geometry_from_various,
     load_default_config,
@@ -1442,7 +1443,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
                 )
             search_provider = self.onda_auth_plugin.provider
             search_type = self.onda_search_plugin.__class__.__name__
-            error_message = f"Skipping error while searching for {search_provider} {search_type} instance:"
+            error_message = f"Skipping error while searching for {search_provider} {search_type} instance"
             error_message_indexes_list = [
                 i.start() for i in re.finditer(error_message, str(cm.output))
             ]
@@ -2102,7 +2103,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             creodias_search_result = json.load(f)
         mock_request.return_value = MockResponse(creodias_search_result, 200)
 
-        with self.assertRaises(RequestError):
+        with self.assertRaises(NotAvailableError):
             res = search_plugin.query(productType="S1_SAR_GRD")
             for product in res[0]:
                 download_plugin = self.plugins_manager.get_download_plugin(product)

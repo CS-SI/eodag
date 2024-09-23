@@ -51,6 +51,7 @@ from eodag.rest.constants import (
     CACHE_KEY_COLLECTIONS,
     CACHE_KEY_QUERYABLES,
 )
+from eodag.rest.errors import ResponseSearchError
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.types.queryables import (
@@ -190,16 +191,17 @@ def search_stac_items(
 
     # get products by ids
     if eodag_args.ids:
-        search_results = SearchResult([])
+        results = SearchResult([])
         for item_id in eodag_args.ids:
-            sr = eodag_api.search(
-                id=item_id,
-                productType=catalogs[0] if catalogs else eodag_args.productType,
-                provider=eodag_args.provider,
+            results.extend(
+                eodag_api.search(
+                    id=item_id,
+                    productType=catalogs[0] if catalogs else eodag_args.productType,
+                    provider=eodag_args.provider,
+                )
             )
-            search_results.extend(sr)
-        search_results.number_matched = len(search_results)
-        total = len(search_results)
+        results.number_matched = len(results)
+        total = len(results)
 
     elif time_interval_overlap(eodag_args, catalog):
         criteria = {
@@ -217,18 +219,20 @@ def search_stac_items(
             criteria[new_key] = criteria[key]
             criteria.pop(key)
 
-        search_results = eodag_api.search(count=True, **criteria)
-        total = search_results.number_matched or 0
-        if search_request.crunch:
-            search_results = crunch_products(
-                search_results, search_request.crunch, **criteria
-            )
+        results = eodag_api.search(count=True, **criteria)
+        total = results.number_matched or 0
     else:
         # return empty results
-        search_results = SearchResult([], 0)
+        results = SearchResult([], 0)
         total = 0
 
-    for record in search_results:
+    if len(results) == 0 and results.errors:
+        raise ResponseSearchError(results.errors)
+
+    if search_request.crunch:
+        results = crunch_products(results, search_request.crunch, **criteria)
+
+    for record in results:
         record.product_type = eodag_api.get_alias_from_product_type(record.product_type)
 
     items = StacItem(
@@ -238,7 +242,7 @@ def search_stac_items(
         eodag_api=eodag_api,
         root=request.state.url_root,
     ).get_stac_items(
-        search_results=search_results,
+        search_results=results,
         total=total,
         next_link=get_next_link(
             request, search_request, total, eodag_args.items_per_page

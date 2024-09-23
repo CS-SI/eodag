@@ -20,7 +20,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Optional, Set, Tuple
+    from typing import Optional, Set
+
+    from typing_extensions import Annotated, Doc
 
 
 class EodagError(Exception):
@@ -84,14 +86,23 @@ class RequestError(EodagError):
     """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""
 
-    history: Set[Tuple[str, Exception]] = set()
-    parameters: Set[str] = set()
+    status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
 
-    def __str__(self):
-        repr = super().__str__()
-        for err_tuple in self.history:
-            repr += f"- {str(err_tuple)}"
-        return repr
+    @classmethod
+    def from_error(cls, error: Exception, msg: Optional[str] = None):
+        """Generate a RequestError from an Exception"""
+        status_code = getattr(error, "code", None)
+        text = getattr(error, "msg", None)
+
+        if response := getattr(error, "response", None):
+            status_code = response.status_code
+            text = response.text
+
+        text = text or str(error)
+
+        e = cls(msg, text) if msg else cls(text)
+        e.status_code = status_code
+        return e
 
 
 class NoMatchingProductType(EodagError):
