@@ -18,7 +18,9 @@ This table lists all the search plugins currently available:
    qssearch.ODataV4Search
    qssearch.PostJsonSearch
    qssearch.StacSearch
+   qssearch.PostJsonSearchWithStacQueryables
    static_stac_search.StaticStacSearch
+   cop_marine.CopMarineSearch
    creodias_s3.CreodiasS3Search
    build_search_result.BuildSearchResult
    build_search_result.BuildPostSearchResult

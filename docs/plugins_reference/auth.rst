@@ -21,5 +21,6 @@ This table lists all the authentication plugins currently available:
    oauth.OAuth
    openid_connect.OIDCAuthorizationCodeFlowAuth
    keycloak.KeycloakOIDCPasswordAuth
+   token_exchange.OIDCTokenExchangeAuth
    qsauth.HttpQueryStringAuth
    sas_auth.SASAuth
