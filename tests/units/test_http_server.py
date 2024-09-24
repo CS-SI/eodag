@@ -999,7 +999,7 @@ class RequestTestCase(unittest.TestCase):
                     "provider": "onda",
                     "error": "ValidationError",
                     "message": "Validation message: start_datetime, updated",
-                    "detail": "{'startTimeFromAscendingNode', 'modificationDate'}",
+                    "detail": {"startTimeFromAscendingNode", "modificationDate"},
                     "status_code": 400,
                 },
             ]
@@ -1016,6 +1016,12 @@ class RequestTestCase(unittest.TestCase):
         response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
+        for record in response_content["errors"]:
+            if "detail" in record and "{" in record["detail"]:
+                record["detail"] = (
+                    record["detail"].replace("{", "").replace("}", "").replace("'", "")
+                )
+                record["detail"] = set(s.strip() for s in record["detail"].split(","))
         self.assertDictEqual(expected_response, response_content)
 
     def test_assets_alt_url_blacklist(self):
