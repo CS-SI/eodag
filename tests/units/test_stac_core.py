@@ -357,7 +357,7 @@ class TestStacCore(unittest.TestCase):
         autospec=True,
     )
     def test_search_stac_items_special_characters(self, mock__request: Mock):
-        """search_stac_items runs without any error with non-stac providers"""
+        """special characters in the id are quoted in the links"""
         # mock the QueryStringSearch request with the S2_MSI_L1C peps response search dictionary
         mock__request.return_value = mock.Mock()
         res = self.peps_resp_search_json
@@ -367,8 +367,9 @@ class TestStacCore(unittest.TestCase):
 
         response = self.rest_core.search_stac_items(
             request=mock_request("http://foo/search"),
-            search_request=SearchPostRequest.model_validate({"provider": "peps"}),
-            catalogs=["S2_MSI_L1C"],
+            search_request=SearchPostRequest.model_validate(
+                {"provider": "peps", "collections": "S2_MSI_L1C"}
+            ),
         )
 
         mock__request.assert_called()

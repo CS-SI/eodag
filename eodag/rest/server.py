@@ -257,7 +257,7 @@ def stac_collections_item_download(
 
     return download_stac_item(
         request=request,
-        catalogs=[collection_id],
+        collection_id=collection_id,
         item_id=item_id,
         provider=provider,
         **arguments,
@@ -281,7 +281,7 @@ def stac_collections_item_download_asset(
 
     return download_stac_item(
         request=request,
-        catalogs=[collection_id],
+        collection_id=collection_id,
         item_id=item_id,
         provider=provider,
         asset=asset,
@@ -434,161 +434,6 @@ async def collections(
         request, provider, q, platform, instrument, constellation, datetime
     )
     return ORJSONResponse(collections)
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items/{item_id}/download",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_item_download(
-    catalogs: str, item_id: str, request: Request
-) -> StarletteResponse:
-    """STAC Catalog item download"""
-    logger.info(f"{request.method} {request.state.url}")
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    return download_stac_item(
-        request=request,
-        catalogs=list_catalog,
-        item_id=item_id,
-        provider=provider,
-        **arguments,
-    )
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items/{item_id}/download/{asset_filter}",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_item_download_asset(
-    catalogs: str, item_id: str, asset_filter: str, request: Request
-):
-    """STAC Catalog item asset download"""
-    logger.info(f"{request.method} {request.state.url}")
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    return download_stac_item(
-        request,
-        catalogs=list_catalog,
-        item_id=item_id,
-        provider=provider,
-        asset=asset_filter,
-        **arguments,
-    )
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items/{item_id}",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_item(
-    catalogs: str, item_id: str, request: Request, provider: Optional[str] = None
-):
-    """Fetch catalog's single features."""
-    logger.info(f"{request.method} {request.state.url}")
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    search_request = SearchPostRequest(provider=provider, ids=[item_id], limit=1)
-
-    item_collection = search_stac_items(request, search_request, catalogs=list_catalog)
-
-    if not item_collection["features"]:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Item {item_id} in Catalog {catalogs} does not exist.",
-        )
-
-    return ORJSONResponse(item_collection["features"][0])
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_items(
-    catalogs: str,
-    request: Request,
-    provider: Optional[str] = None,
-    bbox: Optional[str] = None,
-    datetime: Optional[str] = None,
-    limit: Optional[int] = None,
-    page: Optional[int] = None,
-    sortby: Optional[str] = None,
-    crunch: Optional[str] = None,
-) -> ORJSONResponse:
-    """Fetch catalog's features"""
-    logger.info(f"{request.method} {request.state.url}")
-
-    base_args = {
-        "provider": provider,
-        "datetime": datetime,
-        "bbox": str2list(bbox),
-        "limit": limit,
-        "page": page,
-        "sortby": sortby2list(sortby),
-        "crunch": crunch,
-    }
-
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    try:
-        search_request = SearchPostRequest.model_validate(clean)
-    except pydanticValidationError as e:
-        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
-
-    response = search_stac_items(
-        request=request,
-        search_request=search_request,
-        catalogs=list_catalog,
-    )
-    return ORJSONResponse(response)
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}",
-    tags=["Capabilities"],
-    include_in_schema=False,
-)
-async def stac_catalogs(
-    catalogs: str, request: Request, provider: Optional[str] = None
-) -> ORJSONResponse:
-    """Describe the given catalog and list available sub-catalogs"""
-    logger.info(f"{request.method} {request.state.url}")
-
-    if not catalogs:
-        raise HTTPException(
-            status_code=404,
-            detail="Not found",
-        )
-
-    list_catalog = catalogs.strip("/").split("/")
-    response = await get_stac_catalogs(
-        request=request,
-        url=request.state.url,
-        catalogs=tuple(list_catalog),
-        provider=provider,
-    )
-    return ORJSONResponse(response)
 
 
 @router.api_route(

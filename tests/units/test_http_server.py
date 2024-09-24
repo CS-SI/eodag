@@ -25,7 +25,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional, Union
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import geojson
 import httpx
@@ -38,25 +38,17 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
-from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import (
-    NotAvailableError,
-    RequestError,
-    TimeOutError,
-    ValidationError,
-)
+from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils.exceptions import RequestError, TimeOutError, ValidationError
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,
-    NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
-    STAGING_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
-    parse_header,
 )
 
 
@@ -698,182 +690,6 @@ class RequestTestCase(unittest.TestCase):
             ),
         )
 
-    def test_date_search_from_catalog_items(self):
-        """Search through eodag server catalog/items endpoint using dates filering should return a valid response"""
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
-            "?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-25T00:00:00Z",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
-            "?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
-            "?bbox=0,43,1,44&datetime=2019-01-01/2019-01-31",
-        )
-        self.assertEqual(len(results.features), 0)
-
-    def test_catalog_browse(self):
-        """Browsing catalogs through eodag server should return a valid response"""
-        result = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/day"
-        )
-        self.assertListEqual(
-            [str(i) for i in range(1, 32)],
-            [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
-        )
-
-    def test_catalog_browse_date_search(self):
-        """
-        Browsing catalogs with date filtering through eodag server should return a valid response
-        """
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        # args & catalog intersection
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/2018-02-15",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/..",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2018-01-05",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-01-05T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-05",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-05T00:00:00Z",
-                end="2018-01-05T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        result = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2017-08-01",
-        )
-        self.assertEqual(len(result["features"]), 0)
-
-    def test_date_search_from_catalog_items_with_provider(self):
-        """Search through eodag server catalog/items endpoint using dates filtering should return a valid response
-        and the provider should be added to the item link
-        """
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&provider=peps",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                provider="peps",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-        links = results.features[0]["links"]
-        self_link = None
-        for link in links:
-            if link["rel"] == "self":
-                self_link = link
-        self.assertIsNotNone(self_link)
-        self.assertIn("?provider=peps", self_link["href"])
-        self.assertEqual(
-            results["features"][0]["properties"]["peps:providerProperty"], "foo"
-        )
-
-    def test_search_item_id_from_catalog(self):
-        """Search by id through eodag server /catalog endpoint should return a valid response"""
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/items/foo",
-            expected_search_kwargs={
-                "id": "foo",
-                "productType": self.tested_product_type,
-                "provider": None,
-            },
-        )
-
     def test_search_item_id_from_collection(self):
         """Search by id through eodag server /collection endpoint should return a valid response"""
         self._request_valid(
@@ -1183,7 +999,7 @@ class RequestTestCase(unittest.TestCase):
                     "provider": "onda",
                     "error": "ValidationError",
                     "message": "Validation message: start_datetime, updated",
-                    "detail": "{'startTimeFromAscendingNode', 'modificationDate'}",
+                    "detail": {"startTimeFromAscendingNode", "modificationDate"},
                     "status_code": 400,
                 },
             ]
@@ -1200,6 +1016,12 @@ class RequestTestCase(unittest.TestCase):
         response_content = json.loads(response.content.decode("utf-8"))
 
         self.assertEqual(400, response.status_code)
+        for record in response_content["errors"]:
+            if "detail" in record and "{" in record["detail"]:
+                record["detail"] = (
+                    record["detail"].replace("{", "").replace("}", "").replace("'", "")
+                )
+                record["detail"] = set(s.strip() for s in record["detail"].split(","))
         self.assertDictEqual(expected_response, response_content)
 
     def test_assets_alt_url_blacklist(self):
@@ -1304,39 +1126,6 @@ class RequestTestCase(unittest.TestCase):
         "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
-    def test_download_item_from_catalog_stream(
-        self, mock_download: Mock, mock_auth: Mock
-    ):
-        """Download through eodag server catalog should return a valid response"""
-
-        expected_file = "somewhere.zip"
-
-        mock_download.return_value = StreamResponse(
-            content=iter(bytes(i) for i in range(0)),
-            headers={
-                "content-disposition": f"attachment; filename={expected_file}",
-            },
-        )
-
-        response = self._request_valid_raw(
-            f"catalogs/{self.tested_product_type}/items/foo/download?provider=peps"
-        )
-        mock_download.assert_called_once()
-
-        header_content_disposition = parse_header(
-            response.headers["content-disposition"]
-        )
-        response_filename = header_content_disposition.get_param("filename", None)
-        self.assertEqual(response_filename, expected_file)
-
-    @mock.patch(
-        "eodag.plugins.authentication.base.Authentication.authenticate",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.download.base.Download._stream_download_dict",
-        autospec=True,
-    )
     @mock.patch(
         "eodag.rest.core.eodag_api.download",
         autospec=True,
@@ -1360,81 +1149,6 @@ class RequestTestCase(unittest.TestCase):
         assert not os.path.exists(
             expected_file
         ), f"File {expected_file} should have been deleted"
-
-    @mock.patch(
-        "eodag.rest.core.eodag_api.search",
-        autospec=True,
-    )
-    def test_download_offline_item_from_catalog(self, mock_search):
-        """Download an offline item through eodag server catalog should return a
-        response with HTTP Status 202"""
-        # mock_search_result returns 2 search results, only keep one
-        two_results = self.mock_search_result()
-        product = two_results[0]
-        mock_search.return_value = SearchResult([product], 1)
-        product.downloader_auth = MagicMock()
-        product.downloader.order_download = MagicMock(return_value={"status": "foo"})
-        product.downloader.order_download_status = MagicMock()
-        product.downloader.order_response_process = MagicMock()
-        product.downloader._stream_download_dict = MagicMock(
-            side_effect=NotAvailableError("Product offline. Try again later.")
-        )
-        product.properties["orderLink"] = "http://somewhere?order=foo"
-        product.properties["orderStatusLink"] = f"{NOT_AVAILABLE}?foo=bar"
-
-        # ONLINE product with error
-        product.properties["storageStatus"] = ONLINE_STATUS
-        # status 404 and no order try
-        self._request_not_found(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_not_called()
-        product.downloader.order_download_status.assert_not_called()
-        product.downloader.order_response_process.assert_not_called()
-        product.downloader._stream_download_dict.assert_called_once()
-        product.downloader._stream_download_dict.reset_mock()
-
-        # OFFLINE product with error
-        product.properties["storageStatus"] = OFFLINE_STATUS
-        # status 202 and order once and no status check
-        resp_json = self._request_accepted(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_called_once()
-        product.downloader.order_download.reset_mock()
-        product.downloader.order_download_status.assert_not_called()
-        product.downloader.order_response_process.assert_called()
-        product.downloader.order_response_process.reset_mock()
-        product.downloader._stream_download_dict.assert_not_called()
-        self.assertIn("status=foo", resp_json["location"])
-
-        # OFFLINE product with error and no orderLink
-        product.properties["storageStatus"] = OFFLINE_STATUS
-        order_link = product.properties.pop("orderLink")
-        # status 202 and no order try
-        resp_json = self._request_accepted(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_not_called()
-        product.downloader.order_download_status.assert_not_called()
-        product.downloader.order_response_process.assert_not_called()
-        product.downloader._stream_download_dict.assert_called_once()
-        product.downloader._stream_download_dict.reset_mock()
-
-        # STAGING product and available orderStatusLink
-        product.properties["storageStatus"] = STAGING_STATUS
-        product.properties["orderLink"] = order_link
-        product.properties["orderStatusLink"] = "http://somewhere?foo=bar"
-        # status 202 and no order but status checked and no download try
-        self._request_accepted(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_not_called()
-        product.downloader.order_download_status.assert_called_once()
-        product.downloader.order_download_status.reset_mock()
-        product.downloader.order_response_process.assert_called()
-        product.downloader.order_response_process.reset_mock()
-        product.downloader._stream_download_dict.assert_not_called()
 
     def test_root(self):
         """Request to / should return a valid response"""
