@@ -38,13 +38,8 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
-from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import (
-    NotAvailableError,
-    RequestError,
-    TimeOutError,
-    ValidationError,
-)
+from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils.exceptions import RequestError, TimeOutError, ValidationError
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
