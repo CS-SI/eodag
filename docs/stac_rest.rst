@@ -87,7 +87,7 @@ Start the eodag server with
 
 and then open https://radiantearth.github.io/stac-browser/#/external/http:/127.0.0.1:5000.
 
-.. image:: _static/stac_browser_start.png
+.. image:: _static/stac_browser_example.png
    :width: 800
    :alt: STAC browser example
 
