@@ -394,7 +394,7 @@ async def all_collections(
     :param root: The API root
     :param filters: Search collections filters
     :param provider: (optional) Chosen provider
-    :returns: Collections dictionnary
+    :returns: Collections dictionary
     """
 
     async def _fetch() -> Dict[str, Any]:
@@ -537,7 +537,7 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
 def get_stac_conformance() -> Dict[str, str]:
     """Build STAC conformance
 
-    :returns: conformance dictionnary
+    :returns: conformance dictionary
     """
     return stac_config["conformance"]
 
@@ -555,7 +555,7 @@ def get_stac_extension_oseo(url: str) -> Dict[str, str]:
     """Build STAC OGC / OpenSearch Extension for EO
 
     :param url: Requested URL
-    :returns: Catalog dictionnary
+    :returns: Catalog dictionary
     """
 
     def apply_method(_: str, x: str) -> str:

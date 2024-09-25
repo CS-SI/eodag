@@ -540,7 +540,7 @@ class PluginConfig(yaml.YAMLObject):
 
 
 def load_default_config() -> Dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionnary.
+    """Load the providers configuration into a dictionary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
     variable if exists.
@@ -554,7 +554,7 @@ def load_default_config() -> Dict[str, ProviderConfig]:
 
 
 def load_config(config_path: str) -> Dict[str, ProviderConfig]:
-    """Load the providers configuration into a dictionnary from a given file
+    """Load the providers configuration into a dictionary from a given file
 
     :param config_path: The path to the provider config file
     :returns: The default provider's configuration
@@ -797,7 +797,7 @@ def merge_configs(config: Dict[str, Any], other_config: Dict[str, Any]) -> None:
 
 
 def load_yml_config(yml_path: str) -> Dict[Any, Any]:
-    """Load a conf dictionnary from given yml absolute path
+    """Load a conf dictionary from given yml absolute path
 
     :returns: The yml configuration file
     """
@@ -806,7 +806,7 @@ def load_yml_config(yml_path: str) -> Dict[Any, Any]:
 
 
 def load_stac_config() -> Dict[str, Any]:
-    """Load the stac configuration into a dictionnary
+    """Load the stac configuration into a dictionary
 
     :returns: The stac configuration
     """
@@ -816,7 +816,7 @@ def load_stac_config() -> Dict[str, Any]:
 
 
 def load_stac_api_config() -> Dict[str, Any]:
-    """Load the stac API configuration into a dictionnary
+    """Load the stac API configuration into a dictionary
 
     :returns: The stac API configuration
     """
@@ -826,7 +826,7 @@ def load_stac_api_config() -> Dict[str, Any]:
 
 
 def load_stac_provider_config() -> Dict[str, Any]:
-    """Load the stac provider configuration into a dictionnary
+    """Load the stac provider configuration into a dictionary
 
     :returns: The stac provider configuration
     """

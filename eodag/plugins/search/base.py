@@ -237,7 +237,7 @@ class Search(PluginTopic):
         self, sort_by_arg: SortByList
     ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
-        the "sort_by" argument into a provider-specific string or dictionnary
+        the "sort_by" argument into a provider-specific string or dictionary
 
         :param sort_by_arg: the "sort_by" argument in EODAG format
         :returns: The "sort_by" argument in provider-specific format

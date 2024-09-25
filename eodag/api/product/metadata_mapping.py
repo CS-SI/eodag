@@ -1209,7 +1209,7 @@ def mtd_cfg_as_conversion_and_querypath(
     dest_dict: Dict[str, Any] = {},
     result_type: str = "json",
 ) -> Dict[str, Any]:
-    """Metadata configuration dictionary to querypath with conversion dictionnary
+    """Metadata configuration dictionary to querypath with conversion dictionary
     Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
     or from xpath_str to tuple `(conversion, xpath_str)`
 

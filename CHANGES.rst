@@ -542,7 +542,7 @@ Miscellaneous
 - New tutorial for `Copernicus DEM <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_cop_dem.html>`_
 - Remove ``unidecode`` dependency
 - Start/end dates passed to sobloo are now in UTC, and make it clear that search dates must be in UTC
-- Locations must now be passed to :meth:`~eodag.api.core.EODataAccessGateway.search` method as a dictionnary
+- Locations must now be passed to :meth:`~eodag.api.core.EODataAccessGateway.search` method as a dictionary
 - Metadata mapping update and uniformization, fixes :issue:`154`
 - Raise a :class:`ValueError` when a location search doesn't match any record and add a new ``locations``
   parameter to :meth:`~eodag.api.core.EODataAccessGateway.search`.

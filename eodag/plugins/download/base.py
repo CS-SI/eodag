@@ -159,7 +159,7 @@ class Download(PluginTopic):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         raise NotImplementedError(
             "Download streaming must be implemented using a method named _stream_download_dict"

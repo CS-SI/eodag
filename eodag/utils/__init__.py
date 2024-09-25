@@ -578,7 +578,7 @@ def format_dict_items(
     ... ) == {"foo": {"bar": "qux"}, "baz": ["quux?", "quux!"]}
     True
 
-    :param config_dict: Dictionnary having values that need to be parsed
+    :param config_dict: Dictionary having values that need to be parsed
     :param format_variables: Variables used as args for parsing
     :returns: Updated dict
     """
@@ -597,7 +597,7 @@ def jsonpath_parse_dict_items(
     ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
     True
 
-    :param jsonpath_dict: Dictionnary having values that need to be parsed
+    :param jsonpath_dict: Dictionary having values that need to be parsed
     :param values_dict: Values dict used as args for parsing
     :returns: Updated dict
     """
@@ -743,7 +743,7 @@ def dict_items_recursive_apply(
     ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
     True
 
-    :param config_dict: Input nested dictionnary
+    :param config_dict: Input nested dictionary
     :param apply_method: Method to be applied to dict elements
     :param apply_method_parameters: Optional parameters passed to the method
     :returns: Updated dict
@@ -836,7 +836,7 @@ def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     ... ) == {"a": ["b", {0: 1, 1: 2, 2: 0}], "b": {"a": 0, "b": "c"}}
     True
 
-    :param config_dict: Input nested dictionnary
+    :param config_dict: Input nested dictionary
     :returns: Updated dict
     """
     result_dict: Dict[Any, Any] = deepcopy(config_dict)

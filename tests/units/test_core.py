@@ -2800,7 +2800,7 @@ class TestCoreSearch(TestCoreBase):
             sort_by=[("eodagSortParam", "DESC")],
         )
 
-        # a provider-specific dictionnary has been created to sort by
+        # a provider-specific dictionary has been created to sort by
         self.assertIn(
             "sort_by", mock_postjsonsearch__request.call_args[0][1].query_params.keys()
         )
