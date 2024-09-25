@@ -44,8 +44,6 @@ import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
 from pkg_resources import resource_filename
-from requests.auth import AuthBase
-from typing_extensions import Doc
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
@@ -203,48 +201,67 @@ class ProviderConfig(yaml.YAMLObject):
 
 
 class PluginConfig(yaml.YAMLObject):
-    """Representation of a plugin config
+    """Representation of a plugin config.
 
-    :param name: The name of the plugin class to use to instantiate the plugin object
-    :param metadata_mapping: (optional) The mapping between eodag metadata and
-                                  the plugin specific metadata
-    :param free_params: (optional) Additional configuration parameters
+    This class variables describe available plugins configuration parameters.
     """
 
     class Pagination(TypedDict):
         """Search pagination configuration"""
 
+        #: The maximum number of items per page that the provider can handle
         max_items_per_page: int
+        #: Key path for the number of total items in the provider result
         total_items_nb_key_path: Union[str, JSONPath]
+        #: Key path for the next page URL
         next_page_url_key_path: Union[str, JSONPath]
+        #: Key path for the next page POST request query-object (body)
         next_page_query_obj_key_path: Union[str, JSONPath]
+        # TODO: change this typing to bool and adapt code to it
         next_page_merge_key_path: Union[str, JSONPath]
+        #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
+        #: search request
         count_tpl: str
+        #: The f-string template for pagination requests.
         next_page_url_tpl: str
+        #: The query-object for POST pagination requests.
         next_page_query_obj: str
+        #: The endpoint for counting the number of items satisfying a request
         count_endpoint: str
+        #: Index of the starting page
         start_page: int
 
     class Sort(TypedDict):
         """Configuration for sort during search"""
 
+        #: Default sort settings
         sort_by_default: List[Tuple[str, str]]
+        #: F-string template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to sort search
+        #: results
         sort_by_tpl: str
+        #: Mapping between eodag and provider query parameters used for sort
         sort_param_mapping: Dict[str, str]
+        #: Mapping between eodag and provider sort-order parameters
         sort_order_mapping: Dict[Literal["ascending", "descending"], str]
+        #: Maximum number of allowed sort parameters per request
         max_sort_params: Annotated[int, Gt(0)]
 
     class DiscoverMetadata(TypedDict):
-        """Configuration for metadata discovery"""
+        """Configuration for metadata discovery (search result properties)"""
 
+        #: Whether metadata discovery is enabled or not
         auto_discovery: bool
+        #: Metadata regex pattern used for discovery in search result properties
         metadata_pattern: str
+        #: Configuration/template that will be used to query for a discovered parameter
         search_param: str
+        #: Path to the metadata in search result
         metadata_path: str
 
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
 
+        #: Parameters metadata-mapping to apply to the order response
         metadata_mapping: Dict[str, Union[str, List[str]]]
 
     class OrderStatusSuccess(TypedDict):
@@ -255,136 +272,235 @@ class PluginConfig(yaml.YAMLObject):
         At least one is required
         """
 
-        status: Annotated[str, Doc("Variable in the order status response json body")]
-        message: Annotated[str, Doc("Variable in the order status response json body")]
-        http_code: Annotated[int, Doc("HTTP code of the order status response")]
+        #: Success value for ``status``
+        status: str
+        #: Success value for ``message``
+        message: str
+        #: Success value for status response HTTP code
+        http_code: int
 
     class OrderStatusOrdered(TypedDict):
         """
         Configuration to identify order status ordered during download
         """
 
-        http_code: Annotated[int, Doc("HTTP code of the order status response")]
+        #: HTTP code of the order status response
+        http_code: int
 
     class OrderStatusRequest(TypedDict):
         """
         Order status request configuration
         """
 
-        method: Annotated[str, Doc("Request HTTP method")]
-        headers: Annotated[Dict[str, Any], Doc("Request hearders")]
+        #: Request HTTP method
+        method: str
+        #: Request hearders
+        headers: Dict[str, Any]
 
     class OrderStatusOnSuccess(TypedDict):
         """Configuration for order status on-success during download"""
 
-        need_search: Annotated[bool, Doc("If a new search is needed on success")]
+        #: Whether a new search is needed on success or not
+        need_search: bool
+        #: Return type of the success result
         result_type: str
+        #: Key in the success response that gives access to the result
         results_entry: str
+        #: Metadata-mapping to apply to the success status result
         metadata_mapping: Dict[str, Union[str, List[str]]]
 
     class OrderStatus(TypedDict):
         """Configuration for order status during download"""
 
+        #: Order status request configuration
         request: PluginConfig.OrderStatusRequest
-        metadata_mapping: Annotated[
-            Dict[str, Union[str, List[str]]],
-            Doc("Metadata-mapping used to parse order status response"),
-        ]
+        #: Metadata-mapping used to parse order status response
+        metadata_mapping: Dict[str, Union[str, List[str]]]
+        #: Configuration to identify order status success during download
         success: PluginConfig.OrderStatusSuccess
-        error: Annotated[
-            Dict[str, Any],
-            Doc("Part of the order status response that tells there is an error"),
-        ]
+        #: Part of the order status response that tells there is an error
+        error: Dict[str, Any]
+        #: Configuration to identify order status ordered during download
         ordered: PluginConfig.OrderStatusOrdered
+        #: Configuration for order status on-success during download
         on_success: PluginConfig.OrderStatusOnSuccess
 
+    #: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
     name: str
+    #: :class:`~eodag.plugins.base.PluginTopic` Plugin type
     type: str
-
-    # search & api ---------------------------------------------------------------------
-    priority: int  # copied from ProviderConfig in PluginManager.get_search_plugins()
-    products: Dict[
-        str, Any
-    ]  # copied from ProviderConfig in PluginManager.get_search_plugins()
-    product_type_config: Dict[str, Any]  # set in core._prepare_search
-    auth: Union[AuthBase, Dict[str, str]]  # set in core._do_search
-    api_endpoint: str
-    need_auth: bool
-    result_type: str
-    results_entry: str
-    pagination: PluginConfig.Pagination
-    sort: PluginConfig.Sort
-    query_params_key: str
-    discover_metadata: PluginConfig.DiscoverMetadata
-    discover_product_types: Dict[str, Any]
-    discover_queryables: Dict[str, Any]
-    metadata_mapping: Dict[str, Union[str, List[str]]]
-    free_params: Dict[Any, Any]
-    constraints_file_url: str
-    remove_from_queryables: List[str]
-    free_text_search_operations: Dict[str, Any]  # ODataV4Search
-    metadata_pre_mapping: Dict[str, Any]  # ODataV4Search
-    data_request_url: str  # DataRequestSearch
-    status_url: str  # DataRequestSearch
-    result_url: str  # DataRequestSearch
-    search_definition: Dict[str, Any]  # CSWSearch
-    merge_responses: bool  # PostJsonSearch for aws_eos
-    collection: bool  # PostJsonSearch for aws_eos
-    max_connections: int  # StaticStacSearch
-    timeout: float  # StaticStacSearch
-    s3_bucket: str  # CreodiasS3Search
-    end_date_excluded: bool  # BuildSearchResult
-    remove_from_query: List[str]  # BuildSearchResult
+    #: :class:`~eodag.plugins.base.PluginTopic` Whether the ssl certificates should be verified in the request or not
     ssl_verify: bool
+    #: :class:`~eodag.plugins.base.PluginTopic` Default s3 bucket
+    s3_bucket: str
+    #: :class:`~eodag.plugins.base.PluginTopic` Authentication error codes
+    auth_error_code: Union[int, List[int]]
 
-    # download -------------------------------------------------------------------------
+    # search & api -----------------------------------------------------------------------------------------------------
+    # copied from ProviderConfig in PluginManager.get_search_plugins()
+    priority: int
+    # copied from ProviderConfig in PluginManager.get_search_plugins()
+    products: Dict[str, Any]
+    # per product type metadata-mapping, set in core._prepare_search
+    product_type_config: Dict[str, Any]
+
+    #: :class:`~eodag.plugins.search.base.Search` Plugin API endpoint
+    api_endpoint: str
+    #: :class:`~eodag.plugins.search.base.Search` Whether Search plugin needs authentification or not
+    need_auth: bool
+    #: :class:`~eodag.plugins.search.base.Search` Return type of the provider result
+    result_type: str
+    #: :class:`~eodag.plugins.search.base.Search`
+    #: Key in the provider search result that gives access to the result entries
+    results_entry: str
+    #: :class:`~eodag.plugins.search.base.Search` Dict containing parameters for pagination
+    pagination: PluginConfig.Pagination
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for sorting the results
+    sort: PluginConfig.Sort
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
+    discover_metadata: PluginConfig.DiscoverMetadata
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
+    discover_product_types: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
+    discover_queryables: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
+    metadata_mapping: Dict[str, Union[str, List[str]]]
+    #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
+    constraints_file_url: str
+    #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
+    remove_from_queryables: List[str]
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
+    free_text_search_operations: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
+    metadata_pre_mapping: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
+    data_request_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
+    status_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
+    #: URL to fetch the search result when the data request is done
+    result_url: str
+    #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
+    search_definition: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
+    merge_responses: bool
+    #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
+    collection: List[str]
+    #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+    #: Maximum number of connections for HTTP requests
+    max_connections: int
+    #: :class:`~eodag.plugins.search.base.Search` Time to wait until request timeout in seconds
+    timeout: float
+    #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
+    #: Whether end date should be excluded from search request or not
+    end_date_excluded: bool
+    #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
+    #: List of parameters used to parse metadata but that must not be included to the query
+    remove_from_query: List[str]
+
+    # download ---------------------------------------------------------------------------------------------------------
+    #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
     base_uri: str
+    #: :class:`~eodag.plugins.download.base.Download` Where to store downloaded products, as an absolute file path
     output_dir: str
+    #: :class:`~eodag.plugins.download.base.Download`
+    #: Whether the content of the downloaded file should be extracted or not
     extract: bool
+    #: :class:`~eodag.plugins.download.base.Download` Which extension should be used for the downloaded file
     output_extension: str
-    order_enabled: bool  # HTTPDownload
-    order_method: str  # HTTPDownload
-    order_headers: Dict[str, str]  # HTTPDownload
-
-    order_on_response: PluginConfig.OrderOnResponse
-    order_status: PluginConfig.OrderStatus
-    no_auth_download: Annotated[
-        bool,
-        Doc(
-            "Do not authenticate the download request but only the order and order status ones."
-        ),
-    ]
-    bucket_path_level: int  # S3RestDownload
-    requester_pays: bool  # AwsDownload
+    #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not
     flatten_top_dirs: bool
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
+    order_enabled: bool
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
+    order_method: str
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Headers to be added to the order request
+    order_headers: Dict[str, str]
+    #: :class:`~eodag.plugins.download.http.HTTPDownload`
+    #: Dictionary containing the key :attr:`~eodag.config.PluginConfig.metadata_mapping` which can be used to add new
+    #: product properties based on the data in response to the order request
+    order_on_response: PluginConfig.OrderOnResponse
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Order status handling
+    order_status: PluginConfig.OrderStatus
+    #: :class:`~eodag.plugins.download.http.HTTPDownload`
+    #: Do not authenticate the download request but only the order and order status ones
+    no_auth_download: bool
+    #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
+    #: At which level of the path part of the url the bucket can be found
+    bucket_path_level: int
+    #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
+    requester_pays: bool
 
-    # auth -----------------------------------------------------------------------------
+    # auth -------------------------------------------------------------------------------------------------------------
+    #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication credentials dictionary
     credentials: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication URL
     auth_uri: str
-    auth_base_uri: str
-    auth_error_code: int
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: Dictionary containing all keys/value pairs that should be added to the headers
     headers: Dict[str, str]
-    token_provision: str  # KeycloakOIDCPasswordAuth
-    client_id: str  # KeycloakOIDCPasswordAuth
-    client_secret: str  # KeycloakOIDCPasswordAuth
-    realm: str  # KeycloakOIDCPasswordAuth
-    user_consent_needed: str  # OIDCAuthorizationCodeFlowAuth
-    authentication_uri_source: str  # OIDCAuthorizationCodeFlowAuth
-    redirect_uri: str  # OIDCAuthorizationCodeFlowAuth
-    authorization_uri: str  # OIDCAuthorizationCodeFlowAuth
-    login_form_xpath: str  # OIDCAuthorizationCodeFlowAuth
-    user_consent_form_xpath: str  # OIDCAuthorizationCodeFlowAuth
-    user_consent_form_data: Dict[str, str]  # OIDCAuthorizationCodeFlowAuth
-    token_exchange_post_data_method: str  # OIDCAuthorizationCodeFlowAuth
-    token_uri: str  # OIDCAuthorizationCodeFlowAuth
-    token_key: str  # OIDCAuthorizationCodeFlowAuth
-    req_data: Dict[str, Any]  # TokenAuth
-    signed_url_key: str  # SASAuth
-    refresh_uri: str  # TokenAuth
-    refresh_token_key: str  # TokenAuth
-    subject: Dict[str, Any]  # TokenExchangeAuth
-    subject_issuer: str  # TokenExchangeAuth
-    audience: str  # TokenExchangeAuth
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: The key pointing to the token in the response from the token server
+    token_key: str
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: Key to get the refresh token in the response from the token server
+    refresh_token_key: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
+    #: How the token should be used in the request
+    token_provision: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC provider's client ID
+    client_id: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC provider's client secret
+    client_secret: str
+    #: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
+    #: Base url used in the request to fetch the token
+    auth_base_uri: str
+    #: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth` Keycloak realm
+    realm: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Whether a user consent is needed during the authentication or not
+    user_consent_needed: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Where to look for the :attr:`~eodag.config.PluginConfig.authorization_uri`
+    authentication_uri_source: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The callback url that will handle the code given by the OIDC provider
+    redirect_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The authorization url of the server (where to query for grants)
+    authorization_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The xpath to the HTML form element representing the user login form
+    login_form_xpath: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The xpath to the user consent form
+    user_consent_form_xpath: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The data that will be passed with the POST request on the form 'action' URL
+    user_consent_form_data: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Way to pass the data to the POST request that is made to the token server
+    token_exchange_post_data_method: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The url to query to get the authorized token
+    token_uri: str
+    #: :class:`~eodag.plugins.authentication.sas_auth.SASAuth` Key to get the signed url
+    signed_url_key: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: Credentials json structure if they should be sent as POST data
+    req_data: Dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth` URL used to fetch the access token with a refresh token
+    refresh_uri: str
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin configuration
+    #: used to retrieve subject token
+    subject: Dict[str, Any]
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: Identifies the issuer of the `subject_token`
+    subject_issuer: str
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: Audience that the token ID is intended for. :attr:`~eodag.config.PluginConfig.client_id` of the Relying Party
+    audience: str
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper

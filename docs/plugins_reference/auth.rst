@@ -19,6 +19,7 @@ This table lists all the authentication plugins currently available:
    header.HTTPHeaderAuth
    aws_auth.AwsAuth
    oauth.OAuth
+   openid_connect.OIDCRefreshTokenBase
    openid_connect.OIDCAuthorizationCodeFlowAuth
    keycloak.KeycloakOIDCPasswordAuth
    token_exchange.OIDCTokenExchangeAuth

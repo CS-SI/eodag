@@ -105,7 +105,6 @@
       # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
       # Let's set it to this value for now
       max_items_per_page: 500
-    query_params_key: 'search'
     discover_metadata:
       auto_discovery: true
       metadata_pattern: '^[a-zA-Z0-9_]+$'
@@ -4124,7 +4123,6 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
       max_items_per_page: 200
-    query_params_key: 'search'
     discover_product_types:
       fetch_url: null
     discover_queryables:
@@ -4730,7 +4728,6 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
       max_items_per_page: 200
-    query_params_key: 'search'
     discover_product_types:
       fetch_url: null
     constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
@@ -6002,7 +5999,6 @@
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
-    query_params_key: 'search'
     discover_product_types:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
       single_collection_fetch_qs: q={productType}

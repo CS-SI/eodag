@@ -259,5 +259,7 @@ Plugin configuration
 
 .. autoclass:: eodag.config.PluginConfig
    :members:
-   :member-order: groupwise
-   :exclude-members: yaml_loader
+   :member-order: bysource
+   :undoc-members:
+   :exclude-members: priority, products, product_type_config, yaml_loader, from_mapping, from_yaml, update, validate,
+                     yaml_dumper, yaml_tag
