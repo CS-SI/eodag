@@ -260,3 +260,4 @@ Plugin configuration
 .. autoclass:: eodag.config.PluginConfig
    :members:
    :member-order: groupwise
+   :exclude-members: yaml_loader
