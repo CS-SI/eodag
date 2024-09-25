@@ -16,10 +16,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         lfs: true
-    - name: Get history and tags for SCM versioning to work
-      run: |
-        git fetch --prune --unshallow
-        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        # Get history and tags for SCM versioning to work
+        fetch-depth: 0
     - name: Set up Python 3.8
       uses: actions/setup-python@v5
       with:

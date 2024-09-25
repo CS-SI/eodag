@@ -14,10 +14,9 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-      - name: Get history and tags for SCM versioning to work
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        with:
+          # Get history and tags for SCM versioning to work
+          fetch-depth: 0
       - name: Set up Python 3.8
         uses: actions/setup-python@v5
         with:

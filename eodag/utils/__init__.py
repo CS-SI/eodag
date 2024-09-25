@@ -99,7 +99,7 @@ from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
-from requests import HTTPError
+from requests import HTTPError, Response
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
@@ -1129,7 +1129,7 @@ class MockResponse:
     def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
-            raise HTTPError()
+            raise HTTPError(response=Response())
 
 
 def md5sum(file_path: str) -> str:

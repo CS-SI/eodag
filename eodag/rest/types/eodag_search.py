@@ -363,8 +363,8 @@ class EODAGSearch(BaseModel):
     def to_stac(
         cls,
         field_name: str,
-        stac_item_properties: List[str] = None,
-        provider: str = None,
+        stac_item_properties: Optional[List[str]] = None,
+        provider: Optional[str] = None,
     ) -> str:
         """Get the alias of a field in a Pydantic model"""
         field = cls.model_fields.get(field_name)
