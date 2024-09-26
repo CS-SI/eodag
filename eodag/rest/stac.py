@@ -173,7 +173,7 @@ class StacCommon:
         :param stac_config: STAC configuration from stac.yml conf file
         :param extension: Extension name
         :param kwargs: Additional variables needed for parsing extension
-        :returns: STAC extension as dictionnary
+        :returns: STAC extension as dictionary
         """
         extension_model = deepcopy(stac_config).get("extensions", {}).get(extension, {})
 
@@ -459,7 +459,7 @@ class StacItem(StacCommon):
 
         :param search_results: EODAG search results
         :param catalog: STAC catalog dict used for parsing item metadata
-        :returns: Items dictionnary
+        :returns: Items dictionary
         """
         items_model = deepcopy(self.stac_config["items"])
 

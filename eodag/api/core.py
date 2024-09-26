@@ -2311,7 +2311,7 @@ class EODataAccessGateway:
         """For each provider, gives its available sortable parameter(s) and its maximum
         number of them if it supports the sorting feature, otherwise gives None.
 
-        :returns: A dictionnary with providers as keys and dictionnary of sortable parameter(s) and
+        :returns: A dictionary with providers as keys and dictionary of sortable parameter(s) and
                   its (their) maximum number as value(s).
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """

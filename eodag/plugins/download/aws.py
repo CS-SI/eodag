@@ -638,7 +638,7 @@ class AwsDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
-        Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
+        Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
@@ -651,7 +651,7 @@ class AwsDownload(Download):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         if progress_callback is None:
             logger.info(
@@ -830,7 +830,7 @@ class AwsDownload(Download):
 
         :param bucket_name: Bucket containg objects
         :param prefix: Prefix used to try auth
-        :param auth_dict: Dictionnary containing authentication keys
+        :param auth_dict: Dictionary containing authentication keys
         :returns: The rasterio environement variables
         """
         if self.s3_session is not None:
@@ -858,7 +858,7 @@ class AwsDownload(Download):
         :param bucket_name: Bucket containg objects
         :param prefix: Prefix used to filter objects on auth try
                        (not used to filter returned objects)
-        :param auth_dict: Dictionnary containing authentication keys
+        :param auth_dict: Dictionary containing authentication keys
         :returns: The boto3 authenticated objects
         """
         auth_methods: List[

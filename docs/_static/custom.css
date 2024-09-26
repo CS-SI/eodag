@@ -77,3 +77,17 @@ table.datatable th:first-child, table.datatable td:first-child {
 table.datatable tbody tr:last-child th, table.datatable tbody tr:last-child td {
     border-bottom: 1px solid #ddd;
 }
+
+dl.attribute {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    margin-bottom: 1rem !important;
+}
+
+dl.attribute dt {
+    grid-column-start: 1;
+}
+
+dl.attribute dd {
+    grid-column-start: 2;
+}

@@ -739,7 +739,7 @@ class HTTPDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
-        Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
+        Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
@@ -752,7 +752,7 @@ class HTTPDownload(Download):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")

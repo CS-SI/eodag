@@ -153,7 +153,7 @@ def get_search_param(map_value: List[str]) -> str:
 
 
 def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
-    """Format a string of form {<field_name>#<conversion_function>}
+    """Format a string of form ``{<field_name>#<conversion_function>}``
 
     The currently understood converters are:
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
@@ -1209,7 +1209,7 @@ def mtd_cfg_as_conversion_and_querypath(
     dest_dict: Dict[str, Any] = {},
     result_type: str = "json",
 ) -> Dict[str, Any]:
-    """Metadata configuration dictionary to querypath with conversion dictionnary
+    """Metadata configuration dictionary to querypath with conversion dictionary
     Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
     or from xpath_str to tuple `(conversion, xpath_str)`
 

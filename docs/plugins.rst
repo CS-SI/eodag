@@ -29,59 +29,87 @@ EODAG currently advertises 5 types of plugins: *Search*, *Download*, *Crunch*, *
 
 The providers are implemented with a triplet of *Search/Authentication/Download* plugins or with an *Api* plugin:
 
-+--------------------+----------------------------------+-------------------------------+----------------+
-| Provider           | Search                           | Authentication                | Download       |
-+====================+==================================+===============================+================+
-| aws_eos            | PostJsonSearch                   | AwsAuth                       | AwsDownload    |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| theia              | QueryStringSearch                | TokenAuth                     | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| peps               | QueryStringSearch                | GenericAuth                   | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| creodias           | QueryStringSearch                | KeycloakOIDCPasswordAuth      | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| onda               | ODataV4Search                    | GenericAuth                   | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| astraea_eod        | StacSearch                       | AwsAuth                       | AwsDownload    |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| usgs_satapi_aws    | StacSearch                       | AwsAuth                       | AwsDownload    |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| earth_search       | StacSearch                       | AwsAuth                       | AwsDownload    |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| earth_search_cog   | StacSearch                       | None                          | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| earth_search_gcs   | StacSearch                       | AwsAuth                       | AwsDownload    |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| usgs               | UsgsApi                          | UsgsApi                       | UsgsApi        |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| ecmwf              | EcmwfApi                         | EcmwfApi                      | EcmwfApi       |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| cop_ads            | BuildSearchResult                | GenericAuth                   | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| cop_cds            | BuildSearchResult                | GenericAuth                   | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| cop_marine         | CopMarineSearch                  | AwsDownload                   | AwsAuth        |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| meteoblue          | BuildPostSearchResult            | HttpQueryStringAuth           | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| cop_dataspace      | QueryStringSearch                | KeycloakOIDCPasswordAuth      | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| planetary_computer | StacSearch                       | SASAuth                       | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| hydroweb_next      | StacSearch                       | HTTPHeaderAuth                | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| wekeo_main         | PostJsonSearchWithStacQueryables | TokenAuth                     | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| wekeo_ecmwf        | PostJsonSearch                   | TokenAuth                     | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| wekeo_cmems        | PostJsonSearch                   | TokenAuth                     | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| dedt_lumi          | BuildSearchResult                | OIDCAuthorizationCodeFlowAuth | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| dedl               | StacSearch                       | OIDCTokenExchangeAuth         | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
-| eumetsat_ds        | QueryStringSearch                | TokenAuth                     | HTTPDownload   |
-+--------------------+----------------------------------+-------------------------------+----------------+
++------------------------+------------------------------------+---------------------------------+------------------+
+| Provider               | Search                             | Authentication                  | Download         |
++========================+====================================+=================================+==================+
+| ``astraea_eod``        | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``aws_eos``            | |PostJsonSearch|                   | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_ads``            | |BuildSearchResult|                | |GenericAuth|                   | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_cds``            | |BuildSearchResult|                | |GenericAuth|                   | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_dataspace``      | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_marine``         | |CopMarineSearch|                  | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``creodias``           | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``dedl``               | |StacSearch|                       | |OIDCTokenExchangeAuth|         | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``dedt_lumi``          | |BuildSearchResult|                | |OIDCAuthorizationCodeFlowAuth| | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``earth_search``       | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``earth_search_cog``   | |StacSearch|                       | ``None``                        | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``earth_search_gcs``   | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``ecmwf``              | |EcmwfApi|                         | |EcmwfApi|                      | |EcmwfApi|       |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``eumetsat_ds``        | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``hydroweb_next``      | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``meteoblue``          | |BuildPostSearchResult|            | |HttpQueryStringAuth|           | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``onda``               | |ODataV4Search|                    | |GenericAuth|                   | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``peps``               | |QueryStringSearch|                | |GenericAuth|                   | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``planetary_computer`` | |StacSearch|                       | |SASAuth|                       | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``usgs``               | |UsgsApi|                          | |UsgsApi|                       | |UsgsApi|        |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``usgs_satapi_aws``    | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``theia``              | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``wekeo_ecmwf``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``wekeo_cmems``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``wekeo_main``         | |PostJsonSearchWithStacQueryables| | |TokenAuth|                     | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+
+.. |UsgsApi| replace:: :class:`~eodag.plugins.apis.usgs.UsgsApi`
+.. |EcmwfApi| replace:: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi`
+
+.. |GenericAuth| replace:: :class:`~eodag.plugins.authentication.generic.GenericAuth`
+.. |HTTPHeaderAuth| replace:: :class:`~eodag.plugins.authentication.header.HTTPHeaderAuth`
+.. |AwsAuth| replace:: :class:`~eodag.plugins.authentication.aws_auth.AwsAuth`
+.. |TokenAuth| replace:: :class:`~eodag.plugins.authentication.token.TokenAuth`
+.. |OIDCAuthorizationCodeFlowAuth| replace:: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+.. |OIDCTokenExchangeAuth| replace:: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+.. |KeycloakOIDCPasswordAuth| replace:: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
+.. |HttpQueryStringAuth| replace:: :class:`~eodag.plugins.authentication.qsauth.HttpQueryStringAuth`
+.. |SASAuth| replace:: :class:`~eodag.plugins.authentication.sas_auth.SASAuth`
+
+.. |AwsDownload| replace:: :class:`~eodag.plugins.download.aws.AwsDownload`
+.. |HTTPDownload| replace:: :class:`~eodag.plugins.download.http.HTTPDownload`
+.. |CreodiasS3Download| replace:: :class:`~eodag.plugins.download.creodias_s3.CreodiasS3Download`
+
+.. |QueryStringSearch| replace:: :class:`~eodag.plugins.search.qssearch.QueryStringSearch`
+.. |ODataV4Search| replace:: :class:`~eodag.plugins.search.qssearch.ODataV4Search`
+.. |PostJsonSearch| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearch`
+.. |StacSearch| replace:: :class:`~eodag.plugins.search.qssearch.StacSearch`
+.. |PostJsonSearchWithStacQueryables| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables`
+.. |BuildSearchResult| replace:: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
+.. |BuildPostSearchResult| replace:: :class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult`
+.. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
+.. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
+
 
 .. _creating_plugins:
 
@@ -142,11 +170,11 @@ with consistency between the entry point name and the super class of you
 plugin class. Here is a list of entry point names and the plugin topic to
 which they map:
 
-* 'eodag.plugins.api'      : :class:`~eodag.plugins.apis.base.Api`
-* 'eodag.plugins.auth'     : :class:`~eodag.plugins.auth.base.Authentication`
-* 'eodag.plugins.crunch'   : :class:`~eodag.plugins.crunch.base.Crunch`
-* 'eodag.plugins.download' : :class:`~eodag.plugins.download.base.Download`
-* 'eodag.plugins.search'   : :class:`~eodag.plugins.search.base.Search`
+* `eodag.plugins.api`            : :class:`~eodag.plugins.apis.base.Api`
+* `eodag.plugins.authentication` : :class:`~eodag.plugins.authentication.base.Authentication`
+* `eodag.plugins.crunch`         : :class:`~eodag.plugins.crunch.base.Crunch`
+* `eodag.plugins.download`       : :class:`~eodag.plugins.download.base.Download`
+* `eodag.plugins.search`         : :class:`~eodag.plugins.search.base.Search`
 
 
 Read the :ref:`mock search plugin` section to get an example of how to build a search
@@ -225,62 +253,13 @@ return a list of mocked EOProducts on search requests.
 
       pip install eodag_search_mock
 
-Provider configuration
-^^^^^^^^^^^^^^^^^^^^^^
 
-The plugin structure is reflected in the internal providers configuration file. Here is a sample::
+Plugin configuration
+^^^^^^^^^^^^^^^^^^^^
 
-   provider_name:
-      priority: 1
-      products:
-         # List of supported product types
-         # This is a mapping containing all the information required by the search plugin class to perform its job.
-         # The mapping is available in the config attribute of the search plugin as config['products']
-         S2_MSI_L1C:
-            a-config-key-needed-by-search-plugin-to-search-this-product-type: value
-            another-config-key: another-value
-            # Whether this product type is partially supported by this provider (the provider does not contain all the
-            # products of this type)
-            partial: True
-         ...
-      search:
-         plugin: CustomSearchPluginClass
-         api_endpoint: https://mandatory.config.key/
-         a-key-conf-used-by-the-plugin-class-init-method: value
-         another-random-key: random-value
-         # A mapping between the search result of the provider and the eodag way of describing EO products (the keys are
-         # the same as in the OpenSearch specification)
-         metadata_mapping:
-            ...
-         ...
-      download:
-         plugin: CustomDownloadPlugin
-         # Same as with search for random config keys as needed by the plugin class
-         ...
-      auth:
-         plugin: CustomAuthPlugin
-         # Same as with search for random config keys as needed by the plugin class
-         ...
-
-Note however, that for a provider which already has a Python library for accessing its products, the configuration
-varies a little bit. It does not have the 'search' and 'download' keys. Instead, there is a single 'api' key like this::
-
-   provider_name:
-      ...
-      api:
-         plugin: ApiPluginClassName
-         ...
-
-An :class:`~eodag.api.product._product.EOProduct` has a :attr:`~eodag.api.product._product.EOProduct.properties` attribute
-which is built based on how its metadata are set in the provider configuration. The following converters can be used to
-transform the values collected from the provider:
-
-.. automethod:: eodag.api.product.metadata_mapping.format_metadata
-
-For example::
-
-   search:
-      ...
-      metadata_mapping:
-         publicationDate: '{$.data.timestamp#to_iso_utc_datetime_from_milliseconds}'
-         ...
+.. autoclass:: eodag.config.PluginConfig
+   :members:
+   :member-order: bysource
+   :undoc-members:
+   :exclude-members: priority, products, product_type_config, yaml_loader, from_mapping, from_yaml, update, validate,
+                     yaml_dumper, yaml_tag

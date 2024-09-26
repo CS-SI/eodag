@@ -122,6 +122,7 @@ Site contents
 
    add_provider
    plugins
+   params_mapping
    contribute
    changelog
    GitHub Repository <https://github.com/CS-SI/eodag>
