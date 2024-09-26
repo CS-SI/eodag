@@ -153,7 +153,7 @@ def get_search_param(map_value: List[str]) -> str:
 
 
 def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
-    """Format a string of form {<field_name>#<conversion_function>}
+    """Format a string of form ``{<field_name>#<conversion_function>}``
 
     The currently understood converters are:
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
