@@ -410,9 +410,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
-    discover_product_types: DiscoverProductTypes
+    discover_product_types: PluginConfig.DiscoverProductTypes
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
-    discover_queryables: DiscoverQueryables
+    discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: Dict[str, Union[str, List[str]]]
     #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
@@ -438,7 +438,7 @@ class PluginConfig(yaml.YAMLObject):
     #: result and a two step search has to be performed
     per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
-    metadata_pre_mapping: MetadataPreMapping
+    metadata_pre_mapping: PluginConfig.MetadataPreMapping
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
     data_request_url: str
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
