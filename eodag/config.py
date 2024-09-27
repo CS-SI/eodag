@@ -263,6 +263,41 @@ class PluginConfig(yaml.YAMLObject):
         #: Path to the metadata in search result
         metadata_path: str
 
+    class DiscoverProductTypes(TypedDict, total=False):
+        """Configuration for product types discovery"""
+
+        #: URL from which the product types can be fetched
+        fetch_url: Optional[str]
+        #: Type of the provider result
+        result_type: str
+        #: JsonPath to the list of product types
+        results_entry: Union[JSONPath, str]
+        #: Mapping for the product type id
+        generic_product_type_id: str
+        #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: result
+        generic_product_type_parsable_metadata: Dict[str, str]
+        #: Mapping for product type properties which can be parsed from the result that are not product type metadata
+        generic_product_type_parsable_properties: Dict[str, str]
+        #: URL to fetch data for a single collection
+        single_collection_fetch_url: str
+        #: Query string to be added to the fetch_url to filter for a collection
+        single_collection_fetch_qs: str
+        #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url
+        single_product_type_parsable_metadata: Dict[str, str]
+
+    class DiscoverQueryables(TypedDict, total=False):
+        """Configuration for queryables discovery"""
+
+        #: URL to fetch the queryables valid for all product types
+        fetch_url: Optional[str]
+        #: URL to fetch the queryables for a specific product type
+        product_type_fetch_url: Optional[str]
+        #: Type of the result
+        result_type: str
+        #: JsonPath to retrieve the queryables from the provider result
+        results_entry: str
+
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
 
@@ -284,7 +319,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Success value for status response HTTP code
         http_code: int
 
-    class OrderStatusOrdered(TypedDict):
+    class OrderStatusOrdered(TypedDict, total=False):
         """
         Configuration to identify order status ordered during download
         """
@@ -292,7 +327,7 @@ class PluginConfig(yaml.YAMLObject):
         #: HTTP code of the order status response
         http_code: int
 
-    class OrderStatusRequest(TypedDict):
+    class OrderStatusRequest(TypedDict, total=False):
         """
         Order status request configuration
         """
@@ -302,7 +337,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Request hearders
         headers: Dict[str, Any]
 
-    class OrderStatusOnSuccess(TypedDict):
+    class OrderStatusOnSuccess(TypedDict, total=False):
         """Configuration for order status on-success during download"""
 
         #: Whether a new search is needed on success or not
@@ -314,7 +349,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Metadata-mapping to apply to the success status result
         metadata_mapping: Dict[str, Union[str, List[str]]]
 
-    class OrderStatus(TypedDict):
+    class OrderStatus(TypedDict, total=False):
         """Configuration for order status during download"""
 
         #: Order status request configuration
@@ -365,15 +400,28 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
-    discover_product_types: Dict[str, Any]
+    discover_product_types: DiscoverProductTypes
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
-    discover_queryables: Dict[str, Any]
+    discover_queryables: DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: Dict[str, Union[str, List[str]]]
     #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
     constraints_file_url: str
+    #: :class:`~eodag.plugins.search.base.Search`
+    #: Key which is used in the eodag configuration to map the eodag product type to the provider product type
+    constraints_file_dataset_key: str
+    #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
+    constraints_entry: str
+    #: :class:`~eodag.plugins.search.base.Search`
+    #: Whether only a provider result containing constraints_entry is accepted as valid and used to create constraints
+    #: or not
+    stop_without_constraints_entry_key: bool
     #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
     remove_from_queryables: List[str]
+    #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string
+    literal_search_params: Dict[str, str]
+    #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Characters that should not be quoted in the url params
+    dont_quote: List[str]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
     free_text_search_operations: Dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
