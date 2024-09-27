@@ -365,6 +365,16 @@ class PluginConfig(yaml.YAMLObject):
         #: Configuration for order status on-success during download
         on_success: PluginConfig.OrderStatusOnSuccess
 
+    class MetadataPreMapping(TypedDict, total=False):
+        """Configuration which can be used to simplify further metadata extraction"""
+
+        #: JsonPath of the metadata entry
+        metadata_path: str
+        #: Key to get the metadata id
+        metadata_path_id: str
+        #: Key to get the metadata value
+        metadata_path_value: str
+
     #: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
     name: str
     #: :class:`~eodag.plugins.base.PluginTopic` Plugin type
@@ -424,8 +434,11 @@ class PluginConfig(yaml.YAMLObject):
     dont_quote: List[str]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
     free_text_search_operations: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Set to ``True`` if the metadata is not given in the search
+    #: result and a two step search has to be performed
+    per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
-    metadata_pre_mapping: Dict[str, Any]
+    metadata_pre_mapping: MetadataPreMapping
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
     data_request_url: str
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
