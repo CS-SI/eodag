@@ -340,12 +340,12 @@ class PluginConfig(yaml.YAMLObject):
     s3_bucket: str
     #: :class:`~eodag.plugins.base.PluginTopic` Authentication error codes
     auth_error_code: Union[int, List[int]]
+    #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
+    timeout: float
 
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
     priority: int
-    # copied from ProviderConfig in PluginManager.get_search_plugins()
-    products: Dict[str, Any]
     # per product type metadata-mapping, set in core._prepare_search
     product_type_config: Dict[str, Any]
 
@@ -394,8 +394,6 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for HTTP requests
     max_connections: int
-    #: :class:`~eodag.plugins.search.base.Search` Time to wait until request timeout in seconds
-    timeout: float
     #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
@@ -415,6 +413,12 @@ class PluginConfig(yaml.YAMLObject):
     output_extension: str
     #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not
     flatten_top_dirs: bool
+    #: :class:`~eodag.plugins.download.base.Download` Level in extracted path tree where to find data
+    archive_depth: int
+    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
+    ignore_assets: bool
+    #: :class:`~eodag.plugins.download.base.Download` Product type specific configuration
+    products: Dict[str, Dict[str, Any]]
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
@@ -430,6 +434,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.http.HTTPDownload`
     #: Do not authenticate the download request but only the order and order status ones
     no_auth_download: bool
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
+    dl_url_params: Dict[str, str]
     #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
