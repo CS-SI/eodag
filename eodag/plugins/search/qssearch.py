@@ -113,7 +113,7 @@ class QueryStringSearch(Search):
     query strings (e.g: opensearch). Most of the other search plugins inherit from this plugin.
 
     :param provider: provider name
-    :param config: Download plugin configuration:
+    :param config: Search plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.result_type` (``str``): One of ``json`` or ``xml``, depending on the
           representation of the provider's search results. The default is ``json``.
@@ -232,11 +232,11 @@ class QueryStringSearch(Search):
           semantics of the query string formatting introduced by this plugin: any eodag search parameter
           can be referenced in the query string with an additional optional conversion function that
           is separated from it by a ``#`` (see :func:`~eodag.api.product.metadata_mapping.format_metadata` for further
-          details on the available converters). Note that for the values in the ``free_text_search_operations``
-          configuration parameter follow the same rule. If the metadata_mapping is not a list but
-          only a string, this means that the parameters is not queryable but it is included in the
-          result obtained from the provider. The string indicates how the provider result should be
-          mapped to the eodag parameter.
+          details on the available converters). Note that for the values in the
+          :attr:`~eodag.config.PluginConfig.free_text_search_operations` configuration parameter follow the same rule.
+          If the metadata_mapping is not a list but only a string, this means that the parameters is not queryable but
+          it is included in the result obtained from the provider. The string indicates how the provider result should
+          be mapped to the eodag parameter.
         * :attr:`~eodag.config.PluginConfig.discover_metadata` (:class:`~eodag.config.PluginConfig.DiscoverMetadata`):
           configuration for the auto-discovery of queryable parameters as well as parameters returned by the provider
           which are not in the metadata mapping. It has the attributes:
@@ -247,32 +247,11 @@ class QueryStringSearch(Search):
             the result should match so that is used
           * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``Union [str, Dict[str, Any]]``): format
             to add a query param given by the user and not in the metadata mapping to the requets, 'metadata' will be
-            replaced by the search param; can be a string or a dict containing `free_text_search_operations` (see below)
+            replaced by the search param; can be a string or a dict containing
+            :attr:`~eodag.config.PluginConfig.free_text_search_operations`
+            (see :class:`~eodag.plugins.search.qssearch.ODataV4Search`)
           * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.metadata_path` (``str``): path where the queryable
             properties can be found in the provider result
-
-        * :attr:`~eodag.config.PluginConfig.free_text_search_operations`: (optional) A tree structure of the form::
-
-            # noqa: E800
-            <search-param>:     # e.g: $search
-                union: # how to join the operations below (e.g: ' AND ' -->
-                    # '(op1 AND op2) AND (op3 OR op4)')
-                wrapper: # a pattern for how each operation will be wrapped
-                        # (e.g: '({})' --> '(op1 AND op2)')
-                operations:     # The operations to build
-                <opname>:     # e.g: AND
-                    - <op1>    # e.g:
-                            # 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
-                    - <op2>    # e.g:
-                        # 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
-                    ...
-                ...
-            ...
-
-          With the structure above, each operation will become a string of the form:
-          '(<op1> <opname> <op2>)', then the operations will be joined together using
-          the union string and finally if the number of operations is greater than 1,
-          they will be wrapped as specified by the wrapper config key.
 
         * :attr:`~eodag.config.PluginConfig.discover_queryables`
           (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
@@ -296,7 +275,6 @@ class QueryStringSearch(Search):
           the result is an array of constraints
         * :attr:`~eodag.config.PluginConfig.stop_without_constraints_entry_key` (``bool``): if true only a provider
           result containing `constraints_entry` is accepted as valid and used to create constraints; default: ``False``
-
     """
 
     extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {
@@ -1277,19 +1255,47 @@ class QueryStringSearch(Search):
 
 
 class ODataV4Search(QueryStringSearch):
-    """A specialisation of a QueryStringSearch that does a two step search to retrieve
-    all products metadata. All configuration parameters of QueryStringSearch are also available
-    for this plugin. In addition, the following parameters can be configured:
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.QueryStringSearch` that does a two step search to
+    retrieve all products metadata. All configuration parameters of
+    :class:`~eodag.plugins.search.qssearch.QueryStringSearch` are also available for this plugin. In addition, the
+    following parameters can be configured:
 
-    * **per_product_metadata_query** [bool]: should be set to true if the metadata is not given
-      in the search result and a two step search has to be performed; default: false
-    * **metadata_pre_mapping** [Dict[str, str]]: a dictionary which can be used to simplify
-      further metadata extraction. For example, going from '$.Metadata[?(@.id="foo")].value'
-      to '$.Metadata.foo.value'. It has the keys:
+    :param provider: provider name
+    :param config: Search plugin configuration:
 
-        * **metadata_path** [str]: json path of the metadata entry
-        * **metadata_path_id** [str]: key to get the metadata id
-        * **metadata_path_value** [str]: key to get the metadata value
+      * :attr:`~eodag.config.PluginConfig.per_product_metadata_query` (``bool``): should be set to true if the metadata
+        is not given in the search result and a two step search has to be performed; default: false
+      * :attr:`~eodag.config.PluginConfig.metadata_pre_mapping` (:class:`~eodag.config.PluginConfig.MetadataPreMapping`)
+        : a dictionary which can be used to simplify further metadata extraction. For example, going from
+        ``$.Metadata[?(@.id="foo")].value`` to ``$.Metadata.foo.value``. It has the keys:
+
+        * :attr:`~eodag.config.PluginConfig.MetadataPreMapping.metadata_path` (``str``): json path of the metadata entry
+        * :attr:`~eodag.config.PluginConfig.MetadataPreMapping.metadata_path_id` (``str``): key to get the metadata id
+        * :attr:`~eodag.config.PluginConfig.MetadataPreMapping.metadata_path_value` (``str``): key to get the metadata
+          value
+
+      * :attr:`~eodag.config.PluginConfig.free_text_search_operations`: (optional) A tree structure of the form::
+
+          # noqa: E800
+          <search-param>:     # e.g: $search
+              union: # how to join the operations below (e.g: ' AND ' -->
+                  # '(op1 AND op2) AND (op3 OR op4)')
+              wrapper: # a pattern for how each operation will be wrapped
+                      # (e.g: '({})' --> '(op1 AND op2)')
+              operations:     # The operations to build
+              <opname>:     # e.g: AND
+                  - <op1>    # e.g:
+                          # 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+                  - <op2>    # e.g:
+                      # 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+                  ...
+              ...
+          ...
+
+        With the structure above, each operation will become a string of the form:
+        ``(<op1> <opname> <op2>)``, then the operations will be joined together using
+        the union string and finally if the number of operations is greater than 1,
+        they will be wrapped as specified by the wrapper config key.
 
     """
 
