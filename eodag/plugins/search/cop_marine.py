@@ -131,12 +131,10 @@ class CopMarineSearch(StaticStacSearch):
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
-        fetch_url = cast(
-            str,
-            self.config.discover_product_types["fetch_url"].format(
-                **self.config.__dict__
-            ),
+        fetch_url = cast(str, self.config.discover_product_types["fetch_url"]).format(
+            **self.config.__dict__
         )
+
         logger.debug("fetch data for collection %s", product_type)
         provider_product_type = self.config.products.get(product_type, {}).get(
             "productType", None
