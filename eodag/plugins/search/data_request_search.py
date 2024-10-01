@@ -71,7 +71,7 @@ class DataRequestSearch(Search):
         * :attr:`~eodag.config.PluginConfig.results_entry` (``str``) (**mandatory**): The name of
           the key in the provider search result that gives access to the result entries
         * :attr:`~eodag.config.PluginConfig.data_request_url` (``str``) (**mandatory**): url
-        to which the data request shall be sent
+          to which the data request shall be sent
         * :attr:`~eodag.config.PluginConfig.status_url` (``str``) (**mandatory**): url to fetch
           the status of the data request
         * :attr:`~eodag.config.PluginConfig.result_url` (``str``) (**mandatory**): url to fetch
@@ -158,6 +158,7 @@ class DataRequestSearch(Search):
           If the metadata_mapping is not a list but only a string, this means that the parameters is not queryable but
           it is included in the result obtained from the provider. The string indicates how the provider result should
           be mapped to the eodag parameter.
+
     """
 
     data_request_id: Optional[str]
