@@ -238,6 +238,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           Refers to the name of the query param to be used in the query request
         * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): The key pointing to
           the refresh_token in the json response to the POST request to the token server
+
     """
 
     SCOPE = "openid"
