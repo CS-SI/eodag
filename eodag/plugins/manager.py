@@ -36,14 +36,19 @@ from typing import (
 
 import pkg_resources
 
-from eodag.config import AUTH_CONF_KEYS, load_config, merge_configs
+from eodag.config import (
+    AUTH_TOPIC_KEYS,
+    PLUGINS_TOPICS_KEYS,
+    load_config,
+    merge_configs,
+)
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy
+from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, dict_md5sum
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -77,7 +82,7 @@ class PluginManager:
                              supported by ``eodag``
     """
 
-    supported_topics = {"search", "download", "crunch", "auth", "api"}
+    supported_topics = set(PLUGINS_TOPICS_KEYS)
 
     product_type_to_provider_config_map: Dict[str, List[ProviderConfig]]
 
@@ -146,7 +151,7 @@ class PluginManager:
             self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
-        self._built_plugins_cache: Dict[Tuple[str, str], Any] = {}
+        self._built_plugins_cache: Dict[Tuple[str, str, str], Any] = {}
 
     def build_product_type_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""
@@ -343,7 +348,7 @@ class PluginManager:
         }
 
         for plugin_provider, provider_conf in sorted_providers_config.items():
-            for key in AUTH_CONF_KEYS:
+            for key in AUTH_TOPIC_KEYS:
                 auth_conf = getattr(provider_conf, key, None)
                 if auth_conf is None:
                     continue
@@ -421,9 +426,11 @@ class PluginManager:
             # Sort the provider configs, taking into account the new priority order
             provider_configs.sort(key=attrgetter("priority"), reverse=True)
         # Update the priority of already built plugins of the given provider
-        for provider_name, topic_class in self._built_plugins_cache:
+        for provider_name, topic_class, auth_match_md5 in self._built_plugins_cache:
             if provider_name == provider:
-                self._built_plugins_cache[(provider, topic_class)].priority = priority
+                self._built_plugins_cache[
+                    (provider, topic_class, auth_match_md5)
+                ].priority = priority
 
     def _build_plugin(
         self,
@@ -442,8 +449,16 @@ class PluginManager:
                 :class:`~eodag.plugin.authentication.Authentication` or
                 :class:`~eodag.plugin.crunch.Crunch`
         """
+        # md5 hash to helps identifying an auth plugin within several for a given provider
+        # (each has distinct matching settings)
+        auth_match_md5 = dict_md5sum(
+            {
+                "matching_url": getattr(plugin_conf, "matching_url", None),
+                "matching_conf": getattr(plugin_conf, "matching_conf", None),
+            }
+        )
         cached_instance = self._built_plugins_cache.setdefault(
-            (provider, topic_class.__name__), None
+            (provider, topic_class.__name__, auth_match_md5), None
         )
         if cached_instance is not None:
             return cached_instance
@@ -453,5 +468,7 @@ class PluginManager:
         plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
             provider, plugin_conf
         )
-        self._built_plugins_cache[(provider, topic_class.__name__)] = plugin
+        self._built_plugins_cache[
+            (provider, topic_class.__name__, auth_match_md5)
+        ] = plugin
         return plugin

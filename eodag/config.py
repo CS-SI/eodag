@@ -57,6 +57,7 @@ from eodag.utils import (
     dict_items_recursive_apply,
     merge_mappings,
     slugify,
+    sort_dict,
     string_to_jsonpath,
     update_nested_dict,
     uri_to_path,
@@ -68,8 +69,8 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
-AUTH_CONF_KEYS = ("auth", "search_auth", "download_auth")
-PLUGINS_CONF_KEYS = ("api", "search", "download") + AUTH_CONF_KEYS
+AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
+PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
 
 
 class SimpleYamlProxyConfig:
@@ -156,7 +157,7 @@ class ProviderConfig(yaml.YAMLObject):
     def from_mapping(cls, mapping: Dict[str, Any]) -> ProviderConfig:
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
-        for key in ("api", "search", "download", "auth"):
+        for key in PLUGINS_TOPICS_KEYS:
             if key in mapping:
                 mapping[key] = PluginConfig.from_mapping(mapping[key])
         c = cls()
@@ -171,11 +172,10 @@ class ProviderConfig(yaml.YAMLObject):
         """
         if "name" not in config_keys:
             raise ValidationError("Provider config must have name key")
-        if not any(k in config_keys for k in ("api", "search", "download", "auth")):
+        if not any(k in config_keys for k in PLUGINS_TOPICS_KEYS):
             raise ValidationError("A provider must implement at least one plugin")
-        if "api" in config_keys and any(
-            k in config_keys for k in ("search", "download", "auth")
-        ):
+        non_api_keys = [k for k in PLUGINS_TOPICS_KEYS if k != "api"]
+        if "api" in config_keys and any(k in config_keys for k in non_api_keys):
             raise ValidationError(
                 "A provider implementing an Api plugin must not implement any other "
                 "type of plugin"
@@ -193,10 +193,10 @@ class ProviderConfig(yaml.YAMLObject):
             {
                 key: value
                 for key, value in mapping.items()
-                if key not in PLUGINS_CONF_KEYS and value is not None
+                if key not in PLUGINS_TOPICS_KEYS and value is not None
             },
         )
-        for key in PLUGINS_CONF_KEYS:
+        for key in PLUGINS_TOPICS_KEYS:
             current_value: Optional[Dict[str, Any]] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
@@ -602,27 +602,28 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
 def provider_config_init(
     provider_config: ProviderConfig,
     stac_search_default_conf: Optional[Dict[str, Any]] = None,
-    auth_configs: Optional[List[PluginConfig]] = None,
+    auth_confs_with_creds: Optional[List[PluginConfig]] = None,
 ) -> None:
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
     :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
+    :param auth_confs_with_creds: existing auth plugins configurations having credentials registered
     """
     # For the provider, set the default output_dir of its download plugin
     # as tempdir in a portable way
-    for param_name in ("download", "api"):
-        if param_name in vars(provider_config):
-            param_value = getattr(provider_config, param_name)
-            if not getattr(param_value, "output_dir", None):
-                param_value.output_dir = tempfile.gettempdir()
-            if not getattr(param_value, "delete_archive", None):
-                param_value.delete_archive = True
+    for download_topic_key in ("download", "api"):
+        if download_topic_key in vars(provider_config):
+            download_conf = getattr(provider_config, download_topic_key)
+            if not getattr(download_conf, "output_dir", None):
+                download_conf.output_dir = tempfile.gettempdir()
+            if not getattr(download_conf, "delete_archive", None):
+                download_conf.delete_archive = True
 
     # share credentials across compatible auth plugins
-    if auth_configs:
-        for param_name in AUTH_CONF_KEYS:
-            provider_config_auth = getattr(provider_config, param_name, None)
+    if auth_confs_with_creds:
+        for auth_topic_key in AUTH_TOPIC_KEYS:
+            provider_config_auth = getattr(provider_config, auth_topic_key, None)
             if provider_config_auth and not credentials_in_auth(provider_config_auth):
                 # no credentials set for this provider
                 provider_matching_conf = getattr(
@@ -631,12 +632,12 @@ def provider_config_init(
                 provider_matching_url = getattr(
                     provider_config_auth, "matching_url", None
                 )
-                for conf_with_creds in auth_configs:
+                for conf_with_creds in auth_confs_with_creds:
                     # copy credentials between plugins if `matching_conf` or `matching_url` are matching
                     if (
                         provider_matching_conf
-                        and provider_matching_conf
-                        == getattr(conf_with_creds, "matching_conf", {})
+                        and sort_dict(provider_matching_conf)
+                        == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
                     ) or (
                         provider_matching_url
                         and provider_matching_url

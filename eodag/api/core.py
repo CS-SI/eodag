@@ -39,7 +39,8 @@ from whoosh.qparser import QueryParser
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
-    AUTH_CONF_KEYS,
+    AUTH_TOPIC_KEYS,
+    PLUGINS_TOPICS_KEYS,
     PluginConfig,
     SimpleYamlProxyConfig,
     credentials_in_auth,
@@ -170,15 +171,17 @@ class EODataAccessGateway:
 
         # init updated providers conf
         stac_provider_config = load_stac_provider_config()
-        auth_configs = [
+        auth_confs_with_creds = [
             getattr(p, k)
             for p in self.providers_config.values()
-            for k in AUTH_CONF_KEYS
+            for k in AUTH_TOPIC_KEYS
             if hasattr(p, k) and credentials_in_auth(getattr(p, k))
         ]
         for provider in self.providers_config.keys():
             provider_config_init(
-                self.providers_config[provider], stac_provider_config, auth_configs
+                self.providers_config[provider],
+                stac_provider_config,
+                auth_confs_with_creds,
             )
 
         # re-build _plugins_manager using up-to-date providers_config
@@ -365,15 +368,17 @@ class EODataAccessGateway:
         override_config_from_mapping(self.providers_config, conf_update)
 
         stac_provider_config = load_stac_provider_config()
-        auth_configs = [
+        auth_confs_with_creds = [
             getattr(p, k)
             for p in self.providers_config.values()
-            for k in AUTH_CONF_KEYS
+            for k in AUTH_TOPIC_KEYS
             if hasattr(p, k) and credentials_in_auth(getattr(p, k))
         ]
         for provider in conf_update.keys():
             provider_config_init(
-                self.providers_config[provider], stac_provider_config, auth_configs
+                self.providers_config[provider],
+                stac_provider_config,
+                auth_confs_with_creds,
             )
             setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
@@ -436,19 +441,21 @@ class EODataAccessGateway:
 
         # api plugin usage: remove unneeded search/download/auth plugin conf
         if conf_dict[name].get("api"):
-            conf_dict[name].pop("search", None)
-            conf_dict[name].pop("download", None)
-            conf_dict[name].pop("auth", None)
+            for k in PLUGINS_TOPICS_KEYS:
+                if k != "api":
+                    conf_dict[name].pop(k, None)
 
         override_config_from_mapping(self.providers_config, conf_dict)
-        auth_configs = [
+        auth_confs_with_creds = [
             getattr(p, k)
             for p in self.providers_config.values()
-            for k in AUTH_CONF_KEYS
+            for k in AUTH_TOPIC_KEYS
             if hasattr(p, k) and credentials_in_auth(getattr(p, k))
         ]
         provider_config_init(
-            self.providers_config[name], load_stac_provider_config(), auth_configs
+            self.providers_config[name],
+            load_stac_provider_config(),
+            auth_confs_with_creds,
         )
         setattr(self.providers_config[name], "product_types_fetched", False)
         self._plugins_manager.build_product_type_to_provider_config_map()
