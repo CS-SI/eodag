@@ -81,11 +81,14 @@ class BuildPostSearchResult(PostJsonSearch):
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
     object.
 
-    The available configuration parameters inherits from parent classes (PostJsonSearch and
+    The available configuration parameters are inherited from parent classes (PostJsonSearch and
     QueryStringSearch), with particularly for this plugin:
 
-    * **remove_from_query** [List[str]]: List of parameters used to parse metadata but that must
-      not be included to the query
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.remove_from_query` (``List[str]``): List of parameters
+          used to parse metadata but that must not be included to the query
 
     """
 
@@ -243,9 +246,12 @@ class BuildSearchResult(BuildPostSearchResult):
     The available configuration parameters inherits from parent classes (BuildPostSearchResult,
     PostJsonSearch and QueryStringSearch), with particularly for this plugin:
 
-    * **end_date_excluded** [bool]: Set to `False` if provider does not include end date in
-      the search request; In this case, if the end date is at midnight, the previous day will be
-      used. default: true
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to ``False`` if provider
+          does not include end date in the search request; In this case, if the end date is at midnight,
+          the previous day will be used. default: ``True``
 
     """
 

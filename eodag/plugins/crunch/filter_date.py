@@ -39,8 +39,10 @@ class FilterDate(Crunch):
 
     The Crunch configuration, may contain :
 
-    * **start** [str]: start sensing time in iso format
-    * **end** [str]: end sensing time in iso format
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.start` (``str``): start sensing time in iso format
+        * :attr:`~eodag.config.PluginConfig.end` (``str``): end sensing time in iso format
     """
 
     @staticmethod

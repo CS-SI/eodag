@@ -114,8 +114,10 @@ class CopMarineSearch(StaticStacSearch):
     a special method which fetches the urls of the available products from an S3 storage and
     filters them has been written.
     The configuration parameters are inherited from the parent and grand-parent classes. The
-    `auto_discovery` parameter in the `discover_metadata` section has to be set to `false` and the
-    `fetch_url` in the `discover_queryables` queryables section has to be set to `null` to
+    :attr:`~eodag.config.PluginConfig.DiscoverMetadata.auto_discovery` parameter in the
+    :attr:`~eodag.config.PluginConfig.discover_metadata` section has to be set to ``false`` and the
+    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` in the
+    :attr:`~eodag.config.PluginConfig.discover_queryables` queryables section has to be set to ``null`` to
     overwrite the default config from the stac provider configuration because those functionalities
     are not available.
     """

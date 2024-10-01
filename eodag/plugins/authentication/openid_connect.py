@@ -183,53 +183,61 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     The headless interaction is fully configurable, and rely on XPATH to retrieve all the necessary
     information.
 
-    The configuration keys of this plugin are as follows (they have no defaults):
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
 
-        * **type** [str] (mandatory): OIDCAuthorizationCodeFlowAuth
-        * **authorization_uri** [str] (mandatory): The authorization url of the server (where to query for grants)
-        * **redirect_uri** [str] (mandatory): The callback url that will handle the code given by the OIDC provider
-        * **token_uri** [str] (mandatory): The url to query to exchange the authorization
-          code obtained from the OIDC provider for an authorized token
-        * **client_id** [str] (mandatory): The OIDC provider's client ID of the eodag provider
-        * **user_consent_needed** [bool] (mandatory): Whether a user consent is needed
-          during the authentication
-        * **token_exchange_post_data_method** [str] (mandatory): One of: json, data or params.
-          This is the way to pass the data to the POST request that is made to the token server.
-          They correspond to the recognised keywords arguments of the Python
-          `requests <http://docs.python-requests.org/>`_ library
-        * **token_key** [str] (mandatory): The key pointing to the token in the json response
-          to the POST request to the token server
-        * **token_provision** [str] (mandatory): One of qs or header. This is how the token
-          obtained will be used to authenticate the user on protected requests. If 'qs' is
-          chosen, then 'token_qs_key' is mandatory
-        * **login_form_xpath** [str] (mandatory): The xpath to the HTML form element representing
-          the user login form
-        * **authentication_uri_source** [str] (mandatory): Where to look for the authentication_uri.
-          One of 'config' (in the configuration) or 'login-form' (use the 'action' URL found in the
-          login form retrieved with login_form_xpath). If the value is 'config',
-          authentication_uri config param is mandatory
-        * **authentication_uri** [str] (mandatory if authentication_uri_source=config):
-          The URL of the authentication backend of the OIDC provider
-        * **user_consent_form_xpath** [str]: The xpath to the user consent form. The form
-          is searched in the content of the response to the authorization request
-        * **user_consent_form_data** [Dict[str, str]]: The data that will be passed with the
-          POST request on the form 'action' URL. The data are given as a key value pairs, the
-          keys representing the data key and the value being either a 'constant' string value,
-          or a string of the form 'xpath(<path-to-a-value-to-be-retrieved>)' and representing a
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): OIDCAuthorizationCodeFlowAuth
+        * :attr:`~eodag.config.PluginConfig.authorization_uri` (``str``) (**mandatory**):  The
+          authorization url of the server (where to query for grants)
+        * :attr:`~eodag.config.PluginConfig.redirect_uri` (``str``) (**mandatory**):  The callback
+          url that will handle the code given by the OIDC provider
+        * :attr:`~eodag.config.PluginConfig.token_uri` (``str``) (**mandatory**):  The url to query
+          to exchange the authorization code obtained from the OIDC provider for an authorized token
+        * :attr:`~eodag.config.PluginConfig.client_id` (``str``) (**mandatory**): The OIDC provider's
+          client ID of the eodag provider
+        * :attr:`~eodag.config.PluginConfig.user_consent_needed` (``bool`) (mandatory): Whether
+          a user consent is needed during the authentication
+        * :attr:`~eodag.config.PluginConfig.token_exchange_post_data_method` (``str``) (**mandatory**):
+          One of: ``json``, ``data`` or ``params``. This is the way to pass the data to the
+          POST request that is made to the token server. They correspond to the recognised keywords
+          arguments of the Python `requests <http://docs.python-requests.org/>`_ library
+        * :attr:`~eodag.config.PluginConfig.token_key` (``str``) (**mandatory**): The key pointing
+          to the token in the json response to the POST request to the token server
+        * :attr:`~eodag.config.PluginConfig.token_provision` (``str``) (**mandatory**): One of
+          ``qs`` or ``header``. This is how the token obtained will be used to authenticate the
+          user on protected requests. If ``qs`` is chosen, then ``token_qs_key`` is mandatory
+        * :attr:`~eodag.config.PluginConfig.login_form_xpath` (``str``) (**mandatory**): The
+          xpath to the HTML form element representing the user login form
+        * :attr:`~eodag.config.PluginConfig.authentication_uri_source` (``str``) (**mandatory**): Where
+          to look for the authentication_uri. One of ``config`` (in the configuration) or ``login-form``
+          (use the 'action' URL found in the login form retrieved with login_form_xpath). If the
+          value is ``config``, authentication_uri config param is mandatory
+        * :attr:`~eodag.config.PluginConfig.authentication_uri` (``str``): (mandatory if
+          authentication_uri_source=config) The URL of the authentication backend of the OIDC provider
+        * :attr:`~eodag.config.PluginConfig.user_consent_form_xpath` (``str``): The xpath to
+          the user consent form. The form is searched in the content of the response to the authorization request
+        * :attr:`~eodag.config.PluginConfig.user_consent_form_data` (``Dict[str, str]``): The data that
+          will be passed with the POST request on the form 'action' URL. The data are given as
+          key value pairs, the keys representing the data key and the value being either a 'constant'
+          string value, or a string of the form 'xpath(<path-to-a-value-to-be-retrieved>)' and representing a
           value to be retrieved in the user consent form. The xpath must resolve directly to a
           string value, not to an HTML element. Example: `xpath(//input[@name="sessionDataKeyConsent"]/@value)`
-        * **additional_login_form_data** [Dict[str, str]]: A mapping giving additional data
-          to be passed to the login POST request. The value follows the same rules as with user_consent_form_data
-        * **exchange_url_error_pattern** [Dict[str, str]]: Key/value pairs of patterns/messages.
-          If exchange_url contains the given pattern, the associated message will be sent in an AuthenticationError
-        * **client_secret** [str]:The OIDC provider's client secret of the eodag provider
-        * **token_exchange_params** [Dict[str, str]: mandatory keys for the dict: redirect_uri, client_id;
-          A mapping between OIDC url query string and token handler query string params
-          (only necessary if they are not the same as for OIDC). This is eodag provider dependant
-        * **token_qs_key** [str] (mandatory when token_provision=qs): Refers to the name
-          of the query param to be used in the query request
-        * **refresh_token_key** [str]: The key pointing to the refresh_token in the json response
-          to the POST request to the token server
+        * :attr:`~eodag.config.PluginConfig.additional_login_form_data` (``Dict[str, str]``): A mapping
+          giving additional data to be passed to the login POST request. The value follows
+          the same rules as with user_consent_form_data
+        * :attr:`~eodag.config.PluginConfig.exchange_url_error_pattern` (``Dict[str, str]``): Key/value
+          pairs of patterns/messages. If exchange_url contains the given pattern, the associated
+          message will be sent in an AuthenticationError
+        * :attr:`~eodag.config.PluginConfig.client_secret` (``str``): The OIDC provider's client
+          secret of the eodag provider
+        * :attr:`~eodag.config.PluginConfig.token_exchange_params` (``Dict[str, str]``): mandatory
+          keys for the dict: redirect_uri, client_id; A mapping between OIDC url query string
+          and token handler query string params (only necessary if they are not the same as for OIDC).
+          This is eodag provider dependant
+        * :attr:`~eodag.config.PluginConfig.token_qs_key` (``str``): (mandatory when token_provision=qs)
+          Refers to the name of the query param to be used in the query request
+        * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): The key pointing to
+          the refresh_token in the json response to the POST request to the token server
     """
 
     SCOPE = "openid"

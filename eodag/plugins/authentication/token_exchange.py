@@ -38,16 +38,22 @@ class OIDCTokenExchangeAuth(Authentication):
     """Token exchange implementation using
         :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` token as subject.
 
-    The configuration keys of this plugin are as follows (they have no defaults):
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
 
-    * **subject** [Dict[str, Any]] (mandatory): The full OIDCAuthorizationCodeFlowAuth plugin
-      configuration used to retrieve subject token
-    * **subject_issuer** [str] (mandatory): Identifies the issuer of the subject_token
-    * **token_uri** [str] (mandatory): The url to query to get the authorized token
-    * **client_id** [str] (mandatory): The OIDC provider's client ID of the eodag provider
-    * **audience** [str] (mandatory): This parameter specifies the target client you want the new token minted for.
-    * **token_key** [str] (mandatory): The key pointing to the token in the json response to
-      the POST request to the token server
+        * :attr:`~eodag.config.PluginConfig.subject` (``Dict[str, Any]``) (**mandatory**):
+          The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin
+          configuration used to retrieve subject token
+        * :attr:`~eodag.config.PluginConfig.subject_issuer` (``str``) (**mandatory**): Identifies
+          the issuer of the subject_token
+        * :attr:`~eodag.config.PluginConfig.token_uri` (``str``) (**mandatory**): The url to
+          query to get the authorized token
+        * :attr:`~eodag.config.PluginConfig.client_id` (``str``) (**mandatory**): The OIDC
+          provider's client ID of the eodag provider
+        * :attr:`~eodag.config.PluginConfig.audience` (``str``) (**mandatory**): This parameter
+          specifies the target client you want the new token minted for.
+        * :attr:`~eodag.config.PluginConfig.token_key` (``str``) (**mandatory**): The key
+          pointing to the token in the json response to the POST request to the token server
 
     """
 

@@ -34,10 +34,12 @@ class FilterProperty(Crunch):
 
     Filter products, retaining only those whose property match criteria
 
-    The Crunch configuration should contain :
+    :param config: Search plugin configuration:
 
-    * **<property>** [Any] (mandatory): property key from product.properties, associated to its filter value
-    * **operator** [str]: Operator used for filtering (one of `lt,le,eq,ne,ge,gt`). Default is `eq`
+        * ``<property>`` ``(Any)`` (**mandatory**): property key from product.properties,
+          associated to its filter value
+        * :attr:`~eodag.config.PluginConfig.operator` (``str``): Operator used for filtering
+          (one of ``lt,le,eq,ne,ge,gt``). Default is ``eq``
     """
 
     def proceed(

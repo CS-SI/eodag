@@ -101,7 +101,7 @@ class HTTPDownload(Download):
     :param provider: provider name
     :param config: Download plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.type` (``str``): (mandatory) ``HTTPDownload``
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): ``HTTPDownload``
         * :attr:`~eodag.config.PluginConfig.base_uri` (``str``): default endpoint url
         * :attr:`~eodag.config.PluginConfig.method` (``str``): HTTP request method for the download request (``GET`` or
           ``POST``); default: ``GET``
@@ -109,8 +109,8 @@ class HTTPDownload(Download):
           extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
           authentication error
-        * :attr:`~eodag.config.PluginConfig.dl_url_params` [Dict[str, Any]]: parameters to be added to the query params
-          of the request
+        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``Dict[str, Any]``): parameters to be
+          added to the query params of the request
         * :attr:`~eodag.config.PluginConfig.archive_depth` (``int``): level in extracted path tree where to find data;
           default: ``1``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
@@ -126,8 +126,8 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
           authentication; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
-          if this paramter is set to true, a mapping for the orderLink has to be added to the metadata mapping of
-          the search plugin used for the provider; default: False
+          if this parameter is set to true, a mapping for the orderLink has to be added to the metadata mapping of
+          the search plugin used for the provider; default: ``False``
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
           or ``POST``); default: ``GET``
         * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): headers to be added to the order

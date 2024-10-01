@@ -70,19 +70,26 @@ logger = logging.getLogger("eodag.apis.usgs")
 class UsgsApi(Api):
     """A plugin that enables to query and download data on the USGS catalogues
 
-    The configuration parameters for this plugin are:
+    :param provider: provider name
+    :param config: Api plugin configuration:
 
-    * **type** [str] (mandatory): UsgsApi
-    * **pagination** [Dict[str, Any]] (mandatory): dict containing parameters for pagination; should contain the
-      key total_items_nb_key_path which is indicating the key for the number of total items in the provider result
-    * **ssl_verify** [bool]: if the ssl certificates should be verified in the download request; default: True
-    * **need_auth** [bool]: if authentication is required for search; default: False
-    * **extract** [bool]: if the content of the downloaded file should be extracted; default: True
-    * **order_enabled** [bool]: if the product has to be ordered to download it; default: False
-    * **metadata_mapping** [Dict[str, Union[str, list]]]: how parameters should be mapped between the provider and eodag
-      If a string is given, this is the mapping parameter returned by provider -> eodag parameter. If a list with
-      2 elements is given, the first one is the mapping eodag parameter -> provider query parameters and the second one
-      the mapping provider result parameter -> eodag parameter
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): UsgsApi
+        * :attr:`~eodag.config.PluginConfig.pagination` (``Dict[str, Any]``) (**mandatory**): dict
+          containing parameters for pagination; should contain the key ``total_items_nb_key_path``
+          which is indicating the key for the number of total items in the provider result
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
+          should be verified in the download request; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.need_auth` (``bool``): if authentication is required
+          for search; default: ``False``
+        * :attr:`~eodag.config.PluginConfig.extract` (``bool``): if the content of the downloaded
+          file should be extracted; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to
+          be ordered to download it; default: ``False``
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Union[str, list]]``): how
+          parameters should be mapped between the provider and eodag; If a string is given, this is
+          the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
+          is given, the first one is the mapping eodag parameter -> provider query parameters
+          and the second one the mapping provider result parameter -> eodag parameter
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
