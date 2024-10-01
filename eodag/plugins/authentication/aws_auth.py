@@ -40,11 +40,12 @@ class AwsAuth(Authentication):
     * auth using current environment (AWS environment variables and/or ``~/aws/*``),
       will be skipped if AWS credentials are filled in eodag conf
 
-    The configuration parameters for this plugin are:
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
 
-    * **type** [str] (mandatory): AwsAuth
-    * **auth_error_code** [int] (mandatory for creodias_s3): which error code is returned
-      in case of an authentication error
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): AwsAuth
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): (mandatory for creodias_s3)
+          which error code is returned in case of an authentication error
 
     """
 

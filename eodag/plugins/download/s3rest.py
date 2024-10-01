@@ -67,19 +67,22 @@ class S3RestDownload(Download):
 
     Re-use AwsDownload bucket some handling methods
 
-    Download plugin configuration:
+    :param provider: provider name
+    :param config: Download plugin configuration:
 
-    * **config.base_uri** [str] (mandatory):  default endpoint url
-    * **config.extract** [bool]: extract downloaded archive or not
-    * **config.auth_error_code** [int]: authentication error code
-    * **config.bucket_path_level** [int]: bucket location index in path.split('/')
-    * **config.order_enabled** [bool]: whether order is enabled or not if product is `OFFLINE`
-    * **config.order_method** [str]: HTTP request method, GET (default) or POST
-    * **config.order_headers** [dict]: order request headers
-    * **order_on_response** [:class:`~eodag.config.PluginConfig.OrderOnResponse`]: a typed dictionary
-      containing the key 'metadata_mapping' which can be used to add new product properties
-      based on the data in response to the order request
-    * **config.order_status** [:class:`~eodag.config.PluginConfig.OrderStatus`]: Order status handling
+        * :attr:`~eodag.config.PluginConfig.base_uri` (``str``) (**mandatory**): default endpoint url
+        * :attr:`~eodag.config.PluginConfig.extract` (``bool``): extract downloaded archive or not
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): authentication error code
+        * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): bucket location index in path.split('/')
+        * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): whether order is enabled
+          or not if product is `OFFLINE`
+        * :attr:`~eodag.config.PluginConfig.order_method` (``str``) HTTP request method, ``GET`` (default) or ``POST``
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): order request headers
+        * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
+          a typed dictionary containing the key 'metadata_mapping' which can be used to add new product properties
+          based on the data in response to the order request
+        * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
+          Order status handling
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

@@ -246,7 +246,7 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.metadata_pattern` (``str``): regex string a parameter in
             the result should match so that is used
           * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``Union [str, Dict[str, Any]]``): format
-            to add a query param given by the user and not in the metadata mapping to the requets, 'metadata' will be
+            to add a query param given by the user and not in the metadata mapping to the requests, 'metadata' will be
             replaced by the search param; can be a string or a dict containing
             :attr:`~eodag.config.PluginConfig.free_text_search_operations`
             (see :class:`~eodag.plugins.search.qssearch.ODataV4Search`)
@@ -1395,17 +1395,20 @@ class PostJsonSearch(QueryStringSearch):
     not a get request, the pagination configuration will look slightly different. It has the
     following parameters:
 
-    * **next_page_query_obj**: The additional parameters needed to add pagination information to
-      the search request. These parameters won't be included in result. This must be a json dict
-      formatted like `{{"foo":"bar"}}` because it will be passed to a `.format()` method
-      before being loaded as json.
-    * **total_items_nb_key_path** [str]:  An XPath or JsonPath leading to the total number of
-      results satisfying a request. This is used for providers which provides the total results
-      metadata along with the result of the query and don't have an endpoint for querying
-      the number of items satisfying a request, or for providers for which the count endpoint
-      returns a json or xml document
-    * **max_items_per_page** [int]: The maximum number of items per page that the provider can
-      handle; default: 50
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.next_page_query_obj` (``str``): The additional parameters
+          needed to add pagination information to the search request. These parameters won't be
+          included in result. This must be a json dict formatted like `{{"foo":"bar"}}` because
+          it will be passed to a `.format()` method before being loaded as json.
+        * :attr:`~eodag.config.PluginConfig.total_items_nb_key_path*` (``str``):  An XPath or JsonPath
+          leading to the total number of results satisfying a request. This is used for providers
+          which provides the total results metadata along with the result of the query and don't
+          have an endpoint for querying the number of items satisfying a request, or for providers
+          for which the count endpoint returns a json or xml document
+        * :attr:`~eodag.config.PluginConfig.max_items_per_page` (``int``): The maximum number of items
+          per page that the provider can handle; default: ``50``
 
     """
 
@@ -1797,8 +1800,9 @@ class StacSearch(PostJsonSearch):
     (see stac_provider.yml). If some parameters are different for a specific provider, they
     have to be overwritten. If certain functionalities are not available, their configuration
     parameters have to be overwritten with `null`. E.g. if there is no queryables endpoint,
-    the `fetch_url` and `product_type_fetch_url` in the `discover_queryables` config have
-    to be set to `null`.
+    the :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` and
+    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` in the
+    :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

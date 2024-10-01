@@ -37,7 +37,9 @@ class FilterLatestByName(Crunch):
 
     The Crunch configuration must contain :
 
-    * **name_pattern** [str] (mandatory) : product name pattern
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.name_pattern` (``str``) (**mandatory**): product name pattern
     """
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")

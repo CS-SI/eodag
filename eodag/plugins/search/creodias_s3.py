@@ -121,7 +121,10 @@ class CreodiasS3Search(ODataV4Search):
     adapts results so that the assets contain links to s3. It has the same configuration
     parameters as ODataV4Search and one additional parameter:
 
-    * **s3_endpoint** [str] (mandatory): base url of the s3
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``) (**mandatory**): base url of the s3
     """
 
     def __init__(self, provider, config):
