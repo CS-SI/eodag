@@ -195,7 +195,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           to exchange the authorization code obtained from the OIDC provider for an authorized token
         * :attr:`~eodag.config.PluginConfig.client_id` (``str``) (**mandatory**): The OIDC provider's
           client ID of the eodag provider
-        * :attr:`~eodag.config.PluginConfig.user_consent_needed` (``bool`) (mandatory): Whether
+        * :attr:`~eodag.config.PluginConfig.user_consent_needed` (``bool``) (mandatory): Whether
           a user consent is needed during the authentication
         * :attr:`~eodag.config.PluginConfig.token_exchange_post_data_method` (``str``) (**mandatory**):
           One of: ``json``, ``data`` or ``params``. This is the way to pass the data to the
