@@ -7,7 +7,7 @@ This getting started aims at introducing you to ``eodag`` and at getting you usi
 it efficiently as quickly as possible.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    overview
    install
