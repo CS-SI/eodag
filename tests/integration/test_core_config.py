@@ -167,6 +167,73 @@ class TestCoreProvidersConfig(TestCase):
             "bar",
         )
 
+    def test_core_providers_shared_credentials(self):
+        """credentials must be shared between plugins having the same matching settings"""
+
+        self.dag.add_provider(
+            "a_provider_without_creds_matching_url",
+            "https://foo.bar/search",
+            auth={
+                "matching_url": "http://foo.bar",
+            },
+        )
+        self.dag.add_provider(
+            "a_provider_with_creds",
+            "https://foo.bar/search",
+            auth={
+                "matching_url": "http://foo.bar",
+                "credentials": {"username": "bar", "password": "foo"},
+            },
+        )
+        self.dag.update_providers_config(
+            """
+            another_provider_with_creds:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                auth:
+                    matching_conf:
+                        something: special
+                    credentials:
+                        username: baz
+                        password: qux
+
+            a_provider_without_creds_matching_conf:
+                search:
+                    type: StacSearch
+                    api_endpoint: https://foo.bar/search
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{productType}'
+                auth:
+                    matching_conf:
+                        something: special
+            """
+        )
+        self.assertDictEqual(
+            self.dag.providers_config["a_provider_with_creds"].auth.credentials,
+            {"username": "bar", "password": "foo"},
+        )
+        self.assertDictEqual(
+            self.dag.providers_config["a_provider_with_creds"].auth.credentials,
+            self.dag.providers_config[
+                "a_provider_without_creds_matching_url"
+            ].auth.credentials,
+        )
+        self.assertDictEqual(
+            self.dag.providers_config["another_provider_with_creds"].auth.credentials,
+            {"username": "baz", "password": "qux"},
+        )
+        self.assertDictEqual(
+            self.dag.providers_config["another_provider_with_creds"].auth.credentials,
+            self.dag.providers_config[
+                "a_provider_without_creds_matching_conf"
+            ].auth.credentials,
+        )
+
     def test_core_providers_add(self):
         """add_provider method must add provider using given conf"""
 
