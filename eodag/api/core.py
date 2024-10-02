@@ -39,7 +39,6 @@ from whoosh.qparser import QueryParser
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
-    AUTH_TOPIC_KEYS,
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
     SimpleYamlProxyConfig,
@@ -52,6 +51,7 @@ from eodag.config import (
     override_config_from_file,
     override_config_from_mapping,
     provider_config_init,
+    share_credentials,
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
@@ -169,19 +169,14 @@ class EODataAccessGateway:
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
 
+        # share credentials between updated plugins confs
+        share_credentials(self.providers_config)
+
         # init updated providers conf
-        stac_provider_config = load_stac_provider_config()
-        auth_confs_with_creds = [
-            getattr(p, k)
-            for p in self.providers_config.values()
-            for k in AUTH_TOPIC_KEYS
-            if hasattr(p, k) and credentials_in_auth(getattr(p, k))
-        ]
         for provider in self.providers_config.keys():
             provider_config_init(
                 self.providers_config[provider],
-                stac_provider_config,
-                auth_confs_with_creds,
+                load_stac_provider_config(),
             )
 
         # re-build _plugins_manager using up-to-date providers_config
@@ -345,14 +340,24 @@ class EODataAccessGateway:
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
 
-    def update_providers_config(self, yaml_conf: str) -> None:
+    def update_providers_config(
+        self,
+        yaml_conf: Optional[str] = None,
+        dict_conf: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Update providers configuration with given input.
         Can be used to add a provider to existing configuration or update
         an existing one.
 
         :param yaml_conf: YAML formated provider configuration
+        :param dict_conf: provider configuration as dictionary in place of ``yaml_conf``
         """
-        conf_update = yaml.safe_load(yaml_conf)
+        if dict_conf is not None:
+            conf_update = dict_conf
+        elif yaml_conf is not None:
+            conf_update = yaml.safe_load(yaml_conf)
+        else:
+            return None
 
         # restore the pruned configuration
         for provider in list(self._pruned_providers_config.keys()):
@@ -367,18 +372,13 @@ class EODataAccessGateway:
 
         override_config_from_mapping(self.providers_config, conf_update)
 
-        stac_provider_config = load_stac_provider_config()
-        auth_confs_with_creds = [
-            getattr(p, k)
-            for p in self.providers_config.values()
-            for k in AUTH_TOPIC_KEYS
-            if hasattr(p, k) and credentials_in_auth(getattr(p, k))
-        ]
+        # share credentials between updated plugins confs
+        share_credentials(self.providers_config)
+
         for provider in conf_update.keys():
             provider_config_init(
                 self.providers_config[provider],
-                stac_provider_config,
-                auth_confs_with_creds,
+                load_stac_provider_config(),
             )
             setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
@@ -445,20 +445,7 @@ class EODataAccessGateway:
                 if k != "api":
                     conf_dict[name].pop(k, None)
 
-        override_config_from_mapping(self.providers_config, conf_dict)
-        auth_confs_with_creds = [
-            getattr(p, k)
-            for p in self.providers_config.values()
-            for k in AUTH_TOPIC_KEYS
-            if hasattr(p, k) and credentials_in_auth(getattr(p, k))
-        ]
-        provider_config_init(
-            self.providers_config[name],
-            load_stac_provider_config(),
-            auth_confs_with_creds,
-        )
-        setattr(self.providers_config[name], "product_types_fetched", False)
-        self._plugins_manager.build_product_type_to_provider_config_map()
+        self.update_providers_config(dict_conf=conf_dict)
 
         if priority is None:
             self.set_preferred_provider(name)

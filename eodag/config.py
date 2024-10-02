@@ -599,16 +599,57 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     )
 
 
+def share_credentials(
+    providers_config: Dict[str, ProviderConfig],
+) -> None:
+    """Share credentials between plugins having the same matching criteria
+
+    :param providers_configs: eodag providers configurations
+    """
+    auth_confs_with_creds = [
+        getattr(p, k)
+        for p in providers_config.values()
+        for k in AUTH_TOPIC_KEYS
+        if hasattr(p, k) and credentials_in_auth(getattr(p, k))
+    ]
+    for provider, provider_config in providers_config.items():
+        if auth_confs_with_creds:
+            for auth_topic_key in AUTH_TOPIC_KEYS:
+                provider_config_auth = getattr(provider_config, auth_topic_key, None)
+                if provider_config_auth and not credentials_in_auth(
+                    provider_config_auth
+                ):
+                    # no credentials set for this provider
+                    provider_matching_conf = getattr(
+                        provider_config_auth, "matching_conf", {}
+                    )
+                    provider_matching_url = getattr(
+                        provider_config_auth, "matching_url", None
+                    )
+                    for conf_with_creds in auth_confs_with_creds:
+                        # copy credentials between plugins if `matching_conf` or `matching_url` are matching
+                        if (
+                            provider_matching_conf
+                            and sort_dict(provider_matching_conf)
+                            == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
+                        ) or (
+                            provider_matching_url
+                            and provider_matching_url
+                            == getattr(conf_with_creds, "matching_url", None)
+                        ):
+                            getattr(
+                                providers_config[provider], auth_topic_key
+                            ).credentials = conf_with_creds.credentials
+
+
 def provider_config_init(
     provider_config: ProviderConfig,
     stac_search_default_conf: Optional[Dict[str, Any]] = None,
-    auth_confs_with_creds: Optional[List[PluginConfig]] = None,
 ) -> None:
     """Applies some default values to provider config
 
     :param provider_config: An eodag provider configuration
     :param stac_search_default_conf: default conf to overwrite with provider_config if STAC
-    :param auth_confs_with_creds: existing auth plugins configurations having credentials registered
     """
     # For the provider, set the default output_dir of its download plugin
     # as tempdir in a portable way
@@ -619,31 +660,6 @@ def provider_config_init(
                 download_conf.output_dir = tempfile.gettempdir()
             if not getattr(download_conf, "delete_archive", None):
                 download_conf.delete_archive = True
-
-    # share credentials across compatible auth plugins
-    if auth_confs_with_creds:
-        for auth_topic_key in AUTH_TOPIC_KEYS:
-            provider_config_auth = getattr(provider_config, auth_topic_key, None)
-            if provider_config_auth and not credentials_in_auth(provider_config_auth):
-                # no credentials set for this provider
-                provider_matching_conf = getattr(
-                    provider_config_auth, "matching_conf", {}
-                )
-                provider_matching_url = getattr(
-                    provider_config_auth, "matching_url", None
-                )
-                for conf_with_creds in auth_confs_with_creds:
-                    # copy credentials between plugins if `matching_conf` or `matching_url` are matching
-                    if (
-                        provider_matching_conf
-                        and sort_dict(provider_matching_conf)
-                        == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
-                    ) or (
-                        provider_matching_url
-                        and provider_matching_url
-                        == getattr(conf_with_creds, "matching_url", None)
-                    ):
-                        provider_config_auth.credentials = conf_with_creds.credentials
 
     try:
         if (
