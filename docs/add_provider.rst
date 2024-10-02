@@ -46,6 +46,13 @@ provide the new provider's configuration in a ``YAML`` format. The following exa
 It configures the following existing plugins: :class:`~eodag.plugins.search.qssearch.StacSearch` (search),
 :class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.aws.AwsDownload` (download).
 
+Each plugin configuration is inserted following the appropriate plugin topic key:
+
+- ``search`` for `search plugins <plugins_reference/search.rst>`_
+- ``download`` for `download plugins <plugins_reference/download.rst>`_
+- ``auth``, ``search_auth``, or ``download_auth`` for `authentication plugins <plugins_reference/auth.rst>`_
+- ``api`` for `api plugins <plugins_reference/api.rst>`_
+
 Of course, it is also necessary to know how to configure these plugins (which parameters they take, what values they can have, etc.).
 You can get some inspiration from the *Providers pre-configuration* section by analysing how ``eodag`` configures the providers it comes installed with.
 

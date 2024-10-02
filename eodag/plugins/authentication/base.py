@@ -27,7 +27,16 @@ if TYPE_CHECKING:
 
 
 class Authentication(PluginTopic):
-    """Plugins authentication Base plugin"""
+    """Plugins authentication Base plugin
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with search plugin endpoint or
+          download link
+        * :attr:`~eodag.config.PluginConfig.matching_conf` (``Dict[str, Any]``): Part of the search or download plugin
+          configuration that needs authentication and helps identifying it
+    """
 
     def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
         """Authenticate"""

@@ -93,9 +93,11 @@
   url: https://developers.eos.com/datasets_description.html
   search: !plugin
     type: PostJsonSearch
-    api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}?api_key={apikey}'
+    api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}'
     need_auth: true
-    auth_error_code: 403
+    auth_error_code:
+      - 402
+      - 403
     results_entry: 'results'
     ssl_verify: true
     pagination:
@@ -535,8 +537,13 @@
             productPath: '$.path'
         complementary_url_key:
           - productPath
-  auth: !plugin
+  download_auth: !plugin
     type: AwsAuth
+    matching_url: s3://
+  search_auth: !plugin
+    type: HttpQueryStringAuth
+    matching_url: https://gate.eos.com
+    ssl_verify: true
 
 ---
 !provider # MARK: theia
@@ -714,6 +721,7 @@
       issuerId: theia
   auth: !plugin
     type: TokenAuth
+    matching_url: https://theia.cnes.fr
     auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
     ssl_verify: true
 
@@ -872,6 +880,7 @@
       issuerId: peps
   auth: !plugin
     type: GenericAuth
+    matching_url: https://peps.cnes.fr
 ---
 !provider # MARK: creodias
   name: creodias
@@ -1037,6 +1046,7 @@
     ssl_verify: true
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
+    matching_url: https://[-\w]+.creodias.eu
     auth_base_uri: 'https://identity.cloudferro.com/auth'
     realm: 'Creodias-new'
     client_id: 'CLOUDFERRO_PUBLIC'
@@ -1557,6 +1567,7 @@
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
+    matching_url: https://catalogue.onda-dias.eu
 
 ---
 !provider # MARK: astraea_eod
@@ -1685,6 +1696,7 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+    matching_url: s3://
 
 ---
 !provider # MARK: usgs_satapi_aws
@@ -1745,6 +1757,7 @@
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
+    matching_url: s3://
 
 ---
 !provider # MARK: earth_search
@@ -1847,6 +1860,7 @@
           - tilePath
   auth: !plugin
     type: AwsAuth
+    matching_url: s3://
 
 ---
 !provider # MARK: earth_search_cog
@@ -1961,7 +1975,7 @@
       productType: '{productType}'
   download: !plugin
     type: AwsDownload
-    base_uri: https://storage.googleapis.com
+    s3_endpoint: https://storage.googleapis.com
     ignore_assets: True
     ssl_verify: true
     products:
@@ -1969,6 +1983,9 @@
         default_bucket: 'gcp-public-data-sentinel-2'
   auth: !plugin
     type: AwsAuth
+    matching_url: s3://
+    matching_conf:
+      s3_endpoint: https://storage.googleapis.com
 ---
 !provider # MARK: ecmwf
   name: ecmwf
@@ -2210,6 +2227,7 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
+    matching_url: https://ads.atmosphere.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -2568,6 +2586,7 @@
     - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
+    matching_url: https://cds.climate.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -3473,6 +3492,7 @@
     ssl_verify: true
   auth: !plugin
     type: GenericAuth
+    matching_url: https://copernicus.nci.org.au
     method: basic
 ---
 !provider # MARK: meteoblue
@@ -3566,6 +3586,7 @@
     output_extension: .nc
   auth: !plugin
     type: HttpQueryStringAuth
+    matching_url: https?://[a-z]+.meteoblue.com
     auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
     ssl_verify: true
 ---
@@ -3753,6 +3774,7 @@
     ssl_verify: true
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
+    matching_url: https://catalogue.dataspace.copernicus.eu
     auth_base_uri: 'https://identity.dataspace.copernicus.eu/auth'
     realm: 'CDSE'
     client_id: 'cdse-public'
@@ -3998,6 +4020,7 @@
     ssl_verify: true
   auth: !plugin
     type: SASAuth
+    matching_url: https://[-\w\.]+.blob.core.windows.net
     auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
     signed_url_key: href
     ssl_verify: true
@@ -4047,6 +4070,7 @@
     ssl_verify: true
   auth: !plugin
     type: HTTPHeaderAuth
+    matching_url: https://hydroweb.next.theia-land.fr
     headers:
       X-API-Key: "{apikey}"
 
@@ -4631,6 +4655,7 @@
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
   auth: !plugin
     type: TokenAuth
+    matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
     refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
     token_type: json
@@ -5935,6 +5960,7 @@
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:EFAS_SEASONAL_REFORECAST"}}'
   auth: !plugin
     type: TokenAuth
+    matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
     refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
     token_type: json
@@ -6052,6 +6078,7 @@
       productType: '{productType}'
   auth: !plugin
     type: TokenAuth
+    matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
     refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
     token_type: json
@@ -6243,12 +6270,14 @@
       productIdentifier: '$.S3Path'
   download: !plugin
     type: CreodiasS3Download
-    base_uri: 'https://eodata.cloudferro.com'
+    s3_endpoint: 'https://eodata.cloudferro.com'
     s3_bucket: 'eodata'
     ssl_verify: true
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    matching_conf:
+      s3_endpoint: 'https://eodata.cloudferro.com'
   products:
       # S1
     S1_SAR_RAW:
@@ -6595,6 +6624,7 @@
         output_extension: .grib
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
+    matching_url: https://[-\w\.]+.dte.destination-earth.eu
     authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
     token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
@@ -6685,6 +6715,7 @@
         output_extension: .grib
   auth: !plugin
     type: OIDCTokenExchangeAuth
+    matching_url: https://[-\w\.]+.data.destination-earth.eu
     subject:
       authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
       redirect_uri: https://hda.data.destination-earth.eu/stac
@@ -7300,6 +7331,7 @@
     ssl_verify: true
   auth: !plugin
     type: TokenAuth
+    matching_url: https://api.eumetsat.int
     auth_uri: 'https://api.eumetsat.int/token'
     auth_error_code: 401
     req_data:
@@ -7468,7 +7500,10 @@
       collection: '{collection}'
   download: !plugin
     type: AwsDownload
-    base_uri: https://s3.waw3-1.cloudferro.com
+    s3_endpoint: https://s3.waw3-1.cloudferro.com
     bucket_path_level: 0
   auth: !plugin
     type: AwsAuth
+    matching_url: s3://
+    matching_conf:
+      s3_endpoint: https://s3.waw3-1.cloudferro.com

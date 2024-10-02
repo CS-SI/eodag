@@ -39,8 +39,10 @@ from whoosh.qparser import QueryParser
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
+    PLUGINS_TOPICS_KEYS,
     PluginConfig,
     SimpleYamlProxyConfig,
+    credentials_in_auth,
     get_ext_product_types_conf,
     load_default_config,
     load_stac_provider_config,
@@ -49,6 +51,7 @@ from eodag.config import (
     override_config_from_file,
     override_config_from_mapping,
     provider_config_init,
+    share_credentials,
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
@@ -76,9 +79,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import (
-    AuthenticationError,
     EodagError,
-    MisconfiguredError,
     NoMatchingProductType,
     PluginImplementationError,
     RequestError,
@@ -168,10 +169,15 @@ class EODataAccessGateway:
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
 
+        # share credentials between updated plugins confs
+        share_credentials(self.providers_config)
+
         # init updated providers conf
-        stac_provider_config = load_stac_provider_config()
         for provider in self.providers_config.keys():
-            provider_config_init(self.providers_config[provider], stac_provider_config)
+            provider_config_init(
+                self.providers_config[provider],
+                load_stac_provider_config(),
+            )
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -334,14 +340,24 @@ class EODataAccessGateway:
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
 
-    def update_providers_config(self, yaml_conf: str) -> None:
+    def update_providers_config(
+        self,
+        yaml_conf: Optional[str] = None,
+        dict_conf: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Update providers configuration with given input.
         Can be used to add a provider to existing configuration or update
         an existing one.
 
         :param yaml_conf: YAML formated provider configuration
+        :param dict_conf: provider configuration as dictionary in place of ``yaml_conf``
         """
-        conf_update = yaml.safe_load(yaml_conf)
+        if dict_conf is not None:
+            conf_update = dict_conf
+        elif yaml_conf is not None:
+            conf_update = yaml.safe_load(yaml_conf)
+        else:
+            return None
 
         # restore the pruned configuration
         for provider in list(self._pruned_providers_config.keys()):
@@ -356,9 +372,14 @@ class EODataAccessGateway:
 
         override_config_from_mapping(self.providers_config, conf_update)
 
-        stac_provider_config = load_stac_provider_config()
+        # share credentials between updated plugins confs
+        share_credentials(self.providers_config)
+
         for provider in conf_update.keys():
-            provider_config_init(self.providers_config[provider], stac_provider_config)
+            provider_config_init(
+                self.providers_config[provider],
+                load_stac_provider_config(),
+            )
             setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
@@ -420,14 +441,11 @@ class EODataAccessGateway:
 
         # api plugin usage: remove unneeded search/download/auth plugin conf
         if conf_dict[name].get("api"):
-            conf_dict[name].pop("search", None)
-            conf_dict[name].pop("download", None)
-            conf_dict[name].pop("auth", None)
+            for k in PLUGINS_TOPICS_KEYS:
+                if k != "api":
+                    conf_dict[name].pop(k, None)
 
-        override_config_from_mapping(self.providers_config, conf_dict)
-        provider_config_init(self.providers_config[name], load_stac_provider_config())
-        setattr(self.providers_config[name], "product_types_fetched", False)
-        self._plugins_manager.build_product_type_to_provider_config_map()
+        self.update_providers_config(dict_conf=conf_dict)
 
         if priority is None:
             self.set_preferred_provider(name)
@@ -453,12 +471,7 @@ class EODataAccessGateway:
 
             # check authentication
             if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
-                credentials_exist = any(
-                    [
-                        cred is not None
-                        for cred in getattr(conf.api, "credentials", {}).values()
-                    ]
-                )
+                credentials_exist = credentials_in_auth(conf.api)
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider] = self.providers_config.pop(
@@ -470,7 +483,7 @@ class EODataAccessGateway:
                         provider,
                     )
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
-                if not hasattr(conf, "auth"):
+                if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
                     self._pruned_providers_config[provider] = self.providers_config.pop(
                         provider
@@ -481,11 +494,13 @@ class EODataAccessGateway:
                         provider,
                     )
                     continue
-                credentials_exist = any(
-                    [
-                        cred is not None
-                        for cred in getattr(conf.auth, "credentials", {}).values()
-                    ]
+                credentials_exist = (
+                    hasattr(conf, "search_auth")
+                    and credentials_in_auth(conf.search_auth)
+                ) or (
+                    not hasattr(conf, "search_auth")
+                    and hasattr(conf, "auth")
+                    and credentials_in_auth(conf.auth)
                 )
                 if not credentials_exist:
                     # credentials needed but not found
@@ -798,23 +813,15 @@ class EODataAccessGateway:
                     continue
                 # append auth to search plugin if needed
                 if getattr(search_plugin.config, "need_auth", False):
-                    auth_plugin = self._plugins_manager.get_auth_plugin(
-                        search_plugin.provider
-                    )
-                    if auth_plugin and callable(
-                        getattr(auth_plugin, "authenticate", None)
+                    if auth := self._plugins_manager.get_auth(
+                        search_plugin.provider,
+                        getattr(search_plugin.config, "api_endpoint", None),
+                        search_plugin.config,
                     ):
-                        try:
-                            kwargs["auth"] = auth_plugin.authenticate()
-                        except (AuthenticationError, MisconfiguredError) as e:
-                            logger.warning(
-                                f"Could not authenticate on {provider}: {str(e)}"
-                            )
-                            ext_product_types_conf[provider] = None
-                            continue
+                        kwargs["auth"] = auth
                     else:
-                        logger.warning(
-                            f"Could not authenticate on {provider} using {auth_plugin} plugin"
+                        logger.debug(
+                            f"Could not authenticate on {provider} for product types discovery"
                         )
                         ext_product_types_conf[provider] = None
                         continue
@@ -1622,16 +1629,12 @@ class EODataAccessGateway:
 
         # append auth if needed
         if getattr(plugin.config, "need_auth", False):
-            auth_plugin = self._plugins_manager.get_auth_plugin(plugin.provider)
-            if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
-                try:
-                    kwargs["auth"] = auth_plugin.authenticate()
-                except (AuthenticationError, MisconfiguredError) as e:
-                    logger.warning(f"Could not authenticate on {provider}: {str(e)}")
-            else:
-                logger.warning(
-                    f"Could not authenticate on {provider} using {auth_plugin} plugin"
-                )
+            if auth := self._plugins_manager.get_auth(
+                plugin.provider,
+                getattr(plugin.config, "api_endpoint", None),
+                plugin.config,
+            ):
+                kwargs["auth"] = auth
 
         product_type_config = plugin.discover_product_types(**kwargs)
         self.update_product_types_list({provider: product_type_config})
@@ -1842,10 +1845,6 @@ class EODataAccessGateway:
                 max_items_per_page,
             )
 
-        need_auth = getattr(search_plugin.config, "need_auth", False)
-        auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
-        can_authenticate = callable(getattr(auth_plugin, "authenticate", None))
-
         results: List[EOProduct] = []
         total_results: Optional[int] = 0 if count else None
 
@@ -1853,10 +1852,16 @@ class EODataAccessGateway:
 
         try:
             prep = PreparedSearch(count=count)
-            if need_auth and auth_plugin and can_authenticate:
-                prep.auth = auth_plugin.authenticate()
 
-            prep.auth_plugin = auth_plugin
+            # append auth if needed
+            if getattr(search_plugin.config, "need_auth", False):
+                if auth := self._plugins_manager.get_auth(
+                    search_plugin.provider,
+                    getattr(search_plugin.config, "api_endpoint", None),
+                    search_plugin.config,
+                ):
+                    prep.auth = auth
+
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
@@ -1916,6 +1921,21 @@ class EODataAccessGateway:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
+                    matching_url = (
+                        next(iter(eo_product.assets.values()))["href"]
+                        if len(eo_product.assets) > 0
+                        else eo_product.properties.get("downloadLink")
+                    )
+                    try:
+                        auth_plugin = next(
+                            self._plugins_manager.get_auth_plugins(
+                                search_plugin.provider,
+                                matching_url=matching_url,
+                                matching_conf=download_plugin.config,
+                            )
+                        )
+                    except StopIteration:
+                        auth_plugin = None
                     eo_product.register_downloader(download_plugin, auth_plugin)
 
             results.extend(res)
@@ -2088,12 +2108,12 @@ class EODataAccessGateway:
         products = self.deserialize(filename)
         for i, product in enumerate(products):
             if product.downloader is None:
+                downloader = self._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(product.provider)
-                products[i].register_downloader(
-                    self._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
+                products[i].register_downloader(downloader, auth)
+
         return products
 
     @_deprecated(
@@ -2224,12 +2244,11 @@ class EODataAccessGateway:
 
     def _setup_downloader(self, product: EOProduct) -> None:
         if product.downloader is None:
+            downloader = self._plugins_manager.get_download_plugin(product)
             auth = product.downloader_auth
             if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(product.provider)
-            product.register_downloader(
-                self._plugins_manager.get_download_plugin(product), auth
-            )
+                auth = self._plugins_manager.get_auth_plugin(downloader, product)
+            product.register_downloader(downloader, auth)
 
     def get_cruncher(self, name: str, **options: Any) -> Crunch:
         """Build a crunch plugin from a configuration
@@ -2281,7 +2300,7 @@ class EODataAccessGateway:
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             if getattr(plugin.config, "need_auth", False) and (
-                auth := self._plugins_manager.get_auth_plugin(plugin.provider)
+                auth := self._plugins_manager.get_auth_plugin(plugin)
             ):
                 plugin.auth = auth.authenticate()
             providers_queryables[plugin.provider] = plugin.list_queryables(

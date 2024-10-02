@@ -1413,3 +1413,18 @@ def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
         k: sort_dict(v) if isinstance(v, dict) else v
         for k, v in sorted(input_dict.items())
     }
+
+
+def dict_md5sum(input_dict: Dict[str, Any]) -> str:
+    """
+    Hash nested dictionary
+
+    :param input_dict: input dict
+    :returns: hash
+
+    >>> hd = dict_md5sum({"b": {"c": 1, "a": 2, "b": 3}, "a": 4})
+    >>> hd
+    'a195bcef1bb3b419e9e74b7cc5db8098'
+    >>> assert(dict_md5sum({"a": 4, "b": {"b": 3, "c": 1, "a": 2}}) == hd)
+    """
+    return obj_md5sum(sort_dict(input_dict))

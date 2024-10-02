@@ -99,8 +99,8 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def get_download_plugin(self, product: EOProduct):
         return self.plugins_manager.get_download_plugin(product)
 
-    def get_auth_plugin(self, provider):
-        return self.plugins_manager.get_auth_plugin(provider)
+    def get_auth_plugin(self, associated_plugin, product):
+        return self.plugins_manager.get_auth_plugin(associated_plugin, product)
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
@@ -1034,10 +1034,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.product.provider = "cop_ads"
         self.product.product_type = "CAMS_EAC4"
+        self.product.properties[
+            "downloadLink"
+        ] = "https://ads.atmosphere.copernicus.eu/dummy"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(self.product.provider)
+        auth = self.get_auth_plugin(plugin, self.product)
         auth.config.credentials = {"apikey": "anicekey"}
         self.product.register_downloader(plugin, auth)
 
@@ -1126,6 +1129,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_get(self, mock_request):
         """HTTPDownload.order_download() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["orderLink"] = "http://somewhere/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
 
@@ -1133,7 +1137,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         timeout_backup = getattr(plugin.config, "timeout", None)
         plugin.config.timeout = 10
         try:
-            auth_plugin = self.get_auth_plugin(self.product.provider)
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
             auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
             auth = auth_plugin.authenticate()
 
@@ -1157,10 +1161,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_post(self, mock_request):
         """HTTPDownload.order_download() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
@@ -1219,8 +1224,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "error": {"that": "failed"},
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
@@ -1261,8 +1267,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
         self.product.properties["searchLink"] = "http://somewhere/search-gain"
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
@@ -1834,7 +1841,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.properties["storageStatus"] = ONLINE_STATUS
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(self.product.provider)
+        auth = self.get_auth_plugin(plugin, self.product)
         self.product.register_downloader(plugin, auth)
 
         @responses.activate(registry=responses.registries.OrderedRegistry)
@@ -1912,7 +1919,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = "somewhere"
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(self.product.provider)
+        auth = self.get_auth_plugin(plugin, self.product)
         self.product.register_downloader(plugin, auth)
 
         # no retry

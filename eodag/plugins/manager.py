@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from operator import attrgetter
 from pathlib import Path
 from typing import (
@@ -35,17 +36,28 @@ from typing import (
 
 import pkg_resources
 
-from eodag.config import load_config, merge_configs
+from eodag.config import (
+    AUTH_TOPIC_KEYS,
+    PLUGINS_TOPICS_KEYS,
+    load_config,
+    merge_configs,
+)
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.utils import GENERIC_PRODUCT_TYPE
-from eodag.utils.exceptions import MisconfiguredError, UnsupportedProvider
+from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, dict_md5sum
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    UnsupportedProvider,
+)
 
 if TYPE_CHECKING:
+    from requests.auth import AuthBase
+
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig, ProviderConfig
     from eodag.plugins.base import PluginTopic
@@ -70,7 +82,7 @@ class PluginManager:
                              supported by ``eodag``
     """
 
-    supported_topics = {"search", "download", "crunch", "auth", "api"}
+    supported_topics = set(PLUGINS_TOPICS_KEYS)
 
     product_type_to_provider_config_map: Dict[str, List[ProviderConfig]]
 
@@ -139,7 +151,7 @@ class PluginManager:
             self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
-        self._built_plugins_cache: Dict[Tuple[str, str], Any] = {}
+        self._built_plugins_cache: Dict[Tuple[str, str, str], Any] = {}
 
     def build_product_type_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""
@@ -249,25 +261,135 @@ class PluginManager:
             )
         return plugin
 
-    def get_auth_plugin(self, provider: str) -> Optional[Authentication]:
+    def get_auth_plugin(
+        self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
+    ) -> Optional[Authentication]:
+        """Build and return the authentication plugin associated to the given
+        search/download plugin
+
+        .. versionchanged:: v3.0.0
+            ``get_auth_plugin()`` now needs ``associated_plugin`` instead of ``provider``
+            as argument.
+
+        :param associated_plugin: The search/download plugin to which the authentication
+                                  plugin is linked
+        :param product: The product to download. ``None`` for search authentication
+        :returns: The Authentication plugin
+        """
+        # matching url from product to download
+        if product is not None and len(product.assets) > 0:
+            matching_url = next(iter(product.assets.values()))["href"]
+        elif product is not None:
+            matching_url = product.properties.get("downloadLink")
+        else:
+            # search auth
+            matching_url = getattr(associated_plugin.config, "api_endpoint", None)
+
+        try:
+            auth_plugin = next(
+                self.get_auth_plugins(
+                    associated_plugin.provider,
+                    matching_url=matching_url,
+                    matching_conf=associated_plugin.config,
+                )
+            )
+        except StopIteration:
+            auth_plugin = None
+        return auth_plugin
+
+    def get_auth_plugins(
+        self,
+        provider: str,
+        matching_url: Optional[str] = None,
+        matching_conf: Optional[PluginConfig] = None,
+    ) -> Iterator[Authentication]:
         """Build and return the authentication plugin for the given product_type and
         provider
 
         :param provider: The provider for which to get the authentication plugin
-        :returns: The Authentication plugin for the provider
+        :param matching_url: url to compare with plugin matching_url pattern
+        :param matching_conf: configuration to compare with plugin matching_conf
+        :returns: All the Authentication plugins for the given criteria
         """
-        plugin_conf = self.providers_config[provider]
-        auth: Optional[PluginConfig] = getattr(plugin_conf, "auth", None)
-        if not auth:
-            # We guess the plugin being built is of type Api, therefore no need
-            # for an Auth plugin.
-            return None
-        auth.priority = plugin_conf.priority
-        plugin = cast(
-            Authentication,
-            self._build_plugin(provider, auth, Authentication),
-        )
-        return plugin
+        auth_conf: Optional[PluginConfig] = None
+
+        def _is_auth_plugin_matching(
+            auth_conf: PluginConfig,
+            matching_url: Optional[str],
+            matching_conf: Optional[PluginConfig],
+        ) -> bool:
+            plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
+            if matching_conf:
+                if (
+                    plugin_matching_conf
+                    and matching_conf.__dict__.items() >= plugin_matching_conf.items()
+                ):
+                    # conf matches
+                    return True
+            plugin_matching_url = getattr(auth_conf, "matching_url", None)
+            if matching_url:
+                if plugin_matching_url and re.match(
+                    rf"{plugin_matching_url}", matching_url
+                ):
+                    # url matches
+                    return True
+            if not plugin_matching_conf and not plugin_matching_url:
+                # plugin without match criteria
+                return True
+            else:
+                # no match
+                return False
+
+        # providers configs with given provider at first
+        sorted_providers_config = deepcopy(self.providers_config)
+        sorted_providers_config = {
+            provider: sorted_providers_config.pop(provider),
+            **sorted_providers_config,
+        }
+
+        for plugin_provider, provider_conf in sorted_providers_config.items():
+            for key in AUTH_TOPIC_KEYS:
+                auth_conf = getattr(provider_conf, key, None)
+                if auth_conf is None:
+                    continue
+                if _is_auth_plugin_matching(auth_conf, matching_url, matching_conf):
+                    auth_conf.priority = provider_conf.priority
+                    plugin = cast(
+                        Authentication,
+                        self._build_plugin(plugin_provider, auth_conf, Authentication),
+                    )
+                    yield plugin
+                else:
+                    continue
+
+    def get_auth(
+        self,
+        provider: str,
+        matching_url: Optional[str] = None,
+        matching_conf: Optional[PluginConfig] = None,
+    ) -> Optional[Union[AuthBase, Dict[str, str]]]:
+        """Authenticate and return the authenticated object for the first matching
+        authentication plugin
+
+        :param provider: The provider for which to get the authentication plugin
+        :param matching_url: url to compare with plugin matching_url pattern
+        :param matching_conf: configuration to compare with plugin matching_conf
+        :returns: All the Authentication plugins for the given criteria
+        """
+        for auth_plugin in self.get_auth_plugins(provider, matching_url, matching_conf):
+            if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
+                try:
+                    auth = auth_plugin.authenticate()
+                    return auth
+                except (AuthenticationError, MisconfiguredError) as e:
+                    logger.debug(f"Could not authenticate on {provider}: {str(e)}")
+                    continue
+            else:
+                logger.debug(
+                    f"Could not authenticate on {provider} using {auth_plugin} plugin"
+                )
+                continue
+        return None
 
     @staticmethod
     def get_crunch_plugin(name: str, **options: Any) -> Crunch:
@@ -304,9 +426,11 @@ class PluginManager:
             # Sort the provider configs, taking into account the new priority order
             provider_configs.sort(key=attrgetter("priority"), reverse=True)
         # Update the priority of already built plugins of the given provider
-        for provider_name, topic_class in self._built_plugins_cache:
+        for provider_name, topic_class, auth_match_md5 in self._built_plugins_cache:
             if provider_name == provider:
-                self._built_plugins_cache[(provider, topic_class)].priority = priority
+                self._built_plugins_cache[
+                    (provider, topic_class, auth_match_md5)
+                ].priority = priority
 
     def _build_plugin(
         self,
@@ -325,8 +449,16 @@ class PluginManager:
                 :class:`~eodag.plugin.authentication.Authentication` or
                 :class:`~eodag.plugin.crunch.Crunch`
         """
+        # md5 hash to helps identifying an auth plugin within several for a given provider
+        # (each has distinct matching settings)
+        auth_match_md5 = dict_md5sum(
+            {
+                "matching_url": getattr(plugin_conf, "matching_url", None),
+                "matching_conf": getattr(plugin_conf, "matching_conf", None),
+            }
+        )
         cached_instance = self._built_plugins_cache.setdefault(
-            (provider, topic_class.__name__), None
+            (provider, topic_class.__name__, auth_match_md5), None
         )
         if cached_instance is not None:
             return cached_instance
@@ -336,5 +468,7 @@ class PluginManager:
         plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
             provider, plugin_conf
         )
-        self._built_plugins_cache[(provider, topic_class.__name__)] = plugin
+        self._built_plugins_cache[
+            (provider, topic_class.__name__, auth_match_md5)
+        ] = plugin
         return plugin

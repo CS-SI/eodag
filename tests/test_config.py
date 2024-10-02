@@ -289,7 +289,7 @@ class TestConfigFunctions(unittest.TestCase):
                         productType: '{productType}'
                 download:
                     type: AwsDownload
-                    base_uri: https://api.my_new_provider
+                    s3_endpoint: https://api.my_new_provider
                 auth:
                     type: AwsAuth
                     credentials:
@@ -326,9 +326,11 @@ class TestConfigFunctions(unittest.TestCase):
         aws_eos:
           search:
               product_location_scheme: file
-          auth:
+          search_auth:
               credentials:
                   apikey: api-key
+          download_auth:
+              credentials:
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
 
@@ -352,7 +354,7 @@ class TestConfigFunctions(unittest.TestCase):
                   productType: '{productType}'
             download:
                 type: AwsDownload
-                base_uri: https://api.my_new_provider
+                s3_endpoint: https://api.my_new_provider
                 flatten_top_dirs: false
             auth:
                 type: AwsAuth
@@ -374,12 +376,13 @@ class TestConfigFunctions(unittest.TestCase):
 
         aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
-        self.assertEqual(aws_conf.auth.credentials["apikey"], "api-key")
+        self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
-            aws_conf.auth.credentials["aws_access_key_id"], "access-key-id"
+            aws_conf.download_auth.credentials["aws_access_key_id"], "access-key-id"
         )
         self.assertEqual(
-            aws_conf.auth.credentials["aws_secret_access_key"], "secret-access-key"
+            aws_conf.download_auth.credentials["aws_secret_access_key"],
+            "secret-access-key",
         )
 
         peps_conf = default_config["peps"]
@@ -407,7 +410,7 @@ class TestConfigFunctions(unittest.TestCase):
         self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
         self.assertEqual(my_new_provider_conf.download.type, "AwsDownload")
         self.assertEqual(
-            my_new_provider_conf.download.base_uri, "https://api.my_new_provider"
+            my_new_provider_conf.download.s3_endpoint, "https://api.my_new_provider"
         )
         self.assertFalse(my_new_provider_conf.download.flatten_top_dirs)
         self.assertIsInstance(my_new_provider_conf.auth, config.PluginConfig)
