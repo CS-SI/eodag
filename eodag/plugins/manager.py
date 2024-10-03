@@ -280,7 +280,9 @@ class PluginManager:
         if product is not None and len(product.assets) > 0:
             matching_url = next(iter(product.assets.values()))["href"]
         elif product is not None:
-            matching_url = product.properties.get("downloadLink")
+            matching_url = product.properties.get(
+                "downloadLink"
+            ) or product.properties.get("orderLink")
         else:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)

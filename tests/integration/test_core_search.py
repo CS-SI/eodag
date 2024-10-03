@@ -542,6 +542,33 @@ class TestCoreSearch(unittest.TestCase):
         )
         mock_query.reset_mock()
 
+        # order link matching
+        self.dag.add_provider(
+            "provider_matching_order_link",
+            "https://foo.bar/baz/search",
+        )
+        mock_query.side_effect = [
+            (
+                [
+                    EOProduct(
+                        "provider_matching_download_link",
+                        dict(
+                            geometry="POINT (0 0)",
+                            id="a",
+                            orderLink="https://somewhere/to/download",
+                        ),
+                    )
+                ],
+                1,
+            ),
+        ]
+        results = self.dag.search(provider="provider_matching_download_link")
+        self.assertEqual(
+            results[0].downloader_auth.config.credentials["username"],
+            "yet-another-username",
+        )
+        mock_query.reset_mock()
+
         # first asset matching
         self.dag.add_provider(
             "provider_matching_asset",

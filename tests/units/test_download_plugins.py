@@ -1036,7 +1036,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.product_type = "CAMS_EAC4"
         self.product.properties[
             "downloadLink"
-        ] = "https://ads.atmosphere.copernicus.eu/dummy"
+        ] = "https://ads-beta.atmosphere.copernicus.eu/dummy"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
