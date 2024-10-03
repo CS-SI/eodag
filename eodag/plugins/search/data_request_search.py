@@ -90,15 +90,15 @@ class DataRequestSearch(Search):
           (**mandatory**): The configuration of how the pagination is done on the provider. It is a tree with the
           following nodes:
 
-            * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
-              leading to the total number of results satisfying a request. This is used for providers which provides the
-              total results metadata along with the result of the query and don't have an endpoint for querying
-              the number of items satisfying a request, or for providers for which the count endpoint
-              returns a json or xml document
-            * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum
-              number of items per page that the provider can handle; default: ``50``
-            * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the
-              first page; default: ``1``
+          * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
+            leading to the total number of results satisfying a request. This is used for providers which provides the
+            total results metadata along with the result of the query and don't have an endpoint for querying
+            the number of items satisfying a request, or for providers for which the count endpoint
+            returns a json or xml document
+          * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum
+            number of items per page that the provider can handle; default: ``50``
+          * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the
+            first page; default: ``1``
 
         * :attr:`~eodag.config.PluginConfig.discover_product_types`
           (:class:`~eodag.config.PluginConfig.DiscoverProductTypes`): configuration for product type discovery based on
@@ -145,8 +145,8 @@ class DataRequestSearch(Search):
                     - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
                     - '$.properties.acquisition.endViewingDate'
 
-          means that the search url will have a query string parameter named *"f"* with a value of
-          *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done with the value
+          means that the search url will have a query string parameter named ``f`` with a value of
+          ``acquisition.endViewingDate:lte:1543922280.0`` if the search was done with the value
           of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
           ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
           of ``completionTimeFromAscendingNode``. This example shows all there is to know about the

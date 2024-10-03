@@ -224,8 +224,8 @@ class QueryStringSearch(Search):
                     - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
                     - '$.properties.acquisition.endViewingDate'
 
-          means that the search url will have a query string parameter named *"f"* with a value of
-          *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done with the value
+          means that the search url will have a query string parameter named ``f`` with a value of
+          ``acquisition.endViewingDate:lte:1543922280.0`` if the search was done with the value
           of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
           ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
           of ``completionTimeFromAscendingNode``. This example shows all there is to know about the
@@ -1388,26 +1388,27 @@ class ODataV4Search(QueryStringSearch):
 
 
 class PostJsonSearch(QueryStringSearch):
-    """A specialisation of a QueryStringSearch that uses POST method
-    All configuration parameters available for QueryStringSearch are also available for PostJsonSearch.
-    The mappings given in metadata_mapping are used to construct a (json) body for the
-    POST request that is sent to the provider. Due to the fact that we sent a POST request and
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.QueryStringSearch` that uses POST method
+
+    All configuration parameters available for :class:`~eodag.plugins.search.qssearch.QueryStringSearch`
+    are also available for PostJsonSearch. The mappings given in metadata_mapping are used to construct
+    a (json) body for the POST request that is sent to the provider. Due to the fact that we sent a POST request and
     not a get request, the pagination configuration will look slightly different. It has the
     following parameters:
 
     :param provider: provider name
     :param config: Search plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.next_page_query_obj` (``str``): The additional parameters
+        * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The additional parameters
           needed to add pagination information to the search request. These parameters won't be
-          included in result. This must be a json dict formatted like `{{"foo":"bar"}}` because
-          it will be passed to a `.format()` method before being loaded as json.
-        * :attr:`~eodag.config.PluginConfig.total_items_nb_key_path*` (``str``):  An XPath or JsonPath
+          included in result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because
+          it will be passed to a :meth:`str.format` method before being loaded as json.
+        * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path*` (``str``):  An XPath or JsonPath
           leading to the total number of results satisfying a request. This is used for providers
           which provides the total results metadata along with the result of the query and don't
           have an endpoint for querying the number of items satisfying a request, or for providers
           for which the count endpoint returns a json or xml document
-        * :attr:`~eodag.config.PluginConfig.max_items_per_page` (``int``): The maximum number of items
+        * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items
           per page that the provider can handle; default: ``50``
 
     """
@@ -1794,12 +1795,13 @@ class PostJsonSearch(QueryStringSearch):
 
 
 class StacSearch(PostJsonSearch):
-    """A specialisation of PostJsonSearch that uses generic STAC configuration, it therefore
-    has the same configuration parameters (those inherited from QueryStringSearch)
-    For providers using StacSearch default values are defined for most of the parameters
-    (see stac_provider.yml). If some parameters are different for a specific provider, they
+    """A specialisation of :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses generic
+    STAC configuration, it therefore has the same configuration parameters (those inherited
+    from :class:`~eodag.plugins.search.qssearch.QueryStringSearch`).
+    For providers using ``StacSearch`` default values are defined for most of the parameters
+    (see ``stac_provider.yml``). If some parameters are different for a specific provider, they
     have to be overwritten. If certain functionalities are not available, their configuration
-    parameters have to be overwritten with `null`. E.g. if there is no queryables endpoint,
+    parameters have to be overwritten with ``null``. E.g. if there is no queryables endpoint,
     the :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` and
     :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` in the
     :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
@@ -1959,8 +1961,8 @@ class StacSearch(PostJsonSearch):
 
 
 class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
-    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that
-    uses generic STAC configuration for queryables (inherited from StacSearch).
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses
+    generic STAC configuration for queryables (inherited from :class:`~eodag.plugins.search.qssearch.StacSearch`).
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

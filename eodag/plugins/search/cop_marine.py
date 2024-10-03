@@ -110,9 +110,12 @@ def _check_int_values_properties(properties: Dict[str, Any]):
 
 class CopMarineSearch(StaticStacSearch):
     """class that implements search for the Copernicus Marine provider
-    It calls discover_product_types inherited from StaticStacSearch but for the actual search
-    a special method which fetches the urls of the available products from an S3 storage and
+
+    It calls :meth:`~eodag.plugins.search.static_stac_search.StaticStacSearch.discover_product_types`
+    inherited from :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+    but for the actual search a special method which fetches the urls of the available products from an S3 storage and
     filters them has been written.
+
     The configuration parameters are inherited from the parent and grand-parent classes. The
     :attr:`~eodag.config.PluginConfig.DiscoverMetadata.auto_discovery` parameter in the
     :attr:`~eodag.config.PluginConfig.discover_metadata` section has to be set to ``false`` and the

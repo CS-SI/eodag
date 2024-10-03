@@ -62,9 +62,9 @@ class CSWSearch(Search):
         * :attr:`~eodag.config.PluginConfig.version` (``str``): OGC Catalogue Service version; default: ``2.0.2``
         * :attr:`~eodag.config.PluginConfig.search_definition` (``Dict[str, Any]``) (**mandatory**):
 
-            * **product_type_tags** (``List[Dict[str, Any]``): dict of product type tags
-            * **resource_location_filter** (``str``): regex string
-            * **date_tags** (``Dict[str, Any]``): tags for start and end
+          * **product_type_tags** (``List[Dict[str, Any]``): dict of product type tags
+          * **resource_location_filter** (``str``): regex string
+          * **date_tags** (``Dict[str, Any]``): tags for start and end
 
         * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Any]``): The search plugins of this kind can
           detect when a metadata mapping is "query-able", and get the semantics of how to format the query string
@@ -78,8 +78,8 @@ class CSWSearch(Search):
                     - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
                     - '$.properties.acquisition.endViewingDate'
 
-          means that the search url will have a query string parameter named *"f"* with a value of
-          *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done with the value
+          means that the search url will have a query string parameter named ``f`` with a value of
+          ``acquisition.endViewingDate:lte:1543922280.0`` if the search was done with the value
           of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
           ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
           of ``completionTimeFromAscendingNode``. This example shows all there is to know about the

@@ -29,7 +29,8 @@ if TYPE_CHECKING:
 
 
 class GenericAuth(Authentication):
-    """GenericAuth authentication plugin (authentication using username and password)
+    """GenericAuth authentication plugin (authentication using ``username`` and ``password``)
+
     The mandatory parameters that have to be added in the eodag config are username and password.
 
     :param provider: provider name

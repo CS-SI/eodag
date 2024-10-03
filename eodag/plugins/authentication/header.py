@@ -54,9 +54,9 @@ class HTTPHeaderAuth(Authentication):
                 ...
             ...
 
-    As you can see in the sample above, the maintainer of `provider` define the headers that will be used in the
-    authentication process as-is, by giving their names (e.g. `Authorization`) and their value (e.g
-    `"Something {userinput}"`) as regular Python string templates that enable passing in the user input necessary to
+    As you can see in the sample above, the maintainer of ``provider`` define the headers that will be used in the
+    authentication process as-is, by giving their names (e.g. ``Authorization``) and their value (e.g
+    ``"Something {userinput}"``) as regular Python string templates that enable passing in the user input necessary to
     compute its identity. The user input awaited in the header value string must be present in the user config file.
     In the sample above, the plugin await for user credentials to be specified as::
 
