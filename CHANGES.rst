@@ -1,8 +1,8 @@
 Release history
 ---------------
 
-3.0.0b3 (2024-08-01)
-++++++++++++++++++++
+v3.0.0b3 (2024-08-01)
++++++++++++++++++++++
 
 Breaking changes
 ^^^^^^^^^^^^^^^^
@@ -45,8 +45,8 @@ Miscellaneous
 * **[test]** Fixed end-to-end tests (:pull:`1236`)
 * External product types reference updates (:pull:`1244`)(:pull:`1246`)(:pull:`1251`)
 
-3.0.0b2 (2024-06-29)
-++++++++++++++++++++
+v3.0.0b2 (2024-06-29)
++++++++++++++++++++++
 
 Core features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,8 +65,8 @@ Miscellaneous
 * **[docs]** Custom mock search plugin example (:pull:`1242`)
 * External product types reference updates (:pull:`1234`)
 
-3.0.0b1 (2024-06-24)
-++++++++++++++++++++
+v3.0.0b1 (2024-06-24)
++++++++++++++++++++++
 
 Breaking changes
 ^^^^^^^^^^^^^^^^
@@ -174,13 +174,13 @@ Miscellaneous
   (:pull:`1110`)(:pull:`1114`)(:pull:`1136`)(:pull:`1137`)(:pull:`1140`)(:pull:`1146`)(:pull:`1151`)(:pull:`1153`)
   (:pull:`1160`)(:pull:`1165`)(:pull:`1203`)(:pull:`1204`)(:pull:`1206`)(:pull:`1207`)(:pull:`1208`)(:pull:`1229`)
 
-2.12.1 (2024-03-05)
-+++++++++++++++++++
+v2.12.1 (2024-03-05)
+++++++++++++++++++++
 
 * `CdsApi` queryables fix (:pull:`1048`)
 
-2.12.0 (2024-02-19)
-+++++++++++++++++++
+v2.12.0 (2024-02-19)
+++++++++++++++++++++
 
 * Individual product asset download methods (:pull:`932`)
 * New environment variable `EODAG_CFG_DIR` available for custom configuration directory (:pull:`927`)
@@ -208,8 +208,8 @@ Miscellaneous
   (:pull:`980`)(:pull:`988`)(:pull:`991`)(:pull:`996`)(:pull:`1003`)(:pull:`1009`)(:pull:`1013`)(:pull:`1016`)
   (:pull:`1019`)(:pull:`1022`)(:pull:`1024`)(:pull:`1025`)
 
-2.11.0 (2023-11-20)
-+++++++++++++++++++
+v2.11.0 (2023-11-20)
+++++++++++++++++++++
 
 * Fallback mechanism for search (:pull:`753`)(:pull:`807`)
 * `creodias` and `cop_dataspace` configuration update (from `OData` to `OpenSearch`) (:pull:`866`)(:pull:`883`)
@@ -235,8 +235,8 @@ Miscellaneous
   (:pull:`832`)(:pull:`835`)(:pull:`838`)(:pull:`844`)(:pull:`867`)(:pull:`868`)(:pull:`872`)(:pull:`877`)(:pull:`878`)
   (:pull:`881`)(:pull:`893`)(:pull:`899`)(:pull:`913`)(:pull:`920`)(:pull:`925`)(:pull:`926`)
 
-2.11.0b1 (2023-07-28)
-+++++++++++++++++++++
+v2.11.0b1 (2023-07-28)
+++++++++++++++++++++++
 
 * `wekeo <https://www.wekeo.eu>`_ as new provider (:pull:`772`)
 * Server-mode Flask to FastAPI (:pull:`701`)
@@ -255,8 +255,8 @@ Miscellaneous
   (:pull:`729`)(:pull:`731`)(:pull:`737`)(:pull:`738`)(:pull:`743`)(:pull:`744`)(:pull:`745`)(:pull:`749`)(:pull:`751`)
   (:pull:`762`)(:pull:`771`)(:pull:`775`)(:pull:`777`)
 
-2.10.0 (2023-04-18)
-+++++++++++++++++++
+v2.10.0 (2023-04-18)
+++++++++++++++++++++
 
 * `hydroweb_next` (`hydroweb.next <https://hydroweb.next.theia-land.fr>`_), thematic hub for hydrology data access,
   as new provider (:pull:`711`)
@@ -272,8 +272,8 @@ Miscellaneous
 * Various minor fixes and improvements (:pull:`693`)(:pull:`694`)(:pull:`695`)(:pull:`696`)(:pull:`703`)(:pull:`707`)
   (:pull:`712`)(:pull:`714`)
 
-2.9.2 (2023-03-31)
-++++++++++++++++++
+v2.9.2 (2023-03-31)
++++++++++++++++++++
 
 * `planetary_computer`, `Microsoft Planetary Computer <https://planetarycomputer.microsoft.com/>`_  as new provider
   (:pull:`659`)
@@ -285,8 +285,8 @@ Miscellaneous
 * Various minor fixes and improvements (:pull:`665`)(:pull:`666`)(:pull:`667`)(:pull:`668`)(:pull:`669`)(:pull:`670`)
   (:pull:`675`)(:pull:`688`)(:pull:`690`)(:pull:`691`)
 
-2.9.1 (2023-02-27)
-++++++++++++++++++
+v2.9.1 (2023-02-27)
++++++++++++++++++++
 
 * ``cop_dataspace``, `Copernicus Data Space <https://dataspace.copernicus.eu>`_  as new provider (:pull:`658`)
 * EODAG specific `User-Agent` appended to requests headers (:pull:`656`)
@@ -297,8 +297,8 @@ Miscellaneous
 * Fixes search errors handling (:pull:`660`)
 * Various minor fixes and improvements (:pull:`649`)(:pull:`652`)
 
-2.9.0 (2023-02-16)
-++++++++++++++++++
+v2.9.0 (2023-02-16)
++++++++++++++++++++
 
 * Optimizes search time mixing count and search requests when possible (:pull:`632`)
 * Optimizes search time with rewritten ``JSONPath.parse`` usage now based on a
@@ -314,8 +314,8 @@ Miscellaneous
   (:pull:`629`)(:pull:`630`)(:pull:`635`)(:pull:`638`)(:pull:`640`)(:pull:`641`)(:pull:`642`)(:pull:`644`)(:pull:`646`)
   (:pull:`647`)
 
-2.8.0 (2023-01-17)
-++++++++++++++++++
+v2.8.0 (2023-01-17)
++++++++++++++++++++
 
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_ as new forecast provider,
   in the context of DOMINO-X (:pull:`604`)
@@ -334,8 +334,8 @@ Miscellaneous
   (:pull:`586`)(:pull:`588`)(:pull:`589`)(:pull:`590`)(:pull:`592`)(:pull:`593`)(:pull:`595`)(:pull:`597`)(:pull:`598`)
   (:pull:`599`)(:pull:`609`)(:pull:`610`)
 
-2.7.0 (2022-11-29)
-++++++++++++++++++
+v2.7.0 (2022-11-29)
++++++++++++++++++++
 
 * Fetch external product types before searching for an unkown product type (:pull:`559`)
 * Handle local assets in :class:`~eodag.plugins.download.http.HTTPDownload` plugin (:pull:`561`)
@@ -343,16 +343,16 @@ Miscellaneous
 * Fixed request error handling during :meth:`~eodag.api.core.EODataAccessGateway.search_all` (:pull:`554`)
 * Various minor fixes and improvements (:pull:`555`)(:pull:`558`)(:pull:`562`)
 
-2.6.2 (2022-11-15)
-++++++++++++++++++
+v2.6.2 (2022-11-15)
++++++++++++++++++++
 
 * Added new methods to get assets filename from header (:pull:`542`)
 * All local files URI formats are now supported (:pull:`545`)
 * More tests (:pull:`539`)(:pull:`549`)
 * Various minor fixes and improvements (:pull:`535`)(:pull:`540`)(:pull:`541`)(:pull:`543`)(:pull:`544`)(:pull:`553`)
 
-2.6.1 (2022-10-19)
-++++++++++++++++++
+v2.6.1 (2022-10-19)
++++++++++++++++++++
 
 * Swagger UI now needs to be manually run when using python API (:pull:`529`)
 * Removed `cloudCover` restriction in product types discovery (:pull:`530`)
@@ -363,8 +363,8 @@ Miscellaneous
 * Fixed S3 bucket extraction (:pull:`524`)
 * Various minor fixes and improvements (:pull:`522`)(:pull:`523`)(:pull:`525`)(:pull:`526`)
 
-2.6.0 (2022-10-07)
-++++++++++++++++++
+v2.6.0 (2022-10-07)
++++++++++++++++++++
 
 * New `product types automatic discovery\
   <https://eodag.rtfd.io/en/latest/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
@@ -380,19 +380,19 @@ Miscellaneous
 * Various minor fixes and improvements (:pull:`469`)(:pull:`483`)(:pull:`484`)(:pull:`485`)(:pull:`490`)(:pull:`492`)
   (:pull:`494`)(:pull:`495`)(:pull:`496`)(:pull:`497`)(:pull:`510`)(:pull:`511`)(:pull:`514`)(:pull:`517`)
 
-2.5.2 (2022-07-05)
-++++++++++++++++++
+v2.5.2 (2022-07-05)
++++++++++++++++++++
 
 * Fixes missing ``productPath`` property for some ``earth_search`` products (:pull:`480`)
 
-2.5.1 (2022-06-27)
-++++++++++++++++++
+v2.5.1 (2022-06-27)
++++++++++++++++++++
 
 * Fixed broken :class:`~eodag.plugins.download.aws.AwsDownload` configuration for STAC providers (:pull:`475`)
 * Set ``setuptools_scm`` max version for python3.6 (:pull:`477`)
 
-2.5.0 (2022-06-07)
-++++++++++++++++++
+v2.5.0 (2022-06-07)
++++++++++++++++++++
 
 * `ecmwf <https://www.ecmwf.int/>`_ as new provider with new API plugin :class:`~eodag.plugins.apis.ecmwf.EcmwfApi`
   and `tutorial <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_ecmwf.html>`_, developed in the context
@@ -414,8 +414,8 @@ Miscellaneous
 * Various minor fixes and improvements (:pull:`430`)(:pull:`433`)(:pull:`434`)(:pull:`436`)(:pull:`438`)(:pull:`444`)
   (:pull:`448`)(:pull:`449`)(:pull:`451`)(:pull:`460`)(:pull:`464`)
 
-2.4.0 (2022-03-09)
-++++++++++++++++++
+v2.4.0 (2022-03-09)
++++++++++++++++++++
 
 * STAC API POST requests and Query fragment handled in both
   :class:`~eodag.plugins.search.qssearch.StacSearch` client (:pull:`363`)(:pull:`367`) and server mode (:pull:`417`)
@@ -434,8 +434,8 @@ Miscellaneous
   (:pull:`374`)(:pull:`377`)(:pull:`379`)(:pull:`388`)(:pull:`394`)(:pull:`393`)(:pull:`405`)(:pull:`401`)(:pull:`398`)
   (:pull:`399`)(:pull:`419`)(:pull:`415`)(:pull:`410`)(:pull:`420`)
 
-2.3.4 (2021-10-08)
-++++++++++++++++++
+v2.3.4 (2021-10-08)
++++++++++++++++++++
 
 * Link to the new eodag Jupyterlab extension: `eodag-labextension <https://github.com/CS-SI/eodag-labextension>`_
   (:pull:`352`)
@@ -445,15 +445,15 @@ Miscellaneous
 * Fixed issue when downloading ``S2_MSI_L2A`` products from ``mundi`` (:pull:`350`)
 * Various minor fixes and improvements (:pull:`340`)(:pull:`341`)(:pull:`345`)
 
-2.3.3 (2021-08-11)
-++++++++++++++++++
+v2.3.3 (2021-08-11)
++++++++++++++++++++
 
 * Fixed issue when searching by id (:pull:`335`)
 * Specified minimal `eodag-cube <https://github.com/CS-SI/eodag-cube>`_ version needed (:pull:`338`)
 * Various minor fixes and improvements (:pull:`336`)(:pull:`337`)
 
-2.3.2 (2021-07-29)
-++++++++++++++++++
+v2.3.2 (2021-07-29)
++++++++++++++++++++
 
 * Fixes duplicate logging in :meth:`~eodag.api.core.EODataAccessGateway.search_all` (:pull:`330`)
 * Enable additional arguments like `productType` when searching by id (:pull:`329`)
@@ -462,22 +462,22 @@ Miscellaneous
 * Fixes missing `productType` in product properties when searching by id (:pull:`320`)
 * Various minor fixes and improvements (:pull:`319`)(:pull:`321`)
 
-2.3.1 (2021-07-09)
-++++++++++++++++++
+v2.3.1 (2021-07-09)
++++++++++++++++++++
 
 - Dockerfile update to be compatible with `stac-browser v2.0` (:pull:`314`)
 - Adds new notebook extra dependency (:pull:`317`)
 - EOProduct drivers definition update (:pull:`316`)
 
-2.3.0 (2021-06-24)
-++++++++++++++++++
+v2.3.0 (2021-06-24)
++++++++++++++++++++
 
 - Removed Sentinel-3 products not available on peps any more (:pull:`304`, thanks `@tpfd <https://github.com/tpfd>`_)
 - Prevent :meth:`~eodag.utils.notebook.NotebookWidgets.display_html` in ipython shell (:pull:`307`)
 - Fixed plugins reload after having updated providers settings from user configuration (:pull:`306`)
 
-2.3.0b1 (2021-06-11)
-++++++++++++++++++++
+v2.3.0b1 (2021-06-11)
++++++++++++++++++++++
 
 - Re-structured and more complete documentation (:pull:`233`, and also :pull:`224`, :pull:`254`, :pull:`282`,
   :pull:`287`, :pull:`301`)
@@ -509,8 +509,8 @@ Miscellaneous
 - Various minor fixes and improvements (:pull:`219`)(:pull:`246`)(:pull:`247`)(:pull:`258`)(:pull:`233`)(:pull:`273`)
   (:pull:`274`)(:pull:`280`)(:pull:`284`)(:pull:`288`)(:pull:`290`)(:pull:`295`)
 
-2.2.0 (2021-03-26)
-++++++++++++++++++
+v2.2.0 (2021-03-26)
++++++++++++++++++++
 
 - New :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
   :meth:`~eodag.api.core.EODataAccessGateway.search_iter_page` methods to simplify pagination handling (:pull:`190`)
@@ -522,15 +522,15 @@ Miscellaneous
 - More explicit signature for :meth:`~eodag.utils.logging.setup_logging`, fixes :issue:`197`
 - Various minor fixes
 
-2.1.1 (2021-03-18)
-++++++++++++++++++
+v2.1.1 (2021-03-18)
++++++++++++++++++++
 
 - Continuous Integration performed with GitHub actions
 - Providers config automatically loaded from EODAG external plugins, fixes :issue:`172`
 - Various minor fixes
 
-2.1.0 (2021-03-09)
-++++++++++++++++++
+v2.1.0 (2021-03-09)
++++++++++++++++++++
 
 - `earth_search <https://www.element84.com/earth-search>`_ and
   `usgs_satapi_aws <https://landsatlook.usgs.gov/sat-api>`_ as new providers
@@ -548,14 +548,14 @@ Miscellaneous
   parameter to :meth:`~eodag.api.core.EODataAccessGateway.search`.
 - Drop support of Python 3.5
 
-2.0.1 (2021-02-05)
-++++++++++++++++++
+v2.0.1 (2021-02-05)
++++++++++++++++++++
 
 - Fixes issue when rebuilding index on NFS, see :issue:`151`
 - Tests can be run in parallel mode, fixes :issue:`103`
 
-2.0 (2021-01-28)
-++++++++++++++++
+v2.0 (2021-01-28)
++++++++++++++++++
 
 - Add a new provider dynamically
 - Allow to dynamically set download options, fixes :issue:`145` and :issue:`112`
@@ -571,8 +571,8 @@ Miscellaneous
 - Documentation and tutorials update
 - Various minor fixes, code refactorization, and tests update
 
-2.0b2 (2020-12-18)
-++++++++++++++++++
+v2.0b2 (2020-12-18)
++++++++++++++++++++
 
 - New method :meth:`~eodag.api.core.EODataAccessGateway.deserialize_and_register`, fixes :issue:`140`
 - Load static stac catalogs as :class:`~eodag.api.search_result.SearchResult`
@@ -581,8 +581,8 @@ Miscellaneous
 - Removed fixed dependencies, fixes :issue:`82`
 - Use locations conf template by default
 
-2.0b1 (2020-11-17)
-++++++++++++++++++
+v2.0b1 (2020-11-17)
++++++++++++++++++++
 
 - STAC API compliant REST server
 - Common configuration for STAC providers
@@ -590,13 +590,13 @@ Miscellaneous
 - Search by geometry / bbox / location name, fixes :issue:`49`
 - removed Python 2.7 support
 
-1.6.0 (2020-08-24)
-++++++++++++++++++
+v1.6.0 (2020-08-24)
++++++++++++++++++++
 
 - Warning: last release including Python 2.7 support
 
-1.6.0rc2 (2020-08-11)
-+++++++++++++++++++++
+v1.6.0rc2 (2020-08-11)
+++++++++++++++++++++++
 
 - Queryable parameters configuration update for peps
 - Fixed re-download error after original zip deletion, fixes :issue:`142`
@@ -604,8 +604,8 @@ Miscellaneous
 - Default user configuration file usage in CLI mode
 - Fixed error when provider returns geometry as bbox with negative coords, fixes :issue:`143`
 
-1.6.0rc0 (2020-06-18)
-+++++++++++++++++++++
+v1.6.0rc0 (2020-06-18)
+++++++++++++++++++++++
 
 - Github set as default version control repository hosting service for source code and issues
 - New provider for AWS: aws_eos (S2_MSI_L1C/L2A, S1_SAR_GRD, L8, CBERS-4, MODIS, NAIP), replaces aws_s3_sentinel2_l1c
@@ -618,19 +618,19 @@ Miscellaneous
 - Advanced tutorial notebook, fixes :issue:`130`
 - Various minor fixes, code refactorization, and tests update
 
-1.5.2 (2020-05-06)
-++++++++++++++++++
+v1.5.2 (2020-05-06)
++++++++++++++++++++
 
 - Fix CLI download_all missing plugin configuration, fixes :issue:`134`
 
-1.5.1 (2020-04-08)
-++++++++++++++++++
+v1.5.1 (2020-04-08)
++++++++++++++++++++
 
 - ``productionStatus`` parameter renamed to ``storageStatus``,
   see `Parameters Mapping documentation <https://eodag.readthedocs.io/en/latest/intro.html#parameters-mapping>`_
 
-1.5.0 (2020-04-08)
-++++++++++++++++++
+v1.5.0 (2020-04-08)
++++++++++++++++++++
 
 - ``productionStatus`` parameter standardization over providers
 - Not-available products download management, using ``wait``/``timeout``
@@ -640,19 +640,19 @@ Miscellaneous
 - Update search endoint for aws_s3_sentinel2_l1c and add RequestPayer option usage,
   fixes :issue:`131`
 
-1.4.2 (2020-03-04)
-++++++++++++++++++
+v1.4.2 (2020-03-04)
++++++++++++++++++++
 
 - Skip badly configured providers in user configuration, see :issue:`129`
 
-1.4.1 (2020-02-25)
-++++++++++++++++++
+v1.4.1 (2020-02-25)
++++++++++++++++++++
 
 - Warning message if an unknow provider is found in user configuration file,
   fixes :issue:`129`
 
-1.4.0 (2020-02-24)
-++++++++++++++++++
+v1.4.0 (2020-02-24)
++++++++++++++++++++
 
 - Add to query the parameters set in the provider product type definition
 - New :class:`~eodag.plugins.download.s3rest.S3RestDownload` plugin for mundi, fixes :issue:`127`
@@ -665,8 +665,8 @@ Miscellaneous
 - Sobloo and creodias quicklooks fix
 - Eodag logo added and other minor changes to documentation
 
-1.3.6 (2020-01-24)
-++++++++++++++++++
+v1.3.6 (2020-01-24)
++++++++++++++++++++
 
 - USGS plugin corrections, fixes :issue:`73`
 - Fixed py27 encodeurl in querystring
@@ -674,33 +674,33 @@ Miscellaneous
 - Default eodag conf used in end-to-end tests, fixes :issue:`98`
 - Fixed :meth:`~eodag.api.core.EODataAccessGateway.download_all` method :issue:`118`
 
-1.3.5 (2020-01-07)
-++++++++++++++++++
+v1.3.5 (2020-01-07)
++++++++++++++++++++
 
 - Removed tqdm_notebook warning, fixes :issue:`117`
 - Removed traceback from geom intersection warning, fixes :issue:`114`
 - Documentation update for provider priorities and parametters mapping
 - New test for readme/pypi syntax
 
-1.3.4 (2019-12-12)
-++++++++++++++++++
+v1.3.4 (2019-12-12)
++++++++++++++++++++
 
 - Use sobloo official api endpoint, fixes :issue:`115`
 - New badges in readme and CS logo
 - Set owslib version to 0.18.0 (py27 support dropped)
 
-1.3.3 (2019-10-11)
-++++++++++++++++++
+v1.3.3 (2019-10-11)
++++++++++++++++++++
 
 - Fixes product configuration for theia provider :issue:`113`
 
-1.3.2 (2019-09-27)
-++++++++++++++++++
+v1.3.2 (2019-09-27)
++++++++++++++++++++
 
 - Fixes pagination configuration for sobloo provider :issue:`111`
 
-1.3.1 (2019-09-27)
-++++++++++++++++++
+v1.3.1 (2019-09-27)
++++++++++++++++++++
 
 - Added calls graphs in documentation
 - Tutorial notebooks fixes :issue:`109`,
@@ -708,65 +708,65 @@ Miscellaneous
 - Download unit display fix :issue:`108`
 - Fix date format with sobloo provider :issue:`107`
 
-1.3.0 (2019-09-06)
-++++++++++++++++++
+v1.3.0 (2019-09-06)
++++++++++++++++++++
 
 - Add parameters mapping in documentation
 - Add new queryable parameters for sobloo :issue:`105`
 - Fix custom search
 - Fix sobloo cloudCoverage query :issue:`106`
 
-1.2.3 (2019-08-26)
-++++++++++++++++++
+v1.2.3 (2019-08-26)
++++++++++++++++++++
 
 - Binder basic tuto Binder badge only
 
-1.2.2 (2019-08-23)
-++++++++++++++++++
+v1.2.2 (2019-08-23)
++++++++++++++++++++
 
 - Binder basic tuto working
 
-1.2.1 (2019-08-23)
-++++++++++++++++++
+v1.2.1 (2019-08-23)
++++++++++++++++++++
 
 - Add binder links
 
-1.2.0 (2019-08-22)
-++++++++++++++++++
+v1.2.0 (2019-08-22)
++++++++++++++++++++
 
 - Add download_all support by plugins
 - Fix GeoJSON rounding issue with new geojson lib
 
-1.1.3 (2019-08-05)
-++++++++++++++++++
+v1.1.3 (2019-08-05)
++++++++++++++++++++
 
 - Tutorial fix
 
-1.1.2 (2019-08-05)
-++++++++++++++++++
+v1.1.2 (2019-08-05)
++++++++++++++++++++
 
 - Fix dependency version issue (Jinja2)
 - Tutorials fixes and enhancements
 
-1.1.1 (2019-07-26)
-++++++++++++++++++
+v1.1.1 (2019-07-26)
++++++++++++++++++++
 
 - Updates documentation for custom field
 
-1.1.0 (2019-07-23)
-++++++++++++++++++
+v1.1.0 (2019-07-23)
++++++++++++++++++++
 
 - Adds custom fields for query string search
 - Adapts to new download interface for sobloo
 
-1.0.1 (2019-04-30)
-++++++++++++++++++
+v1.0.1 (2019-04-30)
++++++++++++++++++++
 
 - Fixes :issue:`97`
 - Fixes :issue:`96`
 
-1.0 (2019-04-26)
-++++++++++++++++
+v1.0 (2019-04-26)
++++++++++++++++++
 
 - Adds product type search functionality
 - Extends the list of search parameters with ``instrument``, ``platform``, ``platformSerialIdentifier``,
@@ -777,8 +777,8 @@ Miscellaneous
 - Exposes get quicklook functionality on REST interface
 - Fixes a bug occuring when ``outputs_prefix`` config parameter is not set in user config
 
-0.7.2 (2019-03-26)
-++++++++++++++++++
+v0.7.2 (2019-03-26)
++++++++++++++++++++
 
 - Fixes bug due to the new version of PyYaml
 - Updates documentation and tutorial
@@ -786,8 +786,8 @@ Miscellaneous
   ``EODAG_CFG_FILE`` environment variable.
 
 
-0.7.1 (2019-03-01)
-++++++++++++++++++
+v0.7.1 (2019-03-01)
++++++++++++++++++++
 
 - Creates a http rest server interface to eodag
 - Switches separator of conversion functions in search parameters: the separator switches from "$" to "#"
@@ -806,8 +806,8 @@ Miscellaneous
   and how many results to retrieve (default 20)
 
 
-0.7.0 (2018-12-04)
-++++++++++++++++++
+v0.7.0 (2018-12-04)
++++++++++++++++++++
 
 - Creates Creodias, Mundi, Onda and Wekeo drivers
 - Every provider configuration parameter is now overridable by the user configuration
@@ -817,27 +817,27 @@ Miscellaneous
 - New authentication plugins (keycloak with openid)
 
 
-0.6.3 (2018-09-24)
-++++++++++++++++++
+v0.6.3 (2018-09-24)
++++++++++++++++++++
 
 - Silences rasterio's NotGeoreferencedWarning warning when sentinel2_l1c driver tries to determine the address of a
   requested band on the disk
 - Changes the `DEFAULT_PROJ` constant in `eodag.utils` from a `pyproj.Proj` instance to `rasterio.crs.CRS` instance
 
-0.6.2 (2018-09-24)
-++++++++++++++++++
+v0.6.2 (2018-09-24)
++++++++++++++++++++
 
 - Updates catalog url for airbus-ds provider
 - Removes authentication for airbus-ds provider on catalog search
 
-0.6.1 (2018-09-19)
-++++++++++++++++++
+v0.6.1 (2018-09-19)
++++++++++++++++++++
 
 - Enhance error message for missing credentials
 - Enable EOProduct to remember its remote address for subsequent downloads
 
-0.6.0 (2018-08-09)
-++++++++++++++++++
+v0.6.0 (2018-08-09)
++++++++++++++++++++
 
 - Add support of a new product type: PLD_BUNDLE provided by theia-landsat
 - Create a new authentication plugin to perform headless OpenID connect authorisation
@@ -847,26 +847,26 @@ Miscellaneous
 - Set product archive depth for peps provider to 2 (after extracting a product from peps,
   the product is nested one level inside a top level directory where it was extracted)
 
-0.5.0 (2018-08-02)
-++++++++++++++++++
+v0.5.0 (2018-08-02)
++++++++++++++++++++
 
 - Make progress bar for download optional and customizable
 - Fix bugs in FilterOverlap cruncher
 
-0.4.0 (2018-07-26)
-++++++++++++++++++
+v0.4.0 (2018-07-26)
++++++++++++++++++++
 
 - Enable quicklook retrieval interface for EOProduct
 
-0.3.0 (2018-07-23)
-++++++++++++++++++
+v0.3.0 (2018-07-23)
++++++++++++++++++++
 
 - Add docs for tutorials
 - Configure project for CI/CD on Bitbucket pipelines
 
 
-0.2.0 (2018-07-17)
-++++++++++++++++++
+v0.2.0 (2018-07-17)
++++++++++++++++++++
 
 - Prepare project for release as open source and publication on PyPI
 - The get_data functionality now returns an xarray.DataArray instead of numpy.ndarray
@@ -875,8 +875,8 @@ Miscellaneous
 - Add tutorials
 
 
-0.1.0 (2018-06-20)
-++++++++++++++++++
+v0.1.0 (2018-06-20)
++++++++++++++++++++
 
 - Handle different organisation of files in downloaded zip files
 - Add HTTPHeaderAuth authentication plugin
@@ -891,8 +891,8 @@ Miscellaneous
 - Some bug fixes
 
 
-0.0.1 (2018-06-15)
-++++++++++++++++++
+v0.0.1 (2018-06-15)
++++++++++++++++++++
 
 - Starting to be stable for internal use
 - Basic functionality implemented (search, download, crunch, get_data)
