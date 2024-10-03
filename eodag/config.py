@@ -446,6 +446,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
     #: URL to fetch the search result when the data request is done
     result_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
+    #: if date parameters are mandatory in the request
+    dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
     search_definition: Dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
@@ -461,6 +464,12 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
     #: List of parameters used to parse metadata but that must not be included to the query
     remove_from_query: List[str]
+    #: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
+    #: base url of the S3 used
+    s3_endpoint: str
+    #: :class:`~eodag.plugins.search.csw.CSWSearch`
+    #: OGC Catalogue Service version
+    version: str
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
@@ -569,8 +578,12 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: Credentials json structure if they should be sent as POST data
     req_data: Dict[str, Any]
-    #: :class:`~eodag.plugins.authentication.token.TokenAuth` URL used to fetch the access token with a refresh token
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: URL used to fetch the access token with a refresh token
     refresh_uri: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: type of the token
+    token_type: str
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin configuration
     #: used to retrieve subject token
@@ -581,6 +594,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: Audience that the token ID is intended for. :attr:`~eodag.config.PluginConfig.client_id` of the Relying Party
     audience: str
+    #: :class:`~eodag.plugins.authentication.generic.GenericAuth`
+    #: which authentication method should be used
+    method: str
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper

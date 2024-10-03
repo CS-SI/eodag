@@ -43,12 +43,13 @@ logger = logging.getLogger("eodag.search.static_stac_search")
 
 class StaticStacSearch(StacSearch):
     """Static STAC Catalog search plugin
+
     This plugin first loads all STAC items found in the catalog, and converts them to
-    EOProducts using StacSearch.
+    EOProducts using :class:`~eodag.plugins.search.qssearch.StacSearch`.
     Then it uses crunchers to only keep products matching query parameters.
 
-    The plugin inherits the configuration parameters from PostJsonSearch (via the StacSearch
-    inheritance) with the following particularities:
+    The plugin inherits the configuration parameters from :class:`~eodag.plugins.search.qssearch.PostJsonSearch`
+    (via the :class:`~eodag.plugins.search.qssearch.StacSearch` inheritance) with the following particularities:
 
     :param provider: provider name
     :param config: Search plugin configuration:

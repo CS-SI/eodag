@@ -81,8 +81,9 @@ class BuildPostSearchResult(PostJsonSearch):
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
     object.
 
-    The available configuration parameters are inherited from parent classes (PostJsonSearch and
-    QueryStringSearch), with particularly for this plugin:
+    The available configuration parameters are inherited from parent classes
+    (:class:`~eodag.plugins.search.qssearch.PostJsonSearch` and
+    :class:`~eodag.plugins.search.qssearch.QueryStringSearch`), with particularly for this plugin:
 
     :param provider: provider name
     :param config: Search plugin configuration:
@@ -243,8 +244,10 @@ class BuildSearchResult(BuildPostSearchResult):
     This plugin builds a single :class:`~eodag.api.search_result.SearchResult` object
     using given query parameters as product properties.
 
-    The available configuration parameters inherits from parent classes (BuildPostSearchResult,
-    PostJsonSearch and QueryStringSearch), with particularly for this plugin:
+    The available configuration parameters inherits from parent classes
+    (:class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult`,
+    :class:`~eodag.plugins.search.qssearch.PostJsonSearch` and
+    :class:`~eodag.plugins.search.qssearch.QueryStringSearch`), with particularly for this plugin:
 
     :param provider: provider name
     :param config: Search plugin configuration:
