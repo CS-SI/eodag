@@ -464,9 +464,6 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
     #: List of parameters used to parse metadata but that must not be included to the query
     remove_from_query: List[str]
-    #: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
-    #: base url of the S3 used
-    s3_endpoint: str
     #: :class:`~eodag.plugins.search.csw.CSWSearch`
     #: OGC Catalogue Service version
     version: str
