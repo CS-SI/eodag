@@ -1924,7 +1924,10 @@ class EODataAccessGateway:
                     matching_url = (
                         next(iter(eo_product.assets.values()))["href"]
                         if len(eo_product.assets) > 0
-                        else eo_product.properties.get("downloadLink")
+                        else (
+                            eo_product.properties.get("downloadLink")
+                            or eo_product.properties.get("orderLink")
+                        )
                     )
                     try:
                         auth_plugin = next(

@@ -2227,7 +2227,7 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://ads.atmosphere.copernicus.eu
+    matching_url: https://ads-beta.atmosphere.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -2586,7 +2586,7 @@
     - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://cds.climate.copernicus.eu
+    matching_url: https://cds-beta.climate.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
