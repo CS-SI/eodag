@@ -512,14 +512,14 @@ class TestEODagEndToEnd(EndToEndBase):
         product = self.execute_search(
             *COP_ADS_SEARCH_ARGS, search_kwargs_dict=COP_ADS_SEARCH_KWARGS
         )
-        expected_filename = "{}".format(product.properties["title"])
+        expected_filename = "{}.grib".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_cop_cds(self):
         product = self.execute_search(
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
-        expected_filename = "{}".format(product.properties["title"])
+        expected_filename = "{}.grib".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sara(self):
@@ -539,7 +539,7 @@ class TestEODagEndToEnd(EndToEndBase):
 
     def test_end_to_end_search_download_wekeo_ecmwf(self):
         product = self.execute_search(*WEKEO_ECMWF_SEARCH_ARGS)
-        expected_filename = "{}".format(product.properties["title"])
+        expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename, timeout_sec=40)
 
     def test_end_to_end_search_download_eumetsat_ds(self):
