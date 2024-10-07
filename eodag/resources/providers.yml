@@ -2574,15 +2574,6 @@
           "time": {startTimeFromAscendingNode#get_ecmwf_time}
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  anchor_hday_hmonth_hyear: &hday_hmonth_hyear
-    completionTimeFromAscendingNode:
-    - |
-      {{
-        "hyear": {_date#interval_to_datetime_dict}["year"],
-        "hmonth": {_date#interval_to_datetime_dict}["month"],
-        "hday": {_date#interval_to_datetime_dict}["day"]
-      }}
-    - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
     matching_url: https://cds-beta.climate.copernicus.eu
@@ -5443,19 +5434,6 @@
         metadata_mapping:
           download_id: $.json.features[0]._id
           downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
-    products:
-      GLOFAS_FORECAST:
-        output_extension: .grib
-      GLOFAS_REFORECAST:
-        output_extension: .grib
-      GLOFAS_HISTORICAL:
-        output_extension: .grib
-      GLOFAS_SEASONAL:
-        output_extension: .grib
-      GLOFAS_SEASONAL_REFORECAST:
-        output_extension: .grib
-      FIRE_HISTORICAL:
-        output_extension: .grib
 
 ---
 !provider  # MARK: wekeo_cmems
