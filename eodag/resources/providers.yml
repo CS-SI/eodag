@@ -6496,7 +6496,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_file_url: "https://cs-si.github.io/eodag/eodag/resources/constraints/{dataset}.json"
+    constraints_file_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
     metadata_mapping:
       productType: destination-earth
       storageStatus: OFFLINE

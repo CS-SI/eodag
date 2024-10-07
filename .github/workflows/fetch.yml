@@ -15,7 +15,6 @@ jobs:
     - name: Checkout the repo
       uses: actions/checkout@v4
       with:
-        lfs: true
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
     - name: Set up Python 3.8

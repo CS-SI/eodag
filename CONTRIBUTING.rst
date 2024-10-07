@@ -30,11 +30,7 @@ include the following information in your post:
 Submit patches
 --------------
 
-If you intend to work on files stored with `Git LFS <https://git-lfs.com>`_, as the ones in
-`eodag/resources/constraints`, first follow the installation instructions on the
-`extension's website <https://git-lfs.com>`_. Otherwise, skip this step.
-
-To contribute to eodag source code:
+If you intend to contribute to eodag source code:
 
 .. code-block:: bash
 
