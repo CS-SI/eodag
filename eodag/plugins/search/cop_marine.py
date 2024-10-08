@@ -140,9 +140,12 @@ class CopMarineSearch(StaticStacSearch):
         )
         try:
             collection_data = requests.get(collection_url).json()
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            if exc.errno == 404:
+                logger.error("product %s not found", product_type)
+                raise UnsupportedProductType(product_type)
             logger.error("data for product %s could not be fetched", product_type)
-            raise UnsupportedProductType(product_type)
+            raise
 
         datasets = []
         for link in [li for li in collection_data["links"] if li["rel"] == "item"]:
