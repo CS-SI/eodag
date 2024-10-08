@@ -6541,17 +6541,15 @@
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     matching_url: https://[-\w\.]+.dte.destination-earth.eu
-    oidc_config_url: https://identity.cloudferro.com/auth/realms/Creodias-new/.well-known/openid-configuration
+    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
-    token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
     client_id: polytope-api-public
     user_consent_needed: false
     token_exchange_post_data_method: data
-    token_key: access_token
-    refresh_token_key: refresh_token
     token_provision: header
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
+    use_refresh_token: false  # don't use refresh token atm because it is very strange
 ---
 
 !provider # MARK: dedl
