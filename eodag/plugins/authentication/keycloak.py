@@ -98,7 +98,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """
 
     GRANT_TYPE = "password"
-    REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
+    REQUIRED_PARAMS = ["client_id", "client_secret", "token_provision"]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)

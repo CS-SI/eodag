@@ -1054,6 +1054,7 @@
     token_qs_key: 'token'
     auth_error_code: 401
     ssl_verify: true
+    allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
       # S1
     S1_SAR_RAW:
@@ -3780,6 +3781,7 @@
     token_qs_key: 'token'
     auth_error_code: 401
     ssl_verify: true
+    allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
     # S2
     S2_MSI_L1C:
@@ -6549,7 +6551,6 @@
     token_provision: header
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
-    use_refresh_token: false  # don't use refresh token atm because it is very strange
 ---
 
 !provider # MARK: dedl

@@ -549,11 +549,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
     #: The OIDC provider's .well-known/openid-configuration url.
     oidc_config_url: str
-    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiances
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiences
     allowed_audiences: List[str]
-    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` use refresh token
-    #: (hopefully) temporary solution to not use refresh token for dedt_lumi because it is very strange
-    use_refresh_token: bool
     #: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
     #: Base url used in the request to fetch the token
     auth_base_uri: str

@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 import string
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from random import SystemRandom
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -130,16 +130,16 @@ class OIDCRefreshTokenBase(Authentication):
         self.access_token_expiration = datetime.fromtimestamp(
             self.decode_jwt_token(self.access_token)["exp"], UTC
         )
-        if getattr(self.config, "use_refresh_token", True):
-            self.refresh_token = response.get(
-                getattr(self.config, "refresh_token_key", "refresh_token"), ""
+        self.refresh_token = response.get(
+            getattr(self.config, "refresh_token_key", "refresh_token"), ""
+        )
+        if self.refresh_token and response.get("refresh_expires_in", 0):
+            self.refresh_token_expiration = now + timedelta(
+                seconds=int(response["refresh_expires_in"])
             )
-            self.refresh_token_expiration = datetime.fromtimestamp(
-                self.decode_jwt_token(self.refresh_token)["exp"]
-                if self.refresh_token
-                else 0,
-                UTC,
-            )
+        else:
+            # refresh token does not expire but will be changed at each request
+            self.refresh_token_expiration = datetime.max
 
         return self.access_token
 
