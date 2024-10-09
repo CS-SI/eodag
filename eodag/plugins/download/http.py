@@ -79,6 +79,7 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NotAvailableError,
+    RequestError,
     TimeOutError,
 )
 
@@ -193,18 +194,11 @@ class HTTPDownload(Download):
                     logger.debug(ordered_message)
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
-                    if hasattr(e, "response") and (
-                        content := getattr(e.response, "content", None)
-                    ):
-                        error_message = f"{content.decode('utf-8')} - {e}"
-                    else:
-                        error_message = str(e)
-                    logger.warning(
-                        "%s could not be ordered, request returned %s",
-                        product.properties["title"],
-                        error_message,
-                    )
                     self._check_auth_exception(e)
+                    title = product.properties["title"]
+                    message = f"{title} could not be ordered"
+                    raise RequestError.from_error(e, message) from e
+
                 return self.order_response_process(response, product)
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
