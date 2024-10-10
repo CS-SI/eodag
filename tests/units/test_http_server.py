@@ -1177,7 +1177,7 @@ class RequestTestCase(unittest.TestCase):
             f"collections/{self.tested_product_type}/items/foo/download?provider=peps",
             expected_status_code=500,
         )
-        assert "RequestError" in response.text
+        self.assertIn("RequestError", response.text)
 
     def test_root(self):
         """Request to / should return a valid response"""
