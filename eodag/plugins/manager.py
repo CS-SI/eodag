@@ -335,12 +335,8 @@ class PluginManager:
                 ):
                     # url matches
                     return True
-            if not plugin_matching_conf and not plugin_matching_url:
-                # plugin without match criteria
-                return True
-            else:
-                # no match
-                return False
+            # no match
+            return False
 
         # providers configs with given provider at first
         sorted_providers_config = deepcopy(self.providers_config)
@@ -354,7 +350,20 @@ class PluginManager:
                 auth_conf = getattr(provider_conf, key, None)
                 if auth_conf is None:
                     continue
-                if _is_auth_plugin_matching(auth_conf, matching_url, matching_conf):
+                # plugin without configured match criteria: only works for given provider
+                unconfigured_match = (
+                    True
+                    if (
+                        not getattr(auth_conf, "matching_conf", {})
+                        and not getattr(auth_conf, "matching_url", None)
+                        and provider == plugin_provider
+                    )
+                    else False
+                )
+
+                if unconfigured_match or _is_auth_plugin_matching(
+                    auth_conf, matching_url, matching_conf
+                ):
                     auth_conf.priority = provider_conf.priority
                     plugin = cast(
                         Authentication,
