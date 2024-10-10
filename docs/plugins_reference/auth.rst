@@ -9,6 +9,8 @@ Multiple authentication plugins can be defined per provider under ``auth``, ``se
 using *matching settings* :attr:`~eodag.config.PluginConfig.matching_url` and
 :attr:`~eodag.config.PluginConfig.matching_conf` as configuration parameters.
 Credentials are automatically shared between plugins having the same *matching settings*.
+Authentication plugins without *matching settings* configured will not be shared and will automatically match their
+provider.
 
 Authentication plugins must inherit the following class and implement :meth:`authenticate`:
 

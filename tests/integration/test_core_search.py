@@ -495,6 +495,23 @@ class TestCoreSearch(unittest.TestCase):
             },
         )
 
+        # auth plugin without match configuration
+        self.dag.add_provider(
+            "provider_without_match_configured",
+            "https://foo.bar/baz/search",
+            search={"need_auth": True},
+            auth={
+                "type": "GenericAuth",
+                "credentials": {
+                    "username": "some-username",
+                    "password": "some-password",
+                },
+            },
+        )
+        self.dag.search(provider="provider_without_match_configured")
+        self.assertEqual(mock_query.call_args[0][1].auth.username, "some-username")
+        mock_query.reset_mock()
+
         # search endpoint matching
         self.dag.add_provider(
             "provider_matching_search_api",
