@@ -119,7 +119,7 @@ class SearchArgs(BaseModel):
             )
             sort_by_arg[i] = (sort_param, sort_order[:3])
         # remove duplicates
-        pruned_sort_by_arg: SortByList = list(set(sort_by_arg))  # type: ignore
+        pruned_sort_by_arg: SortByList = list(dict.fromkeys(sort_by_arg))  # type: ignore
         for i, sort_by_tuple in enumerate(pruned_sort_by_arg):
             for j, sort_by_tuple_tmp in enumerate(pruned_sort_by_arg):
                 # since duplicated tuples or dictionnaries have been removed, if two sorting parameters are equal,

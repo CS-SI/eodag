@@ -75,25 +75,23 @@ Example URL:
 
 * http://127.0.0.1:5000/search?collections=S2_MSI_L1C&bbox=0,43,1,44&datetime=2018-01-20/2018-01-25&cloudCover=20
 
-Browsing
---------
 
-EODAG provides additional catalogs that extend browsing/filtering capabilities:
+STAC Browser
+-------------
 
-* ``country`` -> filters items on a specific area defined by selected country
-* ``year``
-        * ``month``
-                * ``day`` -> filters items using specified time interval
-* ``cloud_cover`` -> filters items with specified maximum cloud cover
+The STAC Browser can be used to browse data in a graphic user interface.
 
-Example URLs:
+Start the eodag server with
 
-* http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country : lists available countries
-* http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2019/month/10/cloud_cover/10 : catalog referencing S2_MSI_L1C
-  products over France, aquired during October 2019, and having 10% maximum cloud cover
+``EODAG_CORS_ALLOWED_ORIGINS=https://radiantearth.github.io eodag -vvv serve-rest``
 
-Browsing over catalogs can be experienced connecting EODAG STAC API to
-`STAC-Browser <https://github.com/radiantearth/stac-browser>`_. Simply run:
+and then open https://radiantearth.github.io/stac-browser/#/external/http:/127.0.0.1:5000.
+
+.. image:: _static/stac_browser_example.png
+   :width: 800
+   :alt: STAC browser example
+
+The STAC Browser can also be used with docker-compose:
 
 .. code-block:: bash
 
@@ -103,14 +101,11 @@ Browsing over catalogs can be experienced connecting EODAG STAC API to
     # or for a more verbose logging:
     EODAG_LOGGING=3 docker-compose up
 
-(``EODAG_LOGGING`` environment variable definition will increase ``eodag``
-logging level, and accepts values: 1, 2, or 3 for maximum level)
+(The definition of the ``EODAG_LOGGING`` environment variable will increase ``eodag``
+logging level and accepts the values 1, 2, or 3 (3=maximum level).)
 
-And browse http://127.0.0.1:5001:
+Browse http://127.0.0.1:5001
 
-.. image:: _static/stac_browser_example.png
-   :width: 800
-   :alt: STAC browser example
 
 docker
 ------
@@ -148,14 +143,14 @@ Example
     6
 
     # browse for items
-    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/collections/S2_MSI_L1C/items" \
     | jq ".numberMatched"
     9
 
     # get download link
-    $ curl "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items" \
+    $ curl "http://127.0.0.1:5000/collections/S2_MSI_L1C/items" \
     | jq ".features[0].assets.downloadLink.href"
-    "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    "http://127.0.0.1:5002/collections/S2_MSI_L1C/items/S2B_MSIL1C_20240917T115259_N0511_R137_T21CWS_20240917T145134/download"
 
     # download
-    $ wget "http://127.0.0.1:5000/catalogs/S2_MSI_L1C/country/FRA/year/2021/month/01/day/25/cloud_cover/10/items/S2A_MSIL1C_20210125T105331_N0209_R051_T31UCR_20210125T130733/download"
+    $ wget "http://127.0.0.1:5002/collections/S2_MSI_L1C/items/S2B_MSIL1C_20240917T115259_N0511_R137_T21CWS_20240917T145134/download"

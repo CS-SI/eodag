@@ -33,12 +33,12 @@ import requests
 import responses
 import yaml
 from botocore.stub import Stubber
+from dateutil.utils import today
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
-from eodag.utils.exceptions import TimeOutError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -48,9 +48,11 @@ from tests.context import (
     AuthenticationError,
     EOProduct,
     MisconfiguredError,
+    NotAvailableError,
     PluginManager,
     PreparedSearch,
     RequestError,
+    TimeOutError,
     cached_parse,
     get_geometry_from_various,
     load_default_config,
@@ -81,8 +83,8 @@ class BaseSearchPluginTest(unittest.TestCase):
             )
         )
 
-    def get_auth_plugin(self, provider):
-        return self.plugins_manager.get_auth_plugin(provider)
+    def get_auth_plugin(self, search_plugin):
+        return self.plugins_manager.get_auth_plugin(search_plugin)
 
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
@@ -167,7 +169,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
         provider = "mundi"
         self.mundi_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.mundi_auth_plugin = self.get_auth_plugin(provider)
+        self.mundi_auth_plugin = self.get_auth_plugin(self.mundi_search_plugin)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -293,7 +295,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # One of the providers that has a QueryStringSearch Search plugin
         provider = "peps"
         self.peps_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.peps_auth_plugin = self.get_auth_plugin(provider)
+        self.peps_auth_plugin = self.get_auth_plugin(self.peps_search_plugin)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -448,9 +450,14 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self, mock__request
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
-        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        # One of the providers that has discover_product_types() configured with QueryStringSearch
         provider = "wekeo_cmems"
         search_plugin = self.get_search_plugin(provider=provider)
+        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "QueryStringSearch",
+            search_plugin.discover_product_types.__func__.__qualname__.split(".")[0],
+        )
 
         mock__request.return_value = mock.Mock()
         mock__request.return_value.json.side_effect = [
@@ -580,13 +587,20 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_queryables(
         self, mock_requests_session_constraints
     ):
-        search_plugin = self.get_search_plugin(provider="wekeo")
+        # One of the providers that has discover_queryables() configured with QueryStringSearch
+        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+        self.assertEqual("PostJsonSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "QueryStringSearch",
+            search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
+        )
+
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
-        wekeo_constraints = {"constraints": constraints}
+        wekeo_ecmwf_constraints = {"constraints": constraints}
         mock_requests_session_constraints.return_value = MockResponse(
-            wekeo_constraints, status_code=200
+            wekeo_ecmwf_constraints, status_code=200
         )
 
         provider_queryables_from_constraints_file = [
@@ -612,7 +626,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             timeout=5,
         )
 
-        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo)
+        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
         for provider_queryable in provider_queryables_from_constraints_file:
             provider_queryable = (
                 get_queryable_from_provider(
@@ -685,11 +699,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # One of the providers that has a PostJsonSearch Search plugin
         provider = "aws_eos"
         self.awseos_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.awseos_auth_plugin = self.get_auth_plugin(provider)
+        self.awseos_auth_plugin = self.get_auth_plugin(self.awseos_search_plugin)
         self.awseos_auth_plugin.config.credentials = dict(apikey="dummyapikey")
-        self.awseos_url = (
-            "https://gate.eos.com/api/lms/search/v2/sentinel2?api_key=dummyapikey"
-        )
+        self.awseos_url = "https://gate.eos.com/api/lms/search/v2/sentinel2"
 
     def test_plugins_search_postjsonsearch_request_error(self):
         """A query with a PostJsonSearch must handle requests errors"""
@@ -908,6 +920,241 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         self.assertNotIn("bar", products[0].properties)
 
+    @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch.normalize_results", autospec=True
+    )
+    def test_plugins_search_postjsonsearch_default_dates(
+        self, mock_normalize, mock_request
+    ):
+        provider = "wekeo_ecmwf"
+        search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
+        search_plugin = next(search_plugins)
+        # year, month, day, time given -> don't use default dates
+        search_plugin.query(
+            prep=PreparedSearch(),
+            productType="ERA5_SL",
+            year=2020,
+            month=["02"],
+            day=["20", "21"],
+            time=["01:00"],
+        )
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "year": 2020,
+                "month": ["02"],
+                "day": ["20", "21"],
+                "time": ["01:00"],
+                "product_type": ["ensemble_mean"],
+                "variable": ["10m_u_component_of_wind"],
+                "format": "grib",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers=USER_AGENT,
+            timeout=60,
+            verify=True,
+        )
+        # start date given and converted to year, month, day, time
+        search_plugin.query(
+            prep=PreparedSearch(),
+            productType="ERA5_SL",
+            startTimeFromAscendingNode="2021-02-01T03:00:00Z",
+        )
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "year": "2021",
+                "month": ["02"],
+                "day": ["01"],
+                "time": ["03:00"],
+                "product_type": ["ensemble_mean"],
+                "variable": ["10m_u_component_of_wind"],
+                "format": "grib",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers=USER_AGENT,
+            timeout=60,
+            verify=True,
+        )
+        # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
+        pt_conf = {
+            "ID": "ERA5_SL",
+            "abstract": "ERA5 abstract",
+            "instrument": None,
+            "platform": "ERA5",
+            "platformSerialIdentifier": "ERA5",
+            "processingLevel": None,
+            "keywords": "ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels",
+            "sensorType": "ATMOSPHERIC",
+            "license": "proprietary",
+            "title": "ERA5 hourly data on single levels from 1940 to present",
+            "missionStartDate": "1940-01-01T00:00:00Z",
+            "_id": "ERA5_SL",
+        }
+        search_plugin.config.product_type_config = dict(
+            pt_conf,
+            **{"productType": "ERA5_SL"},
+        )
+        search_plugin.query(productType="ERA5_SL", prep=PreparedSearch())
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "year": "1940",
+                "month": ["01"],
+                "day": ["01"],
+                "time": ["00:00"],
+                "product_type": ["ensemble_mean"],
+                "variable": ["10m_u_component_of_wind"],
+                "format": "grib",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers=USER_AGENT,
+            timeout=60,
+            verify=True,
+        )
+        # product type with dates are query params -> use missionStartDate and today
+        pt_conf = {
+            "ID": "CAMS_EAC4",
+            "abstract": "CAMS_EAC4 abstract",
+            "instrument": None,
+            "platform": "CAMS",
+            "platformSerialIdentifier": "CAMS",
+            "processingLevel": None,
+            "keywords": "Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4",
+            "sensorType": "ATMOSPHERIC",
+            "license": "proprietary",
+            "title": "CAMS global reanalysis (EAC4)",
+            "missionStartDate": "2003-01-01T00:00:00Z",
+            "_id": "CAMS_EAC4",
+        }
+        search_plugin.config.product_type_config = dict(
+            pt_conf,
+            **{"productType": "CAMS_EAC4"},
+        )
+        search_plugin.query(productType="CAMS_EAC4", prep=PreparedSearch())
+        mock_request.assert_called_with(
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
+            json={
+                "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
+                "format": "grib",
+                "variable": ["2m_dewpoint_temperature"],
+                "time": ["00:00"],
+                "dtstart": "2003-01-01T00:00:00.000Z",
+                "dtend": today().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+                "itemsPerPage": 20,
+                "startIndex": 0,
+            },
+            headers=USER_AGENT,
+            timeout=60,
+            verify=True,
+        )
+
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_plugins_search_postjsonsearch_query_params_wekeo(self, mock__request):
+        """A query with PostJsonSearch (here wekeo) must generate query params corresponding to the
+        search criteria"""
+        provider = "wekeo_ecmwf"
+        product_type = "GRIDDED_GLACIERS_MASS_CHANGE"
+        search_plugin = self.get_search_plugin(product_type, provider)
+        auth_plugin = self.get_auth_plugin(search_plugin)
+
+        mock__request.return_value = mock.Mock()
+
+        def _test_query_params(search_criteria, raw_result, expected_query_params):
+            mock__request.reset_mock()
+            mock__request.return_value.json.side_effect = [raw_result]
+            results, _ = search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=10,
+                    auth_plugin=auth_plugin,
+                ),
+                **search_criteria,
+            )
+            self.assertDictEqual(
+                mock__request.call_args_list[0].args[1].query_params,
+                expected_query_params,
+            )
+
+        raw_result = {
+            "properties": {"itemsPerPage": 1, "startIndex": 0, "totalResults": 1},
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "startdate": "1975-01-01T00:00:00Z",
+                        "enddate": "2024-09-30T00:00:00Z",
+                    },
+                    "id": "derived-gridded-glacier-mass-change-576f8a153a25a83d9d3a5cfb03c4a759",
+                }
+            ],
+        }
+
+        # Test #1: using the datetime
+        search_criteria = {
+            "productType": product_type,
+            "startTimeFromAscendingNode": "1980-01-01",
+            "completionTimeFromAscendingNode": "1981-12-31",
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "version": "wgms_fog_2022_09",
+        }
+        expected_query_params = {
+            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "hydrological_year": ["1980_81"],
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "product_version": "wgms_fog_2022_09",
+            "itemsPerPage": 10,
+            "startIndex": 0,
+        }
+        _test_query_params(search_criteria, raw_result, expected_query_params)
+
+        # Test #2: using parameter hydrological_year (single value)
+        search_criteria = {
+            "productType": product_type,
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "version": "wgms_fog_2022_09",
+            "hydrological_year": ["2020_21"],
+        }
+        expected_query_params = {
+            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "hydrological_year": ["2020_21"],
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "product_version": "wgms_fog_2022_09",
+            "itemsPerPage": 10,
+            "startIndex": 0,
+        }
+        _test_query_params(search_criteria, raw_result, expected_query_params)
+
+        # Test #3: using parameter hydrological_year (multiple values)
+        search_criteria = {
+            "productType": product_type,
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "version": "wgms_fog_2022_09",
+            "hydrological_year": ["1990_91", "2020_21"],
+        }
+        expected_query_params = {
+            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "hydrological_year": ["1990_91", "2020_21"],
+            "variable": "glacier_mass_change",
+            "format": "zip",
+            "product_version": "wgms_fog_2022_09",
+            "itemsPerPage": 10,
+            "startIndex": 0,
+        }
+        _test_query_params(search_criteria, raw_result, expected_query_params)
+
 
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
@@ -915,7 +1162,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
         self.onda_search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.onda_auth_plugin = self.get_auth_plugin(provider)
+        self.onda_auth_plugin = self.get_auth_plugin(self.onda_search_plugin)
         # Some expected results
         with open(self.provider_resp_dir / "onda_count.json") as f:
             self.onda_resp_count = json.load(f)
@@ -1194,7 +1441,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
                 )
             search_provider = self.onda_auth_plugin.provider
             search_type = self.onda_search_plugin.__class__.__name__
-            error_message = f"Skipping error while searching for {search_provider} {search_type} instance:"
+            error_message = f"Skipping error while searching for {search_provider} {search_type} instance"
             error_message_indexes_list = [
                 i.start() for i in re.finditer(error_message, str(cm.output))
             ]
@@ -1499,7 +1746,7 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
         # One of the providers that has a BuildPostSearchResult Search plugin
         provider = "meteoblue"
         self.search_plugin = self.get_search_plugin(provider=provider)
-        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
         self.auth_plugin.config.credentials = {"cred": "entials"}
         self.auth = self.auth_plugin.authenticate()
 
@@ -1577,7 +1824,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         self.plugins_manager = PluginManager(providers_config)
         provider = "wekeo_old"
         self.search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.auth_plugin = self.get_auth_plugin(provider)
+        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
         self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
         mock_requests_get.return_value = MockResponse({"access_token": "token"}, 200)
         self.search_plugin.auth = self.auth_plugin.authenticate()
@@ -1814,7 +2061,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         res = search_plugin.query(productType="S1_SAR_GRD")
         for product in res[0]:
             download_plugin = self.plugins_manager.get_download_plugin(product)
-            auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+            auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, product)
             stubber.add_response("list_objects", list_objects_response)
             stubber.activate()
             setattr(auth_plugin, "s3_client", client)
@@ -1854,11 +2101,13 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             creodias_search_result = json.load(f)
         mock_request.return_value = MockResponse(creodias_search_result, 200)
 
-        with self.assertRaises(RequestError):
+        with self.assertRaises(NotAvailableError):
             res = search_plugin.query(productType="S1_SAR_GRD")
             for product in res[0]:
                 download_plugin = self.plugins_manager.get_download_plugin(product)
-                auth_plugin = self.plugins_manager.get_auth_plugin(self.provider)
+                auth_plugin = self.plugins_manager.get_auth_plugin(
+                    download_plugin, product
+                )
                 auth_plugin.config.credentials = {
                     "aws_access_key_id": "foo",
                     "aws_secret_access_key": "bar",
@@ -1908,6 +2157,61 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             )
         )
 
+    def test_plugins_search_buildsearchresult_exclude_end_date(self):
+        """BuildSearchResult.query must adapt end date in certain cases"""
+        # start & stop as dates -> keep end date as it is
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01",
+            completionTimeFromAscendingNode="2020-01-02",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-02", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+        # start & stop as datetimes, not midnight -> keep and dates as it is
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01T02:00:00Z",
+            completionTimeFromAscendingNode="2020-01-02T03:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-02", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+        # start & stop as datetimes, midnight -> exclude end date
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
+            completionTimeFromAscendingNode="2020-01-02T00:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+        # start & stop same date -> keep end date
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            startTimeFromAscendingNode="2020-01-01T00:00:00Z",
+            completionTimeFromAscendingNode="2020-01-01T00:00:00Z",
+        )
+        eoproduct = results[0]
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["startTimeFromAscendingNode"]
+        )
+        self.assertEqual(
+            "2020-01-01", eoproduct.properties["completionTimeFromAscendingNode"]
+        )
+
     def test_plugins_search_buildsearchresult_dates_missing(self):
         """BuildSearchResult.query must use default dates if missing"""
         # given start & stop
@@ -1921,7 +2225,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-01"
+            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
         )
 
         # missing start & stop
@@ -1935,7 +2239,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            "2015-01-01",
+            "2015-01-02",
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -1952,7 +2256,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-26"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
         )
 
     def test_plugins_search_buildsearchresult_without_producttype(self):
@@ -1969,7 +2273,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert eoproduct.properties["startTimeFromAscendingNode"] == "2020-01-01"
-        assert eoproduct.properties["completionTimeFromAscendingNode"] == "2020-01-01"
+        assert eoproduct.properties["completionTimeFromAscendingNode"] == "2020-01-02"
         assert eoproduct.properties["title"] == eoproduct.properties["id"]
         assert eoproduct.properties["title"].startswith(
             f"{self.product_dataset.upper()}"
@@ -2046,7 +2350,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
 
         mock_requests_session_constraints.assert_called_once_with(
             mock.ANY,
-            "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
+            "https://ads-beta.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
             "cams-europe-air-quality-reanalyses/constraints.json",
             headers=USER_AGENT,
             auth=None,
@@ -2105,14 +2409,14 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
 
         mock_requests_session_constraints.assert_called_once_with(
             mock.ANY,
-            "https://datastore.copernicus-climate.eu/cams/published-forms/camsprod/"
+            "https://ads-beta.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
             "cams-europe-air-quality-reanalyses/constraints.json",
             headers=USER_AGENT,
             auth=None,
             timeout=5,
         )
 
-        self.assertEqual(9, len(queryables))
+        self.assertEqual(11, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:
@@ -2191,7 +2495,7 @@ class TestSearchPluginBuildSearchResult(unittest.TestCase):
         )
         self.assertIsNotNone(queryables)
 
-        self.assertEqual(9, len(queryables))
+        self.assertEqual(11, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("variable")
         if queryable is not None:
@@ -2391,6 +2695,16 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 },
             ]
         }
+        self.list_objects_response3 = {
+            "Contents": [
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_15325642_fizncnqijei.nc"
+                },
+                {
+                    "Key": "native/PRODUCT_A/dataset-number-two/item_846282_niznjvnqkrf.nc"
+                },
+            ]
+        }
         self.s3 = boto3.client(
             "s3",
             config=botocore.config.Config(
@@ -2469,6 +2783,86 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_query_no_dates_in_id(self, mock_requests_get):
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        search_plugin.config.products = {
+            "PRODUCT_A": {
+                "productType": "PRODUCT_A",
+                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+            }
+        }
+
+        with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
+            s3_stub.return_value = self.s3
+            stubber = Stubber(self.s3)
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response1,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+            )
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response3,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-two",
+                    "Marker": "native/PRODUCT_A/dataset-number-two/item_846282_niznjvnqkrf.nc",
+                },
+            )
+            stubber.activate()
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A",
+                startTimeFromAscendingNode="1969-01-01T01:00:00Z",
+                completionTimeFromAscendingNode="1970-02-01T01:00:00Z",
+            )
+            mock_requests_get.assert_has_calls(
+                calls=[
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                    ),
+                    call().json(),
+                ]
+            )
+            self.assertEqual(2, num_total)
+            products_dataset2 = [
+                product
+                for product in result
+                if product.properties["dataset"] == "dataset-number-two"
+            ]
+            self.assertEqual(2, len(products_dataset2))
+            self.assertEqual(
+                "1970-01-01T00:00:00.000000Z",
+                products_dataset2[0].properties["startTimeFromAscendingNode"],
+            )
+            self.assertEqual(
+                "1970-01-01T00:00:00.000000Z",
+                products_dataset2[0].properties["completionTimeFromAscendingNode"],
+            )
+            self.assertEqual(
+                "15325642",
+                products_dataset2[0].properties["platformSerialIdentifier"],
+            )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_with_id(self, mock_requests_get):
         mock_requests_get.return_value.json.side_effect = [
             self.product_data,
@@ -2510,3 +2904,79 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 "item_20200204_20200205_niznjvnqkrf_20210101",
                 result[0].properties["id"],
             )
+
+
+class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginPostJsonSearchWithStacQueryables, self).setUp()
+        # One of the providers that has a PostJsonSearchWithStacQueryables Search plugin
+        provider = "wekeo_main"
+        self.wekeomain_search_plugin = self.get_search_plugin(
+            self.product_type, provider
+        )
+        self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.build_query_string", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch.build_query_string", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables._request",
+        autospec=True,
+    )
+    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain(
+        self,
+        mock__request,
+        mock_build_qs_postjsonsearch,
+        mock_build_qs_stacsearch,
+        mock_normalize_results,
+    ):
+        """A query with a PostJsonSearchWithStacQueryables (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
+        mock_build_qs_postjsonsearch.return_value = (
+            mock_build_qs_stacsearch.return_value
+        ) = (
+            {
+                "dataset_id": "EO:ESA:DAT:SENTINEL-2",
+                "startDate": "2020-08-08",
+                "completionDate": "2020-08-16",
+                "bbox": [137.772897, 13.134202, 153.749135, 23.885986],
+                "processingLevel": "S2MSI1C",
+            },
+            mock.ANY,
+        )
+
+        self.wekeomain_search_plugin.query(
+            prep=PreparedSearch(
+                page=1,
+                items_per_page=2,
+                auth_plugin=self.wekeomain_auth_plugin,
+            ),
+            **self.search_criteria_s2_msi_l1c,
+        )
+
+        mock__request.assert_called()
+        mock_build_qs_postjsonsearch.assert_called()
+        mock_build_qs_stacsearch.assert_not_called()
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.PostJsonSearch.discover_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+    )
+    def test_plugins_search_postjsonsearch_discover_queryables(
+        self,
+        mock_stacsearch_discover_queryables,
+        mock_postjsonsearch_discover_queryables,
+    ):
+        """Queryables discovery with a PostJsonSearchWithStacQueryables (here wekeo_main) must use discover_queryables() of StacSearch"""  # noqa
+        self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
+        mock_stacsearch_discover_queryables.assert_called()
+        mock_postjsonsearch_discover_queryables.assert_not_called()

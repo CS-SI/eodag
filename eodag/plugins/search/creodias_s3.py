@@ -29,7 +29,12 @@ from eodag.config import PluginConfig
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import ODataV4Search
 from eodag.utils import guess_file_type
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, RequestError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    NotAvailableError,
+    RequestError,
+)
 
 DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
 logger = logging.getLogger("eodag.search.creodiass3")
@@ -50,7 +55,7 @@ def patched_register_downloader(self, downloader, authenticator):
     try:
         _update_assets(self, downloader.config, authenticator)
     except BotoCoreError as e:
-        raise RequestError(f"could not update assets: {str(e)}") from e
+        raise RequestError.from_error(e, "could not update assets") from e
 
 
 def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
@@ -70,7 +75,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
             if not getattr(auth, "s3_client", None):
                 auth.s3_client = boto3.client(
                     "s3",
-                    endpoint_url=config.base_uri,
+                    endpoint_url=config.s3_endpoint,
                     aws_access_key_id=auth_dict["aws_access_key_id"],
                     aws_secret_access_key=auth_dict["aws_secret_access_key"],
                 )
@@ -105,7 +110,9 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                 raise AuthenticationError(
                     f"Authentication failed on {config.base_uri} s3"
                 ) from e
-            raise RequestError(f"assets for product {prefix} could not be found") from e
+            raise NotAvailableError(
+                f"assets for product {prefix} could not be found"
+            ) from e
 
 
 class CreodiasS3Search(ODataV4Search):

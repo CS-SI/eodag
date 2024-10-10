@@ -99,7 +99,7 @@ from dateutil.tz import UTC
 from jsonpath_ng import jsonpath
 from jsonpath_ng.ext import parse
 from jsonpath_ng.jsonpath import Child, Fields, Index, Root, Slice
-from requests import HTTPError
+from requests import HTTPError, Response
 from shapely.geometry import Polygon, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 from tqdm.auto import tqdm
@@ -578,7 +578,7 @@ def format_dict_items(
     ... ) == {"foo": {"bar": "qux"}, "baz": ["quux?", "quux!"]}
     True
 
-    :param config_dict: Dictionnary having values that need to be parsed
+    :param config_dict: Dictionary having values that need to be parsed
     :param format_variables: Variables used as args for parsing
     :returns: Updated dict
     """
@@ -597,7 +597,7 @@ def jsonpath_parse_dict_items(
     ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
     True
 
-    :param jsonpath_dict: Dictionnary having values that need to be parsed
+    :param jsonpath_dict: Dictionary having values that need to be parsed
     :param values_dict: Values dict used as args for parsing
     :returns: Updated dict
     """
@@ -743,7 +743,7 @@ def dict_items_recursive_apply(
     ... ) == {'foo': {'bar': 'BAZ!'}, 'qux': ['A!', 'B!']}
     True
 
-    :param config_dict: Input nested dictionnary
+    :param config_dict: Input nested dictionary
     :param apply_method: Method to be applied to dict elements
     :param apply_method_parameters: Optional parameters passed to the method
     :returns: Updated dict
@@ -836,7 +836,7 @@ def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     ... ) == {"a": ["b", {0: 1, 1: 2, 2: 0}], "b": {"a": 0, "b": "c"}}
     True
 
-    :param config_dict: Input nested dictionnary
+    :param config_dict: Input nested dictionary
     :returns: Updated dict
     """
     result_dict: Dict[Any, Any] = deepcopy(config_dict)
@@ -1129,7 +1129,7 @@ class MockResponse:
     def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
-            raise HTTPError()
+            raise HTTPError(response=Response())
 
 
 def md5sum(file_path: str) -> str:
@@ -1413,3 +1413,18 @@ def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
         k: sort_dict(v) if isinstance(v, dict) else v
         for k, v in sorted(input_dict.items())
     }
+
+
+def dict_md5sum(input_dict: Dict[str, Any]) -> str:
+    """
+    Hash nested dictionary
+
+    :param input_dict: input dict
+    :returns: hash
+
+    >>> hd = dict_md5sum({"b": {"c": 1, "a": 2, "b": 3}, "a": 4})
+    >>> hd
+    'a195bcef1bb3b419e9e74b7cc5db8098'
+    >>> assert(dict_md5sum({"a": 4, "b": {"b": 3, "c": 1, "a": 2}}) == hd)
+    """
+    return obj_md5sum(sort_dict(input_dict))

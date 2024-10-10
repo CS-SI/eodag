@@ -179,6 +179,27 @@ class Search(PluginTopic):
         else:
             return {}
 
+    def get_product_type_cfg_value(self, key: str, default: Any = None) -> Any:
+        """
+        Get the value of a configuration option specific to the current product type.
+
+        This method retrieves the value of a configuration option from the
+        `product_type_config` attribute. If the option is not found, the provided
+        default value is returned.
+
+        :param key: The configuration option key.
+        :type key: str
+        :param default: The default value to be returned if the option is not found (default is None).
+        :type default: Any
+
+        :return: The value of the specified configuration option or the default value.
+        :rtype: Any
+        """
+        product_type_cfg = getattr(self.config, "product_type_config", {})
+        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
+
+        return non_none_cfg.get(key, default)
+
     def get_metadata_mapping(
         self, product_type: Optional[str] = None
     ) -> Dict[str, Union[str, List[str]]]:
@@ -216,7 +237,7 @@ class Search(PluginTopic):
         self, sort_by_arg: SortByList
     ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
-        the "sort_by" argument into a provider-specific string or dictionnary
+        the "sort_by" argument into a provider-specific string or dictionary
 
         :param sort_by_arg: the "sort_by" argument in EODAG format
         :returns: The "sort_by" argument in provider-specific format
@@ -225,7 +246,7 @@ class Search(PluginTopic):
             raise ValidationError(f"{self.provider} does not support sorting feature")
         # TODO: remove this code block when search args model validation is embeded
         # remove duplicates
-        sort_by_arg = list(set(sort_by_arg))
+        sort_by_arg = list(dict.fromkeys(sort_by_arg))
 
         sort_by_qs: str = ""
         sort_by_qp: Dict[str, Any] = {}

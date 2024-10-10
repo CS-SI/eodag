@@ -20,7 +20,6 @@ from __future__ import annotations
 import logging
 import os
 import re
-import traceback
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from json import JSONDecodeError
@@ -36,13 +35,13 @@ from typing import (
 
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse
 from pydantic import ValidationError as pydanticValidationError
 from pygeofilter.backends.cql2_json import to_cql2
 from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
-from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from eodag.config import load_stac_api_config
 from eodag.rest.cache import init_cache
@@ -59,23 +58,11 @@ from eodag.rest.core import (
     get_stac_extension_oseo,
     search_stac_items,
 )
-from eodag.rest.types.eodag_search import EODAGSearch
+from eodag.rest.errors import add_exception_handlers
 from eodag.rest.types.queryables import QueryablesGetParams
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
 from eodag.rest.utils import format_pydantic_error, str2json, str2list
 from eodag.utils import parse_header, update_nested_dict
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    DownloadError,
-    MisconfiguredError,
-    NoMatchingProductType,
-    NotAvailableError,
-    RequestError,
-    TimeOutError,
-    UnsupportedProductType,
-    UnsupportedProvider,
-    ValidationError,
-)
 
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
@@ -84,12 +71,6 @@ if TYPE_CHECKING:
 from starlette.responses import Response as StarletteResponse
 
 logger = logging.getLogger("eodag.rest.server")
-ERRORS_WITH_500_STATUS_CODE = {
-    "MisconfiguredError",
-    "AuthenticationError",
-    "DownloadError",
-    "RequestError",
-}
 
 
 class APIRouter(FastAPIRouter):
@@ -197,6 +178,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+add_exception_handlers(app)
+
 
 @app.middleware("http")
 async def forward_middleware(
@@ -221,141 +204,10 @@ async def forward_middleware(
     return response
 
 
-@app.exception_handler(StarletteHTTPException)
-async def default_exception_handler(
-    request: Request, error: HTTPException
-) -> ORJSONResponse:
-    """Default errors handle"""
-    description = (
-        getattr(error, "description", None)
-        or getattr(error, "detail", None)
-        or str(error)
-    )
-    return ORJSONResponse(
-        status_code=error.status_code,
-        content={"description": description},
-    )
-
-
-@app.exception_handler(ValidationError)
-async def handle_invalid_usage_with_validation_error(
-    request: Request, error: ValidationError
-) -> ORJSONResponse:
-    """Invalid usage [400] ValidationError handle"""
-    if error.parameters:
-        for error_param in error.parameters:
-            stac_param = EODAGSearch.to_stac(error_param)
-            error.message = error.message.replace(error_param, stac_param)
-    logger.debug(traceback.format_exc())
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=400,
-            detail=f"{type(error).__name__}: {str(error.message)}",
-        ),
-    )
-
-
-@app.exception_handler(NoMatchingProductType)
-@app.exception_handler(UnsupportedProductType)
-@app.exception_handler(UnsupportedProvider)
-async def handle_invalid_usage(request: Request, error: Exception) -> ORJSONResponse:
-    """Invalid usage [400] errors handle"""
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=400,
-            detail=f"{type(error).__name__}: {str(error)}",
-        ),
-    )
-
-
-@app.exception_handler(NotAvailableError)
-async def handle_resource_not_found(
-    request: Request, error: Exception
-) -> ORJSONResponse:
-    """Not found [404] errors handle"""
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=404,
-            detail=f"{type(error).__name__}: {str(error)}",
-        ),
-    )
-
-
-@app.exception_handler(MisconfiguredError)
-@app.exception_handler(AuthenticationError)
-async def handle_auth_error(request: Request, error: Exception) -> ORJSONResponse:
-    """These errors should be sent as internal server error to the client"""
-    logger.error("%s: %s", type(error).__name__, str(error))
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=500,
-            detail="Internal server error: please contact the administrator",
-        ),
-    )
-
-
-@app.exception_handler(DownloadError)
-async def handle_download_error(request: Request, error: Exception) -> ORJSONResponse:
-    """DownloadError should be sent as internal server error with details to the client"""
-    logger.error(f"{type(error).__name__}: {str(error)}")
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=500,
-            detail=f"{type(error).__name__}: {str(error)}",
-        ),
-    )
-
-
-@app.exception_handler(RequestError)
-async def handle_request_error(request: Request, error: RequestError) -> ORJSONResponse:
-    """RequestError should be sent as internal server error with details to the client"""
-    if getattr(error, "history", None):
-        error_history_tmp = list(error.history)
-        for i, search_error in enumerate(error_history_tmp):
-            if search_error[1].__class__.__name__ in ERRORS_WITH_500_STATUS_CODE:
-                search_error[1].args = ("an internal error occured",)
-                error_history_tmp[i] = search_error
-                continue
-            if getattr(error, "parameters", None):
-                for error_param in error.parameters:
-                    stac_param = EODAGSearch.to_stac(error_param)
-                    search_error[1].args = (
-                        search_error[1].args[0].replace(error_param, stac_param),
-                    )
-                    error_history_tmp[i] = search_error
-        error.history = set(error_history_tmp)
-    logger.error(f"{type(error).__name__}: {str(error)}")
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=500,
-            detail=f"{type(error).__name__}: {str(error)}",
-        ),
-    )
-
-
-@app.exception_handler(TimeOutError)
-async def handle_timeout(request: Request, error: Exception) -> ORJSONResponse:
-    """Timeout [504] errors handle"""
-    logger.error(f"{type(error).__name__}: {str(error)}")
-    return await default_exception_handler(
-        request,
-        HTTPException(
-            status_code=504,
-            detail=f"{type(error).__name__}: {str(error)}",
-        ),
-    )
-
-
 @router.api_route(methods=["GET", "HEAD"], path="/", tags=["Capabilities"])
 async def catalogs_root(request: Request) -> ORJSONResponse:
     """STAC catalogs root"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     response = await get_stac_catalogs(
         request=request,
@@ -367,9 +219,9 @@ async def catalogs_root(request: Request) -> ORJSONResponse:
 
 
 @router.api_route(methods=["GET", "HEAD"], path="/conformance", tags=["Capabilities"])
-def conformance() -> ORJSONResponse:
+def conformance(request: Request) -> ORJSONResponse:
     """STAC conformance"""
-    logger.debug("URL: /conformance")
+    logger.info(f"{request.method} {request.state.url}")
     response = get_stac_conformance()
 
     return ORJSONResponse(response)
@@ -382,7 +234,7 @@ def conformance() -> ORJSONResponse:
 )
 def stac_extension_oseo(request: Request) -> ORJSONResponse:
     """STAC OGC / OpenSearch extension for EO"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
     response = get_stac_extension_oseo(url=request.state.url)
 
     return ORJSONResponse(response)
@@ -398,14 +250,14 @@ def stac_collections_item_download(
     collection_id: str, item_id: str, request: Request
 ) -> StarletteResponse:
     """STAC collection item download"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     return download_stac_item(
         request=request,
-        catalogs=[collection_id],
+        collection_id=collection_id,
         item_id=item_id,
         provider=provider,
         **arguments,
@@ -422,14 +274,14 @@ def stac_collections_item_download_asset(
     collection_id: str, item_id: str, asset: str, request: Request
 ):
     """STAC collection item asset download"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     arguments = dict(request.query_params)
     provider = arguments.pop("provider", None)
 
     return download_stac_item(
         request=request,
-        catalogs=[collection_id],
+        collection_id=collection_id,
         item_id=item_id,
         provider=provider,
         asset=asset,
@@ -446,7 +298,7 @@ def stac_collections_item(
     collection_id: str, item_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection item by id"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     search_request = SearchPostRequest(
         provider=provider, ids=[item_id], collections=[collection_id], limit=1
@@ -522,7 +374,7 @@ async def list_collection_queryables(
     :param collection_id: The identifier of the collection for which to retrieve queryable properties.
     :returns: A json object containing the list of available queryable properties for the specified collection.
     """
-    logger.debug(f"URL: {request.url}")
+    logger.info(f"{request.method} {request.state.url}")
     additional_params = dict(request.query_params)
     provider = additional_params.pop("provider", None)
 
@@ -545,7 +397,7 @@ async def collection_by_id(
     collection_id: str, request: Request, provider: Optional[str] = None
 ) -> ORJSONResponse:
     """STAC collection by id"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     response = await get_collection(
         request=request,
@@ -576,167 +428,12 @@ async def collections(
     Can be filtered using parameters: instrument, platform, platformSerialIdentifier, sensorType,
     processingLevel
     """
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     collections = await all_collections(
         request, provider, q, platform, instrument, constellation, datetime
     )
     return ORJSONResponse(collections)
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items/{item_id}/download",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_item_download(
-    catalogs: str, item_id: str, request: Request
-) -> StarletteResponse:
-    """STAC Catalog item download"""
-    logger.debug("URL: %s", request.url)
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    return download_stac_item(
-        request=request,
-        catalogs=list_catalog,
-        item_id=item_id,
-        provider=provider,
-        **arguments,
-    )
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items/{item_id}/download/{asset_filter}",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_item_download_asset(
-    catalogs: str, item_id: str, asset_filter: str, request: Request
-):
-    """STAC Catalog item asset download"""
-    logger.debug("URL: %s", request.url)
-
-    arguments = dict(request.query_params)
-    provider = arguments.pop("provider", None)
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    return download_stac_item(
-        request,
-        catalogs=list_catalog,
-        item_id=item_id,
-        provider=provider,
-        asset=asset_filter,
-        **arguments,
-    )
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items/{item_id}",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_item(
-    catalogs: str, item_id: str, request: Request, provider: Optional[str] = None
-):
-    """Fetch catalog's single features."""
-    logger.debug("URL: %s", request.url)
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    search_request = SearchPostRequest(provider=provider, ids=[item_id], limit=1)
-
-    item_collection = search_stac_items(request, search_request, catalogs=list_catalog)
-
-    if not item_collection["features"]:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Item {item_id} in Catalog {catalogs} does not exist.",
-        )
-
-    return ORJSONResponse(item_collection["features"][0])
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}/items",
-    tags=["Data"],
-    include_in_schema=False,
-)
-def stac_catalogs_items(
-    catalogs: str,
-    request: Request,
-    provider: Optional[str] = None,
-    bbox: Optional[str] = None,
-    datetime: Optional[str] = None,
-    limit: Optional[int] = None,
-    page: Optional[int] = None,
-    sortby: Optional[str] = None,
-    crunch: Optional[str] = None,
-) -> ORJSONResponse:
-    """Fetch catalog's features"""
-    logger.debug("URL: %s", request.state.url)
-
-    base_args = {
-        "provider": provider,
-        "datetime": datetime,
-        "bbox": str2list(bbox),
-        "limit": limit,
-        "page": page,
-        "sortby": sortby2list(sortby),
-        "crunch": crunch,
-    }
-
-    clean = {k: v for k, v in base_args.items() if v is not None and v != []}
-
-    list_catalog = catalogs.strip("/").split("/")
-
-    try:
-        search_request = SearchPostRequest.model_validate(clean)
-    except pydanticValidationError as e:
-        raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
-
-    response = search_stac_items(
-        request=request,
-        search_request=search_request,
-        catalogs=list_catalog,
-    )
-    return ORJSONResponse(response)
-
-
-@router.api_route(
-    methods=["GET", "HEAD"],
-    path="/catalogs/{catalogs:path}",
-    tags=["Capabilities"],
-    include_in_schema=False,
-)
-async def stac_catalogs(
-    catalogs: str, request: Request, provider: Optional[str] = None
-) -> ORJSONResponse:
-    """Describe the given catalog and list available sub-catalogs"""
-    logger.debug("URL: %s", request.url)
-
-    if not catalogs:
-        raise HTTPException(
-            status_code=404,
-            detail="Not found",
-        )
-
-    list_catalog = catalogs.strip("/").split("/")
-    response = await get_stac_catalogs(
-        request=request,
-        url=request.state.url,
-        catalogs=tuple(list_catalog),
-        provider=provider,
-    )
-    return ORJSONResponse(response)
 
 
 @router.api_route(
@@ -756,7 +453,7 @@ async def list_queryables(request: Request) -> ORJSONResponse:
     :param request: The incoming request object.
     :returns: A json object containing the list of available queryable terms.
     """
-    logger.debug(f"URL: {request.url}")
+    logger.info(f"{request.method} {request.state.url}")
     additional_params = dict(request.query_params.items())
     provider = additional_params.pop("provider", None)
     queryables = await get_queryables(
@@ -789,7 +486,7 @@ def get_search(
     crunch: Optional[str] = None,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
-    logger.debug("URL: %s", request.state.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     query_params = str(request.query_params)
 
@@ -843,7 +540,7 @@ def get_search(
 )
 async def post_search(request: Request) -> ORJSONResponse:
     """STAC post search"""
-    logger.debug("URL: %s", request.url)
+    logger.info(f"{request.method} {request.state.url}")
 
     content_type = request.headers.get("Content-Type")
 
@@ -864,10 +561,12 @@ async def post_search(request: Request) -> ORJSONResponse:
 
     logger.debug("Body: %s", search_request.model_dump(exclude_none=True))
 
-    response = search_stac_items(
-        request=request,
-        search_request=search_request,
+    response = await run_in_threadpool(
+        search_stac_items,
+        request,
+        search_request,
     )
+
     return ORJSONResponse(content=response, media_type="application/json")
 
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from copy import copy as copy_copy
+from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -48,6 +49,7 @@ import geojson
 import orjson
 import requests
 import yaml
+from dateutil.utils import today
 from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import create_model
@@ -517,6 +519,12 @@ class QueryStringSearch(Search):
                     e,
                 )
                 return None
+            except requests.RequestException as e:
+                logger.debug(
+                    "Could not parse discovered product types response from "
+                    f"{self.provider}, {type(e).__name__}: {e.args}"
+                )
+                return None
         conf_update_dict["product_types_config"] = dict_items_recursive_apply(
             conf_update_dict["product_types_config"],
             lambda k, v: v if v != NOT_AVAILABLE else None,
@@ -538,9 +546,7 @@ class QueryStringSearch(Search):
             self,
             PreparedSearch(
                 url=single_collection_url,
-                info_message="Fetching data for product type product type: {}".format(
-                    product_type
-                ),
+                info_message=f"Fetching data for product type: {product_type}",
                 exception_message="Skipping error while fetching product types for "
                 "{} {} instance:".format(self.provider, self.__class__.__name__),
             ),
@@ -703,9 +709,6 @@ class QueryStringSearch(Search):
                 }
             )
 
-        if product_type is None:
-            raise ValidationError("Required productType is missing")
-
         qp, qs = self.build_query_string(product_type, **keywords)
 
         prep.query_params = qp
@@ -825,7 +828,7 @@ class QueryStringSearch(Search):
             else:
                 next_url = "{}?{}".format(search_endpoint, qs_with_sort)
             urls.append(next_url)
-        return urls, total_results
+        return list(dict.fromkeys(urls)), total_results
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
@@ -854,8 +857,8 @@ class QueryStringSearch(Search):
                 search_url
             )
             single_search_prep.exception_message = (
-                "Skipping error while searching for {} {} "
-                "instance:".format(self.provider, self.__class__.__name__)
+                f"Skipping error while searching for {self.provider}"
+                f" {self.__class__.__name__} instance"
             )
             response = self._request(single_search_prep)
             next_page_url_key_path = self.config.pagination.get(
@@ -1174,7 +1177,7 @@ class QueryStringSearch(Search):
                     self.__class__.__name__,
                     err_msg,
                 )
-            raise RequestError(str(err))
+            raise RequestError.from_error(err, exception_message) from err
         return response
 
 
@@ -1219,7 +1222,7 @@ class ODataV4Search(QueryStringSearch):
                     raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
                 except requests.RequestException:
                     logger.exception(
-                        "Skipping error while searching for %s %s instance:",
+                        "Skipping error while searching for %s %s instance",
                         self.provider,
                         self.__class__.__name__,
                     )
@@ -1273,6 +1276,82 @@ class ODataV4Search(QueryStringSearch):
 class PostJsonSearch(QueryStringSearch):
     """A specialisation of a QueryStringSearch that uses POST method"""
 
+    def _get_default_end_date_from_start_date(
+        self, start_datetime: str, product_type: str
+    ) -> str:
+        default_end_date = self.config.products.get(product_type, {}).get(
+            "_default_end_date", None
+        )
+        if default_end_date:
+            return default_end_date
+        try:
+            start_date = datetime.fromisoformat(start_datetime)
+        except ValueError:
+            start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
+        product_type_conf = self.config.products[product_type]
+        if (
+            "metadata_mapping" in product_type_conf
+            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
+        ):
+            mapping = product_type_conf["metadata_mapping"][
+                "startTimeFromAscendingNode"
+            ]
+            if isinstance(mapping, list) and "year" in mapping[0]:
+                # if date is mapped to year/month/(day), use end_date = start_date to avoid large requests
+                end_date = start_date
+                return end_date.isoformat()
+        return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
+
+    def _check_date_params(self, keywords: Dict[str, Any], product_type: str) -> None:
+        """checks if start and end date are present in the keywords and adds them if not"""
+        if (
+            "startTimeFromAscendingNode"
+            and "completionTimeFromAscendingNode" in keywords
+        ):
+            return
+        # start time given, end time missing
+        if "startTimeFromAscendingNode" in keywords:
+            keywords[
+                "completionTimeFromAscendingNode"
+            ] = self._get_default_end_date_from_start_date(
+                keywords["startTimeFromAscendingNode"], product_type
+            )
+            return
+        product_type_conf = self.config.products[product_type]
+        if (
+            "metadata_mapping" in product_type_conf
+            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
+        ):
+            mapping = product_type_conf["metadata_mapping"][
+                "startTimeFromAscendingNode"
+            ]
+            if isinstance(mapping, list):
+                # get time parameters (date, year, month, ...) from metadata mapping
+                input_mapping = mapping[0].replace("{{", "").replace("}}", "")
+                time_params = [
+                    values.split(":")[0].strip() for values in input_mapping.split(",")
+                ]
+                time_params = [
+                    tp.replace('"', "").replace("'", "") for tp in time_params
+                ]
+                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
+                # no default date is required
+                in_keywords = True
+                for tp in time_params:
+                    if tp not in keywords:
+                        in_keywords = False
+                if not in_keywords:
+                    keywords[
+                        "startTimeFromAscendingNode"
+                    ] = self.get_product_type_cfg_value(
+                        "missionStartDate", today().isoformat()
+                    )
+                    keywords[
+                        "completionTimeFromAscendingNode"
+                    ] = self._get_default_end_date_from_start_date(
+                        keywords["startTimeFromAscendingNode"], product_type
+                    )
+
     def query(
         self,
         prep: PreparedSearch = PreparedSearch(),
@@ -1322,6 +1401,8 @@ class PostJsonSearch(QueryStringSearch):
                     and isinstance(self.config.metadata_mapping[k], list)
                 }
             )
+            if getattr(self.config, "dates_required", False):
+                self._check_date_params(keywords, product_type)
 
             qp, _ = self.build_query_string(product_type, **keywords)
 
@@ -1503,7 +1584,7 @@ class PostJsonSearch(QueryStringSearch):
                     )
 
             urls.append(search_endpoint)
-        return urls, total_results
+        return list(dict.fromkeys(urls)), total_results
 
     def _request(
         self,
@@ -1551,22 +1632,16 @@ class PostJsonSearch(QueryStringSearch):
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
         except (requests.RequestException, URLError) as err:
+            response = locals().get("response", Response())
             # check if error is identified as auth_error in provider conf
             auth_errors = getattr(self.config, "auth_error_code", [None])
             if not isinstance(auth_errors, list):
                 auth_errors = [auth_errors]
-            if (
-                hasattr(err, "response")
-                and err.response is not None
-                and getattr(err.response, "status_code", None)
-                and err.response.status_code in auth_errors
-            ):
+            if response.status_code and response.status_code in auth_errors:
                 raise AuthenticationError(
-                    "HTTP Error {} returned:\n{}\nPlease check your credentials for {}".format(
-                        err.response.status_code,
-                        err.response.text.strip(),
-                        self.provider,
-                    )
+                    f"Please check your credentials for {self.provider}.",
+                    f"HTTP Error {response.status_code} returned.",
+                    response.text.strip(),
                 )
             if exception_message:
                 logger.exception(exception_message)
@@ -1577,16 +1652,8 @@ class PostJsonSearch(QueryStringSearch):
                     self.provider,
                     self.__class__.__name__,
                 )
-            if "response" in locals():
-                logger.debug(response.content)
-            error_text = str(err)
-            if (
-                hasattr(err, "response")
-                and err.response is not None
-                and getattr(err.response, "text", None)
-            ):
-                error_text = err.response.text
-            raise RequestError(error_text) from err
+            logger.debug(response.content or str(err))
+            raise RequestError.from_error(err, exception_message) from err
         return response
 
 
@@ -1637,12 +1704,35 @@ class StacSearch(PostJsonSearch):
                        arguments)
         :returns: fetched queryable parameters dict
         """
+        if (
+            not self.config.discover_queryables["fetch_url"]
+            and not self.config.discover_queryables["product_type_fetch_url"]
+        ):
+            logger.info(f"Cannot fetch queryables with {self.provider}")
+            return None
+
         product_type = kwargs.get("productType", None)
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)
             if product_type
             else None
         )
+        if (
+            provider_product_type
+            and not self.config.discover_queryables["product_type_fetch_url"]
+        ):
+            logger.info(
+                f"Cannot fetch queryables for a specific product type with {self.provider}"
+            )
+            return None
+        if (
+            not provider_product_type
+            and not self.config.discover_queryables["fetch_url"]
+        ):
+            logger.info(
+                f"Cannot fetch global queryables with {self.provider}. A product type must be specified"
+            )
+            return None
 
         try:
             unparsed_fetch_url = (
@@ -1654,10 +1744,16 @@ class StacSearch(PostJsonSearch):
             fetch_url = unparsed_fetch_url.format(
                 provider_product_type=provider_product_type, **self.config.__dict__
             )
+            auth = (
+                self.auth
+                if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
+                else None
+            )
             response = QueryStringSearch._request(
                 self,
                 PreparedSearch(
                     url=fetch_url,
+                    auth=auth,
                     info_message="Fetching queryables: {}".format(fetch_url),
                     exception_message="Skipping error while fetching queryables for "
                     "{} {} instance:".format(self.provider, self.__class__.__name__),
@@ -1709,3 +1805,18 @@ class StacSearch(PostJsonSearch):
             python_queryables = create_model("m", **field_definitions).model_fields
 
         return model_fields_to_annotated(python_queryables)
+
+
+class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that
+    uses generic STAC configuration for queryables.
+    """
+
+    def __init__(self, provider: str, config: PluginConfig) -> None:
+        PostJsonSearch.__init__(self, provider, config)
+
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters"""
+        return PostJsonSearch.build_query_string(self, product_type, **kwargs)

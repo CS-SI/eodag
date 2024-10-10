@@ -33,7 +33,7 @@ import yaml
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import ProgressCallback
-from eodag.utils.exceptions import DownloadError
+from eodag.utils.exceptions import DownloadError, NoMatchingProductType
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -96,11 +96,11 @@ class BaseDownloadPluginTest(unittest.TestCase):
         super(BaseDownloadPluginTest, self).tearDown()
         self.tmp_dir.cleanup()
 
-    def get_download_plugin(self, product):
+    def get_download_plugin(self, product: EOProduct):
         return self.plugins_manager.get_download_plugin(product)
 
-    def get_auth_plugin(self, provider):
-        return self.plugins_manager.get_auth_plugin(provider)
+    def get_auth_plugin(self, associated_plugin, product):
+        return self.plugins_manager.get_auth_plugin(associated_plugin, product)
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
@@ -323,7 +323,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload.download() must change the outputs extension from '.zip' to '.tar' and keep the content
         of the output as it is when it is a tar file and outputs extension is set to '.zip'"""
 
-        provider = "wekeo"
+        provider = "wekeo_main"
         download_url = (
             "https://prism-dem-open.copernicus.eu/pd-desk-open-access/prismDownload/"
             "COP-DEM_GLO-30-DGED__2022_1/Copernicus_DSM_10_S90_00_W141_00.tar"
@@ -1034,16 +1034,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.product.provider = "cop_ads"
         self.product.product_type = "CAMS_EAC4"
+        self.product.properties[
+            "downloadLink"
+        ] = "https://ads-beta.atmosphere.copernicus.eu/dummy"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(self.product.provider)
-        auth.config.credentials = {"username": "john", "password": "doe"}
+        auth = self.get_auth_plugin(plugin, self.product)
+        auth.config.credentials = {"apikey": "anicekey"}
         self.product.register_downloader(plugin, auth)
 
-        endpoint = "https://ads.atmosphere.copernicus.eu/api/v2"
+        endpoint = "https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1"
         self.product.properties["orderLink"] = (
-            f"{endpoint}/resources/{product_dataset}" + '?{"foo": "bar"}'
+            f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
         self.product.properties["storageStatus"] = "OFFLINE"
         self.product.location = self.product.remote_location = (
@@ -1054,29 +1057,35 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         def run():
             responses.add(
                 responses.POST,
-                f"{endpoint}/resources/{product_dataset}",
+                f"{endpoint}/processes/{product_dataset}/execution",
                 status=200,
                 content_type="application/json",
-                body=b'{"state": "queued", "request_id": "dummy_request_id"}',
+                body=b'{"status": "accepted", "jobID": "dummy_request_id"}',
                 auto_calculate_content_length=True,
             )
             responses.add(
                 responses.GET,
-                f"{endpoint}/tasks/dummy_request_id",
+                f"{endpoint}/jobs/dummy_request_id",
                 status=200,
                 content_type="application/json",
-                body=b'{"state": "running", "request_id": "dummy_request_id"}',
+                body=b'{"status": "running", "jobID": "dummy_request_id"}',
                 auto_calculate_content_length=True,
             )
             responses.add(
                 responses.GET,
-                f"{endpoint}/tasks/dummy_request_id",
+                f"{endpoint}/jobs/dummy_request_id",
+                status=200,
+                content_type="application/json",
+                body=(b'{"status": "successful", ' b'"jobID": "dummy_request_id"}'),
+                auto_calculate_content_length=True,
+            )
+            responses.add(
+                responses.GET,
+                f"{endpoint}/jobs/dummy_request_id/results",
                 status=200,
                 content_type="application/json",
                 body=(
-                    b'{"state": "completed", '
-                    b'"request_id": "dummy_request_id", '
-                    b'"location": "http://somewhere/download/dummy_request_id"}'
+                    b'{"asset": {"value": {"href": "http://somewhere/download/dummy_request_id"}}}'
                 ),
                 auto_calculate_content_length=True,
             )
@@ -1085,7 +1094,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 "http://somewhere/download/dummy_request_id",
                 status=200,
                 content_type="application/octet-stream",
-                adding_headers={"content-disposition": ""},
+                adding_headers={"content-disposition": "", "PRIVATE-TOKEN": "anicekey"},
                 body=b"some content",
                 auto_calculate_content_length=True,
             )
@@ -1094,7 +1103,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
             # expected values
             expected_remote_location = "http://somewhere/download/dummy_request_id"
-            expected_order_status_link = f"{endpoint}/tasks/dummy_request_id"
+            expected_order_status_link = f"{endpoint}/jobs/dummy_request_id"
             expected_path = os.path.join(
                 output_data_path, self.product.properties["title"]
             )
@@ -1120,6 +1129,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_get(self, mock_request):
         """HTTPDownload.order_download() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["orderLink"] = "http://somewhere/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
 
@@ -1127,7 +1137,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         timeout_backup = getattr(plugin.config, "timeout", None)
         plugin.config.timeout = 10
         try:
-            auth_plugin = self.get_auth_plugin(self.product.provider)
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
             auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
             auth = auth_plugin.authenticate()
 
@@ -1151,10 +1161,11 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_post(self, mock_request):
         """HTTPDownload.order_download() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
         plugin.config.order_method = "POST"
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
@@ -1213,8 +1224,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             "error": {"that": "failed"},
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
@@ -1255,8 +1267,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
         self.product.properties["searchLink"] = "http://somewhere/search-gain"
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
 
-        auth_plugin = self.get_auth_plugin(self.product.provider)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
         auth = auth_plugin.authenticate()
 
@@ -1482,6 +1495,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         )
         self.assertEqual((bucket, prefix), ("default_bucket", "somewhere/else"))
 
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload._get_unique_products", autospec=True
+    )
     @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
@@ -1499,12 +1515,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
     def test_plugins_download_aws_no_safe_build_no_flatten_top_dirs(
         self,
-        mock_requests_get,
-        mock_get_authenticated_objects,
-        mock_get_chunk_dest_path,
-        mock_finalize_s2_safe_product,
-        mock_check_manifest_file_list,
-        mock_flatten_top_directories,
+        mock_requests_get: mock.Mock,
+        mock_get_authenticated_objects: mock.Mock,
+        mock_get_chunk_dest_path: mock.Mock,
+        mock_finalize_s2_safe_product: mock.Mock,
+        mock_check_manifest_file_list: mock.Mock,
+        mock_flatten_top_directories: mock.Mock,
+        mock__get_unique_products: mock.Mock,
     ):
         """AwsDownload.download() must not call safe build methods if not needed"""
 
@@ -1525,6 +1542,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.assertEqual(mock_check_manifest_file_list.call_count, 0)
         self.assertEqual(mock_flatten_top_directories.call_count, 0)
 
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload._get_unique_products", autospec=True
+    )
     @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
@@ -1542,12 +1562,13 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
     def test_plugins_download_aws_no_safe_build_flatten_top_dirs(
         self,
-        mock_requests_get,
-        mock_get_authenticated_objects,
-        mock_get_chunk_dest_path,
-        mock_finalize_s2_safe_product,
-        mock_check_manifest_file_list,
-        mock_flatten_top_directories,
+        mock_requests_get: mock.Mock,
+        mock_get_authenticated_objects: mock.Mock,
+        mock_get_chunk_dest_path: mock.Mock,
+        mock_finalize_s2_safe_product: mock.Mock,
+        mock_check_manifest_file_list: mock.Mock,
+        mock_flatten_top_directories: mock.Mock,
+        mock__get_unique_products: mock.Mock,
     ):
         """AwsDownload.download() must not call safe build methods if not needed"""
 
@@ -1729,6 +1750,26 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # 3 additional calls
         self.assertEqual(7, mock_get_chunk_dest_path.call_count)
 
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_download_aws_no_matching_product_type(
+        self,
+        mock_get_authenticated_objects: mock.Mock,
+    ):
+        """AwsDownload.download() must fail if no product chunk is available"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+
+        # no SAFE build and flatten_top_dirs
+        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.flatten_top_dirs = True
+
+        with self.assertRaises(NoMatchingProductType):
+            plugin.download(self.product, outputs_prefix=self.output_dir)
+
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
     def setUp(self):
@@ -1800,7 +1841,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.properties["storageStatus"] = ONLINE_STATUS
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(self.product.provider)
+        auth = self.get_auth_plugin(plugin, self.product)
         self.product.register_downloader(plugin, auth)
 
         @responses.activate(registry=responses.registries.OrderedRegistry)
@@ -1878,7 +1919,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = "somewhere"
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(self.product.provider)
+        auth = self.get_auth_plugin(plugin, self.product)
         self.product.register_downloader(plugin, auth)
 
         # no retry

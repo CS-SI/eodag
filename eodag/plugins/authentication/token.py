@@ -89,14 +89,15 @@ class TokenAuth(Authentication):
                 and e.response.status_code in auth_errors
             ):
                 raise AuthenticationError(
-                    f"HTTP Error {e.response.status_code} returned, {response_text}\n"
-                    f"Please check your credentials for {self.provider}"
-                )
+                    f"Please check your credentials for {self.provider}.",
+                    f"HTTP Error {e.response.status_code} returned.",
+                    response_text,
+                ) from e
             # other error
             else:
                 raise AuthenticationError(
-                    f"Could no get authentication token: {str(e)}, {response_text}"
-                )
+                    "Could no get authentication token", str(e), response_text
+                ) from e
         else:
             if getattr(self.config, "token_type", "text") == "json":
                 token = response.json()[self.config.token_key]
@@ -126,6 +127,7 @@ class TokenAuth(Authentication):
         req_kwargs: Dict[str, Any] = {
             "headers": dict(self.config.headers, **USER_AGENT)
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
 
         if self.refresh_token:
             logger.debug("fetching access token with refresh token")
@@ -135,6 +137,7 @@ class TokenAuth(Authentication):
                     self.config.refresh_uri,
                     data={"refresh_token": self.refresh_token},
                     timeout=HTTP_REQ_TIMEOUT,
+                    verify=ssl_verify,
                     **req_kwargs,
                 )
                 response.raise_for_status()
@@ -170,6 +173,7 @@ class TokenAuth(Authentication):
             method=method,
             url=self.config.auth_uri,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=ssl_verify,
             **req_kwargs,
         )
 

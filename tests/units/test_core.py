@@ -91,20 +91,20 @@ class TestCoreBase(unittest.TestCase):
 
 class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
-        "AG_ERA5": ["cop_cds", "wekeo"],
-        "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "dedl", "wekeo"],
+        "AG_ERA5": ["cop_cds", "wekeo_ecmwf"],
+        "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CAMS_GFE_GFAS": ["cop_ads", "dedl"],
-        "CAMS_GRF": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_GRF_AUX": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_SOLAR_RADIATION": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_GREENHOUSE_EGG4": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_GREENHOUSE_INVERSION": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_GLOBAL_EMISSIONS": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_EAC4": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_EAC4_MONTHLY": ["cop_ads", "dedl", "wekeo"],
-        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads", "dedl", "wekeo"],
+        "CAMS_GRF": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_GRF_AUX": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_SOLAR_RADIATION": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_GREENHOUSE_EGG4_MONTHLY": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_GREENHOUSE_EGG4": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_GREENHOUSE_INVERSION": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_GLOBAL_EMISSIONS": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_EAC4": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_EAC4_MONTHLY": ["cop_ads", "dedl", "wekeo_ecmwf"],
+        "CAMS_EU_AIR_QUALITY_RE": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CBERS4_AWFI_L2": ["aws_eos"],
         "CBERS4_AWFI_L4": ["aws_eos"],
         "CBERS4_MUX_L2": ["aws_eos"],
@@ -113,52 +113,52 @@ class TestCore(TestCoreBase):
         "CBERS4_PAN10M_L4": ["aws_eos"],
         "CBERS4_PAN5M_L2": ["aws_eos"],
         "CBERS4_PAN5M_L4": ["aws_eos"],
-        "CLMS_CORINE": ["dedl", "wekeo"],
-        "CLMS_GLO_DMP_333M": ["dedl", "wekeo"],
-        "CLMS_GLO_FAPAR_333M": ["dedl", "wekeo"],
-        "CLMS_GLO_FCOVER_333M": ["dedl", "wekeo"],
-        "CLMS_GLO_GDMP_333M": ["dedl", "wekeo"],
-        "CLMS_GLO_LAI_333M": ["dedl", "wekeo"],
-        "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo"],
-        "CLMS_GLO_NDVI_333M": ["dedl", "wekeo"],
+        "CLMS_CORINE": ["dedl", "wekeo_main"],
+        "CLMS_GLO_DMP_333M": ["dedl", "wekeo_main"],
+        "CLMS_GLO_FAPAR_333M": ["dedl", "wekeo_main"],
+        "CLMS_GLO_FCOVER_333M": ["dedl", "wekeo_main"],
+        "CLMS_GLO_GDMP_333M": ["dedl", "wekeo_main"],
+        "CLMS_GLO_LAI_333M": ["dedl", "wekeo_main"],
+        "CLMS_GLO_NDVI_1KM_LTS": ["dedl", "wekeo_main"],
+        "CLMS_GLO_NDVI_333M": ["dedl", "wekeo_main"],
         "COP_DEM_GLO30_DGED": [
             "creodias",
             "creodias_s3",
             "dedl",
             "earth_search",
-            "wekeo",
+            "wekeo_main",
         ],
-        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO30_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
         "COP_DEM_GLO90_DGED": [
             "creodias",
             "creodias_s3",
             "dedl",
             "earth_search",
-            "wekeo",
+            "wekeo_main",
         ],
-        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo"],
+        "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
-        "EEA_DAILY_VI": ["dedl", "wekeo"],
-        "EFAS_FORECAST": ["cop_cds", "dedl", "wekeo"],
-        "EFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo"],
-        "EFAS_REFORECAST": ["cop_cds", "dedl", "wekeo"],
-        "EFAS_SEASONAL": ["cop_cds", "dedl", "wekeo"],
-        "EFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo"],
-        "ERA5_LAND": ["cop_cds", "dedl", "wekeo"],
-        "ERA5_LAND_MONTHLY": ["cop_cds", "dedl", "wekeo"],
-        "ERA5_PL": ["cop_cds", "dedl", "wekeo"],
-        "ERA5_PL_MONTHLY": ["cop_cds", "dedl", "wekeo"],
-        "ERA5_SL": ["cop_cds", "dedl", "wekeo"],
-        "ERA5_SL_MONTHLY": ["cop_cds", "dedl", "wekeo"],
-        "FIRE_HISTORICAL": ["cop_cds", "dedl", "wekeo"],
-        "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo"],
-        "GLOFAS_FORECAST": ["cop_cds", "dedl", "wekeo"],
-        "GLOFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo"],
-        "GLOFAS_REFORECAST": ["cop_cds", "dedl", "wekeo"],
-        "GLOFAS_SEASONAL": ["cop_cds", "dedl", "wekeo"],
-        "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo"],
-        "GRIDDED_GLACIERS_MASS_CHANGE": ["cop_cds", "dedl", "wekeo"],
+        "EEA_DAILY_VI": ["dedl", "wekeo_main"],
+        "EFAS_FORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "EFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "EFAS_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "EFAS_SEASONAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "EFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "ERA5_LAND": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "ERA5_LAND_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "ERA5_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "ERA5_PL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "ERA5_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "ERA5_SL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "FIRE_HISTORICAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLOFAS_FORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLOFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLOFAS_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLOFAS_SEASONAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GRIDDED_GLACIERS_MASS_CHANGE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
@@ -265,7 +265,7 @@ class TestCore(TestCoreBase):
             "peps",
             "planetary_computer",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S1_SAR_GRD_COG": ["cop_dataspace"],
         "S1_SAR_OCN": [
@@ -275,9 +275,15 @@ class TestCore(TestCoreBase):
             "onda",
             "peps",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
-        "S1_SAR_RAW": ["cop_dataspace", "creodias", "creodias_s3", "onda", "wekeo"],
+        "S1_SAR_RAW": [
+            "cop_dataspace",
+            "creodias",
+            "creodias_s3",
+            "onda",
+            "wekeo_main",
+        ],
         "S1_SAR_SLC": [
             "cop_dataspace",
             "creodias",
@@ -286,7 +292,7 @@ class TestCore(TestCoreBase):
             "onda",
             "peps",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S2_MSI_L1C": [
             "astraea_eod",
@@ -301,7 +307,7 @@ class TestCore(TestCoreBase):
             "peps",
             "sara",
             "usgs",
-            "wekeo",
+            "wekeo_main",
         ],
         "S2_MSI_L2A": [
             "astraea_eod",
@@ -313,9 +319,9 @@ class TestCore(TestCoreBase):
             "onda",
             "planetary_computer",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
-        "S2_MSI_L2AP": ["wekeo"],
+        "S2_MSI_L2AP": ["wekeo_main"],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
@@ -329,7 +335,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_EFR_BC002": ["eumetsat_ds"],
         "S3_ERR": [
@@ -340,7 +346,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_ERR_BC002": ["eumetsat_ds"],
         "S3_LAN": [
@@ -350,7 +356,7 @@ class TestCore(TestCoreBase):
             "dedl",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_OLCI_L2LFR": [
             "cop_dataspace",
@@ -359,7 +365,7 @@ class TestCore(TestCoreBase):
             "dedl",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_OLCI_L2LRR": [
             "cop_dataspace",
@@ -368,7 +374,7 @@ class TestCore(TestCoreBase):
             "dedl",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_OLCI_L2WFR": [
             "cop_dataspace",
@@ -378,7 +384,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_OLCI_L2WRR": [
             "cop_dataspace",
@@ -388,7 +394,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_RAC": ["sara"],
         "S3_SLSTR_L1RBT": [
@@ -399,10 +405,10 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_SLSTR_L1RBT_BC003": ["eumetsat_ds"],
-        "S3_SLSTR_L2": ["wekeo"],
+        "S3_SLSTR_L2": ["wekeo_main"],
         "S3_SLSTR_L2AOD": [
             "cop_dataspace",
             "creodias",
@@ -445,7 +451,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_SRA_A": [
             "cop_dataspace",
@@ -455,7 +461,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_SRA_BS": [
             "cop_dataspace",
@@ -465,7 +471,7 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
         "S3_SY_AOD": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
         "S3_SY_SYN": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
@@ -480,13 +486,13 @@ class TestCore(TestCoreBase):
             "eumetsat_ds",
             "onda",
             "sara",
-            "wekeo",
+            "wekeo_main",
         ],
-        "S3_LAN_HY": ["wekeo"],
-        "S3_LAN_SI": ["wekeo"],
-        "S3_LAN_LI": ["wekeo"],
-        "S5P_L1B_IR_ALL": ["dedl", "wekeo"],
-        "S5P_L2_IR_ALL": ["dedl", "wekeo"],
+        "S3_LAN_HY": ["wekeo_main"],
+        "S3_LAN_SI": ["wekeo_main"],
+        "S3_LAN_LI": ["wekeo_main"],
+        "S5P_L1B_IR_ALL": ["dedl", "wekeo_main"],
+        "S5P_L2_IR_ALL": ["dedl", "wekeo_main"],
         "S3_OLCI_L2WFR_BC003": ["eumetsat_ds"],
         "S3_OLCI_L2WRR_BC003": ["eumetsat_ds"],
         "S3_SRA_1A_BC004": ["eumetsat_ds"],
@@ -523,27 +529,27 @@ class TestCore(TestCoreBase):
         "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
         "S5P_L2_O3_TCL": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L2_SO2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo"],
-        "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["cop_cds", "dedl", "wekeo"],
-        "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo"],
-        "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo"],
-        "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo"],
-        "SEASONAL_MONTHLY_SL": ["cop_cds", "dedl", "wekeo"],
-        "SEASONAL_ORIGINAL_PL": ["cop_cds", "dedl", "wekeo"],
-        "SEASONAL_ORIGINAL_SL": ["cop_cds", "dedl", "wekeo"],
-        "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "dedl", "wekeo"],
-        "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "dedl", "wekeo"],
+        "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo_ecmwf"],
+        "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["dedl", "wekeo_ecmwf"],
+        "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["dedl", "wekeo_ecmwf"],
+        "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo_ecmwf"],
+        "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo_ecmwf"],
+        "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SEASONAL_MONTHLY_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SEASONAL_ORIGINAL_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SEASONAL_ORIGINAL_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SIS_HYDRO_MET_PROJ": ["cop_cds", "dedl"],
         "SPOT5_SPIRIT": ["theia"],
         "SPOT_SWH": ["theia"],
         "SPOT_SWH_OLD": ["theia"],
         "TIGGE_CF_SFC": ["ecmwf"],
-        "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo"],
+        "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "VENUS_L1C": ["theia"],
         "VENUS_L2A_MAJA": ["theia"],
         "VENUS_L3A_MAJA": ["theia"],
@@ -594,8 +600,9 @@ class TestCore(TestCoreBase):
         "theia",
         "usgs",
         "usgs_satapi_aws",
-        "wekeo",
         "wekeo_cmems",
+        "wekeo_ecmwf",
+        "wekeo_main",
     ]
 
     def setUp(self):
@@ -753,6 +760,42 @@ class TestCore(TestCoreBase):
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(sorted(product_types_ids), ["foo"])
 
+    def test_guess_product_type_with_mission_dates(self):
+        """Testing the datetime interval"""
+
+        with open(
+            os.path.join(TEST_RESOURCES_PATH, "ext_product_types_free_text_search.json")
+        ) as f:
+            ext_product_types_conf = json.load(f)
+        self.dag.update_product_types_list(ext_product_types_conf)
+
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES",
+            missionStartDate="2013-02-01",
+            missionEndDate="2013-02-05",
+        )
+        self.assertListEqual(product_types_ids, ["interval_end"])
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES",
+            missionStartDate="2013-02-01",
+            missionEndDate="2013-02-15",
+        )
+        self.assertListEqual(
+            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+        )
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES", missionStartDate="2013-02-01"
+        )
+        self.assertListEqual(
+            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+        )
+        product_types_ids = self.dag.guess_product_type(
+            title="TEST DATES", missionEndDate="2013-02-20"
+        )
+        self.assertListEqual(
+            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+        )
+
     def test_update_product_types_list(self):
         """Core api.update_product_types_list must update eodag product types list"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
@@ -800,7 +843,7 @@ class TestCore(TestCoreBase):
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
-        # ecmwf must have discover_product_types attribute to allow the launch of update_product_types_list
+        # update existing provider conf and check that update_product_types_list() is launched for it
         self.dag.update_providers_config(
             """
             ecmwf:
@@ -1426,7 +1469,7 @@ class TestCore(TestCoreBase):
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "format": "grib",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
@@ -1437,7 +1480,7 @@ class TestCore(TestCoreBase):
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "format": "grib",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
             "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
@@ -1449,7 +1492,7 @@ class TestCore(TestCoreBase):
             "productType": "ERA5_SL",
             "api_product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "time": "00:00",
+            "variable": "10m_u_component_of_wind",
             "format": None,
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
@@ -1599,8 +1642,9 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": None,
             },
-            "wekeo": None,
             "wekeo_cmems": None,
+            "wekeo_ecmwf": None,
+            "wekeo_main": None,
         }
         sortables = self.dag.available_sortables()
         self.assertDictEqual(sortables, expected_result)
@@ -2756,7 +2800,7 @@ class TestCoreSearch(TestCoreBase):
             sort_by=[("eodagSortParam", "DESC")],
         )
 
-        # a provider-specific dictionnary has been created to sort by
+        # a provider-specific dictionary has been created to sort by
         self.assertIn(
             "sort_by", mock_postjsonsearch__request.call_args[0][1].query_params.keys()
         )
@@ -3068,7 +3112,9 @@ class TestCoreProductAlias(TestCoreBase):
 
 
 class TestCoreProviderGroup(TestCoreBase):
-    group = ("peps", "creodias")
+    # create a group with a provider which has product type discovery mechanism
+    # and the other one which has not it to test different cases
+    group = ("creodias", "astraea_eod")
     group_name = "testgroup"
 
     @classmethod
@@ -3084,11 +3130,17 @@ class TestCoreProviderGroup(TestCoreBase):
         """
         The method available_providers returns only one entry for both grouped providers
         """
-        # drop the grouped names from expected providers, as they are grouped under "testgroup" name
         providers = self.dag.available_providers()
-        providers.remove(self.group[0])
-        providers.remove(self.group[1])
-        providers.append(self.group_name)
+
+        # check that setting "by_group" argument to True removes names of grouped providers and add names of their group
+        groups = []
+        for provider, provider_config in self.dag.providers_config.items():
+            provider_group = getattr(provider_config, "group", None)
+            if provider_group and provider_group not in groups:
+                groups.append(provider_group)
+                providers.append(provider_group)
+            if provider_group:
+                providers.remove(provider)
 
         self.assertCountEqual(self.dag.available_providers(by_group=True), providers)
 
@@ -3098,23 +3150,172 @@ class TestCoreProviderGroup(TestCoreBase):
         EODAG return the merged list of product types from both providers of the group.
         """
 
-        earth_search_products = self.dag.list_product_types(
-            self.group[0], fetch_providers=False
-        )
-        earth_search_cog_products = self.dag.list_product_types(
-            self.group[1], fetch_providers=False
-        )
+        search_products = []
+        for provider in self.group:
+            search_products.extend(
+                self.dag.list_product_types(provider, fetch_providers=False)
+            )
 
-        merged_list = list(
-            {
-                d["ID"]: d for d in earth_search_products + earth_search_cog_products
-            }.values()
-        )
+        merged_list = list({d["ID"]: d for d in search_products}.values())
 
         self.assertCountEqual(
             self.dag.list_product_types(self.group_name, fetch_providers=False),
             merged_list,
         )
+
+    @mock.patch("eodag.api.core.get_ext_product_types_conf", autospec=True)
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.discover_product_types", autospec=True
+    )
+    def test_fetch_product_types_list_grouped_providers(
+        self, mock_discover_product_types, mock_get_ext_product_types_conf
+    ):
+        """Core api must fetch product types list and update if needed"""
+        # store providers config
+        tmp_providers_config = copy.deepcopy(self.dag.providers_config)
+
+        # check that no provider has already been fetched
+        for provider_config in self.dag.providers_config.values():
+            self.assertFalse(getattr(provider_config, "product_types_fetched", False))
+
+        mock_get_ext_product_types_conf.return_value = {
+            provider: {
+                "providers_config": {"foo": {"productType": "foo"}},
+                "product_types_config": {"foo": {"title": "Foo collection"}},
+            }
+            for provider in self.group
+        }
+        # add an empty ext-conf for other providers to prevent them to be fetched
+        for provider, provider_config in self.dag.providers_config.items():
+            if hasattr(provider_config, "search"):
+                provider_search_config = provider_config.search
+            elif hasattr(provider_config, "api"):
+                provider_search_config = provider_config.api
+            elif provider not in self.group:
+                continue
+            if (
+                provider not in self.group
+                and hasattr(provider_search_config, "discover_product_types")
+                and provider_search_config.discover_product_types.get("fetch_url", None)
+            ):
+                mock_get_ext_product_types_conf.return_value[provider] = {}
+            # update grouped providers conf and check that discover_product_types() is launched for them
+            if provider in self.group and getattr(
+                provider_search_config, "discover_product_types", {}
+            ).get("fetch_url", None):
+                provider_search_config_key = (
+                    "search" if hasattr(provider_config, "search") else "api"
+                )
+                self.dag.update_providers_config(
+                    f"""
+                    {provider}:
+                        {provider_search_config_key}:
+                            discover_product_types:
+                                fetch_url: 'http://new-{provider}-endpoint'
+                            """
+                )
+
+        # now check that if provider is specified, only this one is fetched
+        with self.assertLogs(level="INFO") as cm:
+            self.dag.fetch_product_types_list(provider=self.group_name)
+            self.assertIn(
+                f"Fetch product types for {self.group_name} group: {', '.join(self.group)}",
+                str(cm.output),
+            )
+
+        # discover_product_types() should have been called one time per each provider of the group
+        # which has product type discovery mechanism. dag configuration of these providers should have been updated
+        for provider in self.group:
+            if getattr(
+                self.dag.providers_config[provider].search, "discover_product_types", {}
+            ).get("fetch_url", False):
+                self.assertTrue(
+                    getattr(
+                        self.dag.providers_config[provider],
+                        "product_types_fetched",
+                        False,
+                    )
+                )
+                self.assertEqual(
+                    self.dag.providers_config[provider].products["foo"],
+                    {"productType": "foo"},
+                )
+                mock_discover_product_types.assert_called_with(
+                    self.dag, provider=provider
+                )
+            else:
+                self.assertFalse(
+                    getattr(
+                        self.dag.providers_config[provider],
+                        "product_types_fetched",
+                        False,
+                    )
+                )
+                self.assertNotIn(
+                    "foo", list(self.dag.providers_config[provider].products.keys())
+                )
+
+        self.assertEqual(
+            self.dag.product_types_config.source["foo"],
+            {"_id": "foo", "title": "Foo collection"},
+        )
+
+        # restore providers config
+        self.dag.providers_config = tmp_providers_config
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
+        autospec=True,
+        return_value={
+            "providers_config": {"foo": {"productType": "foo"}},
+            "product_types_config": {"foo": {"title": "Foo collection"}},
+        },
+    )
+    def test_discover_product_types_grouped_providers(
+        self, mock_plugin_discover_product_types
+    ):
+        """Core api must fetch grouped providers for product types"""
+        with self.assertLogs(level="INFO") as cm:
+            ext_product_types_conf = self.dag.discover_product_types(
+                provider=self.group_name
+            )
+            self.assertIn(
+                f"Discover product types for {self.group_name} group: {', '.join(self.group)}",
+                str(cm.output),
+            )
+
+        self.assertIsNotNone(ext_product_types_conf)
+
+        # discover_product_types() of providers search plugin should have been called one time per each provider
+        # of the group which has product type discovery mechanism. Only config of these providers should have been
+        # added in the external config
+        mock_call_args_list = [
+            mock_plugin_discover_product_types.call_args_list[i].args[0]
+            for i in range(len(mock_plugin_discover_product_types.call_args_list))
+        ]
+        for provider in self.group:
+            provider_search_plugin = next(
+                self.dag._plugins_manager.get_search_plugins(provider=provider)
+            )
+            if getattr(
+                self.dag.providers_config[provider].search, "discover_product_types", {}
+            ).get("fetch_url", False):
+                self.assertIn(provider_search_plugin, mock_call_args_list)
+                self.assertEqual(
+                    ext_product_types_conf[provider]["providers_config"]["foo"][
+                        "productType"
+                    ],
+                    "foo",
+                )
+                self.assertEqual(
+                    ext_product_types_conf[provider]["product_types_config"]["foo"][
+                        "title"
+                    ],
+                    "Foo collection",
+                )
+            else:
+                self.assertNotIn(provider_search_plugin, mock_call_args_list)
+                self.assertNotIn(provider, list(ext_product_types_conf.keys()))
 
     def test_get_search_plugins(
         self,

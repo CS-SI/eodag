@@ -26,6 +26,7 @@ from urllib.parse import quote_plus, unquote_plus
 import geojson
 import orjson
 from dateutil.parser import isoparse
+from dateutil.tz import tzutc
 from jsonpath_ng import Child, Fields, Root
 from pydantic import create_model
 from pydantic.fields import FieldInfo
@@ -110,8 +111,8 @@ class BuildPostSearchResult(PostJsonSearch):
         prep.url = prep.search_urls[0]
         prep.info_message = f"Sending search request: {prep.url}"
         prep.exception_message = (
-            f"Skipping error while searching for {self.provider} "
-            f"{self.__class__.__name__} instance:"
+            f"Skipping error while searching for {self.provider}"
+            f" {self.__class__.__name__} instance"
         )
         response = self._request(prep)
 
@@ -339,24 +340,6 @@ class BuildSearchResult(BuildPostSearchResult):
             self, product_type=product_type, **available_properties
         )
 
-    def get_product_type_cfg(self, key: str, default: Any = None) -> Any:
-        """
-        Get the value of a configuration option specific to the current product type.
-
-        This method retrieves the value of a configuration option from the
-        `_product_type_config` attribute. If the option is not found, the provided
-        default value is returned.
-
-        :param key: The configuration option key.
-        :param default: The default value to be returned if the option is not found (default is None).
-
-        :return: The value of the specified configuration option or the default value.
-        """
-        product_type_cfg = getattr(self.config, "product_type_config", {})
-        non_none_cfg = {k: v for k, v in product_type_cfg.items() if v}
-
-        return non_none_cfg.get(key, default)
-
     def _preprocess_search_params(self, params: Dict[str, Any]) -> None:
         """Preprocess search parameters before making a request to the CDS API.
 
@@ -397,7 +380,7 @@ class BuildSearchResult(BuildPostSearchResult):
 
         # dates
         mission_start_dt = datetime.fromisoformat(
-            self.get_product_type_cfg(
+            self.get_product_type_cfg_value(
                 "missionStartDate", DEFAULT_MISSION_START_DATE
             ).replace(
                 "Z", "+00:00"
@@ -423,11 +406,29 @@ class BuildSearchResult(BuildPostSearchResult):
             "completionTimeFromAscendingNode", default_end_str
         )
 
-        # temporary _date parameter mixing start & end
+        # adapt end date if it is midnight
         end_date_excluded = getattr(self.config, "end_date_excluded", True)
-        end_date = isoparse(params["completionTimeFromAscendingNode"])
-        if not end_date_excluded and end_date == end_date.replace(
-            hour=0, minute=0, second=0, microsecond=0
+        is_datetime = True
+        try:
+            end_date = datetime.strptime(
+                params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%SZ"
+            )
+            end_date = end_date.replace(tzinfo=tzutc())
+        except ValueError:
+            try:
+                end_date = datetime.strptime(
+                    params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%S.%fZ"
+                )
+                end_date = end_date.replace(tzinfo=tzutc())
+            except ValueError:
+                end_date = isoparse(params["completionTimeFromAscendingNode"])
+                is_datetime = False
+        start_date = isoparse(params["startTimeFromAscendingNode"])
+        if (
+            not end_date_excluded
+            and is_datetime
+            and end_date > start_date
+            and end_date == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
         ):
             end_date += timedelta(days=-1)
             params["completionTimeFromAscendingNode"] = end_date.isoformat()

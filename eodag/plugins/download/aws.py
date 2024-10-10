@@ -70,6 +70,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
+    NoMatchingProductType,
     NotAvailableError,
     TimeOutError,
 )
@@ -216,7 +217,7 @@ class AwsDownload(Download):
     :param provider: provider name
     :param config: Download plugin configuration:
 
-        * ``config.base_uri`` (str) - s3 endpoint url
+        * ``config.s3_endpoint`` (str) - s3 endpoint url
         * ``config.requester_pays`` (bool) - (optional) whether download is done from a
           requester-pays bucket or not
         * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
@@ -611,19 +612,20 @@ class AwsDownload(Download):
                 raise NotAvailableError(
                     rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
                 )
+
+        if not unique_product_chunks:
+            raise NoMatchingProductType("No product found to download.")
+
         return unique_product_chunks
 
     def _raise_if_auth_error(self, exception: ClientError) -> None:
         """Raises an error if given exception is an authentication error"""
-        err = exception.response["Error"]
+        err = cast(Dict[str, str], exception.response["Error"])
         if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
             raise AuthenticationError(
-                "HTTP error {} returned\n{}: {}\nPlease check your credentials for {}".format(
-                    exception.response["ResponseMetadata"]["HTTPStatusCode"],
-                    err["Code"],
-                    err["Message"],
-                    self.provider,
-                )
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {exception.response['ResponseMetadata']['HTTPStatusCode']} returned.",
+                err["Code"] + ": " + err["Message"],
             )
 
     def _stream_download_dict(
@@ -636,7 +638,7 @@ class AwsDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
-        Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
+        Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
@@ -649,7 +651,7 @@ class AwsDownload(Download):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         if progress_callback is None:
             logger.info(
@@ -751,7 +753,6 @@ class AwsDownload(Download):
             product_chunk: Any, progress_callback: ProgressCallback
         ) -> Any:
             try:
-
                 chunk_start = 0
                 chunk_end = chunk_start + chunk_size - 1
 
@@ -829,7 +830,7 @@ class AwsDownload(Download):
 
         :param bucket_name: Bucket containg objects
         :param prefix: Prefix used to try auth
-        :param auth_dict: Dictionnary containing authentication keys
+        :param auth_dict: Dictionary containing authentication keys
         :returns: The rasterio environement variables
         """
         if self.s3_session is not None:
@@ -857,7 +858,7 @@ class AwsDownload(Download):
         :param bucket_name: Bucket containg objects
         :param prefix: Prefix used to filter objects on auth try
                        (not used to filter returned objects)
-        :param auth_dict: Dictionnary containing authentication keys
+        :param auth_dict: Dictionary containing authentication keys
         :returns: The boto3 authenticated objects
         """
         auth_methods: List[
@@ -901,7 +902,7 @@ class AwsDownload(Download):
         """Auth strategy using no-sign-request"""
 
         s3_resource = boto3.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
+            service_name="s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
         s3_resource.meta.client.meta.events.register(
             "choose-signer.s3.*", disable_signing
@@ -919,7 +920,7 @@ class AwsDownload(Download):
             s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
             s3_resource = s3_session.resource(
                 service_name="s3",
-                endpoint_url=getattr(self.config, "base_uri", None),
+                endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -958,7 +959,7 @@ class AwsDownload(Download):
             s3_session = boto3.session.Session(**s3_session_kwargs)
             s3_resource = s3_session.resource(
                 service_name="s3",
-                endpoint_url=getattr(self.config, "base_uri", None),
+                endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
             if self.requester_pays:
                 objects = s3_resource.Bucket(bucket_name).objects.filter(
@@ -979,7 +980,7 @@ class AwsDownload(Download):
 
         s3_session = boto3.session.Session()
         s3_resource = s3_session.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "base_uri", None)
+            service_name="s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
         if self.requester_pays:
             objects = s3_resource.Bucket(bucket_name).objects.filter(

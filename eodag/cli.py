@@ -39,6 +39,7 @@ Commands:
 
   noqa: D103
 """
+
 from __future__ import annotations
 
 import json
@@ -553,12 +554,13 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
         for idx, product in enumerate(search_results):
             if product.downloader is None:
+                downloader = satim_api._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
-                search_results[idx].register_downloader(
-                    satim_api._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = satim_api._plugins_manager.get_auth_plugin(
+                        downloader, product
+                    )
+                search_results[idx].register_downloader(downloader, auth)
 
             downloaded_file = product.get_quicklook()
             if not downloaded_file:
@@ -573,12 +575,13 @@ def download(ctx: Context, **kwargs: Any) -> None:
         # register downloader
         for idx, product in enumerate(search_results):
             if product.downloader is None:
+                downloader = satim_api._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(product.provider)
-                search_results[idx].register_downloader(
-                    satim_api._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = satim_api._plugins_manager.get_auth_plugin(
+                        downloader, product
+                    )
+                search_results[idx].register_downloader(downloader, auth)
 
         downloaded_files = satim_api.download_all(search_results)
         if downloaded_files and len(downloaded_files) > 0:
@@ -684,19 +687,32 @@ def serve_rest(
         else:
             sys.exit(0)
     else:
+        import logging
+
         logging_config = uvicorn.config.LOGGING_CONFIG
-        if debug:
-            logging_config["loggers"]["uvicorn"]["level"] = "DEBUG"
-            logging_config["loggers"]["uvicorn.error"]["level"] = "DEBUG"
-            logging_config["loggers"]["uvicorn.access"]["level"] = "DEBUG"
-            logging_config["formatters"]["default"][
-                "fmt"
-            ] = "%(asctime)-15s %(name)-32s [%(levelname)-8s] (%(module)-17s) %(message)s"
-            logging_config["loggers"]["eodag"] = {
-                "handlers": ["default"],
-                "level": "DEBUG" if debug else "INFO",
-                "propagate": False,
+        uvicorn_fmt = "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
+        logging_config["formatters"]["access"]["fmt"] = uvicorn_fmt
+        logging_config["formatters"]["default"]["fmt"] = uvicorn_fmt
+
+        eodag_formatter = logging.Formatter(
+            "%(asctime)-15s %(name)-32s [%(levelname)-8s] (tid=%(thread)d) %(message)s"
+        )
+        logging.getLogger("eodag").handlers[0].setFormatter(eodag_formatter)
+
+        if ctx.obj["verbosity"] <= 1:
+            logging_config["handlers"]["null"] = {
+                "level": "DEBUG",
+                "class": "logging.NullHandler",
             }
+            logging_config["loggers"]["uvicorn"]["handlers"] = ["null"]
+            logging_config["loggers"]["uvicorn.error"]["handlers"] = ["null"]
+            logging_config["loggers"]["uvicorn.access"]["handlers"] = ["null"]
+        else:
+            log_level = "INFO" if ctx.obj["verbosity"] == 2 else "DEBUG"
+            logging_config["loggers"]["uvicorn"]["level"] = log_level
+            logging_config["loggers"]["uvicorn.error"]["level"] = log_level
+            logging_config["loggers"]["uvicorn.access"]["level"] = log_level
+
         uvicorn.run(
             "eodag.rest.server:app",
             host=bind_host,

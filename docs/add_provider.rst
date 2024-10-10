@@ -46,6 +46,13 @@ provide the new provider's configuration in a ``YAML`` format. The following exa
 It configures the following existing plugins: :class:`~eodag.plugins.search.qssearch.StacSearch` (search),
 :class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.aws.AwsDownload` (download).
 
+Each plugin configuration is inserted following the appropriate plugin topic key:
+
+- ``search`` for `search plugins <plugins_reference/search.rst>`_
+- ``download`` for `download plugins <plugins_reference/download.rst>`_
+- ``auth``, ``search_auth``, or ``download_auth`` for `authentication plugins <plugins_reference/auth.rst>`_
+- ``api`` for `api plugins <plugins_reference/api.rst>`_
+
 Of course, it is also necessary to know how to configure these plugins (which parameters they take, what values they can have, etc.).
 You can get some inspiration from the *Providers pre-configuration* section by analysing how ``eodag`` configures the providers it comes installed with.
 
@@ -81,49 +88,49 @@ Click on the link below to display its full content.
 
    </details>
 
-Parameters mapping
-^^^^^^^^^^^^^^^^^^
 
-EODAG maps each provider's specific metadata parameters to a common model using
-`OGC OpenSearch Extension for Earth Observation <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_.
-Extra parameters having no equivalent in this model are mapped as is.
+Provider configuration
+^^^^^^^^^^^^^^^^^^^^^^
 
-Depending on the provider, some parameters are queryable or not. This is configured in `providers.yml`:
+The plugin structure is reflected in the internal providers configuration file. Here is a sample::
 
-* If a parameter metadata-mapping is a list, the first element will help constructing the query \
-  (using `format() <https://docs.python.org/fr/3/library/string.html#string.Formatter.format>`_), and the 2nd will \
-  help extracting its values from the query result (using `jsonpath <https://github.com/h2non/jsonpath-ng>`_)
-* If a parameter metadata-mapping is a string, it will not be queryable and this string will help extracting its \
-  values from the query result (using `jsonpath <https://github.com/h2non/jsonpath-ng>`_).
-
-.. code-block::
-
-   some_provider:
+   provider_name:
+      priority: 1
+      products:
+         # List of supported product types
+         # This is a mapping containing all the information required by the search plugin class to perform its job.
+         # The mapping is available in the config attribute of the search plugin as config['products']
+         S2_MSI_L1C:
+            a-config-key-needed-by-search-plugin-to-search-this-product-type: value
+            another-config-key: another-value
+            # Whether this product type is partially supported by this provider (the provider does not contain all the
+            # products of this type)
+            partial: True
+         ...
       search:
+         plugin: CustomSearchPluginClass
+         api_endpoint: https://mandatory.config.key/
+         a-key-conf-used-by-the-plugin-class-init-method: value
+         another-random-key: random-value
+         # A mapping between the search result of the provider and the eodag way of describing EO products (the keys are
+         # the same as in the OpenSearch specification)
          metadata_mapping:
-            queryableParameter:
-               - 'this_is_query_string={queryableParameter}'
-               - '$.jsonpath.in.result.to.parameter'
-            nonQueryableParameter: '$.jsonpath.in.result.to.another_parameter'
+            ...
+         ...
+      download:
+         plugin: CustomDownloadPlugin
+         # Same as with search for random config keys as needed by the plugin class
+         ...
+      auth:
+         plugin: CustomAuthPlugin
+         # Same as with search for random config keys as needed by the plugin class
+         ...
 
-The following tables list the parameters supported by providers, and if they are queryable or not.
+Note however, that for a provider which already has a Python library for accessing its products, the configuration
+varies a little bit. It does not have the 'search' and 'download' keys. Instead, there is a single 'api' key like this::
 
-OpenSearch parameters (`CSV <_static/params_mapping_opensearch.csv>`__)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. role:: green
-.. csv-table::
-   :file: _static/params_mapping_opensearch.csv
-   :header-rows: 1
-   :stub-columns: 1
-   :class: params
-
-Provider/eodag specific parameters (`CSV <_static/params_mapping_extra.csv>`__)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-.. role:: green
-.. csv-table::
-   :file: _static/params_mapping_extra.csv
-   :header-rows: 1
-   :stub-columns: 1
-   :class: params
+   provider_name:
+      ...
+      api:
+         plugin: ApiPluginClassName
+         ...

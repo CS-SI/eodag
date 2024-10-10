@@ -117,6 +117,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             "grant_type": self.GRANT_TYPE,
         }
         credentials = {k: v for k, v in self.config.credentials.items()}
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
                 self.TOKEN_URL_TEMPLATE.format(
@@ -126,6 +127,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
                 data=dict(req_data, **credentials),
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
@@ -142,6 +144,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             "grant_type": "refresh_token",
             "refresh_token": self.token_info["refresh_token"],
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
                 self.TOKEN_URL_TEMPLATE.format(
@@ -151,6 +154,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
                 data=req_data,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
             )
             response.raise_for_status()
         except requests.RequestException as e:

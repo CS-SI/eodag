@@ -21,18 +21,19 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
-from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from urllib.parse import (
+    parse_qs,
+    quote,
+    urlencode,
+    urlparse,
+    urlsplit,
+    urlunparse,
+    urlunsplit,
+)
 
-import dateutil.parser
 import geojson
-import shapefile
-from dateutil import tz
-from dateutil.relativedelta import relativedelta
 from jsonpath_ng.jsonpath import Child
-from shapely.geometry import shape
-from shapely.geometry.base import BaseGeometry
-from shapely.ops import unary_union
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
@@ -42,7 +43,6 @@ from eodag.api.product.metadata_mapping import (
 from eodag.rest.config import Settings
 from eodag.rest.utils.rfc3339 import str_to_interval
 from eodag.utils import (
-    DEFAULT_MISSION_START_DATE,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -50,14 +50,12 @@ from eodag.utils import (
     jsonpath_parse_dict_items,
     string_to_jsonpath,
     update_nested_dict,
-    urljoin,
 )
 from eodag.utils.exceptions import (
     NoMatchingProductType,
     NotAvailableError,
     RequestError,
     TimeOutError,
-    ValidationError,
 )
 from eodag.utils.requests import fetch_json
 
@@ -68,8 +66,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("eodag.rest.stac")
-
-STAC_CATALOGS_PREFIX = "catalogs"
 
 # fields not to put in item properties
 COLLECTION_PROPERTIES = [
@@ -100,6 +96,13 @@ IGNORED_ITEM_PROPERTIES = [
     "defaultGeometry",
     "_date",
 ]
+
+
+def _quote_url_path(url: str) -> str:
+    parsed = urlsplit(url)
+    path = quote(parsed.path)
+    components = (parsed.scheme, parsed.netloc, path, parsed.query, parsed.fragment)
+    return urlunsplit(components)
 
 
 class StacCommon:
@@ -170,7 +173,7 @@ class StacCommon:
         :param stac_config: STAC configuration from stac.yml conf file
         :param extension: Extension name
         :param kwargs: Additional variables needed for parsing extension
-        :returns: STAC extension as dictionnary
+        :returns: STAC extension as dictionary
         """
         extension_model = deepcopy(stac_config).get("extensions", {}).get(extension, {})
 
@@ -342,6 +345,10 @@ class StacItem(StacCommon):
             # remove empty properties
             product_item = self.__filter_item_properties_values(product_item)
 
+            # quote invalid characters in links
+            for link in product_item["links"]:
+                link["href"] = _quote_url_path(link["href"])
+
             # update item link with datacube query-string
             if _dc_qs or self.provider:
                 url_parts = urlparse(str(product_item["links"][0]["href"]))
@@ -378,9 +385,12 @@ class StacItem(StacCommon):
             origin_href = product.remote_location
 
         # update download link with up-to-date query-args
+        quoted_href = _quote_url_path(
+            downloadlink_href
+        )  # quote invalid characters in url
         assets["downloadLink"] = {
             "title": "Download link",
-            "href": downloadlink_href,
+            "href": quoted_href,
             "type": "application/zip",
         }
 
@@ -424,6 +434,7 @@ class StacItem(StacCommon):
                     assets[asset_key]["type"] = asset_type
                     if origin := assets[asset_key].get("alternate", {}).get("origin"):
                         origin["type"] = asset_type
+                asset_value["href"] = _quote_url_path(asset_value["href"])
 
         if thumbnail_url := product.properties.get(
             "quicklook", product.properties.get("thumbnail", None)
@@ -448,7 +459,7 @@ class StacItem(StacCommon):
 
         :param search_results: EODAG search results
         :param catalog: STAC catalog dict used for parsing item metadata
-        :returns: Items dictionnary
+        :returns: Items dictionary
         """
         items_model = deepcopy(self.stac_config["items"])
 
@@ -606,7 +617,7 @@ class StacItem(StacCommon):
             root=self.root,
             provider=self.provider,
             eodag_api=self.eodag_api,
-            catalogs=[product_type],
+            collection=product_type,
         )
 
         product_dict = deepcopy(product.__dict__)
@@ -744,25 +755,34 @@ class StacCollection(StacCommon):
             ]
             ext_stac_collection["links"].append(link)
 
+        # merge "summaries"
+        ext_stac_collection["summaries"] = {
+            k: v
+            for k, v in {
+                **ext_stac_collection.get("summaries", {}),
+                **product_type_collection["summaries"],
+            }.items()
+            if v and any(v)
+        }
+
         # merge "keywords" lists
-        if "keywords" in ext_stac_collection:
-            try:
-                ext_stac_collection["keywords"] = [
-                    k
-                    for k in set(
-                        ext_stac_collection["keywords"]
-                        + product_type_collection["keywords"]
-                    )
-                    if k is not None
-                ]
-            except TypeError as e:
-                logger.warning(
-                    f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
+        try:
+            ext_stac_collection["keywords"] = [
+                k
+                for k in set(
+                    ext_stac_collection.get("keywords", [])
+                    + product_type_collection["keywords"]
                 )
-                logger.debug(
-                    f"External collection keywords: {str(ext_stac_collection['keywords'])}, ",
-                    f"Product type keywords: {str(product_type_collection['keywords'])}",
-                )
+                if k is not None
+            ]
+        except TypeError as e:
+            logger.warning(
+                f"Could not merge keywords from external collection for {product_type['ID']}: {str(e)}"
+            )
+            logger.debug(
+                f"External collection keywords: {str(ext_stac_collection.get('keywords'))}, ",
+                f"Product type keywords: {str(product_type_collection['keywords'])}",
+            )
 
         # merge providers
         if "providers" in ext_stac_collection:
@@ -848,7 +868,7 @@ class StacCatalog(StacCommon):
     :param provider: Chosen provider
     :param eodag_api: EODAG python API instance
     :param root: (optional) API root
-    :param catalogs: (optional) Catalogs list
+    :param collection: (optional) product type id
     """
 
     def __init__(
@@ -858,7 +878,7 @@ class StacCatalog(StacCommon):
         provider: Optional[str],
         eodag_api: EODataAccessGateway,
         root: str = "/",
-        catalogs: Optional[List[str]] = None,
+        collection: Optional[str] = None,
     ) -> None:
         super(StacCatalog, self).__init__(
             url=url,
@@ -885,7 +905,7 @@ class StacCatalog(StacCommon):
             self.data["links"] += self.children
 
         # build catalog
-        self.__build_stac_catalog(catalogs)
+        self.__build_stac_catalog(collection)
 
     def __update_data_from_catalog_config(self, catalog_config: Dict[str, Any]) -> bool:
         """Updates configuration and data using given input catalog config
@@ -910,17 +930,32 @@ class StacCatalog(StacCommon):
 
         return True
 
-    def set_children(self, children: Optional[List[Dict[str, Any]]] = None) -> bool:
-        """Set catalog children / links
+    def __build_stac_catalog(self, collection: Optional[str] = None) -> StacCatalog:
+        """Build nested catalog from catalag list
 
-        :param children: (optional) Children list
+        :param collection: (optional) product type id
+        :returns: This catalog obj
         """
-        self.children = children or []
-        self.data["links"] = [
-            link for link in self.data["links"] if link["rel"] != "child"
-        ]
-        self.data["links"] += self.children
-        return True
+        settings = Settings.from_environment()
+
+        if not collection:
+            # Build root catalog combined with landing page
+            self.__update_data_from_catalog_config(
+                {
+                    "model": {
+                        **deepcopy(self.stac_config["landing_page"]),
+                        **{
+                            "provider": self.provider,
+                            "id": settings.stac_api_landing_id,
+                            "title": settings.stac_api_title,
+                            "description": settings.stac_api_description,
+                        },
+                    }
+                }
+            )
+        else:
+            self.set_stac_product_type_by_id(collection)
+        return self
 
     def set_stac_product_type_by_id(
         self, product_type: str, **_: Any
@@ -940,7 +975,17 @@ class StacCatalog(StacCommon):
         if not collections:
             raise NotAvailableError(f"Collection {product_type} does not exist.")
 
-        cat_model = deepcopy(self.stac_config["catalogs"]["product_type"]["model"])
+        cat_model = {
+            "id": "{collection[id]}",
+            "title": "{collection[title]}",
+            "description": "{collection[description]}",
+            "extent": "{collection[extent]}",
+            "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+            "keywords": "{collection[keywords]}",
+            "license": "{collection[license]}",
+            "providers": "{collection[providers]}",
+            "summaries": "{collection[summaries]}",
+        }
         # parse f-strings
         format_args = deepcopy(self.stac_config)
         format_args["catalog"] = defaultdict(str, **self.data)
@@ -957,499 +1002,3 @@ class StacCatalog(StacCommon):
         self.search_args.update({"productType": product_type})
 
         return parsed_dict
-
-    # get / set dates filters -------------------------------------------------
-
-    def get_stac_years_list(self, **_: Any) -> List[int]:
-        """Get catalog available years list
-
-        :returns: Years list
-        """
-        extent_date_min, extent_date_max = self.get_datetime_extent()
-
-        return list(range(extent_date_min.year, extent_date_max.year + 1))
-
-    def get_stac_months_list(self, **_: Any) -> List[int]:
-        """Get catalog available months list
-
-        :returns: Months list
-        """
-        extent_date_min, extent_date_max = self.get_datetime_extent()
-
-        return list(
-            range(
-                extent_date_min.month,
-                (extent_date_max - relativedelta(days=1)).month + 1,
-            )
-        )
-
-    def get_stac_days_list(self, **_: Any) -> List[int]:
-        """Get catalog available days list
-
-        :returns: Days list
-        """
-        extent_date_min, extent_date_max = self.get_datetime_extent()
-
-        return list(
-            range(
-                extent_date_min.day, (extent_date_max - relativedelta(days=1)).day + 1
-            )
-        )
-
-    def set_stac_year_by_id(self, year: str, **_: Any) -> Dict[str, Any]:
-        """Updates and returns catalog with given year
-
-        :param year: Year number
-        :returns: Updated catalog
-        """
-        extent_date_min, extent_date_max = self.get_datetime_extent()
-
-        datetime_min = max(
-            [extent_date_min, dateutil.parser.parse(f"{year}-01-01T00:00:00Z")]
-        )
-        datetime_max = min(
-            [
-                extent_date_max,
-                dateutil.parser.parse(f"{year}-01-01T00:00:00Z")
-                + relativedelta(years=1),
-            ]
-        )
-
-        catalog_model = deepcopy(self.stac_config["catalogs"]["year"]["model"])
-
-        parsed_dict = self.set_stac_date(datetime_min, datetime_max, catalog_model)
-
-        return parsed_dict
-
-    def set_stac_month_by_id(self, month: str, **_: Any) -> Dict[str, Any]:
-        """Updates and returns catalog with given month
-
-        :param month: Month number
-        :returns: Updated catalog
-        """
-        extent_date_min, extent_date_max = self.get_datetime_extent()
-        year = extent_date_min.year
-
-        datetime_min = max(
-            [
-                extent_date_min,
-                dateutil.parser.parse(f"{year}-{month}-01T00:00:00Z"),
-            ]
-        )
-        datetime_max = min(
-            [
-                extent_date_max,
-                dateutil.parser.parse(f"{year}-{month}-01T00:00:00Z")
-                + relativedelta(months=1),
-            ]
-        )
-
-        catalog_model = deepcopy(self.stac_config["catalogs"]["month"]["model"])
-
-        parsed_dict = self.set_stac_date(datetime_min, datetime_max, catalog_model)
-
-        return parsed_dict
-
-    def set_stac_day_by_id(self, day: str, **_: Any) -> Dict[str, Any]:
-        """Updates and returns catalog with given day
-
-        :param day: Day number
-        :returns: Updated catalog
-        """
-        extent_date_min, extent_date_max = self.get_datetime_extent()
-        year = extent_date_min.year
-        month = extent_date_min.month
-
-        datetime_min = max(
-            [
-                extent_date_min,
-                dateutil.parser.parse(f"{year}-{month}-{day}T00:00:00Z"),
-            ]
-        )
-        datetime_max = min(
-            [
-                extent_date_max,
-                dateutil.parser.parse(f"{year}-{month}-{day}T00:00:00Z")
-                + relativedelta(days=1),
-            ]
-        )
-
-        catalog_model = deepcopy(self.stac_config["catalogs"]["day"]["model"])
-
-        parsed_dict = self.set_stac_date(datetime_min, datetime_max, catalog_model)
-
-        return parsed_dict
-
-    def get_datetime_extent(self) -> Tuple[datetime, datetime]:
-        """Returns catalog temporal extent as datetime objs
-
-        :returns: Start & stop dates
-        """
-        extent_date_min = dateutil.parser.parse(DEFAULT_MISSION_START_DATE).replace(
-            tzinfo=tz.UTC
-        )
-        extent_date_max = datetime.now(timezone.utc).replace(tzinfo=tz.UTC)
-        for interval in self.data["extent"]["temporal"]["interval"]:
-            extent_date_min_str, extent_date_max_str = interval
-            # date min
-            if extent_date_min_str:
-                extent_date_min = max(
-                    extent_date_min, dateutil.parser.parse(extent_date_min_str)
-                )
-            # date max
-            if extent_date_max_str:
-                extent_date_max = min(
-                    extent_date_max, dateutil.parser.parse(extent_date_max_str)
-                )
-
-        return (
-            extent_date_min.replace(tzinfo=tz.UTC),
-            extent_date_max.replace(tzinfo=tz.UTC),
-        )
-
-    def set_stac_date(
-        self,
-        datetime_min: datetime,
-        datetime_max: datetime,
-        catalog_model: Dict[str, Any],
-    ):
-        """Updates catalog data using given dates
-
-        :param datetime_min: Date min of interval
-        :param datetime_max: Date max of interval
-        :param catalog_model: Catalog model to use, from yml stac_config[catalogs]
-        :returns: Updated catalog
-        """
-        # parse f-strings
-        format_args = deepcopy(self.stac_config)
-        format_args["catalog"] = defaultdict(str, **self.data)
-        format_args["date"] = defaultdict(
-            str,
-            {
-                "year": datetime_min.year,
-                "month": datetime_min.month,
-                "day": datetime_min.day,
-                "min": datetime_min.isoformat().replace("+00:00", "Z"),
-                "max": datetime_max.isoformat().replace("+00:00", "Z"),
-            },
-        )
-        parsed_dict: Dict[str, Any] = format_dict_items(catalog_model, **format_args)
-
-        self.update_data(parsed_dict)
-
-        # update search args
-        self.search_args.update(
-            {
-                "start": datetime_min.isoformat().replace("+00:00", "Z"),
-                "end": datetime_max.isoformat().replace("+00:00", "Z"),
-            }
-        )
-        return parsed_dict
-
-    # get / set cloud_cover filter --------------------------------------------
-
-    def get_stac_cloud_covers_list(self, **_: Any) -> List[int]:
-        """Get cloud_cover list
-
-        :returns: cloud_cover list
-        """
-        return list(range(0, 101, 10))
-
-    def set_stac_cloud_cover_by_id(self, cloud_cover: str, **_: Any) -> Dict[str, Any]:
-        """Updates and returns catalog with given max cloud_cover
-
-        :param cloud_cover: Cloud_cover number
-        :returns: Updated catalog
-        """
-        cat_model = deepcopy(self.stac_config["catalogs"]["cloud_cover"]["model"])
-        # parse f-strings
-        format_args = deepcopy(self.stac_config)
-        format_args["catalog"] = defaultdict(str, **self.data)
-        format_args["cloud_cover"] = cloud_cover
-        parsed_dict: Dict[str, Any] = format_dict_items(cat_model, **format_args)
-
-        self.update_data(parsed_dict)
-
-        # update search args
-        self.search_args.update({"cloudCover": cloud_cover})
-
-        return parsed_dict
-
-    # get / set locations filter ----------------------------------------------
-
-    def get_stac_location_list(self, catalog_name: str) -> List[str]:
-        """Get locations list using stac_conf & locations_config
-
-        :param catalog_name: Catalog/location name
-        :returns: Locations list
-        """
-
-        if catalog_name not in self.stac_config["catalogs"]:
-            logger.warning("no entry found for %s in location_config", catalog_name)
-            return []
-        location_config = self.stac_config["catalogs"][catalog_name]
-
-        for k in ["path", "attr"]:
-            if k not in location_config.keys():
-                logger.warning(
-                    "no %s key found for %s in location_config", k, catalog_name
-                )
-                return []
-        path = location_config["path"]
-        attr = location_config["attr"]
-
-        with shapefile.Reader(path) as shp:
-            countries_list: List[str] = [rec[attr] for rec in shp.records()]  # type: ignore
-
-        # remove duplicates
-        countries_list = list(set(countries_list))
-
-        countries_list.sort()
-
-        return countries_list
-
-    def set_stac_location_by_id(
-        self, location: str, catalog_name: str
-    ) -> Dict[str, Any]:
-        """Updates and returns catalog with given location
-
-        :param location: Feature attribute value for shp filtering
-        :param catalog_name: Catalog/location name
-        :returns: Updated catalog
-        """
-        location_list_cat_key = catalog_name + "_list"
-
-        if location_list_cat_key not in self.stac_config["catalogs"]:
-            logger.warning(
-                "no entry found for %s's list in location_config", catalog_name
-            )
-            return {}
-        location_config = self.stac_config["catalogs"][location_list_cat_key]
-
-        for k in ["path", "attr"]:
-            if k not in location_config.keys():
-                logger.warning(
-                    "no %s key found for %s's list in location_config", k, catalog_name
-                )
-                return {}
-        path = location_config["path"]
-        attr = location_config["attr"]
-
-        with shapefile.Reader(path) as shp:
-            geom_hits = [
-                shape(shaperec.shape)
-                for shaperec in shp.shapeRecords()
-                if shaperec.record.as_dict().get(attr, None) == location
-            ]
-
-        if not geom_hits:
-            logger.warning(
-                "no feature found in %s matching %s=%s", path, attr, location
-            )
-            return {}
-
-        geom = cast(BaseGeometry, unary_union(geom_hits))
-
-        cat_model = deepcopy(self.stac_config["catalogs"]["country"]["model"])
-        # parse f-strings
-        format_args = deepcopy(self.stac_config)
-        format_args["catalog"] = defaultdict(str, **self.data)
-        format_args["feature"] = defaultdict(str, {"geometry": geom, "id": location})
-        parsed_dict: Dict[str, Any] = format_dict_items(cat_model, **format_args)
-
-        self.update_data(parsed_dict)
-
-        # update search args
-        self.search_args.update({"geom": geom})
-
-        return parsed_dict
-
-    def build_locations_config(self) -> Dict[str, str]:
-        """Build locations config from stac_conf[locations_catalogs] & eodag_api.locations_config
-
-        :returns: Locations configuration dict
-        """
-        user_config_locations_list = self.eodag_api.locations_config
-
-        locations_config_model = deepcopy(self.stac_config["locations_catalogs"])
-
-        locations_config: Dict[str, str] = {}
-        for loc in user_config_locations_list:
-            # parse jsonpath
-            parsed = jsonpath_parse_dict_items(
-                locations_config_model, {"shp_location": loc}
-            )
-
-            # set default child/parent for this location
-            parsed["location"]["parent_key"] = f"{loc['name']}_list"
-
-            locations_config[f"{loc['name']}_list"] = parsed["locations_list"]
-            locations_config[loc["name"]] = parsed["location"]
-
-        return locations_config
-
-    def __build_stac_catalog(self, catalogs: Optional[List[str]] = None) -> StacCatalog:
-        """Build nested catalog from catalag list
-
-        :param catalogs: (optional) Catalogs list
-        :returns: This catalog obj
-        """
-        settings = Settings.from_environment()
-
-        # update conf with user shp locations
-        locations_config = self.build_locations_config()
-
-        self.stac_config["catalogs"] = {
-            **deepcopy(self.stac_config["catalogs"]),
-            **locations_config,
-        }
-
-        if not catalogs:
-            # Build root catalog combined with landing page
-            self.__update_data_from_catalog_config(
-                {
-                    "model": {
-                        **deepcopy(self.stac_config["landing_page"]),
-                        **{
-                            "provider": self.provider,
-                            "id": settings.stac_api_landing_id,
-                            "title": settings.stac_api_title,
-                            "description": settings.stac_api_description,
-                        },
-                    }
-                }
-            )
-
-            # build children : product_types
-            product_types_list = [
-                pt
-                for pt in self.eodag_api.list_product_types(
-                    provider=self.provider, fetch_providers=False
-                )
-            ]
-            self.set_children(
-                [
-                    {
-                        "rel": "child",
-                        "href": urljoin(
-                            self.url, f"{STAC_CATALOGS_PREFIX}/{product_type['ID']}"
-                        ),
-                        "title": product_type["title"],
-                    }
-                    for product_type in product_types_list
-                ]
-            )
-            return self
-
-        # use product_types_list as base for building nested catalogs
-        self.__update_data_from_catalog_config(
-            deepcopy(self.stac_config["catalogs"]["product_types_list"])
-        )
-
-        for idx, cat in enumerate(catalogs):
-            if idx % 2 == 0:
-                # even: cat is a filtering value ----------------------------------
-                cat_data_name = self.catalog_config["child_key"]
-                cat_data_value = cat
-
-                # update data
-                cat_data_name_dict = self.stac_config["catalogs"][cat_data_name]
-                set_data_method_name = (
-                    f"set_stac_{cat_data_name}_by_id"
-                    if "catalog_type" not in cat_data_name_dict.keys()
-                    else f"set_stac_{cat_data_name_dict['catalog_type']}_by_id"
-                )
-                set_data_method = getattr(self, set_data_method_name)
-                set_data_method(cat_data_value, catalog_name=cat_data_name)
-
-                if idx == len(catalogs) - 1:
-                    # build children : remaining filtering keys
-                    remaining_catalogs_list = [
-                        c
-                        for c in self.stac_config["catalogs"].keys()
-                        # keep filters not used yet AND
-                        if self.stac_config["catalogs"][c]["model"]["id"]
-                        not in catalogs
-                        and (
-                            # filters with no parent_key constraint (no key, or key=None) OR
-                            "parent_key" not in self.stac_config["catalogs"][c]
-                            or not self.stac_config["catalogs"][c]["parent_key"]
-                            # filters matching parent_key constraint
-                            or self.stac_config["catalogs"][c]["parent_key"]
-                            == cat_data_name
-                        )
-                        # AND filters that match parent attr constraint (locations)
-                        and (
-                            "parent" not in self.stac_config["catalogs"][c]
-                            or not self.stac_config["catalogs"][c]["parent"]["key"]
-                            or (
-                                self.stac_config["catalogs"][c]["parent"]["key"]
-                                == cat_data_name
-                                and self.stac_config["catalogs"][c]["parent"]["attr"]
-                                == cat_data_value
-                            )
-                        )
-                    ]
-
-                    self.set_children(
-                        [
-                            {
-                                "rel": "child",
-                                "href": self.url
-                                + "/"
-                                + self.stac_config["catalogs"][c]["model"]["id"],
-                                "title": str(
-                                    self.stac_config["catalogs"][c]["model"]["id"]
-                                ),
-                            }
-                            for c in remaining_catalogs_list
-                        ]
-                        + [
-                            {
-                                "rel": "items",
-                                "href": self.url + "/items",
-                                "title": "items",
-                            }
-                        ]
-                    )
-
-            else:
-                # odd: cat is a filtering key -------------------------------------
-                try:
-                    cat_key = [
-                        c
-                        for c in self.stac_config["catalogs"].keys()
-                        if self.stac_config["catalogs"][c]["model"]["id"] == cat
-                    ][0]
-                except IndexError as e:
-                    raise ValidationError(
-                        f"Bad settings for {cat} in stac_config catalogs"
-                    ) from e
-                cat_config = deepcopy(self.stac_config["catalogs"][cat_key])
-                # update data
-                self.__update_data_from_catalog_config(cat_config)
-
-                # get filtering values list
-                get_data_method_name = (
-                    f"get_stac_{cat_key}"
-                    if "catalog_type"
-                    not in self.stac_config["catalogs"][cat_key].keys()
-                    else f"get_stac_{self.stac_config['catalogs'][cat_key]['catalog_type']}"
-                )
-                get_data_method = getattr(self, get_data_method_name)
-                cat_data_list = get_data_method(catalog_name=cat_key)
-
-                if idx == len(catalogs) - 1:
-                    # filtering values list as children (do not include items)
-                    self.set_children(
-                        [
-                            {
-                                "rel": "child",
-                                "href": self.url + "/" + str(filtering_data),
-                                "title": str(filtering_data),
-                            }
-                            for filtering_data in cat_data_list
-                        ]
-                    )
-
-        return self

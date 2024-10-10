@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import datetime
 import logging
 import os
 import re
@@ -35,11 +36,16 @@ from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.product.metadata_mapping import (
+    ONLINE_STATUS,
+    mtd_cfg_as_conversion_and_querypath,
+)
 from eodag.api.search_result import SearchResult
 from eodag.config import (
+    PLUGINS_TOPICS_KEYS,
     PluginConfig,
     SimpleYamlProxyConfig,
+    credentials_in_auth,
     get_ext_product_types_conf,
     load_default_config,
     load_stac_provider_config,
@@ -48,10 +54,12 @@ from eodag.config import (
     override_config_from_file,
     override_config_from_mapping,
     provider_config_init,
+    share_credentials,
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables
 from eodag.types.whoosh import EODAGQueryParser
@@ -74,9 +82,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import (
-    AuthenticationError,
     EodagError,
-    MisconfiguredError,
     NoMatchingProductType,
     PluginImplementationError,
     RequestError,
@@ -166,10 +172,15 @@ class EODataAccessGateway:
         # Second level override: From environment variables
         override_config_from_env(self.providers_config)
 
+        # share credentials between updated plugins confs
+        share_credentials(self.providers_config)
+
         # init updated providers conf
-        stac_provider_config = load_stac_provider_config()
         for provider in self.providers_config.keys():
-            provider_config_init(self.providers_config[provider], stac_provider_config)
+            provider_config_init(
+                self.providers_config[provider],
+                load_stac_provider_config(),
+            )
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -215,7 +226,6 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
-        self.search_errors: Set = set()
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -333,14 +343,24 @@ class EODataAccessGateway:
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
         return preferred, priority
 
-    def update_providers_config(self, yaml_conf: str) -> None:
+    def update_providers_config(
+        self,
+        yaml_conf: Optional[str] = None,
+        dict_conf: Optional[Dict[str, Any]] = None,
+    ) -> None:
         """Update providers configuration with given input.
         Can be used to add a provider to existing configuration or update
         an existing one.
 
         :param yaml_conf: YAML formated provider configuration
+        :param dict_conf: provider configuration as dictionary in place of ``yaml_conf``
         """
-        conf_update = yaml.safe_load(yaml_conf)
+        if dict_conf is not None:
+            conf_update = dict_conf
+        elif yaml_conf is not None:
+            conf_update = yaml.safe_load(yaml_conf)
+        else:
+            return None
 
         # restore the pruned configuration
         for provider in list(self._pruned_providers_config.keys()):
@@ -355,9 +375,14 @@ class EODataAccessGateway:
 
         override_config_from_mapping(self.providers_config, conf_update)
 
-        stac_provider_config = load_stac_provider_config()
+        # share credentials between updated plugins confs
+        share_credentials(self.providers_config)
+
         for provider in conf_update.keys():
-            provider_config_init(self.providers_config[provider], stac_provider_config)
+            provider_config_init(
+                self.providers_config[provider],
+                load_stac_provider_config(),
+            )
             setattr(self.providers_config[provider], "product_types_fetched", False)
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
@@ -419,14 +444,11 @@ class EODataAccessGateway:
 
         # api plugin usage: remove unneeded search/download/auth plugin conf
         if conf_dict[name].get("api"):
-            conf_dict[name].pop("search", None)
-            conf_dict[name].pop("download", None)
-            conf_dict[name].pop("auth", None)
+            for k in PLUGINS_TOPICS_KEYS:
+                if k != "api":
+                    conf_dict[name].pop(k, None)
 
-        override_config_from_mapping(self.providers_config, conf_dict)
-        provider_config_init(self.providers_config[name], load_stac_provider_config())
-        setattr(self.providers_config[name], "product_types_fetched", False)
-        self._plugins_manager.build_product_type_to_provider_config_map()
+        self.update_providers_config(dict_conf=conf_dict)
 
         if priority is None:
             self.set_preferred_provider(name)
@@ -452,12 +474,7 @@ class EODataAccessGateway:
 
             # check authentication
             if hasattr(conf, "api") and getattr(conf.api, "need_auth", False):
-                credentials_exist = any(
-                    [
-                        cred is not None
-                        for cred in getattr(conf.api, "credentials", {}).values()
-                    ]
-                )
+                credentials_exist = credentials_in_auth(conf.api)
                 if not credentials_exist:
                     # credentials needed but not found
                     self._pruned_providers_config[provider] = self.providers_config.pop(
@@ -469,7 +486,7 @@ class EODataAccessGateway:
                         provider,
                     )
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
-                if not hasattr(conf, "auth"):
+                if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
                     self._pruned_providers_config[provider] = self.providers_config.pop(
                         provider
@@ -480,11 +497,13 @@ class EODataAccessGateway:
                         provider,
                     )
                     continue
-                credentials_exist = any(
-                    [
-                        cred is not None
-                        for cred in getattr(conf.auth, "credentials", {}).values()
-                    ]
+                credentials_exist = (
+                    hasattr(conf, "search_auth")
+                    and credentials_in_auth(conf.search_auth)
+                ) or (
+                    not hasattr(conf, "search_auth")
+                    and hasattr(conf, "auth")
+                    and credentials_in_auth(conf.auth)
                 )
                 if not credentials_exist:
                     # credentials needed but not found
@@ -599,21 +618,32 @@ class EODataAccessGateway:
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed
 
-        :param provider: (optional) The name of a provider for which product types list
-                         should be updated. Defaults to all providers (None value).
+        :param provider: The name of a provider or provider-group for which product types
+                         list should be updated. Defaults to all providers (None value).
         """
+        providers_to_fetch = list(self.providers_config.keys())
+        # check if some providers are grouped under a group name which is not a provider name
         if provider is not None and provider not in self.providers_config:
-            return
+            providers_to_fetch = [
+                p
+                for p, pconf in self.providers_config.items()
+                if provider == getattr(pconf, "group", None)
+            ]
+            if providers_to_fetch:
+                logger.info(
+                    f"Fetch product types for {provider} group: {', '.join(providers_to_fetch)}"
+                )
+            else:
+                return None
+        elif provider is not None:
+            providers_to_fetch = [provider]
 
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: Dict[str, Any] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
-        for provider_to_fetch, provider_config in (
-            {provider: self.providers_config[provider]}.items()
-            if provider
-            else self.providers_config.items()
-        ):
+        for provider_to_fetch in providers_to_fetch:
+            provider_config = self.providers_config[provider_to_fetch]
             # get discovery conf
             if hasattr(provider_config, "search"):
                 provider_search_config = provider_config.search
@@ -735,11 +765,20 @@ class EODataAccessGateway:
     ) -> Optional[Dict[str, Any]]:
         """Fetch providers for product types
 
-        :param provider: (optional) The name of a provider to fetch. Defaults to all
-                         providers (None value).
+        :param provider: The name of a provider or provider-group to fetch. Defaults to
+                         all providers (None value).
         :returns: external product types configuration
         """
-        if provider and provider not in self.providers_config:
+        grouped_providers = [
+            p
+            for p, provider_config in self.providers_config.items()
+            if provider == getattr(provider_config, "group", None)
+        ]
+        if provider and provider not in self.providers_config and grouped_providers:
+            logger.info(
+                f"Discover product types for {provider} group: {', '.join(grouped_providers)}"
+            )
+        elif provider and provider not in self.providers_config:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
@@ -748,7 +787,9 @@ class EODataAccessGateway:
             p
             for p in (
                 [
-                    provider,
+                    p
+                    for p in self.providers_config
+                    if p in grouped_providers + [provider]
                 ]
                 if provider
                 else self.available_providers()
@@ -762,7 +803,9 @@ class EODataAccessGateway:
                 search_plugin_config = self.providers_config[provider].api
             else:
                 return None
-            if getattr(search_plugin_config, "discover_product_types", None):
+            if getattr(search_plugin_config, "discover_product_types", {}).get(
+                "fetch_url", None
+            ):
                 search_plugin: Union[Search, Api] = next(
                     self._plugins_manager.get_search_plugins(provider=provider)
                 )
@@ -773,23 +816,15 @@ class EODataAccessGateway:
                     continue
                 # append auth to search plugin if needed
                 if getattr(search_plugin.config, "need_auth", False):
-                    auth_plugin = self._plugins_manager.get_auth_plugin(
-                        search_plugin.provider
-                    )
-                    if auth_plugin and callable(
-                        getattr(auth_plugin, "authenticate", None)
+                    if auth := self._plugins_manager.get_auth(
+                        search_plugin.provider,
+                        getattr(search_plugin.config, "api_endpoint", None),
+                        search_plugin.config,
                     ):
-                        try:
-                            kwargs["auth"] = auth_plugin.authenticate()
-                        except (AuthenticationError, MisconfiguredError) as e:
-                            logger.warning(
-                                f"Could not authenticate on {provider}: {str(e)}"
-                            )
-                            ext_product_types_conf[provider] = None
-                            continue
+                        kwargs["auth"] = auth
                     else:
-                        logger.warning(
-                            f"Could not authenticate on {provider} using {auth_plugin} plugin"
+                        logger.debug(
+                            f"Could not authenticate on {provider} for product types discovery"
                         )
                         ext_product_types_conf[provider] = None
                         continue
@@ -815,7 +850,9 @@ class EODataAccessGateway:
                     ) or getattr(self.providers_config[provider], "api", None)
                     if search_plugin_config is None:
                         continue
-                    if not hasattr(search_plugin_config, "discover_product_types"):
+                    if not getattr(
+                        search_plugin_config, "discover_product_types", {}
+                    ).get("fetch_url", None):
                         # conf has been updated and provider product types are no more discoverable
                         continue
                     provider_products_config = (
@@ -1046,20 +1083,28 @@ class EODataAccessGateway:
 
         # datetime filtering
         if missionStartDate or missionEndDate:
+            min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+            max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
             guesses = [
                 g
                 for g in guesses
                 if (
-                    not missionEndDate
-                    or g.get("missionStartDate")
-                    and rfc3339_str_to_datetime(g["missionStartDate"])
-                    <= rfc3339_str_to_datetime(missionEndDate)
-                )
-                and (
-                    not missionStartDate
-                    or g.get("missionEndDate")
-                    and rfc3339_str_to_datetime(g["missionEndDate"])
-                    >= rfc3339_str_to_datetime(missionStartDate)
+                    max(
+                        rfc3339_str_to_datetime(missionStartDate)
+                        if missionStartDate
+                        else min_aware,
+                        rfc3339_str_to_datetime(g["missionStartDate"])
+                        if g.get("missionStartDate")
+                        else min_aware,
+                    )
+                    <= min(
+                        rfc3339_str_to_datetime(missionEndDate)
+                        if missionEndDate
+                        else max_aware,
+                        rfc3339_str_to_datetime(g["missionEndDate"])
+                        if g.get("missionEndDate")
+                        else max_aware,
+                    )
                 )
             ]
 
@@ -1155,7 +1200,7 @@ class EODataAccessGateway:
             items_per_page=items_per_page,
         )
 
-        self.search_errors = set()
+        errors: List[Tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1165,17 +1210,19 @@ class EODataAccessGateway:
                 raise_errors=raise_errors,
                 **search_kwargs,
             )
+            errors.extend(search_results.errors)
             if len(search_results) == 0 and i < len(search_plugins) - 1:
                 logger.warning(
                     f"No result could be obtained from provider {search_plugin.provider}, "
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
+                search_results.errors = errors
                 return search_results
 
         if i > 1:
             logger.error("No result could be obtained from any available provider")
-        return SearchResult([], 0) if count else SearchResult([])
+        return SearchResult([], 0, errors) if count else SearchResult([], errors=errors)
 
     def search_iter_page(
         self,
@@ -1435,7 +1482,7 @@ class EODataAccessGateway:
                 )
                 or DEFAULT_MAX_ITEMS_PER_PAGE
             )
-            logger.debug(
+            logger.info(
                 "Searching for all the products with provider %s and a maximum of %s "
                 "items per page.",
                 search_plugin.provider,
@@ -1526,7 +1573,7 @@ class EODataAccessGateway:
                 "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
             )
             kwargs.update(items_per_page=items_per_page)
-            if isinstance(plugin, BuildPostSearchResult):
+            if isinstance(plugin, PostJsonSearch):
                 kwargs.update(
                     items_per_page=items_per_page,
                     _dc_qs=_dc_qs,
@@ -1544,9 +1591,10 @@ class EODataAccessGateway:
                     **kwargs,
                 ):
                     results.data.extend(page_results.data)
-            except Exception:
+            except Exception as e:
                 if kwargs.get("raise_errors"):
                     raise
+                logger.warning(e)
                 continue
 
             # try using crunch to get unique result
@@ -1584,16 +1632,12 @@ class EODataAccessGateway:
 
         # append auth if needed
         if getattr(plugin.config, "need_auth", False):
-            auth_plugin = self._plugins_manager.get_auth_plugin(plugin.provider)
-            if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
-                try:
-                    kwargs["auth"] = auth_plugin.authenticate()
-                except (AuthenticationError, MisconfiguredError) as e:
-                    logger.warning(f"Could not authenticate on {provider}: {str(e)}")
-            else:
-                logger.warning(
-                    f"Could not authenticate on {provider} using {auth_plugin} plugin"
-                )
+            if auth := self._plugins_manager.get_auth(
+                plugin.provider,
+                getattr(plugin.config, "api_endpoint", None),
+                plugin.config,
+            ):
+                kwargs["auth"] = auth
 
         product_type_config = plugin.discover_product_types(**kwargs)
         self.update_product_types_list({provider: product_type_config})
@@ -1732,12 +1776,10 @@ class EODataAccessGateway:
             provider = preferred_provider
         providers = [plugin.provider for plugin in search_plugins]
         if provider not in providers:
-            logger.warning(
-                "Product type '%s' is not available with provider '%s'. "
-                "Searching it on provider '%s' instead.",
+            logger.debug(
+                "Product type '%s' is not available with preferred provider '%s'.",
                 product_type,
                 provider,
-                search_plugins[0].provider,
             )
         else:
             provider_plugin = list(
@@ -1745,11 +1787,6 @@ class EODataAccessGateway:
             )[0]
             search_plugins.remove(provider_plugin)
             search_plugins.insert(0, provider_plugin)
-            logger.info(
-                "Searching product type '%s' on provider: %s",
-                product_type,
-                search_plugins[0].provider,
-            )
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
@@ -1793,6 +1830,7 @@ class EODataAccessGateway:
         :param kwargs: Some other criteria that will be used to do the search
         :returns: A collection of EO products matching the criteria
         """
+        logger.info("Searching on provider %s", search_plugin.provider)
         max_items_per_page = getattr(search_plugin.config, "pagination", {}).get(
             "max_items_per_page", DEFAULT_MAX_ITEMS_PER_PAGE
         )
@@ -1810,19 +1848,23 @@ class EODataAccessGateway:
                 max_items_per_page,
             )
 
-        need_auth = getattr(search_plugin.config, "need_auth", False)
-        auth_plugin = self._plugins_manager.get_auth_plugin(search_plugin.provider)
-        can_authenticate = callable(getattr(auth_plugin, "authenticate", None))
-
         results: List[EOProduct] = []
         total_results: Optional[int] = 0 if count else None
 
+        errors: List[Tuple[str, Exception]] = []
+
         try:
             prep = PreparedSearch(count=count)
-            if need_auth and auth_plugin and can_authenticate:
-                prep.auth = auth_plugin.authenticate()
 
-            prep.auth_plugin = auth_plugin
+            # append auth if needed
+            if getattr(search_plugin.config, "need_auth", False):
+                if auth := self._plugins_manager.get_auth(
+                    search_plugin.provider,
+                    getattr(search_plugin.config, "api_endpoint", None),
+                    search_plugin.config,
+                ):
+                    prep.auth = auth
+
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
@@ -1882,6 +1924,25 @@ class EODataAccessGateway:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
+                    if len(eo_product.assets) > 0:
+                        matching_url = next(iter(eo_product.assets.values()))["href"]
+                    elif eo_product.properties.get("storageStatus") != ONLINE_STATUS:
+                        matching_url = eo_product.properties.get(
+                            "orderLink"
+                        ) or eo_product.properties.get("downloadLink")
+                    else:
+                        matching_url = eo_product.properties.get("downloadLink")
+
+                    try:
+                        auth_plugin = next(
+                            self._plugins_manager.get_auth_plugins(
+                                search_plugin.provider,
+                                matching_url=matching_url,
+                                matching_conf=download_plugin.config,
+                            )
+                        )
+                    except StopIteration:
+                        auth_plugin = None
                     eo_product.register_downloader(download_plugin, auth_plugin)
 
             results.extend(res)
@@ -1911,13 +1972,6 @@ class EODataAccessGateway:
                         "the total number of products matching the search criteria"
                     )
         except Exception as e:
-            log_msg = f"No result from provider '{search_plugin.provider}' due to an error during search."
-            if not raise_errors:
-                log_msg += " Raise verbosity of log messages for details"
-            logger.info(log_msg)
-            # keep only the message from exception args
-            if len(e.args) > 1:
-                e.args = (e.args[0],)
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
                 # something went bad. This way it will be able to decide what to do next
@@ -1927,8 +1981,8 @@ class EODataAccessGateway:
                     "Error while searching on provider %s (ignored):",
                     search_plugin.provider,
                 )
-                self.search_errors.add((search_plugin.provider, e))
-        return SearchResult(results, total_results)
+                errors.append((search_plugin.provider, e))
+        return SearchResult(results, total_results, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results
@@ -2061,12 +2115,12 @@ class EODataAccessGateway:
         products = self.deserialize(filename)
         for i, product in enumerate(products):
             if product.downloader is None:
+                downloader = self._plugins_manager.get_download_plugin(product)
                 auth = product.downloader_auth
                 if auth is None:
-                    auth = self._plugins_manager.get_auth_plugin(product.provider)
-                products[i].register_downloader(
-                    self._plugins_manager.get_download_plugin(product), auth
-                )
+                    auth = self._plugins_manager.get_auth_plugin(downloader, product)
+                products[i].register_downloader(downloader, auth)
+
         return products
 
     @_deprecated(
@@ -2197,12 +2251,11 @@ class EODataAccessGateway:
 
     def _setup_downloader(self, product: EOProduct) -> None:
         if product.downloader is None:
+            downloader = self._plugins_manager.get_download_plugin(product)
             auth = product.downloader_auth
             if auth is None:
-                auth = self._plugins_manager.get_auth_plugin(product.provider)
-            product.register_downloader(
-                self._plugins_manager.get_download_plugin(product), auth
-            )
+                auth = self._plugins_manager.get_auth_plugin(downloader, product)
+            product.register_downloader(downloader, auth)
 
     def get_cruncher(self, name: str, **options: Any) -> Crunch:
         """Build a crunch plugin from a configuration
@@ -2254,7 +2307,7 @@ class EODataAccessGateway:
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             if getattr(plugin.config, "need_auth", False) and (
-                auth := self._plugins_manager.get_auth_plugin(plugin.provider)
+                auth := self._plugins_manager.get_auth_plugin(plugin)
             ):
                 plugin.auth = auth.authenticate()
             providers_queryables[plugin.provider] = plugin.list_queryables(
@@ -2284,7 +2337,7 @@ class EODataAccessGateway:
         """For each provider, gives its available sortable parameter(s) and its maximum
         number of them if it supports the sorting feature, otherwise gives None.
 
-        :returns: A dictionnary with providers as keys and dictionnary of sortable parameter(s) and
+        :returns: A dictionary with providers as keys and dictionary of sortable parameter(s) and
                   its (their) maximum number as value(s).
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """

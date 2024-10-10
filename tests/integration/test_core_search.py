@@ -29,7 +29,6 @@ from tests.context import (
     NoMatchingProductType,
     RequestError,
     USGSError,
-    ValidationError,
 )
 from tests.utils import mock
 
@@ -78,7 +77,6 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # QueryStringSearch / peps
         self.dag.set_preferred_provider("peps")
-        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
         self.assertRaises(
             RequestError, self.dag.search, productType="foo", raise_errors=True
         )
@@ -153,7 +151,6 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # ODataV4Search / onda
         self.dag.set_preferred_provider("onda")
-        self.assertRaises(ValidationError, self.dag.search, raise_errors=True)
         self.assertRaises(
             RequestError, self.dag.search, productType="foo", raise_errors=True
         )
@@ -242,7 +239,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_main",
             ],
         )
 
@@ -277,7 +274,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_main",
             ],
         )
 
@@ -311,7 +308,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_main",
             ],
         )
 
@@ -367,7 +364,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_main",
             ],
         )
 
@@ -409,7 +406,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_main",
             ],
         )
 
@@ -443,7 +440,7 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "onda",
                 "sara",
-                "wekeo",
+                "wekeo_main",
             ],
         )
 
@@ -458,4 +455,133 @@ class TestCoreSearch(unittest.TestCase):
             mock_query.call_count,
             1,
             "only 1 provider out of 6 must have been requested",
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.query",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_core_search_auths_matching(
+        self, mock_fetch_product_types_list, mock_query
+    ):
+        """Core search must set and use appropriate auth plugins"""
+
+        self.dag.add_provider(
+            "foo",
+            "https://foo.bar/search",
+            auth={
+                "type": "GenericAuth",
+                "matching_url": "https://foo.bar",
+                "credentials": {"username": "a-username", "password": "a-password"},
+            },
+            search_auth={
+                "type": "GenericAuth",
+                "matching_conf": {"something": "special"},
+                "credentials": {
+                    "username": "another-username",
+                    "password": "another-password",
+                },
+            },
+            download_auth={
+                "type": "GenericAuth",
+                "matching_url": "https://somewhere",
+                "credentials": {
+                    "username": "yet-another-username",
+                    "password": "yet-another-password",
+                },
+            },
+        )
+
+        # search endpoint matching
+        self.dag.add_provider(
+            "provider_matching_search_api",
+            "https://foo.bar/baz/search",
+            search={"need_auth": True},
+        )
+        self.dag.search(provider="provider_matching_search_api")
+        self.assertEqual(mock_query.call_args[0][1].auth.username, "a-username")
+        mock_query.reset_mock()
+
+        # plugin conf matching
+        self.dag.add_provider(
+            "provider_matching_another_search_api",
+            "https://fooooo.bar/search",
+            search={"need_auth": True, "something": "special"},
+        )
+        self.dag.search(provider="provider_matching_another_search_api")
+        self.assertEqual(mock_query.call_args[0][1].auth.username, "another-username")
+        mock_query.reset_mock()
+
+        # download link matching
+        self.dag.add_provider(
+            "provider_matching_download_link",
+            "https://foo.bar/baz/search",
+        )
+        mock_query.side_effect = [
+            (
+                [
+                    EOProduct(
+                        "provider_matching_download_link",
+                        dict(
+                            geometry="POINT (0 0)",
+                            id="a",
+                            downloadLink="https://somewhere/to/download",
+                        ),
+                    )
+                ],
+                1,
+            ),
+        ]
+        results = self.dag.search(provider="provider_matching_download_link")
+        self.assertEqual(
+            results[0].downloader_auth.config.credentials["username"],
+            "yet-another-username",
+        )
+        mock_query.reset_mock()
+
+        # order link matching
+        self.dag.add_provider(
+            "provider_matching_order_link",
+            "https://foo.bar/baz/search",
+        )
+        mock_query.side_effect = [
+            (
+                [
+                    EOProduct(
+                        "provider_matching_download_link",
+                        dict(
+                            geometry="POINT (0 0)",
+                            id="a",
+                            orderLink="https://somewhere/to/download",
+                        ),
+                    )
+                ],
+                1,
+            ),
+        ]
+        results = self.dag.search(provider="provider_matching_download_link")
+        self.assertEqual(
+            results[0].downloader_auth.config.credentials["username"],
+            "yet-another-username",
+        )
+        mock_query.reset_mock()
+
+        # first asset matching
+        self.dag.add_provider(
+            "provider_matching_asset",
+            "https://foo.bar/baz/search",
+        )
+        product_with_assets = EOProduct(
+            "provider_matching_asset", dict(geometry="POINT (0 0)", id="a")
+        )
+        product_with_assets.assets.update(
+            {"aa": {"href": "https://foo.bar/download/asset"}}
+        )
+        mock_query.side_effect = [([product_with_assets], 1)]
+        results = self.dag.search(provider="provider_matching_asset")
+        self.assertEqual(
+            results[0].downloader_auth.config.credentials["username"], "a-username"
         )

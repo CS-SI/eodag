@@ -739,7 +739,7 @@ class HTTPDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
-        Returns dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
+        Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
 
         :param product: The EO product to download
@@ -752,7 +752,7 @@ class HTTPDownload(Download):
                         and `dl_url_params` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
-        :returns: Dictionnary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
+        :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
@@ -837,12 +837,9 @@ class HTTPDownload(Download):
             and e.response.status_code in auth_errors
         ):
             raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (
-                    e.response.status_code,
-                    response_text,
-                    self.provider,
-                )
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {e.response.status_code} returned.",
+                response_text,
             )
 
     def _process_exception(
@@ -1248,12 +1245,9 @@ class HTTPDownload(Download):
             auth_errors = [auth_errors]
         if e.response is not None and e.response.status_code in auth_errors:
             raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (
-                    e.response.status_code,
-                    e.response.text.strip(),
-                    self.provider,
-                )
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {e.response.status_code} returned.",
+                e.response.text.strip(),
             )
         elif raise_errors:
             raise DownloadError(e)

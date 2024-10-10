@@ -116,13 +116,6 @@ class EODAGSearch(BaseModel):
     _to_eodag_map: Dict[str, str]
 
     @model_validator(mode="after")
-    def set_raise_errors(self) -> Self:
-        """Set raise_errors to True if provider is set"""
-        if self.provider:
-            self.raise_errors = True
-        return self
-
-    @model_validator(mode="after")
     def remove_timeFromAscendingNode(self) -> Self:  # pylint: disable=invalid-name
         """TimeFromAscendingNode are just used for translation and not for search"""
         self.startTimeFromAscendingNode = None  # pylint: disable=invalid-name
@@ -367,9 +360,21 @@ class EODAGSearch(BaseModel):
         return cls._to_eodag_map.get(value, value)
 
     @classmethod
-    def to_stac(cls, field_name: str) -> str:
+    def to_stac(
+        cls,
+        field_name: str,
+        stac_item_properties: Optional[List[str]] = None,
+        provider: Optional[str] = None,
+    ) -> str:
         """Get the alias of a field in a Pydantic model"""
         field = cls.model_fields.get(field_name)
         if field is not None and field.alias is not None:
             return field.alias
+        if (
+            provider
+            and ":" not in field_name
+            and stac_item_properties
+            and field_name not in stac_item_properties
+        ):
+            return f"{provider}:{field_name}"
         return field_name

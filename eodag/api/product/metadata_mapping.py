@@ -41,6 +41,7 @@ import geojson
 import orjson
 import pyproj
 from dateutil.parser import isoparse
+from dateutil.relativedelta import relativedelta
 from dateutil.tz import UTC, tzutc
 from jsonpath_ng.jsonpath import Child, JSONPath
 from lxml import etree
@@ -152,7 +153,7 @@ def get_search_param(map_value: List[str]) -> str:
 
 
 def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
-    """Format a string of form {<field_name>#<conversion_function>}
+    """Format a string of form ``{<field_name>#<conversion_function>}``
 
     The currently understood converters are:
         - ``datetime_to_timestamp_milliseconds``: converts a utc date string to a timestamp in
@@ -831,7 +832,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         def convert_get_hydrological_year(date: str):
             utc_date = MetadataFormatter.convert_to_iso_utc_datetime(date)
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
-            date_object_second_year = date_object + timedelta(days=365)
+            date_object_second_year = date_object + relativedelta(years=1)
             return [
                 f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
             ]
@@ -1208,7 +1209,7 @@ def mtd_cfg_as_conversion_and_querypath(
     dest_dict: Dict[str, Any] = {},
     result_type: str = "json",
 ) -> Dict[str, Any]:
-    """Metadata configuration dictionary to querypath with conversion dictionnary
+    """Metadata configuration dictionary to querypath with conversion dictionary
     Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
     or from xpath_str to tuple `(conversion, xpath_str)`
 
@@ -1462,6 +1463,14 @@ def get_queryable_from_provider(
     :returns: EODAG configured queryable parameter or None
     """
     pattern = rf"\b{provider_queryable}\b"
+    # if 1:1 mapping exists privilege this one instead of other mapping
+    # e.g. provider queryable = year -> use year and not date in which year also appears
+    mapping_values = [
+        v[0] if isinstance(v, list) else "" for v in metadata_mapping.values()
+    ]
+    if provider_queryable in mapping_values:
+        ind = mapping_values.index(provider_queryable)
+        return Queryables.get_queryable_from_alias(list(metadata_mapping.keys())[ind])
     for param, param_conf in metadata_mapping.items():
         if isinstance(param_conf, list) and re.search(pattern, param_conf[0]):
             return Queryables.get_queryable_from_alias(param)

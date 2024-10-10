@@ -25,7 +25,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional, Union
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
 import geojson
 import httpx
@@ -38,20 +38,17 @@ from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.download.base import Download
 from eodag.rest.config import Settings
 from eodag.rest.types.queryables import StacQueryables
-from eodag.utils import USER_AGENT, MockResponse, StreamResponse
-from eodag.utils.exceptions import NotAvailableError, TimeOutError
+from eodag.utils import USER_AGENT, MockResponse
+from eodag.utils.exceptions import RequestError, TimeOutError, ValidationError
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     HTTP_REQ_TIMEOUT,
-    NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
-    STAGING_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
     SearchResult,
-    parse_header,
 )
 
 
@@ -325,8 +322,12 @@ class RequestTestCase(unittest.TestCase):
         method: str = "GET",
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
+        search_result: SearchResult = None,
     ) -> httpx.Response:
-        mock_search.return_value = self.mock_search_result()
+        if search_result:
+            mock_search.return_value = search_result
+        else:
+            mock_search.return_value = self.mock_search_result()
         response = self.app.request(
             method,
             url,
@@ -367,6 +368,7 @@ class RequestTestCase(unittest.TestCase):
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
         check_links: bool = True,
+        search_result: SearchResult = None,
     ) -> Any:
         response = self._request_valid_raw(
             url,
@@ -374,6 +376,7 @@ class RequestTestCase(unittest.TestCase):
             method=method,
             post_data=post_data,
             search_call_count=search_call_count,
+            search_result=search_result,
         )
 
         # Assert response format is GeoJSON
@@ -687,182 +690,6 @@ class RequestTestCase(unittest.TestCase):
             ),
         )
 
-    def test_date_search_from_catalog_items(self):
-        """Search through eodag server catalog/items endpoint using dates filering should return a valid response"""
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
-            "?bbox=0,43,1,44&datetime=2018-01-20/2018-01-25",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-01-25T00:00:00Z",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
-            "?bbox=0,43,1,44&datetime=2018-01-20/2019-01-01",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items"
-            "?bbox=0,43,1,44&datetime=2019-01-01/2019-01-31",
-        )
-        self.assertEqual(len(results.features), 0)
-
-    def test_catalog_browse(self):
-        """Browsing catalogs through eodag server should return a valid response"""
-        result = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/day"
-        )
-        self.assertListEqual(
-            [str(i) for i in range(1, 32)],
-            [it["title"] for it in result.get("links", []) if it["rel"] == "child"],
-        )
-
-    def test_catalog_browse_date_search(self):
-        """
-        Browsing catalogs with date filtering through eodag server should return a valid response
-        """
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        # args & catalog intersection
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/2018-02-15",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-20/..",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-20T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2018-01-05",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-01-05T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=2018-01-05",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-05T00:00:00Z",
-                end="2018-01-05T00:00:00Z",
-                raise_errors=False,
-                count=True,
-            ),
-        )
-        result = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?datetime=../2017-08-01",
-        )
-        self.assertEqual(len(result["features"]), 0)
-
-    def test_date_search_from_catalog_items_with_provider(self):
-        """Search through eodag server catalog/items endpoint using dates filtering should return a valid response
-        and the provider should be added to the item link
-        """
-        results = self._request_valid(
-            f"catalogs/{self.tested_product_type}/year/2018/month/01/items?bbox=0,43,1,44&provider=peps",
-            expected_search_kwargs=dict(
-                productType=self.tested_product_type,
-                page=1,
-                items_per_page=DEFAULT_ITEMS_PER_PAGE,
-                start="2018-01-01T00:00:00Z",
-                end="2018-02-01T00:00:00Z",
-                provider="peps",
-                geom=box(0, 43, 1, 44, ccw=False),
-                raise_errors=True,
-                count=True,
-            ),
-        )
-        self.assertEqual(len(results.features), 2)
-        links = results.features[0]["links"]
-        self_link = None
-        for link in links:
-            if link["rel"] == "self":
-                self_link = link
-        self.assertIsNotNone(self_link)
-        self.assertIn("?provider=peps", self_link["href"])
-        self.assertEqual(
-            results["features"][0]["properties"]["peps:providerProperty"], "foo"
-        )
-
-    def test_search_item_id_from_catalog(self):
-        """Search by id through eodag server /catalog endpoint should return a valid response"""
-        self._request_valid(
-            f"catalogs/{self.tested_product_type}/items/foo",
-            expected_search_kwargs={
-                "id": "foo",
-                "productType": self.tested_product_type,
-                "provider": None,
-            },
-        )
-
     def test_search_item_id_from_collection(self):
         """Search by id through eodag server /collection endpoint should return a valid response"""
         self._request_valid(
@@ -1017,6 +844,41 @@ class RequestTestCase(unittest.TestCase):
             ],
         )
 
+    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
+    def test_provider_prefix_post_search(self, mock_search):
+        """provider prefixes should be removed from query parameters"""
+        post_data = {
+            "collections": ["ERA5_SL"],
+            "provider": "cop_cds",
+            "query": {
+                "cop_cds:month": {"eq": "10"},
+                "cop_cds:year": {"eq": "2010"},
+                "cop_cds:day": {"eq": "10"},
+            },
+        }
+        mock_search.return_value = SearchResult.from_geojson(
+            {"features": [], "type": "FeatureCollection"}
+        )
+        self.app.request(
+            method="POST",
+            url="search",
+            json=post_data,
+            follow_redirects=True,
+            headers={"Content-Type": "application/json"},
+        )
+        expected_search_kwargs = dict(
+            productType="ERA5_SL",
+            page=1,
+            items_per_page=DEFAULT_ITEMS_PER_PAGE,
+            month="10",
+            year="2010",
+            day="10",
+            raise_errors=False,
+            count=True,
+            provider="cop_cds",
+        )
+        mock_search.assert_called_once_with(**expected_search_kwargs)
+
     def test_search_response_contains_pagination_info(self):
         """Responses to valid search requests must return a geojson with pagination info in properties"""
         response = self._request_valid(f"search?collections={self.tested_product_type}")
@@ -1070,6 +932,97 @@ class RequestTestCase(unittest.TestCase):
                 ]
             )
         )
+
+    def test_search_results_with_errors(self):
+        """Search through eodag server must not display provider's error if it's not empty result"""
+        errors = [
+            ("usgs", Exception("foo error")),
+            ("aws_eos", Exception("boo error")),
+        ]
+        search_results = self.mock_search_result()
+        search_results.errors.extend(errors)
+
+        self._request_valid(
+            f"search?collections={self.tested_product_type}",
+            search_result=search_results,
+        )
+
+    @mock.patch(
+        "eodag.rest.core.eodag_api.search",
+        autospec=True,
+    )
+    def test_search_no_results_with_errors(self, mock_search):
+        """Search through eodag server must display provider's error if it's empty result"""
+        req_err = RequestError("Request error message with status code")
+        req_err.status_code = 418
+        errors = [
+            ("usgs", Exception("Generic exception", "Details of the error")),
+            ("theia", TimeOutError("Timeout message")),
+            ("peps", req_err),
+            ("creodias", AuthenticationError("Authentication message")),
+            (
+                "onda",
+                ValidationError(
+                    "Validation message: startTimeFromAscendingNode, modificationDate",
+                    {"startTimeFromAscendingNode", "modificationDate"},
+                ),
+            ),
+        ]
+        expected_response = {
+            "errors": [
+                {
+                    "provider": "usgs",
+                    "error": "Exception",
+                    "message": "Generic exception",
+                    "detail": "Details of the error",
+                    "status_code": 500,
+                },
+                {
+                    "provider": "theia",
+                    "error": "TimeOutError",
+                    "message": "Timeout message",
+                    "status_code": 504,
+                },
+                {
+                    "provider": "peps",
+                    "error": "RequestError",
+                    "message": "Request error message with status code",
+                    "status_code": 418,
+                },
+                {
+                    "provider": "creodias",
+                    "error": "AuthenticationError",
+                    "message": "Internal server error: please contact the administrator",
+                    "status_code": 500,
+                },
+                {
+                    "provider": "onda",
+                    "error": "ValidationError",
+                    "message": "Validation message: start_datetime, updated",
+                    "detail": {"startTimeFromAscendingNode", "modificationDate"},
+                    "status_code": 400,
+                },
+            ]
+        }
+        mock_search.return_value = SearchResult([], 0, errors)
+
+        response = self.app.request(
+            "GET",
+            "search?collections=S2_MSI_L1C",
+            json=None,
+            follow_redirects=True,
+            headers={},
+        )
+        response_content = json.loads(response.content.decode("utf-8"))
+
+        self.assertEqual(400, response.status_code)
+        for record in response_content["errors"]:
+            if "detail" in record and "{" in record["detail"]:
+                record["detail"] = (
+                    record["detail"].replace("{", "").replace("}", "").replace("'", "")
+                )
+                record["detail"] = set(s.strip() for s in record["detail"].split(","))
+        self.assertDictEqual(expected_response, response_content)
 
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
@@ -1173,39 +1126,6 @@ class RequestTestCase(unittest.TestCase):
         "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
-    def test_download_item_from_catalog_stream(
-        self, mock_download: Mock, mock_auth: Mock
-    ):
-        """Download through eodag server catalog should return a valid response"""
-
-        expected_file = "somewhere.zip"
-
-        mock_download.return_value = StreamResponse(
-            content=iter(bytes(i) for i in range(0)),
-            headers={
-                "content-disposition": f"attachment; filename={expected_file}",
-            },
-        )
-
-        response = self._request_valid_raw(
-            f"catalogs/{self.tested_product_type}/items/foo/download?provider=peps"
-        )
-        mock_download.assert_called_once()
-
-        header_content_disposition = parse_header(
-            response.headers["content-disposition"]
-        )
-        response_filename = header_content_disposition.get_param("filename", None)
-        self.assertEqual(response_filename, expected_file)
-
-    @mock.patch(
-        "eodag.plugins.authentication.base.Authentication.authenticate",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.download.base.Download._stream_download_dict",
-        autospec=True,
-    )
     @mock.patch(
         "eodag.rest.core.eodag_api.download",
         autospec=True,
@@ -1229,81 +1149,6 @@ class RequestTestCase(unittest.TestCase):
         assert not os.path.exists(
             expected_file
         ), f"File {expected_file} should have been deleted"
-
-    @mock.patch(
-        "eodag.rest.core.eodag_api.search",
-        autospec=True,
-    )
-    def test_download_offline_item_from_catalog(self, mock_search):
-        """Download an offline item through eodag server catalog should return a
-        response with HTTP Status 202"""
-        # mock_search_result returns 2 search results, only keep one
-        two_results = self.mock_search_result()
-        product = two_results[0]
-        mock_search.return_value = SearchResult([product], 1)
-        product.downloader_auth = MagicMock()
-        product.downloader.order_download = MagicMock(return_value={"status": "foo"})
-        product.downloader.order_download_status = MagicMock()
-        product.downloader.order_response_process = MagicMock()
-        product.downloader._stream_download_dict = MagicMock(
-            side_effect=NotAvailableError("Product offline. Try again later.")
-        )
-        product.properties["orderLink"] = "http://somewhere?order=foo"
-        product.properties["orderStatusLink"] = f"{NOT_AVAILABLE}?foo=bar"
-
-        # ONLINE product with error
-        product.properties["storageStatus"] = ONLINE_STATUS
-        # status 404 and no order try
-        self._request_not_found(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_not_called()
-        product.downloader.order_download_status.assert_not_called()
-        product.downloader.order_response_process.assert_not_called()
-        product.downloader._stream_download_dict.assert_called_once()
-        product.downloader._stream_download_dict.reset_mock()
-
-        # OFFLINE product with error
-        product.properties["storageStatus"] = OFFLINE_STATUS
-        # status 202 and order once and no status check
-        resp_json = self._request_accepted(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_called_once()
-        product.downloader.order_download.reset_mock()
-        product.downloader.order_download_status.assert_not_called()
-        product.downloader.order_response_process.assert_called()
-        product.downloader.order_response_process.reset_mock()
-        product.downloader._stream_download_dict.assert_not_called()
-        self.assertIn("status=foo", resp_json["location"])
-
-        # OFFLINE product with error and no orderLink
-        product.properties["storageStatus"] = OFFLINE_STATUS
-        order_link = product.properties.pop("orderLink")
-        # status 202 and no order try
-        resp_json = self._request_accepted(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_not_called()
-        product.downloader.order_download_status.assert_not_called()
-        product.downloader.order_response_process.assert_not_called()
-        product.downloader._stream_download_dict.assert_called_once()
-        product.downloader._stream_download_dict.reset_mock()
-
-        # STAGING product and available orderStatusLink
-        product.properties["storageStatus"] = STAGING_STATUS
-        product.properties["orderLink"] = order_link
-        product.properties["orderStatusLink"] = "http://somewhere?foo=bar"
-        # status 202 and no order but status checked and no download try
-        self._request_accepted(
-            f"catalogs/{self.tested_product_type}/items/foo/download"
-        )
-        product.downloader.order_download.assert_not_called()
-        product.downloader.order_download_status.assert_called_once()
-        product.downloader.order_download_status.reset_mock()
-        product.downloader.order_response_process.assert_called()
-        product.downloader.order_response_process.reset_mock()
-        product.downloader._stream_download_dict.assert_not_called()
 
     def test_root(self):
         """Request to / should return a valid response"""
@@ -1465,7 +1310,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("UnsupportedProvider", response_content["description"])
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.manager.PluginManager.get_auth_plugin", autospec=True)
     def test_product_type_queryables(self, mock_requests_session_post):
@@ -1481,7 +1326,7 @@ class RequestTestCase(unittest.TestCase):
             constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
             with open(constraints_path) as f:
                 constraints = json.load(f)
-            wekeo_constraints = {"constraints": constraints}
+            wekeo_main_constraints = {"constraints": constraints}
 
             planetary_computer_queryables_url = (
                 "https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
@@ -1490,7 +1335,7 @@ class RequestTestCase(unittest.TestCase):
             norm_planetary_computer_queryables_url = os.path.normpath(
                 planetary_computer_queryables_url
             ).replace("https:/", "https://")
-            wekeo_constraints_url = (
+            wekeo_main_constraints_url = (
                 "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
                 "EO:ESA:DAT:SENTINEL-1"
             )
@@ -1507,9 +1352,9 @@ class RequestTestCase(unittest.TestCase):
             )
             responses.add(
                 responses.GET,
-                wekeo_constraints_url,
+                wekeo_main_constraints_url,
                 status=200,
-                json=wekeo_constraints,
+                json=wekeo_main_constraints,
             )
 
             # no provider is specified with the product type (2 providers get a queryables or constraints file
@@ -1531,9 +1376,11 @@ class RequestTestCase(unittest.TestCase):
             self.assertIn(
                 ("verify", True), responses.calls[0].request.req_kwargs.items()
             )
-            # check the mock call on wekeo
-            self.assertEqual(wekeo_constraints_url, responses.calls[1].request.url)
-            self.assertIn(("timeout", 5), responses.calls[1].request.req_kwargs.items())
+            # check the mock call on wekeo_main
+            self.assertEqual(wekeo_main_constraints_url, responses.calls[1].request.url)
+            self.assertIn(
+                ("timeout", 60), responses.calls[1].request.req_kwargs.items()
+            )
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[1].request.headers.items()
             )
@@ -1564,14 +1411,14 @@ class RequestTestCase(unittest.TestCase):
             # no property are added from providers queryables because none of them
             # is shared with all providers for this product type
             pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
-            pl_s1_sar_grd_wekeo_queryable = "processingLevel"
+            pl_s1_sar_grd_wekeo_main_queryable = "processingLevel"
             stac_pl_property = "processing:level"
             self.assertIn(
                 pl_s1_sar_grd_planetary_computer_queryable,
                 provider_queryables["properties"],
             )
-            for constraint in wekeo_constraints["constraints"]:
-                self.assertNotIn(pl_s1_sar_grd_wekeo_queryable, constraint)
+            for constraint in wekeo_main_constraints["constraints"]:
+                self.assertNotIn(pl_s1_sar_grd_wekeo_main_queryable, constraint)
             self.assertNotIn(
                 stac_pl_property, res_product_type_no_provider["properties"]
             )
@@ -1589,7 +1436,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("description", response_content)
         self.assertIn("UnsupportedProductType", response_content["description"])
 
-        self.assertEqual(400, response.status_code)
+        self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
@@ -1706,6 +1553,8 @@ class RequestTestCase(unittest.TestCase):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
+        for const in constraints:
+            const["variable"].append("10m_u_component_of_wind")
         mock_requests_session_constraints.return_value = MockResponse(
             constraints, status_code=200
         )
@@ -1726,11 +1575,14 @@ class RequestTestCase(unittest.TestCase):
         # queryables properties not shared by all constraints must be removed
         not_shared_properties = ["leadtime_hour", "type"]
         provider_queryables_from_constraints_file = [
-            properties
+            f"cop_cds:{properties}"
             for properties in provider_queryables_from_constraints_file
             if properties not in not_shared_properties
         ]
-        default_provider_stac_properties = ["api_product_type", "time", "format"]
+        default_provider_stac_properties = [
+            "cop_cds:api_product_type",
+            "cop_cds:format",
+        ]
 
         res = self._request_valid(
             "collections/ERA5_SL/queryables?provider=cop_cds",
@@ -1739,7 +1591,7 @@ class RequestTestCase(unittest.TestCase):
 
         mock_requests_session_constraints.assert_called_once_with(
             mock.ANY,
-            "http://datastore.copernicus-climate.eu/c3s/published-forms/c3sprod/"
+            "https://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/"
             "reanalysis-era5-single-levels/constraints.json",
             headers=USER_AGENT,
             auth=None,

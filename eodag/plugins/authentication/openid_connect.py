@@ -30,12 +30,7 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    MisconfiguredError,
-    RequestError,
-    TimeOutError,
-)
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
@@ -145,8 +140,9 @@ class OIDCRefreshTokenBase(Authentication):
             and e.response.status_code in auth_errors
         ):
             raise AuthenticationError(
-                "HTTP Error %s returned, %s\nPlease check your credentials for %s"
-                % (e.response.status_code, response_text, self.provider)
+                f"Please check your credentials for {self.provider}.",
+                f"HTTP Error {e.response.status_code} returned.",
+                response_text,
             )
         # other error
         else:
@@ -336,10 +332,12 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_data
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             token_response = self.session.post(
                 self.config.token_uri,
                 timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
                 **post_request_kwargs,
             )
             token_response.raise_for_status()
@@ -363,11 +361,13 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             "state": state,
             "redirect_uri": self.config.redirect_uri,
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         authorization_response = self.session.get(
             self.config.authorization_uri,
             params=params,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=ssl_verify,
         )
 
         login_document = etree.HTML(authorization_response.text)
@@ -392,7 +392,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 self.config.login_form_xpath.rstrip("/") + "/@action"
             )
             if not auth_uri or not auth_uri[0]:
-                raise RequestError(
+                raise MisconfiguredError(
                     f"Could not get auth_uri from {self.config.login_form_xpath}"
                 )
             auth_uri = auth_uri[0]
@@ -401,7 +401,11 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             if not auth_uri:
                 raise MisconfiguredError("authentication_uri is missing")
         return self.session.post(
-            auth_uri, data=login_data, headers=USER_AGENT, timeout=HTTP_REQ_TIMEOUT
+            auth_uri,
+            data=login_data,
+            headers=USER_AGENT,
+            timeout=HTTP_REQ_TIMEOUT,
+            verify=ssl_verify,
         )
 
     def grant_user_consent(self, authentication_response: Response) -> Response:
@@ -415,11 +419,13 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             key: self._constant_or_xpath_extracted(value, user_consent_form)
             for key, value in self.config.user_consent_form_data.items()
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         return self.session.post(
             self.config.authorization_uri,
             data=user_consent_data,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=ssl_verify,
         )
 
     def _prepare_token_post_data(self, token_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -467,10 +473,12 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         post_request_kwargs: Any = {
             self.config.token_exchange_post_data_method: token_exchange_data
         }
+        ssl_verify = getattr(self.config, "ssl_verify", True)
         r = self.session.post(
             self.config.token_uri,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
+            verify=ssl_verify,
             **post_request_kwargs,
         )
         return r

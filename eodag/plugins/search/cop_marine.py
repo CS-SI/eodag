@@ -67,6 +67,21 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
         return date
 
 
+def _get_dates_from_dataset_data(
+    dataset_item: Dict[str, Any]
+) -> Optional[Dict[str, str]]:
+    dates = {}
+    if "start_datetime" in dataset_item["properties"]:
+        dates["start"] = dataset_item["properties"]["start_datetime"]
+        dates["end"] = dataset_item["properties"]["end_datetime"]
+    elif "datetime" in dataset_item["properties"]:
+        dates["start"] = dataset_item["properties"]["datetime"]
+        dates["end"] = dataset_item["properties"]["datetime"]
+    else:
+        return None
+    return dates
+
+
 def _get_s3_client(endpoint_url: str) -> S3Client:
     s3_session = boto3.Session()
     return s3_session.client(
@@ -180,20 +195,16 @@ class CopMarineSearch(StaticStacSearch):
             "dataset": dataset_item["id"],
         }
         if use_dataset_dates:
-            if "start_datetime" in dataset_item:
-                properties["startTimeFromAscendingNode"] = dataset_item[
-                    "start_datetime"
-                ]
-                properties["completionTimeFromAscendingNode"] = dataset_item[
-                    "end_datetime"
-                ]
-            elif "datetime" in dataset_item:
-                properties["startTimeFromAscendingNode"] = dataset_item["datetime"]
-                properties["completionTimeFromAscendingNode"] = dataset_item["datetime"]
+            dates = _get_dates_from_dataset_data(dataset_item)
+            if not dates:
+                return None
+            properties["startTimeFromAscendingNode"] = dates["start"]
+            properties["completionTimeFromAscendingNode"] = dates["end"]
         else:
-            item_dates = re.findall(r"\d{8}", item_key)
+            item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", item_id)
             if not item_dates:
-                item_dates = re.findall(r"\d{6}", item_key)
+                item_dates = re.findall(r"_(\d{4})(0[1-9]|1[0-2])", item_id)
+            item_dates = ["".join(row) for row in item_dates]
             item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
             if not item_start:  # identified pattern was not a valid datetime
                 return None
@@ -209,11 +220,26 @@ class CopMarineSearch(StaticStacSearch):
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         for key, value in collection_dict["properties"].items():
-            if key not in ["id", "title", "start_datetime", "end_datetime"]:
+            if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
                 properties[key] = value
         for key, value in dataset_item["properties"].items():
-            if key not in ["id", "title", "start_datetime", "end_datetime"]:
+            if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
                 properties[key] = value
+
+        code_mapping = self.config.products.get(product_type, {}).get(
+            "code_mapping", None
+        )
+        if code_mapping:
+            id_parts = item_id.split("_")
+            if len(id_parts) > code_mapping["index"]:
+                code = id_parts[code_mapping["index"]]
+                if "pattern" not in code_mapping:
+                    properties[code_mapping["param"]] = code
+                elif re.findall(code_mapping["pattern"], code):
+                    properties[code_mapping["param"]] = re.findall(
+                        code_mapping["pattern"], code
+                    )[0]
+
         _check_int_values_properties(properties)
 
         properties["thumbnail"] = collection_dict["assets"]["thumbnail"]["href"]
@@ -348,16 +374,54 @@ class CopMarineSearch(StaticStacSearch):
 
                 for obj in s3_objects["Contents"]:
                     item_key = obj["Key"]
+                    item_id = item_key.split("/")[-1].split(".")[0]
                     # filter according to date(s) in item id
-                    item_dates = re.findall(r"\d{8}", item_key)
+                    item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", item_id)
                     if not item_dates:
-                        item_dates = re.findall(r"\d{6}", item_key)
-                    item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
-                    if not item_start:  # identified pattern was not a valid datetime
+                        item_dates = re.findall(r"_(\d{4})(0[1-9]|1[0-2])", item_id)
+                    item_dates = [
+                        "".join(row) for row in item_dates
+                    ]  # join tuples returned by findall
+                    item_start = None
+                    item_end = None
+                    use_dataset_dates = False
+                    if item_dates:
+                        item_start = _get_date_from_yyyymmdd(item_dates[0], item_key)
+                        if len(item_dates) > 2:  # start, end and created_at timestamps
+                            item_end = _get_date_from_yyyymmdd(item_dates[1], item_key)
+                    if not item_start:
+                        # no valid datetime given in id
+                        use_dataset_dates = True
+                        dates = _get_dates_from_dataset_data(dataset_item)
+                        if dates:
+                            item_start_str = dates["start"].replace("Z", "+0000")
+                            item_end_str = dates["end"].replace("Z", "+0000")
+                            try:
+                                item_start = datetime.strptime(
+                                    item_start_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+                                )
+                                item_end = datetime.strptime(
+                                    item_end_str, "%Y-%m-%dT%H:%M:%S.%f%z"
+                                )
+                            except ValueError:
+                                item_start = datetime.strptime(
+                                    item_start_str, "%Y-%m-%dT%H:%M:%S%z"
+                                )
+                                item_end = datetime.strptime(
+                                    item_end_str, "%Y-%m-%dT%H:%M:%S%z"
+                                )
+                    if not item_start:
+                        # no valid datetime in id and dataset data
                         continue
                     if item_start > end_date:
                         stop_search = True
-                    if not item_dates or (start_date <= item_start <= end_date):
+                    if (
+                        (start_date <= item_start <= end_date)
+                        or (item_end and start_date <= item_end <= end_date)
+                        or (
+                            item_end and item_start < start_date and item_end > end_date
+                        )
+                    ):
                         num_total += 1
                         if num_total < start_index:
                             continue
@@ -368,6 +432,7 @@ class CopMarineSearch(StaticStacSearch):
                                 endpoint_url + "/" + bucket,
                                 dataset_item,
                                 collection_dict,
+                                use_dataset_dates,
                             )
                             if product:
                                 products.append(product)
