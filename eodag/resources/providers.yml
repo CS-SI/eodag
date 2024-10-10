@@ -1567,7 +1567,6 @@
       Content-Type: application/json
   auth: !plugin
     type: GenericAuth
-    matching_url: https://catalogue.onda-dias.eu
 
 ---
 !provider # MARK: astraea_eod
