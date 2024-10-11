@@ -4188,35 +4188,11 @@
       variable:
         - '{{"variable": "{variable}"}}'
         - '$.null'
-      leadtime_hour:
-        - '{{"leadtime_hour": {leadtime_hour}}}'
-        - '$.null'
-      leadtime_month:
-        - '{{"leadtime_month": {leadtime_month}}}'
-        - '$.null'
-      origin:
-        - '{{"origin": "{origin}"}}'
-        - '$.null'
       system:
         - '{{"system": "{system}"}}'
         - '$.null'
-      format:
-        - '{{"format": "{format}"}}'
-        - '$.null'
-      pressure_level:
-        - '{{"pressure_level": {pressure_level}}}'
-        - '$.null'
-      model_level:
-        - '{{"model_level": {model_level}}}'
-        - '$.null'
-      sensor_and_algorithm:
-        - '{{"sensor_and_algorithm": "{sensor_and_algorithm}"}}'
-        - '$.null'
       version:
         - '{{"version": {version}}}'
-        - '$.null'
-      time:
-        - '{{"time": {time}}}'
         - '$.null'
       region:
         - '{{"region": {region}}}'
@@ -4227,71 +4203,17 @@
       source:
         - '{{"source": {source}}}'
         - '$.null'
-      quantity:
-        - '{{"quantity": "{quantity}"}}'
-        - '$.null'
-      input_observations:
-        - '{{"input_observations": "{input_observations}"}}'
-        - '$.null'
-      aggregation:
-        - '{{"aggregation": "{aggregation}"}}'
-        - '$.null'
       model:
         - '{{"model": {model}}}'
         - '$.null'
       level:
         - '{{"level": {level}}}'
         - '$.null'
-      forcing_type:
-        - '{{"forcing_type": "{forcing_type}"}}'
-        - '$.null'
-      sky_type:
-        - '{{"sky_type": {sky_type}}}'
-        - '$.null'
-      band:
-        - '{{"band": {band}}}'
-        - '$.null'
-      aerosol_type:
-        - '{{"aerosol_type": {aerosol_type}}}'
-        - '$.null'
       step:
         - '{{"step": {step}}}'
         - '$.null'
-      longitude:
-        - '{{"longitude": "{longitude}"}}'
-        - '$.null'
-      latitude:
-        - '{{"latitude": "{latitude}"}}'
-        - '$.null'
-      altitude:
-        - '{{"altitude": "{altitude}"}}'
-        - '$.null'
-      time_reference:
-        - '{{"time_reference": "{time_reference}"}}'
-        - '$.null'
-      grid:
-        - '{{"grid": "{grid}"}}'
-        - '$.null'
-      soil_level:
-        - '{{"soil_level": {soil_level}}}'
-        - '$.null'
-      year:
-        - '{{"year": {year}}}'
-        - '$.null'
-      month:
-        - '{{"month": {month}}}'
-        - '$.null'
-      day:
-        - '{{"day": {day}}}'
-        - '$.null'
       satellite:
         - '{{"satellite": {satellite}}}'
-        - '$.null'
-      cdr_type:
-        - '{{"cdr_type": "{cdr_type}"}}'
-        - '$.null'
-      statistic:
-        - '{{"statistic": {statistic}}}'
         - '$.null'
       sensor:
         - '{{"sensor": "{sensor}"}}'
@@ -4783,12 +4705,6 @@
         - '$.null'
       providerProductType:
         - '{{"productType": "{providerProductType}"}}'
-        - '$.null'
-      timeliness:
-        - '{{"timeliness": "{timeliness}"}}'
-        - '$.null'
-      orbitDirection:
-        - '{{"orbitDirection": "{orbitDirection}"}}'
         - '$.null'
       variable:
         - '{{"variable": {variable}}}'
@@ -5396,6 +5312,9 @@
       format: grib
       metadata_mapping:
         id: '$.id'
+        month:
+          - '{{"month": "{month}"}}'
+          - '$.null'
         startTimeFromAscendingNode:
           - |
             {{

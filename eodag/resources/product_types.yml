@@ -2866,7 +2866,7 @@ ERA5_LAND:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5-Land hourly data from 1950 to present
-  missionStartDate: "1950-01-01T00:00:00Z"
+  missionStartDate: "1950-01-01T01:00:00Z"
 
 ERA5_LAND_MONTHLY:
   abstract: |
