@@ -323,6 +323,7 @@ class RequestTestCase(unittest.TestCase):
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
         search_result: SearchResult = None,
+        expected_status_code: int = 200,
     ) -> httpx.Response:
         if search_result:
             mock_search.return_value = search_result
@@ -354,7 +355,7 @@ class RequestTestCase(unittest.TestCase):
         elif expected_search_kwargs is not None:
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
-        self.assertEqual(200, response.status_code, response.text)
+        self.assertEqual(expected_status_code, response.status_code, response.text)
 
         return response
 
@@ -1149,6 +1150,34 @@ class RequestTestCase(unittest.TestCase):
         assert not os.path.exists(
             expected_file
         ), f"File {expected_file} should have been deleted"
+
+    @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.base.Download._stream_download_dict",
+        autospec=True,
+    )
+    def test_error_handler_supports_request_exception_with_status_code_none(
+        self, mock_stream_download: Mock, mock_auth: Mock
+    ):
+        """
+        A RequestError with a status code set to None (the default value) should not
+        crash the server. This test ensures that it doesn't crash the server and that a
+        500 status code is returned to the user.
+        """
+        # Make _stream_download_dict reaise an exception object with a status_code
+        # attribute set to None
+        exception = RequestError()
+        exception.status_code = None
+        mock_stream_download.side_effect = exception
+
+        response = self._request_valid_raw(
+            f"collections/{self.tested_product_type}/items/foo/download?provider=peps",
+            expected_status_code=500,
+        )
+        self.assertIn("RequestError", response.text)
 
     def test_root(self):
         """Request to / should return a valid response"""

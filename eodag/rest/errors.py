@@ -126,7 +126,10 @@ async def eodag_errors_handler(request: Request, exc: Exception) -> ORJSONRespon
     if not isinstance(exc, EodagError):
         return starlette_exception_handler(request, exc)
 
-    code = EODAG_DEFAULT_STATUS_CODES.get(type(exc), getattr(exc, "status_code", 500))
+    exception_status_code = getattr(exc, "status_code", None)
+    default_status_code = exception_status_code or 500
+    code = EODAG_DEFAULT_STATUS_CODES.get(type(exc), default_status_code)
+
     detail = f"{type(exc).__name__}: {str(exc)}"
 
     if type(exc) in (MisconfiguredError, AuthenticationError, TimeOutError):
