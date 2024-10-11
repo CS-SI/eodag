@@ -44,6 +44,16 @@ Also available:
   and linting tools)
 * ``eodag[docs]``, includes dependencies required to build documentation
 
+Conda
+"""""
+
+Conda does not support for the moment `optional groups of dependencies (conda/conda#7502)
+<https://github.com/conda/conda/issues/7502>`_. To separate *server-mode* dependencies from the default installation,
+we made 2 distinct packages on conda-forge:
+
+* `eodag <https://anaconda.org/conda-forge/eodag>`_ equivalent to ``eodag[all-providers,csw]``
+* `eodag-server <https://anaconda.org/conda-forge/eodag-server>`_ equivalent to ``eodag[all-providers,csw,server]``
+
 .. _install_notebooks:
 
 Run the notebooks locally
