@@ -28,12 +28,14 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from typing import Any, Callable, Dict
 from unittest import mock
 
+import pytest
 import responses
 import yaml
+from requests import RequestException
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import ProgressCallback
-from eodag.utils.exceptions import DownloadError, NoMatchingProductType
+from eodag.utils.exceptions import DownloadError, NoMatchingProductType, RequestError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -1156,6 +1158,38 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 plugin.config.timeout = timeout_backup
             else:
                 del plugin.config.timeout
+
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_download_http_order_get_raises_if_request_failed(
+        self, mock_request
+    ):
+        """HTTPDownload.order_download() must raise an error if request to backend
+        provider failed"""
+
+        # Configure mock to raise an error
+        mock_response = mock_request.return_value.__enter__.return_value
+        mock_response.raise_for_status.side_effect = RequestException("Some error msg")
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+        self.product.properties["orderLink"] = "http://somewhere/order"
+
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        # Verify that a RequestError is raised
+        with pytest.raises(RequestError):
+            plugin.order_download(self.product, auth=auth)
+
+        mock_request.assert_called_once_with(
+            method="GET",
+            url=self.product.properties["orderLink"],
+            auth=auth,
+            headers=USER_AGENT,
+            timeout=5,
+            verify=True,
+        )
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
