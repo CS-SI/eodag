@@ -367,12 +367,9 @@ class HTTPDownload(Download):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
             except RequestException as e:
-                raise DownloadError(
-                    "%s order status could not be checked, request returned %s"
-                    % (
-                        product.properties["title"],
-                        e,
-                    )
+                raise RequestError.from_error(
+                    e,
+                    f'{product.properties["title"]} order status could not be checked',
                 ) from e
 
         if not skip_parsing_status_response:
