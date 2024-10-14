@@ -17,10 +17,11 @@
 # limitations under the License.
 
 import unittest
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest import mock
 
 import responses
+from pystac.utils import now_in_utc
 from requests import Request
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
@@ -672,7 +673,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "KeycloakOIDCPasswordAuth",
-                        "auth_base_uri": "http://foo.bar",
+                        "oidc_config_url": "http://foo.bar/auth/realms/myrealm/.well-known/openid-configuration",
                         "client_id": "baz",
                         "realm": "qux",
                         "client_secret": "1234",
@@ -683,10 +684,27 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             },
         )
         cls.plugins_manager = PluginManager(cls.providers_config)
+        oidc_config = {
+            "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
+            "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
+            "jwks_uri": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/certs",
+        }
+        with mock.patch(
+            "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+        ) as mock_request:
+            mock_request.return_value.json.side_effect = [oidc_config, oidc_config]
+            plugin_test = cls()
+            plugin_test.plugins_manager = cls.plugins_manager
+            cls.auth_plugin = cls.get_auth_plugin(plugin_test, "foo_provider")
+
+    def tearDown(self):
+        super(TestAuthPluginKeycloakOIDCPasswordAuth, self).tearDown()
+        self.auth_plugin.access_token = ""
+        self.auth_plugin.refresh_token = ""
 
     def test_plugins_auth_keycloak_validate_credentials(self):
         """KeycloakOIDCPasswordAuth.validate_credentials must raise exception if not well configured"""
-        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin = self.auth_plugin
 
         # credentials missing
         self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
@@ -697,9 +715,9 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         auth_plugin.validate_config_credentials()
 
         # auth_base_uri missing
-        auth_base_uri = auth_plugin.config.__dict__.pop("auth_base_uri")
+        oidc_config_url = auth_plugin.config.__dict__.pop("oidc_config_url")
         self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
-        auth_plugin.config.auth_base_uri = auth_base_uri
+        auth_plugin.config.oidc_config_url = oidc_config_url
         # client_id missing
         client_id = auth_plugin.config.__dict__.pop("client_id")
         self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
@@ -716,13 +734,20 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         # no error
         auth_plugin.validate_config_credentials()
 
-    def test_plugins_auth_keycloak_authenticate(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
+    def test_plugins_auth_keycloak_authenticate(self, mock_decode):
         """KeycloakOIDCPasswordAuth.authenticate must query and store the token as expected"""
-        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
+        mock_decode.return_value = {
+            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+        }
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
             req_kwargs = {
                 "client_id": "baz",
                 "client_secret": "1234",
@@ -733,7 +758,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 responses.POST,
                 url,
                 status=200,
-                json={"access_token": "obtained-token", "expires_in": 0},
+                json={"access_token": "obtained-token", "expires_in": 3600},
                 match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
             )
 
@@ -745,44 +770,35 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             self.assertEqual(auth.where, "qs")
 
         # check that token has been stored
-        self.assertEqual(auth_plugin.token_info["access_token"], "obtained-token")
+        self.assertEqual(auth_plugin.access_token, "obtained-token")
 
-        # check that stored token is used if new auth request fails
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
-            req_kwargs = {
-                "client_id": "baz",
-                "client_secret": "1234",
-                "grant_type": "password",
-                "username": "john",
-            }
-            rsps.add(
-                responses.POST,
-                url,
-                status=401,
-                json={"error": "not allowed"},
-                match=[responses.matchers.urlencoded_params_matcher(req_kwargs)],
-            )
+        # check that stored token is used if available
+        auth = auth_plugin.authenticate()
+        # check if returned auth object is an instance of requests.AuthBase
+        assert isinstance(auth, AuthBase)
+        self.assertEqual(auth.key, "totoken")
+        self.assertEqual(auth.token, "obtained-token")
+        self.assertEqual(auth.where, "qs")
 
-            # check if returned auth object is an instance of requests.AuthBase
-            auth = auth_plugin.authenticate()
-            assert isinstance(auth, AuthBase)
-            self.assertEqual(auth.key, "totoken")
-            self.assertEqual(auth.token, "obtained-token")
-            self.assertEqual(auth.where, "qs")
-
-    def test_plugins_auth_keycloak_authenticate_qs(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
+    def test_plugins_auth_keycloak_authenticate_qs(self, mock_decode):
         """KeycloakOIDCPasswordAuth.authenticate must return a AuthBase object that will inject the token in a query-string"""  # noqa
-        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
+        mock_decode.return_value = {
+            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+        }
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
             rsps.add(
                 responses.POST,
                 url,
                 status=200,
-                json={"access_token": "obtained-token", "expires_in": 0},
+                json={"access_token": "obtained-token", "expires_in": 3600},
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -801,22 +817,29 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
                 "https://httpbin.org/get?baz=qux&totoken=obtained-token",
             )
 
-    def test_plugins_auth_keycloak_authenticate_header(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
+    def test_plugins_auth_keycloak_authenticate_header(self, mock_decode):
         """KeycloakOIDCPasswordAuth.authenticate must return a AuthBase object that will inject the token in the header"""  # noqa
-        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
+        mock_decode.return_value = {
+            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+        }
 
         # backup token_provision and change it to header mode
         token_provision_qs = auth_plugin.config.token_provision
         auth_plugin.config.token_provision = "header"
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
             rsps.add(
                 responses.POST,
                 url,
                 status=200,
-                json={"access_token": "obtained-token", "expires_in": 0},
+                json={"access_token": "obtained-token", "expires_in": 3600},
             )
 
             # check if returned auth object is an instance of requests.AuthBase
@@ -840,13 +863,18 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
 
         auth_plugin.config.token_provision = token_provision_qs
 
-    def test_plugins_auth_keycloak_authenticate_use_refresh_token(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
+    def test_plugins_auth_keycloak_authenticate_use_refresh_token(self, mock_decode):
         """KeycloakOIDCPasswordAuth.authenticate must query and store the token as expected"""
-        auth_plugin = self.get_auth_plugin("foo_provider")
+        auth_plugin = self.auth_plugin
         auth_plugin.config.credentials = {"username": "john"}
+        mock_decode.return_value = {"exp": now_in_utc().timestamp()}
 
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
             req_kwargs = {
                 "client_id": "baz",
                 "client_secret": "1234",
@@ -874,13 +902,12 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             self.assertEqual(auth.where, "qs")
 
         # check that token and refresh token have been stored
-        self.assertEqual(auth_plugin.token_info["access_token"], "obtained-token")
-        assert auth_plugin.token_info
-        self.assertEqual("abc", auth_plugin.token_info["refresh_token"])
+        self.assertEqual(auth_plugin.access_token, "obtained-token")
+        self.assertEqual("abc", auth_plugin.refresh_token)
 
         # check that stored token is used if new auth request fails
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            url = "http://foo.bar/realms/qux/protocol/openid-connect/token"
+            url = "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token"
             req_kwargs = {
                 "client_id": "baz",
                 "client_secret": "1234",
@@ -919,6 +946,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "token_provision": "invalid",
                     },
                 },
@@ -926,6 +954,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "token_provision": "qs",
                     },
                 },
@@ -933,9 +962,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
-                        "authorization_uri": "http://auth.foo/authorization",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "redirect_uri": "http://provider.bar/redirect",
-                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": False,
                         "token_provision": "header",
@@ -947,9 +975,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
-                        "authorization_uri": "http://auth.foo/authorization",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "redirect_uri": "http://provider.bar/redirect",
-                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": True,
                         "user_consent_form_xpath": "//form[@id='form-user-consent']",
@@ -968,9 +995,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
-                        "authorization_uri": "http://auth.foo/authorization",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "redirect_uri": "http://provider.bar/redirect",
-                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "client_secret": "this-is-the-secret",
                         "user_consent_needed": False,
@@ -985,9 +1011,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
-                        "authorization_uri": "http://auth.foo/authorization",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "redirect_uri": "http://provider.bar/redirect",
-                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": False,
                         "token_exchange_post_data_method": "data",
@@ -1002,9 +1027,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
-                        "authorization_uri": "http://auth.foo/authorization",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "redirect_uri": "http://provider.bar/redirect",
-                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": False,
                         "token_exchange_post_data_method": "data",
@@ -1022,9 +1046,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                     "products": {"foo_product": {}},
                     "auth": {
                         "type": "OIDCAuthorizationCodeFlowAuth",
-                        "authorization_uri": "http://auth.foo/authorization",
+                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
                         "redirect_uri": "http://provider.bar/redirect",
-                        "token_uri": "http://auth.foo/token",
                         "client_id": "provider-bar-id",
                         "user_consent_needed": False,
                         "token_exchange_post_data_method": "data",
@@ -1046,12 +1069,21 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         cls.plugins_manager = PluginManager(cls.providers_config)
 
     def get_auth_plugin(self, provider):
-        auth_plugin = super(
-            TestAuthPluginOIDCAuthorizationCodeFlowAuth, self
-        ).get_auth_plugin(provider)
-        # reset token info
-        auth_plugin.token_info = {}
-        return auth_plugin
+        with mock.patch(
+            "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+        ) as mock_request:
+            oidc_config = {
+                "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
+                "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
+                "jwks_uri": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/certs",
+            }
+            mock_request.return_value.json.side_effect = [oidc_config, oidc_config]
+            auth_plugin = super(
+                TestAuthPluginOIDCAuthorizationCodeFlowAuth, self
+            ).get_auth_plugin(provider)
+            # reset token info
+            auth_plugin.token_info = {}
+            return auth_plugin
 
     def test_plugins_auth_codeflowauth_validate_credentials(self):
         """OIDCAuthorizationCodeFlowAuth.validate_credentials must raise an error if credentials are not valid"""
@@ -1087,6 +1119,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.validate_config_credentials()
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._get_token_with_refresh_token",
         autospec=True,
     )
@@ -1095,14 +1131,12 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         autospec=True,
     )
     def test_plugins_auth_codeflowauth_authenticate_ok(
-        self,
-        mock_request_new_token,
-        mock_get_token_with_refresh_token,
+        self, mock_request_new_token, mock_get_token_with_refresh_token, mock_decode
     ):
         """OIDCAuthorizationCodeFlowAuth.authenticate must check if the token is expired, call the correct
         function to get a new one and update the access token"""
         auth_plugin = self.get_auth_plugin("provider_ok")
-        current_time = datetime.now()
+        current_time = now_in_utc()
         json_response = {
             "access_token": "obtained-access-token",
             "expires_in": "3600",
@@ -1111,6 +1145,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         }
         mock_request_new_token.return_value = json_response
         mock_get_token_with_refresh_token.return_value = json_response
+        expiration = current_time + timedelta(
+            seconds=float(json_response["expires_in"])
+        )
+        mock_decode.return_value = {"exp": expiration.timestamp()}
 
         def _authenticate(
             called_once: mock.Mock, not_called: mock.Mock, access_token: str
@@ -1130,33 +1168,26 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
         # Check internal `token_info`` stores the new data
         self.assertEqual(
-            auth_plugin.token_info["refresh_token"],
+            auth_plugin.refresh_token,
             json_response["refresh_token"],
         )
-        self.assertIsNotNone(auth_plugin.token_info["refresh_time"])
         self.assertEqual(
-            auth_plugin.token_info["access_token"],
+            auth_plugin.access_token,
             json_response["access_token"],
         )
-        self.assertIsNotNone(auth_plugin.token_info["token_time"])
-        self.assertEqual(
-            auth_plugin.token_info["access_token_expiration"],
-            float(json_response["expires_in"]),
-        )
-        self.assertEqual(
-            auth_plugin.token_info["refresh_token_expiration"],
-            float(json_response["refresh_expires_in"]),
+        self.assertEqual(auth_plugin.access_token_expiration, expiration)
+        # refresh token expiration is calculated during test execution -> diff to previously
+        # stored current time should be > refresh_expires_in
+        self.assertGreater(
+            auth_plugin.refresh_token_expiration.timestamp() - current_time.timestamp(),
+            7200,
         )
 
         # Refresh token available but expired -> new auth
-        auth_plugin.token_info = {
-            "refresh_token": "old-refresh-token",
-            "refresh_time": current_time - timedelta(hours=3),
-            "access_token": "old-access-token",
-            "token_time": current_time - timedelta(hours=3),
-            "access_token_expiration": 3600,
-            "refresh_token_expiration": 7200,
-        }
+        auth_plugin.refresh_token = "old-refresh-token"
+        auth_plugin.refresh_token_expiration = current_time - timedelta(hours=3)
+        auth_plugin.access_token = "old-access-token"
+        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -1164,11 +1195,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
 
         # Refresh token *not* available and access token expired - new auth
-        auth_plugin.token_info = {
-            "access_token": "old-access-token",
-            "token_time": current_time - timedelta(hours=3),
-            "access_token_expiration": 3600,
-        }
+        auth_plugin.access_token = "old-access-token"
+        auth_plugin.refresh_token = ""
+        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
+
         _authenticate(
             mock_request_new_token,
             mock_get_token_with_refresh_token,
@@ -1176,14 +1206,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
 
         # Refresh token available and access token expired -> refresh
-        auth_plugin.token_info = {
-            "refresh_token": "old-refresh-token",
-            "refresh_time": current_time - timedelta(seconds=4000),
-            "access_token": "old-access-token",
-            "token_time": current_time - timedelta(seconds=4000),
-            "access_token_expiration": 3600,
-            "refresh_token_expiration": 7200,
-        }
+        auth_plugin.refresh_token = "old-refresh-token"
+        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.access_token = "old-access-token"
+        auth_plugin.access_token_expiration = current_time - timedelta(hours=4)
         _authenticate(
             mock_get_token_with_refresh_token,
             mock_request_new_token,
@@ -1191,19 +1217,19 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
 
         # Access token not expired -> use already retrieved token
-        auth_plugin.token_info = {
-            "refresh_token": "old-refresh-token",
-            "refresh_time": current_time - timedelta(seconds=1800),
-            "access_token": "old-access-token",
-            "token_time": current_time - timedelta(seconds=1800),
-            "access_token_expiration": 3600,
-            "refresh_token_expiration": 7200,
-        }
+        auth_plugin.refresh_token = "old-refresh-token"
+        auth_plugin.refresh_token_expiration = current_time + timedelta(hours=3)
+        auth_plugin.access_token = "old-access-token"
+        auth_plugin.access_token_expiration = current_time + timedelta(hours=2)
         auth = auth_plugin.authenticate()
         mock_request_new_token.assert_not_called()
         mock_get_token_with_refresh_token.assert_not_called()
-        self.assertEqual(auth.token, auth_plugin.token_info["access_token"])
+        self.assertEqual(auth.token, auth_plugin.access_token)
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase.decode_jwt_token",
+        autospec=True,
+    )
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.compute_state",
         autospec=True,
@@ -1221,6 +1247,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_authenticate_user,
         mock_exchange_code_for_token,
         mock_compute_state,
+        mock_decode,
     ):
         """OIDCAuthorizationCodeFlowAuth.authenticate must return a CodeAuthorizedAuth object with a `key`
         if `token_provision=="qs"`"""
@@ -1236,6 +1263,9 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_authenticate_user.return_value = mock.Mock(url=exchange_url)
         mock_compute_state.return_value = state
         mock_exchange_code_for_token.return_value = MockResponse(json_response, 200)
+        mock_decode.return_value = {
+            "exp": (now_in_utc() + timedelta(seconds=3600)).timestamp()
+        }
 
         auth = auth_plugin.authenticate()
 
@@ -1395,10 +1425,10 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         """OIDCAuthorizationCodeFlowAuth.get_token_with_refresh_token must call the token URI with a token refresh
         request and return the JSON response"""
         auth_plugin = self.get_auth_plugin("provider_ok")
-        auth_plugin.token_info = {"refresh_token": "old-refresh-token"}
+        auth_plugin.refresh_token = "old-refresh-token"
         token_data = auth_plugin._prepare_token_post_data(
             {
-                "refresh_token": auth_plugin.token_info["refresh_token"],
+                "refresh_token": auth_plugin.refresh_token,
                 "grant_type": "refresh_token",
             }
         )
@@ -1416,7 +1446,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         }
         mock_requests_post.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.token_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
             **post_request_kwargs,
@@ -1471,7 +1501,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         auth_plugin.grant_user_consent(authentication_response)
         mock_requests_post.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.authorization_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             data={"const_key": "const_value", "xpath_key": "additional value"},
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -1517,7 +1547,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # First and only request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.authorization_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             params={
                 "client_id": auth_plugin.config.client_id,
                 "response_type": auth_plugin.RESPONSE_TYPE,
@@ -1568,7 +1598,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # First and only request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.authorization_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             params={
                 "client_id": auth_plugin.config.client_id,
                 "response_type": auth_plugin.RESPONSE_TYPE,
@@ -1620,7 +1650,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # First request: get the authorization URI
         mock_requests_get.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.authorization_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             params={
                 "client_id": auth_plugin.config.client_id,
                 "response_type": auth_plugin.RESPONSE_TYPE,
@@ -1694,7 +1724,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertEqual(response.json()["access_token"], json_response["access_token"])
         mock_requests_post.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.token_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             data={
@@ -1736,7 +1766,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertEqual(response.json()["access_token"], json_response["access_token"])
         mock_requests_post.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.token_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             data={
@@ -1783,7 +1813,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         self.assertEqual(response.json()["access_token"], json_response["access_token"])
         mock_requests_post.assert_called_once_with(
             mock.ANY,
-            auth_plugin.config.token_uri,
+            "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             data={
