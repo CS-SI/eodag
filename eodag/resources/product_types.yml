@@ -4810,6 +4810,19 @@ MSG_CLM_IODC:
   title: Cloud Mask - MSG - Indian Ocean
   missionStartDate: "2017-02-01T00:00:00Z"
 
+MSG_GSAL2R02:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface albedo. The variables estimated are black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2 to Meteosat-10.
+  instrument: MVIRI,SEVIRI
+  platform: MSG,MFG
+  platformSerialIdentifier: MSG,MFG
+  processingLevel: L2
+  keywords: MSG,MFG,SEVIRI,MVIRI,OPTICAL,CLIMATE,L2,MxGGSA000200
+  sensorType: OPTICAL
+  license: proprietary
+  title:  GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
+  missionStartDate: "1982-02-10T00:00:00Z"
+
 MSG_HRSEVIRI:
   abstract: |
     Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to their latency: quarter-hourly images if latency is more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
