@@ -7239,6 +7239,11 @@
       parentIdentifier: EO:EUM:DAT:MULT:HIRSL1
       metadata_mapping:
         <<: *orbit_zone_tile
+    # MSG
+    MSG_CLM:
+      parentIdentifier: EO:EUM:DAT:MSG:CLM
+      metadata_mapping:
+        <<: *orbit_zone_tile
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
