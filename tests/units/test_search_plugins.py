@@ -2919,7 +2919,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
         mock_requests_get.reset()
         mock_requests_get.side_effect = requests.exceptions.ConnectionError()
-        with self.assertRaises(requests.exceptions.ConnectionError):
+        with self.assertRaises(RequestError):
             search_plugin.query(
                 productType="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",

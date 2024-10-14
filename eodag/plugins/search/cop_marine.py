@@ -37,7 +37,7 @@ from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import get_bucket_name_and_prefix
-from eodag.utils.exceptions import UnsupportedProductType, ValidationError
+from eodag.utils.exceptions import RequestError, UnsupportedProductType, ValidationError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -145,7 +145,7 @@ class CopMarineSearch(StaticStacSearch):
                 logger.error("product %s not found", product_type)
                 raise UnsupportedProductType(product_type)
             logger.error("data for product %s could not be fetched", product_type)
-            raise
+            raise RequestError(f"data for product {product_type} could not be fetched")
 
         datasets = []
         for link in [li for li in collection_data["links"] if li["rel"] == "item"]:
