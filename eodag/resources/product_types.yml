@@ -4795,6 +4795,21 @@ MSG_CLM:
   title: Cloud Mask - MSG - 0 degree
   missionStartDate: "2020-09-01T00:00:00Z"
 
+MSG_CLM_IODC:
+  abstract: |
+    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+
+    From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,ATMOSPHERIC,COMPOSITION,VISUALISATION,L2,MSGCLMK,CLM
+  sensorType: OPTICAL
+  license: proprietary
+  title: Cloud Mask - MSG - Indian Ocean
+  missionStartDate: "2017-02-01T00:00:00Z"
+
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |
