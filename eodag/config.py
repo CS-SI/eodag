@@ -268,6 +268,10 @@ class PluginConfig(yaml.YAMLObject):
 
         #: URL from which the product types can be fetched
         fetch_url: Optional[str]
+        #: HTTP method used to fetch product types
+        fetch_method: str
+        #: Request body to fetch product types using POST method
+        fetch_body: Dict[str, Any]
         #: Type of the provider result
         result_type: str
         #: JsonPath to the list of product types

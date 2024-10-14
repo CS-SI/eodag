@@ -526,7 +526,14 @@ class QueryStringSearch(Search):
                 "Skipping error while fetching product types for " "{} {} instance:"
             ).format(self.provider, self.__class__.__name__)
 
-            response = QueryStringSearch._request(self, prep)
+            # Query using appropriate method
+            fetch_method = self.config.discover_product_types.get("fetch_method", "GET")
+            fetch_body = self.config.discover_product_types.get("fetch_body", {})
+            if fetch_method == "POST" and isinstance(self, PostJsonSearch):
+                prep.query_params = fetch_body
+                response = self._request(prep)
+            else:
+                response = QueryStringSearch._request(self, prep)
         except (RequestError, KeyError, AttributeError):
             return None
         else:
