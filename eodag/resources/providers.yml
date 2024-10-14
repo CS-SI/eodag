@@ -7248,6 +7248,10 @@
       parentIdentifier: EO:EUM:DAT:MSG:CLM-IODC
       metadata_mapping:
         <<: *orbit_zone_tile
+    MSG_GSAL2R02:
+      parentIdentifier: EO:EUM:DAT:0300
+      metadata_mapping:
+        <<: *orbit_zone_tile
     MSG_HRSEVIRI:
       parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI
       metadata_mapping:
