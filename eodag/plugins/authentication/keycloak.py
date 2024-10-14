@@ -71,7 +71,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             ...
             auth:
                 plugin: KeycloakOIDCPasswordAuth
-                auth_base_uri: 'https://somewhere/auth'
+                oidc_config_url: 'https://somewhere/auth/realms/realm/.well-known/openid-configuration'
                 realm: 'the-realm'
                 client_id: 'SOME_ID'
                 client_secret: '01234-56789'
@@ -88,7 +88,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             ...
             auth:
                 plugin: KeycloakOIDCPasswordAuth
-                auth_base_uri: 'https://somewhere/auth'
+                oidc_config_url: 'https://somewhere/auth/realms/realm/.well-known/openid-configuration'
                 realm: 'the-realm'
                 client_id: 'SOME_ID'
                 client_secret: '01234-56789'
@@ -98,7 +98,12 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """
 
     GRANT_TYPE = "password"
-    REQUIRED_PARAMS = ["client_id", "client_secret", "token_provision"]
+    REQUIRED_PARAMS = [
+        "oidc_config_url",
+        "client_id",
+        "client_secret",
+        "token_provision",
+    ]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
