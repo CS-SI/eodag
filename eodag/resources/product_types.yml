@@ -4782,6 +4782,19 @@ METOP_HIRSL1:
   title: HIRS Level 1B - Metop - Global
   missionStartDate: "2009-03-23T00:00:00Z"
 
+MSG_CLM:
+  abstract: |
+    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLMK,CLM
+  sensorType: OPTICAL
+  license: proprietary
+  title: Cloud Mask - MSG - 0 degree
+  missionStartDate: "2020-09-01T00:00:00Z"
+
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |
