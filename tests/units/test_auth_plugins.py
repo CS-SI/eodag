@@ -1179,8 +1179,8 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
         self.assertEqual(auth_plugin.access_token_expiration, expiration)
         # refresh token expiration is calculated during test execution -> diff to previously
-        # stored current time should be > refresh_expires_in
-        self.assertGreater(
+        # stored current time should be > refresh_expires_in (equals for windows due to less precision)
+        self.assertGreaterEqual(
             auth_plugin.refresh_token_expiration.timestamp() - current_time.timestamp(),
             7200,
         )
