@@ -7260,6 +7260,10 @@
       parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI-IODC
       metadata_mapping:
         <<: *orbit_zone_tile
+    MSG_RSS_CLM:
+      parentIdentifier: EO:EUM:DAT:MSG:RSS-CLM
+      metadata_mapping:
+        <<: *orbit_zone_tile
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'

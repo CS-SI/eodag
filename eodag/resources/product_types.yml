@@ -4836,6 +4836,19 @@ MSG_HRSEVIRI:
   title: High Rate SEVIRI Level 1.5 Image Data - MSG - 0 degree
   missionStartDate: "2004-01-19T00:00:00Z"
 
+MSG_RSS_CLM:
+  abstract: |
+    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: RSS-CLM,MSGCLMK,MSG,SEVIRI,OPTICAL,CLOUDS,ATMOSPHERE,L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Rapid Scan Cloud Mask - MSG
+  missionStartDate: "2013-02-28T00:00:00Z"
+
 MSG_HRSEVIRI_IODC:
   abstract: |
     Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to the latency: quarter-hourly images with a latency of more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
