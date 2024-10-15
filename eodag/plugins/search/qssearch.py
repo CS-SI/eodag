@@ -23,6 +23,7 @@ from copy import copy as copy_copy
 from datetime import datetime
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -33,6 +34,7 @@ from typing import (
     Tuple,
     TypedDict,
     cast,
+    get_args,
 )
 from urllib.error import URLError
 from urllib.parse import (
@@ -77,12 +79,10 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    Annotated,
     _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
-    get_args,
     get_ssl_context,
     quote,
     string_to_jsonpath,

@@ -22,6 +22,7 @@ import os
 import tempfile
 from inspect import isclass
 from typing import (
+    Annotated,
     Any,
     Dict,
     ItemsView,
@@ -49,7 +50,6 @@ from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypa
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    Annotated,
     cached_yaml_load,
     cached_yaml_load_all,
     cast_scalar_value,

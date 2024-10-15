@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
 from pydantic.fields import Field, FieldInfo
@@ -35,11 +35,9 @@ from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
-    Annotated,
     copy_deepcopy,
     deepcopy,
     format_dict_items,
-    get_args,
     update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
