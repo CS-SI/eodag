@@ -4876,6 +4876,24 @@ MSG_MSG15_RSS:
   title: Rapid Scan High Rate SEVIRI Level 1.5 Image Data - MSG
   missionStartDate: "2008-05-13T00:00:00Z"
 
+MSG_LSA_FRM:
+  abstract: |
+    Fire risk by merging NWP & remotely sensed (FRP) data. The product includes 24h, 48h, 72h, 96h and 120h forecasts of: risk of fire (5 classes) and the probability of ignitions reaching energy releases over 2000GJ (both covering Southern Europe); Fire Weather Index (FWI) and respective components estimated for the whole MSG disk.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: LSA-504.2,FRMV2,FIRE,VEGETATION,LAND,MSG,SEVIRI,OPTICAL,LAND,L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Fire Risk Map - Released Energy Based - MSG
+  # Note: There's a mismatch between the temporal extent mentioned on the
+  # product description page (22/07/2021 to now) and the available time range
+  # displayed on the download page (2023-09-21 - 2024-10-20).
+  #
+  # Using the available time range start date here.
+  missionStartDate: "2023-09-21T00:00:00Z"
+
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |
