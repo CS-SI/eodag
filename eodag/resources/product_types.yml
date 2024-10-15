@@ -4836,19 +4836,6 @@ MSG_HRSEVIRI:
   title: High Rate SEVIRI Level 1.5 Image Data - MSG - 0 degree
   missionStartDate: "2004-01-19T00:00:00Z"
 
-MSG_RSS_CLM:
-  abstract: |
-    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L2
-  keywords: RSS-CLM,MSGCLMK,MSG,SEVIRI,OPTICAL,CLOUDS,ATMOSPHERE,L2
-  sensorType: OPTICAL
-  license: proprietary
-  title: Rapid Scan Cloud Mask - MSG
-  missionStartDate: "2013-02-28T00:00:00Z"
-
 MSG_HRSEVIRI_IODC:
   abstract: |
     Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to the latency: quarter-hourly images with a latency of more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
@@ -4862,6 +4849,32 @@ MSG_HRSEVIRI_IODC:
   license: proprietary
   title:  High Rate SEVIRI Level 1.5 Image Data - MSG - Indian Ocean
   missionStartDate: "2017-02-01T00:00:00Z"
+
+MSG_RSS_CLM:
+  abstract: |
+    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: RSS-CLM,MSGCLMK,MSG,SEVIRI,OPTICAL,CLOUDS,ATMOSPHERE,L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Rapid Scan Cloud Mask - MSG
+  missionStartDate: "2013-02-28T00:00:00Z"
+
+MSG_MSG15_RSS:
+  abstract: |
+    Rectified (level 1.5) Meteosat SEVIRI Rapid Scan image data. The baseline scan region is a reduced area of the top 1/3 of a nominal repeat cycle, covering a latitude range from approximately 15 degrees to 70 degrees. The service generates repeat cycles at 5-minute intervals (the same as currently used for weather radars). The dissemination of RSS data is similar to the normal dissemination, with image segments based on 464 lines and compatible with the full disk level 1.5 data scans. Epilogue and prologue (L1.5 Header and L1.5 Trailer) have the same structure. Calibration is as in Full Earth Scan. Image rectification is to 9.5 degreesE. The scans start at 00:00, 00:05, 00:10, 00:15 ... etc. (5 min scan). The differences from the nominal Full Earth scan are that for channels 1 - 11, only segments 6 - 8 are disseminated and for the High Resolution Visible Channel only segments 16 - 24 are disseminated.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L1
+  keywords: MSG15-RSS,MSG15,MSG,SEVIRI,OPTICAL,OCEAN,ATMOSPHERE,LAND,L1
+  sensorType: OPTICAL
+  license: proprietary
+  title: Rapid Scan High Rate SEVIRI Level 1.5 Image Data - MSG
+  missionStartDate: "2008-05-13T00:00:00Z"
 
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
