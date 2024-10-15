@@ -145,7 +145,9 @@ class CopMarineSearch(StaticStacSearch):
                 logger.error("product %s not found", product_type)
                 raise UnsupportedProductType(product_type)
             logger.error("data for product %s could not be fetched", product_type)
-            raise RequestError.from_error(exc, f"data for product {product_type} could not be fetched") from exc
+            raise RequestError.from_error(
+                exc, f"data for product {product_type} could not be fetched"
+            ) from exc
 
         datasets = []
         for link in [li for li in collection_data["links"] if li["rel"] == "item"]:
