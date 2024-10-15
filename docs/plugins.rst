@@ -60,6 +60,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``eumetsat_ds``        | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``geodes``             | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``hydroweb_next``      | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``meteoblue``          | |BuildPostSearchResult|            | |HttpQueryStringAuth|           | |HTTPDownload|   |
