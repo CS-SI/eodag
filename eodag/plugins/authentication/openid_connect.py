@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 import string
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from random import SystemRandom
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -86,6 +86,7 @@ class OIDCRefreshTokenBase(Authentication):
         self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
         self.token_endpoint = auth_config["token_endpoint"]
         self.authorization_endpoint = auth_config["authorization_endpoint"]
+        self.algorithms = auth_config["id_token_signing_alg_values_supported"]
 
     def decode_jwt_token(self, token: str) -> Dict[str, Any]:
         """Decode JWT token."""
@@ -95,7 +96,7 @@ class OIDCRefreshTokenBase(Authentication):
                 return jwt.decode(
                     token,
                     key,
-                    algorithms=["RS256", "HS512"],
+                    algorithms=self.algorithms,
                     # NOTE: Audience validation MUST match audience claim if set in token
                     # (https://pyjwt.readthedocs.io/en/stable/changelog.html?highlight=audience#id40)
                     audience=self.config.allowed_audiences,
@@ -104,13 +105,13 @@ class OIDCRefreshTokenBase(Authentication):
                 return jwt.decode(
                     token,
                     key,
-                    algorithms=["RS256", "HS512"],
+                    algorithms=self.algorithms,
                 )
         except (jwt.exceptions.InvalidTokenError, jwt.exceptions.DecodeError) as e:
             raise AuthenticationError(e)
 
     def _get_access_token(self) -> str:
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         if self.access_token and now < self.access_token_expiration:
             logger.debug(
                 f"Existing access_token is still valid until {self.access_token_expiration.isoformat()}."
@@ -128,7 +129,7 @@ class OIDCRefreshTokenBase(Authentication):
 
         self.access_token = response[getattr(self.config, "token_key", "access_token")]
         self.access_token_expiration = datetime.fromtimestamp(
-            self.decode_jwt_token(self.access_token)["exp"], UTC
+            self.decode_jwt_token(self.access_token)["exp"], timezone.utc
         )
         self.refresh_token = response.get(
             getattr(self.config, "refresh_token_key", "refresh_token"), ""
@@ -139,7 +140,7 @@ class OIDCRefreshTokenBase(Authentication):
             )
         else:
             # refresh token does not expire but will be changed at each request
-            self.refresh_token_expiration = datetime.max
+            self.refresh_token_expiration = now + timedelta(days=1000)
 
         return self.access_token
 

@@ -688,6 +688,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
             "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
             "jwks_uri": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/certs",
+            "id_token_signing_alg_values_supported": ["RS256", "HS512"],
         }
         with mock.patch(
             "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
@@ -1076,6 +1077,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
                 "authorization_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/auth",
                 "token_endpoint": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/token",
                 "jwks_uri": "http://foo.bar/auth/realms/myrealm/protocol/openid-connect/certs",
+                "id_token_signing_alg_values_supported": ["RS256", "HS512"],
             }
             mock_request.return_value.json.side_effect = [oidc_config, oidc_config]
             auth_plugin = super(
