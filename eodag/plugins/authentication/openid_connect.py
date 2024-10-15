@@ -134,7 +134,7 @@ class OIDCRefreshTokenBase(Authentication):
         self.refresh_token = response.get(
             getattr(self.config, "refresh_token_key", "refresh_token"), ""
         )
-        if self.refresh_token and response.get("refresh_expires_in", 0):
+        if self.refresh_token and response.get("refresh_expires_in", "0"):
             self.refresh_token_expiration = now + timedelta(
                 seconds=int(response["refresh_expires_in"])
             )
