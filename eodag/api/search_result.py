@@ -18,7 +18,17 @@
 from __future__ import annotations
 
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -29,7 +39,6 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
-from eodag.utils import Annotated
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry

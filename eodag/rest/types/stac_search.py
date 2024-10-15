@@ -19,7 +19,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import geojson
 from pydantic import (
@@ -43,7 +53,6 @@ from shapely.geometry import (
     shape,
 )
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
-from typing_extensions import Annotated
 
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime, str_to_interval
 from eodag.utils.exceptions import ValidationError
