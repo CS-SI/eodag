@@ -4894,6 +4894,19 @@ MSG_LSA_FRM:
   # Using the available time range start date here.
   missionStartDate: "2023-09-21T00:00:00Z"
 
+MSG_LSA_LST_CDR:
+  abstract: |
+    The full archive of MSG/SEVIRI data was reprocessed to provide the user community a consistent, homogeneous and continuous Data Record of the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent NRT product (MLST) which can also complement the time series from 2016 onwards.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L3
+  keywords: LSA-050, MLST-R,FIRE,VEGETATION,LAND,MSG,SEVIRI,OPTICAL,LAND,L3
+  sensorType: OPTICAL
+  license: proprietary
+  title: Land Surface Temperature Climate Data Record - MSG
+  missionStartDate: "2004-01-21T00:00:00Z"
+
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |
