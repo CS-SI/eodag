@@ -7268,6 +7268,10 @@
       parentIdentifier: EO:EUM:DAT:MSG:MSG15-RSS
       metadata_mapping:
         <<: *orbit_zone_tile
+    MSG_LSA_FRM:
+      parentIdentifier: EO:EUM:DAT:0398
+      metadata_mapping:
+        <<: *orbit_zone_tile
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
