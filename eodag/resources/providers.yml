@@ -7242,44 +7242,24 @@
     # MSG
     MSG_CLM:
       parentIdentifier: EO:EUM:DAT:MSG:CLM
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_CLM_IODC:
       parentIdentifier: EO:EUM:DAT:MSG:CLM-IODC
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_GSAL2R02:
       parentIdentifier: EO:EUM:DAT:0300
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_HRSEVIRI:
       parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_HRSEVIRI_IODC:
       parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI-IODC
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_RSS_CLM:
       parentIdentifier: EO:EUM:DAT:MSG:RSS-CLM
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_MSG15_RSS:
       parentIdentifier: EO:EUM:DAT:MSG:MSG15-RSS
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_LSA_FRM:
       parentIdentifier: EO:EUM:DAT:0398
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_LSA_LST_CDR:
       parentIdentifier: EO:EUM:DAT:0088
-      metadata_mapping:
-        <<: *orbit_zone_tile
     MSG_LSA_LSTDE:
       parentIdentifier: EO:EUM:DAT:0394
-      metadata_mapping:
-        <<: *orbit_zone_tile
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
