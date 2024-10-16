@@ -44,7 +44,7 @@ class AwsAuth(Authentication):
     :param config: Authentication plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): AwsAuth
-        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): (mandatory for creodias_s3)
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``) (mandatory for ``creodias_s3``):
           which error code is returned in case of an authentication error
 
     """

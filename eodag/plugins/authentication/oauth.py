@@ -28,7 +28,8 @@ if TYPE_CHECKING:
 class OAuth(Authentication):
     """OAuth authentication plugin
 
-    The mandatory parameters that have to be added in the eodag config are aws_access_key_id and aws_secret_access_key.
+    The mandatory parameters that have to be added in the eodag config are ``aws_access_key_id``
+    and ``aws_secret_access_key``.
 
     :param provider: provider name
     :param config: Authentication plugin configuration:
