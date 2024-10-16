@@ -44,8 +44,9 @@ logger = logging.getLogger("eodag.auth.openid_connect")
 class OIDCRefreshTokenBase(Authentication):
     """OIDC refresh token base class, to be used through specific OIDC flows plugins;
     Common mechanism to handle refresh token from all OIDC auth plugins;
-    Plugins inheriting from this base class must implement the methods _request_new_token and
-    _get_token_with_refresh_token. Depending oh the implementation of these methods they can have
+
+    Plugins inheriting from this base class must implement the methods ``_request_new_token()`` and
+    ``_get_token_with_refresh_token()``. Depending on the implementation of these methods they can have
     different configuration parameters.
 
     """
@@ -174,6 +175,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     adds an authentication layer on top of oauth 2.0. This plugin implements the
     `authorization code flow <http://openid.net/specs/openid-connect-core-1_0.html#Authentication>`_
     option of this specification.
+
     The particularity of this plugin is that it proceeds to a headless (not involving the user)
     interaction with the OpenID provider (if necessary) to authenticate a
     registered user with its username and password on the server and then granting to eodag the

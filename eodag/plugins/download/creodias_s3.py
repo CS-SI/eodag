@@ -25,7 +25,7 @@ from eodag.utils.exceptions import MisconfiguredError
 
 class CreodiasS3Download(AwsDownload):
     """
-    Download on creodias s3 from their VMs (extension of AwsDownload)
+    Download on creodias s3 from their VMs (extension of :class:`~eodag.plugins.download.aws.AwsDownload`)
 
     :param provider: provider name
     :param config: Download plugin configuration:

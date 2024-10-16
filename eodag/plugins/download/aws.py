@@ -224,7 +224,7 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure
           should be flattened; default: ``True``
         * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download
-          using downloadLink; default: ``False``
+          using ``downloadLink``; default: ``False``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should
           be verified in requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the
@@ -233,11 +233,11 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type
           specific config; the keys are the product types, the values are dictionaries which can contain the keys:
 
-            * **default_bucket** (``str``): bucket where the product type can be found
-            * **complementary_url_key** (``str``): keys to add additional urls
-            * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
-              be created; used for Sentinel products; default: False
-            * **fetch_metadata** (``Dict[str, Any]``): config for metadata to be fetched for the SAFE product
+          * **default_bucket** (``str``): bucket where the product type can be found
+          * **complementary_url_key** (``str``): keys to add additional urls
+          * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
+            be created; used for Sentinel products; default: False
+          * **fetch_metadata** (``Dict[str, Any]``): config for metadata to be fetched for the SAFE product
 
     """
 

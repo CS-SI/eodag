@@ -551,6 +551,9 @@ class PluginConfig(yaml.YAMLObject):
     authentication_uri_source: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: The callback url that will handle the code given by the OIDC provider
+    authentication_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The URL of the authentication backend of the OIDC provider
     redirect_uri: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: The authorization url of the server (where to query for grants)
@@ -564,6 +567,18 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: The data that will be passed with the POST request on the form 'action' URL
     user_consent_form_data: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Additional data to be passed to the login POST request
+    additional_login_form_data: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Key/value pairs of patterns/messages used for Authentication errors
+    exchange_url_error_pattern: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: A mapping between OIDC url query string and token handler query string params
+    token_exchange_params: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Refers to the name of the query param to be used in the query request
+    token_qs_key: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Way to pass the data to the POST request that is made to the token server
     token_exchange_post_data_method: str

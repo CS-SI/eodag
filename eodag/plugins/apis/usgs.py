@@ -74,8 +74,9 @@ class UsgsApi(Api):
     :param config: Api plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): UsgsApi
-        * :attr:`~eodag.config.PluginConfig.pagination` (``Dict[str, Any]``) (**mandatory**): dict
-          containing parameters for pagination; should contain the key ``total_items_nb_key_path``
+        * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
+          (**mandatory**): object containing parameters for pagination; should contain the attribute
+          :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path`
           which is indicating the key for the number of total items in the provider result
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
           should be verified in the download request; default: ``True``

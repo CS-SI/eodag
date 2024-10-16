@@ -45,8 +45,8 @@ class HttpQueryStringAuth(Authentication):
           given in the configuration
 
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
-    `http://example.com?foo=bar` will become
-    `http://example.com?foo=bar&apikey=XXX&otherkey=YYY` if associated to the following
+    ``http://example.com?foo=bar`` will become
+    ``http://example.com?foo=bar&apikey=XXX&otherkey=YYY`` if associated to the following
     configuration::
 
         provider:
@@ -64,7 +64,7 @@ class HttpQueryStringAuth(Authentication):
                 ...
             ...
 
-    If `auth_uri` is specified (optional), it will be used to check credentials through
+    If ``auth_uri`` is specified (optional), it will be used to check credentials through
     :meth:`~eodag.plugins.authentication.query_string.HttpQueryStringAuth.authenticate`
     """
 

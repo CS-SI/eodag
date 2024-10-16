@@ -55,7 +55,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
           client secret, set to null if no secret is used
         * :attr:`~eodag.config.PluginConfig.token_provision` (``str``) (**mandatory**): if the
           token should be added to the query string (``qs``) or to the header (``header``)
-        * :attr:`~eodag.config.PluginConfig.token_qs_key` (``str``): (mandatory if token_provision=qs)
+        * :attr:`~eodag.config.PluginConfig.token_qs_key` (``str``): (**mandatory if token_provision=qs**)
           key of the param added to the query string
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
           returned in case of an authentication error
@@ -63,8 +63,8 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
           should be verified in the token request; default: ``True``
 
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
-    `http://example.com?foo=bar` will become
-    `http://example.com?foo=bar&my-token=obtained-token` if associated to the following
+    ``http://example.com?foo=bar`` will become
+    ``http://example.com?foo=bar&my-token=obtained-token`` if associated to the following
     configuration::
 
         provider:
@@ -81,7 +81,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             ...
 
     If configured to send the token through the header, the download request header will
-    be updated with `Authorization: "Bearer obtained-token"` if associated to the
+    be updated with ``Authorization: "Bearer obtained-token"`` if associated to the
     following configuration::
 
         provider:
