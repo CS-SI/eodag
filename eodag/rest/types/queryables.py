@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -32,7 +32,6 @@ from pydantic import (
 from eodag.rest.types.eodag_search import EODAGSearch
 from eodag.rest.utils.rfc3339 import str_to_interval
 from eodag.types import python_field_definition_to_json
-from eodag.utils import Annotated
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo

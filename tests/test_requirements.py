@@ -20,6 +20,7 @@ import ast
 import configparser
 import os
 import re
+import sys
 import unittest
 from typing import Any, Dict, Iterator, Set
 
@@ -136,7 +137,12 @@ class TestRequirements(unittest.TestCase):
         setup_requires = get_setup_requires(setup_cfg_path)
         setup_requires.update(get_optional_dependencies(setup_cfg_path, "all"))
         import_required_dict = importlib_metadata.packages_distributions()
-        default_libs = stdlib_list()
+        try:
+            default_libs = stdlib_list()
+        except FileNotFoundError:
+            # python version might not be supported by `stdlib_list`
+            # Since python3.10, we can use `sys.stdlib_module_names` instead
+            default_libs = list(sys.stdlib_module_names)
 
         missing_imports = []
         for project_import in project_imports:

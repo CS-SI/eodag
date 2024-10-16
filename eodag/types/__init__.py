@@ -18,13 +18,25 @@
 """EODAG types"""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from annotated_types import Gt, Lt
 from pydantic import Field
 from pydantic.fields import FieldInfo
 
-from eodag.utils import Annotated, copy_deepcopy, get_args, get_origin
+from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
 
 # Types mapping from JSON Schema and OpenAPI 3.1.0 specifications to Python
@@ -183,7 +195,7 @@ def python_field_definition_to_json(
     """Get json field definition from python `typing.Annotated`
 
     >>> from pydantic import Field
-    >>> from eodag.utils import Annotated
+    >>> from typing import Annotated
     >>> python_field_definition_to_json(
     ...     Annotated[
     ...         Optional[str],

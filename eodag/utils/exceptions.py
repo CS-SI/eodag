@@ -17,12 +17,12 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from typing import Optional, Set
 
-    from typing_extensions import Annotated, Doc
+    from typing_extensions import Doc
 
 
 class EodagError(Exception):

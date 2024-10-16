@@ -17,7 +17,7 @@
 # limitations under the License.
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Annotated, Any, Dict, List, Optional, Tuple, Union, cast
 
 from annotated_types import MinLen
 from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
@@ -27,7 +27,7 @@ from shapely.geometry import Polygon, shape
 from shapely.geometry.base import GEOMETRY_TYPES, BaseGeometry
 
 from eodag.types.bbox import BBox
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, Annotated
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import ValidationError
 
 NumType = Union[float, int]

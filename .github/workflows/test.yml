@@ -19,10 +19,10 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.9
       uses: actions/setup-python@v5
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Get pip cache dir
@@ -48,7 +48,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8, "3.12"]
+        python-version: [3.9, "3.13"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo
@@ -110,7 +110,7 @@ jobs:
       uses: insightsengineering/coverage-action@v2
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.12-ubuntu-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.13-ubuntu-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -140,7 +140,7 @@ jobs:
       uses: insightsengineering/coverage-action@v2
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.12-windows-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.13-windows-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -175,10 +175,10 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.9
       uses: actions/setup-python@v5
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Get pip cache dir
@@ -213,10 +213,10 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
+    - name: Set up Python 3.9
       uses: actions/setup-python@v5
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Get pip cache dir

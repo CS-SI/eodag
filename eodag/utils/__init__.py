@@ -79,11 +79,6 @@ from urllib.parse import (  # noqa; noqa
 )
 from urllib.request import url2pathname
 
-if sys.version_info >= (3, 9):
-    from typing import Annotated, get_args, get_origin  # noqa
-else:
-    from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
-
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:

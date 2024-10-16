@@ -24,7 +24,18 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import geojson
 import pkg_resources
@@ -102,7 +113,7 @@ if TYPE_CHECKING:
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback, Unpack
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.core")
 

@@ -20,7 +20,18 @@ from __future__ import annotations
 import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    cast,
+    get_args,
+)
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -30,7 +41,6 @@ from dateutil.tz import tzutc
 from jsonpath_ng import Child, Fields, Root
 from pydantic import create_model
 from pydantic.fields import FieldInfo
-from typing_extensions import get_args
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -48,7 +58,6 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
-    Annotated,
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
