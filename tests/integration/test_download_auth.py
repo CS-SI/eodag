@@ -81,7 +81,10 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         with self.assertRaises(MisconfiguredError):
             self.eodag.download_all(products)
 
-    def test_eodag_download_missing_credentials_creodias(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get", autospec=True
+    )
+    def test_eodag_download_missing_credentials_creodias(self, mock_requests):
         search_resuls = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_creodias.geojson"
         )
