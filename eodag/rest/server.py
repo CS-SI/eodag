@@ -121,6 +121,17 @@ stac_api_config = load_stac_api_config()
 
 
 @router.api_route(
+    methods=["GET", "HEAD"],
+    path="/_mgmt/ping",
+    include_in_schema=False,
+    status_code=200,
+)
+async def liveness_probe(request: Request) -> Dict[str, bool]:
+    "Endpoint meant to be used as liveness probe by deployment platforms"
+    return {"success": True}
+
+
+@router.api_route(
     methods=["GET", "HEAD"], path="/api", tags=["Capabilities"], include_in_schema=False
 )
 async def eodag_openapi(request: Request) -> Dict[str, Any]:
