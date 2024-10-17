@@ -31,6 +31,7 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `cop_ads <https://ads.atmosphere.copernicus.eu>`_,
       `cop_cds <https://cds.climate.copernicus.eu>`_,
       `cop_dataspace <https://dataspace.copernicus.eu/>`_,
+      `cop_ewds <https://ewds.climate.copernicus.eu>`_,
       `cop_marine <https://marine.copernicus.eu>`_,
       `creodias <https://creodias.eu/>`_,
       `creodias_s3 <https://creodias.eu/>`_,
