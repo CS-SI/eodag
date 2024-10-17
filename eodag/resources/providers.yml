@@ -1599,7 +1599,7 @@
         startTimeFromAscendingNode: properties.datetime
         creationDate: properties.created
     metadata_mapping:
-      # redefine the following mapppings as the provider does not support advanced queries/filtering,
+      # redefine the following mappings as the provider does not support advanced queries/filtering,
       # these parameters will not be queryable
       doi: '$.properties."sci:doi"'
       processingLevel: '$.properties."processing:level"'

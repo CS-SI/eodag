@@ -251,6 +251,8 @@ intersphinx_mapping = {
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
 }
 
+suppress_warnings = ["misc.copy_overwrite"]
+
 
 def _build_finished(app, exception):
     """Post-build pages edit"""

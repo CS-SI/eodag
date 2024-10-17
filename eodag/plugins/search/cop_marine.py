@@ -109,7 +109,21 @@ def _check_int_values_properties(properties: Dict[str, Any]):
 
 
 class CopMarineSearch(StaticStacSearch):
-    """class that implements search for the Copernicus Marine provider"""
+    """class that implements search for the Copernicus Marine provider
+
+    It calls :meth:`~eodag.plugins.search.static_stac_search.StaticStacSearch.discover_product_types`
+    inherited from :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+    but for the actual search a special method which fetches the urls of the available products from an S3 storage and
+    filters them has been written.
+
+    The configuration parameters are inherited from the parent and grand-parent classes. The
+    :attr:`~eodag.config.PluginConfig.DiscoverMetadata.auto_discovery` parameter in the
+    :attr:`~eodag.config.PluginConfig.discover_metadata` section has to be set to ``false`` and the
+    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` in the
+    :attr:`~eodag.config.PluginConfig.discover_queryables` queryables section has to be set to ``null`` to
+    overwrite the default config from the stac provider configuration because those functionalities
+    are not available.
+    """
 
     def __init__(self, provider: str, config: PluginConfig):
         original_metadata_mapping = copy.deepcopy(config.metadata_mapping)
@@ -122,12 +136,10 @@ class CopMarineSearch(StaticStacSearch):
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
-        fetch_url = cast(
-            str,
-            self.config.discover_product_types["fetch_url"].format(
-                **self.config.__dict__
-            ),
+        fetch_url = cast(str, self.config.discover_product_types["fetch_url"]).format(
+            **self.config.__dict__
         )
+
         logger.debug("fetch data for collection %s", product_type)
         provider_product_type = self.config.products.get(product_type, {}).get(
             "productType", None

@@ -41,7 +41,29 @@ logger = logging.getLogger("eodag.authentication.token")
 
 
 class TokenAuth(Authentication):
-    """TokenAuth authentication plugin"""
+    """TokenAuth authentication plugin - fetches a token which is added to search/download requests
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): TokenAuth
+        * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``) (**mandatory**): url used to fetch
+          the access token with user/password
+        * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
+          access token with a refresh token
+        * :attr:`~eodag.config.PluginConfig.token_type` (``str``): type of the token (``json``
+          or ``text``); default: ``text``
+        * :attr:`~eodag.config.PluginConfig.token_key` (``str``): (mandatory if token_type=json)
+          key to get the access token in the response to the token request
+        * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): key to get the refresh
+          token in the response to the token request
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
+          should be verified in the requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
+          returned in case of an authentication error
+        * :attr:`~eodag.config.PluginConfig.req_data` (``Dict[str, Any]``): if the credentials
+          should be sent as data in the post request, the json structure can be given in this parameter
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(TokenAuth, self).__init__(provider, config)

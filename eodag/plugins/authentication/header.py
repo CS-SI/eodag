@@ -34,7 +34,14 @@ class HTTPHeaderAuth(Authentication):
     This plugin enables implementation of custom HTTP authentication scheme (other than Basic, Digest, Token
     negotiation et al.) using HTTP headers.
 
-    The plugin is configured as follows in the providers config file::
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): HTTPHeaderAuth
+        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``): dictionary containing
+          all keys/value pairs that should be added to the headers
+
+    Below an example for the configuration in the providers config file is shown::
 
         provider:
             ...
@@ -47,9 +54,9 @@ class HTTPHeaderAuth(Authentication):
                 ...
             ...
 
-    As you can see in the sample above, the maintainer of `provider` define the headers that will be used in the
-    authentication process as-is, by giving their names (e.g. `Authorization`) and their value (e.g
-    `"Something {userinput}"`) as regular Python string templates that enable passing in the user input necessary to
+    As you can see in the sample above, the maintainer of ``provider`` define the headers that will be used in the
+    authentication process as-is, by giving their names (e.g. ``Authorization``) and their value (e.g
+    ``"Something {userinput}"``) as regular Python string templates that enable passing in the user input necessary to
     compute its identity. The user input awaited in the header value string must be present in the user config file.
     In the sample above, the plugin await for user credentials to be specified as::
 
@@ -72,6 +79,7 @@ class HTTPHeaderAuth(Authentication):
                     X-Another-Special-Header: "YYY"
                 ...
             ...
+
     """
 
     def authenticate(self) -> HeaderAuth:

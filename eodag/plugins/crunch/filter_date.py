@@ -37,10 +37,12 @@ logger = logging.getLogger("eodag.crunch.date")
 class FilterDate(Crunch):
     """FilterDate cruncher: filter products by date
 
-    :param config: Crunch configuration, may contain :
+    The Crunch configuration, may contain :
 
-                   - `start`: (optional) start sensing time in iso format
-                   - `end`: (optional) end sensing time in iso format
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.start` (``str``): start sensing time in iso format
+        * :attr:`~eodag.config.PluginConfig.end` (``str``): end sensing time in iso format
     """
 
     @staticmethod

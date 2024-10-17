@@ -41,11 +41,30 @@ logger = logging.getLogger("eodag.auth.keycloak")
 class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """Authentication plugin using Keycloak and OpenId Connect.
 
-    This plugin request a token and use it through a query-string or a header.
+    This plugin requests a token which is added to a query-string or a header for authentication.
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): KeycloakOIDCPasswordAuth
+        * :attr:`~eodag.config.PluginConfig.auth_base_uri` (``str``) (**mandatory**): base url
+          used in the request to fetch the token
+        * :attr:`~eodag.config.PluginConfig.realm` (``str``) (**mandatory**): keycloak realm
+        * :attr:`~eodag.config.PluginConfig.client_id` (``str``) (**mandatory**): keycloak client id
+        * :attr:`~eodag.config.PluginConfig.client_secret` (``str``) (**mandatory**): keycloak
+          client secret, set to null if no secret is used
+        * :attr:`~eodag.config.PluginConfig.token_provision` (``str``) (**mandatory**): if the
+          token should be added to the query string (``qs``) or to the header (``header``)
+        * :attr:`~eodag.config.PluginConfig.token_qs_key` (``str``): (**mandatory if token_provision=qs**)
+          key of the param added to the query string
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
+          returned in case of an authentication error
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
+          should be verified in the token request; default: ``True``
 
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
-    `http://example.com?foo=bar` will become
-    `http://example.com?foo=bar&my-token=obtained-token` if associated to the following
+    ``http://example.com?foo=bar`` will become
+    ``http://example.com?foo=bar&my-token=obtained-token`` if associated to the following
     configuration::
 
         provider:
@@ -62,7 +81,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             ...
 
     If configured to send the token through the header, the download request header will
-    be updated with `Authorization: "Bearer obtained-token"` if associated to the
+    be updated with ``Authorization: "Bearer obtained-token"`` if associated to the
     following configuration::
 
         provider:
