@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from unittest import mock
 
 import geojson
@@ -95,12 +95,11 @@ class StaticStacSearch(StacSearch):
 
         :returns: configuration dict containing fetched product types information
         """
-        fetch_url = cast(
-            str,
-            self.config.discover_product_types["fetch_url"].format(
-                **self.config.__dict__
-            ),
-        )
+        unformatted_fetch_url = self.config.discover_product_types.get("fetch_url")
+        if unformatted_fetch_url is None:
+            return None
+
+        fetch_url = unformatted_fetch_url.format(**self.config.__dict__)
         collections = fetch_stac_collections(
             fetch_url,
             collection=kwargs.get("q"),

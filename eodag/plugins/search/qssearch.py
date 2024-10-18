@@ -421,9 +421,12 @@ class QueryStringSearch(Search):
             prep = PreparedSearch()
 
             # url from discover_product_types() or conf
-            fetch_url = kwargs.get("fetch_url") or self.config.discover_product_types[
-                "fetch_url"
-            ].format(**self.config.__dict__)
+            fetch_url = kwargs.get("fetch_url")
+            if fetch_url is None:
+                if fetch_url := self.config.discover_product_types.get("fetch_url"):
+                    fetch_url = fetch_url.format(**self.config.__dict__)
+                else:
+                    return None
             prep.url = cast(str, fetch_url)
 
             # get auth if available
@@ -473,12 +476,14 @@ class QueryStringSearch(Search):
                 if self.config.discover_product_types["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json
-                    result = [
-                        match.value
-                        for match in self.config.discover_product_types[
-                            "results_entry"
-                        ].find(resp_as_json)
-                    ]
+                    results_entry = self.config.discover_product_types["results_entry"]
+                    if not isinstance(results_entry, JSONPath):
+                        logger.warning(
+                            f"Could not parse {self.provider} discover_product_types.results_entry"
+                            f" as JSONPath: {results_entry}"
+                        )
+                        return None
+                    result = [match.value for match in results_entry.find(resp_as_json)]
                     if result and isinstance(result[0], list):
                         result = result[0]
 
