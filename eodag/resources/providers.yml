@@ -6243,36 +6243,60 @@
         <<: *orderable_mm
     UERRA_EUROPE_SL:
       productType: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     GRIDDED_GLACIERS_MASS_CHANGE:
-      productType: EO.ECMWF.DAT.GLACIERS_ELEVATION_AND_MASS_CHANGE_DATA_1850_PRESENT
+      productType: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
+      metadata_mapping:
+        <<: *orderable_mm
     GLACIERS_DIST_RANDOLPH:
       productType: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_CARBON_DIOXIDE:
       productType: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_METHANE:
       productType: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_POSTPROCESSED_PL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
-    SATELLITE_SEA_LEVEL_BLACK_SEA:
-      productType: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_BLACK_SEA_1993_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_SEA_LEVEL_GLOBAL:
       productType: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
-    SATELLITE_SEA_LEVEL_MEDITERRANEAN:
-      productType: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_MEDITERRANEAN_SEA_1993_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_SEA_ICE_EDGE_TYPE:
       productType: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_POSTPROCESSED_SL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_ORIGINAL_SL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_ORIGINAL_PL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_MONTHLY_PL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_MONTHLY_SL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SIS_HYDRO_MET_PROJ:
       productType: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
+      metadata_mapping:
+        <<: *orderable_mm
     # ECMWF - CEMS
     FIRE_HISTORICAL:
       productType: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
