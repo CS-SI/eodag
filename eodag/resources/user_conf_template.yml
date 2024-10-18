@@ -266,3 +266,10 @@ cop_marine:
     download:
         extract:
         output_dir:
+cop_ewds:
+    priority: # Lower value means lower priority (Default: 0)
+    download:
+        output_dir:
+    auth:
+        credentials:
+            apikey:
