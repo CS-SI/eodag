@@ -1561,7 +1561,7 @@ class EODataAccessGateway:
             try:
                 product_type = self.get_product_type_from_alias(product_type)
             except NoMatchingProductType:
-                logger.warning("product type %s not found", product_type)
+                logger.debug("product type %s not found", product_type)
         get_search_plugins_kwargs = dict(provider=provider, product_type=product_type)
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
@@ -1929,7 +1929,7 @@ class EODataAccessGateway:
                             eo_product.product_type
                         )
                 except NoMatchingProductType:
-                    logger.warning("product type %s not found", eo_product.product_type)
+                    logger.debug("product type %s not found", eo_product.product_type)
 
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(

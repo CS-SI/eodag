@@ -263,6 +263,37 @@ class PluginConfig(yaml.YAMLObject):
         #: Path to the metadata in search result
         metadata_path: str
 
+    class DiscoverProductTypes(TypedDict, total=False):
+        """Configuration for product types discovery"""
+
+        #: URL from which the product types can be fetched
+        fetch_url: Optional[str]
+        #: HTTP method used to fetch product types
+        fetch_method: str
+        #: Request body to fetch product types using POST method
+        fetch_body: Dict[str, Any]
+        #: The f-string template for pagination requests.
+        next_page_url_tpl: str
+        #: Index of the starting page for pagination requests.
+        start_page: int
+        #: Type of the provider result
+        result_type: str
+        #: JsonPath to the list of product types
+        results_entry: Union[JSONPath, str]
+        #: Mapping for the product type id
+        generic_product_type_id: str
+        #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: result
+        generic_product_type_parsable_metadata: Dict[str, str]
+        #: Mapping for product type properties which can be parsed from the result that are not product type metadata
+        generic_product_type_parsable_properties: Dict[str, str]
+        #: URL to fetch data for a single collection
+        single_collection_fetch_url: str
+        #: Query string to be added to the fetch_url to filter for a collection
+        single_collection_fetch_qs: str
+        #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url
+        single_product_type_parsable_metadata: Dict[str, str]
+
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
 
@@ -365,7 +396,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
-    discover_product_types: Dict[str, Any]
+    discover_product_types: DiscoverProductTypes
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: Dict[str, Any]
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata

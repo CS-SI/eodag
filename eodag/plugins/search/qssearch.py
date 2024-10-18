@@ -366,15 +366,68 @@ class QueryStringSearch(Search):
 
         :returns: configuration dict containing fetched product types information
         """
+        unpaginated_fetch_url = self.config.discover_product_types.get("fetch_url")
+        if not unpaginated_fetch_url:
+            return None
+
+        # product types pagination
+        next_page_url_tpl = self.config.discover_product_types.get("next_page_url_tpl")
+        page = self.config.discover_product_types.get("start_page", 1)
+
+        if not next_page_url_tpl:
+            # no pagination
+            return self.discover_product_types_per_page(**kwargs)
+
+        conf_update_dict: Dict[str, Any] = {
+            "providers_config": {},
+            "product_types_config": {},
+        }
+
+        while True:
+            fetch_url = next_page_url_tpl.format(url=unpaginated_fetch_url, page=page)
+
+            conf_update_dict_per_page = self.discover_product_types_per_page(
+                fetch_url=fetch_url, **kwargs
+            )
+
+            if (
+                not conf_update_dict_per_page
+                or not conf_update_dict_per_page.get("providers_config")
+                or conf_update_dict_per_page.items() <= conf_update_dict.items()
+            ):
+                # conf_update_dict_per_page is empty or a subset on existing conf
+                break
+            else:
+                conf_update_dict["providers_config"].update(
+                    conf_update_dict_per_page["providers_config"]
+                )
+                conf_update_dict["product_types_config"].update(
+                    conf_update_dict_per_page["product_types_config"]
+                )
+
+            page += 1
+
+        return conf_update_dict
+
+    def discover_product_types_per_page(
+        self, **kwargs: Any
+    ) -> Optional[Dict[str, Any]]:
+        """Fetch product types list from provider using `discover_product_types` conf
+        using paginated ``kwargs["fetch_url"]``
+
+        :returns: configuration dict containing fetched product types information
+        """
         try:
             prep = PreparedSearch()
 
-            prep.url = cast(
-                str,
-                self.config.discover_product_types["fetch_url"].format(
-                    **self.config.__dict__
-                ),
-            )
+            # url from discover_product_types() or conf
+            fetch_url = kwargs.get("fetch_url")
+            if fetch_url is None:
+                if fetch_url := self.config.discover_product_types.get("fetch_url"):
+                    fetch_url = fetch_url.format(**self.config.__dict__)
+                else:
+                    return None
+            prep.url = cast(str, fetch_url)
 
             # get auth if available
             if "auth" in kwargs:
@@ -404,7 +457,14 @@ class QueryStringSearch(Search):
                 "Skipping error while fetching product types for " "{} {} instance:"
             ).format(self.provider, self.__class__.__name__)
 
-            response = QueryStringSearch._request(self, prep)
+            # Query using appropriate method
+            fetch_method = self.config.discover_product_types.get("fetch_method", "GET")
+            fetch_body = self.config.discover_product_types.get("fetch_body", {})
+            if fetch_method == "POST" and isinstance(self, PostJsonSearch):
+                prep.query_params = fetch_body
+                response = self._request(prep)
+            else:
+                response = QueryStringSearch._request(self, prep)
         except (RequestError, KeyError, AttributeError):
             return None
         else:
@@ -416,12 +476,14 @@ class QueryStringSearch(Search):
                 if self.config.discover_product_types["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json
-                    result = [
-                        match.value
-                        for match in self.config.discover_product_types[
-                            "results_entry"
-                        ].find(resp_as_json)
-                    ]
+                    results_entry = self.config.discover_product_types["results_entry"]
+                    if not isinstance(results_entry, JSONPath):
+                        logger.warning(
+                            f"Could not parse {self.provider} discover_product_types.results_entry"
+                            f" as JSONPath: {results_entry}"
+                        )
+                        return None
+                    result = [match.value for match in results_entry.find(resp_as_json)]
                     if result and isinstance(result[0], list):
                         result = result[0]
 
