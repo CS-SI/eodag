@@ -6219,16 +6219,28 @@
     # ECMWF - COPERNICUS CDS
     ERA5_SL:
       productType: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_SL_MONTHLY:
       productType: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_PL:
       productType: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_PL_MONTHLY:
       productType: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_LAND:
       productType: EO.ECMWF.DAT.ERA5_LAND_HOURLY
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_LAND_MONTHLY:
       productType: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
+      metadata_mapping:
+        <<: *orderable_mm
     UERRA_EUROPE_SL:
       productType: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
     GRIDDED_GLACIERS_MASS_CHANGE:
