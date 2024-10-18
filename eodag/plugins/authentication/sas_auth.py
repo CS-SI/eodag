@@ -85,7 +85,24 @@ class RequestsSASAuth(AuthBase):
 
 
 class SASAuth(Authentication):
-    """SASAuth authentication plugin"""
+    """SASAuth authentication plugin
+
+    An apiKey that is added in the headers can be given in the credentials in the config file.
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): SASAuth
+        * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``) (**mandatory**): url used to
+          get the signed url
+        * :attr:`~eodag.config.PluginConfig.signed_url_key` (``str``) (**mandatory**): key to
+          get the signed url
+        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``) (**mandatory if
+          apiKey is used**): headers to be added to the requests
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be
+          verified in the requests; default: ``True``
+
+    """
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""

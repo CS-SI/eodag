@@ -36,9 +36,17 @@ class HttpQueryStringAuth(Authentication):
     """An Authentication plugin using HTTP query string parameters.
 
     This plugin sends credentials as query-string parameters.
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): HttpQueryStringAuth
+        * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``): used to check the credentials
+          given in the configuration
+
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
-    `http://example.com?foo=bar` will become
-    `http://example.com?foo=bar&apikey=XXX&otherkey=YYY` if associated to the following
+    ``http://example.com?foo=bar`` will become
+    ``http://example.com?foo=bar&apikey=XXX&otherkey=YYY`` if associated to the following
     configuration::
 
         provider:
@@ -56,7 +64,7 @@ class HttpQueryStringAuth(Authentication):
                 ...
             ...
 
-    If `auth_uri` is specified (optional), it will be used to check credentials through
+    If ``auth_uri`` is specified (optional), it will be used to check credentials through
     :meth:`~eodag.plugins.authentication.query_string.HttpQueryStringAuth.authenticate`
     """
 

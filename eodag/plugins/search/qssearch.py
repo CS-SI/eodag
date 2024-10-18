@@ -110,98 +110,171 @@ logger = logging.getLogger("eodag.search.qssearch")
 
 class QueryStringSearch(Search):
     """A plugin that helps implementing any kind of search protocol that relies on
-    query strings (e.g: opensearch).
+    query strings (e.g: opensearch). Most of the other search plugins inherit from this plugin.
 
-    The available configuration parameters for this kind of plugin are:
+    :param provider: provider name
+    :param config: Search plugin configuration:
 
-        - **result_type**: (optional) One of "json" or "xml", depending on the
-          representation of the provider's search results. The default is "json"
+        * :attr:`~eodag.config.PluginConfig.result_type` (``str``): One of ``json`` or ``xml``, depending on the
+          representation of the provider's search results. The default is ``json``.
+        * :attr:`~eodag.config.PluginConfig.results_entry` (``str``) (**mandatory**): The name of the key in the
+          provider search result that gives access to the result entries
+        * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): The endpoint of the provider's
+          search interface
+        * :attr:`~eodag.config.PluginConfig.need_auth` (``bool``): if authentication is needed for the search request;
+          default: ``False``
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
+          authentication error; only used if ``need_auth=true``
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
+          requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.dont_quote` (``List[str]``): characters that should not be quoted in the
+          url params
+        * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
+          default: ``5``
+        * :attr:`~eodag.config.PluginConfig.literal_search_params` (``Dict[str, str]``): A mapping of (search_param =>
+          search_value) pairs giving search parameters to be passed as is in the search url query string. This is useful
+          for example in situations where the user wants to add a fixed search query parameter exactly
+          as it is done on the provider interface.
+        * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
+          (**mandatory**): The configuration of how the pagination is done on the provider. It is a tree with the
+          following nodes:
 
-        - **results_entry**: (mandatory) The name of the key in the provider search
-          result that gives access to the result entries
+          * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` (``str``) (**mandatory**): The template for
+            pagination requests. This is a simple Python format string which will be resolved using the following
+            keywords: ``url`` (the base url of the search endpoint), ``search`` (the query string corresponding
+            to the search request), ``items_per_page`` (the number of items to return per page),
+            ``skip`` (the number of items to skip) or ``skip_base_1`` (the number of items to skip,
+            starting from 1) and ``page`` (which page to return).
+          * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
+            leading to the total number of results satisfying a request. This is used for providers which provides the
+            total results metadata along with the result of the query and don't have an endpoint for querying
+            the number of items satisfying a request, or for providers for which the count endpoint
+            returns a json or xml document
+          * :attr:`~eodag.config.PluginConfig.Pagination.count_endpoint` (``str``): The endpoint for counting the number
+            of items satisfying a request
+          * :attr:`~eodag.config.PluginConfig.Pagination.count_tpl` (``str``): template for the count parameter that
+            should be added to the search request
+          * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_key_path` (``str``): A JsonPath expression used
+            to retrieve the URL of the next page in the response of the current page.
+          * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items per
+            page that the provider can handle; default: ``50``
+          * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the first page; default: ``1``
 
-        - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
+        * :attr:`~eodag.config.PluginConfig.discover_product_types`
+          (:class:`~eodag.config.PluginConfig.DiscoverProductTypes`): configuration for product type discovery based on
+          information from the provider; It contains the keys:
 
-        - **literal_search_params**: (optional) A mapping of (search_param =>
-          search_value) pairs giving search parameters to be passed as is in the search
-          url query string. This is useful for example in situations where the user wants
-          to pass-in a search query as it is done on the provider interface. In such a case,
-          the user can put in his configuration file the query he needs to pass to the provider.
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` (``str``) (**mandatory**): url from which
+            the product types can be fetched
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.result_type` (``str``): type of the provider result;
+            currently only ``json`` is supported (other types could be used in an extension of this plugin)
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.results_entry` (``str``) (**mandatory**): json path
+            to the list of product types
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_id` (``str``): mapping for the
+            product type id
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_metadata`
+            (``Dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
+            from the provider result
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_properties`
+            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result that are not
+            product type metadata
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url` (``str``): url to fetch
+            data for a single collection; used if product type metadata is not available from the endpoint given in
+            :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url`
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_qs` (``str``): query string
+            to be added to the :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` to filter for a
+            collection
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_product_type_parsable_metadata`
+            (``Dict[str, str]``): mapping for product type metadata returned by the endpoint given in
+            :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url`.
 
-        - **pagination**: (mandatory) The configuration of how the pagination is done
-          on the provider. It is a tree with the following nodes:
+        * :attr:`~eodag.config.PluginConfig.sort` (:class:`~eodag.config.PluginConfig.Sort`): configuration for sorting
+          the results. It contains the keys:
 
-          - *next_page_url_tpl*: The template for pagination requests. This is a simple
-            Python format string which will be resolved using the following keywords:
-            ``url`` (the base url of the search endpoint), ``search`` (the query string
-            corresponding to the search request), ``items_per_page`` (the number of
-            items to return per page), ``skip`` (the number of items to skip) or
-            ``skip_base_1`` (the number of items to skip, starting from 1) and
-            ``page`` (which page to return).
+          * :attr:`~eodag.config.PluginConfig.Sort.sort_by_default` (``List[Tuple(str, Literal["ASC", "DESC"])]``):
+            parameter and sort order by which the result will be sorted by default (if the user does not enter a
+            ``sort_by`` parameter); if not given the result will use the default sorting of the provider; Attention:
+            for some providers sorting might cause a timeout if no filters are used. In that case no default
+            sort parameters should be given. The format is::
 
-          - *total_items_nb_key_path*: (optional) An XPath or JsonPath leading to the
-            total number of results satisfying a request. This is used for providers
-            which provides the total results metadata along with the result of the
-            query and don't have an endpoint for querying the number of items
-            satisfying a request, or for providers for which the count endpoint returns
-            a json or xml document
+                  sort_by_default:
+                      - !!python/tuple [<param>, <sort order> (ASC or DESC)]
 
-          - *count_endpoint*: (optional) The endpoint for counting the number of items
-            satisfying a request
+          * :attr:`~eodag.config.PluginConfig.Sort.sort_by_tpl` (``str``): template for the sort parameter that is added
+            to the request; It contains the parameters `sort_param` and `sort_order` which will be replaced by user
+            input or default value. If the parameters are added as query params to a GET request, the string
+            should start with ``&``, otherwise it should be a valid json string surrounded by ``{{ }}``.
+          * :attr:`~eodag.config.PluginConfig.Sort.sort_param_mapping` (``Dict [str, str]``): mapping for the parameters
+            available for sorting
+          * :attr:`~eodag.config.PluginConfig.Sort.sort_order_mapping`
+            (``Dict[Literal["ascending", "descending"], str]``): mapping for the sort order
+          * :attr:`~eodag.config.PluginConfig.Sort.max_sort_params` (``int``): maximum number of sort parameters
+            supported by the provider; used to validate the user input to avoid failed requests or unexpected behaviour
+            (not all parameters are used in the request)
 
-          - *next_page_url_key_path*: (optional) A JSONPATH expression used to retrieve
-            the URL of the next page in the response of the current page.
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Any]``): The search plugins of this kind can
+          detect when a metadata mapping is "query-able", and get the semantics of how to format the query string
+          parameter that enables to make a query on the corresponding metadata. To make a metadata query-able,
+          just configure it in the metadata mapping to be a list of 2 items, the first one being the
+          specification of the query string search formatting. The later is a string following the
+          specification of Python string formatting, with a special behaviour added to it. For example,
+          an entry in the metadata mapping of this kind::
 
-        - **free_text_search_operations**: (optional) A tree structure of the form::
+                completionTimeFromAscendingNode:
+                    - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
+                    - '$.properties.acquisition.endViewingDate'
 
-            # noqa: E800
-            <search-param>:     # e.g: $search
-                union: # how to join the operations below (e.g: ' AND ' -->
-                       # '(op1 AND op2) AND (op3 OR op4)')
-                wrapper: # a pattern for how each operation will be wrapped
-                         # (e.g: '({})' --> '(op1 AND op2)')
-                operations:     # The operations to build
-                  <opname>:     # e.g: AND
-                    - <op1>    # e.g:
-                               # 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
-                    - <op2>    # e.g:
-                        # 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
-                    ...
-                  ...
-            ...
+          means that the search url will have a query string parameter named ``f`` with a value of
+          ``acquisition.endViewingDate:lte:1543922280.0`` if the search was done with the value
+          of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
+          ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
+          of ``completionTimeFromAscendingNode``. This example shows all there is to know about the
+          semantics of the query string formatting introduced by this plugin: any eodag search parameter
+          can be referenced in the query string with an additional optional conversion function that
+          is separated from it by a ``#`` (see :func:`~eodag.api.product.metadata_mapping.format_metadata` for further
+          details on the available converters). Note that for the values in the
+          :attr:`~eodag.config.PluginConfig.free_text_search_operations` configuration parameter follow the same rule.
+          If the metadata_mapping is not a list but only a string, this means that the parameters is not queryable but
+          it is included in the result obtained from the provider. The string indicates how the provider result should
+          be mapped to the eodag parameter.
+        * :attr:`~eodag.config.PluginConfig.discover_metadata` (:class:`~eodag.config.PluginConfig.DiscoverMetadata`):
+          configuration for the auto-discovery of queryable parameters as well as parameters returned by the provider
+          which are not in the metadata mapping. It has the attributes:
 
-          With the structure above, each operation will become a string of the form:
-          '(<op1> <opname> <op2>)', then the operations will be joined together using
-          the union string and finally if the number of operations is greater than 1,
-          they will be wrapped as specified by the wrapper config key.
+          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.auto_discovery` (``bool``): if the automatic discovery of
+            metadata is activated; default: ``False``; if false, the other parameters are not used;
+          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.metadata_pattern` (``str``): regex string a parameter in
+            the result should match so that is used
+          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``Union [str, Dict[str, Any]]``): format
+            to add a query param given by the user and not in the metadata mapping to the requests, 'metadata' will be
+            replaced by the search param; can be a string or a dict containing
+            :attr:`~eodag.config.PluginConfig.free_text_search_operations`
+            (see :class:`~eodag.plugins.search.qssearch.ODataV4Search`)
+          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.metadata_path` (``str``): path where the queryable
+            properties can be found in the provider result
 
-    The search plugins of this kind can detect when a metadata mapping is "query-able",
-    and get the semantics of how to format the query string parameter that enables to
-    make a query on the corresponding metadata. To make a metadata query-able, just
-    configure it in the metadata mapping to be a list of 2 items, the first one being
-    the specification of the query string search formatting. The later is a string
-    following the specification of Python string formatting, with a special behaviour
-    added to it. For example, an entry in the metadata mapping of this kind::
+        * :attr:`~eodag.config.PluginConfig.discover_queryables`
+          (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
+          provider queryables endpoint; It has the following keys:
 
-        completionTimeFromAscendingNode:
-            - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
-            - '$.properties.acquisition.endViewingDate'
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` (``str``): url to fetch the queryables valid
+            for all product types
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` (``str``): url to fetch the
+            queryables for a specific product type
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.result_type` (``str``): type of the result (currently
+            only ``json`` is used)
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.results_entry` (``str``): json path to retrieve the
+            queryables from the provider result
 
-    means that the search url will have a query string parameter named *"f"* with a
-    value of *"acquisition.endViewingDate:lte:1543922280.0"* if the search was done
-    with the value of ``completionTimeFromAscendingNode`` being
-    ``2018-12-04T12:18:00``. What happened is that
-    ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp
-    of the value of ``completionTimeFromAscendingNode``. This example shows all there
-    is to know about the semantics of the query string formatting introduced by this
-    plugin: any eodag search parameter can be referenced in the query string
-    with an additional optional conversion function that is separated from it by a
-    ``#`` (see :func:`~eodag.utils.format_metadata` for further details on the
-    available converters). Note that for the values in the
-    ``free_text_search_operations`` configuration parameter follow the same rule.
-
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
+        * :attr:`~eodag.config.PluginConfig.constraints_file_url` (``str``): url to fetch the constraints for a specific
+          product type, can be an http url or a path to a file; the constraints are used to build queryables
+        * :attr:`~eodag.config.PluginConfig.constraints_file_dataset_key` (``str``): key which is used in the eodag
+          configuration to map the eodag product type to the provider product type; default: ``dataset``
+        * :attr:`~eodag.config.PluginConfig.constraints_entry` (``str``): key in the json result where the constraints
+          can be found; if not given, it is assumed that the constraints are on top level of the result, i.e.
+          the result is an array of constraints
+        * :attr:`~eodag.config.PluginConfig.stop_without_constraints_entry_key` (``bool``): if true only a provider
+          result containing `constraints_entry` is accepted as valid and used to create constraints; default: ``False``
     """
 
     extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {
@@ -369,12 +442,10 @@ class QueryStringSearch(Search):
         try:
             prep = PreparedSearch()
 
-            prep.url = cast(
-                str,
-                self.config.discover_product_types["fetch_url"].format(
-                    **self.config.__dict__
-                ),
-            )
+            fetch_url = self.config.discover_product_types.get("fetch_url")
+            if fetch_url is None:
+                return None
+            prep.url = fetch_url.format(**self.config.__dict__)
 
             # get auth if available
             if "auth" in kwargs:
@@ -416,12 +487,14 @@ class QueryStringSearch(Search):
                 if self.config.discover_product_types["result_type"] == "json":
                     resp_as_json = response.json()
                     # extract results from response json
-                    result = [
-                        match.value
-                        for match in self.config.discover_product_types[
-                            "results_entry"
-                        ].find(resp_as_json)
-                    ]
+                    results_entry = self.config.discover_product_types["results_entry"]
+                    if not isinstance(results_entry, JSONPath):
+                        logger.warning(
+                            f"Could not parse {self.provider} discover_product_types.results_entry"
+                            f" as JSONPath: {results_entry}"
+                        )
+                        return None
+                    result = [match.value for match in results_entry.find(resp_as_json)]
                     if result and isinstance(result[0], list):
                         result = result[0]
 
@@ -1182,8 +1255,49 @@ class QueryStringSearch(Search):
 
 
 class ODataV4Search(QueryStringSearch):
-    """A specialisation of a QueryStringSearch that does a two step search to retrieve
-    all products metadata"""
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.QueryStringSearch` that does a two step search to
+    retrieve all products metadata. All configuration parameters of
+    :class:`~eodag.plugins.search.qssearch.QueryStringSearch` are also available for this plugin. In addition, the
+    following parameters can be configured:
+
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+      * :attr:`~eodag.config.PluginConfig.per_product_metadata_query` (``bool``): should be set to true if the metadata
+        is not given in the search result and a two step search has to be performed; default: false
+      * :attr:`~eodag.config.PluginConfig.metadata_pre_mapping` (:class:`~eodag.config.PluginConfig.MetadataPreMapping`)
+        : a dictionary which can be used to simplify further metadata extraction. For example, going from
+        ``$.Metadata[?(@.id="foo")].value`` to ``$.Metadata.foo.value``. It has the keys:
+
+        * :attr:`~eodag.config.PluginConfig.MetadataPreMapping.metadata_path` (``str``): json path of the metadata entry
+        * :attr:`~eodag.config.PluginConfig.MetadataPreMapping.metadata_path_id` (``str``): key to get the metadata id
+        * :attr:`~eodag.config.PluginConfig.MetadataPreMapping.metadata_path_value` (``str``): key to get the metadata
+          value
+
+      * :attr:`~eodag.config.PluginConfig.free_text_search_operations`: (optional) A tree structure of the form::
+
+          # noqa: E800
+          <search-param>:     # e.g: $search
+              union: # how to join the operations below (e.g: ' AND ' -->
+                  # '(op1 AND op2) AND (op3 OR op4)')
+              wrapper: # a pattern for how each operation will be wrapped
+                      # (e.g: '({})' --> '(op1 AND op2)')
+              operations:     # The operations to build
+              <opname>:     # e.g: AND
+                  - <op1>    # e.g:
+                          # 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+                  - <op2>    # e.g:
+                      # 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+                  ...
+              ...
+          ...
+
+        With the structure above, each operation will become a string of the form:
+        ``(<op1> <opname> <op2>)``, then the operations will be joined together using
+        the union string and finally if the number of operations is greater than 1,
+        they will be wrapped as specified by the wrapper config key.
+
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(ODataV4Search, self).__init__(provider, config)
@@ -1274,7 +1388,30 @@ class ODataV4Search(QueryStringSearch):
 
 
 class PostJsonSearch(QueryStringSearch):
-    """A specialisation of a QueryStringSearch that uses POST method"""
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.QueryStringSearch` that uses POST method
+
+    All configuration parameters available for :class:`~eodag.plugins.search.qssearch.QueryStringSearch`
+    are also available for PostJsonSearch. The mappings given in metadata_mapping are used to construct
+    a (json) body for the POST request that is sent to the provider. Due to the fact that we sent a POST request and
+    not a get request, the pagination configuration will look slightly different. It has the
+    following parameters:
+
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The additional parameters
+          needed to add pagination information to the search request. These parameters won't be
+          included in result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because
+          it will be passed to a :meth:`str.format` method before being loaded as json.
+        * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
+          leading to the total number of results satisfying a request. This is used for providers
+          which provides the total results metadata along with the result of the query and don't
+          have an endpoint for querying the number of items satisfying a request, or for providers
+          for which the count endpoint returns a json or xml document
+        * :attr:`~eodag.config.PluginConfig.Pagination.max_items_per_page` (``int``): The maximum number of items
+          per page that the provider can handle; default: ``50``
+
+    """
 
     def _get_default_end_date_from_start_date(
         self, start_datetime: str, product_type: str
@@ -1658,7 +1795,17 @@ class PostJsonSearch(QueryStringSearch):
 
 
 class StacSearch(PostJsonSearch):
-    """A specialisation of a QueryStringSearch that uses generic STAC configuration"""
+    """A specialisation of :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses generic
+    STAC configuration, it therefore has the same configuration parameters (those inherited
+    from :class:`~eodag.plugins.search.qssearch.QueryStringSearch`).
+    For providers using ``StacSearch`` default values are defined for most of the parameters
+    (see ``stac_provider.yml``). If some parameters are different for a specific provider, they
+    have to be overwritten. If certain functionalities are not available, their configuration
+    parameters have to be overwritten with ``null``. E.g. if there is no queryables endpoint,
+    the :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` and
+    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` in the
+    :attr:`~eodag.config.PluginConfig.discover_queryables` config have to be set to ``null``.
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         # backup results_entry overwritten by init
@@ -1740,6 +1887,8 @@ class StacSearch(PostJsonSearch):
                 if provider_product_type
                 else self.config.discover_queryables["fetch_url"]
             )
+            if unparsed_fetch_url is None:
+                return None
 
             fetch_url = unparsed_fetch_url.format(
                 provider_product_type=provider_product_type, **self.config.__dict__
@@ -1767,11 +1916,15 @@ class StacSearch(PostJsonSearch):
                 resp_as_json = response.json()
 
                 # extract results from response json
-                json_queryables = [
-                    match.value
-                    for match in self.config.discover_queryables["results_entry"].find(
-                        resp_as_json
+                results_entry = self.config.discover_queryables["results_entry"]
+                if not isinstance(results_entry, JSONPath):
+                    logger.warning(
+                        f"Could not parse {self.provider} discover_queryables.results_entry"
+                        f" as JSONPath: {results_entry}"
                     )
+                    return None
+                json_queryables = [
+                    match.value for match in results_entry.find(resp_as_json)
                 ][0]
 
             except KeyError as e:
@@ -1808,8 +1961,8 @@ class StacSearch(PostJsonSearch):
 
 
 class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
-    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that
-    uses generic STAC configuration for queryables.
+    """A specialisation of a :class:`~eodag.plugins.search.qssearch.PostJsonSearch` that uses
+    generic STAC configuration for queryables (inherited from :class:`~eodag.plugins.search.qssearch.StacSearch`).
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
