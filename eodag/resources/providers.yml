@@ -6323,26 +6323,48 @@
     # COPERNICUS ADS
     CAMS_GAC_FORECAST:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_FORECAST:
       productType: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GFE_GFAS:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_SOLAR_RADIATION:
       productType: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GREENHOUSE_INVERSION:
       productType: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EAC4_MONTHLY:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_RE:
       productType: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EAC4:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GRF_AUX:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GRF:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
     CAMS_GLOBAL_EMISSIONS:
