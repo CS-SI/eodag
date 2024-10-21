@@ -35,11 +35,9 @@ class FilterLatestByName(Crunch):
 
     Filter Search results to get only the latest product, based on the name of the product
 
-    The Crunch configuration must contain :
+    :param config: Crunch configuration, must contain :
 
-    :param config: Search plugin configuration:
-
-        * :attr:`~eodag.config.PluginConfig.name_pattern` (``str``) (**mandatory**): product name pattern
+        * ``name_pattern`` (``str``) (**mandatory**): product name pattern
     """
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")

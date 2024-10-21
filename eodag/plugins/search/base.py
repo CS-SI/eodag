@@ -57,9 +57,7 @@ class Search(PluginTopic):
     """Base Search Plugin.
 
     :param provider: An EODAG provider name
-    :type provider: str
     :param config: An EODAG plugin configuration
-    :type config: Dict[str, Any]
     """
 
     auth: Union[AuthBase, Dict[str, str]]
@@ -95,9 +93,9 @@ class Search(PluginTopic):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Implementation of how the products must be searched goes here.
 
-        This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)
-        which will be processed by a Download plugin (2) and the total number of products matching
-        the search criteria. If ``prep.count`` is False, the second element returned must be ``None``.
+        This method must return a tuple with (1) a list of :class:`~eodag.api.product._product.EOProduct` instances
+        which will be processed by a :class:`~eodag.plugins.download.base.Download` plugin (2) and the total number of
+        products matching the search criteria. If ``prep.count`` is False, the second element returned must be ``None``.
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
@@ -108,9 +106,9 @@ class Search(PluginTopic):
     def discover_queryables(
         self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf
+        """Fetch queryables list from provider using :attr:`~eodag.config.PluginConfig.discover_queryables` conf
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (``productType`` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
@@ -184,7 +182,7 @@ class Search(PluginTopic):
         Get the value of a configuration option specific to the current product type.
 
         This method retrieves the value of a configuration option from the
-        `product_type_config` attribute. If the option is not found, the provided
+        ``product_type_config`` attribute. If the option is not found, the provided
         default value is returned.
 
         :param key: The configuration option key.

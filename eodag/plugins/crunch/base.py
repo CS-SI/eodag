@@ -28,8 +28,8 @@ if TYPE_CHECKING:
 
 class Crunch(PluginTopic):
     """Base cruncher
+
     :param config: Crunch configuration
-    :type config: Dict[str, Any]
     """
 
     def __init__(self, config: Optional[Dict[str, Any]]) -> None:

@@ -54,14 +54,14 @@ class FilterLatestIntersect(Crunch):
         return dateutil.parser.parse(start_date)
 
     def proceed(
-        self, products: List[EOProduct], **search_params: Any
+        self, products: List[EOProduct], **search_params: Dict[str, Any]
     ) -> List[EOProduct]:
         """Execute crunch:
         Filter latest products (the ones with a the highest start date) that intersect search extent.
 
         :param products: A list of products resulting from a search
-        :param search_params: Search criteria that must contain `geometry` (dict)
-                              or search `geom` (:class:`shapely.geometry.base.BaseGeometry`) argument will be used
+        :param search_params: Search criteria that must contain ``geometry`` or ``geom`` parameters having value of
+                              type :class:`shapely.geometry.base.BaseGeometry` or ``Dict[str, Any]``
         :returns: The filtered products
         """
         logger.debug("Start filtering for latest products")
