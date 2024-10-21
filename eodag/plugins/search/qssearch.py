@@ -1403,7 +1403,7 @@ class PostJsonSearch(QueryStringSearch):
           needed to add pagination information to the search request. These parameters won't be
           included in result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because
           it will be passed to a :meth:`str.format` method before being loaded as json.
-        * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path*` (``str``):  An XPath or JsonPath
+        * :attr:`~eodag.config.PluginConfig.Pagination.total_items_nb_key_path` (``str``):  An XPath or JsonPath
           leading to the total number of results satisfying a request. This is used for providers
           which provides the total results metadata along with the result of the query and don't
           have an endpoint for querying the number of items satisfying a request, or for providers

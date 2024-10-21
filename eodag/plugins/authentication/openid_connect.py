@@ -214,8 +214,8 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           to look for the authentication_uri. One of ``config`` (in the configuration) or ``login-form``
           (use the 'action' URL found in the login form retrieved with login_form_xpath). If the
           value is ``config``, authentication_uri config param is mandatory
-        * :attr:`~eodag.config.PluginConfig.authentication_uri` (``str``): (mandatory if
-          authentication_uri_source=config) The URL of the authentication backend of the OIDC provider
+        * :attr:`~eodag.config.PluginConfig.authentication_uri` (``str``): (**mandatory if
+          authentication_uri_source=config**) The URL of the authentication backend of the OIDC provider
         * :attr:`~eodag.config.PluginConfig.user_consent_form_xpath` (``str``): The xpath to
           the user consent form. The form is searched in the content of the response to the authorization request
         * :attr:`~eodag.config.PluginConfig.user_consent_form_data` (``Dict[str, str]``): The data that
@@ -223,7 +223,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           key value pairs, the keys representing the data key and the value being either a 'constant'
           string value, or a string of the form 'xpath(<path-to-a-value-to-be-retrieved>)' and representing a
           value to be retrieved in the user consent form. The xpath must resolve directly to a
-          string value, not to an HTML element. Example: `xpath(//input[@name="sessionDataKeyConsent"]/@value)`
+          string value, not to an HTML element. Example: ``xpath(//input[@name="sessionDataKeyConsent"]/@value)``
         * :attr:`~eodag.config.PluginConfig.additional_login_form_data` (``Dict[str, str]``): A mapping
           giving additional data to be passed to the login POST request. The value follows
           the same rules as with user_consent_form_data
