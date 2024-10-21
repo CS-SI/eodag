@@ -439,6 +439,57 @@ class QueryStringSearch(Search):
 
         :returns: configuration dict containing fetched product types information
         """
+        unpaginated_fetch_url = self.config.discover_product_types.get("fetch_url")
+        if not unpaginated_fetch_url:
+            return None
+
+        # product types pagination
+        next_page_url_tpl = self.config.discover_product_types.get("next_page_url_tpl")
+        page = self.config.discover_product_types.get("start_page", 1)
+
+        if not next_page_url_tpl:
+            # no pagination
+            return self.discover_product_types_per_page(**kwargs)
+
+        conf_update_dict: Dict[str, Any] = {
+            "providers_config": {},
+            "product_types_config": {},
+        }
+
+        while True:
+            fetch_url = next_page_url_tpl.format(url=unpaginated_fetch_url, page=page)
+
+            conf_update_dict_per_page = self.discover_product_types_per_page(
+                fetch_url=fetch_url, **kwargs
+            )
+
+            if (
+                not conf_update_dict_per_page
+                or not conf_update_dict_per_page.get("providers_config")
+                or conf_update_dict_per_page.items() <= conf_update_dict.items()
+            ):
+                # conf_update_dict_per_page is empty or a subset on existing conf
+                break
+            else:
+                conf_update_dict["providers_config"].update(
+                    conf_update_dict_per_page["providers_config"]
+                )
+                conf_update_dict["product_types_config"].update(
+                    conf_update_dict_per_page["product_types_config"]
+                )
+
+            page += 1
+
+        return conf_update_dict
+
+    def discover_product_types_per_page(
+        self, **kwargs: Any
+    ) -> Optional[Dict[str, Any]]:
+        """Fetch product types list from provider using `discover_product_types` conf
+        using paginated ``kwargs["fetch_url"]``
+
+        :returns: configuration dict containing fetched product types information
+        """
         try:
             prep = PreparedSearch()
 
