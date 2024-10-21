@@ -1,4 +1,5 @@
 .. module:: eodag.utils
+   :no-index:
 
 =====
 Utils
@@ -11,9 +12,10 @@ Logging
    :members:
 
 Callbacks
------------------
+---------
 
-.. autofunction::eodag.api.product.DownloadedCallback
+.. autoclass:: eodag.utils.DownloadedCallback
+   :special-members: __call__
 .. autofunction:: eodag.utils.ProgressCallback
 
 Notebook
@@ -21,3 +23,10 @@ Notebook
 
 .. automodule:: eodag.utils.notebook
    :members:
+
+Misc
+----
+
+.. automodule:: eodag.utils
+   :members:
+   :exclude-members: DownloadedCallback, ProgressCallback, NotebookProgressCallback, get_progress_callback
