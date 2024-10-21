@@ -924,6 +924,8 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         ordered_message = ""
         if (
             "orderLink" in product.properties
@@ -974,6 +976,7 @@ class HTTPDownload(Download):
             params=params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=ssl_verify,
             **req_kwargs,
         ) as self.stream:
             try:
