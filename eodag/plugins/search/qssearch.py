@@ -493,10 +493,13 @@ class QueryStringSearch(Search):
         try:
             prep = PreparedSearch()
 
-            fetch_url = self.config.discover_product_types.get("fetch_url")
+            # url from discover_product_types() or conf
+            fetch_url = kwargs.get("fetch_url")
             if fetch_url is None:
-                return None
-            prep.url = fetch_url.format(**self.config.__dict__)
+                if fetch_url := self.config.discover_product_types.get("fetch_url"):
+                    fetch_url = fetch_url.format(**self.config.__dict__)
+                else:
+                    return None
 
             # get auth if available
             if "auth" in kwargs:
