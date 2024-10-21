@@ -215,10 +215,10 @@ class Search(PluginTopic):
         return self.config.metadata_mapping
 
     def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
-        """Extract the "sort_by" argument from the kwargs or the provider default sort configuration
+        """Extract the ``sort_by`` argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
-        :returns: The "sort_by" argument from the kwargs or the provider default sort configuration
+        :returns: The ``sort_by`` argument from the kwargs or the provider default sort configuration
         """
         # remove "sort_by" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string or body once metadata mapping will be done
@@ -237,10 +237,10 @@ class Search(PluginTopic):
         self, sort_by_arg: SortByList
     ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
-        the "sort_by" argument into a provider-specific string or dictionary
+        the ``sort_by`` argument into a provider-specific string or dictionary
 
-        :param sort_by_arg: the "sort_by" argument in EODAG format
-        :returns: The "sort_by" argument in provider-specific format
+        :param sort_by_arg: the ``sort_by`` argument in EODAG format
+        :returns: The ``sort_by`` argument in provider-specific format
         """
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
