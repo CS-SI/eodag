@@ -316,6 +316,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params={},
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
@@ -401,6 +402,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             params={},
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
 
     @mock.patch(
