@@ -7260,6 +7260,8 @@
       parentIdentifier: EO:EUM:DAT:0088
     MSG_LSA_LSTDE:
       parentIdentifier: EO:EUM:DAT:0394
+    MSG_AMVR02:
+      parentIdentifier: EO:EUM:DAT:0405
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'

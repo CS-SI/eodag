@@ -4920,6 +4920,19 @@ MSG_LSA_LSTDE:
   title: Land Surface Temperature with Directional Effects - MSG
   missionStartDate: "2005-01-16T00:00:00Z"
 
+MSG_AMVR02:
+  abstract: |
+    This is the second release of the reprocessed Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Atmospheric Motion Vectors (AMV) Thematic Climate Data Record (TCDR). It contains AMV at all heights below the tropopause, derived from images in 2 channels (Water Vapour 6.2, Infrared 10.8) of the instrument MVIRI on board MFG and SEVIRI on board MSG. Vectors are retrieved by tracking the motion of clouds and other atmospheric constituents such as water vapour patterns. The height assignment of the AMVs is calculated using the Cross-Correlation Contribution (CCC) function to determine the height using the pixels that contribute the most to the vectors. The final vector is estimated averaging the speed and height over 4 consecutive images. A quality indicator is derived for each vector to assess the reliability of the retrieval. Products are stored in netCDF4 format and generated from Meteosat-2 to Meteosat-11 satellites, covering the period from September 1981 to August 2019. This is a Thematic Climate Data Record (TCDR).
+  instrument: SEVIRI,MVIRI
+  platform: MSG,MFG
+  platformSerialIdentifier: MSG,MFG
+  processingLevel: L2
+  keywords: WIND,CLIMATE,ATMOSPHERE,OBSERVATION,THEMATIC,OPTICAL,MXGAMV000200,AMVR20000,L2
+  sensorType: OPTICAL
+  license: proprietary
+  title: Atmospheric Motion Vectors Climate Data Record Release 2 - MFG and MSG - 0 degree
+  missionStartDate: "1981-09-03"
+
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |
