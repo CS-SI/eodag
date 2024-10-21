@@ -27,7 +27,10 @@ if TYPE_CHECKING:
 
 
 class Crunch(PluginTopic):
-    """Base cruncher"""
+    """Base cruncher
+
+    :param config: Crunch configuration
+    """
 
     def __init__(self, config: Optional[Dict[str, Any]]) -> None:
         self.config = PluginConfig()

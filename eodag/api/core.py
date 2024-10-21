@@ -2047,7 +2047,7 @@ class EODataAccessGateway:
         :param search_result: A collection of EO products resulting from a search
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
-                                    :class:`~eodag.api.product.DownloadedCallback` and override
+                                    :class:`~eodag.utils.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :param progress_callback: (optional) A method or a callable object

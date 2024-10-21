@@ -117,7 +117,15 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
 
 class CreodiasS3Search(ODataV4Search):
     """
-    Search on creodias and adapt results to s3
+    ``CreodiasS3Search`` is an extension of :class:`~eodag.plugins.search.qssearch.ODataV4Search`,
+    it executes a Search on creodias and adapts results so that the assets contain links to s3.
+    It has the same configuration parameters as :class:`~eodag.plugins.search.qssearch.ODataV4Search` and
+    one additional parameter:
+
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``) (**mandatory**): base url of the s3
     """
 
     def __init__(self, provider, config):

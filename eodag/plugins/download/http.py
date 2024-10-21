@@ -101,18 +101,47 @@ class HTTPDownload(Download):
     :param provider: provider name
     :param config: Download plugin configuration:
 
-        * ``config.base_uri`` (str) - (optional) default endpoint url
-        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
-        * ``config.auth_error_code`` (int) - (optional) authentication error code
-        * ``config.dl_url_params`` (dict) - (optional) attitional parameters to send in the request
-        * ``config.archive_depth`` (int) - (optional) level in extracted path tree where to find data
-        * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
-        * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
-        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
-        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
-        * ``config.order_headers`` (dict) - (optional) order request headers
-        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - (optional) Order status handling
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): ``HTTPDownload``
+        * :attr:`~eodag.config.PluginConfig.base_uri` (``str``): default endpoint url
+        * :attr:`~eodag.config.PluginConfig.method` (``str``): HTTP request method for the download request (``GET`` or
+          ``POST``); default: ``GET``
+        * :attr:`~eodag.config.PluginConfig.extract` (``bool``): if the content of the downloaded file should be
+          extracted; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
+          authentication error
+        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``Dict[str, Any]``): parameters to be
+          added to the query params of the request
+        * :attr:`~eodag.config.PluginConfig.archive_depth` (``int``): level in extracted path tree where to find data;
+          default: ``1``
+        * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
+          flattened; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using downloadLink;
+          default: ``False``
+        * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
+          default: ``5``
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
+          requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.output_extension` (``str``): which extension should be used for the
+          downloaded file
+        * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
+          authentication; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
+          if this parameter is set to true, a mapping for the orderLink has to be added to the metadata mapping of
+          the search plugin used for the provider; default: ``False``
+        * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
+          or ``POST``); default: ``GET``
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): headers to be added to the order
+          request
+        * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
+          a typed dictionary containing the key ``metadata_mapping`` which can be used to add new product properties
+          based on the data in response to the order request
+        * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
+          configuration to handle the order status; contains information which method to use, how the response data is
+          interpreted, which status corresponds to success, ordered and error and what should be done on success.
+        * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type specific config; the
+          keys are the product types, the values are dictionaries which can contain the keys
+          :attr:`~eodag.config.PluginConfig.output_extension` and :attr:`~eodag.config.PluginConfig.extract` to
+          overwrite the provider config for a specific product type
 
     """
 
@@ -131,12 +160,13 @@ class HTTPDownload(Download):
         and has `orderLink` in its properties.
         Product ordering can be configured using the following download plugin parameters:
 
-            - **order_enabled**: Wether order is enabled or not (may not use this method
+            - :attr:`~eodag.config.PluginConfig.order_enabled`: Wether order is enabled or not (may not use this method
               if no `orderLink` exists)
 
-            - **order_method**: (optional) HTTP request method, GET (default) or POST
+            - :attr:`~eodag.config.PluginConfig.order_method`: (optional) HTTP request method, GET (default) or POST
 
-            - **order_on_response**: (optional) things to do with obtained order response:
+            - :attr:`~eodag.config.PluginConfig.order_on_response`: (optional) things to do with obtained order
+              response:
 
               - *metadata_mapping*: edit or add new product propoerties properties
 
@@ -250,7 +280,7 @@ class HTTPDownload(Download):
         It will be executed before each download retry.
         Product order status request can be configured using the following download plugin parameters:
 
-            - **order_status**: :class:`~eodag.config.PluginConfig.OrderStatus`
+            - :attr:`~eodag.config.PluginConfig.order_status`: :class:`~eodag.config.PluginConfig.OrderStatus`
 
         Product properties used for order status:
 

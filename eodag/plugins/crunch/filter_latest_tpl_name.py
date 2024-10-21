@@ -37,7 +37,7 @@ class FilterLatestByName(Crunch):
 
     :param config: Crunch configuration, must contain :
 
-                   - `name_pattern` : product name pattern
+        * ``name_pattern`` (``str``) (**mandatory**): product name pattern
     """
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
