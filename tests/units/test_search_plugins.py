@@ -39,6 +39,7 @@ from requests import RequestException
 
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
+from eodag.utils.exceptions import UnsupportedProductType
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -3006,6 +3007,25 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(
                 "item_20200204_20200205_niznjvnqkrf_20210101",
                 result[0].properties["id"],
+            )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):
+        exc = requests.RequestException()
+        exc.errno = 404
+        mock_requests_get.side_effect = exc
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        with self.assertRaises(UnsupportedProductType):
+            search_plugin.query(
+                productType="PRODUCT_AX",
+                id="item_20200204_20200205_niznjvnqkrf_20210101",
+            )
+        mock_requests_get.reset()
+        mock_requests_get.side_effect = requests.exceptions.ConnectionError()
+        with self.assertRaises(RequestError):
+            search_plugin.query(
+                productType="PRODUCT_A",
+                id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
 
 
