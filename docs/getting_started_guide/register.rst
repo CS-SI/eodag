@@ -146,7 +146,7 @@ Then use the consumer key as `username` and the consumer secret as `password` fr
 <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
 
 ``geodes``
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^
 Go to `https://geodes-portal.cnes.fr <https://https://geodes-portal.cnes.fr>`_, then login or create an account by
 clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
 as *apikey* in EODAG provider auth credentials.
