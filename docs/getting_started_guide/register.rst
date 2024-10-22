@@ -145,6 +145,12 @@ Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`
 Then use the consumer key as `username` and the consumer secret as `password` from `here
 <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
 
+``geodes``
+^^^^^^^^^^
+Go to `https://geodes-portal.cnes.fr <https://https://geodes-portal.cnes.fr>`_, then login or create an account by
+clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
+as *apikey* in EODAG provider auth credentials.
+
 ``hydroweb_next``
 ^^^^^^^^^^^^^^^^^
 Go to `https://hydroweb.next.theia-land.fr <https://hydroweb.next.theia-land.fr>`_, then login or create an account by

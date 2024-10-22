@@ -445,6 +445,109 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # restore configuration
         search_plugin.config.discover_product_types["results_entry"] = results_entry
 
+    def test_plugins_search_querystringsearch_discover_product_types_paginated(self):
+        """QueryStringSearch.discover_product_types must handle pagination"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "astraea_eod"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        # change onfiguration for this test to filter out some collections
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types[
+            "fetch_url"
+        ] = "https://foo.bar/collections"
+        search_plugin.config.discover_product_types[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
+        search_plugin.config.discover_product_types["start_page"] = 0
+
+        with responses.RequestsMock(
+            assert_all_requests_are_fired=True
+        ) as mock_requests_post:
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=0",
+                json={
+                    "collections": [
+                        {
+                            "id": "foo_collection",
+                            "title": "The FOO collection",
+                            "billing": "free",
+                        }
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=1",
+                json={
+                    "collections": [
+                        {
+                            "id": "bar_collection",
+                            "title": "The BAR non-free collection",
+                            "billing": "non-free",
+                        },
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=2",
+                json={"collections": []},
+            )
+            conf_update_dict = search_plugin.discover_product_types()
+            self.assertIn("foo_collection", conf_update_dict["providers_config"])
+            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["providers_config"])
+            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertEqual(
+                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                "foo_collection",
+            )
+            self.assertEqual(
+                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                "The FOO collection",
+            )
+
+        # restore configuration
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_post(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must be able to query using POST requests"""
+        # One of the providers that has a QueryStringSearch.discover_product_types configured with POST requests
+        provider = "geodes"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "title": "The FOO collection",
+                },
+                {
+                    "id": "bar_collection",
+                    "title": "The BAR collection",
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_product_types()
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertIn("bar_collection", conf_update_dict["providers_config"])
+        self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["productType"],
+            "foo_collection",
+        )
+        self.assertEqual(
+            conf_update_dict["product_types_config"]["foo_collection"]["title"],
+            "The FOO collection",
+        )
+
     @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
     def test_plugins_search_querystringsearch_discover_product_types_with_query_param(
         self, mock__request
