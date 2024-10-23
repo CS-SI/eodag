@@ -69,7 +69,7 @@ class OIDCTokenExchangeAuth(Authentication):
     ]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        super(OIDCTokenExchangeAuth, self).__init__(provider, config)
+        super().__init__(provider, config)
         for required_key in self.REQUIRED_KEYS:
             if getattr(self.config, required_key, None) is None:
                 raise MisconfiguredError(

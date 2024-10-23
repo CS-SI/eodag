@@ -98,7 +98,6 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """
 
     GRANT_TYPE = "password"
-    TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
     REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -120,10 +119,9 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
         Makes authentication request
         """
         self.validate_config_credentials()
-        access_token = self._get_access_token()
-        self.token_info["access_token"] = access_token
+        self._get_access_token()
         return CodeAuthorizedAuth(
-            self.token_info["access_token"],
+            self.access_token,
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
@@ -139,10 +137,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
-                self.TOKEN_URL_TEMPLATE.format(
-                    auth_base_uri=self.config.auth_base_uri.rstrip("/"),
-                    realm=self.config.realm,
-                ),
+                self.token_endpoint,
                 data=dict(req_data, **credentials),
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
@@ -161,15 +156,12 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             "client_id": self.config.client_id,
             "client_secret": self.config.client_secret,
             "grant_type": "refresh_token",
-            "refresh_token": self.token_info["refresh_token"],
+            "refresh_token": self.refresh_token,
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
-                self.TOKEN_URL_TEMPLATE.format(
-                    auth_base_uri=self.config.auth_base_uri.rstrip("/"),
-                    realm=self.config.realm,
-                ),
+                self.token_endpoint,
                 data=req_data,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,

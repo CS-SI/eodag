@@ -546,6 +546,11 @@ class PluginConfig(yaml.YAMLObject):
     client_id: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC provider's client secret
     client_secret: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
+    # The OIDC provider's .well-known/openid-configuration url.
+    oidc_config_url: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiances
+    allowed_audiances: List[str]
     #: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
     #: Base url used in the request to fetch the token
     auth_base_uri: str
