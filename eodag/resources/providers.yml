@@ -7239,6 +7239,29 @@
       parentIdentifier: EO:EUM:DAT:MULT:HIRSL1
       metadata_mapping:
         <<: *orbit_zone_tile
+    # MSG
+    MSG_CLM:
+      parentIdentifier: EO:EUM:DAT:MSG:CLM
+    MSG_CLM_IODC:
+      parentIdentifier: EO:EUM:DAT:MSG:CLM-IODC
+    MSG_GSAL2R02:
+      parentIdentifier: EO:EUM:DAT:0300
+    MSG_HRSEVIRI:
+      parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI
+    MSG_HRSEVIRI_IODC:
+      parentIdentifier: EO:EUM:DAT:MSG:HRSEVIRI-IODC
+    MSG_RSS_CLM:
+      parentIdentifier: EO:EUM:DAT:MSG:RSS-CLM
+    MSG_MSG15_RSS:
+      parentIdentifier: EO:EUM:DAT:MSG:MSG15-RSS
+    MSG_LSA_FRM:
+      parentIdentifier: EO:EUM:DAT:0398
+    MSG_LSA_LST_CDR:
+      parentIdentifier: EO:EUM:DAT:0088
+    MSG_LSA_LSTDE:
+      parentIdentifier: EO:EUM:DAT:0394
+    MSG_AMVR02:
+      parentIdentifier: EO:EUM:DAT:0405
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
