@@ -55,6 +55,13 @@ PEPS_SEARCH_ARGS = [
     "2020-08-16",
     [137.772897, 13.134202, 153.749135, 23.885986],
 ]
+GEODES_SEARCH_ARGS = [
+    "geodes",
+    "S2_MSI_L1C",
+    "2024-08-08",
+    "2024-08-16",
+    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
+]
 AWSEOS_SEARCH_ARGS = [
     "aws_eos",
     "S2_MSI_L1C",
@@ -426,6 +433,11 @@ class TestEODagEndToEnd(EndToEndBase):
     # @unittest.skip("service unavailable for the moment")
     def test_end_to_end_search_download_theia(self):
         product = self.execute_search(*THEIA_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_geodes(self):
+        product = self.execute_search(*GEODES_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
