@@ -7516,8 +7516,8 @@
         - '{{"query":{{"spaceborne:productType":{{"eq":"{providerProductType}"}}}}}}'
         - '$.null'
       downloadLink: '$.assets[?(@.roles[0] == "data")].href'
-      quicklook: '$.assets[?(@.roles[0] == "overview")].href'
-      thumbnail: '$.assets[?(@.roles[0] == "overview")].href'
+      quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # storageStatus set to ONLINE for consistency between providers
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
   products:
