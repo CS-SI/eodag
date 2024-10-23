@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import datetime
-import glob
 import hashlib
 import multiprocessing
 import os
@@ -186,7 +185,7 @@ COP_CDS_SEARCH_ARGS = [
     "cop_cds",
     "ERA5_SL",
     "2021-01-01",
-    "2021-01-05",
+    "2021-01-02",
     # no need of an additional post-processing area extraction
     [-180, -90, 180, 90],
 ]
@@ -386,7 +385,12 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         max_wait_time = timeout_sec
         while (
-            not glob.glob("%s/[!quicklooks]*" % self.tmp_download_path)
+            sum(
+                f.stat().st_size
+                for f in Path(self.tmp_download_path).glob("**/[!quicklooks]*")
+                if f.is_file()
+            )
+            <= 0
             and max_wait_time > 0
         ):
             # check every 2s if download has start
