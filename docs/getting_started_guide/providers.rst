@@ -13,6 +13,7 @@ Products from the following providers are made avaiable through ``eodag``:
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
+* `cop_ewds <https://ewds.climate.copernicus.eu>`_: CEMS Early Warning Data Store
 * `cop_marine <https://marine.copernicus.eu>`_: Copernicus Marine Service
 * `creodias <https://creodias.eu/>`_: CloudFerro DIAS
 * `creodias_s3 <https://creodias.eu/>`_: CloudFerro DIAS data through S3 protocol

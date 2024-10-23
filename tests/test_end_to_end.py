@@ -194,6 +194,13 @@ COP_CDS_SEARCH_KWARGS = {
     # request for grib file instead of netcdf
     "format": "grib",
 }
+COP_EWDS_SEARCH_ARGS = [
+    "cop_ewds",
+    "EFAS_SEASONAL",
+    "2021-01-01",
+    "2021-01-05",
+    [-180, -90, 180, 90],
+]
 SARA_SEARCH_ARGS = [
     "sara",
     "S2_MSI_L1C",
@@ -532,6 +539,11 @@ class TestEODagEndToEnd(EndToEndBase):
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
         expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cop_ewds(self):
+        product = self.execute_search(*COP_EWDS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sara(self):

@@ -66,6 +66,13 @@ cop_dataspace:
         credentials:
             username:
             password:
+cop_ewds:
+    priority: # Lower value means lower priority (Default: 0)
+    download:
+        output_dir:
+    auth:
+        credentials:
+            apikey:
 cop_marine:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration
