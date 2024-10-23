@@ -7497,10 +7497,10 @@
         - '$.properties."spaceborne:sensorMode"'
       # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
       startTimeFromAscendingNode:
-        - '{{"query":{{"temporal:endDate":{{"lte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '{{"query":{{"temporal:endDate":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
         - '$.properties."temporal:startDate"'
       completionTimeFromAscendingNode:
-        - '{{"query":{{"temporal:startDate":{{"gte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '{{"query":{{"temporal:startDate":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
         - '$.properties."temporal:endDate"'
       polarizationChannels:
         - '{{"query":{{"spaceborne:polarization":{{"eq":"{polarizationChannels}"}}}}}}'
