@@ -1817,8 +1817,14 @@ class PostJsonSearch(QueryStringSearch):
                 prep.query_params = self.next_page_query_obj
             if info_message:
                 logger.info(info_message)
-            logger.debug("Query parameters: %s" % prep.query_params)
-            logger.debug("Query kwargs: %s" % kwargs)
+            try:
+                logger.debug("Query parameters: %s" % geojson.dumps(prep.query_params))
+            except TypeError:
+                logger.debug("Query parameters: %s" % prep.query_params)
+            try:
+                logger.debug("Query kwargs: %s" % geojson.dumps(kwargs))
+            except TypeError:
+                logger.debug("Query kwargs: %s" % kwargs)
             response = requests.post(
                 url,
                 json=prep.query_params,
