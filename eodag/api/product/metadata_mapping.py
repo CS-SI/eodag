@@ -914,10 +914,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return assets_dict
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
-    if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
-        search_param = re.sub(
-            r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
-        )
+    if re.search(r"{[\w-]*:[\w#-]*}", search_param):
+        search_param = re.sub(r"{([\w-]*):([\w#-]*)}", r"{\1_COLON_\2}", search_param)
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
@@ -1528,6 +1526,17 @@ def get_provider_queryable_key(
         return ""
     else:
         return eodag_key
+
+
+def name_from_provider_key(
+    name: str,
+    metadata_mapping: Dict[str, Union[List[Any], str]],
+) -> str:
+    """Get equivalent name from metadata mapping provider key whenever possible"""
+    for mm, mv in metadata_mapping.items():
+        if isinstance(mv, list) and len(mv) > 1 and name == mv[0]:
+            return mm
+    return name
 
 
 # Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html

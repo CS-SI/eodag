@@ -17,8 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
+import functools
 import hashlib
 import logging
+import re
+from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from typing import (
     TYPE_CHECKING,
@@ -29,8 +32,8 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Union,
     cast,
-    get_args,
 )
 from urllib.parse import quote_plus, unquote_plus
 
@@ -39,235 +42,228 @@ import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from jsonpath_ng import Child, Fields, Root
-from pydantic import create_model
+from pydantic import Field
 from pydantic.fields import FieldInfo
+from requests.auth import AuthBase
+from shapely.geometry.base import BaseGeometry
+from typing_extensions import get_args
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
-    get_queryable_from_provider,
+    format_metadata,
+    format_query_params,
     mtd_cfg_as_conversion_and_querypath,
+    name_from_provider_key,
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.qssearch import PostJsonSearch
-from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
-)
-from eodag.utils.constraints import (
-    fetch_constraints,
-    get_constraint_queryables_with_additional_params,
+    is_range_in_range,
 )
 from eodag.utils.exceptions import ValidationError
+from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
 
 logger = logging.getLogger("eodag.search.build_search_result")
 
+# keywords from ECMWF keyword database + "dataset" (not part of database but exists)
+# database: https://confluence.ecmwf.int/display/UDOC/Keywords+in+MARS+and+Dissemination+requests
+ECMWF_KEYWORDS = [
+    "dataset",
+    "accuracy",
+    "anoffset",
+    "area",
+    "bitmap",
+    "block",
+    "channel",
+    "class",
+    "database",
+    "date",
+    "diagnostic",
+    "direction",
+    "domain",
+    "duplicates",
+    "expect",
+    "expver",
+    "fcmonth",
+    "fcperiod",
+    "fieldset",
+    "filter",
+    "format",
+    "frame",
+    "frequency",
+    "grid",
+    "hdate",
+    "ident",
+    "interpolation",
+    "intgrid",
+    "iteration",
+    "latitude",
+    "levelist",
+    "levtype",
+    "longitude",
+    "lsm",
+    "method",
+    "number",
+    "obsgroup",
+    "obstype",
+    "origin",
+    "packing",
+    "padding",
+    "param",
+    "priority",
+    "product",
+    "range",
+    "refdate",
+    "reference",
+    "reportype",
+    "repres",
+    "resol",
+    "rotation",
+    "section",
+    "source",
+    "step",
+    "stream",
+    "system",
+    "target",
+    "time",
+    "truncation",
+    "type",
+    "use",
+]
 
-class BuildPostSearchResult(PostJsonSearch):
-    """BuildPostSearchResult search plugin.
+# additional keywords from copernicus services
+COP_DS_KEYWORDS = [
+    "aerosol_type",
+    "altitude",
+    "product_type",
+    "band",
+    "cdr_type",
+    "data_format",
+    "dataset_type",
+    "day",
+    "download_format",
+    "ensemble_member",
+    "experiment",
+    "forcing_type",
+    "gcm",
+    "horizontal_resolution",
+    "hydrological_model",
+    "input_observations",
+    "leadtime_hour",
+    "leadtime_month",
+    "level",
+    "location",
+    "model",
+    "model_level",
+    "model_levels",
+    "month",
+    "nominal_day",
+    "originating_centre",
+    "period",
+    "pressure_level",
+    "processing_level",
+    "processing_type",
+    "product_version",
+    "quantity",
+    "rcm",
+    "region",
+    "satellite",
+    "sensor",
+    "sensor_and_algorithm",
+    "sky_type",
+    "statistic",
+    "system_version",
+    "temporal_aggregation",
+    "time_aggregation",
+    "time_reference",
+    "time_step",
+    "variable",
+    "variable_type",
+    "version",
+    "year",
+]
 
-    This plugin, which inherits from :class:`~eodag.plugins.search.qssearch.PostJsonSearch`,
-    performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
-    object.
 
-    The available configuration parameters are inherited from parent classes
-    (:class:`~eodag.plugins.search.qssearch.PostJsonSearch` and
-    :class:`~eodag.plugins.search.qssearch.QueryStringSearch`), with particularly for this plugin:
+def keywords_to_mdt(
+    keywords: List[str], prefix: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Make metadata mapping dict from a list of keywords*
 
-    :param provider: provider name
-    :param config: Search plugin configuration:
-
-        * :attr:`~eodag.config.PluginConfig.remove_from_query` (``List[str]``): List of parameters
-          used to parse metadata but that must not be included to the query
+    prefix:keyword:
+        - keyword
+        - $."prefix:keyword"
 
     """
-
-    def count_hits(
-        self, count_url: Optional[str] = None, result_type: Optional[str] = None
-    ) -> int:
-        """Count method that will always return 1."""
-        return 1
-
-    def collect_search_urls(
-        self,
-        prep: PreparedSearch = PreparedSearch(),
-        **kwargs: Any,
-    ) -> Tuple[List[str], int]:
-        """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
-        urls, _ = super(BuildPostSearchResult, self).collect_search_urls(prep, **kwargs)
-        return urls, 1
-
-    def do_search(
-        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> List[Dict[str, Any]]:
-        """Perform the actual search request, and return result in a single element."""
-        prep.url = prep.search_urls[0]
-        prep.info_message = f"Sending search request: {prep.url}"
-        prep.exception_message = (
-            f"Skipping error while searching for {self.provider}"
-            f" {self.__class__.__name__} instance"
-        )
-        response = self._request(prep)
-
-        return [response.json()]
-
-    def normalize_results(
-        self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
-        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
-
-        :param results: Raw provider result as single dict in list
-        :param kwargs: Search arguments
-        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
-        """
-        product_type = kwargs.get("productType")
-
-        result = results[0]
-
-        # datacube query string got from previous search
-        _dc_qs = kwargs.pop("_dc_qs", None)
-        if _dc_qs is not None:
-            qs = unquote_plus(unquote_plus(_dc_qs))
-            sorted_unpaginated_query_params = geojson.loads(qs)
-        else:
-            # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(results, "query_params_unpaginated"):
-                unpaginated_query_params = results.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
-                next_page_query_obj = orjson.loads(
-                    self.config.pagination["next_page_query_obj"].format()
-                )
-                unpaginated_query_params = {
-                    k: v[0] if (isinstance(v, list) and len(v) == 1) else v
-                    for k, v in results.query_params.items()
-                    if (k, v) not in next_page_query_obj.items()
-                }
-            else:
-                unpaginated_query_params = self.query_params
-
-            # query hash, will be used to build a product id
-            sorted_unpaginated_query_params = dict_items_recursive_sort(
-                unpaginated_query_params
-            )
-
-        # use all available query_params to parse properties
-        result = dict(
-            result,
-            **sorted_unpaginated_query_params,
-            qs=sorted_unpaginated_query_params,
-        )
-
-        # remove unwanted query params
-        for param in getattr(self.config, "remove_from_query", []):
-            sorted_unpaginated_query_params.pop(param, None)
-
-        qs = geojson.dumps(sorted_unpaginated_query_params)
-
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
-
-        # update result with product_type_def_params and search args if not None (and not auth)
-        kwargs.pop("auth", None)
-        result.update(results.product_type_def_params)
-        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
-
-        # parse properties
-        parsed_properties = properties_from_json(
-            result,
-            self.config.metadata_mapping,
-            discovery_config=getattr(self.config, "discover_metadata", {}),
-        )
-
-        if not product_type:
-            product_type = parsed_properties.get("productType", None)
-
-        # build product id
-        id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s_%s" % (
-            id_prefix,
-            parsed_properties["startTimeFromAscendingNode"]
-            .split("T")[0]
-            .replace("-", ""),
-            parsed_properties["completionTimeFromAscendingNode"]
-            .split("T")[0]
-            .replace("-", ""),
-            query_hash,
-        )
-        parsed_properties["id"] = parsed_properties["title"] = product_id
-
-        # update downloadLink and orderLink
-        parsed_properties["_dc_qs"] = quote_plus(qs)
-        if parsed_properties["downloadLink"] != "Not Available":
-            parsed_properties["downloadLink"] += f"?{qs}"
-
-        # parse metadata needing downloadLink
-        dl_path = Fields("downloadLink")
-        dl_path_from_root = Child(Root(), dl_path)
-        for param, mapping in self.config.metadata_mapping.items():
-            if dl_path in mapping or dl_path_from_root in mapping:
-                parsed_properties.update(
-                    properties_from_json(parsed_properties, {param: mapping})
-                )
-
-        # use product_type_config as default properties
-        parsed_properties = dict(
-            getattr(self.config, "product_type_config", {}),
-            **parsed_properties,
-        )
-
-        product = EOProduct(
-            provider=self.provider,
-            productType=product_type,
-            properties=parsed_properties,
-        )
-
-        return [
-            product,
-        ]
+    mdt: Dict[str, Any] = {}
+    for keyword in keywords:
+        key = f"{prefix}:{keyword}" if prefix else keyword
+        mdt[key] = [keyword, f'$."{key}"']
+    return mdt
 
 
-class BuildSearchResult(BuildPostSearchResult):
-    """BuildSearchResult search plugin.
+def strip_quotes(value: Any) -> Any:
+    """Strip superfluous quotes from elements (addded by mapping converter to_geojson)."""
+    if isinstance(value, (list, tuple)):
+        return [strip_quotes(v) for v in value]
+    elif isinstance(value, dict):
+        raise NotImplementedError("Dict value is not supported.")
+    else:
+        return str(value).strip("'\"")
+
+
+class ECMWFSearch(PostJsonSearch):
+    """ECMWF search plugin.
 
     This plugin builds a single :class:`~eodag.api.search_result.SearchResult` object
     using given query parameters as product properties.
 
-    The available configuration parameters inherits from parent classes
-    (:class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult`,
-    :class:`~eodag.plugins.search.qssearch.PostJsonSearch` and
-    :class:`~eodag.plugins.search.qssearch.QueryStringSearch`), with particularly for this plugin:
+    The available configuration parameters inherits from parent classes, with particularly
+    for this plugin:
 
-    :param provider: provider name
-    :param config: Search plugin configuration:
+        - **end_date_excluded**: Set to `False` if provider does not include end date to
+          search
 
-        * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to ``False`` if provider
-          does not include end date in the search request; In this case, if the end date is at midnight,
-          the previous day will be used. default: ``True``
+        - **remove_from_query**: List of parameters used to parse metadata but that must
+          not be included to the query
 
+        - **constraints_url**: url of the constraint file used to build queryables
+
+    :param provider: An eodag providers configuration dictionary
+    :param config: Path to the user configuration file
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # init self.config.metadata_mapping using Search Base plugin
-        Search.__init__(self, provider, config)
+        # cache fetching method
+        self.fetch_data = functools.lru_cache()(self._fetch_data)
+
+        config.metadata_mapping = {
+            **keywords_to_mdt(ECMWF_KEYWORDS + COP_DS_KEYWORDS, "ecmwf"),
+            **config.metadata_mapping,
+        }
+
+        super().__init__(provider, config)
 
         self.config.__dict__.setdefault("api_endpoint", "")
 
         # needed by QueryStringSearch.build_query_string / format_free_text_search
         self.config.__dict__.setdefault("free_text_search_operations", {})
         # needed for compatibility
-        self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
+        self.config.pagination.setdefault("next_page_query_obj", "{{}}")
 
         # parse jsonpath on init: product type specific metadata-mapping
         for product_type in self.config.products.keys():
@@ -306,7 +302,12 @@ class BuildSearchResult(BuildPostSearchResult):
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
-        return [{}]
+        # quickfix for wekeo_ecmwf
+        if self.config.api_endpoint:
+            return super().do_search(*args, **kwargs)
+        else:
+            # no real search. We fake it all
+            return [{}]
 
     def query(
         self,
@@ -314,33 +315,37 @@ class BuildSearchResult(BuildPostSearchResult):
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
-
         self._preprocess_search_params(kwargs)
 
-        return BuildPostSearchResult.query(self, prep, **kwargs)
+        return super().query(prep, **kwargs)
 
     def clear(self) -> None:
         """Clear search context"""
-        pass
+        super().clear()
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters"""
-        # parse kwargs as properties as they might be needed to build the query
-        parsed_properties = properties_from_json(
-            kwargs,
-            self.config.metadata_mapping,
-        )
-        available_properties = {
-            k: v
-            for k, v in parsed_properties.items()
-            if v not in [NOT_AVAILABLE, NOT_MAPPED]
-        }
+        # quickfix for wekeo_ecmwf
+        if not self.config.api_endpoint:
+            # parse kwargs as properties as they might be needed to build the query
+            parsed_properties = properties_from_json(
+                kwargs,
+                self.config.metadata_mapping,
+            )
+            available_properties = {
+                # We strip values of superfluous quotes (addded by mapping converter to_geojson).
+                k: strip_quotes(v)
+                for k, v in parsed_properties.items()
+                if v not in [NOT_AVAILABLE, NOT_MAPPED]
+            }
+        else:
+            available_properties = kwargs
 
         # build and return the query
-        return BuildPostSearchResult.build_query_string(
-            self, product_type=product_type, **available_properties
+        return super().build_query_string(
+            product_type=product_type, **available_properties
         )
 
     def _preprocess_search_params(self, params: Dict[str, Any]) -> None:
@@ -378,7 +383,7 @@ class BuildSearchResult(BuildPostSearchResult):
         non_none_params = {k: v for k, v in params.items() if v}
 
         # productType
-        dataset = params.get("dataset", None)
+        dataset = params.get("ecmwf:dataset", None)
         params["productType"] = non_none_params.get("productType", dataset)
 
         # dates
@@ -449,94 +454,620 @@ class BuildSearchResult(BuildPostSearchResult):
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        constraints_file_url = getattr(self.config, "constraints_file_url", "")
-        if not constraints_file_url:
-            return {}
-        product_type = kwargs.pop("productType", None)
-        if not product_type:
-            return {}
-
-        provider_product_type = self.config.products.get(product_type, {}).get(
-            "dataset", None
+        product_type = kwargs.pop("productType")
+        product_type_config = self.config.products.get(product_type, {})
+        provider_product_type = (
+            product_type_config.get("ecmwf:dataset", None)
+            or product_type_config["productType"]
         )
-        user_provider_product_type = kwargs.pop("dataset", None)
-        if (
-            user_provider_product_type
-            and user_provider_product_type != provider_product_type
-        ):
-            raise ValidationError(
-                f"Cannot change dataset from {provider_product_type} to {user_provider_product_type}"
+        # extract default datetime
+        processed_kwargs = deepcopy(kwargs)
+        self._preprocess_search_params(processed_kwargs)
+
+        constraints_url = format_metadata(
+            getattr(self.config, "constraints_url", ""), **kwargs
+        )
+        constraints: List[Dict[str, Any]] = self.fetch_data(constraints_url)
+
+        form_url = format_metadata(getattr(self.config, "form_url", ""), **kwargs)
+        form = self.fetch_data(form_url)
+
+        formated_kwargs = self.format_as_provider_keyword(
+            product_type, processed_kwargs
+        )
+        # we re-apply kwargs input to consider override of year, month, day and time.
+        formated_kwargs.update(kwargs)
+
+        # we use non empty kwargs as default to integrate user inputs
+        # it is needed because pydantic json schema does not represents "value"
+        # but only "default"
+        non_empty_formated: Dict[str, Any] = {
+            k: v
+            for k, v in formated_kwargs.items()
+            if v and (not isinstance(v, list) or all(v))
+        }
+        non_empty_kwargs: Dict[str, Any] = {
+            k: v
+            for k, v in processed_kwargs.items()
+            if v and (not isinstance(v, list) or all(v))
+        }
+
+        required_keywords: Set[str] = set()
+
+        # calculate available values
+        if constraints:
+            # Apply constraints filtering
+            available_values = self.available_values_from_constraints(
+                constraints,
+                non_empty_formated,
+                form_keywords=[f["name"] for f in form],
             )
-
-        # defaults
-        default_queryables = self._get_defaults_as_queryables(product_type)
-        # remove dataset from queryables
-        default_queryables.pop("dataset", None)
-
-        non_empty_kwargs = {k: v for k, v in kwargs.items() if v}
-
-        if "{" in constraints_file_url:
-            constraints_file_url = constraints_file_url.format(
-                dataset=provider_product_type
-            )
-        constraints = fetch_constraints(constraints_file_url, self)
-        if not constraints:
-            return default_queryables
-
-        constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
-        if len(kwargs) == 0:
-            # get values from constraints without additional filters
-            for constraint in constraints:
-                for key in constraint.keys():
-                    if key in constraint_params:
-                        constraint_params[key]["enum"].update(constraint[key])
-                    else:
-                        constraint_params[key] = {}
-                        constraint_params[key]["enum"] = set(constraint[key])
+            # Pre-compute the required keywords (present in all constraint dicts)
+            # when form, required keywords are extracted directly from form
+            if not form:
+                required_keywords = set(constraints[0].keys())
+                for constraint in constraints[1:]:
+                    required_keywords.intersection_update(constraint.keys())
         else:
-            # get values from constraints with additional filters
-            constraints_input_params = {k: v for k, v in non_empty_kwargs.items()}
-            constraint_params = get_constraint_queryables_with_additional_params(
-                constraints, constraints_input_params, self, product_type
+            values_url = getattr(self.config, "available_values_url", "")
+            if "{" in values_url:
+                values_url = values_url.format(productType=provider_product_type)
+            data = self.fetch_data(values_url)
+            available_values = data["constraints"]
+            required_keywords = data["required"]
+
+        # dataset defines the productType. It is not a queryable.
+        available_values.pop("ecmwf:dataset", None)
+        available_values.pop("dataset_id", None)
+
+        # generate queryables
+        if form:
+            queryables = self.queryables_by_form(
+                form,
+                available_values,
+                non_empty_formated,
             )
-            # query params that are not in constraints but might be default queryables
-            if len(constraint_params) == 1 and "not_available" in constraint_params:
-                not_queryables: Set[str] = set()
-                for constraint_param in constraint_params["not_available"]["enum"]:
-                    param = CommonQueryables.get_queryable_from_alias(constraint_param)
-                    if param in dict(
-                        CommonQueryables.model_fields, **default_queryables
-                    ):
-                        non_empty_kwargs.pop(constraint_param)
-                    else:
-                        not_queryables.add(constraint_param)
-                if not_queryables:
+        else:
+            queryables = self.queryables_by_values(
+                available_values, list(required_keywords), non_empty_kwargs
+            )
+
+        # ecmwf:date is replaced by start and end.
+        # start and end filters are supported whenever combinaisons of "year", "month", "day" filters exist
+        if queryables.pop("ecmwf:date", None) or "year" in queryables:
+            queryables.update(
+                {
+                    "start": CommonQueryables.get_with_default(
+                        "start", non_empty_kwargs.get("startTimeFromAscendingNode")
+                    ),
+                    "end": CommonQueryables.get_with_default(
+                        "end",
+                        non_empty_kwargs.get("completionTimeFromAscendingNode"),
+                    ),
+                }
+            )
+
+        # area is geom in EODAG.
+        if queryables.pop("area", None):
+            queryables["geom"] = Annotated[
+                Union[str, Dict[str, float], BaseGeometry],
+                Field("Read EODAG documentation for all supported geometry format."),
+            ]
+
+        return queryables
+
+    def available_values_from_constraints(
+        self,
+        constraints: list[Dict[str, Any]],
+        input_keywords: Dict[str, Any],
+        form_keywords: List[str],
+    ) -> Dict[str, List[Optional[str]]]:
+        """
+        Filter constraints using input_keywords. Return list of available queryables.
+        All constraint entries must have the same parameters.
+        """
+        # get ordered constraint keywords
+        constraints_keywords = list(
+            OrderedDict.fromkeys(k for c in constraints for k in c.keys())
+        )
+
+        # prepare ordered input keywords formatted as provider's keywords
+        # required to filter with constraints
+        ordered_keywords = (
+            [kw for kw in form_keywords if kw in constraints_keywords]
+            if form_keywords
+            else constraints_keywords
+        )
+
+        # filter constraint entries matching input keyword values
+        filtered_constraints: List[Dict[str, Any]]
+
+        parsed_keywords: List[str] = []
+        for keyword in ordered_keywords:
+            values = input_keywords.get(keyword)
+
+            if values is None:
+                parsed_keywords.append(keyword)
+                continue
+
+            # we only compare list of strings.
+            if isinstance(values, dict):
+                raise ValidationError(
+                    f"Parameter value as object is not supported: {keyword}={values}"
+                )
+            filter_v = values if isinstance(values, (list, tuple)) else [values]
+
+            # We convert every every single value to a list of string
+            # We strip values of superfluous quotes (addded by mapping converter to_geojson).
+            # ECMWF accept values with /to/. We need to split it to an array
+            # ECMWF accept values in format val1/val2. We need to split it to an array
+            sep = re.compile(r"/to/|/")
+            filter_v = [i for v in filter_v for i in sep.split(strip_quotes(v))]
+
+            # special handling for time 0000 converted to 0 by pre-formating with metadata_mapping
+            if keyword.split(":")[-1] == "time":
+                filter_v = ["0000" if str(v) == "0" else v for v in filter_v]
+
+            # Collect missing values to report errors
+            missing_values = set(filter_v)
+
+            # Filter constraints and check for missing values
+            filtered_constraints = []
+            for entry in constraints:
+                # Filter based on the presence of any value in filter_v
+                entry_values = entry.get(keyword, [])
+
+                # date constraint may be intervals. We identify intervals with a "/" in the value
+                # we assume that if the first value is an interval, all values are intervals
+                if keyword == "date" and "/" in entry[keyword][0]:
+                    if any(is_range_in_range(x, values[0]) for x in entry[keyword]):
+                        present_values = filter_v
+                else:
+                    present_values = [
+                        value for value in filter_v if value in entry_values
+                    ]
+
+                # Remove present values from the missing_values set
+                missing_values -= set(present_values)
+
+                if present_values:
+                    filtered_constraints.append(entry)
+
+            # raise an error as no constraint entry matched the input keywords
+            # raise an error if one value from input is not allowed
+            if not filtered_constraints or missing_values:
+                allowed_values = list(
+                    {value for c in constraints for value in c.get(keyword, [])}
+                )
+                if len(parsed_keywords) > 1:
+                    keywords = [
+                        f"{k}={pk}"
+                        for k in parsed_keywords
+                        if (pk := input_keywords.get(k))
+                    ]
                     raise ValidationError(
-                        f"parameter(s) {not_queryables} not queryable"
+                        f"{keyword}={values} is not available with"
+                        f" {', '.join(keywords)}."
+                        f" Allowed values are {', '.join(allowed_values)}."
                     )
                 else:
-                    # get constraints again without common queryables
-                    constraint_params = (
-                        get_constraint_queryables_with_additional_params(
-                            constraints, non_empty_kwargs, self, product_type
-                        )
+                    raise ValidationError(
+                        f"{values} is not available in {keyword}."
+                        + f" Allowed values are {', '.join(allowed_values)}."
                     )
 
-        field_definitions: Dict[str, Any] = {}
-        for json_param, json_mtd in constraint_params.items():
-            param = (
-                get_queryable_from_provider(
-                    json_param, self.get_metadata_mapping(product_type)
-                )
-                or json_param
-            )
-            default = kwargs.get(param, None) or self.config.products.get(
-                product_type, {}
-            ).get(param, None)
-            annotated_def = json_field_definition_to_python(
-                json_mtd, default_value=default, required=True
-            )
-            field_definitions[param] = get_args(annotated_def)
+            parsed_keywords.append(keyword)
+            constraints = filtered_constraints
 
-        python_queryables = create_model("m", **field_definitions).model_fields
-        return {**default_queryables, **model_fields_to_annotated(python_queryables)}
+        available_values: Dict[str, Any] = {k: set() for k in ordered_keywords}
+
+        # we aggregate the constraint entries left
+        for entry in constraints:
+            for key, value in entry.items():
+                available_values[key].update(value)
+
+        return {k: list(v) for k, v in available_values.items()}
+
+    def queryables_by_form(
+        self,
+        form: List[Dict[str, Any]],
+        available_values: Dict[str, List[str]],
+        defaults: Dict[str, Any],
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        """
+        Generate Annotated field definitions from form entries and available values
+        Used by Copernicus services like cop_cds, cop_ads, cop_ewds.
+        """
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+
+        required_list: List[str] = []
+        for element in form:
+            if "id" not in element:
+                continue
+
+            name: str = element["name"]
+
+            # those are not parameter elements.
+            if name in ("area_group", "global"):
+                continue
+
+            prop = {"title": element.get("label", name)}
+
+            details = element.get("details", {})
+
+            # add values from form if keyword was not in constraints
+            values = (
+                available_values[name]
+                if name in available_values
+                else details.get("values")
+            )
+
+            # multichoice elements are transformed into array
+            if element["type"] in ("StringListWidget", "StringListArrayWidget"):
+                prop["type"] = "array"
+                if values:
+                    prop["items"] = {"type": "string", "enum": sorted(values)}
+
+            # single choice elements are transformed into string
+            elif element["type"] in (
+                "StringChoiceWidget",
+                "DateRangeWidget",
+                "FreeformInputWidget",
+            ):
+                prop["type"] = "string"
+                if values:
+                    prop["enum"] = sorted(values)
+
+            # a bbox element
+            elif element["type"] == "GeographicExtentWidget":
+                prop.update(
+                    {
+                        "type": "array",
+                        "minItems": 4,
+                        "additionalItems": False,
+                        "items": [
+                            {
+                                "type": "number",
+                                "maximum": 180,
+                                "minimum": -180,
+                                "description": "West border of the bounding box",
+                            },
+                            {
+                                "type": "number",
+                                "maximum": 90,
+                                "minimum": -90,
+                                "description": "South border of the bounding box",
+                            },
+                            {
+                                "type": "number",
+                                "maximum": 180,
+                                "minimum": -180,
+                                "description": "East border of the bounding box",
+                            },
+                            {
+                                "type": "number",
+                                "maximum": 90,
+                                "minimum": -90,
+                                "description": "North border of the bounding box",
+                            },
+                        ],
+                    }
+                )
+
+            # DateRangeWidget is a calendar date picker
+            if element["type"] == "DateRangeWidget":
+                prop["description"] = "date formatted like yyyy-mm-dd/yyyy-mm-dd"
+
+            if description := element.get("help"):
+                prop["description"] = description
+
+            default = defaults.get(name)
+
+            if details:
+                fields = details.get("fields")
+                if fields and (comment := fields[0].get("comment")):
+                    prop["description"] = comment
+
+                if d := details.get("default"):
+                    default = default or (d[0] if fields else d)
+
+            if name == "area" and isinstance(default, dict):
+                default = list(default.values())
+
+            if default:
+                # We strip values of superfluous quotes (addded by mapping converter to_geojson).
+                default = strip_quotes(default)
+
+            # sometimes form returns default as array instead of string
+            if default and prop["type"] == "string" and isinstance(default, list):
+                default = ",".join(default)
+
+            # rename keywords from form with metadata mapping.
+            # needed to map constraints like "xxxx" to eodag parameter "cop_cds:xxxx"
+            key = name_from_provider_key(name, self.config.metadata_mapping)
+
+            is_required = bool(element.get("required"))
+            if is_required:
+                required_list.append(name)
+
+            queryables[key] = Annotated[
+                get_args(
+                    json_field_definition_to_python(
+                        prop,
+                        default_value=default,
+                        required=is_required,
+                    )
+                )
+            ]
+
+        return queryables
+
+    def queryables_by_values(
+        self,
+        available_values: Dict[str, List[str]],
+        required_keywords: List[str],
+        defaults: Dict[str, Any],
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        """
+        Generate Annotated field definitions from available values.
+        Used by ECMWF data providers like dedt_lumi.
+        """
+        # Rename keywords from form with metadata mapping.
+        # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
+        required = [
+            name_from_provider_key(k, self.config.metadata_mapping)
+            for k in required_keywords
+        ]
+
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        for name, values in available_values.items():
+            # Rename keywords from form with metadata mapping.
+            # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
+            key = name_from_provider_key(name, self.config.metadata_mapping)
+
+            default = defaults.get(key)
+
+            queryables[key] = Annotated[
+                get_args(
+                    json_field_definition_to_python(
+                        {"type": "string", "title": name, "enum": values},
+                        default_value=strip_quotes(default) if default else None,
+                        required=bool(key in required),
+                    )
+                )
+            ]
+
+        return queryables
+
+    def format_as_provider_keyword(
+        self, product_type: str, properties: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Return provider equivalent keyword names from EODAG keywords."""
+        parsed_properties = properties_from_json(
+            properties,
+            self.config.metadata_mapping,
+        )
+        available_properties = {
+            k: v
+            for k, v in parsed_properties.items()
+            if v not in [NOT_AVAILABLE, NOT_MAPPED]
+        }
+        return format_query_params(product_type, self.config, available_properties)
+
+    def _fetch_data(self, url: str) -> Any:
+        """
+        fetches from a provider elements like constraints or forms.
+        :param url: url from which the constraints can be fetched
+        :returns: json file content fetched from the provider
+        """
+        if not url:
+            return []
+
+        auth = (
+            self.auth
+            if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
+            else None
+        )
+        return fetch_json(url, auth=auth)
+
+    def normalize_results(
+        self, results: RawSearchResult, **kwargs: Any
+    ) -> List[EOProduct]:
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :param kwargs: Search arguments
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        """
+        # quickfix for wekeo_ecmwf
+        if self.config.api_endpoint:
+            return super().normalize_results(results, **kwargs)
+
+        product_type = kwargs.get("productType")
+
+        result = results[0]
+
+        # datacube query string got from previous search
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            sorted_unpaginated_query_params = geojson.loads(qs)
+        else:
+            # update result with query parameters without pagination (or search-only params)
+            if isinstance(
+                self.config.pagination["next_page_query_obj"], str
+            ) and hasattr(results, "query_params_unpaginated"):
+                unpaginated_query_params = results.query_params_unpaginated
+            elif isinstance(self.config.pagination["next_page_query_obj"], str):
+                next_page_query_obj = orjson.loads(
+                    self.config.pagination["next_page_query_obj"].format()
+                )
+                unpaginated_query_params = {
+                    k: v[0] if (isinstance(v, list) and len(v) == 1) else v
+                    for k, v in results.query_params.items()
+                    if (k, v) not in next_page_query_obj.items()
+                }
+            else:
+                unpaginated_query_params = self.query_params
+
+            # query hash, will be used to build a product id
+            sorted_unpaginated_query_params = dict_items_recursive_sort(
+                unpaginated_query_params
+            )
+
+        # use all available query_params to parse properties
+        result = dict(
+            result,
+            **sorted_unpaginated_query_params,
+            qs=sorted_unpaginated_query_params,
+        )
+
+        # remove unwanted query params
+        for param in getattr(self.config, "remove_from_query", []):
+            sorted_unpaginated_query_params.pop(param, None)
+
+        qs = geojson.dumps(sorted_unpaginated_query_params)
+
+        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+
+        # update result with product_type_def_params and search args if not None (and not auth)
+        kwargs.pop("auth", None)
+        result.update(results.product_type_def_params)
+        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+
+        # parse porperties
+        parsed_properties = properties_from_json(
+            result,
+            self.config.metadata_mapping,
+            discovery_config=getattr(self.config, "discover_metadata", {}),
+        )
+
+        if not product_type:
+            product_type = parsed_properties.get("productType", None)
+
+        # build product id
+        id_prefix = (product_type or self.provider).upper()
+        product_id = "%s_%s_%s_%s" % (
+            id_prefix,
+            parsed_properties["startTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            parsed_properties["completionTimeFromAscendingNode"]
+            .split("T")[0]
+            .replace("-", ""),
+            query_hash,
+        )
+        parsed_properties["id"] = parsed_properties["title"] = product_id
+
+        # update downloadLink and orderLink
+        parsed_properties["_dc_qs"] = quote_plus(qs)
+        if parsed_properties["downloadLink"] != "Not Available":
+            parsed_properties["downloadLink"] += f"?{qs}"
+
+        # parse metadata needing downloadLink
+        dl_path = Fields("downloadLink")
+        dl_path_from_root = Child(Root(), dl_path)
+        for param, mapping in self.config.metadata_mapping.items():
+            if dl_path in mapping or dl_path_from_root in mapping:
+                parsed_properties.update(
+                    properties_from_json(parsed_properties, {param: mapping})
+                )
+
+        # use product_type_config as default properties
+        parsed_properties = dict(
+            getattr(self.config, "product_type_config", {}),
+            **parsed_properties,
+        )
+
+        product = EOProduct(
+            provider=self.provider,
+            productType=product_type,
+            properties=parsed_properties,
+        )
+
+        return [
+            product,
+        ]
+
+    def count_hits(
+        self, count_url: Optional[str] = None, result_type: Optional[str] = None
+    ) -> int:
+        """Count method that will always return 1."""
+        return 1
+
+
+class BuildPostSearchResult(ECMWFSearch):
+    """BuildPostSearchResult search plugin.
+
+    This plugin, which inherits from :class:`~eodag.plugins.search.qssearch.PostJsonSearch`,
+    performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
+    object.
+
+    The available configuration parameters inherits from parent classes, with particularly
+    for this plugin:
+
+        - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
+
+        - **pagination**: The configuration of how the pagination is done
+          on the provider. It is a tree with the following nodes:
+
+          - *next_page_query_obj*: (optional) The additional parameters needed to perform
+            search. These paramaters won't be included in result. This must be a json dict
+            formatted like `{{"foo":"bar"}}` because it will be passed to a `.format()`
+            method before being loaded as json.
+
+    :param provider: An eodag providers configuration dictionary
+    :param config: Path to the user configuration file
+    """
+
+    def collect_search_urls(
+        self,
+        prep: PreparedSearch = PreparedSearch(),
+        **kwargs: Any,
+    ) -> Tuple[List[str], int]:
+        """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
+        urls, _ = super().collect_search_urls(prep, **kwargs)
+        return urls, 1
+
+    def do_search(
+        self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
+    ) -> List[Dict[str, Any]]:
+        """Perform the actual search request, and return result in a single element."""
+        prep.url = prep.search_urls[0]
+        prep.info_message = f"Sending search request: {prep.url}"
+        prep.exception_message = (
+            f"Skipping error while searching for {self.provider}"
+            f" {self.__class__.__name__} instance"
+        )
+        response = self._request(prep)
+
+        return [response.json()]
+
+
+# legacy. Used by ecmwf_cmems ??
+def fetch_constraints(constraints_url: str, plugin: Search) -> List[Dict[Any, Any]]:
+    """
+    fetches the constraints from a provider
+    :param constraints_url: url from which the constraints can be fetched
+    :param plugin: api or search plugin of the provider
+    :returns: list of constraints fetched from the provider
+    """
+    auth = (
+        plugin.auth
+        if hasattr(plugin, "auth") and isinstance(plugin.auth, AuthBase)
+        else None
+    )
+    constraints_data = fetch_json(constraints_url, auth=auth)
+
+    config = plugin.config.__dict__
+    if (
+        "constraints_entry" in config
+        and config["constraints_entry"]
+        and config["constraints_entry"] in constraints_data
+    ):
+        constraints = constraints_data[config["constraints_entry"]]
+    elif config.get("stop_without_constraints_entry_key", False):
+        return []
+    else:
+        constraints = constraints_data
+    return constraints

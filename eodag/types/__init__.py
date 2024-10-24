@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG types"""
+
 from __future__ import annotations
 
 from typing import (
@@ -33,7 +34,7 @@ from typing import (
 )
 
 from annotated_types import Gt, Lt
-from pydantic import Field
+from pydantic import BaseModel, Field, create_model
 from pydantic.fields import FieldInfo
 
 from eodag.utils import copy_deepcopy
@@ -83,7 +84,7 @@ def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> Tuple[str, Any]:
 
 
 def _get_type_info_from_annotated(
-    annotated_type: Annotated[type, Any]
+    annotated_type: Annotated[type, Any],
 ) -> Dict[str, Any]:
     """
     retrieves type information from an annotated object
@@ -118,7 +119,8 @@ def python_type_to_json(
     :param python_type: the python type
     :returns: the json type
     """
-    if get_origin(python_type) is Union:
+    origin = get_origin(python_type)
+    if origin is Union:
         json_type = list()
         for single_python_type in get_args(python_type):
             type_data = {}
@@ -138,8 +140,10 @@ def python_type_to_json(
         return list(JSON_TYPES_MAPPING.keys())[
             list(JSON_TYPES_MAPPING.values()).index(python_type)
         ]
-    elif get_origin(python_type) == Annotated:
+    elif origin is Annotated:
         return [_get_type_info_from_annotated(python_type)]
+    elif origin is list:
+        raise NotImplementedError("Never completed")
     else:
         return None
 
@@ -173,12 +177,27 @@ def json_field_definition_to_python(
         title=json_field_definition.get("title", None),
         description=json_field_definition.get("description", None),
         pattern=json_field_definition.get("pattern", None),
+        le=json_field_definition.get("maximum"),
+        ge=json_field_definition.get("minimum"),
     )
 
-    if "enum" in json_field_definition and (
-        isinstance(json_field_definition["enum"], (list, set))
-    ):
-        python_type = Literal[tuple(sorted(json_field_definition["enum"]))]  # type: ignore
+    enum = json_field_definition.get("enum")
+
+    if python_type in (list, set):
+        items = json_field_definition.get("items", None)
+        if isinstance(items, list):
+            python_type = Tuple[  # type: ignore
+                tuple(
+                    json_field_definition_to_python(item, required=True)
+                    for item in items
+                )
+            ]
+        elif isinstance(items, dict):
+            enum = items.get("enum")
+
+    if enum:
+        literal = Literal[tuple(sorted(enum))]  # type: ignore
+        python_type = List[literal] if python_type in (list, set) else literal  # type: ignore
 
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
@@ -190,7 +209,7 @@ def json_field_definition_to_python(
 
 
 def python_field_definition_to_json(
-    python_field_definition: Annotated[Any, FieldInfo]
+    python_field_definition: Annotated[Any, FieldInfo],
 ) -> Dict[str, Any]:
     """Get json field definition from python `typing.Annotated`
 
@@ -252,6 +271,7 @@ def python_field_definition_to_json(
             json_field_definition["max"] = [
                 row["max"] if "max" in row else None for row in field_type
             ]
+
     if "min" in json_field_definition and json_field_definition["min"].count(
         None
     ) == len(json_field_definition["min"]):
@@ -291,7 +311,7 @@ def python_field_definition_to_json(
 
 
 def model_fields_to_annotated(
-    model_fields: Dict[str, FieldInfo]
+    model_fields: Dict[str, FieldInfo],
 ) -> Dict[str, Annotated[Any, FieldInfo]]:
     """Convert BaseModel.model_fields from FieldInfo to Annotated
 
@@ -306,13 +326,28 @@ def model_fields_to_annotated(
     :param model_fields: BaseModel.model_fields to convert
     :returns: Annotated tuple usable as create_model argument
     """
-    annotated_model_fields = dict()
+    annotated_model_fields: Dict[str, Annotated[Any, FieldInfo]] = dict()
     for param, field_info in model_fields.items():
         field_type = field_info.annotation or type(None)
         new_field_info = copy_deepcopy(field_info)
         new_field_info.annotation = None
         annotated_model_fields[param] = Annotated[field_type, new_field_info]
     return annotated_model_fields
+
+
+def annotated_dict_to_model(
+    model_name: str, annotated_fields: Dict[str, Annotated[Any, FieldInfo]]
+) -> BaseModel:
+    """Convert a dictionnary of Annotated values to a Pydantic BaseModel."""
+    fields = {
+        name: (field.__args__[0], field.__metadata__[0])
+        for name, field in annotated_fields.items()
+    }
+    return create_model(
+        model_name,
+        **fields,  # type: ignore
+        __config__={"arbitrary_types_allowed": True},
+    )
 
 
 class ProviderSortables(TypedDict):

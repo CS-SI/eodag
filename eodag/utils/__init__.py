@@ -431,6 +431,33 @@ def datetime_range(start: dt, end: dt) -> Iterator[dt]:
         yield start + datetime.timedelta(days=nday)
 
 
+def is_range_in_range(valid_range: str, check_range: str) -> bool:
+    """Check if the check_range is completely within the valid_range.
+
+    This function checks if both the start and end dates of the check_range
+    are within the start and end dates of the valid_range.
+
+    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
+    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
+    :returns: True if check_range is within valid_range, otherwise False.
+    """
+    if "/" not in valid_range or "/" not in check_range:
+        return False
+
+    # Split the date ranges into start and end dates
+    start_valid, end_valid = valid_range.split("/")
+    start_check, end_check = check_range.split("/")
+
+    # Convert the strings to datetime objects using fromisoformat
+    start_valid_dt = datetime.datetime.fromisoformat(start_valid)
+    end_valid_dt = datetime.datetime.fromisoformat(end_valid)
+    start_check_dt = datetime.datetime.fromisoformat(start_check)
+    end_check_dt = datetime.datetime.fromisoformat(end_check)
+
+    # Check if check_range is within valid_range
+    return start_valid_dt <= start_check_dt and end_valid_dt >= end_check_dt
+
+
 class DownloadedCallback:
     """Example class for callback after each download in :meth:`~eodag.api.core.EODataAccessGateway.download_all`"""
 

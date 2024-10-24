@@ -367,6 +367,9 @@ class EODAGSearch(BaseModel):
         provider: Optional[str] = None,
     ) -> str:
         """Get the alias of a field in a Pydantic model"""
+        # quick fix. TODO: refactor of EODAGSearch.
+        if field_name in ("productType", "id"):
+            return field_name
         field = cls.model_fields.get(field_name)
         if field is not None and field.alias is not None:
             return field.alias

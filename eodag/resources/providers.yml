@@ -2100,7 +2100,7 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://ads-beta.atmosphere.copernicus.eu
+    matching_url: https://ads.atmosphere.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -2115,8 +2115,8 @@
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}
-        searchLink: https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
@@ -2162,15 +2162,13 @@
       CAMS_EAC4_MONTHLY:
         output_extension: .grib
   search: !plugin
-    type: BuildSearchResult
+    type: ECMWFSearch
     ssl_verify: true
     end_date_excluded: false
     remove_from_query:
       - dataset
-    discover_queryables:
-      fetch_url: null
-      product_type_fetch_url: null
-    constraints_file_url: "https://ads-beta.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
+    constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json"
+    form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2185,203 +2183,107 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
+      storageStatus: OFFLINE
       downloadLink: '$.null'
       qs: $.qs
-      orderLink: 'https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
-      # Copernicus ADS specific parameters
-      aerosol_type:
-        - aerosol_type
-        - '$.aerosol_type'
-      altitude:
-        - altitude
-        - '$.altitude'
-      api_product_type:
-        - product_type
-        - '$.api_product_type'
-      band:
-        - band
-        - '$.band'
-      dataset:
-        - dataset
-        - '$.dataset'
-      day:
-        - day
-        - '$.day'
-      forcing_type:
-        - forcing_type
-        - '$.forcing_type'
-      format:
-        - data_format
-        - '$.format'
-      input_observations:
-        - input_observations
-        - '$.input_observations'
-      latitude:
-        - '{{"location": {{"latitude": {latitude}, "longitude": {longitude}}}}}'
-        - '$.latitude'
-      level:
-        - level
-        - '$.level'
-      leadtime_hour:
-        - leadtime_hour
-        - '$.leadtime_hour'
-      levtype:
-        - levtype
-        - '$.levtype'
-      location:
-        - location
-        - '$.location'
-      longitude:
-        - '{{"location": {{"latitude": {latitude}, "longitude": {longitude}}}}}'
-        - '$.longitude'
-      model:
-        - model
-        - '$.model'
-      model_level:
-        - model_level
-        - '$.model_level'
-      month:
-        - month
-        - '$.month'
-      param:
-        - param
-        - '$.param'
-      pressure_level:
-        - pressure_level
-        - '$.pressure_level'
-      product:
-        - product
-        - '$.product'
-      sky_type:
-        - sky_type
-        - '$.sky_type'
-      source:
-        - source
-        - '$.source'
-      step:
-        - step
-        - '$.step'
-      target:
-        - target
-        - '$.target'
-      time:
-        - time
-        - '$.time'
-      time_aggregation:
-        - time_aggregation
-        - '$.time_aggregation'
-      time_reference:
-        - time_reference
-        - '$.time_reference'
-      time_step:
-        - time_step
-        - '$.time_step'
-      type:
-        - type
-        - '$.type'
-      variable:
-        - variable
-        - '$.variable'
-      version:
-        - version
-        - '{$.version#to_geojson}'
-      quantity:
-        - quantity
-        - '$.quantity'
-      year:
-        - year
-        - '$.year'
+      orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{ecmwf:dataset}/execution?{{"inputs": {qs#to_geojson}}}'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
-      dataset: cams-global-atmospheric-composition-forecasts
-      type: forecast
-      format: grib
-      variable: 10m_u_component_of_wind
-      time: '00:00'
-      leadtime_hour: '0'
+      "ecmwf:dataset": cams-global-atmospheric-composition-forecasts
+      "ecmwf:type": forecast
+      "ecmwf:format": grib
+      "ecmwf:variable": 10m_u_component_of_wind
+      "ecmwf:time": '00:00'
+      "ecmwf:leadtime_hour": '0'
     CAMS_GFE_GFAS:
-      dataset: cams-global-fire-emissions-gfas
-      format: grib
-      variable: wildfire_combustion_rate
+      "ecmwf:dataset": cams-global-fire-emissions-gfas
+      "ecmwf:data_format": grib
+      "ecmwf:variable": wildfire_combustion_rate
     CAMS_EU_AIR_QUALITY_FORECAST:
-      dataset: cams-europe-air-quality-forecasts
-      model: ensemble
-      format: grib
-      variable: ammonia
-      type: forecast
-      time: '00:00'
-      level: '0'
-      leadtime_hour: '0'
+      "ecmwf:dataset": cams-europe-air-quality-forecasts
+      "ecmwf:model": ensemble
+      "ecmwf:data_format": grib
+      "ecmwf:variable": ammonia
+      "ecmwf:type": forecast
+      "ecmwf:time": '00:00'
+      "ecmwf:level": '0'
+      "ecmwf:leadtime_hour": '0'
     CAMS_EU_AIR_QUALITY_RE:
-      dataset: cams-europe-air-quality-reanalyses
-      type: validated_reanalysis
-      format: zip
-      variable: nitrogen_dioxide
-      model: ensemble
-      level: '0'
+      "ecmwf:dataset": cams-europe-air-quality-reanalyses
+      "ecmwf:type": validated_reanalysis
+      "ecmwf:data_format": zip
+      "ecmwf:variable": nitrogen_dioxide
+      "ecmwf:model": ensemble
+      "ecmwf:level": '0'
       metadata_mapping:
         <<: *month_year
     CAMS_GRF:
-      dataset: cams-global-radiative-forcings
-      format: zip
-      variable: radiative_forcing_of_carbon_dioxide
-      forcing_type: instantaneous
-      band: long_wave
-      sky_type: all_sky
-      level: surface
-      version: '2'
+      "ecmwf:dataset": cams-global-radiative-forcings
+      "ecmwf:data_format": zip
+      "ecmwf:variable": radiative_forcing_of_carbon_dioxide
+      "ecmwf:forcing_type": instantaneous
+      "ecmwf:band": long_wave
+      "ecmwf:sky_type": all_sky
+      "ecmwf:level": surface
+      "ecmwf:version": '2'
       metadata_mapping:
         <<: *month_year
     CAMS_GRF_AUX:
-      dataset: cams-global-radiative-forcing-auxilliary-variables
-      band: short_wave
-      sky_type: clear_sky
-      version: '1.5'
-      format: zip
-      variable: aerosol_radiation_effect
-      aerosol_type: marine
-      level: surface
+      "ecmwf:dataset": cams-global-radiative-forcing-auxilliary-variables
+      "ecmwf:band": short_wave
+      "ecmwf:sky_type": clear_sky
+      "ecmwf:version": '1.5'
+      "ecmwf:data_format": zip
+      "ecmwf:variable": aerosol_radiation_effect
+      "ecmwf:aerosol_type": marine
+      "ecmwf:level": surface
       metadata_mapping:
         <<: *month_year
     CAMS_SOLAR_RADIATION:
-      dataset: cams-solar-radiation-timeseries
-      sky_type: clear
-      time_step: 1minute
-      time_reference: true_solar_time
-      location:
-        latitude: 0
-        longitude: 0
-      altitude: -999
-      format: csv
+      "ecmwf:dataset": cams-solar-radiation-timeseries
+      "ecmwf:sky_type": clear
+      "ecmwf:time_step": 1minute
+      "ecmwf:time_reference": true_solar_time
+      "ecmwf:location":
+        "latitude": 0
+        "longitude": 0
+      "ecmwf:altitude": -999
+      "ecmwf:data_format": csv
+      metadata_mapping:
+        "ecmwf:latitude":
+          - '{{"location": {{"latitude": {"ecmwf:latitude"}, "longitude": {"ecmwf:longitude"}}}}}'
+          - '$."ecmwf:latitude"'
+        "ecmwf:longitude":
+          - '{{"location": {{"latitude": {"ecmwf:latitude"}, "longitude": {"ecmwf:longitude"}}}}}'
+          - '$."ecmwf:longitude"'
     CAMS_GREENHOUSE_EGG4_MONTHLY:
-      dataset: cams-global-ghg-reanalysis-egg4-monthly
-      format: grib
-      variable: snow_albedo
-      api_product_type: monthly_mean
+      "ecmwf:dataset": cams-global-ghg-reanalysis-egg4-monthly
+      "ecmwf:data_format": grib
+      "ecmwf:variable": snow_albedo
+      "ecmwf:product_type": monthly_mean
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_EGG4:
-      dataset: cams-global-ghg-reanalysis-egg4
-      format: grib
-      variable: snow_albedo
-      step: '0'
+      "ecmwf:dataset": cams-global-ghg-reanalysis-egg4
+      "ecmwf:data_format": grib
+      "ecmwf:variable": snow_albedo
+      "ecmwf:step": '0'
     CAMS_GREENHOUSE_INVERSION:
-      dataset: cams-global-greenhouse-gas-inversion
-      version: latest
-      variable: carbon_dioxide
-      quantity: mean_column
-      input_observations: surface
-      time_aggregation: instantaneous
+      "ecmwf:dataset": cams-global-greenhouse-gas-inversion
+      "ecmwf:version": latest
+      "ecmwf:variable": carbon_dioxide
+      "ecmwf:quantity": mean_column
+      "ecmwf:input_observations": surface
+      "ecmwf:time_aggregation": instantaneous
       metadata_mapping:
         <<: *month_year
     CAMS_GLOBAL_EMISSIONS:
-      dataset: cams-global-emission-inventories
-      version: latest
-      format: zip
-      variable: acids
-      source: anthropogenic
+      "ecmwf:dataset": cams-global-emission-inventories
+      "ecmwf:version": latest
+      "ecmwf:data_format": zip
+      "ecmwf:variable": acids
+      "ecmwf:source": anthropogenic
       metadata_mapping:
         completionTimeFromAscendingNode:
           - |
@@ -2390,19 +2292,19 @@
             }}
           - '{$.completionTimeFromAscendingNode#to_iso_date}'
     CAMS_EAC4:
-      dataset: cams-global-reanalysis-eac4
-      format: grib
-      variable: '2m_dewpoint_temperature'
-      time: '00:00'
+      "ecmwf:dataset": cams-global-reanalysis-eac4
+      "ecmwf:data_format": grib
+      "ecmwf:variable": '2m_dewpoint_temperature'
+      "ecmwf:time": '00:00'
     CAMS_EAC4_MONTHLY:
-      dataset: cams-global-reanalysis-eac4-monthly
-      format: grib
-      variable: 2m_dewpoint_temperature
-      api_product_type: monthly_mean
+      "ecmwf:dataset": cams-global-reanalysis-eac4-monthly
+      "ecmwf:data_format": grib
+      "ecmwf:variable": 2m_dewpoint_temperature
+      "ecmwf:product_type": monthly_mean
       metadata_mapping:
         <<: *month_year
     GENERIC_PRODUCT_TYPE:
-      dataset: '{productType}'
+      "ecmwf:dataset": '{productType}'
 ---
 !provider # MARK: cop_cds
   name: cop_cds
@@ -2410,7 +2312,7 @@
   description: Copernicus Climate Data Store
   roles:
     - host
-  url: https://cds-beta.climate.copernicus.eu
+  url: https://cds.climate.copernicus.eu
   # anchors to avoid duplications
   anchor_day_month_year: &day_month_year
     completionTimeFromAscendingNode:
@@ -2440,7 +2342,7 @@
       }}
     - '{$.completionTimeFromAscendingNode#to_iso_date}'
   anchor_month_year_time: &month_year_time
-    completionTimeFromAscendingNode:
+    startTimeFromAscendingNode:
       - |
         {{
           "year": {_date#interval_to_datetime_dict}["year"],
@@ -2450,7 +2352,7 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://cds-beta.climate.copernicus.eu
+    matching_url: https://cds.climate.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -2465,8 +2367,8 @@
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://cds-beta.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
-        searchLink: https://cds-beta.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
@@ -2526,16 +2428,14 @@
         output_extension: .zip
         extract: true
   search: !plugin
-    type: BuildSearchResult
+    type: ECMWFSearch
     ssl_verify: true
     end_date_excluded: false
     remove_from_query:
       - dataset
       - date
-    discover_queryables:
-      fetch_url: null
-      product_type_fetch_url: null
-    constraints_file_url: https://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
+    constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json
+    form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
     metadata_mapping:
       productType: $.productType
       title: $.id
@@ -2550,231 +2450,81 @@
         - '{{"area": {geometry#to_nwse_bounds}}}'
         - $.geometry
       defaultGeometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
-      storageStatus: '{$.null#replace_str("Not Available","OFFLINE")}'
+      storageStatus: OFFLINE
       downloadLink: $.null
       qs: $.qs
-      orderLink: 'https://cds-beta.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+      orderLink: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{ecmwf:dataset}/execution?{{"inputs": {qs#to_geojson}}}'
       # Copernicus CDS specific parameters
-      api_product_type:
-        - product_type
-        - $.api_product_type
-      cdr_type:
-        - cdr_type
-        - $.cdr_type
-      dataset:
-        - dataset
-        - $.dataset
-      dataset_type:
-        - dataset_type
-        - $.dataset_type
-      day:
-        - day
-        - $.day
-      download_format:
-        - download_format
-        - $.download_format
-      ensemble_member:
-        - ensemble_member
-        - $.ensemble_member
-      experiment:
-        - experiment
-        - $.experiment
-      filter:
-        - filter
-        - $.filter
-      format:
-        - data_format
-        - $.format
-      gcm:
-        - gcm
-        - $.gcm
-      grid:
-        - grid
-        - $.grid
-      hdate:
-        - hdate
-        - $.hdate
-      horizontal_resolution:
-        - horizontal_resolution
-        - $.horizontal_resolution
-      hydrological_model:
-        - hydrological_model
-        - $.hydrological_model
-      latitude:
-        - latitude
-        - $.latitude
-      leadtime_hour:
-        - leadtime_hour
-        - $.leadtime_hour
-      leadtime_month:
-        - leadtime_month
-        - $.leadtime_month
-      longitude:
-        - longitude
-        - $.longitude
-      model_levels:
-        - model_levels
-        - $.model_levels
-      month:
-        - month
-        - $.month
-      nominal_day:
-        - nominal_day
-        - $.nominal_day
-      origin:
-        - origin
-        - $.origin
-      originating_centre:
-        - originating_centre
-        - $.originating_centre
-      param:
-        - param
-        - $.param
-      period:
-        - period
-        - $.period
-      pressure_level:
-        - pressure_level
-        - $.pressure_level
-      processing_level:
-        - processing_level
-        - $.processing_level
-      processing_type:
-        - processing_type
-        - $.processing_type
-      product:
-        - product
-        - $.product
-      product_version:
-        - product_version
-        - $.product_version
-      rcm:
-        - rcm
-        - $.rcm
-      region:
-        - region
-        - $.region
-      satellite:
-        - satellite
-        - $.satellite
-      sensor:
-        - sensor
-        - $.sensor
-      sensor_and_algorithm:
-        - sensor_and_algorithm
-        - $.sensor_and_algorithm
-      source:
-        - source
-        - $.source
-      statistic:
-        - statistic
-        - $.statistic
-      step:
-        - step
-        - $.step
-      system:
-        - system
-        - $.system
-      system_version:
-        - system_version
-        - '{$.system_version#to_geojson}'
-      target:
-        - target
-        - $.target
-      temporal_aggregation:
-        - temporal_aggregation
-        - $.temporal_aggregation
-      time:
-        - time
-        - $.time
-      time_aggregation:
-        - time_aggregation
-        - $.time_aggregation
-      type:
-        - type
-        - $.type
-      variable:
-        - variable
-        - $.variable
-      variable_type:
-        - variable_type
-        - $.variable_type
-      version:
+      # to_geojson is used to handle versions like 1_0 that would be otherwise evaluated to 10 by the metadata mapping formating
+      "ecmwf:version":
         - version
-        - '{$.version#to_geojson}'
-      year:
-        - year
-        - $.year
+        - '{$."ecmwf:version"#to_geojson}'
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
     AG_ERA5:
-      dataset: sis-agrometeorological-indicators
-      version: '1_1'
-      variable: cloud_cover
-      statistic: 24_hour_mean
-      format: zip
+      "ecmwf:dataset": sis-agrometeorological-indicators
+      "ecmwf:version": '"1_1"'
+      "ecmwf:variable": cloud_cover
+      "ecmwf:statistic": 24_hour_mean
       metadata_mapping:
         <<: *day_month_year
     ERA5_SL:
-      dataset: reanalysis-era5-single-levels
-      api_product_type: reanalysis
-      format: grib
-      variable: 10m_u_component_of_wind
+      "ecmwf:dataset": reanalysis-era5-single-levels
+      "ecmwf:product_type": reanalysis
+      "ecmwf:variable": 10m_u_component_of_wind
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_PL:
-      dataset: reanalysis-era5-pressure-levels
-      api_product_type: reanalysis
-      format: grib
-      variable: geopotential
+      "ecmwf:dataset": reanalysis-era5-pressure-levels
+      "ecmwf:product_type": reanalysis
+      "ecmwf:variable": geopotential
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_PL_MONTHLY:
-      dataset: reanalysis-era5-pressure-levels-monthly-means
-      api_product_type: monthly_averaged_reanalysis_by_hour_of_day
-      format: grib
-      variable: divergence
-      pressure_level: '1'
+      "ecmwf:dataset": reanalysis-era5-pressure-levels-monthly-means
+      "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
+      "ecmwf:variable": divergence
+      "ecmwf:pressure_level": '1'
       metadata_mapping:
         <<: *month_year_time
     ERA5_LAND:
-      dataset: reanalysis-era5-land
-      variable: 2m_dewpoint_temperature
-      format: grib
+      "ecmwf:dataset": reanalysis-era5-land
+      "ecmwf:variable": 2m_dewpoint_temperature
+      "ecmwf:data_format": grib
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_LAND_MONTHLY:
-      dataset: reanalysis-era5-land-monthly-means
-      api_product_type: monthly_averaged_reanalysis_by_hour_of_day
-      variable: 2m_dewpoint_temperature
-      format: grib
+      "ecmwf:dataset": reanalysis-era5-land-monthly-means
+      "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
+      "ecmwf:variable": 2m_dewpoint_temperature
+      "ecmwf:data_format": grib
       metadata_mapping:
         <<: *month_year_time
     ERA5_SL_MONTHLY:
-      dataset: reanalysis-era5-single-levels-monthly-means
-      api_product_type: monthly_averaged_reanalysis_by_hour_of_day
-      format: grib
+      "ecmwf:dataset": reanalysis-era5-single-levels-monthly-means
+      "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
+      "ecmwf:data_format": grib
       metadata_mapping:
         <<: *month_year_time
     UERRA_EUROPE_SL:
-      dataset: reanalysis-uerra-europe-single-levels
-      origin: mescan_surfex
-      variable: 10m_wind_direction
-      time: 00:00
-      format: grib
+      "ecmwf:dataset": reanalysis-uerra-europe-single-levels
+      "ecmwf:origin": mescan_surfex
+      "ecmwf:variable": 10m_wind_direction
+      "ecmwf:time": 00:00
+      "ecmwf:data_format": grib
       metadata_mapping:
         <<: *day_month_year
     GLACIERS_DIST_RANDOLPH:
-      dataset: insitu-glaciers-extent
-      variable: glacier_area
-      api_product_type: gridded
-      version: '6_0'
-      format: zip
+      "ecmwf:dataset": insitu-glaciers-extent
+      "ecmwf:variable": glacier_area
+      "ecmwf:product_type": gridded
+      "ecmwf:version": '"6_0"'
+      "ecmwf:data_format": zip
     GRIDDED_GLACIERS_MASS_CHANGE:
-      dataset: derived-gridded-glacier-mass-change
-      variable: glacier_mass_change
-      product_version: wgms_fog_2023_09
-      format: zip
+      "ecmwf:dataset": derived-gridded-glacier-mass-change
+      "ecmwf:variable": glacier_mass_change
+      "ecmwf:product_version": wgms_fog_2023_09
+      "ecmwf:data_format": zip
       metadata_mapping:
         completionTimeFromAscendingNode:
           - |
@@ -2783,147 +2533,145 @@
             }}
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
     SATELLITE_CARBON_DIOXIDE:
-      dataset: satellite-carbon-dioxide
-      processing_level: level_3
-      variable: xco2
-      sensor_and_algorithm: merged_obs4mips
-      version: '4_5'
+      "ecmwf:dataset": satellite-carbon-dioxide
+      "ecmwf:processing_level": level_3
+      "ecmwf:variable": xco2
+      "ecmwf:sensor_and_algorithm": merged_obs4mips
+      "ecmwf:version": '"4_5"'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
-      dataset: satellite-fire-burned-area
-      origin: esa_cci
-      sensor: modis
-      variable: grid_variables
-      version: '5_1_1cds'
-      nominal_day: '01'
+      "ecmwf:dataset": satellite-fire-burned-area
+      "ecmwf:origin": esa_cci
+      "ecmwf:sensor": modis
+      "ecmwf:variable": grid_variables
+      "ecmwf:version": '5_1_1cds'
+      "ecmwf:nominal_day": '01'
       metadata_mapping:
         <<: *month_year
     SATELLITE_METHANE:
-      dataset: satellite-methane
-      processing_level: level_3
-      variable: xch4
-      sensor_and_algorithm: merged_obs4mips
-      version: '4_5'
+      "ecmwf:dataset": satellite-methane
+      "ecmwf:processing_level": level_3
+      "ecmwf:variable": xch4
+      "ecmwf:sensor_and_algorithm": merged_obs4mips
+      "ecmwf:version": '"4_5"'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
-      cdr_type: cdr
-      dataset: satellite-sea-ice-edge-type
-      region: northern_hemisphere
-      variable:
+      "ecmwf:dataset": satellite-sea-ice-edge-type
+      "ecmwf:cdr_type": cdr
+      "ecwmf:region": northern_hemisphere
+      "ecmwf:variable":
         - sea_ice_edge
         - sea_ice_type
-      version: '3_0'
+      "ecmwf:version": '"3_0"'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_THICKNESS:
-      cdr_type: cdr
-      dataset: satellite-sea-ice-thickness
-      satellite: envisat
-      variable: all
-      version: '3_0'
+      "ecmwf:dataset": satellite-sea-ice-thickness
+      "ecmwf:cdr_type": cdr
+      "ecmwf:satellite": envisat
+      "ecmwf:variable": all
+      "ecmwf:version": '"3_0"'
       metadata_mapping:
         <<: *month_year
     SATELLITE_SEA_ICE_CONCENTRATION:
-      cdr_type: cdr
-      dataset: satellite-sea-ice-concentration
-      origin: eumetsat_osi_saf
-      region:
+      "ecmwf:dataset": satellite-sea-ice-concentration
+      "ecmwf:cdr_type": cdr
+      "ecmwf:origin": eumetsat_osi_saf
+      "ecmwf:region":
         - northern_hemisphere
         - southern_hemisphere
-      sensor: ssmis
-      temporal_aggregation: daily
-      variable: all
-      version: v3
+      "ecmwf:sensor": ssmis
+      "ecmwf:temporal_aggregation": daily
+      "ecmwf:variable": all
+      "ecmwf:version": v3
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_LEVEL_GLOBAL:
-      dataset: satellite-sea-level-global
-      variable:
+      "ecmwf:dataset": satellite-sea-level-global
+      "ecmwf:variable":
         - daily
-      version: vdt2021
+      "ecmwf:version": vdt2021
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_PL:
-      dataset: seasonal-postprocessed-pressure-levels
-      format: grib
-      originating_centre: ecmwf
-      system: '5'
-      variable: geopotential_anomaly
-      pressure_level: '10'
-      api_product_type: ensemble_mean
-      leadtime_month: '1'
+      "ecmwf:dataset": seasonal-postprocessed-pressure-levels
+      "ecmwf:data_format": grib
+      "ecmwf:originating_centre": ecmwf
+      "ecmwf:system": '5'
+      "ecmwf:variable": geopotential_anomaly
+      "ecmwf:pressure_level": '10'
+      "ecmwf:product_type": ensemble_mean
+      "ecmwf:leadtime_month": '1'
       metadata_mapping:
         <<: *month_year
     SEASONAL_POSTPROCESSED_SL:
-      dataset: seasonal-postprocessed-single-levels
-      format: grib
-      originating_centre: ecmwf
-      system: '5'
-      variable: 2m_dewpoint_temperature_anomaly
-      api_product_type: ensemble_mean
-      leadtime_month: '1'
+      "ecmwf:dataset": seasonal-postprocessed-single-levels
+      "ecmwf:data_format": grib
+      "ecmwf:originating_centre": ecmwf
+      "ecmwf:system": '5'
+      "ecmwf:variable": 2m_dewpoint_temperature_anomaly
+      "ecmwf:product_type": ensemble_mean
+      "ecmwf:leadtime_month": '1'
       metadata_mapping:
         <<: *month_year
     SEASONAL_ORIGINAL_SL:
-      dataset: seasonal-original-single-levels
-      format: grib
-      originating_centre: ecmwf
-      system: '5'
-      variable: 10m_u_component_of_wind
-      leadtime_hour: '6'
-      day: '01'
+      "ecmwf:dataset": seasonal-original-single-levels
+      "ecmwf:data_format": grib
+      "ecmwf:originating_centre": ecmwf
+      "ecmwf:system": '5'
+      "ecmwf:variable": 10m_u_component_of_wind
+      "ecmwf:leadtime_hour": '6'
       metadata_mapping:
-        <<: *month_year
+        <<: *day_month_year
     SEASONAL_ORIGINAL_PL:
-      dataset: seasonal-original-pressure-levels
-      format: grib
-      originating_centre: ecmwf
-      system: '5'
-      variable: geopotential
-      pressure_level: '10'
-      leadtime_hour: '12'
-      day: '01'
+      "ecmwf:dataset": seasonal-original-pressure-levels
+      "ecmwf:data_format": grib
+      "ecmwf:originating_centre": ecmwf
+      "ecmwf:system": '5'
+      "ecmwf:variable": geopotential
+      "ecmwf:pressure_level": '10'
+      "ecmwf:leadtime_hour": '12'
       metadata_mapping:
-        <<: *month_year
+        <<: *day_month_year
     SEASONAL_MONTHLY_PL:
-      dataset: seasonal-monthly-pressure-levels
-      format: grib
-      originating_centre: ecmwf
-      system: '5'
-      variable: geopotential
-      pressure_level: '10'
-      api_product_type: monthly_mean
-      leadtime_month: '1'
+      "ecmwf:dataset": seasonal-monthly-pressure-levels
+      "ecmwf:data_format": grib
+      "ecmwf:originating_centre": ecmwf
+      "ecmwf:system": '5'
+      "ecmwf:variable": geopotential
+      "ecmwf:pressure_level": '10'
+      "ecmwf:product_type": monthly_mean
+      "ecmwf:leadtime_month": '1'
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_SL:
-      dataset: seasonal-monthly-single-levels
-      format: grib
-      originating_centre: ecmwf
-      system: '5'
-      variable: 10m_u_component_of_wind
-      api_product_type: monthly_mean
-      leadtime_month: '1'
+      "ecmwf:dataset": seasonal-monthly-single-levels
+      "ecmwf:data_format": grib
+      "ecmwf:originating_centre": ecmwf
+      "ecmwf:system": '5'
+      "ecmwf:variable": 10m_u_component_of_wind
+      "ecmwf:product_type": monthly_mean
+      "ecmwf:leadtime_month": '1'
       metadata_mapping:
         <<: *month_year
     SIS_HYDRO_MET_PROJ:
-      dataset: sis-hydrology-meteorology-derived-projections
-      format: zip
-      api_product_type: climate_impact_indicators
-      variable: 2m_air_temperature
-      variable_type: absolute_change_from_reference_period
-      processing_type: original
-      time_aggregation: monthly_mean
-      horizontal_resolution: 5_km
-      experiment: degree_scenario
-      rcm: cclm4_8_17
-      gcm: ec_earth
-      ensemble_member: r12i1p1
-      period: 1_5_c
+      "ecmwf:dataset": sis-hydrology-meteorology-derived-projections
+      "ecmwf:data_format": zip
+      "ecmwf:product_type": climate_impact_indicators
+      "ecmwf:variable": 2m_air_temperature
+      "ecmwf:variable_type": absolute_change_from_reference_period
+      "ecmwf:processing_type": original
+      "ecmwf:time_aggregation": monthly_mean
+      "ecmwf:horizontal_resolution": 5_km
+      "ecmwf:experiment": degree_scenario
+      "ecmwf:rcm": cclm4_8_17
+      "ecmwf:gcm": ec_earth
+      "ecmwf:ensemble_member": r12i1p1
+      "ecmwf:period": 1_5_c
     GENERIC_PRODUCT_TYPE:
-      dataset: '{productType}'
+      "ecmwf:dataset": '{productType}'
 ---
 !provider # MARK: sara
   name: sara
@@ -4356,8 +4104,9 @@
       - '{{"variable": {variable}}}'
       - '$.null'
   search: !plugin
-    type: PostJsonSearch
+    type: ECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
+    available_values_url:
     timeout: 60
     need_auth: true
     auth_error_code: 401
@@ -4369,10 +4118,6 @@
       max_items_per_page: 200
     discover_product_types:
       fetch_url: null
-    constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
-    constraints_file_dataset_key: productType
-    constraints_entry: constraints
-    stop_without_constraints_entry_key: true
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'
@@ -4518,6 +4263,9 @@
         - '$.null'
       hydrological_year:
         - '{{"hydrological_year": {hydrological_year}}}'
+        - '$.null'
+      download_format:
+        - '{{"download_format": "{download_format}"}}'
         - '$.null'
   products:
     SATELLITE_CARBON_DIOXIDE:
@@ -4904,6 +4652,7 @@
         - ensemble_mean
       variable:
         - 10m_u_component_of_wind
+      download_format: zip
       format: grib # netcdf format may fail
       metadata_mapping:
         id: '$.id'
@@ -5369,7 +5118,7 @@
         missionEndDate: '$.metadata._source.tempextent_end'
         processingLevel: '$.null'
         keywords: '$.metadata._source.keywords'
-    constraints_file_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+    constraints_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
     constraints_file_dataset_key: productType
     constraints_entry: constraints
     stop_without_constraints_entry_key: true
@@ -5814,12 +5563,12 @@
   description: Destination Earth Digital Twin Outputs from LUMI through Polytope API
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
   search: !plugin
-    type: BuildSearchResult
+    type: ECMWFSearch
     ssl_verify: true
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_file_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
+    constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{ecmwf:dataset}.json"
     metadata_mapping:
       productType: destination-earth
       storageStatus: OFFLINE
@@ -5831,86 +5580,32 @@
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
       downloadLink: $.null
-      activity:
-        - activity
-        - $.activity
-      anoffset:
-        - anoffset
-        - $.anoffset
-      class:
-        - class
-        - $.class
-      dataset:
-        - dataset
-        - $.dataset
-      domain:
-        - domain
-        - $.domain
-      experiment:
-        - experiment
-        - $.experiment
-      expver:
-        - expver
-        - $.expver
-      generation:
-        - generation
-        - $.generation
-      levelist:
-        - levelist
-        - $.levelist
-      levtype:
-        - levtype
-        - $.levtype
-      model:
-        - model
-        - $.model
-      param:
-        - param
-        - $.param
-      realization:
-        - realization
-        - $.realization
-      resolution:
-        - resolution
-        - $.resolution
-      step:
-        - step
-        - $.step
-      stream:
-        - stream
-        - $.stream
-      time:
-        - time
-        - $.time
-      type:
-        - type
-        - $.type
   products:
     DT_EXTREMES:
-      class: d1
-      dataset: extremes-dt
-      expver: "0001"
-      stream: oper
-      type: fc
-      levtype: sfc
-      step: "0"
-      param: "31"
-      time: "0000"
+      "ecmwf:dataset": extremes-dt
+      "ecmwf:class": d1
+      "ecmwf:expver": "0001"
+      "ecmwf:stream": oper
+      "ecmwf:type": fc
+      "ecmwf:levtype": sfc
+      "ecmwf:step": "0"
+      "ecmwf:param": "31"
+      "ecmwf:time": "0000"
     DT_CLIMATE_ADAPTATION:
-      activity: ScenarioMIP
-      class: d1
-      dataset: climate-dt
-      experiment: SSP3-7.0
-      expver: "0001"
-      generation: 1
-      model: IFS-NEMO
-      param: 134/165/166
-      realization: 1
-      resolution: high
-      stream: clte
-      type: fc
-      levtype: sfc
-      time: "0000"
+      "ecmwf:dataset": climate-dt
+      "ecmwf:class": d1
+      "ecmwf:generation": 1
+      "ecmwf:expver": "0001"
+      "ecmwf:stream": clte
+      "ecmwf:type": fc
+      "ecmwf:activity": ScenarioMIP
+      "ecmwf:experiment": SSP3-7.0
+      "ecmwf:realization": 1
+      "ecmwf:model": IFS-NEMO
+      "ecmwf:param": 134/165/166
+      "ecmwf:resolution": high
+      "ecmwf:levtype": sfc
+      "ecmwf:time": "0000"
   download: !plugin
     type: HTTPDownload
     ssl_verify: true

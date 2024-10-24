@@ -344,15 +344,23 @@ class Search(PluginTopic):
         )
         default_values.pop("metadata_mapping", None)
 
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
         try:
-            queryables = self.discover_queryables(**{**default_values, **filters}) or {}
+            return self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError:
-            pass
+            return self.queryables_from_metadata_mapping(product_type)
 
+    def queryables_from_metadata_mapping(
+        self,
+        product_type: Optional[str] = None,
+    ):
+        """
+        Extract queryable parameters from product type metadata mapping.
+        """
         metadata_mapping: Dict[str, Any] = deepcopy(
             self.get_metadata_mapping(product_type)
         )
+
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
 
         for param in list(metadata_mapping.keys()):
             if NOT_MAPPED in metadata_mapping[param] or not isinstance(
@@ -369,22 +377,8 @@ class Search(PluginTopic):
             )
             if not isinstance(eodag_queryable_field_info, FieldInfo):
                 continue
-            # keep default field info of eodag queryables
-            if k in filters and k in queryables:
-                queryable_field_info = (
-                    get_args(queryables[k])[1]
-                    if len(get_args(queryables[k])) > 1
-                    else None
-                )
-                if not isinstance(queryable_field_info, FieldInfo):
-                    continue
-                queryable_field_info.default = filters[k]
-                continue
-            if k in queryables:
-                continue
             if eodag_queryable_field_info.is_required() or (
                 (eodag_queryable_field_info.alias or k) in metadata_mapping
             ):
                 queryables[k] = v
-
         return queryables
