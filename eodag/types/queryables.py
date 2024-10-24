@@ -15,11 +15,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Annotated, Optional
+from datetime import date, datetime
+from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Lt
 from pydantic import BaseModel, Field
+from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
+
+from eodag.types import model_fields_to_annotated
 
 Percentage = Annotated[PositiveInt, Lt(100)]
 
@@ -27,11 +31,15 @@ Percentage = Annotated[PositiveInt, Lt(100)]
 class CommonQueryables(BaseModel):
     """A class representing search common queryable properties."""
 
-    productType: Annotated[str, Field()]
-    id: Annotated[Optional[str], Field(None)]
-    start: Annotated[Optional[str], Field(None, alias="startTimeFromAscendingNode")]
-    end: Annotated[Optional[str], Field(None, alias="completionTimeFromAscendingNode")]
-    geom: Annotated[Optional[str], Field(None, alias="geometry")]
+    product_type: Annotated[str, Field(alias="productType")]
+    id: Annotated[str, Field(None)]
+    start: Annotated[
+        Union[datetime, date], Field(None, alias="startTimeFromAscendingNode")
+    ]
+    end: Annotated[
+        Union[datetime, date], Field(None, alias="completionTimeFromAscendingNode")
+    ]
+    geom: Annotated[str, Field(None, alias="geometry")]
 
     @classmethod
     def get_queryable_from_alias(cls, value: str) -> str:
@@ -49,75 +57,87 @@ class CommonQueryables(BaseModel):
         }
         return alias_map.get(value, value)
 
+    @classmethod
+    def get_with_default(
+        cls, field: str, default: Optional[Any]
+    ) -> Annotated[Any, FieldInfo]:
+        """Get field and set default value."""
+        annotated_fields = model_fields_to_annotated(cls.model_fields)
+        f = annotated_fields[field]
+        if default is None:
+            return f
+        f.__metadata__[0].default = default
+        return f
+
 
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties."""
 
-    uid: Annotated[Optional[str], Field(None)]
+    uid: Annotated[str, Field(None)]
     # OpenSearch Parameters for Collection Search (Table 3)
-    doi: Annotated[Optional[str], Field(None)]
-    platform: Annotated[Optional[str], Field(None)]
-    platformSerialIdentifier: Annotated[Optional[str], Field(None)]
-    instrument: Annotated[Optional[str], Field(None)]
-    sensorType: Annotated[Optional[str], Field(None)]
-    compositeType: Annotated[Optional[str], Field(None)]
-    processingLevel: Annotated[Optional[str], Field(None)]
-    orbitType: Annotated[Optional[str], Field(None)]
-    spectralRange: Annotated[Optional[str], Field(None)]
-    wavelengths: Annotated[Optional[str], Field(None)]
-    hasSecurityConstraints: Annotated[Optional[str], Field(None)]
-    dissemination: Annotated[Optional[str], Field(None)]
+    doi: Annotated[str, Field(None)]
+    platform: Annotated[str, Field(None)]
+    platformSerialIdentifier: Annotated[str, Field(None)]
+    instrument: Annotated[str, Field(None)]
+    sensorType: Annotated[str, Field(None)]
+    compositeType: Annotated[str, Field(None)]
+    processingLevel: Annotated[str, Field(None)]
+    orbitType: Annotated[str, Field(None)]
+    spectralRange: Annotated[str, Field(None)]
+    wavelengths: Annotated[str, Field(None)]
+    hasSecurityConstraints: Annotated[str, Field(None)]
+    dissemination: Annotated[str, Field(None)]
     # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-    title: Annotated[Optional[str], Field(None)]
-    topicCategory: Annotated[Optional[str], Field(None)]
-    keyword: Annotated[Optional[str], Field(None)]
-    abstract: Annotated[Optional[str], Field(None)]
-    resolution: Annotated[Optional[int], Field(None)]
-    organisationName: Annotated[Optional[str], Field(None)]
-    organisationRole: Annotated[Optional[str], Field(None)]
-    publicationDate: Annotated[Optional[str], Field(None)]
-    lineage: Annotated[Optional[str], Field(None)]
-    useLimitation: Annotated[Optional[str], Field(None)]
-    accessConstraint: Annotated[Optional[str], Field(None)]
-    otherConstraint: Annotated[Optional[str], Field(None)]
-    classification: Annotated[Optional[str], Field(None)]
-    language: Annotated[Optional[str], Field(None)]
-    specification: Annotated[Optional[str], Field(None)]
+    title: Annotated[str, Field(None)]
+    topicCategory: Annotated[str, Field(None)]
+    keyword: Annotated[str, Field(None)]
+    abstract: Annotated[str, Field(None)]
+    resolution: Annotated[int, Field(None)]
+    organisationName: Annotated[str, Field(None)]
+    organisationRole: Annotated[str, Field(None)]
+    publicationDate: Annotated[str, Field(None)]
+    lineage: Annotated[str, Field(None)]
+    useLimitation: Annotated[str, Field(None)]
+    accessConstraint: Annotated[str, Field(None)]
+    otherConstraint: Annotated[str, Field(None)]
+    classification: Annotated[str, Field(None)]
+    language: Annotated[str, Field(None)]
+    specification: Annotated[str, Field(None)]
     # OpenSearch Parameters for Product Search (Table 5)
-    parentIdentifier: Annotated[Optional[str], Field(None)]
-    productionStatus: Annotated[Optional[str], Field(None)]
-    acquisitionType: Annotated[Optional[str], Field(None)]
-    orbitNumber: Annotated[Optional[int], Field(None)]
-    orbitDirection: Annotated[Optional[str], Field(None)]
-    track: Annotated[Optional[str], Field(None)]
-    frame: Annotated[Optional[str], Field(None)]
-    swathIdentifier: Annotated[Optional[str], Field(None)]
-    cloudCover: Annotated[Optional[Percentage], Field(None)]
-    snowCover: Annotated[Optional[Percentage], Field(None)]
-    lowestLocation: Annotated[Optional[str], Field(None)]
-    highestLocation: Annotated[Optional[str], Field(None)]
-    productVersion: Annotated[Optional[str], Field(None)]
-    productQualityStatus: Annotated[Optional[str], Field(None)]
-    productQualityDegradationTag: Annotated[Optional[str], Field(None)]
-    processorName: Annotated[Optional[str], Field(None)]
-    processingCenter: Annotated[Optional[str], Field(None)]
-    creationDate: Annotated[Optional[str], Field(None)]
-    modificationDate: Annotated[Optional[str], Field(None)]
-    processingDate: Annotated[Optional[str], Field(None)]
-    sensorMode: Annotated[Optional[str], Field(None)]
-    archivingCenter: Annotated[Optional[str], Field(None)]
-    processingMode: Annotated[Optional[str], Field(None)]
+    parentIdentifier: Annotated[str, Field(None)]
+    productionStatus: Annotated[str, Field(None)]
+    acquisitionType: Annotated[str, Field(None)]
+    orbitNumber: Annotated[int, Field(None)]
+    orbitDirection: Annotated[str, Field(None)]
+    track: Annotated[str, Field(None)]
+    frame: Annotated[str, Field(None)]
+    swathIdentifier: Annotated[str, Field(None)]
+    cloudCover: Annotated[Percentage, Field(None)]
+    snowCover: Annotated[Percentage, Field(None)]
+    lowestLocation: Annotated[str, Field(None)]
+    highestLocation: Annotated[str, Field(None)]
+    productVersion: Annotated[str, Field(None)]
+    productQualityStatus: Annotated[str, Field(None)]
+    productQualityDegradationTag: Annotated[str, Field(None)]
+    processorName: Annotated[str, Field(None)]
+    processingCenter: Annotated[str, Field(None)]
+    creationDate: Annotated[str, Field(None)]
+    modificationDate: Annotated[str, Field(None)]
+    processingDate: Annotated[str, Field(None)]
+    sensorMode: Annotated[str, Field(None)]
+    archivingCenter: Annotated[str, Field(None)]
+    processingMode: Annotated[str, Field(None)]
     # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-    availabilityTime: Annotated[Optional[str], Field(None)]
-    acquisitionStation: Annotated[Optional[str], Field(None)]
-    acquisitionSubType: Annotated[Optional[str], Field(None)]
-    illuminationAzimuthAngle: Annotated[Optional[str], Field(None)]
-    illuminationZenithAngle: Annotated[Optional[str], Field(None)]
-    illuminationElevationAngle: Annotated[Optional[str], Field(None)]
-    polarizationMode: Annotated[Optional[str], Field(None)]
-    polarizationChannels: Annotated[Optional[str], Field(None)]
-    antennaLookDirection: Annotated[Optional[str], Field(None)]
-    minimumIncidenceAngle: Annotated[Optional[float], Field(None)]
-    maximumIncidenceAngle: Annotated[Optional[float], Field(None)]
-    dopplerFrequency: Annotated[Optional[float], Field(None)]
-    incidenceAngleVariation: Annotated[Optional[float], Field(None)]
+    availabilityTime: Annotated[str, Field(None)]
+    acquisitionStation: Annotated[str, Field(None)]
+    acquisitionSubType: Annotated[str, Field(None)]
+    illuminationAzimuthAngle: Annotated[str, Field(None)]
+    illuminationZenithAngle: Annotated[str, Field(None)]
+    illuminationElevationAngle: Annotated[str, Field(None)]
+    polarizationMode: Annotated[str, Field(None)]
+    polarizationChannels: Annotated[str, Field(None)]
+    antennaLookDirection: Annotated[str, Field(None)]
+    minimumIncidenceAngle: Annotated[float, Field(None)]
+    maximumIncidenceAngle: Annotated[float, Field(None)]
+    dopplerFrequency: Annotated[float, Field(None)]
+    incidenceAngleVariation: Annotated[float, Field(None)]

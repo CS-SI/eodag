@@ -18,44 +18,36 @@
 from __future__ import annotations
 
 import logging
-import os
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import requests
+import requests.auth
 
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, path_to_uri, uri_to_path
+from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
 from eodag.utils.exceptions import RequestError, TimeOutError
 
 logger = logging.getLogger("eodag.utils.requests")
 
 
 def fetch_json(
-    file_url: str,
-    req_session: Optional[requests.Session] = None,
+    url: str,
     auth: Optional[requests.auth.AuthBase] = None,
     timeout: float = HTTP_REQ_TIMEOUT,
 ) -> Any:
     """
     Fetches http/distant or local json file
 
-    :param file_url: url from which the file can be fetched
+    :param url: url from which the file can be fetched
     :param req_session: (optional) requests session
     :param auth: (optional) authenticated object if request needs authentication
     :param timeout: (optional) authenticated object
     :returns: json file content
     """
-    if req_session is None:
-        req_session = requests.Session()
+    logger.debug(f"fetching GET {url}")
     try:
-        if not file_url.lower().startswith("http"):
-            file_url = path_to_uri(os.path.abspath(file_url))
-            req_session.mount("file://", LocalFileAdapter())
-
-        headers = USER_AGENT
-        logger.debug(f"fetching {file_url}")
-        res = req_session.get(
-            file_url,
-            headers=headers,
+        res = requests.get(
+            url,
+            headers=USER_AGENT,
             auth=auth,
             timeout=timeout,
         )
@@ -63,66 +55,6 @@ def fetch_json(
     except requests.exceptions.Timeout as exc:
         raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
     except requests.exceptions.RequestException as exc:
-        raise RequestError.from_error(exc, f"Unable to fetch {file_url}") from exc
+        raise RequestError.from_error(exc, f"Unable to fetch {url}") from exc
     else:
         return res.json()
-
-
-class LocalFileAdapter(requests.adapters.BaseAdapter):
-    """Protocol Adapter to allow Requests to GET file:// URLs inspired
-    by https://stackoverflow.com/questions/10123929/fetch-a-file-from-a-local-url-with-python-requests/27786580
-    `LocalFileAdapter` class available for the moment (on the 2024-04-22)
-    """
-
-    @staticmethod
-    def _chkpath(method: str, path: str) -> Tuple[int, str]:
-        """Return an HTTP status for the given filesystem path.
-
-        :param method: method of the request
-        :param path: path of the given file
-        :returns: HTTP status and its associated message
-        """
-        if method.lower() in ("put", "delete"):
-            return 501, "Not Implemented"  # TODO
-        elif method.lower() not in ("get", "head"):
-            return 405, "Method Not Allowed"
-        elif os.path.isdir(path):
-            return 400, "Path Not A File"
-        elif not os.path.isfile(path):
-            return 404, "File Not Found"
-        elif not os.access(path, os.R_OK):
-            return 403, "Access Denied"
-        else:
-            return 200, "OK"
-
-    def send(
-        self, request: requests.PreparedRequest, *args: Any, **kwargs: Any
-    ) -> requests.Response:
-        """Wraps a file, described in request, in a Response object.
-
-        :param req: The PreparedRequest being "sent".
-        :param kwargs: (not used) additionnal arguments of the request
-        :returns: a Response object containing the file
-        """
-        response = requests.Response()
-
-        if request.method is None or request.url is None:
-            raise RequestError("Method or url of the request is missing")
-
-        path_url = uri_to_path(request.url)
-
-        response.status_code, response.reason = self._chkpath(request.method, path_url)
-        if response.status_code == 200 and request.method.lower() != "head":
-            try:
-                response.raw = open(path_url, "rb")
-            except (OSError, IOError) as err:
-                response.status_code = 500
-                response.reason = str(err)
-        response.url = request.url
-        response.request = request
-
-        return response
-
-    def close(self):
-        """Closes without cleaning up adapter specific items."""
-        pass

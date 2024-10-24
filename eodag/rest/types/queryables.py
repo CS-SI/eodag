@@ -154,7 +154,8 @@ class StacQueryables(BaseModel):
             items={"type": "number"},
         ),
     }
-    properties: Dict[str, StacQueryableProperty] = Field()
+    properties: Dict[str, Any] = Field()
+    required: Optional[List[str]] = Field(None)
     additional_properties: bool = Field(
         default=True, serialization_alias="additionalProperties"
     )

@@ -84,7 +84,6 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
-    copy_deepcopy,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
@@ -1801,27 +1800,7 @@ class EODataAccessGateway:
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
-            try:
-                search_plugin.config.product_type_config = dict(
-                    [
-                        p
-                        for p in self.list_product_types(
-                            search_plugin.provider, fetch_providers=False
-                        )
-                        if p["_id"] == product_type
-                    ][0],
-                    **{"productType": product_type},
-                )
-                # If the product isn't in the catalog, it's a generic product type.
-            except IndexError:
-                # Construct the GENERIC_PRODUCT_TYPE metadata
-                search_plugin.config.product_type_config = dict(
-                    ID=GENERIC_PRODUCT_TYPE,
-                    **self.product_types_config[GENERIC_PRODUCT_TYPE],
-                    productType=product_type,
-                )
-            # Remove the ID since this is equal to productType.
-            search_plugin.config.product_type_config.pop("ID", None)
+            self._attach_product_type_config(search_plugin, product_type)
 
         return search_plugins, kwargs
 
@@ -2298,7 +2277,7 @@ class EODataAccessGateway:
             pt["ID"]
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
-        product_type = kwargs.get("productType")
+        product_type: Optional[str] = kwargs.get("productType")
 
         if product_type:
             try:
@@ -2309,7 +2288,7 @@ class EODataAccessGateway:
                 raise UnsupportedProductType(f"{product_type} is not available") from e
 
         if product_type and product_type not in available_product_types:
-            self.fetch_product_types_list()
+            self.fetch_product_types_list(provider)
 
         if not provider and not product_type:
             return model_fields_to_annotated(CommonQueryables.model_fields)
@@ -2317,6 +2296,7 @@ class EODataAccessGateway:
         providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
+            self._attach_product_type_config(plugin, product_type)
             if getattr(plugin.config, "need_auth", False) and (
                 auth := self._plugins_manager.get_auth_plugin(plugin)
             ):
@@ -2333,14 +2313,6 @@ class EODataAccessGateway:
             for k, v in list(providers_queryables.values())[0].items()
             if k in queryable_keys
         }
-
-        # always keep at least CommonQueryables
-        common_queryables = copy_deepcopy(CommonQueryables.model_fields)
-        for key, queryable in common_queryables.items():
-            if key in kwargs:
-                queryable.default = kwargs[key]
-
-        queryables.update(model_fields_to_annotated(common_queryables))
 
         return queryables
 
@@ -2375,3 +2347,30 @@ class EODataAccessGateway:
                 ],
             }
         return sortables
+
+    def _attach_product_type_config(self, plugin: Search, product_type: str) -> None:
+        """
+        Attach product_types_config to plugin config. This dict contains product
+        type metadata that will also be stored in each product's properties.
+        """
+        try:
+            plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(
+                        plugin.provider, fetch_providers=False
+                    )
+                    if p["_id"] == product_type
+                ][0],
+                **{"productType": product_type},
+            )
+            # If the product isn't in the catalog, it's a generic product type.
+        except IndexError:
+            # Construct the GENERIC_PRODUCT_TYPE metadata
+            plugin.config.product_type_config = dict(
+                ID=GENERIC_PRODUCT_TYPE,
+                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                productType=product_type,
+            )
+        # Remove the ID since this is equal to productType.
+        plugin.config.product_type_config.pop("ID", None)
