@@ -3983,7 +3983,6 @@
     need_auth: true
     auth_error_code: 401
     results_entry: 'features'
-    two_passes_id_search: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
@@ -5451,7 +5450,6 @@
     timeout: 60
     auth_error_code: 401
     results_entry: 'features'
-    two_passes_id_search: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
