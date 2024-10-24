@@ -5558,7 +5558,7 @@
         - fire_danger_index
       version:
         - "4_1"
-      format:
+      data_format:
         - "grib"
       grid: original_grid
       type: consolidated_dataset
@@ -5571,8 +5571,8 @@
         version:
           - '{{"system_version": {version}}}'
           - '$.null'
-        format:
-          - '{{"format": {format}}}'
+        data_format:
+          - '{{"data_format": "{data_format}"}}'
           - '$.null'
         type:
           - '{{"dataset_type": "{type}"}}'
