@@ -152,12 +152,10 @@ async def eodag_openapi(request: Request) -> Dict[str, Any]:
         root_catalog["description"]
         + f" (stac-api-spec {stac_api_version})"
         + "<details><summary>Available collections / product types</summary>"
-        + "".join(
-            [
-                f"[{pt['ID']}](/collections/{pt['ID']} '{pt['title']}') - "
-                for pt in detailled_collections_list
-            ]
-        )[:-2]
+        + "".join([
+            f"[{pt['ID']}](/collections/{pt['ID']} '{pt['title']}') - "
+            for pt in detailled_collections_list
+        ])[:-2]
         + "</details>"
     )
 
