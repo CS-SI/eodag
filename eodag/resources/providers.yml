@@ -6340,8 +6340,12 @@
         <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GLOBAL_EMISSIONS:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
+      metadata_mapping:
+        <<: *orderable_mm
     # COPERNICUS ADS -  Digital Elevation Model
     COP_DEM_GLO30_DGED:
       productType: EO.DEM.DAT.COP-DEM_GLO-30-DGED
