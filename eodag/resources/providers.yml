@@ -2624,9 +2624,6 @@
         output_extension: .grib
       UERRA_EUROPE_SL:
         output_extension: .grib
-      SATELLITE_SEA_LEVEL_BLACK_SEA:
-        output_extension: .zip
-        extract: true
       GLACIERS_DIST_RANDOLPH:
         output_extension: .zip
         extract: true
@@ -4772,18 +4769,6 @@
         <<: *day_month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_ICE_CONCENTRATION"}}'
-    SATELLITE_SEA_LEVEL_BLACK_SEA:
-      productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
-      variable: all
-      format: zip
-      metadata_mapping:
-        id: '$.id'
-        <<: *day_month_year
-        variable:
-          - '{{"variable": "{variable}"}}'
-          - '$.null'
-        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA"}}'
     SATELLITE_SEA_LEVEL_GLOBAL:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL
       variable:
@@ -4799,18 +4784,6 @@
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL"}}'
-    SATELLITE_SEA_LEVEL_MEDITERRANEAN:
-      productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_MEDITERRANEAN
-      variable: all
-      format: zip
-      metadata_mapping:
-        id: '$.id'
-        <<: *day_month_year
-        variable:
-          - '{{"variable": "{variable}"}}'
-          - '$.null'
-        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_MEDITERRANEAN"}}'
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
       variable:
