@@ -20,10 +20,11 @@ from __future__ import annotations
 import logging
 import re
 import string
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from random import SystemRandom
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
+import jwt
 import requests
 from lxml import etree
 from requests.auth import AuthBase
@@ -51,88 +52,112 @@ class OIDCRefreshTokenBase(Authentication):
 
     """
 
-    class TokenInfo(TypedDict, total=False):
-        """Token infos"""
+    jwks_client: jwt.PyJWKClient
 
-        refresh_token: str
-        refresh_time: datetime
-        token_time: datetime
-        access_token: str
-        access_token_expiration: float
-        refresh_token_expiration: float
+    access_token: str
+    access_token_expiration: datetime
+
+    refresh_token: str
+    refresh_token_expiration: datetime
+
+    token_endpoint: str
+    authorization_endpoint: str
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(OIDCRefreshTokenBase, self).__init__(provider, config)
         self.session = requests.Session()
-        # already retrieved token info store
-        self.token_info: OIDCRefreshTokenBase.TokenInfo = {}
+
+        self.access_token = ""
+        self.access_token_expiration = datetime.min
+
+        self.refresh_token = ""
+        self.refresh_token_expiration = datetime.min
+
+        try:
+            response = requests.get(self.config.oidc_config_url)
+            response.raise_for_status()
+            auth_config = response.json()
+        except requests.HTTPError as e:
+            raise MisconfiguredError(
+                f"Cannot obtain OIDC endpoints from {self.config.oidc_config_url}"
+                f"Request returned {e.response.text}."
+            )
+
+        self.jwks_client = jwt.PyJWKClient(auth_config["jwks_uri"])
+        self.token_endpoint = auth_config["token_endpoint"]
+        self.authorization_endpoint = auth_config["authorization_endpoint"]
+        self.algorithms = auth_config["id_token_signing_alg_values_supported"]
+
+    def decode_jwt_token(self, token: str) -> Dict[str, Any]:
+        """Decode JWT token."""
+        try:
+            key = self.jwks_client.get_signing_key_from_jwt(token).key
+            if getattr(self.config, "allowed_audiences", None):
+                return jwt.decode(
+                    token,
+                    key,
+                    algorithms=self.algorithms,
+                    # NOTE: Audience validation MUST match audience claim if set in token
+                    # (https://pyjwt.readthedocs.io/en/stable/changelog.html?highlight=audience#id40)
+                    audience=self.config.allowed_audiences,
+                )
+            else:
+                return jwt.decode(
+                    token,
+                    key,
+                    algorithms=self.algorithms,
+                )
+        except (jwt.exceptions.InvalidTokenError, jwt.exceptions.DecodeError) as e:
+            raise AuthenticationError(e)
 
     def _get_access_token(self) -> str:
-        current_time = datetime.now()
-        if (
-            # No info: first time
-            not self.token_info
-            # Refresh token available but expired
-            or (
-                "refresh_token" in self.token_info
-                and self.token_info["refresh_token_expiration"] > 0
-                and (current_time - self.token_info["token_time"]).seconds
-                >= self.token_info["refresh_token_expiration"]
+        now = datetime.now(timezone.utc)
+        if self.access_token and now < self.access_token_expiration:
+            logger.debug(
+                f"Existing access_token is still valid until {self.access_token_expiration.isoformat()}."
             )
-            # Refresh token *not* available and access token expired
-            or (
-                "refresh_token" not in self.token_info
-                and (current_time - self.token_info["token_time"]).seconds
-                >= self.token_info["access_token_expiration"]
+            return self.access_token
+
+        elif self.refresh_token and now < self.refresh_token_expiration:
+            response = self._get_token_with_refresh_token()
+            logger.debug(
+                "access_token expired, fetching new access_token using refresh_token"
             )
-        ):
-            # Request *new* token on first attempt or if token expired
-            res = self._request_new_token()
-            self.token_info["token_time"] = current_time
-            self.token_info["access_token_expiration"] = float(res["expires_in"])
-            if "refresh_token" in res:
-                self.token_info["refresh_time"] = current_time
-                self.token_info["refresh_token_expiration"] = float(
-                    res["refresh_expires_in"]
-                )
-                self.token_info["refresh_token"] = str(res["refresh_token"])
-            return str(res["access_token"])
+        else:
+            logger.debug("access_token expired or not available yet, new token request")
+            response = self._request_new_token()
 
-        elif (
-            # Refresh token available and access token expired
-            "refresh_token" in self.token_info
-            and (current_time - self.token_info["refresh_time"]).seconds
-            >= self.token_info["access_token_expiration"]
-        ):
-            # Use refresh token
-            res = self._get_token_with_refresh_token()
-            self.token_info["refresh_token"] = res["refresh_token"]
-            self.token_info["refresh_time"] = current_time
-            return res["access_token"]
+        self.access_token = response[getattr(self.config, "token_key", "access_token")]
+        self.access_token_expiration = datetime.fromtimestamp(
+            self.decode_jwt_token(self.access_token)["exp"], timezone.utc
+        )
+        self.refresh_token = response.get(
+            getattr(self.config, "refresh_token_key", "refresh_token"), ""
+        )
+        if self.refresh_token and response.get("refresh_expires_in", "0"):
+            self.refresh_token_expiration = now + timedelta(
+                seconds=int(response["refresh_expires_in"])
+            )
+        else:
+            # refresh token does not expire but will be changed at each request
+            self.refresh_token_expiration = now + timedelta(days=1000)
 
-        logger.debug("Using already retrieved access token")
-        return self.token_info["access_token"]
+        return self.access_token
 
     def _request_new_token(self) -> Dict[str, str]:
-        """Fetch the access token with a new authentcation"""
+        """Fetch the access token with a new authentication"""
         raise NotImplementedError(
             "Incomplete OIDC refresh token retrieval mechanism implementation"
         )
 
     def _request_new_token_error(self, e: requests.RequestException) -> Dict[str, str]:
         """Handle RequestException raised by `self._request_new_token()`"""
-        if self.token_info.get("access_token"):
+        if self.access_token:
             # try using already retrieved token if authenticate() fails (OTP use-case)
-            if "access_token_expiration" in self.token_info:
-                return {
-                    "access_token": self.token_info["access_token"],
-                    "expires_in": str(self.token_info["access_token_expiration"]),
-                }
-            else:
-                return {
-                    "access_token": self.token_info["access_token"],
-                    "expires_in": "0",
-                }
+            return {
+                "access_token": self.access_token,
+                "expires_in": self.access_token_expiration.isoformat(),
+            }
         response_text = getattr(e.response, "text", "").strip()
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
@@ -189,12 +214,10 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     :param config: Authentication plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): OIDCAuthorizationCodeFlowAuth
-        * :attr:`~eodag.config.PluginConfig.authorization_uri` (``str``) (**mandatory**):  The
-          authorization url of the server (where to query for grants)
         * :attr:`~eodag.config.PluginConfig.redirect_uri` (``str``) (**mandatory**):  The callback
           url that will handle the code given by the OIDC provider
-        * :attr:`~eodag.config.PluginConfig.token_uri` (``str``) (**mandatory**):  The url to query
-          to exchange the authorization code obtained from the OIDC provider for an authorized token
+        * :attr:`~eodag.config.PluginConfig.oidc_config_url` (``str``) (**mandatory**):
+          The url to get the OIDC Provider's endpoints
         * :attr:`~eodag.config.PluginConfig.client_id` (``str``) (**mandatory**): The OIDC provider's
           client ID of the eodag provider
         * :attr:`~eodag.config.PluginConfig.user_consent_needed` (``bool``) (mandatory): Whether
@@ -203,7 +226,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           One of: ``json``, ``data`` or ``params``. This is the way to pass the data to the
           POST request that is made to the token server. They correspond to the recognised keywords
           arguments of the Python `requests <http://docs.python-requests.org/>`_ library
-        * :attr:`~eodag.config.PluginConfig.token_key` (``str``) (**mandatory**): The key pointing
+        * :attr:`~eodag.config.PluginConfig.token_key` (``str``): The key pointing
           to the token in the json response to the POST request to the token server
         * :attr:`~eodag.config.PluginConfig.token_provision` (``str``) (**mandatory**): One of
           ``qs`` or ``header``. This is how the token obtained will be used to authenticate the
@@ -267,17 +290,17 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 
     def authenticate(self) -> CodeAuthorizedAuth:
         """Authenticate"""
-        self.token_info["access_token"] = self._get_access_token()
+        self._get_access_token()
 
         return CodeAuthorizedAuth(
-            self.token_info["access_token"],
+            self.access_token,
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
 
     def _request_new_token(self) -> Dict[str, str]:
-        """Fetch the access token with a new authentcation"""
-        logger.debug("Fetching access token from %s", self.config.token_uri)
+        """Fetch the access token with a new authentication"""
+        logger.debug("Fetching access token from %s", self.token_endpoint)
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
@@ -306,10 +329,10 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
     def _get_token_with_refresh_token(self) -> Dict[str, str]:
         """Fetch the access token with the refresh token"""
         logger.debug(
-            "Fetching access token with refresh token from %s", self.config.token_uri
+            "Fetching access token with refresh token from %s.", self.token_endpoint
         )
         token_data: Dict[str, Any] = {
-            "refresh_token": self.token_info["refresh_token"],
+            "refresh_token": self.refresh_token,
             "grant_type": "refresh_token",
         }
         token_data = self._prepare_token_post_data(token_data)
@@ -319,7 +342,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             token_response = self.session.post(
-                self.config.token_uri,
+                self.token_endpoint,
                 timeout=HTTP_REQ_TIMEOUT,
                 verify=ssl_verify,
                 **post_request_kwargs,
@@ -347,7 +370,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
         authorization_response = self.session.get(
-            self.config.authorization_uri,
+            self.authorization_endpoint,
             params=params,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -405,7 +428,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
         return self.session.post(
-            self.config.authorization_uri,
+            self.authorization_endpoint,
             data=user_consent_data,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
@@ -459,7 +482,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
         r = self.session.post(
-            self.config.token_uri,
+            self.token_endpoint,
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=ssl_verify,
