@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import tarfile
 import zipfile
@@ -1079,6 +1080,11 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        matching_url = (
+            product.downloader_auth.config.matching_url
+            if product.downloader_auth
+            else ""
+        )
 
         # loop for assets download
         for asset in assets_values:
@@ -1087,11 +1093,14 @@ class HTTPDownload(Download):
                     f"Local asset detected. Download skipped for {asset['href']}"
                 )
                 continue
-
+            if matching_url and re.match(matching_url, asset["href"]):
+                auth_object = auth
+            else:
+                auth_object = None
             with requests.get(
                 asset["href"],
                 stream=True,
-                auth=auth,
+                auth=auth_object,
                 params=params,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -1104,8 +1113,7 @@ class HTTPDownload(Download):
                         exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
                     ) from exc
                 except RequestException as e:
-                    raise_errors = True if len(assets_values) == 1 else False
-                    self._handle_asset_exception(e, asset, raise_errors=raise_errors)
+                    self._handle_asset_exception(e, asset)
                 else:
                     asset_rel_path = (
                         asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
@@ -1263,9 +1271,7 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(
-        self, e: RequestException, asset: Asset, raise_errors: bool = False
-    ) -> None:
+    def _handle_asset_exception(self, e: RequestException, asset: Asset) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
@@ -1276,11 +1282,11 @@ class HTTPDownload(Download):
                 f"HTTP Error {e.response.status_code} returned.",
                 e.response.text.strip(),
             )
-        elif raise_errors:
-            raise DownloadError(e)
         else:
-            logger.warning("Unexpected error: %s" % e)
-            logger.warning("Skipping %s" % asset["href"])
+            logger.error(
+                "Unexpected error at download of asset %s: %s", asset["href"], e
+            )
+            raise DownloadError(e)
 
     def _get_asset_sizes(
         self,
