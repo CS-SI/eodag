@@ -2501,6 +2501,8 @@
       GLACIERS_DIST_RANDOLPH:
         output_extension: .zip
         extract: true
+      FIRE_HISTORICAL:
+        output_extension: .grib
       SATELLITE_CARBON_DIOXIDE:
         output_extension: .zip
         extract: true
@@ -2782,6 +2784,16 @@
               "hydrological_year": {completionTimeFromAscendingNode#get_hydrological_year}
             }}
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
+    FIRE_HISTORICAL:
+      dataset: cems-fire-historical-v1
+      grid: original_grid
+      dataset_type: consolidated_dataset
+      api_product_type: reanalysis
+      variable: build_up_index
+      system_version: '4_1'
+      format: grib
+      metadata_mapping:
+        <<: *day_month_year
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
       processing_level: level_2
@@ -4812,6 +4824,35 @@
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT"}}'
+    FIRE_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
+      providerProductType: reanalysis
+      variable:
+        - fire_danger_index
+      version:
+        - "4_1"
+      format:
+        - "grib"
+      grid: original_grid
+      type: consolidated_dataset
+      metadata_mapping:
+        id: '$.id'
+        <<: *day_month_year
+        providerProductType:
+          - '{{"product_type": "{providerProductType}"}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        format:
+          - '{{"data_format": {format}}}'
+          - '$.null'
+        type:
+          - '{{"dataset_type": "{type}"}}'
+          - '$.null'
+        <<: *variable_list
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"}}'
     GRIDDED_GLACIERS_MASS_CHANGE:
       productType: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
       variable: glacier_mass_change
