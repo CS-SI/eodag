@@ -1257,7 +1257,7 @@ class RequestTestCase(unittest.TestCase):
             stac_common_queryables,
         )
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_queryables_with_provider(self, mock_requests_get: Mock):
         """Request to /queryables with a valid provider as parameter should return a valid response."""
         queryables_path = os.path.join(
@@ -1289,6 +1289,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
         mock_requests_get.assert_called_once_with(
+            mock.ANY,
             url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
@@ -1467,7 +1468,7 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider
         using a queryables file should return a valid response."""
@@ -1503,6 +1504,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
         mock_requests_get.assert_called_once_with(
+            mock.ANY,
             url=planetary_computer_queryables_url,
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,

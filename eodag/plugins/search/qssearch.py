@@ -59,6 +59,7 @@ from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from urllib3 import Retry
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -78,6 +79,9 @@ from eodag.types.search_args import SortByList
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_STATUS_FORCELIST,
+    REQ_RETRY_TOTAL,
     USER_AGENT,
     _deprecated,
     deepcopy,
@@ -1252,6 +1256,14 @@ class QueryStringSearch(Search):
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
             ssl_verify = getattr(self.config, "ssl_verify", True)
 
+            retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+            retry_backoff_factor = getattr(
+                self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+            )
+            retry_status_forcelist = getattr(
+                self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
+            )
+
             ssl_ctx = get_ssl_context(ssl_verify)
             # auth if needed
             kwargs: Dict[str, Any] = {}
@@ -1290,7 +1302,16 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(
+
+                session = requests.Session()
+                retries = Retry(
+                    total=retry_total,
+                    backoff_factor=retry_backoff_factor,
+                    status_forcelist=retry_status_forcelist,
+                )
+                session.mount(url, HTTPAdapter(max_retries=retries))
+
+                response = session.get(
                     url,
                     timeout=timeout,
                     headers=USER_AGENT,

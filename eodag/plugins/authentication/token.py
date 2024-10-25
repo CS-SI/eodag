@@ -28,7 +28,13 @@ from requests.auth import AuthBase
 from urllib3 import Retry
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
+from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_STATUS_FORCELIST,
+    REQ_RETRY_TOTAL,
+    USER_AGENT,
+)
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
@@ -139,10 +145,18 @@ class TokenAuth(Authentication):
         self,
         session: requests.Session,
     ) -> requests.Response:
+        retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+        retry_backoff_factor = getattr(
+            self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+        )
+        retry_status_forcelist = getattr(
+            self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
+        )
+
         retries = Retry(
-            total=3,
-            backoff_factor=2,
-            status_forcelist=[401, 429, 500, 502, 503, 504],
+            total=retry_total,
+            backoff_factor=retry_backoff_factor,
+            status_forcelist=retry_status_forcelist,
         )
 
         # append headers to req if some are specified in config

@@ -120,6 +120,10 @@ USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 HTTP_REQ_TIMEOUT = 5  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
+REQ_RETRY_TOTAL = 3
+REQ_RETRY_BACKOFF_FACTOR = 2
+REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
+
 # default wait times in minutes
 DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
 DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes

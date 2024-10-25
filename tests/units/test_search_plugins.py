@@ -549,7 +549,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "The FOO collection",
         )
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_plugins_search_querystringsearch_discover_product_types_with_query_param(
         self, mock__request
     ):
@@ -580,6 +580,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         ]
         search_plugin.discover_product_types()
         mock__request.assert_called_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
             timeout=60,
             headers=USER_AGENT,
@@ -675,7 +676,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("bar", products[0].properties)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=requests.exceptions.Timeout(),
     )

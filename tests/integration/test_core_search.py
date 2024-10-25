@@ -61,7 +61,7 @@ class TestCoreSearch(unittest.TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -221,7 +221,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -259,7 +259,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -295,7 +295,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
     )
     def test_core_search_fallback_find_on_first(self, mock_get, mock_request):
@@ -349,7 +349,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=[RequestException, mock.DEFAULT, mock.DEFAULT],
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
