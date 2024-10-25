@@ -73,7 +73,6 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             auth:
                 plugin: KeycloakOIDCPasswordAuth
                 oidc_config_url: 'https://somewhere/auth/realms/realm/.well-known/openid-configuration'
-                realm: 'the-realm'
                 client_id: 'SOME_ID'
                 client_secret: '01234-56789'
                 token_provision: qs
@@ -90,7 +89,6 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             auth:
                 plugin: KeycloakOIDCPasswordAuth
                 oidc_config_url: 'https://somewhere/auth/realms/realm/.well-known/openid-configuration'
-                realm: 'the-realm'
                 client_id: 'SOME_ID'
                 client_secret: '01234-56789'
                 token_provision: header

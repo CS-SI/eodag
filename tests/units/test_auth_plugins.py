@@ -715,7 +715,7 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
         # no error
         auth_plugin.validate_config_credentials()
 
-        # auth_base_uri missing
+        # oidc_config_url missing
         oidc_config_url = auth_plugin.config.__dict__.pop("oidc_config_url")
         self.assertRaises(MisconfiguredError, auth_plugin.validate_config_credentials)
         auth_plugin.config.oidc_config_url = oidc_config_url
