@@ -62,7 +62,7 @@ from eodag.rest.errors import add_exception_handlers
 from eodag.rest.types.queryables import QueryablesGetParams
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
 from eodag.rest.utils import format_pydantic_error, str2json, str2list
-from eodag.utils import parse_header, update_nested_dict
+from eodag.utils import LIVENESS_PROBE_PATH, parse_header, update_nested_dict
 
 if TYPE_CHECKING:
     from fastapi.types import DecoratedCallable
@@ -122,7 +122,7 @@ stac_api_config = load_stac_api_config()
 
 @router.api_route(
     methods=["GET", "HEAD"],
-    path="/_mgmt/ping",
+    path=LIVENESS_PROBE_PATH,
     include_in_schema=False,
     status_code=200,
 )
