@@ -41,7 +41,7 @@ import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from pydantic.fields import FieldInfo
+from pydantic.fields import Field, FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -2258,6 +2258,18 @@ class EODataAccessGateway:
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
+    def _get_queryables_for_product_type(
+        self, product_type: str, plugin: Search, **kwargs: Any
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        self._attach_product_type_config(plugin, product_type)
+        if getattr(plugin.config, "need_auth", False) and (
+            auth := self._plugins_manager.get_auth_plugin(plugin)
+        ):
+            plugin.auth = auth.authenticate()
+        if "productType" not in kwargs:
+            kwargs["productType"] = product_type
+        return plugin.list_queryables(filters=kwargs, product_type=product_type)
+
     def list_queryables(
         self, provider: Optional[str] = None, **kwargs: Any
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
@@ -2296,14 +2308,36 @@ class EODataAccessGateway:
         providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
-            self._attach_product_type_config(plugin, product_type)
-            if getattr(plugin.config, "need_auth", False) and (
-                auth := self._plugins_manager.get_auth_plugin(plugin)
-            ):
-                plugin.auth = auth.authenticate()
-            providers_queryables[plugin.provider] = plugin.list_queryables(
-                filters=kwargs, product_type=product_type
-            )
+            if product_type:
+                plugin_queryables = self._get_queryables_for_product_type(
+                    product_type, plugin, **kwargs
+                )
+                if plugin_queryables:
+                    providers_queryables[plugin.provider] = plugin_queryables
+            else:
+                # if no product type is given use an intersection for all product types of the provider
+                all_queryable_keys: Optional[Set[str]] = None
+                for pt in available_product_types:
+                    product_type_queryables = self._get_queryables_for_product_type(
+                        pt, plugin, **kwargs
+                    )
+                    if product_type_queryables:
+                        if not all_queryable_keys:
+                            all_queryable_keys = set(product_type_queryables.keys())
+                        else:
+                            all_queryable_keys = set.intersection(
+                                all_queryable_keys, set(product_type_queryables.keys())
+                            )
+                    if all_queryable_keys:
+                        providers_queryables[plugin.provider] = {
+                            k: Annotated[
+                                Any,
+                                Field(
+                                    description=f"{k} - Set the collection parameter to get possible values"
+                                ),
+                            ]
+                            for k in all_queryable_keys
+                        }
 
         queryable_keys: Set[str] = set.intersection(  # type: ignore
             *[set(q.keys()) for q in providers_queryables.values()]

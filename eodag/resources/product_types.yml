@@ -3166,7 +3166,7 @@ SATELLITE_SEA_ICE_EDGE_TYPE:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Sea ice edge and type daily gridded data from 1978 to present derived from satellite observations
-  missionStartDate: "1978-12-03T00:00:00Z"
+  missionStartDate: "1978-10-25T00:00:00Z"
   missionEndDate: "2023-05-02T23:59:59"
 
 SATELLITE_SEA_ICE_THICKNESS:

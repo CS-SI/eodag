@@ -2472,12 +2472,16 @@
       "ecmwf:dataset": reanalysis-era5-single-levels
       "ecmwf:product_type": reanalysis
       "ecmwf:variable": 10m_u_component_of_wind
+      "ecmwf:data_format": grib
+      "ecmwf:download_format": zip
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_PL:
       "ecmwf:dataset": reanalysis-era5-pressure-levels
       "ecmwf:product_type": reanalysis
       "ecmwf:variable": geopotential
+      "ecmwf:data_format": grib
+      "ecmwf:download_format": zip
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_PL_MONTHLY:
@@ -2485,12 +2489,15 @@
       "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
       "ecmwf:variable": divergence
       "ecmwf:pressure_level": '1'
+      "ecmwf:data_format": grib
+      "ecmwf:download_format": zip
       metadata_mapping:
         <<: *month_year_time
     ERA5_LAND:
       "ecmwf:dataset": reanalysis-era5-land
       "ecmwf:variable": 2m_dewpoint_temperature
       "ecmwf:data_format": grib
+      "ecmwf:download_format": zip
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_LAND_MONTHLY:
@@ -2498,12 +2505,14 @@
       "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
       "ecmwf:variable": 2m_dewpoint_temperature
       "ecmwf:data_format": grib
+      "ecmwf:download_format": zip
       metadata_mapping:
         <<: *month_year_time
     ERA5_SL_MONTHLY:
       "ecmwf:dataset": reanalysis-era5-single-levels-monthly-means
       "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
       "ecmwf:data_format": grib
+      "ecmwf:download_format": zip
       metadata_mapping:
         <<: *month_year_time
     UERRA_EUROPE_SL:
@@ -2623,8 +2632,9 @@
       "ecmwf:system": '5'
       "ecmwf:variable": 10m_u_component_of_wind
       "ecmwf:leadtime_hour": '6'
+      "ecmwf:day": '01'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *month_year
     SEASONAL_ORIGINAL_PL:
       "ecmwf:dataset": seasonal-original-pressure-levels
       "ecmwf:data_format": grib
@@ -2633,8 +2643,9 @@
       "ecmwf:variable": geopotential
       "ecmwf:pressure_level": '10'
       "ecmwf:leadtime_hour": '12'
+      "ecmwf:day": '01'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *month_year
     SEASONAL_MONTHLY_PL:
       "ecmwf:dataset": seasonal-monthly-pressure-levels
       "ecmwf:data_format": grib

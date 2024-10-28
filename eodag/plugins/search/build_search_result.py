@@ -226,6 +226,71 @@ def strip_quotes(value: Any) -> Any:
         return str(value).strip("'\"")
 
 
+def _update_properties_from_element(
+    prop: Dict[str, Any], element: Dict[str, Any], values: List[str]
+):
+    """updates a property dict with the given values based on the information from the element dict
+    e.g. the type is set based on the type of the element"""
+    # multichoice elements are transformed into array
+    if element["type"] in ("StringListWidget", "StringListArrayWidget"):
+        prop["type"] = "array"
+        if values:
+            prop["items"] = {"type": "string", "enum": sorted(values)}
+
+    # single choice elements are transformed into string
+    elif element["type"] in (
+        "StringChoiceWidget",
+        "DateRangeWidget",
+        "FreeformInputWidget",
+    ):
+        prop["type"] = "string"
+        if values:
+            prop["enum"] = sorted(values)
+
+    # a bbox element
+    elif element["type"] == "GeographicExtentWidget":
+        prop.update(
+            {
+                "type": "array",
+                "minItems": 4,
+                "additionalItems": False,
+                "items": [
+                    {
+                        "type": "number",
+                        "maximum": 180,
+                        "minimum": -180,
+                        "description": "West border of the bounding box",
+                    },
+                    {
+                        "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                        "description": "South border of the bounding box",
+                    },
+                    {
+                        "type": "number",
+                        "maximum": 180,
+                        "minimum": -180,
+                        "description": "East border of the bounding box",
+                    },
+                    {
+                        "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                        "description": "North border of the bounding box",
+                    },
+                ],
+            }
+        )
+
+    # DateRangeWidget is a calendar date picker
+    if element["type"] == "DateRangeWidget":
+        prop["description"] = "date formatted like yyyy-mm-dd/yyyy-mm-dd"
+
+    if description := element.get("help"):
+        prop["description"] = description
+
+
 class ECMWFSearch(PostJsonSearch):
     """ECMWF search plugin.
 
@@ -479,7 +544,7 @@ class ECMWFSearch(PostJsonSearch):
         formated_kwargs.update(kwargs)
 
         # we use non empty kwargs as default to integrate user inputs
-        # it is needed because pydantic json schema does not represents "value"
+        # it is needed because pydantic json schema does not represent "value"
         # but only "default"
         non_empty_formated: Dict[str, Any] = {
             k: v
@@ -502,6 +567,7 @@ class ECMWFSearch(PostJsonSearch):
                 non_empty_formated,
                 form_keywords=[f["name"] for f in form],
             )
+
             # Pre-compute the required keywords (present in all constraint dicts)
             # when form, required keywords are extracted directly from form
             if not form:
@@ -516,9 +582,13 @@ class ECMWFSearch(PostJsonSearch):
             available_values = data["constraints"]
             required_keywords = data["required"]
 
-        # dataset defines the productType. It is not a queryable.
-        available_values.pop("ecmwf:dataset", None)
-        available_values.pop("dataset_id", None)
+        for keyword in kwargs:
+            if (
+                keyword not in available_values
+                and keyword.replace("ecmwf:", "") not in available_values
+                and keyword not in product_type_config
+            ):
+                raise ValidationError(f"{keyword} in not a queryable parameter")
 
         # generate queryables
         if form:
@@ -561,7 +631,7 @@ class ECMWFSearch(PostJsonSearch):
         constraints: list[Dict[str, Any]],
         input_keywords: Dict[str, Any],
         form_keywords: List[str],
-    ) -> Dict[str, List[Optional[str]]]:
+    ) -> Dict[str, List[str]]:
         """
         Filter constraints using input_keywords. Return list of available queryables.
         All constraint entries must have the same parameters.
@@ -597,8 +667,8 @@ class ECMWFSearch(PostJsonSearch):
                 )
             filter_v = values if isinstance(values, (list, tuple)) else [values]
 
-            # We convert every every single value to a list of string
-            # We strip values of superfluous quotes (addded by mapping converter to_geojson).
+            # We convert every single value to a list of string
+            # We strip values of superfluous quotes (added by mapping converter to_geojson).
             # ECMWF accept values with /to/. We need to split it to an array
             # ECMWF accept values in format val1/val2. We need to split it to an array
             sep = re.compile(r"/to/|/")
@@ -619,6 +689,7 @@ class ECMWFSearch(PostJsonSearch):
 
                 # date constraint may be intervals. We identify intervals with a "/" in the value
                 # we assume that if the first value is an interval, all values are intervals
+                present_values = []
                 if keyword == "date" and "/" in entry[keyword][0]:
                     if any(is_range_in_range(x, values[0]) for x in entry[keyword]):
                         present_values = filter_v
@@ -686,6 +757,9 @@ class ECMWFSearch(PostJsonSearch):
                 continue
 
             name: str = element["name"]
+            if name == "warning":
+                # sometimes warnings are displayed in the UI which appear in form but are not a property
+                continue
 
             # those are not parameter elements.
             if name in ("area_group", "global"):
@@ -702,64 +776,8 @@ class ECMWFSearch(PostJsonSearch):
                 else details.get("values")
             )
 
-            # multichoice elements are transformed into array
-            if element["type"] in ("StringListWidget", "StringListArrayWidget"):
-                prop["type"] = "array"
-                if values:
-                    prop["items"] = {"type": "string", "enum": sorted(values)}
-
-            # single choice elements are transformed into string
-            elif element["type"] in (
-                "StringChoiceWidget",
-                "DateRangeWidget",
-                "FreeformInputWidget",
-            ):
-                prop["type"] = "string"
-                if values:
-                    prop["enum"] = sorted(values)
-
-            # a bbox element
-            elif element["type"] == "GeographicExtentWidget":
-                prop.update(
-                    {
-                        "type": "array",
-                        "minItems": 4,
-                        "additionalItems": False,
-                        "items": [
-                            {
-                                "type": "number",
-                                "maximum": 180,
-                                "minimum": -180,
-                                "description": "West border of the bounding box",
-                            },
-                            {
-                                "type": "number",
-                                "maximum": 90,
-                                "minimum": -90,
-                                "description": "South border of the bounding box",
-                            },
-                            {
-                                "type": "number",
-                                "maximum": 180,
-                                "minimum": -180,
-                                "description": "East border of the bounding box",
-                            },
-                            {
-                                "type": "number",
-                                "maximum": 90,
-                                "minimum": -90,
-                                "description": "North border of the bounding box",
-                            },
-                        ],
-                    }
-                )
-
-            # DateRangeWidget is a calendar date picker
-            if element["type"] == "DateRangeWidget":
-                prop["description"] = "date formatted like yyyy-mm-dd/yyyy-mm-dd"
-
-            if description := element.get("help"):
-                prop["description"] = description
+            # updates the properties with the values given based on the information from the element
+            _update_properties_from_element(prop, element, values)
 
             default = defaults.get(name)
 
