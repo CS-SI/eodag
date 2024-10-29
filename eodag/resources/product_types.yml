@@ -3839,7 +3839,6 @@ EFAS_FORECAST:
   license: proprietary
   title: River discharge and related forecasted data by the European Flood Awareness System
   missionStartDate: "2018-10-11T00:00:00Z"
-  missionEndDate: "2023-09-19T00:00:00Z"
 
 EFAS_HISTORICAL:
   abstract: |

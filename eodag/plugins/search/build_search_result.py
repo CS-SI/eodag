@@ -248,7 +248,7 @@ def _update_properties_from_element(
             prop["enum"] = sorted(values)
 
     # a bbox element
-    elif element["type"] == "GeographicExtentWidget":
+    elif element["type"] in ["GeographicExtentWidget", "GeographicExtentMapWidget"]:
         prop.update(
             {
                 "type": "array",
