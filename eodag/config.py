@@ -272,6 +272,8 @@ class PluginConfig(yaml.YAMLObject):
         fetch_method: str
         #: Request body to fetch product types using POST method
         fetch_body: Dict[str, Any]
+        #: Maximum number of connections for concurrent HTTP requests
+        max_connections: int
         #: The f-string template for pagination requests.
         next_page_url_tpl: str
         #: Index of the starting page for pagination requests.
@@ -464,7 +466,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
     collection: List[str]
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
-    #: Maximum number of connections for HTTP requests
+    #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
     #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
     #: Whether end date should be excluded from search request or not

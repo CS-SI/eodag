@@ -47,6 +47,7 @@ from urllib.parse import (
 )
 from urllib.request import Request, urlopen
 
+import concurrent.futures
 import geojson
 import orjson
 import requests
@@ -564,7 +565,10 @@ class QueryStringSearch(Search):
                     if result and isinstance(result[0], list):
                         result = result[0]
 
-                    for product_type_result in result:
+                    def conf_update_from_product_type_result(
+                        product_type_result: Dict[str, Any]
+                    ) -> None:
+                        """Update ``conf_update_dict`` using given product type json response"""
                         # providers_config extraction
                         extracted_mapping = properties_from_json(
                             product_type_result,
@@ -651,6 +655,20 @@ class QueryStringSearch(Search):
                         conf_update_dict["product_types_config"][
                             generic_product_type_id
                         ]["keywords"] = keywords_values_str
+
+                    # runs concurrent requests and aggregate results in conf_update_dict
+                    max_connections = self.config.discover_product_types.get(
+                        "max_connections"
+                    )
+                    with concurrent.futures.ThreadPoolExecutor(
+                        max_workers=max_connections
+                    ) as executor:
+                        futures = (
+                            executor.submit(conf_update_from_product_type_result, r)
+                            for r in result
+                        )
+                        [f.result() for f in concurrent.futures.as_completed(futures)]
+
             except KeyError as e:
                 logger.warning(
                     "Incomplete %s discover_product_types configuration: %s",
