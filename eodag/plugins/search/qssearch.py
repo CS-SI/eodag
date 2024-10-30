@@ -1504,7 +1504,7 @@ class PostJsonSearch(QueryStringSearch):
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface"""
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType", "")
         count = prep.count
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)

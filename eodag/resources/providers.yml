@@ -6983,9 +6983,6 @@
       "ecmwf:day": '01'
       "ecmwf:leadtime_hour": '12'
       "ecmwf:variable": build_up_index
-      "ecmwf:system_version": '5'
+      "ecmwf:release_version": '5'
       metadata_mapping:
-        "ecmwf:system_version":
-          - release_version
-          - $."ecmwf:system_version"
         <<: *month_year

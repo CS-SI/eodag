@@ -85,7 +85,6 @@ ECMWF_KEYWORDS = [
     "dataset",
     "accuracy",
     "anoffset",
-    "area",
     "bitmap",
     "block",
     "channel",
@@ -160,8 +159,11 @@ COP_DS_KEYWORDS = [
     "experiment",
     "forcing_type",
     "gcm",
+    "hday",
+    "hmonth",
     "horizontal_resolution",
     "hydrological_model",
+    "hyear",
     "input_observations",
     "leadtime_hour",
     "leadtime_month",
@@ -181,9 +183,11 @@ COP_DS_KEYWORDS = [
     "quantity",
     "rcm",
     "region",
+    "release_version",
     "satellite",
     "sensor",
     "sensor_and_algorithm",
+    "soil_level",
     "sky_type",
     "statistic",
     "system_version",
@@ -582,6 +586,9 @@ class ECMWFSearch(PostJsonSearch):
             available_values = data["constraints"]
             required_keywords = data["required"]
 
+        # To check if all keywords are queryable parameters, we check if they are in the
+        # available values or the product type config (available values calculated from the
+        # constraints might not include all queryables)
         for keyword in kwargs:
             if (
                 keyword not in available_values
@@ -603,8 +610,12 @@ class ECMWFSearch(PostJsonSearch):
             )
 
         # ecmwf:date is replaced by start and end.
-        # start and end filters are supported whenever combinaisons of "year", "month", "day" filters exist
-        if queryables.pop("ecmwf:date", None) or "year" in queryables:
+        # start and end filters are supported whenever combinations of "year", "month", "day" filters exist
+        if (
+            queryables.pop("ecmwf:date", None)
+            or "ecmwf:year" in queryables
+            or "ecmwf:hyear" in queryables
+        ):
             queryables.update(
                 {
                     "start": CommonQueryables.get_with_default(
@@ -753,17 +764,17 @@ class ECMWFSearch(PostJsonSearch):
 
         required_list: List[str] = []
         for element in form:
-            if "id" not in element:
-                continue
-
             name: str = element["name"]
-            if name == "warning":
-                # sometimes warnings are displayed in the UI which appear in form but are not a property
-                continue
 
             # those are not parameter elements.
-            if name in ("area_group", "global"):
+            if name in ("area_group", "global", "warning", "licences"):
                 continue
+            if "type" not in element or element["type"] == "FreeEditionWidget":
+                continue
+
+            # ordering done by id -> set id to high value if not present -> element will be last
+            if "id" not in element:
+                element["id"] = 100
 
             prop = {"title": element.get("label", name)}
 

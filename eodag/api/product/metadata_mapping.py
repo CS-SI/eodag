@@ -40,6 +40,7 @@ from typing import (
 import geojson
 import orjson
 import pyproj
+import shapely
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import UTC, tzutc
@@ -365,6 +366,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> List[float]:
+            if isinstance(input_geom, str):
+                input_geom = shapely.wkt.loads(input_geom)
             return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
 
         @staticmethod
