@@ -922,7 +922,7 @@ class EODataAccessGateway:
                             new_product_types.append(new_product_type)
                 if new_product_types:
                     logger.debug(
-                        f"Added product types {str(new_product_types)} for {provider}"
+                        f"Added {len(new_product_types)} product types for {provider}"
                     )
 
             elif provider not in self.providers_config:
