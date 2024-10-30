@@ -29,6 +29,9 @@ jobs:
         source .venv/bin/activate
         uv pip install ".[all-providers]"
     - name: Fetch and update external product types reference
+      env:
+        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
+        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
       run: |
         source .venv/bin/activate
         export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
