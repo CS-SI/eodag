@@ -136,6 +136,13 @@ class QueryStringSearch(Search):
           url params
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
+          total number of retries to allow; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
+          ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+          ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
+          ``[401, 429, 500, 502, 503, 504]``
         * :attr:`~eodag.config.PluginConfig.literal_search_params` (``Dict[str, str]``): A mapping of (search_param =>
           search_value) pairs giving search parameters to be passed as is in the search url query string. This is useful
           for example in situations where the user wants to add a fixed search query parameter exactly
@@ -171,6 +178,8 @@ class QueryStringSearch(Search):
 
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` (``str``) (**mandatory**): url from which
             the product types can be fetched
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.max_connections` (``int``): Maximum number of
+            connections for concurrent HTTP requests
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.result_type` (``str``): type of the provider result;
             currently only ``json`` is supported (other types could be used in an extension of this plugin)
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.results_entry` (``str``) (**mandatory**): json path

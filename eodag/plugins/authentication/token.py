@@ -69,6 +69,13 @@ class TokenAuth(Authentication):
           returned in case of an authentication error
         * :attr:`~eodag.config.PluginConfig.req_data` (``Dict[str, Any]``): if the credentials
           should be sent as data in the post request, the json structure can be given in this parameter
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
+          total number of retries to allow; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
+          ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+          ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
+          ``[401, 429, 500, 502, 503, 504]``
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

@@ -397,6 +397,15 @@ class PluginConfig(yaml.YAMLObject):
     auth_error_code: Union[int, List[int]]
     #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
     timeout: float
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``total`` parameter,
+    #: total number of retries to allow
+    retry_total: int
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``backoff_factor`` parameter,
+    #: backoff factor to apply between attempts after the second try
+    retry_backoff_factor: int
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
+    #: list of integer HTTP status codes that we should force a retry on
+    retry_status_forcelist: List[int]
 
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
