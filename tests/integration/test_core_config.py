@@ -386,7 +386,7 @@ class TestCoreProductTypesConfig(TestCase):
         autospec=True,
     )
     @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_core_discover_product_types_auth(
         self, mock_requests_get, mock_urlopen, mock_build_response
     ):
@@ -448,6 +448,7 @@ class TestCoreProductTypesConfig(TestCase):
         self.dag.discover_product_types(provider="foo_provider")
 
         mock_requests_get.assert_called_once_with(
+            mock.ANY,
             self.dag.providers_config["foo_provider"].search.discover_product_types[
                 "fetch_url"
             ],

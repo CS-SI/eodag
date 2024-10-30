@@ -2155,7 +2155,7 @@ class EODataAccessGateway:
 
         :param filename: A filename containing features encoded as a geojson
         :param recursive: (optional) Browse recursively in child nodes if True
-        :param max_connections: (optional) Maximum number of connections for HTTP requests
+        :param max_connections: (optional) Maximum number of connections for concurrent HTTP requests
         :param provider: (optional) Data provider
         :param productType: (optional) Data product type
         :param timeout: (optional) Timeout in seconds for each internal HTTP request

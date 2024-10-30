@@ -56,7 +56,7 @@ class StaticStacSearch(StacSearch):
 
         * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): path to the catalog;
           in contrast to the api_endpoint for other plugin types this can be a url or local system path.
-        * :attr:`~eodag.config.PluginConfig.max_connections` (``int``): Maximum number of
+        * :attr:`~eodag.config.PluginConfig.max_connections` (``int``): Maximum number of concurrent
           connections for HTTP requests; default: ``100``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): Timeout in seconds for each
           internal HTTP request; default: ``5``

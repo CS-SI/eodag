@@ -47,6 +47,7 @@ from urllib.parse import (
 )
 from urllib.request import Request, urlopen
 
+import concurrent.futures
 import geojson
 import orjson
 import requests
@@ -59,6 +60,7 @@ from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
+from urllib3 import Retry
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -78,6 +80,9 @@ from eodag.types.search_args import SortByList
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_STATUS_FORCELIST,
+    REQ_RETRY_TOTAL,
     USER_AGENT,
     _deprecated,
     deepcopy,
@@ -131,6 +136,13 @@ class QueryStringSearch(Search):
           url params
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
+          total number of retries to allow; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
+          ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+          ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
+          ``[401, 429, 500, 502, 503, 504]``
         * :attr:`~eodag.config.PluginConfig.literal_search_params` (``Dict[str, str]``): A mapping of (search_param =>
           search_value) pairs giving search parameters to be passed as is in the search url query string. This is useful
           for example in situations where the user wants to add a fixed search query parameter exactly
@@ -166,6 +178,8 @@ class QueryStringSearch(Search):
 
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` (``str``) (**mandatory**): url from which
             the product types can be fetched
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.max_connections` (``int``): Maximum number of
+            connections for concurrent HTTP requests
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.result_type` (``str``): type of the provider result;
             currently only ``json`` is supported (other types could be used in an extension of this plugin)
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.results_entry` (``str``) (**mandatory**): json path
@@ -560,7 +574,10 @@ class QueryStringSearch(Search):
                     if result and isinstance(result[0], list):
                         result = result[0]
 
-                    for product_type_result in result:
+                    def conf_update_from_product_type_result(
+                        product_type_result: Dict[str, Any]
+                    ) -> None:
+                        """Update ``conf_update_dict`` using given product type json response"""
                         # providers_config extraction
                         extracted_mapping = properties_from_json(
                             product_type_result,
@@ -647,6 +664,20 @@ class QueryStringSearch(Search):
                         conf_update_dict["product_types_config"][
                             generic_product_type_id
                         ]["keywords"] = keywords_values_str
+
+                    # runs concurrent requests and aggregate results in conf_update_dict
+                    max_connections = self.config.discover_product_types.get(
+                        "max_connections"
+                    )
+                    with concurrent.futures.ThreadPoolExecutor(
+                        max_workers=max_connections
+                    ) as executor:
+                        futures = (
+                            executor.submit(conf_update_from_product_type_result, r)
+                            for r in result
+                        )
+                        [f.result() for f in concurrent.futures.as_completed(futures)]
+
             except KeyError as e:
                 logger.warning(
                     "Incomplete %s discover_product_types configuration: %s",
@@ -1252,6 +1283,14 @@ class QueryStringSearch(Search):
             timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
             ssl_verify = getattr(self.config, "ssl_verify", True)
 
+            retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+            retry_backoff_factor = getattr(
+                self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+            )
+            retry_status_forcelist = getattr(
+                self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
+            )
+
             ssl_ctx = get_ssl_context(ssl_verify)
             # auth if needed
             kwargs: Dict[str, Any] = {}
@@ -1290,7 +1329,16 @@ class QueryStringSearch(Search):
             else:
                 if info_message:
                     logger.info(info_message)
-                response = requests.get(
+
+                session = requests.Session()
+                retries = Retry(
+                    total=retry_total,
+                    backoff_factor=retry_backoff_factor,
+                    status_forcelist=retry_status_forcelist,
+                )
+                session.mount(url, HTTPAdapter(max_retries=retries))
+
+                response = session.get(
                     url,
                     timeout=timeout,
                     headers=USER_AGENT,
