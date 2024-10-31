@@ -2624,9 +2624,6 @@
         output_extension: .grib
       UERRA_EUROPE_SL:
         output_extension: .grib
-      SATELLITE_SEA_LEVEL_BLACK_SEA:
-        output_extension: .zip
-        extract: true
       GLACIERS_DIST_RANDOLPH:
         output_extension: .zip
         extract: true
@@ -4772,18 +4769,6 @@
         <<: *day_month_year
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_ICE_CONCENTRATION"}}'
-    SATELLITE_SEA_LEVEL_BLACK_SEA:
-      productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA
-      variable: all
-      format: zip
-      metadata_mapping:
-        id: '$.id'
-        <<: *day_month_year
-        variable:
-          - '{{"variable": "{variable}"}}'
-          - '$.null'
-        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_BLACK_SEA"}}'
     SATELLITE_SEA_LEVEL_GLOBAL:
       productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL
       variable:
@@ -4799,18 +4784,6 @@
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL"}}'
-    SATELLITE_SEA_LEVEL_MEDITERRANEAN:
-      productType: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_MEDITERRANEAN
-      variable: all
-      format: zip
-      metadata_mapping:
-        id: '$.id'
-        <<: *day_month_year
-        variable:
-          - '{{"variable": "{variable}"}}'
-          - '$.null'
-        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_MEDITERRANEAN"}}'
     SEASONAL_ORIGINAL_SL:
       productType: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
       variable:
@@ -6215,48 +6188,84 @@
     # ECMWF - COPERNICUS CDS
     ERA5_SL:
       productType: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_SL_MONTHLY:
       productType: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_PL:
       productType: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_PL_MONTHLY:
       productType: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_LAND:
       productType: EO.ECMWF.DAT.ERA5_LAND_HOURLY
+      metadata_mapping:
+        <<: *orderable_mm
     ERA5_LAND_MONTHLY:
       productType: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
+      metadata_mapping:
+        <<: *orderable_mm
     UERRA_EUROPE_SL:
       productType: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      metadata_mapping:
+        <<: *orderable_mm
     GRIDDED_GLACIERS_MASS_CHANGE:
-      productType: EO.ECMWF.DAT.GLACIERS_ELEVATION_AND_MASS_CHANGE_DATA_1850_PRESENT
+      productType: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
+      metadata_mapping:
+        <<: *orderable_mm
     GLACIERS_DIST_RANDOLPH:
       productType: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_CARBON_DIOXIDE:
       productType: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_METHANE:
       productType: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_POSTPROCESSED_PL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
-    SATELLITE_SEA_LEVEL_BLACK_SEA:
-      productType: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_BLACK_SEA_1993_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_SEA_LEVEL_GLOBAL:
       productType: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
-    SATELLITE_SEA_LEVEL_MEDITERRANEAN:
-      productType: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_MEDITERRANEAN_SEA_1993_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SATELLITE_SEA_ICE_EDGE_TYPE:
       productType: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_POSTPROCESSED_SL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_ORIGINAL_SL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_ORIGINAL_PL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_MONTHLY_PL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SEASONAL_MONTHLY_SL:
       productType: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
+      metadata_mapping:
+        <<: *orderable_mm
     SIS_HYDRO_MET_PROJ:
       productType: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
+      metadata_mapping:
+        <<: *orderable_mm
     # ECMWF - CEMS
     FIRE_HISTORICAL:
       productType: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
@@ -6283,30 +6292,56 @@
     # COPERNICUS ADS
     CAMS_GAC_FORECAST:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_FORECAST:
       productType: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GFE_GFAS:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_SOLAR_RADIATION:
       productType: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GREENHOUSE_INVERSION:
       productType: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EAC4_MONTHLY:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_RE:
       productType: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_EAC4:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GRF_AUX:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GRF:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
+      metadata_mapping:
+        <<: *orderable_mm
     CAMS_GLOBAL_EMISSIONS:
       productType: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
+      metadata_mapping:
+        <<: *orderable_mm
     # COPERNICUS ADS -  Digital Elevation Model
     COP_DEM_GLO30_DGED:
       productType: EO.DEM.DAT.COP-DEM_GLO-30-DGED

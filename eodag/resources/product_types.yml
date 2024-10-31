@@ -3286,32 +3286,6 @@ SEASONAL_POSTPROCESSED_PL:
   title: Seasonal forecast anomalies on pressure levels
   missionStartDate: "2017-09-01T00:00:00Z"
 
-SATELLITE_SEA_LEVEL_BLACK_SEA:
-  abstract: |
-    Sea level anomaly is the height of water over the mean sea surface in a given time and region. Up-to-date
-    altimeter standards are used to estimate the sea level anomalies with a mapping algorithm dedicated to the
-    Black sea region. Anomalies are computed with respect to a twenty-year mean reference period (1993-2012).
-    The steady number of reference satellite used in the production of this dataset contributes to the long-term
-    stability of the sea level record. Improvements of the accuracy, sampling of meso-scale processes and of the
-    high-latitude coverage were achieved by using a few additional satellite missions. New data are provided with
-    a delay of about 4-5 months relatively to near-real time or interim sea level products. This delay is mainly
-    due to the timeliness of the input data, the centred processing temporal window and the validation process.
-    However, this processing and validation adds stability and accuracy to the sea level variables and make them
-    adapted to climate applications. This dataset includes uncertainties for each grid cell. More details about
-    the sea level retrieval, additional filters, optimisation procedures, and the error estimation are given in
-    the Documentation section. Variables in the dataset/application are: Absolute dynamic topography, Absolute
-    geostrophic velocity meridian component, Absolute geostrophic velocity zonal component, Geostrophic velocity
-    anomalies meridian component, Geostrophic velocity anomalies zonal component, Sea level anomaly
-  platform:
-  instrument:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: Climate,ECMWF,CDS,C3S,sea,level,Black Sea
-  sensorType: HYDROLOGICAL
-  license: proprietary
-  title: Sea level daily gridded data from satellite observations for the Black Sea from 1993 to 2020
-  missionStartDate: "1993-01-01T00:00:00Z"
-
 SATELLITE_SEA_LEVEL_GLOBAL:
   abstract: |
     This data set provides gridded daily global estimates of sea level anomaly based on satellite altimetry
@@ -3354,33 +3328,6 @@ SATELLITE_SEA_LEVEL_GLOBAL:
   title: Sea level gridded data from satellite observations for the global ocean
   missionStartDate: "1993-01-01T00:00:00Z"
   missionEndDate: "2022-08-04T23:59:59Z"
-
-SATELLITE_SEA_LEVEL_MEDITERRANEAN:
-  abstract: |
-    Sea level anomaly is the height of water over the mean sea surface in a given time and region. In this dataset sea
-    level anomalies are computed with respect to a twenty-year mean reference period (1993-2012). Up-to-date altimeter
-    standards are used to estimate the sea level anomalies with a mapping algorithm specifically dedicated to the
-    Mediterranean Sea. The steady number of reference satellite used in the production of this dataset contributes to
-    the long-term stability of the sea level record. Improvements of the accuracy, sampling of meso-scale processes and
-    of the high-latitude coverage were achieved by using a few additional satellite missions. New data are provided with
-    a delay of about 4-5 months relatively to near-real time or interim sea level products. This delay is mainly due to
-    the timeliness of the input data, the centred processing temporal window and the validation process. However, this
-    processing and validation adds stability and accuracy to the sea level variables and make them adapted to climate
-    applications. This dataset includes uncertainties for each grid cell. More details about the sea level retrieval,
-    additional filters, optimisation procedures, and the error estimation are given in the Documentation section.
-    Variables in the dataset/application are: Absolute dynamic topography, Absolute geostrophic velocity meridian
-    component, Absolute geostrophic velocity zonal component, Geostrophic velocity anomalies meridian component,
-    Geostrophic velocity anomalies zonal component, Sea level anomaly
-  platform:
-  instrument:
-  platformSerialIdentifier:
-  processingLevel:
-  keywords: Climate,ECMWF,CDS,C3S,sea,level,mediterranean
-  sensorType: HYDROLOGICAL
-  license: proprietary
-  title: Sea level daily gridded data from satellite observations for the Mediterranean Sea
-  missionStartDate: "1993-01-01T00:00:00Z"
-  missionEndDate: "2018-11-01T23:59:59Z"
 
 SEASONAL_POSTPROCESSED_SL:
   abstract: |
