@@ -1047,14 +1047,14 @@
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     matching_url: https://[-\w]+.creodias.eu
-    auth_base_uri: 'https://identity.cloudferro.com/auth'
-    realm: 'Creodias-new'
+    oidc_config_url: https://identity.cloudferro.com/auth/realms/Creodias-new/.well-known/openid-configuration
     client_id: 'CLOUDFERRO_PUBLIC'
     client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
     token_provision: qs
     token_qs_key: 'token'
     auth_error_code: 401
     ssl_verify: true
+    allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
       # S1
     S1_SAR_RAW:
@@ -3616,14 +3616,14 @@
   auth: !plugin
     type: KeycloakOIDCPasswordAuth
     matching_url: https://catalogue.dataspace.copernicus.eu
-    auth_base_uri: 'https://identity.dataspace.copernicus.eu/auth'
-    realm: 'CDSE'
+    oidc_config_url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/.well-known/openid-configuration
     client_id: 'cdse-public'
     client_secret: null
     token_provision: qs
     token_qs_key: 'token'
     auth_error_code: 401
     ssl_verify: true
+    allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
     # S2
     S2_MSI_L1C:
@@ -6055,14 +6055,11 @@
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     matching_url: https://[-\w\.]+.dte.destination-earth.eu
-    authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
+    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
-    token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
     client_id: polytope-api-public
     user_consent_needed: false
     token_exchange_post_data_method: data
-    token_key: access_token
-    refresh_token_key: refresh_token
     token_provision: header
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
@@ -6147,9 +6144,8 @@
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
     subject:
-      authorization_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/auth
+      oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
       redirect_uri: https://hda.data.destination-earth.eu/stac
-      token_uri: https://auth.destine.eu/realms/desp/protocol/openid-connect/token
       client_id: dedl-hda
       user_consent_needed: false
       exchange_url_error_pattern:
