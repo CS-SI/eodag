@@ -2777,13 +2777,13 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.list_objects_response1 = {
             "Contents": [
                 {
-                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200102_20200103_hdkIFEKFNEDNF_20210101.nc"
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200102_20200103_hdkIFE.KFNEDNF_20210101.nc"
                 },
                 {
                     "Key": "native/PRODUCT_A/dataset-number-one/item_20200104_20200105_hdkIFEKFNEDNF_20210101.nc"
                 },
                 {
-                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDNF_20210101.nc"
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDN_20210101.nc"
                 },
             ]
         }
@@ -2973,6 +2973,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.product_data,
             self.dataset1_data,
             self.dataset2_data,
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
         ]
 
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
@@ -2980,25 +2983,35 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
             s3_stub.return_value = self.s3
             stubber = Stubber(self.s3)
-            stubber.add_response(
-                "list_objects",
-                self.list_objects_response1,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
-            )
-            stubber.add_response(
-                "list_objects",
-                {},
-                {
-                    "Bucket": "bucket1",
-                    "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDNF_20210101.nc",
-                    "Prefix": "native/PRODUCT_A/dataset-number-one",
-                },
-            )
-            stubber.add_response(
-                "list_objects",
-                self.list_objects_response2,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
-            )
+            for i in [
+                0,
+                1,
+            ]:  # add responses twice because 2 search requests will be executed
+                stubber.add_response(
+                    "list_objects",
+                    self.list_objects_response1,
+                    {
+                        "Bucket": "bucket1",
+                        "Prefix": "native/PRODUCT_A/dataset-number-one",
+                    },
+                )
+                stubber.add_response(
+                    "list_objects",
+                    {},
+                    {
+                        "Bucket": "bucket1",
+                        "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDN_20210101.nc",
+                        "Prefix": "native/PRODUCT_A/dataset-number-one",
+                    },
+                )
+                stubber.add_response(
+                    "list_objects",
+                    self.list_objects_response2,
+                    {
+                        "Bucket": "bucket1",
+                        "Prefix": "native/PRODUCT_A/dataset-number-two",
+                    },
+                )
             stubber.activate()
             result, num_total = search_plugin.query(
                 productType="PRODUCT_A",
@@ -3007,6 +3020,15 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(1, num_total)
             self.assertEqual(
                 "item_20200204_20200205_niznjvnqkrf_20210101",
+                result[0].properties["id"],
+            )
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A",
+                id="item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
+            )
+            self.assertEqual(1, num_total)
+            self.assertEqual(
+                "item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
                 result[0].properties["id"],
             )
 

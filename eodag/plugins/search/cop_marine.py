@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
 import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
@@ -202,7 +203,7 @@ class CopMarineSearch(StaticStacSearch):
         use_dataset_dates: bool = False,
     ) -> Optional[EOProduct]:
 
-        item_id = item_key.split("/")[-1].split(".")[0]
+        item_id = os.path.splitext(item_key.split("/")[-1])[0]
         download_url = s3_url + "/" + item_key
         properties = {
             "id": item_id,
@@ -391,7 +392,7 @@ class CopMarineSearch(StaticStacSearch):
 
                 for obj in s3_objects["Contents"]:
                     item_key = obj["Key"]
-                    item_id = item_key.split("/")[-1].split(".")[0]
+                    item_id = os.path.splitext(item_key.split("/")[-1])[0]
                     # filter according to date(s) in item id
                     item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", item_id)
                     if not item_dates:
