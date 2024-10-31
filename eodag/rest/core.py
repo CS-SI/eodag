@@ -620,18 +620,28 @@ async def get_queryables(
             stac_properties[stac_param] = queryable
             required = list(map(lambda x: x.replace(param, stac_param), required))
 
+        # due to certain metadata mappings we might only get end_datetime but we can
+        # assume that start_datetime is also available
+        if (
+            "end_datetime" in stac_properties
+            and "start_datetime" not in stac_properties
+        ):
+            stac_properties["start_datetime"] = deepcopy(
+                stac_properties["end_datetime"]
+            )
+            stac_properties["start_datetime"]["title"] = "start_datetime"
         # if we can search by start_datetime we can search by datetime
         if "start_datetime" in stac_properties:
-            stac_properties["datetime"] = StacQueryables.default_properties[
+            stac_properties["datetime"] = StacQueryables.possible_properties[
                 "datetime"
             ].model_dump()
 
         # format spatial extend properties to STAC format.
         if "geometry" in stac_properties:
-            stac_properties["bbox"] = StacQueryables.default_properties[
+            stac_properties["bbox"] = StacQueryables.possible_properties[
                 "bbox"
             ].model_dump()
-            stac_properties["geometry"] = StacQueryables.default_properties[
+            stac_properties["geometry"] = StacQueryables.possible_properties[
                 "geometry"
             ].model_dump()
 

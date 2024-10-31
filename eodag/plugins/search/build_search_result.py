@@ -63,7 +63,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import json_field_definition_to_python
-from eodag.types.queryables import CommonQueryables
+from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     deepcopy,
@@ -618,10 +618,10 @@ class ECMWFSearch(PostJsonSearch):
         ):
             queryables.update(
                 {
-                    "start": CommonQueryables.get_with_default(
+                    "start": Queryables.get_with_default(
                         "start", non_empty_kwargs.get("startTimeFromAscendingNode")
                     ),
-                    "end": CommonQueryables.get_with_default(
+                    "end": Queryables.get_with_default(
                         "end",
                         non_empty_kwargs.get("completionTimeFromAscendingNode"),
                     ),

@@ -4115,9 +4115,8 @@
       - '{{"variable": {variable}}}'
       - '$.null'
   search: !plugin
-    type: ECMWFSearch
+    type: PostJsonSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
-    available_values_url:
     timeout: 60
     need_auth: true
     auth_error_code: 401

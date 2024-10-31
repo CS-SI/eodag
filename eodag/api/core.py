@@ -2314,6 +2314,15 @@ class EODataAccessGateway:
                 )
                 if plugin_queryables:
                     providers_queryables[plugin.provider] = plugin_queryables
+            elif getattr(plugin.config, "discover_queryables", {}).get("fetch_url", ""):
+                # the provider has a generic /queryables endpoint
+                if getattr(plugin.config, "need_auth", False) and (
+                    auth := self._plugins_manager.get_auth_plugin(plugin)
+                ):
+                    plugin.auth = auth.authenticate()
+                plugin_queryables = plugin.list_queryables(kwargs)
+                if plugin_queryables:
+                    providers_queryables[plugin.provider] = plugin_queryables
             else:
                 # if no product type is given use an intersection for all product types of the provider
                 all_queryable_keys: Optional[Set[str]] = None

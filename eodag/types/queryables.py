@@ -32,21 +32,10 @@ class CommonQueryables(BaseModel):
     """A class representing search common queryable properties."""
 
     product_type: Annotated[str, Field(alias="productType")]
-    id: Annotated[str, Field(None)]
-    start: Annotated[
-        Union[datetime, date], Field(None, alias="startTimeFromAscendingNode")
-    ]
-    end: Annotated[
-        Union[datetime, date], Field(None, alias="completionTimeFromAscendingNode")
-    ]
-    geom: Annotated[str, Field(None, alias="geometry")]
 
     @classmethod
     def get_queryable_from_alias(cls, value: str) -> str:
         """Get queryable parameter from alias
-
-        >>> CommonQueryables.get_queryable_from_alias('startTimeFromAscendingNode')
-        'start'
         >>> CommonQueryables.get_queryable_from_alias('productType')
         'productType'
         """
@@ -73,6 +62,13 @@ class CommonQueryables(BaseModel):
 class Queryables(CommonQueryables):
     """A class representing all search queryable properties."""
 
+    start: Annotated[
+        Union[datetime, date], Field(None, alias="startTimeFromAscendingNode")
+    ]
+    end: Annotated[
+        Union[datetime, date], Field(None, alias="completionTimeFromAscendingNode")
+    ]
+    geom: Annotated[str, Field(None, alias="geometry")]
     uid: Annotated[str, Field(None)]
     # OpenSearch Parameters for Collection Search (Table 3)
     doi: Annotated[str, Field(None)]

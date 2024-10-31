@@ -1475,7 +1475,7 @@ def get_queryable_from_provider(
     :param metadata_mapping: metadata-mapping configuration
     :returns: EODAG configured queryable parameter or None
     """
-    pattern = rf"\b{provider_queryable}\b"
+    pattern = rf"\"{provider_queryable}\""
     # if 1:1 mapping exists privilege this one instead of other mapping
     # e.g. provider queryable = year -> use year and not date in which year also appears
     mapping_values = [

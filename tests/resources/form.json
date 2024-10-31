@@ -1,0 +1,79 @@
+[
+  {
+    "name": "variable",
+    "type": "StringListArrayWidget",
+    "details": {
+      "groups": [
+        {"values": ["a", "b", "c"]},
+        {"values": ["e", "f"]}
+      ]
+    },
+    "id": 1
+  },
+  {
+    "name": "warning"
+  },
+  {
+    "name": "year",
+    "type": "StringListWidget",
+    "details": {
+      "values": ["1940","2000", "2001", "2002", "2003", "2004", "2005"]
+    },
+    "id": 2
+  },
+  {
+    "name": "month",
+    "type": "StringListWidget",
+    "details": {
+      "values": ["01", "02", "03", "04", "05", "06", "07", "12"]
+    },
+    "id": 3
+  },
+  {
+    "name": "day",
+    "type": "StringListWidget",
+    "details": {
+      "values": ["01", "02", "03", "10", "20", "25"]
+    },
+    "id": 4
+  },
+  {
+    "name": "time",
+    "type": "StringListWidget",
+    "details": {
+      "values": ["00:00","01:00", "09:00", "12:00", "18:00", "22:00"]
+    },
+    "id": 5
+  },
+  {
+    "name": "leadtime_hour",
+    "type": "StringListWidget",
+    "details": {
+      "values": ["24", "48", "72"]
+    },
+    "id": 6
+  },
+  {
+    "name": "type",
+    "type": "StringChoiceWidget",
+    "details": {
+      "values": ["A", "B"]
+    },
+    "id": 7
+  },
+   {
+    "name": "product_type",
+    "type": "StringChoiceWidget",
+    "details": {
+      "values": ["ensemble_mean", "reanalysis"]
+    }
+  },
+  {
+    "name": "data_format",
+    "type": "StringChoiceWidget",
+    "details": {
+      "values": ["grib", "netcdf"]
+    },
+    "id": 8
+  }
+]

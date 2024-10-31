@@ -1972,6 +1972,10 @@ class StacSearch(PostJsonSearch):
 
             python_queryables = create_model("m", **field_definitions).model_fields
 
+        # replace geometry by geom
+        geom_queryable = python_queryables.pop("geometry", None)
+        if geom_queryable:
+            python_queryables["geom"] = geom_queryable
         return model_fields_to_annotated(python_queryables)
 
 
