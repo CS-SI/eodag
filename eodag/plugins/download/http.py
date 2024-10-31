@@ -1085,6 +1085,11 @@ class HTTPDownload(Download):
             if product.downloader_auth
             else ""
         )
+        matching_conf = (
+            product.downloader_auth.config.matching_conf
+            if product.downloader_auth
+            else None
+        )
 
         # loop for assets download
         for asset in assets_values:
@@ -1093,7 +1098,9 @@ class HTTPDownload(Download):
                     f"Local asset detected. Download skipped for {asset['href']}"
                 )
                 continue
-            if matching_url and re.match(matching_url, asset["href"]):
+            if matching_conf or (
+                matching_url and re.match(matching_url, asset["href"])
+            ):
                 auth_object = auth
             else:
                 auth_object = None
