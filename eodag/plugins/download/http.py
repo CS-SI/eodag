@@ -1081,12 +1081,12 @@ class HTTPDownload(Download):
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
         matching_url = (
-            product.downloader_auth.config.matching_url
+            getattr(product.downloader_auth.config, "matching_url", "")
             if product.downloader_auth
             else ""
         )
         matching_conf = (
-            product.downloader_auth.config.matching_conf
+            getattr(product.downloader_auth.config, "matching_conf", None)
             if product.downloader_auth
             else None
         )
