@@ -1817,6 +1817,9 @@
     S2_MSI_L1C:
       productType: sentinel-2-l1c
       metadata_mapping:
+        id:
+          - '{{"query":{{"s2:product_uri":{{"eq":"{id}.SAFE"}}}}}}'
+          - '{$.properties."s2:product_uri"#remove_extension}'
         title: '{$.properties."s2:product_uri"#remove_extension}'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
