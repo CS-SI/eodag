@@ -697,55 +697,96 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
         )
 
-        @mock.patch(
-            "eodag.plugins.download.http.ProgressCallback.__call__",
-            autospec=True,
-        )
-        @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
-        @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
-        def test_plugins_download_http_assets_interrupt(
-            self, mock_requests_get, mock_requests_head, mock_progress_callback
-        ):
-            """HTTPDownload.download() must download assets to a temporary file"""
+    @mock.patch("eodag.plugins.download.http.HTTPDownload._get_asset_sizes")
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_error(
+        self, mock_requests_get, mock_requests_head, mock_asset_size
+    ):
+        """HTTPDownload.download() must create an outputfile"""
 
-            plugin = self.get_download_plugin(self.product)
-            self.product.location = self.product.remote_location = "http://somewhere"
-            self.product.properties["id"] = "someproduct"
-            self.product.assets.clear()
-            self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
-            mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
-                b"some content"
+        class MockResponse:
+            def __init__(self, json_data, status_code):
+                self.json_data = json_data
+                self.status_code = status_code
+
+            def json(self):
+                return self.json_data
+
+            def __iter__(self):
+                yield self
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+            def raise_for_status(self):
+                if self.status_code == 400:
+                    raise RequestException
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        self.product.assets.update({"bar": {"href": "http://somewhere/anotherthing"}})
+        res = MockResponse({"a": "a"}, 400)
+        mock_requests_get.side_effect = res
+        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        with self.assertRaises(DownloadError):
+            plugin.download(self.product, output_dir=self.output_dir)
+
+    @mock.patch(
+        "eodag.plugins.download.http.ProgressCallback.__call__",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_interrupt(
+        self, mock_requests_get, mock_requests_head, mock_progress_callback
+    ):
+        """HTTPDownload.download() must download assets to a temporary file"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
+            b"some content"
+        )
+        mock_requests_get.return_value.__enter__.return_value.headers = {
+            "content-disposition": '; filename = "somethingelse"'
+        }
+        mock_requests_head.return_value.headers = {"content-disposition": ""}
+        # ProgressCallback is called twice in HTTPDownload._download_assets. The
+        # temporary asset file is created after the first call.
+        progress_callback_exception = Exception("Interrupt assets download")
+        mock_progress_callback.side_effect = [
+            mock.DEFAULT,
+            progress_callback_exception,
+        ]
+        with self.assertRaises(Exception) as cm:
+            plugin.download(self.product, output_dir=self.output_dir)
+        # Interrupted download
+        self.assertEqual(progress_callback_exception, cm.exception)
+        # Product location not changed
+        self.assertEqual(self.product.location, "http://somewhere")
+        self.assertEqual(self.product.remote_location, "http://somewhere")
+        # Temp file created
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.output_dir, "dummy_product", "somethingelse~")
             )
-            mock_requests_get.return_value.__enter__.return_value.headers = {
-                "content-disposition": '; filename = "somethingelse"'
-            }
-            mock_requests_head.return_value.headers = {"content-disposition": ""}
-            # ProgressCallback is called twice in HTTPDownload._download_assets. The
-            # temporary asset file is created after the first call.
-            progress_callback_exception = Exception("Interrupt assets download")
-            mock_progress_callback.side_effect = [
-                mock.DEFAULT,
-                progress_callback_exception,
-            ]
-            with self.assertRaises(Exception) as cm:
-                plugin.download(self.product, output_dir=self.output_dir)
-            # Interrupted download
-            self.assertEqual(progress_callback_exception, cm.exception)
-            # Product location not changed
-            self.assertEqual(self.product.location, "http://somewhere")
-            self.assertEqual(self.product.remote_location, "http://somewhere")
-            # Temp file created
-            self.assertTrue(
-                os.path.exists(
-                    os.path.join(self.output_dir, "dummy_product", "somethingelse~")
-                )
+        )
+        # Asset file not created
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(self.output_dir, "dummy_product", "somethingelse")
             )
-            # Asset file not created
-            self.assertFalse(
-                os.path.exists(
-                    os.path.join(self.output_dir, "dummy_product", "somethingelse")
-                )
-            )
+        )
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
