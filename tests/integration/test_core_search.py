@@ -101,8 +101,8 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_query, mock_fetch_product_types_list, mock_post
     ):
         mock_query.return_value = ([], 0)
-        # StacSearch / astraea_eod
-        self.dag.set_preferred_provider("astraea_eod")
+        # StacSearch / earth_search
+        self.dag.set_preferred_provider("earth_search")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
@@ -207,6 +207,10 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.authentication.token.TokenAuth.authenticate",
         autospec=True,
     )
@@ -226,7 +230,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     def test_core_search_fallback_find_nothing(
-        self, mock_get, mock_post, mock_request, mock_auth
+        self, mock_get, mock_post, mock_request, mock_auth_token, mock_auth_oidc
     ):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
@@ -237,6 +241,7 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
                 "geodes",
                 "onda",
                 "sara",
@@ -273,6 +278,7 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
                 "geodes",
                 "onda",
                 "sara",
@@ -308,6 +314,7 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
                 "geodes",
                 "onda",
                 "sara",
@@ -365,6 +372,7 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
                 "geodes",
                 "onda",
                 "sara",
@@ -408,6 +416,7 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
                 "geodes",
                 "onda",
                 "sara",
@@ -443,6 +452,7 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
                 "geodes",
                 "onda",
                 "sara",

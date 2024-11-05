@@ -1370,10 +1370,6 @@ class RequestTestCase(unittest.TestCase):
                 "EO:ESA:DAT:SENTINEL-1"
             )
 
-            stac_common_queryables = list(StacQueryables.default_properties.keys())
-            # when product type is given, "collection" item is not used
-            stac_common_queryables.remove("collection")
-
             responses.add(
                 responses.GET,
                 planetary_computer_queryables_url,
@@ -1387,13 +1383,13 @@ class RequestTestCase(unittest.TestCase):
                 json=wekeo_main_constraints,
             )
 
-            # no provider is specified with the product type (2 providers get a queryables or constraints file
+            # no provider is specified with the product type (3 providers get a queryables or constraints file
             # among available providers for S1_SAR_GRD for the moment): queryables intersection returned
             res_product_type_no_provider = self._request_valid(
                 "collections/S1_SAR_GRD/queryables",
                 check_links=False,
             )
-            self.assertEqual(len(responses.calls), 2)
+            self.assertEqual(len(responses.calls), 3)
 
             # check the mock call on planetary_computer
             self.assertEqual(
@@ -1433,11 +1429,6 @@ class RequestTestCase(unittest.TestCase):
             )
             self.assertFalse(res_product_type_no_provider["additionalProperties"])
 
-            # properties from stac common queryables are added and are the only ones of the response
-            self.assertListEqual(
-                list(res_product_type_no_provider["properties"].keys()),
-                stac_common_queryables,
-            )
             # no property are added from providers queryables because none of them
             # is shared with all providers for this product type
             pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"

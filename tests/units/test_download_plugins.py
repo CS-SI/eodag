@@ -1541,7 +1541,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
     def setUp(self):
         super(TestDownloadPluginAws, self).setUp()
         self.product = EOProduct(
-            "astraea_eod",
+            "aws_eos",
             dict(
                 geometry="POINT (0 0)",
                 title="dummy_product",
@@ -1695,14 +1695,14 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         """AwsDownload.download() must call safe build methods if needed"""
 
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+        self.product.properties["productInfo"] = "http://example.com/productInfo.json"
         execpected_output = os.path.join(
             self.output_dir, self.product.properties["title"]
         )
         # fetch_metadata return
         mock_requests_get.return_value.json.return_value = {
             "title": "foo",
-            "productPath": "s3://example/here/is/productPath",
+            "path": "s3://example/here/is/productPath",
         }
         # authenticated objects mock
         mock_get_authenticated_objects.return_value.keys.return_value = [
@@ -1721,7 +1721,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
-            self.product.properties["tileInfo"],
+            self.product.properties["productInfo"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
@@ -1768,8 +1768,8 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         """AwsDownload.download() must call safe build methods if needed"""
 
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["tileInfo"] = "http://example.com/tileInfo.json"
-        self.product.properties["tilePath"] = "http://example.com/tilePath"
+        self.product.properties["productInfo"] = "http://example.com/productInfo.json"
+        self.product.properties["productPath"] = "http://example.com/productPath"
         self.product.assets.clear()
         self.product.assets.update(
             {
@@ -1783,7 +1783,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         # fetch_metadata return
         mock_requests_get.return_value.json.return_value = {
             "title": "foo",
-            "productPath": "s3://example/here/is/productPath",
+            "path": "s3://example/here/is/productPath",
         }
         # authenticated objects mock
         mock_get_authenticated_objects.return_value.keys.return_value = [
@@ -1802,7 +1802,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         path = plugin.download(self.product, output_dir=self.output_dir)
 
         mock_requests_get.assert_called_once_with(
-            self.product.properties["tileInfo"],
+            self.product.properties["productInfo"],
             headers=USER_AGENT,
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
@@ -1810,7 +1810,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         mock_get_authenticated_objects.assert_called_once_with(
             plugin, "example", "", {}
         )
-        self.assertEqual(mock_get_chunk_dest_path.call_count, 4)
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 3)
         mock_get_chunk_dest_path.assert_any_call(
             plugin, product=self.product, chunk=mock.ANY, build_safe=True
         )
@@ -1824,8 +1824,8 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         self.product.properties["title"] = "newTitle"
         setattr(self.product, "location", "file://path/to/file")
         plugin.download(self.product, output_dir=self.output_dir, asset="file1")
-        # 3 additional calls
-        self.assertEqual(7, mock_get_chunk_dest_path.call_count)
+        # 2 additional calls
+        self.assertEqual(5, mock_get_chunk_dest_path.call_count)
 
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",

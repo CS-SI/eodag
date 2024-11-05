@@ -15,16 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-astraea_eod:
-    priority: # Lower value means lower priority (Default: 0)
-    search: # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
-    download:
-        output_dir:
 aws_eos:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration

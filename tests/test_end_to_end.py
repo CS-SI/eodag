@@ -68,13 +68,6 @@ AWSEOS_SEARCH_ARGS = [
     "2020-01-15",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-ASTRAE_EOD_SEARCH_ARGS = [
-    "astraea_eod",
-    "S2_MSI_L1C",
-    "2020-01-01",
-    "2020-01-15",
-    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
-]
 EARTH_SEARCH_SEARCH_ARGS = [
     "earth_search",
     "S2_MSI_L1C",
@@ -499,11 +492,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_astraea_eod(self):
-        product = self.execute_search(*ASTRAE_EOD_SEARCH_ARGS)
-        expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename, wait_sec=15)
-
     def test_end_to_end_search_download_earth_search(self):
         product = self.execute_search(*EARTH_SEARCH_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
@@ -634,11 +622,6 @@ class TestEODagEndToEnd(EndToEndBase):
                 msg=f"tileIdentifier not mapped for {provider}",
             )
 
-    def test_end_to_end_search_all_astraea_eod_iterate(self):
-        # 23/03/2021: Got 39 products for this search
-        results = self.execute_search_all(*ASTRAE_EOD_SEARCH_ARGS, items_per_page=10)
-        self.assertGreater(len(results), 10)
-
     def test_end_to_end_discover_product_types_creodias(self):
         """discover_product_types() must return an external product types configuration for creodias"""
         provider = "creodias"
@@ -658,40 +641,6 @@ class TestEODagEndToEnd(EndToEndBase):
         # check that all pre-configured product types are listed by provider
         provider_product_types = [
             v["collection"]
-            for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
-        ]
-        for provider_product_type in provider_product_types:
-            self.assertIn(
-                provider_product_type,
-                ext_product_types_conf[provider]["providers_config"],
-            )
-
-    def test_end_to_end_discover_product_types_astraea_eod(self):
-        """discover_product_types() must return an external product types configuration for astraea_eod"""
-        provider = "astraea_eod"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
-        self.assertEqual(
-            "sentinel1_l1c_grd",
-            ext_product_types_conf[provider]["providers_config"]["sentinel1_l1c_grd"][
-                "productType"
-            ],
-        )
-        self.assertEqual(
-            "Sentinel-1 L1C GRD",
-            ext_product_types_conf[provider]["product_types_config"][
-                "sentinel1_l1c_grd"
-            ]["title"],
-        )
-        self.assertEqual(
-            "CC-BY-SA-3.0",
-            ext_product_types_conf[provider]["product_types_config"][
-                "sentinel1_l1c_grd"
-            ]["license"],
-        )
-        # check that all pre-configured product types are listed by provider
-        provider_product_types = [
-            v["productType"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]

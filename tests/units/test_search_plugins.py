@@ -406,7 +406,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
         # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
-        provider = "astraea_eod"
+        provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
         # change onfiguration for this test to filter out some collections
@@ -449,7 +449,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_discover_product_types_paginated(self):
         """QueryStringSearch.discover_product_types must handle pagination"""
         # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
-        provider = "astraea_eod"
+        provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
         # change onfiguration for this test to filter out some collections
@@ -595,7 +595,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """QueryStringSearch.discover_product_types must return a dict with well formatted keywords"""
         # One of the providers that has a QueryStringSearch Search plugin and keywords configured
-        provider = "astraea_eod"
+        provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
         mock__request.return_value = mock.Mock()
@@ -1806,39 +1806,36 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertNotIn("bar", products[0].properties)
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
-    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_astraea_eod(
+    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_earth_search(
         self, mock__request
     ):
-        """The metadata mapping for a astraea_eod should correctly build assets"""
+        """The metadata mapping for a earth_search should correctly build tileIdentifier"""
         mock__request.return_value = mock.Mock()
         result = {
             "features": [
                 {
                     "id": "foo",
                     "geometry": None,
-                    "assets": {
-                        "productInfo": {"href": "s3://foo.bar/baz/productInfo.json"}
+                    "properties": {
+                        "mgrs:utm_zone": "31",
+                        "mgrs:latitude_band": "T",
+                        "mgrs:grid_square": "CJ",
                     },
                 },
             ],
         }
-        product_type = "S1_SAR_GRD"
+        product_type = "S2_MSI_L1C"
         mock__request.return_value.json.side_effect = [result]
-        search_plugin = self.get_search_plugin(product_type, "astraea_eod")
+        search_plugin = self.get_search_plugin(product_type, "earth_search")
 
         products, _ = search_plugin.query(
             productType=product_type,
             auth=None,
         )
-        self.assertIn("productInfo", products[0].assets)
+        self.assertIn("tileIdentifier", products[0].properties)
         self.assertEqual(
-            products[0].assets["productInfo"]["href"],
-            "s3://foo.bar/baz/productInfo.json",
-        )
-        self.assertIn("manifest.safe", products[0].assets)
-        self.assertEqual(
-            products[0].assets["manifest.safe"]["href"],
-            "s3://foo.bar/baz/manifest.safe",
+            products[0].properties["tileIdentifier"],
+            "31TCJ",
         )
 
 

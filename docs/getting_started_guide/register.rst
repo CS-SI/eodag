@@ -8,7 +8,7 @@ the users obtain a set of credentials (e.g. login/password, API key, etc.). Thes
 need to be provided to ``eodag`` (see :ref:`configure`). The list below explains how to register
 to each provider supported by ``eodag``:
 
-[AWS] ``astraea_eod``, ``earth_search``, ``usgs_satapi_aws``
+[AWS] ``earth_search``, ``usgs_satapi_aws``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 You need AWS credentials for download:
 

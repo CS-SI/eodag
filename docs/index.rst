@@ -26,7 +26,6 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
 .. glossary::
 
     [Growing list of] supported providers
-      `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_,
       `aws_eos <https://eos.com>`_,
       `cop_ads <https://ads.atmosphere.copernicus.eu>`_,
       `cop_cds <https://cds.climate.copernicus.eu>`_,

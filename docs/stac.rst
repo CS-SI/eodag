@@ -11,7 +11,7 @@ STAC client
 -----------
 
 STAC API providers can be configured to be used for `search` and `download` using EODAG.
-Some providers (*astraea_eod*, *dedl*, *earth_search*, *geodes*, *hydroweb_next*, *planetary_computer*,
+Some providers (*dedl*, *earth_search*, *geodes*, *hydroweb_next*, *planetary_computer*,
 *usgs_satapi_aws*) are already implemented and new providers can be dynamically added by the user.
 Static catalogs can also be fetched by EODAG.
 
