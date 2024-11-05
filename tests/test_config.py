@@ -487,7 +487,7 @@ class TestConfigFunctions(unittest.TestCase):
         # local conf file
         ext_product_types_conf = get_ext_product_types_conf(ext_product_types_path)
         self.assertIsInstance(ext_product_types_conf, dict)
-        self.assertIn("foo", ext_product_types_conf["astraea_eod"]["providers_config"])
+        self.assertIn("foo", ext_product_types_conf["earth_search"]["providers_config"])
 
 
 class TestStacProviderConfig(unittest.TestCase):

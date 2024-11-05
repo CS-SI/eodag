@@ -8,7 +8,6 @@ Description
 
 Products from the following providers are made avaiable through ``eodag``:
 
-* `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 * `aws_eos <https://eos.com/>`_: EOS search for Amazon public datasets
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
