@@ -2342,7 +2342,7 @@
       }}
     - '{$.completionTimeFromAscendingNode#to_iso_date}'
   anchor_month_year_time: &month_year_time
-    startTimeFromAscendingNode:
+    completionTimeFromAscendingNode:
       - |
         {{
           "year": {_date#interval_to_datetime_dict}["year"],
@@ -4115,19 +4115,19 @@
       - '{{"variable": {variable}}}'
       - '$.null'
   search: !plugin
-    type: PostJsonSearch
+    type: ECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
     need_auth: true
     auth_error_code: 401
     results_entry: 'features'
-    dates_required: true
     pagination:
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
       max_items_per_page: 200
     discover_product_types:
       fetch_url: null
+    available_values_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{productType}'
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'

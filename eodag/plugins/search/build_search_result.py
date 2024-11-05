@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -65,7 +65,6 @@ from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import (
-    DEFAULT_MISSION_START_DATE,
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
@@ -384,7 +383,10 @@ class ECMWFSearch(PostJsonSearch):
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
-        self._preprocess_search_params(kwargs)
+        product_type = prep.product_type
+        if not product_type:
+            product_type = kwargs.get("productType", None)
+        self._preprocess_search_params(kwargs, product_type)
 
         return super().query(prep, **kwargs)
 
@@ -417,7 +419,9 @@ class ECMWFSearch(PostJsonSearch):
             product_type=product_type, **available_properties
         )
 
-    def _preprocess_search_params(self, params: Dict[str, Any]) -> None:
+    def _preprocess_search_params(
+        self, params: Dict[str, Any], product_type: Optional[str]
+    ) -> None:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
@@ -456,59 +460,38 @@ class ECMWFSearch(PostJsonSearch):
         params["productType"] = non_none_params.get("productType", dataset)
 
         # dates
-        mission_start_dt = datetime.fromisoformat(
-            self.get_product_type_cfg_value(
-                "missionStartDate", DEFAULT_MISSION_START_DATE
-            ).replace(
-                "Z", "+00:00"
-            )  # before 3.11
-        )
-
-        default_end_from_cfg = self.config.products.get(params["productType"], {}).get(
-            "_default_end_date", None
-        )
-        default_end_str = (
-            default_end_from_cfg
-            or (
-                datetime.now(timezone.utc)
-                if params.get("startTimeFromAscendingNode")
-                else mission_start_dt + timedelta(days=1)
-            ).isoformat()
-        )
-
-        params["startTimeFromAscendingNode"] = non_none_params.get(
-            "startTimeFromAscendingNode", mission_start_dt.isoformat()
-        )
-        params["completionTimeFromAscendingNode"] = non_none_params.get(
-            "completionTimeFromAscendingNode", default_end_str
-        )
+        # check if default dates have to be added
+        self._check_date_params(params, product_type)
 
         # adapt end date if it is midnight
-        end_date_excluded = getattr(self.config, "end_date_excluded", True)
-        is_datetime = True
-        try:
-            end_date = datetime.strptime(
-                params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%SZ"
-            )
-            end_date = end_date.replace(tzinfo=tzutc())
-        except ValueError:
+        if "completionTimeFromAscendingNode" in params:
+            end_date_excluded = getattr(self.config, "end_date_excluded", True)
+            is_datetime = True
             try:
                 end_date = datetime.strptime(
-                    params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%S.%fZ"
+                    params["completionTimeFromAscendingNode"], "%Y-%m-%dT%H:%M:%SZ"
                 )
                 end_date = end_date.replace(tzinfo=tzutc())
             except ValueError:
-                end_date = isoparse(params["completionTimeFromAscendingNode"])
-                is_datetime = False
-        start_date = isoparse(params["startTimeFromAscendingNode"])
-        if (
-            not end_date_excluded
-            and is_datetime
-            and end_date > start_date
-            and end_date == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        ):
-            end_date += timedelta(days=-1)
-            params["completionTimeFromAscendingNode"] = end_date.isoformat()
+                try:
+                    end_date = datetime.strptime(
+                        params["completionTimeFromAscendingNode"],
+                        "%Y-%m-%dT%H:%M:%S.%fZ",
+                    )
+                    end_date = end_date.replace(tzinfo=tzutc())
+                except ValueError:
+                    end_date = isoparse(params["completionTimeFromAscendingNode"])
+                    is_datetime = False
+            start_date = isoparse(params["startTimeFromAscendingNode"])
+            if (
+                not end_date_excluded
+                and is_datetime
+                and end_date > start_date
+                and end_date
+                == end_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            ):
+                end_date += timedelta(days=-1)
+                params["completionTimeFromAscendingNode"] = end_date.isoformat()
 
         # geometry
         if "geometry" in params:
@@ -531,7 +514,7 @@ class ECMWFSearch(PostJsonSearch):
         )
         # extract default datetime
         processed_kwargs = deepcopy(kwargs)
-        self._preprocess_search_params(processed_kwargs)
+        self._preprocess_search_params(processed_kwargs, product_type)
 
         constraints_url = format_metadata(
             getattr(self.config, "constraints_url", ""), **kwargs
@@ -584,7 +567,7 @@ class ECMWFSearch(PostJsonSearch):
                 values_url = values_url.format(productType=provider_product_type)
             data = self.fetch_data(values_url)
             available_values = data["constraints"]
-            required_keywords = data["required"]
+            required_keywords = data.get("required", [])
 
         # To check if all keywords are queryable parameters, we check if they are in the
         # available values or the product type config (available values calculated from the
@@ -964,7 +947,7 @@ class ECMWFSearch(PostJsonSearch):
         result.update(results.product_type_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
-        # parse porperties
+        # parse properties
         parsed_properties = properties_from_json(
             result,
             self.config.metadata_mapping,
@@ -976,16 +959,23 @@ class ECMWFSearch(PostJsonSearch):
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
-        product_id = "%s_%s_%s_%s" % (
-            id_prefix,
-            parsed_properties["startTimeFromAscendingNode"]
-            .split("T")[0]
-            .replace("-", ""),
-            parsed_properties["completionTimeFromAscendingNode"]
-            .split("T")[0]
-            .replace("-", ""),
-            query_hash,
-        )
+        if (
+            "startTimeFromAscendingNode" in parsed_properties
+            and parsed_properties["startTimeFromAscendingNode"] != "Not Available"
+        ):
+            product_id = "%s_%s_%s_%s" % (
+                id_prefix,
+                parsed_properties["startTimeFromAscendingNode"]
+                .split("T")[0]
+                .replace("-", ""),
+                parsed_properties["completionTimeFromAscendingNode"]
+                .split("T")[0]
+                .replace("-", ""),
+                query_hash,
+            )
+        else:
+            product_id = f"{id_prefix}_{query_hash}"
+
         parsed_properties["id"] = parsed_properties["title"] = product_id
 
         # update downloadLink and orderLink

@@ -77,6 +77,7 @@ from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.search_args import SortByList
 from eodag.utils import (
+    DEFAULT_MISSION_START_DATE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     REQ_RETRY_BACKOFF_FACTOR,
@@ -1423,54 +1424,50 @@ class PostJsonSearch(QueryStringSearch):
     """
 
     def _get_default_end_date_from_start_date(
-        self, start_datetime: str, product_type: str
+        self, start_datetime: str, product_type_conf: Dict[str, Any]
     ) -> str:
-        default_end_date = self.config.products.get(product_type, {}).get(
-            "_default_end_date", None
-        )
-        if default_end_date:
-            return default_end_date
         try:
             start_date = datetime.fromisoformat(start_datetime)
         except ValueError:
             start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
-        product_type_conf = self.config.products[product_type]
-        if (
-            "metadata_mapping" in product_type_conf
-            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
-        ):
-            mapping = product_type_conf["metadata_mapping"][
-                "startTimeFromAscendingNode"
-            ]
+        if "completionTimeFromAscendingNode" in product_type_conf:
+            mapping = product_type_conf["completionTimeFromAscendingNode"]
             if isinstance(mapping, list) and "year" in mapping[0]:
                 # if date is mapped to year/month/(day), use end_date = start_date to avoid large requests
                 end_date = start_date
                 return end_date.isoformat()
         return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
 
-    def _check_date_params(self, keywords: Dict[str, Any], product_type: str) -> None:
+    def _check_date_params(
+        self, keywords: Dict[str, Any], product_type: Optional[str]
+    ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
         if (
             "startTimeFromAscendingNode"
             and "completionTimeFromAscendingNode" in keywords
         ):
             return
+
+        product_type_conf = getattr(self.config, "metadata_mapping", {})
+        if (
+            product_type
+            and product_type in self.config.products
+            and "metadata_mapping" in self.config.products[product_type]
+        ):
+            product_type_conf = self.config.products[product_type]["metadata_mapping"]
         # start time given, end time missing
         if "startTimeFromAscendingNode" in keywords:
             keywords[
                 "completionTimeFromAscendingNode"
             ] = self._get_default_end_date_from_start_date(
-                keywords["startTimeFromAscendingNode"], product_type
+                keywords["startTimeFromAscendingNode"], product_type_conf
             )
             return
-        product_type_conf = self.config.products[product_type]
-        if (
-            "metadata_mapping" in product_type_conf
-            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
-        ):
-            mapping = product_type_conf["metadata_mapping"][
-                "startTimeFromAscendingNode"
-            ]
+
+        if "completionTimeFromAscendingNode" in product_type_conf:
+            mapping = product_type_conf["startTimeFromAscendingNode"]
+            if not isinstance(mapping, list):
+                mapping = product_type_conf["completionTimeFromAscendingNode"]
             if isinstance(mapping, list):
                 # get time parameters (date, year, month, ...) from metadata mapping
                 input_mapping = mapping[0].replace("{{", "").replace("}}", "")
@@ -1490,12 +1487,12 @@ class PostJsonSearch(QueryStringSearch):
                     keywords[
                         "startTimeFromAscendingNode"
                     ] = self.get_product_type_cfg_value(
-                        "missionStartDate", today().isoformat()
+                        "missionStartDate", DEFAULT_MISSION_START_DATE
                     )
                     keywords[
                         "completionTimeFromAscendingNode"
                     ] = self._get_default_end_date_from_start_date(
-                        keywords["startTimeFromAscendingNode"], product_type
+                        keywords["startTimeFromAscendingNode"], product_type_conf
                     )
 
     def query(
@@ -1628,6 +1625,8 @@ class PostJsonSearch(QueryStringSearch):
         raw_search_result.product_type_def_params = prep.product_type_def_params
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
+        if count and not total_items:
+            total_items = len(eo_products)
         return eo_products, total_items
 
     def normalize_results(
@@ -1972,10 +1971,6 @@ class StacSearch(PostJsonSearch):
 
             python_queryables = create_model("m", **field_definitions).model_fields
 
-        # replace geometry by geom
-        geom_queryable = python_queryables.pop("geometry", None)
-        if geom_queryable:
-            python_queryables["geom"] = geom_queryable
         return model_fields_to_annotated(python_queryables)
 
 

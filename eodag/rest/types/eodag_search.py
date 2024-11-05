@@ -370,6 +370,9 @@ class EODAGSearch(BaseModel):
         # quick fix. TODO: refactor of EODAGSearch.
         if field_name in ("productType", "id"):
             return field_name
+        # another quick fix to handle different names of geometry
+        if field_name == "geometry":
+            field_name = "geom"
         field = cls.model_fields.get(field_name)
         if field is not None and field.alias is not None:
             return field.alias
