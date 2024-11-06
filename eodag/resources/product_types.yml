@@ -2375,7 +2375,7 @@ CAMS_GAC_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS global atmospheric composition forecasts
-  missionStartDate: "2015-01-02T00:00:00Z"
+  missionStartDate: "2019-07-09"
 
 CAMS_EU_AIR_QUALITY_FORECAST:
   abstract: |
