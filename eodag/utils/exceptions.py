@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Annotated
 if TYPE_CHECKING:
     from typing import Optional, Set
 
-    from typing_extensions import Doc
+    from typing_extensions import Doc, Self
 
 
 class EodagError(Exception):
@@ -86,7 +86,7 @@ class RequestError(EodagError):
     status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
 
     @classmethod
-    def from_error(cls, error: Exception, msg: Optional[str] = None) -> RequestError:
+    def from_error(cls, error: Exception, msg: Optional[str] = None) -> Self:
         """Generate a RequestError from an Exception"""
         status_code = getattr(error, "code", None)
         text = getattr(error, "msg", None)
@@ -96,7 +96,7 @@ class RequestError(EodagError):
         # have a status code other than 200
         if response is not None:
             status_code = response.status_code
-            text = " ".join([text, response.text])
+            text = " ".join([text or "", response.text])
 
         text = text or str(error)
 
@@ -113,10 +113,11 @@ class ValidationError(RequestError):
         self.parameters = parameters
 
     @classmethod
-    def from_error(cls, error: Exception, msg: Optional[str] = None) -> ValidationError:
+    def from_error(cls, error: Exception, msg: Optional[str] = None) -> Self:
         """Override parent from_error to handle ValidationError specificities."""
-        error.msg = msg
-        return super().from_error(error)
+        setattr(error, "msg", msg)
+        validation_error = super().from_error(error)
+        return validation_error
 
 
 class DownloadError(RequestError):

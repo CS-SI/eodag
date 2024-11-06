@@ -227,7 +227,7 @@ class HTTPDownload(Download):
                 except RequestException as e:
                     self._check_auth_exception(e)
                     msg = f'{product.properties["title"]} could not be ordered'
-                    if e.response.status_code == 400:
+                    if e.response is not None and e.response.status_code == 400:
                         raise ValidationError.from_error(e, msg) from e
                     else:
                         raise DownloadError.from_error(e, msg) from e
@@ -401,7 +401,7 @@ class HTTPDownload(Download):
                     skip_parsing_status_response = True
             except RequestException as e:
                 msg = f'{product.properties["title"]} order status could not be checked'
-                if e.response.status_code == 400:
+                if e.response is not None and e.response.status_code == 400:
                     raise ValidationError.from_error(e, msg) from e
                 else:
                     raise DownloadError.from_error(e, msg) from e
