@@ -2913,9 +2913,9 @@
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
-      processing_level: level_2
+      processing_level: level_3
       variable: xco2
-      sensor_and_algorithm: merged_emma
+      sensor_and_algorithm: merged_obs4mips
       version: '4_5'
       metadata_mapping:
         <<: *day_month_year
