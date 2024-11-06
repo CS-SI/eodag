@@ -39,6 +39,7 @@ from requests import RequestException
 
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
+from eodag.utils.exceptions import UnsupportedProductType
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
@@ -405,7 +406,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """QueryStringSearch.discover_product_types must return a well formatted dict"""
         # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
-        provider = "astraea_eod"
+        provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
         # change onfiguration for this test to filter out some collections
@@ -445,7 +446,110 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # restore configuration
         search_plugin.config.discover_product_types["results_entry"] = results_entry
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_paginated(self):
+        """QueryStringSearch.discover_product_types must handle pagination"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        # change onfiguration for this test to filter out some collections
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types[
+            "fetch_url"
+        ] = "https://foo.bar/collections"
+        search_plugin.config.discover_product_types[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
+        search_plugin.config.discover_product_types["start_page"] = 0
+
+        with responses.RequestsMock(
+            assert_all_requests_are_fired=True
+        ) as mock_requests_post:
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=0",
+                json={
+                    "collections": [
+                        {
+                            "id": "foo_collection",
+                            "title": "The FOO collection",
+                            "billing": "free",
+                        }
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=1",
+                json={
+                    "collections": [
+                        {
+                            "id": "bar_collection",
+                            "title": "The BAR non-free collection",
+                            "billing": "non-free",
+                        },
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=2",
+                json={"collections": []},
+            )
+            conf_update_dict = search_plugin.discover_product_types()
+            self.assertIn("foo_collection", conf_update_dict["providers_config"])
+            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["providers_config"])
+            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertEqual(
+                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                "foo_collection",
+            )
+            self.assertEqual(
+                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                "The FOO collection",
+            )
+
+        # restore configuration
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
+    def test_plugins_search_querystringsearch_discover_product_types_post(
+        self, mock__request
+    ):
+        """QueryStringSearch.discover_product_types must be able to query using POST requests"""
+        # One of the providers that has a QueryStringSearch.discover_product_types configured with POST requests
+        provider = "geodes"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        mock__request.return_value = mock.Mock()
+        mock__request.return_value.json.return_value = {
+            "collections": [
+                {
+                    "id": "foo_collection",
+                    "title": "The FOO collection",
+                },
+                {
+                    "id": "bar_collection",
+                    "title": "The BAR collection",
+                },
+            ]
+        }
+        conf_update_dict = search_plugin.discover_product_types()
+        self.assertIn("foo_collection", conf_update_dict["providers_config"])
+        self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+        self.assertIn("bar_collection", conf_update_dict["providers_config"])
+        self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+        self.assertEqual(
+            conf_update_dict["providers_config"]["foo_collection"]["productType"],
+            "foo_collection",
+        )
+        self.assertEqual(
+            conf_update_dict["product_types_config"]["foo_collection"]["title"],
+            "The FOO collection",
+        )
+
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_plugins_search_querystringsearch_discover_product_types_with_query_param(
         self, mock__request
     ):
@@ -476,6 +580,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         ]
         search_plugin.discover_product_types()
         mock__request.assert_called_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/foo_collection",
             timeout=60,
             headers=USER_AGENT,
@@ -490,7 +595,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     ):
         """QueryStringSearch.discover_product_types must return a dict with well formatted keywords"""
         # One of the providers that has a QueryStringSearch Search plugin and keywords configured
-        provider = "astraea_eod"
+        provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
         mock__request.return_value = mock.Mock()
@@ -571,7 +676,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("bar", products[0].properties)
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=requests.exceptions.Timeout(),
     )
@@ -1701,39 +1806,36 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertNotIn("bar", products[0].properties)
 
     @mock.patch("eodag.plugins.search.qssearch.StacSearch._request", autospec=True)
-    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_astraea_eod(
+    def test_plugins_search_stacsearch_distinct_product_type_mtd_mapping_earth_search(
         self, mock__request
     ):
-        """The metadata mapping for a astraea_eod should correctly build assets"""
+        """The metadata mapping for a earth_search should correctly build tileIdentifier"""
         mock__request.return_value = mock.Mock()
         result = {
             "features": [
                 {
                     "id": "foo",
                     "geometry": None,
-                    "assets": {
-                        "productInfo": {"href": "s3://foo.bar/baz/productInfo.json"}
+                    "properties": {
+                        "mgrs:utm_zone": "31",
+                        "mgrs:latitude_band": "T",
+                        "mgrs:grid_square": "CJ",
                     },
                 },
             ],
         }
-        product_type = "S1_SAR_GRD"
+        product_type = "S2_MSI_L1C"
         mock__request.return_value.json.side_effect = [result]
-        search_plugin = self.get_search_plugin(product_type, "astraea_eod")
+        search_plugin = self.get_search_plugin(product_type, "earth_search")
 
         products, _ = search_plugin.query(
             productType=product_type,
             auth=None,
         )
-        self.assertIn("productInfo", products[0].assets)
+        self.assertIn("tileIdentifier", products[0].properties)
         self.assertEqual(
-            products[0].assets["productInfo"]["href"],
-            "s3://foo.bar/baz/productInfo.json",
-        )
-        self.assertIn("manifest.safe", products[0].assets)
-        self.assertEqual(
-            products[0].assets["manifest.safe"]["href"],
-            "s3://foo.bar/baz/manifest.safe",
+            products[0].properties["tileIdentifier"],
+            "31TCJ",
         )
 
 
@@ -2672,13 +2774,13 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         self.list_objects_response1 = {
             "Contents": [
                 {
-                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200102_20200103_hdkIFEKFNEDNF_20210101.nc"
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200102_20200103_hdkIFE.KFNEDNF_20210101.nc"
                 },
                 {
                     "Key": "native/PRODUCT_A/dataset-number-one/item_20200104_20200105_hdkIFEKFNEDNF_20210101.nc"
                 },
                 {
-                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDNF_20210101.nc"
+                    "Key": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDN_20210101.nc"
                 },
             ]
         }
@@ -2868,6 +2970,9 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.product_data,
             self.dataset1_data,
             self.dataset2_data,
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
         ]
 
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
@@ -2875,25 +2980,35 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
             s3_stub.return_value = self.s3
             stubber = Stubber(self.s3)
-            stubber.add_response(
-                "list_objects",
-                self.list_objects_response1,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
-            )
-            stubber.add_response(
-                "list_objects",
-                {},
-                {
-                    "Bucket": "bucket1",
-                    "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDNF_20210101.nc",
-                    "Prefix": "native/PRODUCT_A/dataset-number-one",
-                },
-            )
-            stubber.add_response(
-                "list_objects",
-                self.list_objects_response2,
-                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
-            )
+            for i in [
+                0,
+                1,
+            ]:  # add responses twice because 2 search requests will be executed
+                stubber.add_response(
+                    "list_objects",
+                    self.list_objects_response1,
+                    {
+                        "Bucket": "bucket1",
+                        "Prefix": "native/PRODUCT_A/dataset-number-one",
+                    },
+                )
+                stubber.add_response(
+                    "list_objects",
+                    {},
+                    {
+                        "Bucket": "bucket1",
+                        "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDN_20210101.nc",
+                        "Prefix": "native/PRODUCT_A/dataset-number-one",
+                    },
+                )
+                stubber.add_response(
+                    "list_objects",
+                    self.list_objects_response2,
+                    {
+                        "Bucket": "bucket1",
+                        "Prefix": "native/PRODUCT_A/dataset-number-two",
+                    },
+                )
             stubber.activate()
             result, num_total = search_plugin.query(
                 productType="PRODUCT_A",
@@ -2903,6 +3018,34 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual(
                 "item_20200204_20200205_niznjvnqkrf_20210101",
                 result[0].properties["id"],
+            )
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A",
+                id="item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
+            )
+            self.assertEqual(1, num_total)
+            self.assertEqual(
+                "item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
+                result[0].properties["id"],
+            )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):
+        exc = requests.RequestException()
+        exc.errno = 404
+        mock_requests_get.side_effect = exc
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        with self.assertRaises(UnsupportedProductType):
+            search_plugin.query(
+                productType="PRODUCT_AX",
+                id="item_20200204_20200205_niznjvnqkrf_20210101",
+            )
+        mock_requests_get.reset()
+        mock_requests_get.side_effect = requests.exceptions.ConnectionError()
+        with self.assertRaises(RequestError):
+            search_plugin.query(
+                productType="PRODUCT_A",
+                id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
 
 

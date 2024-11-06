@@ -8,7 +8,7 @@ the users obtain a set of credentials (e.g. login/password, API key, etc.). Thes
 need to be provided to ``eodag`` (see :ref:`configure`). The list below explains how to register
 to each provider supported by ``eodag``:
 
-[AWS] ``astraea_eod``, ``earth_search``, ``usgs_satapi_aws``
+[AWS] ``earth_search``, ``usgs_satapi_aws``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 You need AWS credentials for download:
 
@@ -64,8 +64,8 @@ Then log in and go to your user profile on `Climate Data Store <https://cds-beta
 
 To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence
 whereas other licences are valid for a group of datasets.
-For example after accepting the `Licence to use Copernicus Products` you can use all `ERA5` datasets and the
-`CEMS-FLOODS datasets licence` is valid for all `GLOFAS` and `EFAS` datasets.
+For example after accepting the `Licence to use Copernicus Products` you can use all `ERA5` datasets, to use the seasonal data from C3S you
+also have to accept the `Additional licence to use non European contributions`.
 
 To accept a licence:
 
@@ -79,6 +79,24 @@ To accept a licence:
 ^^^^^^^^^^^^^^^^^
 Create an account `here
 <https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/auth?client_id=cdse-public&redirect_uri=https%3A%2F%2Fdataspace.copernicus.eu%2Fbrowser%2F&response_type=code&scope=openid>`__
+
+``cop_ewds``
+^^^^^^^^^^^^
+Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
+Then log in and go to your user profile on `CEMS Early Warning Data Store <https://ewds.climate.copernicus.eu>`__ and use your
+*Personal Access Token* as *apikey* in eodag credentials.
+
+To download data, you also have to accept certain terms depending on the dataset. There are two different licences that have to be accepted
+to use the CEMS EWDS datasets. Accepting the `CEMS-FLOODS datasets licence` is necessary to use the `GLOFAS` and `EFAS` datasets,
+the `Licence to use Copernicus Products` is valid for the Fire danger datasets.
+
+To accept a licence:
+
+* Search for the dataset you want to download `here <https://ewds.climate.copernicus.eu/datasets>`__ while being
+  logged in.
+* Open the dataset details and go to the download tab.
+* Scroll down and accept the licence in the section `Terms of use`.
+* You can check which licences you have accepted in your user profile.
 
 ``cop_marine``
 ^^^^^^^^^^^^^^
@@ -144,6 +162,12 @@ Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`
 
 Then use the consumer key as `username` and the consumer secret as `password` from `here
 <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
+
+``geodes``
+^^^^^^^^^^
+Go to `https://geodes-portal.cnes.fr <https://https://geodes-portal.cnes.fr>`_, then login or create an account by
+clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
+as *apikey* in EODAG provider auth credentials.
 
 ``hydroweb_next``
 ^^^^^^^^^^^^^^^^^

@@ -23,7 +23,7 @@ from typing import Dict, Optional, TypedDict
 class DownloadConf(TypedDict, total=False):
     """Download configuration
 
-    :cvar output_prefix: where to store downloaded products, as an absolute file path
+    :cvar output_dir: where to store downloaded products, as an absolute file path
                          (Default: local temporary directory)
     :cvar output_extension: downloaded file extension
     :cvar extract: whether to extract the downloaded products, only applies to archived products

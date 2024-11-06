@@ -249,7 +249,11 @@ intersphinx_mapping = {
     # https://github.com/psf/requests/issues/6140#issuecomment-1135071992
     "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
+    "click": ("https://click.palletsprojects.com/en/stable/", None),
+    "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
 }
+
+suppress_warnings = ["misc.copy_overwrite"]
 
 
 def _build_finished(app, exception):

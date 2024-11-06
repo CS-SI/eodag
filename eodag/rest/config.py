@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import List, Union
+from typing import Annotated, List, Union
 
 from pydantic import Field
 from pydantic.functional_validators import BeforeValidator
@@ -26,7 +26,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Doc
 
 from eodag.rest.constants import DEFAULT_MAXSIZE, DEFAULT_TTL
-from eodag.utils import Annotated
 
 
 def str2liststr(raw: Union[str, List[str]]) -> List[str]:

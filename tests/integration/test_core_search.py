@@ -61,7 +61,7 @@ class TestCoreSearch(unittest.TestCase):
         self.tmp_home_dir.cleanup()
 
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -101,8 +101,8 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_query, mock_fetch_product_types_list, mock_post
     ):
         mock_query.return_value = ([], 0)
-        # StacSearch / astraea_eod
-        self.dag.set_preferred_provider("astraea_eod")
+        # StacSearch / earth_search
+        self.dag.set_preferred_provider("earth_search")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
@@ -207,6 +207,10 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.authentication.token.TokenAuth.authenticate",
         autospec=True,
     )
@@ -221,12 +225,12 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
     def test_core_search_fallback_find_nothing(
-        self, mock_get, mock_post, mock_request, mock_auth
+        self, mock_get, mock_post, mock_request, mock_auth_token, mock_auth_oidc
     ):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
@@ -237,6 +241,8 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
+                "geodes",
                 "onda",
                 "sara",
                 "wekeo_main",
@@ -258,7 +264,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -272,6 +278,8 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
+                "geodes",
                 "onda",
                 "sara",
                 "wekeo_main",
@@ -293,7 +301,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=RequestException,
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
     )
     def test_core_search_fallback_find_on_first(self, mock_get, mock_request):
@@ -306,6 +314,8 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
+                "geodes",
                 "onda",
                 "sara",
                 "wekeo_main",
@@ -346,7 +356,7 @@ class TestCoreSearch(unittest.TestCase):
         side_effect=[RequestException, mock.DEFAULT, mock.DEFAULT],
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.requests.get",
+        "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
         side_effect=RequestException,
     )
@@ -362,6 +372,8 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
+                "geodes",
                 "onda",
                 "sara",
                 "wekeo_main",
@@ -404,6 +416,8 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
+                "geodes",
                 "onda",
                 "sara",
                 "wekeo_main",
@@ -438,6 +452,8 @@ class TestCoreSearch(unittest.TestCase):
                 "peps",
                 "cop_dataspace",
                 "creodias",
+                "dedl",
+                "geodes",
                 "onda",
                 "sara",
                 "wekeo_main",
@@ -494,6 +510,23 @@ class TestCoreSearch(unittest.TestCase):
                 },
             },
         )
+
+        # auth plugin without match configuration
+        self.dag.add_provider(
+            "provider_without_match_configured",
+            "https://foo.bar/baz/search",
+            search={"need_auth": True},
+            auth={
+                "type": "GenericAuth",
+                "credentials": {
+                    "username": "some-username",
+                    "password": "some-password",
+                },
+            },
+        )
+        self.dag.search(provider="provider_without_match_configured")
+        self.assertEqual(mock_query.call_args[0][1].auth.username, "some-username")
+        mock_query.reset_mock()
 
         # search endpoint matching
         self.dag.add_provider(

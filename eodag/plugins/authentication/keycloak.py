@@ -41,19 +41,38 @@ logger = logging.getLogger("eodag.auth.keycloak")
 class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """Authentication plugin using Keycloak and OpenId Connect.
 
-    This plugin request a token and use it through a query-string or a header.
+    This plugin requests a token which is added to a query-string or a header for authentication.
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): KeycloakOIDCPasswordAuth
+        * :attr:`~eodag.config.PluginConfig.oidc_config_url` (``str``) (**mandatory**):
+          The url to get the OIDC Provider's endpoints
+        * :attr:`~eodag.config.PluginConfig.client_id` (``str``) (**mandatory**): keycloak client id
+        * :attr:`~eodag.config.PluginConfig.client_secret` (``str``) (**mandatory**): keycloak
+          client secret, set to null if no secret is used
+        * :attr:`~eodag.config.PluginConfig.token_provision` (``str``) (**mandatory**): if the
+          token should be added to the query string (``qs``) or to the header (``header``)
+        * :attr:`~eodag.config.PluginConfig.token_qs_key` (``str``): (**mandatory if token_provision=qs**)
+          key of the param added to the query string
+        * :attr:`~eodag.config.PluginConfig.allowed_audiences` (``List[str]``) (**mandatory**):
+          The allowed audiences that have to be present in the user token.
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
+          returned in case of an authentication error
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
+          should be verified in the token request; default: ``True``
 
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
-    `http://example.com?foo=bar` will become
-    `http://example.com?foo=bar&my-token=obtained-token` if associated to the following
+    ``http://example.com?foo=bar`` will become
+    ``http://example.com?foo=bar&my-token=obtained-token`` if associated to the following
     configuration::
 
         provider:
             ...
             auth:
                 plugin: KeycloakOIDCPasswordAuth
-                auth_base_uri: 'https://somewhere/auth'
-                realm: 'the-realm'
+                oidc_config_url: 'https://somewhere/auth/realms/realm/.well-known/openid-configuration'
                 client_id: 'SOME_ID'
                 client_secret: '01234-56789'
                 token_provision: qs
@@ -62,15 +81,14 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             ...
 
     If configured to send the token through the header, the download request header will
-    be updated with `Authorization: "Bearer obtained-token"` if associated to the
+    be updated with ``Authorization: "Bearer obtained-token"`` if associated to the
     following configuration::
 
         provider:
             ...
             auth:
                 plugin: KeycloakOIDCPasswordAuth
-                auth_base_uri: 'https://somewhere/auth'
-                realm: 'the-realm'
+                oidc_config_url: 'https://somewhere/auth/realms/realm/.well-known/openid-configuration'
                 client_id: 'SOME_ID'
                 client_secret: '01234-56789'
                 token_provision: header
@@ -79,8 +97,12 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
     """
 
     GRANT_TYPE = "password"
-    TOKEN_URL_TEMPLATE = "{auth_base_uri}/realms/{realm}/protocol/openid-connect/token"
-    REQUIRED_PARAMS = ["auth_base_uri", "client_id", "client_secret", "token_provision"]
+    REQUIRED_PARAMS = [
+        "oidc_config_url",
+        "client_id",
+        "client_secret",
+        "token_provision",
+    ]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(KeycloakOIDCPasswordAuth, self).__init__(provider, config)
@@ -101,10 +123,9 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
         Makes authentication request
         """
         self.validate_config_credentials()
-        access_token = self._get_access_token()
-        self.token_info["access_token"] = access_token
+        self._get_access_token()
         return CodeAuthorizedAuth(
-            self.token_info["access_token"],
+            self.access_token,
             self.config.token_provision,
             key=getattr(self.config, "token_qs_key", None),
         )
@@ -120,10 +141,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
-                self.TOKEN_URL_TEMPLATE.format(
-                    auth_base_uri=self.config.auth_base_uri.rstrip("/"),
-                    realm=self.config.realm,
-                ),
+                self.token_endpoint,
                 data=dict(req_data, **credentials),
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,
@@ -142,15 +160,12 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             "client_id": self.config.client_id,
             "client_secret": self.config.client_secret,
             "grant_type": "refresh_token",
-            "refresh_token": self.token_info["refresh_token"],
+            "refresh_token": self.refresh_token,
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
-                self.TOKEN_URL_TEMPLATE.format(
-                    auth_base_uri=self.config.auth_base_uri.rstrip("/"),
-                    realm=self.config.realm,
-                ),
+                self.token_endpoint,
                 data=req_data,
                 headers=USER_AGENT,
                 timeout=HTTP_REQ_TIMEOUT,

@@ -15,21 +15,208 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+aws_eos:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    search_auth:
+        credentials:
+            api_key:
+    download_auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_profile:
+    download:
+        output_dir:
+cop_ads:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+    auth:
+        credentials:
+            apikey:
+cop_cds:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+    auth:
+        credentials:
+            apikey:
+cop_dataspace:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
+cop_ewds:
+    priority: # Lower value means lower priority (Default: 0)
+    download:
+        output_dir:
+    auth:
+        credentials:
+            apikey:
+cop_marine:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+creodias:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
+            totp: # set totp dynamically, see https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication
+creodias_s3:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        output_dir:
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+dedl:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
+dedt_lumi:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+    download:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
+earth_search:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_profile:
+    download:
+        output_dir:
+earth_search_cog:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        output_dir:
+earth_search_gcs:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+    download:
+        output_dir:
+ecmwf:
+    priority: # Lower value means lower priority (Default: 0)
+    api:
+        output_dir:
+        credentials:
+            username:
+            password:
+eumetsat_ds:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
+    download:
+        output_dir:
+geodes:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        extract:
+        output_dir:
+hydroweb_next:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        output_dir:
+meteoblue:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        output_dir:
+onda:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+    auth:
+        credentials:
+            username:
+            password:
 peps:
     priority: # Lower value means lower priority (Default: 1)
-    search:  # Search parameters configuration
+    search: # Search parameters configuration
     download:
-        extract:  # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
+        extract: # whether to extract the downloaded products, only applies to archived products (true or false, Default: true).
         output_dir: # where to store downloaded products, as an absolute file path (Default: local temporary directory)
-        dl_url_params:  # additional parameters to pass over to the download url as an url parameter
+        dl_url_params: # additional parameters to pass over to the download url as an url parameter
         delete_archive: # whether to delete the downloaded archives (true or false, Default: true).
+    auth:
+        credentials:
+            username:
+            password:
+planetary_computer:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            apikey:
+    download:
+        output_dir:
+sara:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    download:
+        extract:
+        output_dir:
+        delete_archive:
     auth:
         credentials:
             username:
             password:
 theia:
     priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
+    search: # Search parameters configuration
     download:
         extract:
         output_dir:
@@ -48,53 +235,9 @@ usgs:
         credentials:
             username:
             password:
-aws_eos:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    search_auth:
-        credentials:
-            api_key:
-    download_auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
-    download:
-        output_dir:
-creodias:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-    auth:
-        credentials:
-            username:
-            password:
-            totp: # set totp dynamically, see https://eodag.readthedocs.io/en/latest/getting_started_guide/configure.html#authenticate-using-an-otp-one-time-password-two-factor-authentication
-onda:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-    auth:
-        credentials:
-            username:
-            password:
-astraea_eod:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
-    download:
-        output_dir:
 usgs_satapi_aws:
     priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
+    search: # Search parameters configuration
     auth:
         credentials:
             aws_access_key_id:
@@ -102,118 +245,6 @@ usgs_satapi_aws:
             aws_profile:
     download:
         output_dir:
-earth_search:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-            aws_profile:
-    download:
-        output_dir:
-earth_search_cog:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        output_dir:
-earth_search_gcs:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    auth:
-        credentials:
-            aws_access_key_id:
-            aws_secret_access_key:
-    download:
-        output_dir:
-ecmwf:
-    priority: # Lower value means lower priority (Default: 0)
-    api:
-        output_dir:
-        credentials:
-            username:
-            password:
-cop_ads:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-    auth:
-      credentials:
-        apikey:
-cop_cds:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-    auth:
-        credentials:
-            apikey:
-sara:
-    priority: # Lower value means lower priority (Default: 0)
-    search:  # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-        delete_archive:
-    auth:
-        credentials:
-            username:
-            password:
-meteoblue:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    auth:
-        credentials:
-            apikey:
-    download:
-        output_dir:
-cop_dataspace:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-    auth:
-        credentials:
-            username:
-            password:
-planetary_computer:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    auth:
-        credentials:
-            apikey:
-    download:
-        output_dir:
-hydroweb_next:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    auth:
-        credentials:
-            apikey:
-    download:
-        output_dir:
-wekeo_main:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        output_dir:
-    auth:
-        credentials:
-            username:
-            password:
-wekeo_ecmwf:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        output_dir:
-    auth:
-        credentials:
-            username:
-            password:
 wekeo_cmems:
     priority: # Lower value means lower priority (Default: 0)
     search:
@@ -223,46 +254,21 @@ wekeo_cmems:
         credentials:
             username:
             password:
-creodias_s3:
+wekeo_ecmwf:
     priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        output_dir:
-    auth:
-        credentials:
-          aws_access_key_id:
-          aws_secret_access_key:
-dedt_lumi:
-    priority: # Lower value means lower priority (Default: 0)
-    search:
+    search: # Search parameters configuration
     download:
         output_dir:
     auth:
         credentials:
             username:
             password:
-dedl:
+wekeo_main:
     priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
+    search: # Search parameters configuration
     download:
-        output_dir:
-    auth:
-      credentials:
-        username:
-        password:
-eumetsat_ds:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
         output_dir:
     auth:
         credentials:
             username:
             password:
-    download:
-        output_dir:
-cop_marine:
-    priority: # Lower value means lower priority (Default: 0)
-    search:   # Search parameters configuration
-    download:
-        extract:
-        output_dir:

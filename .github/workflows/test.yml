@@ -19,36 +19,21 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: "3.8"
-    - name: Update pip
-      run: python -m pip install --upgrade pip
-    - name: Get pip cache dir
-      id: pip-cache
-      shell: bash
-      run: echo "DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
-    - name: Get current week number
-      id: get-week
-      shell: bash
-      run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
-    - name: Pip cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.pip-cache.outputs.DIR }}
-        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
-    - name: Install tox
-      run: python -m pip install tox
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
     - name: Run linters with tox
-      run: python -m tox -e linters
+      run: uvx --python 3.9 --with tox-uv tox -e linters
 
   tests:
     name: Test it!
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.8, "3.12"]
+        python-version: [3.9, "3.13"]
         os: [ubuntu-latest, windows-latest]
     steps:
     - name: Checkout the repo
@@ -56,29 +41,14 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python ${{ matrix.python-version }} on ${{ matrix.os }}
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Update pip
-      run: python -m pip install --upgrade pip
-    - name: Get pip cache dir
-      id: pip-cache
-      shell: bash
-      run: echo "DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
-    - name: Get current week number
-      id: get-week
-      shell: bash
-      run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
-    - name: Pip cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.pip-cache.outputs.DIR }}
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
-    - name: Install tox and tox-gh-actions
-      run: python -m pip install tox tox-gh-actions
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
     - name: Test with tox
-      run: tox
+      run: uvx --python ${{ matrix.python-version }} --with tox-uv --with tox-gh-actions tox
     - name: Upload Unit Test Results
       if: always()
       uses: actions/upload-artifact@v4
@@ -110,7 +80,7 @@ jobs:
       uses: insightsengineering/coverage-action@v2
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.12-ubuntu-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.13-ubuntu-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -140,7 +110,7 @@ jobs:
       uses: insightsengineering/coverage-action@v2
       with:
         # Path to the Cobertura XML report.
-        path: artifacts/unit-test-results-python3.12-windows-latest/coverage.xml
+        path: artifacts/unit-test-results-python3.13-windows-latest/coverage.xml
         # Minimum total coverage, if you want to the
         # workflow to enforce it as a standard.
         # This has no effect if the `fail` arg is set to `false`.
@@ -175,34 +145,18 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: "3.8"
-    - name: Update pip
-      run: python -m pip install --upgrade pip
-    - name: Get pip cache dir
-      id: pip-cache
-      shell: bash
-      run: echo "DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
-    - name: Get current week number
-      id: get-week
-      shell: bash
-      run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
-    - name: Pip cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.pip-cache.outputs.DIR }}
-        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
     - name: Install pandoc
       run: |
         curl -s https://api.github.com/repos/jgm/pandoc/releases/latest | grep -o "https.*amd64.deb" | wget -O pandoc.deb -qi -
         sudo dpkg -i pandoc.deb && rm pandoc.deb
-    - name: Install tox
-      run: |
-        python -m pip install tox
     - name: Testing with tox
-      run: python -m tox -e docs
+      run: uvx --with tox-uv tox -e docs
 
   check-pypi:
     name: Long description check for PyPI
@@ -213,27 +167,11 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: "3.8"
-    - name: Update pip
-      run: python -m pip install --upgrade pip
-    - name: Get pip cache dir
-      id: pip-cache
-      shell: bash
-      run: echo "DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
-    - name: Get current week number
-      id: get-week
-      shell: bash
-      run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
-    - name: Pip cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.pip-cache.outputs.DIR }}
-        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
-    - name: Install tox and sphinx (to have rst2html.py utility available)
-      run: |
-        python -m pip install tox sphinx
-    - name: Testing with tox
-      run: python -m tox -e pypi
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
+    - name: Testing with tox and sphinx (to have rst2html.py utility available)
+      run: uvx --with tox-uv --with sphinx tox -e pypi

@@ -17,12 +17,12 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from typing import Optional, Set
 
-    from typing_extensions import Annotated, Doc
+    from typing_extensions import Doc
 
 
 class EodagError(Exception):
@@ -94,7 +94,10 @@ class RequestError(EodagError):
         status_code = getattr(error, "code", None)
         text = getattr(error, "msg", None)
 
-        if response := getattr(error, "response", None):
+        response = getattr(error, "response", None)
+        # Explicitly test for None because response objects are considered false if they
+        # have a status code other than 200
+        if response is not None:
             status_code = response.status_code
             text = response.text
 

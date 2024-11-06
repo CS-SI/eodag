@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
 import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
@@ -37,7 +38,7 @@ from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
 from eodag.utils import get_bucket_name_and_prefix
-from eodag.utils.exceptions import UnsupportedProductType, ValidationError
+from eodag.utils.exceptions import RequestError, UnsupportedProductType, ValidationError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -109,7 +110,21 @@ def _check_int_values_properties(properties: Dict[str, Any]):
 
 
 class CopMarineSearch(StaticStacSearch):
-    """class that implements search for the Copernicus Marine provider"""
+    """class that implements search for the Copernicus Marine provider
+
+    It calls :meth:`~eodag.plugins.search.static_stac_search.StaticStacSearch.discover_product_types`
+    inherited from :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+    but for the actual search a special method which fetches the urls of the available products from an S3 storage and
+    filters them has been written.
+
+    The configuration parameters are inherited from the parent and grand-parent classes. The
+    :attr:`~eodag.config.PluginConfig.DiscoverMetadata.auto_discovery` parameter in the
+    :attr:`~eodag.config.PluginConfig.discover_metadata` section has to be set to ``false`` and the
+    :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` in the
+    :attr:`~eodag.config.PluginConfig.discover_queryables` queryables section has to be set to ``null`` to
+    overwrite the default config from the stac provider configuration because those functionalities
+    are not available.
+    """
 
     def __init__(self, provider: str, config: PluginConfig):
         original_metadata_mapping = copy.deepcopy(config.metadata_mapping)
@@ -122,12 +137,10 @@ class CopMarineSearch(StaticStacSearch):
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
-        fetch_url = cast(
-            str,
-            self.config.discover_product_types["fetch_url"].format(
-                **self.config.__dict__
-            ),
+        fetch_url = cast(str, self.config.discover_product_types["fetch_url"]).format(
+            **self.config.__dict__
         )
+
         logger.debug("fetch data for collection %s", product_type)
         provider_product_type = self.config.products.get(product_type, {}).get(
             "productType", None
@@ -140,9 +153,14 @@ class CopMarineSearch(StaticStacSearch):
         )
         try:
             collection_data = requests.get(collection_url).json()
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            if exc.errno == 404:
+                logger.error("product %s not found", product_type)
+                raise UnsupportedProductType(product_type)
             logger.error("data for product %s could not be fetched", product_type)
-            raise UnsupportedProductType(product_type)
+            raise RequestError.from_error(
+                exc, f"data for product {product_type} could not be fetched"
+            ) from exc
 
         datasets = []
         for link in [li for li in collection_data["links"] if li["rel"] == "item"]:
@@ -185,7 +203,7 @@ class CopMarineSearch(StaticStacSearch):
         use_dataset_dates: bool = False,
     ) -> Optional[EOProduct]:
 
-        item_id = item_key.split("/")[-1].split(".")[0]
+        item_id = os.path.splitext(item_key.split("/")[-1])[0]
         download_url = s3_url + "/" + item_key
         properties = {
             "id": item_id,
@@ -374,7 +392,7 @@ class CopMarineSearch(StaticStacSearch):
 
                 for obj in s3_objects["Contents"]:
                     item_key = obj["Key"]
-                    item_id = item_key.split("/")[-1].split(".")[0]
+                    item_id = os.path.splitext(item_key.split("/")[-1])[0]
                     # filter according to date(s) in item id
                     item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", item_id)
                     if not item_dates:

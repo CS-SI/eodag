@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shutil
 import tarfile
 import zipfile
@@ -79,6 +80,7 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NotAvailableError,
+    RequestError,
     TimeOutError,
 )
 
@@ -100,18 +102,47 @@ class HTTPDownload(Download):
     :param provider: provider name
     :param config: Download plugin configuration:
 
-        * ``config.base_uri`` (str) - (optional) default endpoint url
-        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
-        * ``config.auth_error_code`` (int) - (optional) authentication error code
-        * ``config.dl_url_params`` (dict) - (optional) attitional parameters to send in the request
-        * ``config.archive_depth`` (int) - (optional) level in extracted path tree where to find data
-        * ``config.flatten_top_dirs`` (bool) - (optional) flatten directory structure
-        * ``config.ignore_assets`` (bool) - (optional) ignore assets and download using downloadLink
-        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
-        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
-        * ``config.order_headers`` (dict) - (optional) order request headers
-        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - (optional) Order status handling
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): ``HTTPDownload``
+        * :attr:`~eodag.config.PluginConfig.base_uri` (``str``): default endpoint url
+        * :attr:`~eodag.config.PluginConfig.method` (``str``): HTTP request method for the download request (``GET`` or
+          ``POST``); default: ``GET``
+        * :attr:`~eodag.config.PluginConfig.extract` (``bool``): if the content of the downloaded file should be
+          extracted; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
+          authentication error
+        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``Dict[str, Any]``): parameters to be
+          added to the query params of the request
+        * :attr:`~eodag.config.PluginConfig.archive_depth` (``int``): level in extracted path tree where to find data;
+          default: ``1``
+        * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
+          flattened; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using downloadLink;
+          default: ``False``
+        * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
+          default: ``5``
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
+          requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.output_extension` (``str``): which extension should be used for the
+          downloaded file
+        * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
+          authentication; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
+          if this parameter is set to true, a mapping for the orderLink has to be added to the metadata mapping of
+          the search plugin used for the provider; default: ``False``
+        * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
+          or ``POST``); default: ``GET``
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): headers to be added to the order
+          request
+        * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
+          a typed dictionary containing the key ``metadata_mapping`` which can be used to add new product properties
+          based on the data in response to the order request
+        * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
+          configuration to handle the order status; contains information which method to use, how the response data is
+          interpreted, which status corresponds to success, ordered and error and what should be done on success.
+        * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type specific config; the
+          keys are the product types, the values are dictionaries which can contain the keys
+          :attr:`~eodag.config.PluginConfig.output_extension` and :attr:`~eodag.config.PluginConfig.extract` to
+          overwrite the provider config for a specific product type
 
     """
 
@@ -130,12 +161,13 @@ class HTTPDownload(Download):
         and has `orderLink` in its properties.
         Product ordering can be configured using the following download plugin parameters:
 
-            - **order_enabled**: Wether order is enabled or not (may not use this method
+            - :attr:`~eodag.config.PluginConfig.order_enabled`: Wether order is enabled or not (may not use this method
               if no `orderLink` exists)
 
-            - **order_method**: (optional) HTTP request method, GET (default) or POST
+            - :attr:`~eodag.config.PluginConfig.order_method`: (optional) HTTP request method, GET (default) or POST
 
-            - **order_on_response**: (optional) things to do with obtained order response:
+            - :attr:`~eodag.config.PluginConfig.order_on_response`: (optional) things to do with obtained order
+              response:
 
               - *metadata_mapping*: edit or add new product propoerties properties
 
@@ -193,18 +225,11 @@ class HTTPDownload(Download):
                     logger.debug(ordered_message)
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
-                    if hasattr(e, "response") and (
-                        content := getattr(e.response, "content", None)
-                    ):
-                        error_message = f"{content.decode('utf-8')} - {e}"
-                    else:
-                        error_message = str(e)
-                    logger.warning(
-                        "%s could not be ordered, request returned %s",
-                        product.properties["title"],
-                        error_message,
-                    )
                     self._check_auth_exception(e)
+                    title = product.properties["title"]
+                    message = f"{title} could not be ordered"
+                    raise RequestError.from_error(e, message) from e
+
                 return self.order_response_process(response, product)
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
@@ -256,7 +281,7 @@ class HTTPDownload(Download):
         It will be executed before each download retry.
         Product order status request can be configured using the following download plugin parameters:
 
-            - **order_status**: :class:`~eodag.config.PluginConfig.OrderStatus`
+            - :attr:`~eodag.config.PluginConfig.order_status`: :class:`~eodag.config.PluginConfig.OrderStatus`
 
         Product properties used for order status:
 
@@ -900,6 +925,8 @@ class HTTPDownload(Download):
             logger.info("Progress bar unavailable, please call product.download()")
             progress_callback = ProgressCallback(disable=True)
 
+        ssl_verify = getattr(self.config, "ssl_verify", True)
+
         ordered_message = ""
         if (
             "orderLink" in product.properties
@@ -950,6 +977,7 @@ class HTTPDownload(Download):
             params=params,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=ssl_verify,
             **req_kwargs,
         ) as self.stream:
             try:
@@ -1052,6 +1080,16 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        matching_url = (
+            getattr(product.downloader_auth.config, "matching_url", "")
+            if product.downloader_auth
+            else ""
+        )
+        matching_conf = (
+            getattr(product.downloader_auth.config, "matching_conf", None)
+            if product.downloader_auth
+            else None
+        )
 
         # loop for assets download
         for asset in assets_values:
@@ -1060,11 +1098,16 @@ class HTTPDownload(Download):
                     f"Local asset detected. Download skipped for {asset['href']}"
                 )
                 continue
-
+            if matching_conf or (
+                matching_url and re.match(matching_url, asset["href"])
+            ):
+                auth_object = auth
+            else:
+                auth_object = None
             with requests.get(
                 asset["href"],
                 stream=True,
-                auth=auth,
+                auth=auth_object,
                 params=params,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
@@ -1077,8 +1120,7 @@ class HTTPDownload(Download):
                         exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
                     ) from exc
                 except RequestException as e:
-                    raise_errors = True if len(assets_values) == 1 else False
-                    self._handle_asset_exception(e, asset, raise_errors=raise_errors)
+                    self._handle_asset_exception(e, asset)
                 else:
                     asset_rel_path = (
                         asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
@@ -1236,9 +1278,7 @@ class HTTPDownload(Download):
 
         return fs_dir_path
 
-    def _handle_asset_exception(
-        self, e: RequestException, asset: Asset, raise_errors: bool = False
-    ) -> None:
+    def _handle_asset_exception(self, e: RequestException, asset: Asset) -> None:
         # check if error is identified as auth_error in provider conf
         auth_errors = getattr(self.config, "auth_error_code", [None])
         if not isinstance(auth_errors, list):
@@ -1249,11 +1289,11 @@ class HTTPDownload(Download):
                 f"HTTP Error {e.response.status_code} returned.",
                 e.response.text.strip(),
             )
-        elif raise_errors:
-            raise DownloadError(e)
         else:
-            logger.warning("Unexpected error: %s" % e)
-            logger.warning("Skipping %s" % asset["href"])
+            logger.error(
+                "Unexpected error at download of asset %s: %s", asset["href"], e
+            )
+            raise DownloadError(e)
 
     def _get_asset_sizes(
         self,

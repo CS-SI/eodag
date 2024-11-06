@@ -22,6 +22,7 @@ import os
 import tempfile
 from inspect import isclass
 from typing import (
+    Annotated,
     Any,
     Dict,
     ItemsView,
@@ -49,7 +50,6 @@ from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypa
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    Annotated,
     cached_yaml_load,
     cached_yaml_load_all,
     cast_scalar_value,
@@ -263,6 +263,51 @@ class PluginConfig(yaml.YAMLObject):
         #: Path to the metadata in search result
         metadata_path: str
 
+    class DiscoverProductTypes(TypedDict, total=False):
+        """Configuration for product types discovery"""
+
+        #: URL from which the product types can be fetched
+        fetch_url: Optional[str]
+        #: HTTP method used to fetch product types
+        fetch_method: str
+        #: Request body to fetch product types using POST method
+        fetch_body: Dict[str, Any]
+        #: Maximum number of connections for concurrent HTTP requests
+        max_connections: int
+        #: The f-string template for pagination requests.
+        next_page_url_tpl: str
+        #: Index of the starting page for pagination requests.
+        start_page: int
+        #: Type of the provider result
+        result_type: str
+        #: JsonPath to the list of product types
+        results_entry: Union[JSONPath, str]
+        #: Mapping for the product type id
+        generic_product_type_id: str
+        #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
+        #: result
+        generic_product_type_parsable_metadata: Dict[str, str]
+        #: Mapping for product type properties which can be parsed from the result that are not product type metadata
+        generic_product_type_parsable_properties: Dict[str, str]
+        #: URL to fetch data for a single collection
+        single_collection_fetch_url: str
+        #: Query string to be added to the fetch_url to filter for a collection
+        single_collection_fetch_qs: str
+        #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url
+        single_product_type_parsable_metadata: Dict[str, str]
+
+    class DiscoverQueryables(TypedDict, total=False):
+        """Configuration for queryables discovery"""
+
+        #: URL to fetch the queryables valid for all product types
+        fetch_url: Optional[str]
+        #: URL to fetch the queryables for a specific product type
+        product_type_fetch_url: Optional[str]
+        #: Type of the result
+        result_type: str
+        #: JsonPath to retrieve the queryables from the provider result
+        results_entry: str
+
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
 
@@ -284,7 +329,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Success value for status response HTTP code
         http_code: int
 
-    class OrderStatusOrdered(TypedDict):
+    class OrderStatusOrdered(TypedDict, total=False):
         """
         Configuration to identify order status ordered during download
         """
@@ -292,7 +337,7 @@ class PluginConfig(yaml.YAMLObject):
         #: HTTP code of the order status response
         http_code: int
 
-    class OrderStatusRequest(TypedDict):
+    class OrderStatusRequest(TypedDict, total=False):
         """
         Order status request configuration
         """
@@ -302,7 +347,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Request hearders
         headers: Dict[str, Any]
 
-    class OrderStatusOnSuccess(TypedDict):
+    class OrderStatusOnSuccess(TypedDict, total=False):
         """Configuration for order status on-success during download"""
 
         #: Whether a new search is needed on success or not
@@ -314,7 +359,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Metadata-mapping to apply to the success status result
         metadata_mapping: Dict[str, Union[str, List[str]]]
 
-    class OrderStatus(TypedDict):
+    class OrderStatus(TypedDict, total=False):
         """Configuration for order status during download"""
 
         #: Order status request configuration
@@ -330,6 +375,16 @@ class PluginConfig(yaml.YAMLObject):
         #: Configuration for order status on-success during download
         on_success: PluginConfig.OrderStatusOnSuccess
 
+    class MetadataPreMapping(TypedDict, total=False):
+        """Configuration which can be used to simplify further metadata extraction"""
+
+        #: JsonPath of the metadata entry
+        metadata_path: str
+        #: Key to get the metadata id
+        metadata_path_id: str
+        #: Key to get the metadata value
+        metadata_path_value: str
+
     #: :class:`~eodag.plugins.base.PluginTopic` The name of the plugin class to use to instantiate the plugin object
     name: str
     #: :class:`~eodag.plugins.base.PluginTopic` Plugin type
@@ -340,12 +395,21 @@ class PluginConfig(yaml.YAMLObject):
     s3_bucket: str
     #: :class:`~eodag.plugins.base.PluginTopic` Authentication error codes
     auth_error_code: Union[int, List[int]]
+    #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
+    timeout: float
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``total`` parameter,
+    #: total number of retries to allow
+    retry_total: int
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``backoff_factor`` parameter,
+    #: backoff factor to apply between attempts after the second try
+    retry_backoff_factor: int
+    #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
+    #: list of integer HTTP status codes that we should force a retry on
+    retry_status_forcelist: List[int]
 
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
     priority: int
-    # copied from ProviderConfig in PluginManager.get_search_plugins()
-    products: Dict[str, Any]
     # per product type metadata-mapping, set in core._prepare_search
     product_type_config: Dict[str, Any]
 
@@ -365,19 +429,35 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
-    discover_product_types: Dict[str, Any]
+    discover_product_types: PluginConfig.DiscoverProductTypes
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
-    discover_queryables: Dict[str, Any]
+    discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: Dict[str, Union[str, List[str]]]
     #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
     constraints_file_url: str
+    #: :class:`~eodag.plugins.search.base.Search`
+    #: Key which is used in the eodag configuration to map the eodag product type to the provider product type
+    constraints_file_dataset_key: str
+    #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
+    constraints_entry: str
+    #: :class:`~eodag.plugins.search.base.Search`
+    #: Whether only a provider result containing constraints_entry is accepted as valid and used to create constraints
+    #: or not
+    stop_without_constraints_entry_key: bool
     #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
     remove_from_queryables: List[str]
+    #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string
+    literal_search_params: Dict[str, str]
+    #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Characters that should not be quoted in the url params
+    dont_quote: List[str]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
     free_text_search_operations: Dict[str, Any]
+    #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Set to ``True`` if the metadata is not given in the search
+    #: result and a two step search has to be performed
+    per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
-    metadata_pre_mapping: Dict[str, Any]
+    metadata_pre_mapping: PluginConfig.MetadataPreMapping
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
     data_request_url: str
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
@@ -385,6 +465,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
     #: URL to fetch the search result when the data request is done
     result_url: str
+    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
+    #: if date parameters are mandatory in the request
+    dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
     search_definition: Dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
@@ -392,16 +475,17 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
     collection: List[str]
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
-    #: Maximum number of connections for HTTP requests
+    #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
-    #: :class:`~eodag.plugins.search.base.Search` Time to wait until request timeout in seconds
-    timeout: float
     #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
     #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
     #: List of parameters used to parse metadata but that must not be included to the query
     remove_from_query: List[str]
+    #: :class:`~eodag.plugins.search.csw.CSWSearch`
+    #: OGC Catalogue Service version
+    version: str
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
@@ -415,6 +499,12 @@ class PluginConfig(yaml.YAMLObject):
     output_extension: str
     #: :class:`~eodag.plugins.download.base.Download` Whether the directory structure should be flattened or not
     flatten_top_dirs: bool
+    #: :class:`~eodag.plugins.download.base.Download` Level in extracted path tree where to find data
+    archive_depth: int
+    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
+    ignore_assets: bool
+    #: :class:`~eodag.plugins.download.base.Download` Product type specific configuration
+    products: Dict[str, Dict[str, Any]]
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
@@ -430,6 +520,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.http.HTTPDownload`
     #: Do not authenticate the download request but only the order and order status ones
     no_auth_download: bool
+    #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
+    dl_url_params: Dict[str, str]
     #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
@@ -465,11 +557,11 @@ class PluginConfig(yaml.YAMLObject):
     client_id: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC provider's client secret
     client_secret: str
-    #: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth`
-    #: Base url used in the request to fetch the token
-    auth_base_uri: str
-    #: :class:`~eodag.plugins.authentication.keycloak.KeycloakOIDCPasswordAuth` Keycloak realm
-    realm: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
+    #: The OIDC provider's ``.well-known/openid-configuration`` url.
+    oidc_config_url: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiences
+    allowed_audiences: List[str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Whether a user consent is needed during the authentication or not
     user_consent_needed: str
@@ -478,6 +570,9 @@ class PluginConfig(yaml.YAMLObject):
     authentication_uri_source: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: The callback url that will handle the code given by the OIDC provider
+    authentication_uri: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: The URL of the authentication backend of the OIDC provider
     redirect_uri: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: The authorization url of the server (where to query for grants)
@@ -492,6 +587,18 @@ class PluginConfig(yaml.YAMLObject):
     #: The data that will be passed with the POST request on the form 'action' URL
     user_consent_form_data: Dict[str, str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Additional data to be passed to the login POST request
+    additional_login_form_data: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Key/value pairs of patterns/messages used for Authentication errors
+    exchange_url_error_pattern: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: A mapping between OIDC url query string and token handler query string params
+    token_exchange_params: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
+    #: Refers to the name of the query param to be used in the query request
+    token_qs_key: str
+    #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Way to pass the data to the POST request that is made to the token server
     token_exchange_post_data_method: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
@@ -502,8 +609,12 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: Credentials json structure if they should be sent as POST data
     req_data: Dict[str, Any]
-    #: :class:`~eodag.plugins.authentication.token.TokenAuth` URL used to fetch the access token with a refresh token
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: URL used to fetch the access token with a refresh token
     refresh_uri: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: type of the token
+    token_type: str
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin configuration
     #: used to retrieve subject token
@@ -514,6 +625,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: Audience that the token ID is intended for. :attr:`~eodag.config.PluginConfig.client_id` of the Relying Party
     audience: str
+    #: :class:`~eodag.plugins.authentication.generic.GenericAuth`
+    #: which authentication method should be used
+    method: str
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper

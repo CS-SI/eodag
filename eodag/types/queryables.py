@@ -15,12 +15,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
+from typing import Annotated, Optional
 
 from annotated_types import Lt
 from pydantic import BaseModel, Field
 from pydantic.types import PositiveInt
-from typing_extensions import Annotated
 
 Percentage = Annotated[PositiveInt, Lt(100)]
 

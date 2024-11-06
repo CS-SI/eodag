@@ -10,7 +10,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
 
 .. note::
 
-   Some tutorials require auxiliary data that can be directly downloaded from `Github <https://github.com/CS-SI/eodag/tree/master/examples/auxdata>`_.
+   Some tutorials require auxiliary data that can be directly downloaded from `Github <https://github.com/CS-SI/eodag/tree/master/docs/notebooks/tutos/auxdata>`_.
 
 .. warning::
 

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
 from pydantic.fields import Field, FieldInfo
@@ -35,11 +35,9 @@ from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
-    Annotated,
     copy_deepcopy,
     deepcopy,
     format_dict_items,
-    get_args,
     update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
@@ -95,9 +93,9 @@ class Search(PluginTopic):
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Implementation of how the products must be searched goes here.
 
-        This method must return a tuple with (1) a list of EOProduct instances (see eodag.api.product module)
-        which will be processed by a Download plugin (2) and the total number of products matching
-        the search criteria. If ``prep.count`` is False, the second element returned must be ``None``.
+        This method must return a tuple with (1) a list of :class:`~eodag.api.product._product.EOProduct` instances
+        which will be processed by a :class:`~eodag.plugins.download.base.Download` plugin (2) and the total number of
+        products matching the search criteria. If ``prep.count`` is False, the second element returned must be ``None``.
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
@@ -108,9 +106,9 @@ class Search(PluginTopic):
     def discover_queryables(
         self, **kwargs: Any
     ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using `discover_queryables` conf
+        """Fetch queryables list from provider using :attr:`~eodag.config.PluginConfig.discover_queryables` conf
 
-        :param kwargs: additional filters for queryables (`productType` and other search
+        :param kwargs: additional filters for queryables (``productType`` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
@@ -184,7 +182,7 @@ class Search(PluginTopic):
         Get the value of a configuration option specific to the current product type.
 
         This method retrieves the value of a configuration option from the
-        `product_type_config` attribute. If the option is not found, the provided
+        ``product_type_config`` attribute. If the option is not found, the provided
         default value is returned.
 
         :param key: The configuration option key.
@@ -215,10 +213,10 @@ class Search(PluginTopic):
         return self.config.metadata_mapping
 
     def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
-        """Extract the "sort_by" argument from the kwargs or the provider default sort configuration
+        """Extract the ``sort_by`` argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
-        :returns: The "sort_by" argument from the kwargs or the provider default sort configuration
+        :returns: The ``sort_by`` argument from the kwargs or the provider default sort configuration
         """
         # remove "sort_by" from search args if exists because it is not part of metadata mapping,
         # it will complete the query string or body once metadata mapping will be done
@@ -237,10 +235,10 @@ class Search(PluginTopic):
         self, sort_by_arg: SortByList
     ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
-        the "sort_by" argument into a provider-specific string or dictionary
+        the ``sort_by`` argument into a provider-specific string or dictionary
 
-        :param sort_by_arg: the "sort_by" argument in EODAG format
-        :returns: The "sort_by" argument in provider-specific format
+        :param sort_by_arg: the ``sort_by`` argument in EODAG format
+        :returns: The ``sort_by`` argument in provider-specific format
         """
         if not hasattr(self.config, "sort"):
             raise ValidationError(f"{self.provider} does not support sorting feature")

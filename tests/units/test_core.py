@@ -140,30 +140,30 @@ class TestCore(TestCoreBase):
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
         "EEA_DAILY_VI": ["dedl", "wekeo_main"],
-        "EFAS_FORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "EFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "EFAS_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "EFAS_SEASONAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "EFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "EFAS_FORECAST": ["cop_ewds", "dedl"],
+        "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
+        "EFAS_REFORECAST": ["cop_ewds", "dedl"],
+        "EFAS_SEASONAL": ["cop_ewds", "dedl"],
+        "EFAS_SEASONAL_REFORECAST": ["cop_ewds", "dedl"],
         "ERA5_LAND": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_LAND_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_PL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_SL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "FIRE_HISTORICAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "FIRE_HISTORICAL": ["cop_ewds", "dedl"],
+        "FIRE_SEASONAL": ["cop_ewds"],
         "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "GLOFAS_FORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "GLOFAS_HISTORICAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "GLOFAS_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "GLOFAS_SEASONAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "GLOFAS_SEASONAL_REFORECAST": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GLOFAS_FORECAST": ["cop_ewds", "dedl"],
+        "GLOFAS_HISTORICAL": ["cop_ewds", "dedl"],
+        "GLOFAS_REFORECAST": ["cop_ewds", "dedl"],
+        "GLOFAS_SEASONAL": ["cop_ewds", "dedl"],
+        "GLOFAS_SEASONAL_REFORECAST": ["cop_ewds", "dedl"],
         "GRIDDED_GLACIERS_MASS_CHANGE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],
         "LANDSAT_C2L1": [
-            "astraea_eod",
             "dedl",
             "planetary_computer",
             "usgs",
@@ -205,7 +205,18 @@ class TestCore(TestCoreBase):
         "METOP_OSI_150B": ["eumetsat_ds"],
         "METOP_SOMO12": ["eumetsat_ds"],
         "METOP_SOMO25": ["eumetsat_ds"],
-        "MODIS_MCD43A4": ["astraea_eod", "aws_eos", "planetary_computer"],
+        "MSG_CLM": ["eumetsat_ds"],
+        "MSG_CLM_IODC": ["eumetsat_ds"],
+        "MSG_GSAL2R02": ["eumetsat_ds"],
+        "MSG_HRSEVIRI": ["eumetsat_ds"],
+        "MSG_HRSEVIRI_IODC": ["eumetsat_ds"],
+        "MSG_RSS_CLM": ["eumetsat_ds"],
+        "MSG_MSG15_RSS": ["eumetsat_ds"],
+        "MSG_LSA_FRM": ["eumetsat_ds"],
+        "MSG_LSA_LST_CDR": ["eumetsat_ds"],
+        "MSG_LSA_LSTDE": ["eumetsat_ds"],
+        "MSG_AMVR02": ["eumetsat_ds"],
+        "MODIS_MCD43A4": ["aws_eos", "planetary_computer"],
         "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024": ["cop_marine"],
         "MO_GLOBAL_ANALYSISFORECAST_BGC_001_028": ["cop_marine"],
         "MO_GLOBAL_ANALYSISFORECAST_WAV_001_027": ["cop_marine"],
@@ -245,7 +256,7 @@ class TestCore(TestCoreBase):
         "MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102": ["cop_marine"],
         "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104": ["cop_marine"],
         "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108": ["cop_marine"],
-        "NAIP": ["astraea_eod", "aws_eos", "earth_search", "planetary_computer"],
+        "NAIP": ["aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
         "OSO": ["theia"],
@@ -254,13 +265,13 @@ class TestCore(TestCoreBase):
         "PLD_PANSHARPENED": ["theia"],
         "PLD_XS": ["theia"],
         "S1_SAR_GRD": [
-            "astraea_eod",
             "aws_eos",
             "cop_dataspace",
             "creodias",
             "creodias_s3",
             "dedl",
             "earth_search",
+            "geodes",
             "onda",
             "peps",
             "planetary_computer",
@@ -272,6 +283,7 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
+            "geodes",
             "onda",
             "peps",
             "sara",
@@ -289,13 +301,13 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
+            "geodes",
             "onda",
             "peps",
             "sara",
             "wekeo_main",
         ],
         "S2_MSI_L1C": [
-            "astraea_eod",
             "aws_eos",
             "cop_dataspace",
             "creodias",
@@ -303,6 +315,7 @@ class TestCore(TestCoreBase):
             "dedl",
             "earth_search",
             "earth_search_gcs",
+            "geodes",
             "onda",
             "peps",
             "sara",
@@ -310,7 +323,6 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S2_MSI_L2A": [
-            "astraea_eod",
             "aws_eos",
             "cop_dataspace",
             "creodias",
@@ -323,7 +335,7 @@ class TestCore(TestCoreBase):
         ],
         "S2_MSI_L2AP": ["wekeo_main"],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
-        "S2_MSI_L2A_MAJA": ["theia"],
+        "S2_MSI_L2A_MAJA": ["geodes", "theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
         "S2_MSI_L3A_WASP": ["theia"],
@@ -532,10 +544,8 @@ class TestCore(TestCoreBase):
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo_ecmwf"],
         "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "SATELLITE_SEA_LEVEL_BLACK_SEA": ["dedl", "wekeo_ecmwf"],
         "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "SATELLITE_SEA_LEVEL_MEDITERRANEAN": ["dedl", "wekeo_ecmwf"],
         "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo_ecmwf"],
         "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo_ecmwf"],
         "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
@@ -559,7 +569,6 @@ class TestCore(TestCoreBase):
             "onda",
             "usgs",
             "creodias",
-            "astraea_eod",
             "usgs_satapi_aws",
             "earth_search",
             "earth_search_cog",
@@ -577,11 +586,11 @@ class TestCore(TestCoreBase):
     }
     SUPPORTED_PROVIDERS = [
         "peps",
-        "astraea_eod",
         "aws_eos",
         "cop_ads",
         "cop_cds",
         "cop_dataspace",
+        "cop_ewds",
         "cop_marine",
         "creodias",
         "creodias_s3",
@@ -592,6 +601,7 @@ class TestCore(TestCoreBase):
         "earth_search_gcs",
         "ecmwf",
         "eumetsat_ds",
+        "geodes",
         "hydroweb_next",
         "meteoblue",
         "onda",
@@ -801,15 +811,15 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
             ext_product_types_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers_config["astraea_eod"].products)
-        self.assertNotIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
+        self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        self.assertIn("foo", self.dag.providers_config["astraea_eod"].products)
-        self.assertIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertIn("foo", self.dag.providers_config["earth_search"].products)
+        self.assertIn("bar", self.dag.providers_config["earth_search"].products)
         self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
         self.assertEqual(
             self.dag.product_types_config["bar"]["title"], "Bar collection"
@@ -819,10 +829,10 @@ class TestCore(TestCoreBase):
         """Core api.update_product_types_list on unkwnown provider must not crash and not update conf"""
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
             ext_product_types_conf = json.load(f)
-        self.dag.providers_config.pop("astraea_eod")
+        self.dag.providers_config.pop("earth_search")
 
         self.dag.update_product_types_list(ext_product_types_conf)
-        self.assertNotIn("astraea_eod", self.dag.providers_config)
+        self.assertNotIn("earth_search", self.dag.providers_config)
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
@@ -836,7 +846,7 @@ class TestCore(TestCoreBase):
             ext_product_types_conf = json.load(f)
 
         # we keep the existing ext-conf to use it for a provider with an api plugin
-        ext_product_types_conf["ecmwf"] = ext_product_types_conf.pop("astraea_eod")
+        ext_product_types_conf["ecmwf"] = ext_product_types_conf.pop("earth_search")
 
         self.assertNotIn("foo", self.dag.providers_config["ecmwf"].products)
         self.assertNotIn("bar", self.dag.providers_config["ecmwf"].products)
@@ -868,17 +878,17 @@ class TestCore(TestCoreBase):
         with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
             ext_product_types_conf = json.load(f)
 
-        self.assertNotIn("foo", self.dag.providers_config["astraea_eod"].products)
-        self.assertNotIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
+        self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
-        delattr(self.dag.providers_config["astraea_eod"], "search")
+        delattr(self.dag.providers_config["earth_search"], "search")
 
         self.dag.update_product_types_list(ext_product_types_conf)
 
-        self.assertNotIn("foo", self.dag.providers_config["astraea_eod"].products)
-        self.assertNotIn("bar", self.dag.providers_config["astraea_eod"].products)
+        self.assertNotIn("foo", self.dag.providers_config["earth_search"].products)
+        self.assertNotIn("bar", self.dag.providers_config["earth_search"].products)
         self.assertNotIn("foo", self.dag.product_types_config)
         self.assertNotIn("bar", self.dag.product_types_config)
 
@@ -892,15 +902,17 @@ class TestCore(TestCoreBase):
     )
     def test_discover_product_types(self, mock_plugin_discover_product_types):
         """Core api must fetch providers for product types"""
-        ext_product_types_conf = self.dag.discover_product_types(provider="astraea_eod")
+        ext_product_types_conf = self.dag.discover_product_types(
+            provider="earth_search"
+        )
         self.assertEqual(
-            ext_product_types_conf["astraea_eod"]["providers_config"]["foo"][
+            ext_product_types_conf["earth_search"]["providers_config"]["foo"][
                 "productType"
             ],
             "foo",
         )
         self.assertEqual(
-            ext_product_types_conf["astraea_eod"]["product_types_config"]["foo"][
+            ext_product_types_conf["earth_search"]["product_types_config"]["foo"][
                 "title"
             ],
             "Foo collection",
@@ -939,8 +951,10 @@ class TestCore(TestCoreBase):
 
     def test_discover_product_types_without_plugin(self):
         """Core api must not fetch providers without search and api plugins"""
-        delattr(self.dag.providers_config["astraea_eod"], "search")
-        ext_product_types_conf = self.dag.discover_product_types(provider="astraea_eod")
+        delattr(self.dag.providers_config["earth_search"], "search")
+        ext_product_types_conf = self.dag.discover_product_types(
+            provider="earth_search"
+        )
         self.assertEqual(
             ext_product_types_conf,
             None,
@@ -974,16 +988,16 @@ class TestCore(TestCoreBase):
 
         # check that with a non-empty ext-conf, a provider will be marked as fetched, and eodag conf updated
         mock_get_ext_product_types_conf.return_value = {
-            "astraea_eod": {
+            "earth_search": {
                 "providers_config": {"foo": {"productType": "foo"}},
                 "product_types_config": {"foo": {"title": "Foo collection"}},
             }
         }
         # add an empty ext-conf for other providers to prevent them to be fetched
         for provider, provider_config in self.dag.providers_config.items():
-            if provider != "astraea_eod" and hasattr(provider_config, "search"):
+            if provider != "earth_search" and hasattr(provider_config, "search"):
                 provider_search_config = provider_config.search
-            elif provider != "astraea_eod" and hasattr(provider_config, "api"):
+            elif provider != "earth_search" and hasattr(provider_config, "api"):
                 provider_search_config = provider_config.api
             else:
                 continue
@@ -992,9 +1006,9 @@ class TestCore(TestCoreBase):
             ) and provider_search_config.discover_product_types.get("fetch_url", None):
                 mock_get_ext_product_types_conf.return_value[provider] = {}
         self.dag.fetch_product_types_list()
-        self.assertTrue(self.dag.providers_config["astraea_eod"].product_types_fetched)
+        self.assertTrue(self.dag.providers_config["earth_search"].product_types_fetched)
         self.assertEqual(
-            self.dag.providers_config["astraea_eod"].products["foo"],
+            self.dag.providers_config["earth_search"].products["foo"],
             {"productType": "foo"},
         )
         self.assertEqual(
@@ -1006,7 +1020,7 @@ class TestCore(TestCoreBase):
         self.assertEqual(mock_discover_product_types.call_count, 0)
         self.dag.update_providers_config(
             """
-            astraea_eod:
+            earth_search:
                 search:
                     discover_product_types:
                         fetch_url: 'http://new-endpoint'
@@ -1014,7 +1028,7 @@ class TestCore(TestCoreBase):
         )
         self.dag.fetch_product_types_list()
         mock_discover_product_types.assert_called_once_with(
-            self.dag, provider="astraea_eod"
+            self.dag, provider="earth_search"
         )
 
         # add new provider conf and check that discover_product_types() is launched for it
@@ -1076,7 +1090,7 @@ class TestCore(TestCoreBase):
         """fetch_product_types_list must launch product types discovery for new system-wide providers"""
         # add a new system-wide provider not listed in ext-conf
         new_default_conf = load_default_config()
-        new_default_conf["new_provider"] = new_default_conf["astraea_eod"]
+        new_default_conf["new_provider"] = new_default_conf["earth_search"]
 
         with mock.patch(
             "eodag.api.core.load_default_config",
@@ -1129,7 +1143,7 @@ class TestCore(TestCoreBase):
         # only user-defined providers must be fetched
         self.dag.update_providers_config(
             """
-            astraea_eod:
+            earth_search:
                 search:
                     discover_product_types:
                         fetch_url: 'http://new-endpoint'
@@ -1503,10 +1517,6 @@ class TestCore(TestCoreBase):
         self.maxDiff = None
         expected_result = {
             "peps": None,
-            "astraea_eod": {
-                "sortables": ["id", "startTimeFromAscendingNode", "creationDate"],
-                "max_sort_params": None,
-            },
             "aws_eos": None,
             "cop_ads": None,
             "cop_cds": None,
@@ -1519,6 +1529,7 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
+            "cop_ewds": None,
             "creodias": {
                 "sortables": [
                     "startTimeFromAscendingNode",
@@ -1596,6 +1607,16 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
             "cop_marine": None,
+            "geodes": {
+                "max_sort_params": None,
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "platformSerialIdentifier",
+                    "cloudCover",
+                ],
+            },
             "hydroweb_next": {
                 "sortables": [
                     "id",
@@ -3114,7 +3135,7 @@ class TestCoreProductAlias(TestCoreBase):
 class TestCoreProviderGroup(TestCoreBase):
     # create a group with a provider which has product type discovery mechanism
     # and the other one which has not it to test different cases
-    group = ("creodias", "astraea_eod")
+    group = ("creodias", "earth_search")
     group_name = "testgroup"
 
     @classmethod

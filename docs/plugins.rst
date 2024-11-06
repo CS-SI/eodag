@@ -32,8 +32,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | Provider               | Search                             | Authentication                  | Download         |
 +========================+====================================+=================================+==================+
-| ``astraea_eod``        | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
-+------------------------+------------------------------------+---------------------------------+------------------+
 | ``aws_eos``            | |PostJsonSearch|                   | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_ads``            | |BuildSearchResult|                | |GenericAuth|                   | |HTTPDownload|   |
@@ -59,6 +57,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 | ``ecmwf``              | |EcmwfApi|                         | |EcmwfApi|                      | |EcmwfApi|       |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``eumetsat_ds``        | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``geodes``             | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``hydroweb_next``      | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
@@ -261,5 +261,5 @@ Plugin configuration
    :members:
    :member-order: bysource
    :undoc-members:
-   :exclude-members: priority, products, product_type_config, yaml_loader, from_mapping, from_yaml, update, validate,
-                     yaml_dumper, yaml_tag
+   :exclude-members: priority, product_type_config, yaml_loader, from_mapping, from_yaml, update, validate, yaml_dumper,
+                     yaml_tag
