@@ -2930,9 +2930,9 @@
         <<: *month_year
     SATELLITE_METHANE:
       dataset: satellite-methane
-      processing_level: level_2
+      processing_level: level_3
       variable: xch4
-      sensor_and_algorithm: merged_emma
+      sensor_and_algorithm: merged_obs4mips
       version: '4_5'
       metadata_mapping:
         <<: *day_month_year
