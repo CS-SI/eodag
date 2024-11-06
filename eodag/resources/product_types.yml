@@ -2414,7 +2414,7 @@ CAMS_GFE_GFAS:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS global biomass burning emissions based on fire radiative power (GFAS)
-  missionStartDate: "2003-01-01T00:00:00Z"
+  missionStartDate: "2018-07-02T00:00:00Z"
 
 CAMS_SOLAR_RADIATION:
   abstract: |
