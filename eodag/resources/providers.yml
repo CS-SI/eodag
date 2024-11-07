@@ -4655,7 +4655,7 @@
       processingLevel:
         - level_2
       version:
-        - "4.0"
+        - "4_0"
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
@@ -4701,7 +4701,7 @@
       processingLevel:
         - level_2
       version:
-        - "4.0"
+        - "4_0"
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
