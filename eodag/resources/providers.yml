@@ -4828,11 +4828,10 @@
       productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
       providerProductType: reanalysis
       variable:
-        - fire_danger_index
+        - fire_weather_index
       version:
         - "4_1"
-      format:
-        - "grib"
+      format: '"grib"'
       grid: original_grid
       type: consolidated_dataset
       metadata_mapping:

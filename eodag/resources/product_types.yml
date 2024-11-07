@@ -3634,7 +3634,7 @@ FIRE_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Fire danger indices historical data from the Copernicus Emergency Management Service
-  missionStartDate: "1940-01-03T00:00:00Z"
+  missionStartDate: "1940-03-01T00:00:00Z"
 
 FIRE_SEASONAL:
   abstract: |
