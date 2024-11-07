@@ -4831,7 +4831,7 @@
         - fire_weather_index
       version:
         - "4_1"
-      format: '"grib"'
+      format: grib
       grid: original_grid
       type: consolidated_dataset
       metadata_mapping:
@@ -4844,7 +4844,7 @@
           - '{{"system_version": {version}}}'
           - '$.null'
         format:
-          - '{{"data_format": {format}}}'
+          - '{{"data_format": "{format}"}}'
           - '$.null'
         type:
           - '{{"dataset_type": "{type}"}}'
