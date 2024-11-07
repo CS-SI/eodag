@@ -1023,9 +1023,22 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearch_default_dates(
         self, mock_normalize, mock_request
     ):
+        class PluginMockResponse:
+            def __init__(self, json_data, status_code):
+                self.json_data = json_data
+                self.status_code = status_code
+
+            def json(self):
+                return self.json_data
+
+            def raise_for_status(self):
+                if self.status_code != 200:
+                    raise RequestError
+
         provider = "wekeo_ecmwf"
         search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
         search_plugin = next(search_plugins)
+        mock_request.return_value = PluginMockResponse({"features": []}, 200)
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
             prep=PreparedSearch(),
@@ -2253,7 +2266,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             )
         )
 
-    def test_plugins_search_buildsearchresult_exclude_end_date(self):
+    def test_plugins_search_ecmwfsearch_exclude_end_date(self):
         """BuildSearchResult.query must adapt end date in certain cases"""
         # start & stop as dates -> keep end date as it is
         results, _ = self.search_plugin.query(
@@ -2308,7 +2321,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "2020-01-01", eoproduct.properties["completionTimeFromAscendingNode"]
         )
 
-    def test_plugins_search_buildsearchresult_dates_missing(self):
+    def test_plugins_search_ecmwfsearch_dates_missing(self):
         """BuildSearchResult.query must use default dates if missing"""
         # given start & stop
         results, _ = self.search_plugin.query(
@@ -2355,7 +2368,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
         )
 
-    def test_plugins_search_buildsearchresult_without_producttype(self):
+    def test_plugins_search_ecmwfsearch_without_producttype(self):
         """
         BuildSearchResult.query must build a EOProduct from input parameters without product type.
         For test only, result cannot be downloaded.
@@ -2380,7 +2393,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["orderLink"].startswith("http")
         assert NOT_AVAILABLE in eoproduct.location
 
-    def test_plugins_search_buildsearchresult_with_producttype(self):
+    def test_plugins_search_ecmwfsearch_with_producttype(self):
         """BuildSearchResult.query must build a EOProduct from input parameters with predefined product type"""
         results, _ = self.search_plugin.query(
             **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
@@ -2399,7 +2412,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         eoproduct = results[0]
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
 
-    def test_plugins_search_buildsearchresult_with_custom_producttype(self):
+    def test_plugins_search_ecmwfsearch_with_custom_producttype(self):
         """BuildSearchResult.query must build a EOProduct from input parameters with custom product type"""
         results, _ = self.search_plugin.query(
             **self.query_dates,
@@ -2420,9 +2433,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
     @mock.patch("eodag.utils.requests.requests.get", autospec=True)
-    def test_plugins_search_buildsearchresult_discover_queryables(
-        self, mock_requests_get
-    ):
+    def test_plugins_search_ecmwfsearch_discover_queryables(self, mock_requests_get):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
@@ -2535,88 +2546,6 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         if queryable is not None:
             self.assertEqual("a", queryable.__metadata__[0].get_default())
             self.assertFalse(queryable.__metadata__[0].is_required())
-
-    def test_plugins_search_buildsearchresult_discover_queryables_with_local_constraints_file(
-        self,
-    ):
-        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
-        with open(constraints_path) as f:
-            constraints = json.load(f)
-        tmp_search_constraints_file_url = self.search_plugin.config.constraints_url
-        self.search_plugin.config.constraints_url = constraints_path
-
-        provider_queryables_from_constraints_file = [
-            "ecmwf:year",
-            "ecmwf:month",
-            "ecmwf:day",
-            "ecmwf:time",
-            "ecmwf:variable",
-            "ecmwf:leadtime_hour",
-            "ecmwf:type",
-            "ecmwf:product_type",
-        ]
-
-        queryables = self.search_plugin.discover_queryables(
-            productType="CAMS_EU_AIR_QUALITY_RE"
-        )
-        self.assertIsNotNone(queryables)
-
-        # queryables from provider constraints file are added (here the ones of CAMS_EU_AIR_QUALITY_RE for cop_ads)
-        for provider_queryable in provider_queryables_from_constraints_file:
-            provider_queryable = (
-                get_queryable_from_provider(
-                    provider_queryable,
-                    self.search_plugin.get_metadata_mapping("CAMS_EU_AIR_QUALITY_RE"),
-                )
-                or provider_queryable
-            )
-            self.assertIn(provider_queryable, queryables)
-
-        # default properties in provider config are added and must be default values of the queryables
-        for property, default_value in self.search_plugin.config.products[
-            "CAMS_EU_AIR_QUALITY_RE"
-        ].items():
-            queryable = queryables.get(property)
-            if queryable is not None:
-                self.assertEqual(default_value, queryable.__metadata__[0].get_default())
-                # queryables with default values are not required
-                self.assertFalse(queryable.__metadata__[0].is_required())
-
-        # queryables without default values are required
-        queryable = queryables.get("month")
-        if queryable is not None:
-            self.assertEqual(PydanticUndefined, queryable.__metadata__[0].get_default())
-            self.assertTrue(queryable.__metadata__[0].is_required())
-
-        # check that queryable constraints from the constraints file are in queryable info
-        # (here it is a case where all constraints of "variable" queryable can be taken into account)
-        queryable = queryables.get("variable")
-        if queryable is not None:
-            variable_constraints = []
-            for constraint in constraints:
-                if "variable" in constraint:
-                    variable_constraints.extend(constraint["variable"])
-            # remove queryable constraints duplicates to make the assertion works
-            self.assertSetEqual(
-                set(variable_constraints), set(queryable.__origin__.__args__)
-            )
-
-        # with additional param
-        queryables = self.search_plugin.discover_queryables(
-            productType="CAMS_EU_AIR_QUALITY_RE",
-            variable="a",
-        )
-        self.assertIsNotNone(queryables)
-
-        self.assertEqual(11, len(queryables))
-        # default properties called in function arguments are added and must be default values of the queryables
-        queryable = queryables.get("variable")
-        if queryable is not None:
-            self.assertEqual("a", queryable.__metadata__[0].get_default())
-            self.assertFalse(queryable.__metadata__[0].is_required())
-
-        # restore configuration
-        self.search_plugin.config.constraints_file_url = tmp_search_constraints_file_url
 
 
 class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):

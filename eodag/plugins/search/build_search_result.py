@@ -461,7 +461,8 @@ class ECMWFSearch(PostJsonSearch):
 
         # dates
         # check if default dates have to be added
-        self._check_date_params(params, product_type)
+        if getattr(self.config, "dates_required", False):
+            self._check_date_params(params, product_type)
 
         # adapt end date if it is midnight
         if "completionTimeFromAscendingNode" in params:
@@ -563,6 +564,8 @@ class ECMWFSearch(PostJsonSearch):
                     required_keywords.intersection_update(constraint.keys())
         else:
             values_url = getattr(self.config, "available_values_url", "")
+            if not values_url:
+                return self.queryables_from_metadata_mapping(product_type)
             if "{" in values_url:
                 values_url = values_url.format(productType=provider_product_type)
             data = self.fetch_data(values_url)
@@ -892,7 +895,7 @@ class ECMWFSearch(PostJsonSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
         # quickfix for wekeo_ecmwf
-        if self.config.api_endpoint:
+        if self.config.api_endpoint and "wekeo" in self.provider:
             return super().normalize_results(results, **kwargs)
 
         product_type = kwargs.get("productType")
@@ -915,13 +918,12 @@ class ECMWFSearch(PostJsonSearch):
                     self.config.pagination["next_page_query_obj"].format()
                 )
                 unpaginated_query_params = {
-                    k: v[0] if (isinstance(v, list) and len(v) == 1) else v
+                    k: v
                     for k, v in results.query_params.items()
                     if (k, v) not in next_page_query_obj.items()
                 }
             else:
                 unpaginated_query_params = self.query_params
-
             # query hash, will be used to build a product id
             sorted_unpaginated_query_params = dict_items_recursive_sort(
                 unpaginated_query_params

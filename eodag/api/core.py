@@ -72,7 +72,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import BuildPostSearchResult
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables
+from eodag.types.queryables import CommonQueryables, Queryables
 from eodag.types.whoosh import EODAGQueryParser
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -2326,6 +2326,7 @@ class EODataAccessGateway:
             else:
                 # if no product type is given use an intersection for all product types of the provider
                 all_queryable_keys: Optional[Set[str]] = None
+                standard_queryables = model_fields_to_annotated(Queryables.model_fields)
                 for pt in available_product_types:
                     product_type_queryables = self._get_queryables_for_product_type(
                         pt, plugin, **kwargs
@@ -2339,7 +2340,9 @@ class EODataAccessGateway:
                             )
                     if all_queryable_keys:
                         providers_queryables[plugin.provider] = {
-                            k: Annotated[
+                            k: standard_queryables[k]
+                            if k in standard_queryables
+                            else Annotated[
                                 Any,
                                 Field(
                                     description=f"{k} - Set the collection parameter to get possible values"

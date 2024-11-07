@@ -20,16 +20,21 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 import geojson
 from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
+from pydantic.fields import FieldInfo
 
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
-from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.plugins.search.build_search_result import (
+    ECMWF_KEYWORDS,
+    ECMWFSearch,
+    keywords_to_mdt,
+)
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -58,7 +63,7 @@ logger = logging.getLogger("eodag.apis.ecmwf")
 ECMWF_MARS_KNOWN_FORMATS = {"grib": "grib", "netcdf": "nc"}
 
 
-class EcmwfApi(Api, BuildPostSearchResult):
+class EcmwfApi(Api, ECMWFSearch):
     """A plugin that enables to build download-request and download data on ECMWF MARS.
 
     Builds a single ready-to-download :class:`~eodag.api.product._product.EOProduct`
@@ -76,7 +81,8 @@ class EcmwfApi(Api, BuildPostSearchResult):
     :param config: Api plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): EcmwfApi
-        * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): url of the ecmwf api
+        * :attr:`~eodag.config.PluginConfig.auth_endpoint` (``str``) (**mandatory**): url of
+          the authentication endpoint of the ecmwf api
         * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Union[str, list]]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
@@ -86,12 +92,17 @@ class EcmwfApi(Api, BuildPostSearchResult):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         # init self.config.metadata_mapping using Search Base plugin
+        config.metadata_mapping = {
+            **keywords_to_mdt(ECMWF_KEYWORDS, "ecmwf"),
+            **config.metadata_mapping,
+        }
         Search.__init__(self, provider, config)
 
         # needed by QueryStringSearch.build_query_string / format_free_text_search
         self.config.__dict__.setdefault("free_text_search_operations", {})
         # needed for compatibility
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
+        self.config.__dict__.setdefault("api_endpoint", "")
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request."""
@@ -108,9 +119,9 @@ class EcmwfApi(Api, BuildPostSearchResult):
         # productType
         if not kwargs.get("productType"):
             kwargs["productType"] = "%s_%s_%s" % (
-                kwargs.get("dataset", "mars"),
-                kwargs.get("type", ""),
-                kwargs.get("levtype", ""),
+                kwargs.get("ecmwf:dataset", "mars"),
+                kwargs.get("ecmwf:type", ""),
+                kwargs.get("ecmwf:levtype", ""),
             )
         # start date
         if "startTimeFromAscendingNode" not in kwargs:
@@ -132,7 +143,7 @@ class EcmwfApi(Api, BuildPostSearchResult):
         if "geometry" in kwargs:
             kwargs["geometry"] = get_geometry_from_various(geometry=kwargs["geometry"])
 
-        return BuildPostSearchResult.query(self, prep, **kwargs)
+        return ECMWFSearch.query(self, prep, **kwargs)
 
     def authenticate(self) -> Dict[str, Optional[str]]:
         """Check credentials and returns information needed for auth
@@ -143,7 +154,7 @@ class EcmwfApi(Api, BuildPostSearchResult):
         # Get credentials from eodag or using ecmwf conf
         email = getattr(self.config, "credentials", {}).get("username", None)
         key = getattr(self.config, "credentials", {}).get("password", None)
-        url = getattr(self.config, "api_endpoint", None)
+        url = getattr(self.config, "auth_endpoint", None)
         if not all([email, key, url]):
             key, url, email = get_apikey_values()
 
@@ -277,3 +288,15 @@ class EcmwfApi(Api, BuildPostSearchResult):
     def clear(self) -> None:
         """Clear search context"""
         pass
+
+    def discover_queryables(
+        self, **kwargs: Any
+    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
+        """Fetch queryables list from provider using metadata mapping
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :returns: fetched queryable parameters dict
+        """
+        product_type = kwargs.get("productType", None)
+        return self.queryables_from_metadata_mapping(product_type)

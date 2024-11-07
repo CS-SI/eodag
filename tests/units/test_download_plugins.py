@@ -1097,7 +1097,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.product_type = "CAMS_EAC4"
         self.product.properties[
             "downloadLink"
-        ] = "https://ads-beta.atmosphere.copernicus.eu/dummy"
+        ] = "https://ads.atmosphere.copernicus.eu/dummy"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
@@ -1105,7 +1105,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         auth.config.credentials = {"apikey": "anicekey"}
         self.product.register_downloader(plugin, auth)
 
-        endpoint = "https://ads-beta.atmosphere.copernicus.eu/api/retrieve/v1"
+        endpoint = "https://ads.atmosphere.copernicus.eu/api/retrieve/v1"
         self.product.properties["orderLink"] = (
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )

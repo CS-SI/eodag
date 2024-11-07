@@ -1616,6 +1616,7 @@ class PostJsonSearch(QueryStringSearch):
             # do not try to extract total_items from search results if count is False
             del prep.total_items_nb
             del prep.need_count
+
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
@@ -1970,6 +1971,10 @@ class StacSearch(PostJsonSearch):
                 field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields
+            # replace geometry by geom
+            geom_queryable = python_queryables.pop("geometry", None)
+            if geom_queryable:
+                python_queryables["geom"] = geom_queryable
 
         return model_fields_to_annotated(python_queryables)
 

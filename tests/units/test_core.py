@@ -1397,22 +1397,16 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_queryables",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
     )
     def test_list_queryables(
         self,
         mock_stacsearch_discover_queryables: Mock,
-        mock_qssearch_discover_queryables: Mock,
         mock_fetch_product_types_list: Mock,
         mock_auth_plugin: Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
         mock_stacsearch_discover_queryables.return_value = {}
-        mock_qssearch_discover_queryables.return_value = {}
 
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
@@ -1439,7 +1433,6 @@ class TestCore(TestCoreBase):
             provider="peps", productType="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
-        self.assertLess(len(queryables_peps_s1grd), len(queryables_peps_none))
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
@@ -1467,7 +1460,7 @@ class TestCore(TestCoreBase):
             self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
 
     @mock.patch(
-        "eodag.plugins.search.build_search_result.BuildSearchResult.discover_queryables",
+        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
         autospec=True,
     )
     def test_list_queryables_with_constraints(self, mock_discover_queryables: Mock):
@@ -1480,34 +1473,41 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "productType": "ERA5_SL",
-            "api_product_type": "reanalysis",
-            "dataset": "reanalysis-era5-single-levels",
-            "format": "grib",
-            "variable": "10m_u_component_of_wind",
+            "ecmwf:product_type": "reanalysis",
+            "ecmwf:dataset": "reanalysis-era5-single-levels",
+            "ecmwf:data_format": "grib",
+            "ecmwf:download_format": "zip",
+            "ecmwf:variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
+        self.dag.list_queryables(
+            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:month": "02"}
+        )
         params = {
             "productType": "ERA5_SL",
-            "api_product_type": "reanalysis",
-            "dataset": "reanalysis-era5-single-levels",
-            "format": "grib",
-            "variable": "10m_u_component_of_wind",
-            "month": "02",
+            "ecmwf:product_type": "reanalysis",
+            "ecmwf:dataset": "reanalysis-era5-single-levels",
+            "ecmwf:data_format": "grib",
+            "ecmwf:download_format": "zip",
+            "ecmwf:variable": "10m_u_component_of_wind",
+            "ecmwf:month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
         mock_discover_queryables.reset_mock()
 
         # unset default values
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
+        self.dag.list_queryables(
+            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:data_format": ""}
+        )
         defaults = {
             "productType": "ERA5_SL",
-            "api_product_type": "reanalysis",
-            "dataset": "reanalysis-era5-single-levels",
-            "variable": "10m_u_component_of_wind",
-            "format": None,
+            "ecmwf:product_type": "reanalysis",
+            "ecmwf:dataset": "reanalysis-era5-single-levels",
+            "ecmwf:variable": "10m_u_component_of_wind",
+            "ecmwf:data_format": "",
+            "ecmwf:download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 

@@ -27,6 +27,7 @@ import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
+from build.lib.eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
@@ -92,31 +93,31 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         }
         self.product_type = "TIGGE_CF_SFC"
         self.product_type_params = {
-            "class": "ti",
-            "dataset": "tigge",
-            "expver": "prod",
-            "type": "cf",
-            "levtype": "sfc",
-            "origin": "ecmf",
-            "grid": "0.5/0.5",
-            "param": "59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/"
+            "ecmwf:class": "ti",
+            "ecmwf:dataset": "tigge",
+            "ecmwf:expver": "prod",
+            "ecmwf:type": "cf",
+            "ecmwf:levtype": "sfc",
+            "ecmwf:origin": "ecmf",
+            "ecmwf:grid": "0.5/0.5",
+            "ecmwf:param": "59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/"
             + "228002/228039/228139/228141/228144/228164/228228",
-            "step": 0,
-            "time": "00:00",
-            "target": "output",
+            "ecmwf:step": 0,
+            "ecmwf:time": "00:00",
+            "ecmwf:target": "output",
         }
         self.custom_query_params = {
-            "origin": "ecmf",
-            "levtype": "sfc",
-            "number": "1",
-            "expver": "prod",
-            "dataset": "tigge",
-            "step": "0",
-            "grid": "2/2",
-            "param": "228164",  # total cloud cover parameter
-            "time": "00",
-            "type": "cf",
-            "class": "ti",
+            "ecmwf:origin": "ecmf",
+            "ecmwf:levtype": "sfc",
+            "ecmwf:number": "1",
+            "ecmwf:expver": "prod",
+            "ecmwf:dataset": "tigge",
+            "ecmwf:step": "0",
+            "ecmwf:grid": "2/2",
+            "ecmwf:param": "228164",  # total cloud cover parameter
+            "ecmwf:time": "00",
+            "ecmwf:type": "cf",
+            "ecmwf:class": "ti",
         }
 
     def test_plugins_apis_ecmwf_query_dates_missing(self):
@@ -197,13 +198,14 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
         # check if product_type_params is a subset of eoproduct.properties
         assert self.product_type_params.items() <= eoproduct.properties.items()
+        params = deepcopy(self.query_dates)
+        params["productType"] = self.product_type
+        params["ecmwf:param"] = "tcc"
 
         # product type default settings can be overwritten using search kwargs
-        results, _ = self.api_plugin.query(
-            **self.query_dates, productType=self.product_type, param="tcc"
-        )
+        results, _ = self.api_plugin.query(**params)
         eoproduct = results[0]
-        assert eoproduct.properties["param"] == "tcc"
+        assert eoproduct.properties["ecmwf:param"] == "tcc"
 
     def test_plugins_apis_ecmwf_query_with_custom_producttype(self):
         """EcmwfApi.query must build a EOProduct from input parameters with custom product type"""
@@ -215,9 +217,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         assert eoproduct.properties["title"].startswith(
             "%s_%s_%s"
             % (
-                self.custom_query_params["dataset"].upper(),
-                self.custom_query_params["type"].upper(),
-                self.custom_query_params["levtype"].upper(),
+                self.custom_query_params["ecmwf:dataset"].upper(),
+                self.custom_query_params["ecmwf:type"].upper(),
+                self.custom_query_params["ecmwf:levtype"].upper(),
             )
         )
         # check if custom_query_params is a subset of eoproduct.properties
@@ -251,7 +253,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         auth_dict = self.api_plugin.authenticate()
         assert auth_dict["email"] == credentials["username"]
         assert auth_dict["key"] == credentials["password"]
-        assert auth_dict["url"] == self.api_plugin.config.api_endpoint
+        assert auth_dict["url"] == self.api_plugin.config.auth_endpoint
         del self.api_plugin.config.credentials
 
     @mock.patch(
@@ -314,8 +316,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
         mock_ecmwfservice_execute.side_effect = create_empty_file_for_operation_archive
         operation_archive_custom_query_params = self.custom_query_params.copy()
-        operation_archive_custom_query_params.pop("dataset")
-        operation_archive_custom_query_params["format"] = "netcdf"
+        operation_archive_custom_query_params.pop("ecmwf:dataset")
         results = dag.search(
             **self.query_dates,
             **operation_archive_custom_query_params,
@@ -327,7 +328,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         arg_path = os.path.join(
             output_data_path,
             "%s" % eoproduct.properties["title"],
-            "%s.nc" % eoproduct.properties["title"],
+            "%s.grib" % eoproduct.properties["title"],
         )
         path = eoproduct.download(output_dir=output_data_path)
         download_request = geojson.loads(urlsplit(eoproduct.remote_location).query)
@@ -370,17 +371,13 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         eoproducts = SearchResult([])
 
         # public dataset request
-        results = dag.search(
-            **self.query_dates,
-            **self.custom_query_params,
-            accuracy="bar",
-        )
+        params = deepcopy(self.query_dates)
+        params.update(self.custom_query_params)
+        params["ecmwf:accuracy"] = "bar"
+        results = dag.search(**params)
         eoproducts.extend(results)
-        results = dag.search(
-            **self.query_dates,
-            **self.custom_query_params,
-            accuracy="baz",
-        )
+        params["ecmwf:accuracy"] = "baz"
+        results = dag.search(**params)
         eoproducts.extend(results)
         assert len(eoproducts) == 2
 
