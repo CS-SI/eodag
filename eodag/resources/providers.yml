@@ -5308,6 +5308,9 @@
         metadata_mapping:
           download_id: $.json.features[0]._id
           downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+    products:
+      FIRE_HISTORICAL:
+        output_extension: .grib
 
 ---
 !provider  # MARK: wekeo_cmems
@@ -6012,6 +6015,8 @@
       DT_EXTREMES:
         output_extension: .grib
       DT_CLIMATE_ADAPTATION:
+        output_extension: .grib
+      FIRE_HISTORICAL:
         output_extension: .grib
   auth: !plugin
     type: OIDCTokenExchangeAuth
