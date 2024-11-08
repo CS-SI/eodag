@@ -2208,18 +2208,6 @@
       AG_ERA5:
         output_extension: .zip
         extract: true
-      ERA5_SL:
-        output_extension: .grib
-      ERA5_PL:
-        output_extension: .grib
-      ERA5_PL_MONTHLY:
-        output_extension: .grib
-      ERA5_LAND:
-        output_extension: .grib
-      ERA5_LAND_MONTHLY:
-        output_extension: .grib
-      ERA5_SL_MONTHLY:
-        output_extension: .grib
       UERRA_EUROPE_SL:
         output_extension: .grib
       GLACIERS_DIST_RANDOLPH:

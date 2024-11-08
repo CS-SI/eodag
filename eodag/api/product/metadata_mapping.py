@@ -988,6 +988,11 @@ def properties_from_json(
                     if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
+                    if (
+                        extracted_value == NOT_AVAILABLE
+                        and NOT_AVAILABLE not in conversion_or_none
+                    ):
+                        continue
                     properties[metadata] = format_metadata(
                         "{%s%s%s}" % (metadata, SEP, conversion_or_none),
                         **{metadata: extracted_value},

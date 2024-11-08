@@ -92,6 +92,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import (
+    AuthenticationError,
     EodagError,
     NoMatchingProductType,
     PluginImplementationError,
@@ -2265,7 +2266,13 @@ class EODataAccessGateway:
         if getattr(plugin.config, "need_auth", False) and (
             auth := self._plugins_manager.get_auth_plugin(plugin)
         ):
-            plugin.auth = auth.authenticate()
+            try:
+                plugin.auth = auth.authenticate()
+            except AuthenticationError:
+                logger.error(
+                    "queryables from provider %s could not be fetched due to an authentication error",
+                    plugin.provider,
+                )
         if "productType" not in kwargs:
             kwargs["productType"] = product_type
         return plugin.list_queryables(filters=kwargs, product_type=product_type)
@@ -2319,7 +2326,13 @@ class EODataAccessGateway:
                 if getattr(plugin.config, "need_auth", False) and (
                     auth := self._plugins_manager.get_auth_plugin(plugin)
                 ):
-                    plugin.auth = auth.authenticate()
+                    try:
+                        plugin.auth = auth.authenticate()
+                    except AuthenticationError:
+                        logger.error(
+                            "queryables from provider %s could not be fetched due to an authentication error",
+                            plugin.provider,
+                        )
                 plugin_queryables = plugin.list_queryables(kwargs)
                 if plugin_queryables:
                     providers_queryables[plugin.provider] = plugin_queryables

@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from copy import copy as copy_copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -637,7 +637,11 @@ class QueryStringSearch(Search):
                                     ][kf]
                                 )
                                 for kf in keywords_fields
-                                if conf_update_dict["product_types_config"][
+                                if kf
+                                in conf_update_dict["product_types_config"][
+                                    generic_product_type_id
+                                ]
+                                and conf_update_dict["product_types_config"][
                                     generic_product_type_id
                                 ][kf]
                                 != NOT_AVAILABLE
@@ -1432,10 +1436,13 @@ class PostJsonSearch(QueryStringSearch):
             start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
         if "completionTimeFromAscendingNode" in product_type_conf:
             mapping = product_type_conf["completionTimeFromAscendingNode"]
+            # if date is mapped to year/month/(day), use end_date = start_date  else start_date + 1 day
+            # (default dates are only needed for ecmwf products where selected timespans should not be too large)
             if isinstance(mapping, list) and "year" in mapping[0]:
-                # if date is mapped to year/month/(day), use end_date = start_date to avoid large requests
                 end_date = start_date
-                return end_date.isoformat()
+            else:
+                end_date = start_date + timedelta(days=1)
+            return end_date.isoformat()
         return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
 
     def _check_date_params(

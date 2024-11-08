@@ -1023,22 +1023,10 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearch_default_dates(
         self, mock_normalize, mock_request
     ):
-        class PluginMockResponse:
-            def __init__(self, json_data, status_code):
-                self.json_data = json_data
-                self.status_code = status_code
-
-            def json(self):
-                return self.json_data
-
-            def raise_for_status(self):
-                if self.status_code != 200:
-                    raise RequestError
-
         provider = "wekeo_ecmwf"
         search_plugins = self.plugins_manager.get_search_plugins(provider=provider)
         search_plugin = next(search_plugins)
-        mock_request.return_value = PluginMockResponse({"features": []}, 200)
+        mock_request.return_value = MockResponse({"features": []}, 200)
         # year, month, day, time given -> don't use default dates
         search_plugin.query(
             prep=PreparedSearch(),

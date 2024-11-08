@@ -83,6 +83,7 @@ logger = logging.getLogger("eodag.search.build_search_result")
 ECMWF_KEYWORDS = [
     "dataset",
     "accuracy",
+    "activity",
     "anoffset",
     "bitmap",
     "block",
@@ -103,6 +104,7 @@ ECMWF_KEYWORDS = [
     "format",
     "frame",
     "frequency",
+    "generation",
     "grid",
     "hdate",
     "ident",
@@ -125,11 +127,12 @@ ECMWF_KEYWORDS = [
     "priority",
     "product",
     "range",
+    "realization",
     "refdate",
     "reference",
     "reportype",
     "repres",
-    "resol",
+    "resolution",
     "rotation",
     "section",
     "source",
@@ -406,7 +409,7 @@ class ECMWFSearch(PostJsonSearch):
                 self.config.metadata_mapping,
             )
             available_properties = {
-                # We strip values of superfluous quotes (addded by mapping converter to_geojson).
+                # We strip values of superfluous quotes (added by mapping converter to_geojson).
                 k: strip_quotes(v)
                 for k, v in parsed_properties.items()
                 if v not in [NOT_AVAILABLE, NOT_MAPPED]
