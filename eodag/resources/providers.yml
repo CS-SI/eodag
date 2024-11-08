@@ -2501,8 +2501,6 @@
       GLACIERS_DIST_RANDOLPH:
         output_extension: .zip
         extract: true
-      FIRE_HISTORICAL:
-        output_extension: .grib
       SATELLITE_CARBON_DIOXIDE:
         output_extension: .zip
         extract: true
@@ -2784,16 +2782,6 @@
               "hydrological_year": {completionTimeFromAscendingNode#get_hydrological_year}
             }}
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
-    FIRE_HISTORICAL:
-      dataset: cems-fire-historical-v1
-      grid: original_grid
-      dataset_type: consolidated_dataset
-      api_product_type: reanalysis
-      variable: build_up_index
-      system_version: '4_1'
-      format: grib
-      metadata_mapping:
-        <<: *day_month_year
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
       processing_level: level_2

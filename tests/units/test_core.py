@@ -151,7 +151,7 @@ class TestCore(TestCoreBase):
         "ERA5_PL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_SL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "FIRE_HISTORICAL": ["cop_ewds", "cop_cds", "dedl", "wekeo_ecmwf"],
+        "FIRE_HISTORICAL": ["cop_ewds", "dedl", "wekeo_ecmwf"],
         "FIRE_SEASONAL": ["cop_ewds"],
         "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "GLOFAS_FORECAST": ["cop_ewds", "dedl"],
