@@ -233,9 +233,13 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
+        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+        old_record_filename = os.path.join(download_records_dir, url_hash)
         record_filename = os.path.join(
             download_records_dir, self.generate_record_hash(product)
         )
+        if os.path.isfile(old_record_filename):
+            os.rename(old_record_filename, record_filename)
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info(
                 f"Product already downloaded: {fs_path}",
