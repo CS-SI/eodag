@@ -5357,6 +5357,23 @@
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS"}}'
+    CAMS_GFE_GFAS:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
+      format: grib
+      variable:
+        - wildfire_combustion_rate
+      time:
+        - '00:00'
+      leadtime_hour:
+        - '0'
+      metadata_mapping:
+        id: '$.id'
+        type:
+          - '{{"type": {type}}}'
+          - '$.null'
+        <<: *variable_list
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS"}}'
     CAMS_SOLAR_RADIATION:
       productType: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
       sky_type: clear
