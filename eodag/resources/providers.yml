@@ -2427,7 +2427,7 @@
       dataset: cams-global-atmospheric-composition-forecasts
       type: forecast
       format: grib
-      variable: ammonium_aerosol_optical_depth_550nm
+      variable: 10m_u_component_of_wind
       time: '00:00'
       leadtime_hour: '0'
     CAMS_GFE_GFAS:
@@ -5344,7 +5344,7 @@
         - forecast
       format: grib
       variable:
-        - ammonium_aerosol_optical_depth_550nm
+        - 10m_u_component_of_wind
       time:
         - '00:00'
       leadtime_hour:
