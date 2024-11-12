@@ -1427,7 +1427,6 @@ class RequestTestCase(unittest.TestCase):
             )
             self.assertFalse(res_product_type_no_provider["additionalProperties"])
 
-
             res_list = list(res_product_type_no_provider["properties"].keys())
             res_list.sort()
             expected = [
