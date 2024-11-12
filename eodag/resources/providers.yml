@@ -4515,10 +4515,10 @@
         - '{{"productIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
       startTimeFromAscendingNode:
-        - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+        - '{{"startdate": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.startdate'
       completionTimeFromAscendingNode:
-        - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+        - '{{"enddate": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.enddate'
       downloadLink: '$.properties.location'
       title: '$.id'
@@ -4545,7 +4545,7 @@
         - '{{"system": "{system}"}}'
         - '$.null'
       format:
-        - '{{"format": "{format}"}}'
+        - '{{"data_format": "{format}"}}'
         - '$.null'
       pressure_level:
         - '{{"pressure_level": {pressure_level}}}'
