@@ -2338,7 +2338,7 @@
       "ecmwf:dataset": insitu-glaciers-extent
       "ecmwf:variable": glacier_area
       "ecmwf:product_type": gridded
-      "ecmwf:version": '"6_0"'
+      "ecmwf:version": rgi_6_0
       "ecmwf:data_format": zip
     GRIDDED_GLACIERS_MASS_CHANGE:
       "ecmwf:dataset": derived-gridded-glacier-mass-change
@@ -4370,7 +4370,7 @@
       providerProductType:
         - gridded
       format: zip
-      version: "6_0"
+      version: rgi_6_0
       metadata_mapping:
         id: '$.id'
         <<: *day_month_year
