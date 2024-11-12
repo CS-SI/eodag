@@ -37,7 +37,7 @@ class CommonQueryables(BaseModel):
     def get_queryable_from_alias(cls, value: str) -> str:
         """Get queryable parameter from alias
         >>> CommonQueryables.get_queryable_from_alias('productType')
-        'productType'
+        'product_type'
         """
         alias_map = {
             field_info.alias: name
