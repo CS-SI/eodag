@@ -33,7 +33,6 @@ import requests
 import responses
 import yaml
 from botocore.stub import Stubber
-from dateutil.utils import today
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 from typing_extensions import get_args
@@ -1146,8 +1145,8 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "data_format": "grib",
                 "variable": ["2m_dewpoint_temperature"],
                 "time": ["00:00"],
-                "startdate": "2003-01-01T00:00:00.000Z",
-                "enddate": today().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+                "dtstart": "2003-01-01T00:00:00.000Z",
+                "dtend": "2003-01-02T00:00:00.000Z",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -2334,9 +2333,12 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"],
             DEFAULT_MISSION_START_DATE,
         )
+        exp_end_date = datetime.strptime(
+            DEFAULT_MISSION_START_DATE, "%Y-%m-%dT%H:%M:%SZ"
+        ) + timedelta(days=1)
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            today().strftime("%Y-%m-%d"),
+            exp_end_date.strftime("%Y-%m-%d"),
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -2353,7 +2355,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
         )
 
     def test_plugins_search_ecmwfsearch_without_producttype(self):
