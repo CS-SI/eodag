@@ -2433,7 +2433,7 @@
     CAMS_GFE_GFAS:
       dataset: cams-global-fire-emissions-gfas
       format: grib
-      variable: altitude_of_plume_bottom
+      variable: wildfire_combustion_rate
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
