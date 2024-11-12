@@ -22,7 +22,7 @@ This table lists all the search plugins currently available:
    static_stac_search.StaticStacSearch
    cop_marine.CopMarineSearch
    creodias_s3.CreodiasS3Search
-   build_search_result.BuildSearchResult
+   build_search_result.ECMWFSearch
    build_search_result.BuildPostSearchResult
    data_request_search.DataRequestSearch
    csw.CSWSearch
