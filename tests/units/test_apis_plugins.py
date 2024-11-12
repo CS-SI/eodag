@@ -27,7 +27,7 @@ import responses
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
-from build.lib.eodag.utils import deepcopy
+from eodag.utils import deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_MISSION_START_DATE,
