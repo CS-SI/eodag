@@ -650,9 +650,13 @@ async def get_queryables(
                 "collection"
             ].model_dump()
 
+        additional_properties = eodag_api.has_queryables_additional_properties(
+            params.collection, provider
+        )
+
         return StacQueryables(
             q_id=request.state.url,
-            additional_properties=bool(not params.collection),
+            additional_properties=additional_properties,
             properties=stac_properties,
             required=required or None,
         ).model_dump(mode="json", by_alias=True, exclude_none=True)

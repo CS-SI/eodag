@@ -2363,17 +2363,42 @@ class EODataAccessGateway:
                             ]
                             for k in all_queryable_keys
                         }
-
-        queryable_keys: Set[str] = set.intersection(  # type: ignore
-            *[set(q.keys()) for q in providers_queryables.values()]
-        )
-        queryables = {
-            k: v
-            for k, v in list(providers_queryables.values())[0].items()
-            if k in queryable_keys
-        }
+        if providers_queryables:
+            queryable_keys: Set[str] = set.intersection(  # type: ignore
+                *[set(q.keys()) for q in providers_queryables.values()]
+            )
+            queryables = {
+                k: v
+                for k, v in list(providers_queryables.values())[0].items()
+                if k in queryable_keys
+            }
+        else:
+            queryables = {}
 
         return queryables
+
+    def has_queryables_additional_properties(
+        self, product_type: Optional[str], provider: Optional[str]
+    ):
+        """
+        checks if additional properties are allowed for the given product type provider configuration
+        will be true if no product type if given or if no provider is given and there are several providers possible
+        will be false if the provider uses constraints
+        :param product_type: (optional) product type selected
+        :param provider: (optional) provider selected
+        :return: if additional properties are allowed
+        """
+        if not product_type:
+            return True
+        plugins = [
+            p for p in self._plugins_manager.get_search_plugins(product_type, provider)
+        ]
+        if not provider and len(plugins) != 1:
+            return True
+        plugin_config = plugins[0].config
+        if getattr(plugin_config, "constraints_url", ""):
+            return False
+        return True
 
     def available_sortables(self) -> Dict[str, Optional[ProviderSortables]]:
         """For each provider, gives its available sortable parameter(s) and its maximum

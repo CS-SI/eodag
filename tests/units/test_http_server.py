@@ -1425,7 +1425,7 @@ class RequestTestCase(unittest.TestCase):
                     "additionalProperties",
                 ],
             )
-            self.assertFalse(res_product_type_no_provider["additionalProperties"])
+            self.assertTrue(res_product_type_no_provider["additionalProperties"])
 
             res_list = list(res_product_type_no_provider["properties"].keys())
             res_list.sort()
@@ -1470,7 +1470,13 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
-    def test_product_type_queryables_with_provider(self, mock_requests_get):
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
+        autospec=True,
+    )
+    def test_product_type_queryables_with_provider(
+        self, mock_discover_queryables_ecmwf, mock_requests_get
+    ):
         """Request a collection-specific list of queryables for a given provider
         using a queryables file should return a valid response."""
         queryables_path = os.path.join(
@@ -1525,7 +1531,7 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
-        self.assertFalse(res_product_type_with_provider["additionalProperties"])
+        self.assertTrue(res_product_type_with_provider["additionalProperties"])
 
         # properties from stac common queryables are added
         for p in stac_common_queryables:
@@ -1548,6 +1554,14 @@ class RequestTestCase(unittest.TestCase):
             "string",
             res_product_type_with_provider["properties"][stac_psi_property]["type"],
         )
+
+        # provider + product type with constraints -> additionalProperties = False
+        mock_discover_queryables_ecmwf.return_value = {}
+        res_product_type_with_provider = self._request_valid(
+            "collections/ERA5_SL/queryables?provider=cop_cds",
+            check_links=False,
+        )
+        self.assertFalse(res_product_type_with_provider["additionalProperties"])
 
     def test_stac_queryables_type(self):
         res = self._request_valid(
