@@ -21,6 +21,8 @@ import logging
 import os
 import re
 import shutil
+import tarfile
+import zipfile
 from datetime import datetime
 from email.message import Message
 from itertools import chain
@@ -587,7 +589,7 @@ class HTTPDownload(Download):
         output_extension = getattr(self.config, "products", {}).get(
             product.product_type, {}
         ).get("output_extension", None) or getattr(
-            self.config, "output_extension", ".zip"
+            self.config, "output_extension", None
         )
         kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
 
@@ -635,9 +637,8 @@ class HTTPDownload(Download):
             timeout: int,
             **kwargs: Unpack[DownloadConf],
         ) -> None:
-            filename, chunk_iterator = self._stream_download(
-                product, auth, progress_callback, **kwargs
-            )
+            result = self._stream_download(product, auth, progress_callback, **kwargs)
+            filename, chunk_iterator = result
             is_empty = True
 
             ext = Path(filename).suffix
@@ -663,6 +664,19 @@ class HTTPDownload(Download):
         with open(record_filename, "w") as fh:
             fh.write(url)
         logger.debug("Download recorded in %s", record_filename)
+
+        if os.path.isfile(path) and not (
+            zipfile.is_zipfile(path) or tarfile.is_tarfile(path)
+        ):
+            new_fs_path = os.path.join(
+                os.path.dirname(path),
+                sanitize(product.properties["title"]),
+            )
+            if not os.path.isdir(new_fs_path):
+                os.makedirs(new_fs_path)
+            shutil.move(path, new_fs_path)
+            product.location = path_to_uri(new_fs_path)
+            return new_fs_path
 
         product_path = self._finalize(
             str(path),
