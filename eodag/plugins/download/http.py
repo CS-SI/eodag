@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -636,26 +637,30 @@ class HTTPDownload(Download):
             wait: int,
             timeout: int,
             **kwargs: Unpack[DownloadConf],
-        ) -> None:
-            result = self._stream_download(product, auth, progress_callback, **kwargs)
-            filename, chunk_iterator = result
+        ) -> os.PathLike:
             is_empty = True
+            result = self._stream_download(product, auth, progress_callback, **kwargs)
+            if result is not None and fs_path is not None:
+                filename, chunk_iterator = result
 
-            ext = Path(filename).suffix
-            path = Path(fs_path).with_suffix(ext)
+                ext = Path(filename).suffix
+                path = Path(fs_path).with_suffix(ext)
 
-            with open(path, "wb") as fhandle:
-                chunks = chunk_iterator()
-                for chunk in chunks:
-                    is_empty = False
-                    fhandle.write(chunk)
+                with open(path, "wb") as fhandle:
+                    chunks = chunk_iterator()
+                    for chunk in chunks:
+                        is_empty = False
+                        fhandle.write(chunk)
+                self.stream.close()  # Closing response stream
 
-            self.stream.close()  # Closing response stream
+                if is_empty:
+                    raise DownloadError(f"product {product.properties['id']} is empty")
 
-            if is_empty:
-                raise DownloadError(f"product {product.properties['id']} is empty")
-
-            return path
+                return path
+            else:
+                raise DownloadError(
+                    f"download of product {product.properties['id']} failed"
+                )
 
         path = download_request(
             product, auth, progress_callback, wait, timeout, **kwargs
@@ -811,9 +816,13 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+        result = self._stream_download(product, auth, progress_callback, **kwargs)
+        if result is None:
+            raise DownloadError(f"download of {product.properties['id']} is empty")
+        filename, chunk_iterator = result
         # start reading chunks to set product.headers
         try:
+            chunks = chunk_iterator()
             first_chunk = next(chunks)
         except StopIteration:
             # product is empty file
@@ -885,7 +894,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ):
+    ) -> tuple[str, Callable[[], Any]] | None:
         """
         fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
@@ -963,6 +972,7 @@ class HTTPDownload(Download):
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
         except RequestException as e:
             self._process_exception(e, product, ordered_message)
+            return None
         else:
             # check if product was ordered
 
@@ -980,7 +990,7 @@ class HTTPDownload(Download):
             stream_size = self._check_stream_size(product) or None
 
             product.headers = self.stream.headers
-            filename = self._check_product_filename(product) or None
+            filename = self._check_product_filename(product)
             product.headers["content-disposition"] = f"attachment; filename={filename}"
             content_type = product.headers.get("Content-Type")
             guessed_content_type = (
