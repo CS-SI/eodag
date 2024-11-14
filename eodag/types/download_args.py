@@ -33,7 +33,7 @@ class DownloadConf(TypedDict, total=False):
     """
 
     output_dir: str
-    output_extension: str
+    output_extension: str | None
     extract: bool
     dl_url_params: Dict[str, str]
     delete_archive: bool
