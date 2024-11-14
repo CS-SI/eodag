@@ -1516,7 +1516,8 @@ def get_provider_queryable_key(
     provider_queryables: Dict[str, Any],
     metadata_mapping: Dict[str, Union[List[Any], str]],
 ) -> str:
-    """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
+    """Finds the provider queryable corresponding to the given eodag key based on the metadata mapping
+
     :param eodag_key: key in eodag
     :param provider_queryables: queryables returned from the provider
     :param metadata_mapping: metadata mapping from which the keys are retrieved

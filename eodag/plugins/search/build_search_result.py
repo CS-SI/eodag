@@ -1071,7 +1071,8 @@ class BuildPostSearchResult(ECMWFSearch):
 # legacy. Used by ecmwf_cmems ??
 def fetch_constraints(constraints_url: str, plugin: Search) -> List[Dict[Any, Any]]:
     """
-    fetches the constraints from a provider
+    Fetches the constraints from a provider
+
     :param constraints_url: url from which the constraints can be fetched
     :param plugin: api or search plugin of the provider
     :returns: list of constraints fetched from the provider

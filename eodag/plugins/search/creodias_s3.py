@@ -42,6 +42,7 @@ logger = logging.getLogger("eodag.search.creodiass3")
 
 def patched_register_downloader(self, downloader, authenticator):
     """Add the download information to the product.
+
     :param self: product to which information should be added
     :param downloader: The download method that it can use
                       :class:`~eodag.plugins.download.base.Download` or

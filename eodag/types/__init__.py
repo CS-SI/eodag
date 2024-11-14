@@ -71,8 +71,8 @@ def json_type_to_python(json_type: Union[str, List[str]]) -> type:
 
 
 def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> Tuple[str, Any]:
-    """
-    checks if the value from an Annotated object is a minimum or maximum
+    """Checks if the value from an Annotated object is a minimum or maximum
+
     :param type_info: info from Annotated
     :return: "min" or "max"
     """
@@ -86,8 +86,8 @@ def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> Tuple[str, Any]:
 def _get_type_info_from_annotated(
     annotated_type: Annotated[type, Any],
 ) -> Dict[str, Any]:
-    """
-    retrieves type information from an annotated object
+    """Retrieves type information from an annotated object
+
     :param annotated_type: annotated object
     :return: dict containing type and min/max if available
     """
