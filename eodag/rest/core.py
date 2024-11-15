@@ -587,7 +587,7 @@ async def get_queryables(
         )
 
         python_queryables_json = annotated_dict_to_model(
-            "QueryableProperties", python_queryables
+            "QueryableProperties", python_queryables.data
         ).model_json_schema(by_alias=True)
 
         properties: Dict[str, Any] = python_queryables_json["properties"]
@@ -650,9 +650,7 @@ async def get_queryables(
                 "collection"
             ].model_dump()
 
-        additional_properties = eodag_api.has_queryables_additional_properties(
-            params.collection, provider
-        )
+        additional_properties = python_queryables.additional_properties
 
         return StacQueryables(
             q_id=request.state.url,

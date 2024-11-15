@@ -51,6 +51,7 @@ from eodag.api.product.metadata_mapping import (
     ONLINE_STATUS,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.api.product.queryables import QueryablesDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -2279,7 +2280,7 @@ class EODataAccessGateway:
 
     def list_queryables(
         self, provider: Optional[str] = None, **kwargs: Any
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+    ) -> QueryablesDict:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
@@ -2375,9 +2376,12 @@ class EODataAccessGateway:
         else:
             queryables = {}
 
-        return queryables
+        additional_properties = self._has_queryables_additional_properties(
+            product_type, provider
+        )
+        return QueryablesDict(additional_properties=additional_properties, **queryables)
 
-    def has_queryables_additional_properties(
+    def _has_queryables_additional_properties(
         self, product_type: Optional[str], provider: Optional[str]
     ):
         """
