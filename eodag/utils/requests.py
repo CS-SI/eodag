@@ -35,12 +35,11 @@ def fetch_json(
     timeout: float = HTTP_REQ_TIMEOUT,
 ) -> Any:
     """
-    Fetches http/distant or local json file
+    Fetches json file from http url
 
     :param url: url from which the file can be fetched
-    :param req_session: (optional) requests session
     :param auth: (optional) authenticated object if request needs authentication
-    :param timeout: (optional) authenticated object
+    :param timeout: (optional) request timeout in seconds
     :returns: json file content
     """
     logger.debug(f"fetching GET {url}")

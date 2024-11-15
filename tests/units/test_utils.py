@@ -322,7 +322,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(deep_copied["a"][0]["b"][0], 0)
 
     def test_fetch_json(self):
-        """fetch_json must be able to fetch a distant or local json file"""
+        """fetch_json must be able to fetch a distant json file"""
 
         # distant
         file_url = "https://foo.bar"

@@ -2269,7 +2269,7 @@ class EODataAccessGateway:
             try:
                 plugin.auth = auth.authenticate()
             except AuthenticationError:
-                logger.error(
+                logger.debug(
                     "queryables from provider %s could not be fetched due to an authentication error",
                     plugin.provider,
                 )
@@ -2329,7 +2329,7 @@ class EODataAccessGateway:
                     try:
                         plugin.auth = auth.authenticate()
                     except AuthenticationError:
-                        logger.error(
+                        logger.debug(
                             "queryables from provider %s could not be fetched due to an authentication error",
                             plugin.provider,
                         )
@@ -2381,7 +2381,7 @@ class EODataAccessGateway:
         self, product_type: Optional[str], provider: Optional[str]
     ):
         """
-        checks if additional properties are allowed for the given product type provider configuration
+        Checks if additional properties are allowed for the given product type provider configuration
         will be true if no product type if given or if no provider is given and there are several providers possible
         will be false if the provider uses constraints
         :param product_type: (optional) product type selected

@@ -52,10 +52,10 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
+    eodag_key_from_provider_key,
     format_metadata,
     format_query_params,
     mtd_cfg_as_conversion_and_querypath,
-    name_from_provider_key,
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
@@ -802,7 +802,7 @@ class ECMWFSearch(PostJsonSearch):
 
             # rename keywords from form with metadata mapping.
             # needed to map constraints like "xxxx" to eodag parameter "cop_cds:xxxx"
-            key = name_from_provider_key(name, self.config.metadata_mapping)
+            key = eodag_key_from_provider_key(name, self.config.metadata_mapping)
 
             is_required = bool(element.get("required"))
             if is_required:
@@ -833,7 +833,7 @@ class ECMWFSearch(PostJsonSearch):
         # Rename keywords from form with metadata mapping.
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
         required = [
-            name_from_provider_key(k, self.config.metadata_mapping)
+            eodag_key_from_provider_key(k, self.config.metadata_mapping)
             for k in required_keywords
         ]
 
@@ -841,7 +841,7 @@ class ECMWFSearch(PostJsonSearch):
         for name, values in available_values.items():
             # Rename keywords from form with metadata mapping.
             # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-            key = name_from_provider_key(name, self.config.metadata_mapping)
+            key = eodag_key_from_provider_key(name, self.config.metadata_mapping)
 
             default = defaults.get(key)
 
