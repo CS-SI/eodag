@@ -84,6 +84,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import Unpack  # noqa
 
+
 import click
 import orjson
 import shapefile
@@ -1120,7 +1121,7 @@ def get_geometry_from_various(
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data: Any, status_code: int) -> None:
+    def __init__(self, json_data: Any = None, status_code: int = 200) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
@@ -1129,10 +1130,21 @@ class MockResponse:
         """Return json data"""
         return self.json_data
 
+    def __iter__(self):
+        yield self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
-            raise HTTPError(response=Response())
+            response = Response()
+            response.status_code = self.status_code
+            raise HTTPError(response=response)
 
 
 def md5sum(file_path: str) -> str:

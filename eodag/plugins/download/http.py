@@ -80,8 +80,8 @@ from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
     NotAvailableError,
-    RequestError,
     TimeOutError,
+    ValidationError,
 )
 
 if TYPE_CHECKING:
@@ -226,9 +226,11 @@ class HTTPDownload(Download):
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
-                    title = product.properties["title"]
-                    message = f"{title} could not be ordered"
-                    raise RequestError.from_error(e, message) from e
+                    msg = f'{product.properties["title"]} could not be ordered'
+                    if e.response is not None and e.response.status_code == 400:
+                        raise ValidationError.from_error(e, msg) from e
+                    else:
+                        raise DownloadError.from_error(e, msg) from e
 
                 return self.order_response_process(response, product)
         except requests.exceptions.Timeout as exc:
@@ -398,13 +400,11 @@ class HTTPDownload(Download):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
             except RequestException as e:
-                raise DownloadError(
-                    "%s order status could not be checked, request returned %s"
-                    % (
-                        product.properties["title"],
-                        e,
-                    )
-                ) from e
+                msg = f'{product.properties["title"]} order status could not be checked'
+                if e.response is not None and e.response.status_code == 400:
+                    raise ValidationError.from_error(e, msg) from e
+                else:
+                    raise DownloadError.from_error(e, msg) from e
 
         if not skip_parsing_status_response:
             # status request
