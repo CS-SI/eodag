@@ -426,10 +426,10 @@ class Download(PluginTopic):
 
             tmp_dir.cleanup()
 
-            if delete_archive:
+            if delete_archive and os.path.isfile(fs_path):
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
-            else:
+            elif os.path.isfile(fs_path):
                 logger.info(
                     f"Archive deletion is deactivated, keeping {os.path.basename(fs_path)}"
                 )

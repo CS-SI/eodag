@@ -15,6 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import hashlib
 import io
 import os
 import shutil
@@ -121,6 +122,44 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             self.assertEqual(fs_path, product_file.name)
             self.assertIsNone(record_filename)
             self.assertIn("Product already present on this platform", str(cm.output))
+
+    def test_plugins_download_base_prepare_download_record_file(self):
+        """Download._prepare_download must check existing record files"""
+
+        self.product.location = self.product.remote_location = "http://foo.bar"
+        self.product.product_type = "foo"
+
+        with TemporaryDirectory() as output_dir:
+            download_kwargs = dict(output_dir=output_dir)
+            product_path_dir = Path(output_dir) / self.product.properties["title"]
+            recordfile_dir = Path(output_dir) / ".downloaded"
+            recordfile_dir.mkdir()
+
+            recordfile_path = (
+                recordfile_dir / hashlib.md5("foo-dummy".encode("utf-8")).hexdigest()
+            )
+            old_recordfile_path = (
+                recordfile_dir
+                / hashlib.md5("http://foo.bar".encode("utf-8")).hexdigest()
+            )
+
+            plugin = self.get_download_plugin(self.product)
+
+            # < v3.0.0b1 formatted record file and product path exist, record file moved to new format
+            product_path_dir.mkdir()
+            (product_path_dir / "foo").touch()
+            old_recordfile_path.touch()
+            with self.assertLogs(level="INFO") as cm:
+                plugin._prepare_download(self.product, **download_kwargs)
+                self.assertTrue(os.path.isfile(recordfile_path))
+                self.assertFalse(os.path.isfile(old_recordfile_path))
+                self.assertIn("Product already downloaded", str(cm.output))
+
+            # new formatted record file and product path exist
+            with self.assertLogs(level="INFO") as cm:
+                plugin._prepare_download(self.product, **download_kwargs)
+                self.assertTrue(os.path.isfile(recordfile_path))
+                self.assertIn("Product already downloaded", str(cm.output))
 
     def test_plugins_download_base_prepare_download_no_url(self):
         """Download._prepare_download must return None when no download url"""
