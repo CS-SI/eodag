@@ -835,20 +835,25 @@ class AwsDownload(Download):
         :param auth_dict: Dictionary containing authentication keys
         :returns: The rasterio environement variables
         """
-        if self.s3_session is not None:
-            if self.requester_pays:
-                return {"session": self.s3_session, "requester_pays": True}
-            else:
-                return {"session": self.s3_session}
+        rio_env_dict: Dict[str, Any] = {}
 
+        if self.s3_session is not None:
+            # already authenticated
+            rio_env_dict.update({"session": self.s3_session})
+            if self.requester_pays:
+                rio_env_dict.update({"requester_pays": True})
+            return rio_env_dict
+
+        # authenticate and try again
         _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
         if self.s3_session is not None:
+            rio_env_dict.update({"session": self.s3_session})
             if self.requester_pays:
-                return {"session": self.s3_session, "requester_pays": True}
-            else:
-                return {"session": self.s3_session}
-        else:
-            return {"aws_unsigned": True}
+                rio_env_dict.update({"requester_pays": True})
+            return rio_env_dict
+
+        rio_env_dict.update({"aws_unsigned": True})
+        return rio_env_dict
 
     def get_authenticated_objects(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
