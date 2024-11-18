@@ -38,7 +38,7 @@ class QueryablesDict(UserDict):
                                 {"'alias': '<span style='color: black'>" + v.__metadata__[0].alias + "</span>',&ensp;"
                 if v.__metadata__[0].alias else ""}
                                 {"'type': '<span style='color: black'>" + str(v.__args__[0]) + "</span>',&ensp;"
-                if v.__args__[0].__name__ == "Union" else(
+                if not hasattr(v.__args__[0], "__name__") or v.__args__[0].__name__ == "Union" else(
                                 "'type': '<span style='color: black'>" + v.__args__[0].__name__ + "</span>',&ensp;")}
                                 {"'default': '<span style='color: black'>" +
                                  str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
