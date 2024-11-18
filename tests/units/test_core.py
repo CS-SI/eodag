@@ -29,11 +29,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
 
+from lxml import html
 from pkg_resources import DistributionNotFound, resource_filename
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
+from eodag.api.product.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1420,6 +1422,7 @@ class TestCore(TestCoreBase):
         for key, queryable in queryables_none_none.items():
             # compare obj.__repr__
             self.assertEqual(str(expected_result[key]), str(queryable))
+        self.assertTrue(queryables_none_none.additional_properties)
 
         queryables_peps_none = self.dag.list_queryables(provider="peps")
         expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
@@ -1428,6 +1431,7 @@ class TestCore(TestCoreBase):
         for key, queryable in queryables_peps_none.items():
             # compare obj.__repr__
             self.assertEqual(str(expected_longer_result[key]), str(queryable))
+        self.assertTrue(queryables_peps_none.additional_properties)
 
         queryables_peps_s1grd = self.dag.list_queryables(
             provider="peps", productType="S1_SAR_GRD"
@@ -1440,6 +1444,7 @@ class TestCore(TestCoreBase):
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
+        self.assertTrue(queryables_peps_s1grd.additional_properties)
 
         # when a product type is specified but not the provider, the intersection of the queryables of all providers
         # having the product type in its config is returned, using queryables of the provider with the highest priority
@@ -1458,6 +1463,7 @@ class TestCore(TestCoreBase):
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
             # queryables intersection comes from peps's queryables
             self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
+        self.assertTrue(queryables_none_s1grd.additional_properties)
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
@@ -1482,7 +1488,7 @@ class TestCore(TestCoreBase):
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
-        self.dag.list_queryables(
+        res = self.dag.list_queryables(
             provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:month": "02"}
         )
         params = {
@@ -1495,6 +1501,7 @@ class TestCore(TestCoreBase):
             "ecmwf:month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
+        self.assertFalse(res.additional_properties)
         mock_discover_queryables.reset_mock()
 
         # unset default values
@@ -1510,6 +1517,16 @@ class TestCore(TestCoreBase):
             "ecmwf:download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+
+    def test_queryables_repr(self):
+        queryables = self.dag.list_queryables(provider="peps", productType="S1_SAR_GRD")
+        self.assertIsInstance(queryables, QueryablesDict)
+        queryables_repr = html.fromstring(queryables._repr_html_())
+        self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
+        spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
+        self.assertIn("product_type", spans[0].text)
+        self.assertIn("productType", spans[1].text)
+        self.assertIn("str", spans[2].text)
 
     def test_available_sortables(self):
         """available_sortables must return available sortable(s) and its (their)

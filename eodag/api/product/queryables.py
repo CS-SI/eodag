@@ -28,7 +28,7 @@ class QueryablesDict(UserDict):
         )
         tr_style = "style='background-color: transparent;'" if embedded else ""
         return (
-            f"<table>{thead}"
+            f"<table>{thead}<tbody>"
             + "".join(
                 [
                     f"""<tr {tr_style}><td style='text-align: left;'>
@@ -53,5 +53,5 @@ class QueryablesDict(UserDict):
                     for k, v in self.items()
                 ]
             )
-            + "</table>"
+            + "</tbody></table>"
         )

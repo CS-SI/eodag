@@ -2290,8 +2290,8 @@ class EODataAccessGateway:
         :raises UnsupportedProductType: If the specified product type is not available for the
                                         provider.
 
-        :returns: A dict containing the EODAG queryable properties, associating
-                  parameters to their annotated type
+        :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
+                  properties, associating parameters to their annotated type, and a additional_properties attribute
         """
         available_product_types = [
             pt["ID"]
@@ -2311,7 +2311,10 @@ class EODataAccessGateway:
             self.fetch_product_types_list(provider)
 
         if not provider and not product_type:
-            return model_fields_to_annotated(CommonQueryables.model_fields)
+            return QueryablesDict(
+                additional_properties=True,
+                **model_fields_to_annotated(CommonQueryables.model_fields),
+            )
 
         providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
 
