@@ -31,6 +31,7 @@ from unittest.mock import Mock
 
 from lxml import html
 from pkg_resources import DistributionNotFound, resource_filename
+from pydantic import ValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -1464,6 +1465,16 @@ class TestCore(TestCoreBase):
             # queryables intersection comes from peps's queryables
             self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
         self.assertTrue(queryables_none_s1grd.additional_properties)
+
+        # model_validate should validate input parameters using the queryables result
+        queryables_validated = queryables_peps_s1grd.model_validate(
+            productType="S1_SAR_GRD", snowCover=50
+        )
+        self.assertIn("snowCover", queryables_validated.__dict__)
+        with self.assertRaises(ValidationError):
+            queryables_peps_s1grd.model_validate(
+                productType="S1_SAR_GRD", snowCover=500
+            )
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",

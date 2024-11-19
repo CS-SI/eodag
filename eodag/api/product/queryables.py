@@ -2,6 +2,8 @@ from collections import UserDict
 
 from pydantic.fields import Field
 
+from eodag.types import annotated_dict_to_model
+
 
 class QueryablesDict(UserDict):
     """Class inheriting from UserDict which contains queryables with their annotated type;
@@ -54,4 +56,15 @@ class QueryablesDict(UserDict):
                 ]
             )
             + "</tbody></table>"
+        )
+
+    def model_validate(self, **kwargs):
+        """
+        validates the input parameters based on the annotated queryables given in self.data
+        :param kwargs: input parameters to be validated
+        :return: validated model
+        :raises: :class:`~pydantic.ValidationError`
+        """
+        return annotated_dict_to_model("Queryables", self.data).model_validate(
+            {**kwargs}
         )
