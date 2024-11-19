@@ -19,13 +19,29 @@ from __future__ import annotations
 
 import io
 import logging
+import os
+import re
 import zipfile
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
+
+import boto3
+import botocore
+
+from eodag.api.product import AssetsDict  # type: ignore
+from eodag.plugins.authentication.aws_auth import AwsAuth
+from eodag.utils import get_bucket_name_and_prefix, guess_file_type
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    NotAvailableError,
+)
 
 if TYPE_CHECKING:
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
+
+    from eodag.api.product import EOProduct  # type: ignore
 
 logger = logging.getLogger("eodag.utils.s3")
 
@@ -94,3 +110,98 @@ def list_files_in_s3_zipped_object(
     logger.debug("Found %s files in %s" % (len(zip.filelist), key_name))
 
     return zip.filelist
+
+
+def update_assets_from_s3(
+    product: EOProduct,
+    auth: AwsAuth,
+    s3_endpoint: Optional[str] = None,
+    content_url: Optional[str] = None,
+) -> None:
+    """Update ``EOProduct.assets`` using content listed in its ``remote_location`` or given
+    ``content_url``.
+
+    If url points to a zipped archive, its content will also be be listed.
+
+    :param product: product to update
+    :param auth: Authentication plugin
+    :param s3_endpoint: s3 endpoint if not hosted on AWS
+    :param content_url: s3 URL pointing to the content that must be listed (defaults to
+                        ``product.remote_location`` if empty)
+    """
+    required_creds = ["aws_access_key_id", "aws_secret_access_key"]
+
+    if content_url is None:
+        content_url = product.remote_location
+
+    bucket, prefix = get_bucket_name_and_prefix(content_url, 0)
+
+    if prefix:
+        try:
+            auth_dict = auth.authenticate()
+
+            if not all(x in auth_dict for x in required_creds):
+                raise MisconfiguredError(
+                    f"Incomplete credentials for {product.provider}, missing "
+                    f"{[x for x in required_creds if x not in auth_dict]}"
+                )
+            if not getattr(auth, "s3_client", None):
+                auth.s3_client = boto3.client(
+                    "s3", endpoint_url=s3_endpoint, **auth_dict
+                )
+            logger.debug("Listing assets in %s", prefix)
+
+            # get roles patterns for assets if configured
+            assets_roles_pattern = getattr(product.assets, "assets_roles_pattern", {})
+
+            product.assets = AssetsDict(product)
+            product.assets.assets_roles_pattern = assets_roles_pattern
+
+            if prefix.endswith(".zip"):
+                # List prefix zip content
+                assets_urls = [
+                    f"zip+s3://{bucket}/{prefix}!{f.filename}"
+                    for f in list_files_in_s3_zipped_object(
+                        bucket, prefix, auth.s3_client
+                    )
+                ]
+            else:
+                # List files in prefix
+                assets_urls = [
+                    f"s3://{bucket}/{obj['Key']}"
+                    for obj in auth.s3_client.list_objects(
+                        Bucket=bucket, Prefix=prefix, MaxKeys=300
+                    )["Contents"]
+                ]
+
+            for asset_url in assets_urls:
+                asset_basename = os.path.basename(asset_url)
+
+                if len(asset_basename) > 0 and asset_basename not in product.assets:
+
+                    product.assets[asset_basename] = {
+                        "title": asset_basename,
+                        "href": asset_url,
+                    }
+                    if mime_type := guess_file_type(asset_basename):
+                        product.assets[asset_basename]["type"] = mime_type
+
+                    # set role using conf passed through search_plugin.normalize_results
+                    for role, pattern in assets_roles_pattern.items():
+                        if re.match(pattern, asset_url):
+                            product.assets[asset_basename].setdefault("roles", [])
+                            product.assets[asset_basename]["roles"].append(role)
+
+            # update driver
+            product.driver = product.get_driver()
+
+        except botocore.exceptions.ClientError as e:
+            if str(auth.config.auth_error_code) in str(e):
+                raise AuthenticationError(
+                    f"Authentication failed on {s3_endpoint} s3"
+                ) from e
+            raise NotAvailableError(
+                f"assets for product {prefix} could not be found"
+            ) from e
+    else:
+        logger.debug(f"No s3 prefix could guessed from {content_url}")

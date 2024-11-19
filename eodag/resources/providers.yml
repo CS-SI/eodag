@@ -5888,6 +5888,9 @@
         completionTimeFromAscendingNode: temporal:endDate
         platformSerialIdentifier: spaceborne:satellitePlatform
         cloudCover: spaceborne:cloudCover
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
     metadata_mapping:
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
@@ -5985,6 +5988,139 @@
     matching_url: https://geodes-portal.cnes.fr
     headers:
       X-API-Key: "{apikey}"
+
+---
+!provider  # MARK: geodes_s3
+  name: geodes_s3
+  priority: 0
+  roles:
+    - host
+  description: French National Space Agency (CNES) Earth Observation portal through s3 Datalake
+  url: https://geodes.cnes.fr
+  search: !plugin
+    type: StacListAssets
+    api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
+    s3_endpoint: https://s3.datalake.cnes.fr
+    need_auth: true
+    ssl_verify: false
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+    discover_product_types:
+      fetch_url: https://geodes-portal.cnes.fr/api/stac/collections
+      fetch_method: POST
+      fetch_body:
+        limit: 10000
+    pagination:
+      total_items_nb_key_path: '$.context.matched'
+      # 1000 is ok and 2000 fails
+      max_items_per_page: 1000
+    sort:
+      sort_by_tpl: '{{"sortBy": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_param_mapping:
+        id: spaceborne:s2TakeId
+        startTimeFromAscendingNode: temporal:startDate
+        completionTimeFromAscendingNode: temporal:endDate
+        platformSerialIdentifier: spaceborne:satellitePlatform
+        cloudCover: spaceborne:cloudCover
+      sort_order_mapping:
+        ascending: asc
+        descending: desc
+    assets_roles_pattern:
+      data: '.*/(?!MSK)[^/]+\.(jp2|tiff|nc|grib)'
+      data-mask: '.*/MSK[^/]+\.(jp2|tiff|nc|grib)'
+      metadata: '.*/[^/]+\.(xml|xsd|safe)$'
+    metadata_mapping:
+      uid: '$.id'
+      # OpenSearch Parameters for Collection Search (Table 3)
+      productType:
+        - '{{"query":{{"dataType":{{"eq":"{productType}"}}}}}}'
+        - '$.properties."dataType"'
+      processingLevel:
+        - '{{"query":{{"spaceborne:productLevel":{{"eq":"{processingLevel}"}}}}}}'
+        - '$.properties."spaceborne:productLevel"'
+      platformSerialIdentifier:
+        - '{{"query":{{"spaceborne:satellitePlatform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
+        - '$.properties."spaceborne:satellitePlatform"'
+      instrument:
+        - '{{"query":{{"spaceborne:satelliteSensor":{{"eq":"{instrument}"}}}}}}'
+        - '$.properties."spaceborne:satelliteSensor"'
+      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
+      title: '{$.properties."accessService:endpointURL"#replace_str(r"^.*\/(\w+)\.zip$",r"\1")}'
+      keyword: '$.properties."spaceborne:keywords"'
+      # OpenSearch Parameters for Product Search (Table 5)
+      orbitNumber:
+        - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":{orbitNumber}}}}}}}'
+        - '$.properties."spaceborne:absoluteOrbitID"'
+      orbitDirection:
+        - '{{"query":{{"spaceborne:orbitDirection":{{"eq":"{orbitDirection}"}}}}}}'
+        - '$.properties."spaceborne:orbitDirection"'
+      swathIdentifier:
+        - '{{"query":{{"spaceborne:swath":{{"eq":"{swathIdentifier}"}}}}}}'
+        - '$.properties."spaceborne:swath"'
+      cloudCover:
+        - '{{"query":{{"spaceborne:cloudCover":{{"lte":{cloudCover}}}}}}}'
+        - '$.properties."spaceborne:cloudCover"'
+      sensorMode:
+        - '{{"query":{{"spaceborne:sensorMode":{{"eq":"{sensorMode}"}}}}}}'
+        - '$.properties."spaceborne:sensorMode"'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - '{{"query":{{"temporal:endDate":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties."temporal:startDate"'
+      completionTimeFromAscendingNode:
+        - '{{"query":{{"temporal:startDate":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties."temporal:endDate"'
+      polarizationChannels:
+        - '{{"query":{{"spaceborne:polarization":{{"eq":"{polarizationChannels}"}}}}}}'
+        - '$.properties."spaceborne:polarization"'
+      # Custom parameters (not defined in the base document referenced above)
+      id:
+        - '{{"query":{{"accessService:endpointURL":{{"contains":"{id}"}}}}}}'
+        - '{$.properties."accessService:endpointURL"#replace_str(r"^.*\/(\w+)\.zip$",r"\1")}'
+      geometry:
+        - '{{"intersects":{geometry#to_geojson}}}'
+        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      providerProductType:
+        - '{{"query":{{"spaceborne:productType":{{"eq":"{providerProductType}"}}}}}}'
+        - '$.null'
+      downloadLink: '$.properties["accessService:endpointURL"]'
+      quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
+      # storageStatus set to ONLINE for consistency between providers
+      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
+  products:
+    S1_SAR_OCN:
+      providerProductType: OCN
+      productType: PEPS_S1_L2
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_GRD:
+      providerProductType: GRD
+      productType: PEPS_S1_L1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_SAR_SLC:
+      providerProductType: SLC
+      productType: PEPS_S1_L1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S2_MSI_L1C:
+      productType: PEPS_S2_L1C
+    S2_MSI_L2A_MAJA:
+      productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: AwsDownload
+    s3_endpoint: https://s3.datalake.cnes.fr
+  auth: !plugin
+    type: AwsAuth
+    auth_error_code: 403
+    matching_conf:
+      s3_endpoint: https://s3.datalake.cnes.fr
 
 ---
 !provider # MARK: cop_ewds
