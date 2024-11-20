@@ -58,13 +58,10 @@ class QueryablesDict(UserDict):
             + "</tbody></table>"
         )
 
-    def model_validate(self, **kwargs):
+    def get_model(self):
         """
-        validates the input parameters based on the annotated queryables given in self.data
-        :param kwargs: input parameters to be validated
-        :return: validated model
-        :raises: :class:`~pydantic.ValidationError`
+        converts the object from the QueryablesDict class to an object of the pydantic Model class
+        so that validation can be performed
+        :return: pydantic BaseModel of the queryables dict
         """
-        return annotated_dict_to_model("Queryables", self.data).model_validate(
-            {**kwargs}
-        )
+        return annotated_dict_to_model("Queryables", self.data)

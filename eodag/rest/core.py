@@ -62,7 +62,6 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.types import annotated_dict_to_model
 from eodag.utils import (
     _deprecated,
     deepcopy,
@@ -586,9 +585,9 @@ async def get_queryables(
             provider=provider, **params.model_dump(exclude_none=True, by_alias=True)
         )
 
-        python_queryables_json = annotated_dict_to_model(
-            "QueryableProperties", python_queryables.data
-        ).model_json_schema(by_alias=True)
+        python_queryables_json = python_queryables.get_model().model_json_schema(
+            by_alias=True
+        )
 
         properties: Dict[str, Any] = python_queryables_json["properties"]
         required: List[str] = python_queryables_json.get("required") or []

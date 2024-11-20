@@ -1467,13 +1467,13 @@ class TestCore(TestCoreBase):
         self.assertTrue(queryables_none_s1grd.additional_properties)
 
         # model_validate should validate input parameters using the queryables result
-        queryables_validated = queryables_peps_s1grd.model_validate(
-            productType="S1_SAR_GRD", snowCover=50
+        queryables_validated = queryables_peps_s1grd.get_model().model_validate(
+            {"productType": "S1_SAR_GRD", "snowCover": 50}
         )
         self.assertIn("snowCover", queryables_validated.__dict__)
         with self.assertRaises(ValidationError):
-            queryables_peps_s1grd.model_validate(
-                productType="S1_SAR_GRD", snowCover=500
+            queryables_peps_s1grd.get_model().model_validate(
+                {"productType": "S1_SAR_GRD", "snowCover": 500}
             )
 
     @mock.patch(
