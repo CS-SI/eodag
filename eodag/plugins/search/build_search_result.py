@@ -527,7 +527,6 @@ class ECMWFSearch(PostJsonSearch):
 
         form_url = format_metadata(getattr(self.config, "form_url", ""), **kwargs)
         form = self.fetch_data(form_url)
-        print(processed_kwargs)
 
         formated_kwargs = self.format_as_provider_keyword(
             product_type, processed_kwargs
@@ -542,19 +541,16 @@ class ECMWFSearch(PostJsonSearch):
         # we use non empty kwargs as default to integrate user inputs
         # it is needed because pydantic json schema does not represent "value"
         # but only "default"
-        print(formated_kwargs)
         non_empty_formated: Dict[str, Any] = {
             k: v
             for k, v in formated_kwargs.items()
             if v and (not isinstance(v, list) or all(v))
         }
-        print(non_empty_formated)
         non_empty_kwargs: Dict[str, Any] = {
             k: v
             for k, v in processed_kwargs.items()
             if v and (not isinstance(v, list) or all(v))
         }
-        print(non_empty_kwargs)
 
         required_keywords: Set[str] = set()
 
