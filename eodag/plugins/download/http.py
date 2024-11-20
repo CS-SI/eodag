@@ -124,8 +124,6 @@ class HTTPDownload(Download):
           default: ``5``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.output_extension` (``str``): which extension should be used for the
-          downloaded file
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
           authentication; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
@@ -142,9 +140,8 @@ class HTTPDownload(Download):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
         * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type specific config; the
-          keys are the product types, the values are dictionaries which can contain the keys
-          :attr:`~eodag.config.PluginConfig.output_extension` and :attr:`~eodag.config.PluginConfig.extract` to
-          overwrite the provider config for a specific product type
+          keys are the product types, the values are dictionaries which can contain the key
+          :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific product type
 
     """
 
@@ -718,15 +715,6 @@ class HTTPDownload(Download):
                     ext = guess_extension(content_type)
                     if ext:
                         filename += ext
-                else:
-                    output_extension: Optional[str] = (
-                        getattr(self.config, "products", {})
-                        .get(product.product_type, {})
-                        .get("output_extension")
-                    )
-                    if output_extension:
-                        filename += output_extension
-
         return filename
 
     def _stream_download_dict(
