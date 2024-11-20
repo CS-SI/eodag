@@ -34,9 +34,11 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +========================+====================================+=================================+==================+
 | ``aws_eos``            | |PostJsonSearch|                   | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``cop_ads``            | |BuildSearchResult|                | |GenericAuth|                   | |HTTPDownload|   |
+| ``cop_ads``            | |ECMWFSearch|                | |HTTPHeaderAuth|                   | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``cop_cds``            | |BuildSearchResult|                | |GenericAuth|                   | |HTTPDownload|   |
+| ``cop_cds``            | |ECMWFSearch|                | |HTTPHeaderAuth|                   | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
+| ``cop_ewds``           | |ECMWFSearch|                | |HTTPHeaderAuth|                   | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``cop_dataspace``      | |QueryStringSearch|                | |KeycloakOIDCPasswordAuth|      | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
@@ -46,7 +48,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``dedl``               | |StacSearch|                       | |OIDCTokenExchangeAuth|         | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``dedt_lumi``          | |BuildSearchResult|                | |OIDCAuthorizationCodeFlowAuth| | |HTTPDownload|   |
+| ``dedt_lumi``          | |ECMWFSearch|                | |OIDCAuthorizationCodeFlowAuth| | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``earth_search``       | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
@@ -105,7 +107,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |PostJsonSearch| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearch`
 .. |StacSearch| replace:: :class:`~eodag.plugins.search.qssearch.StacSearch`
 .. |PostJsonSearchWithStacQueryables| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables`
-.. |BuildSearchResult| replace:: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
+.. |ECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
 .. |BuildPostSearchResult| replace:: :class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult`
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`

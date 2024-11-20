@@ -477,10 +477,10 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
-    #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
-    #: :class:`~eodag.plugins.search.build_search_result.BuildSearchResult`
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: List of parameters used to parse metadata but that must not be included to the query
     remove_from_query: List[str]
     #: :class:`~eodag.plugins.search.csw.CSWSearch`

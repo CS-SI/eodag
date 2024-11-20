@@ -2254,7 +2254,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
 
     def test_plugins_search_ecmwfsearch_exclude_end_date(self):
-        """BuildSearchResult.query must adapt end date in certain cases"""
+        """ECMWFSearch.query must adapt end date in certain cases"""
         # start & stop as dates -> keep end date as it is
         results, _ = self.search_plugin.query(
             productType=self.product_type,
@@ -2309,7 +2309,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
 
     def test_plugins_search_ecmwfsearch_dates_missing(self):
-        """BuildSearchResult.query must use default dates if missing"""
+        """ECMWFSearch.query must use default dates if missing"""
         # given start & stop
         results, _ = self.search_plugin.query(
             productType=self.product_type,
@@ -2360,7 +2360,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
     def test_plugins_search_ecmwfsearch_without_producttype(self):
         """
-        BuildSearchResult.query must build a EOProduct from input parameters without product type.
+        ECMWFSearch.query must build a EOProduct from input parameters without product type.
         For test only, result cannot be downloaded.
         """
         results, count = self.search_plugin.query(
@@ -2384,7 +2384,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert NOT_AVAILABLE in eoproduct.location
 
     def test_plugins_search_ecmwfsearch_with_producttype(self):
-        """BuildSearchResult.query must build a EOProduct from input parameters with predefined product type"""
+        """ECMWFSearch.query must build a EOProduct from input parameters with predefined product type"""
         results, _ = self.search_plugin.query(
             **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
         )
@@ -2403,7 +2403,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
 
     def test_plugins_search_ecmwfsearch_with_custom_producttype(self):
-        """BuildSearchResult.query must build a EOProduct from input parameters with custom product type"""
+        """ECMWFSearch.query must build a EOProduct from input parameters with custom product type"""
         results, _ = self.search_plugin.query(
             **self.query_dates,
             **self.custom_query_params,

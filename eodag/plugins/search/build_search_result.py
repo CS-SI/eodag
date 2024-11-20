@@ -300,22 +300,21 @@ def _update_properties_from_element(
 class ECMWFSearch(PostJsonSearch):
     """ECMWF search plugin.
 
-    This plugin builds a single :class:`~eodag.api.search_result.SearchResult` object
+    This plugin builds a :class:`~eodag.api.search_result.SearchResult` containing a single product
     using given query parameters as product properties.
 
-    The available configuration parameters inherits from parent classes, with particularly
-    for this plugin:
-
-        - **end_date_excluded**: Set to `False` if provider does not include end date to
-          search
-
-        - **remove_from_query**: List of parameters used to parse metadata but that must
-          not be included to the query
-
-        - **constraints_url**: url of the constraint file used to build queryables
+    The available configuration parameters inherits from parent classes, with some particular parameters
+    for this plugin.
 
     :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.remove_from_query` (``List[str]``): List of parameters
+          used to parse metadata but that must not be included to the query
+        * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
+          provider does not include end date to search
+        * :attr:`~eodag.config.PluginConfig.constraints_url` (``str``): url of the constraint file
+          used to build queryables
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -1027,25 +1026,24 @@ class ECMWFSearch(PostJsonSearch):
 class BuildPostSearchResult(ECMWFSearch):
     """BuildPostSearchResult search plugin.
 
-    This plugin, which inherits from :class:`~eodag.plugins.search.qssearch.PostJsonSearch`,
+    This plugin, which inherits from :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`,
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
     object.
 
-    The available configuration parameters inherits from parent classes, with particularly
-    for this plugin:
-
-        - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
-
-        - **pagination**: The configuration of how the pagination is done
-          on the provider. It is a tree with the following nodes:
-
-          - *next_page_query_obj*: (optional) The additional parameters needed to perform
-            search. These paramaters won't be included in result. This must be a json dict
-            formatted like `{{"foo":"bar"}}` because it will be passed to a `.format()`
-            method before being loaded as json.
+    The available configuration parameters inherits from parent classes, with some a particularity
+    for pagination for this plugin.
 
     :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
+          (**mandatory**): The configuration of how the pagination is done on the provider. For
+          this plugin it has the node:
+
+            * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
+              additional parameters needed to perform search. These parameters won't be included in
+              the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
+              will be passed to a :meth:`str.format` method before being loaded as json.
     """
 
     def collect_search_urls(
