@@ -331,17 +331,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             product_type,
         )
-        output_extension = getattr(
-            product.downloader.config, "output_extension", ".zip"
-        )
         path = product.download()
 
-        self.assertTrue(
-            path == os.path.join(self.output_dir, product.properties["title"] + ".zip")
-            and os.path.isfile(path)
-            and output_extension == ".zip"
-            and zipfile.is_zipfile(path)
+        expected_path = os.path.join(
+            self.output_dir, product.properties["title"] + ".zip"
         )
+        self.assertEqual(path, expected_path)
+        self.assertTrue(os.path.isfile(path))
+        self.assertTrue(zipfile.is_zipfile(path))
 
         # check if the hidden directory ".downloaded" have been created with the product zip file
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
