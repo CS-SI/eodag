@@ -4812,6 +4812,34 @@
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT"}}'
+    FIRE_HISTORICAL:
+      productType: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
+      providerProductType: reanalysis
+      variable:
+        - fire_weather_index
+      version:
+        - "4_1"
+      format: grib
+      grid: original_grid
+      type: consolidated_dataset
+      metadata_mapping:
+        id: '$.id'
+        <<: *day_month_year
+        providerProductType:
+          - '{{"product_type": "{providerProductType}"}}'
+          - '$.null'
+        version:
+          - '{{"system_version": {version}}}'
+          - '$.null'
+        format:
+          - '{{"data_format": "{format}"}}'
+          - '$.null'
+        type:
+          - '{{"dataset_type": "{type}"}}'
+          - '$.null'
+        <<: *variable_list
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1"}}'
     GRIDDED_GLACIERS_MASS_CHANGE:
       productType: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
       variable: glacier_mass_change
@@ -5280,6 +5308,9 @@
         metadata_mapping:
           download_id: $.json.features[0]._id
           downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+    products:
+      FIRE_HISTORICAL:
+        output_extension: .grib
 
 ---
 !provider  # MARK: wekeo_cmems
@@ -5984,6 +6015,8 @@
       DT_EXTREMES:
         output_extension: .grib
       DT_CLIMATE_ADAPTATION:
+        output_extension: .grib
+      FIRE_HISTORICAL:
         output_extension: .grib
   auth: !plugin
     type: OIDCTokenExchangeAuth
