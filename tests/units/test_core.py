@@ -94,7 +94,7 @@ class TestCore(TestCoreBase):
         "AG_ERA5": ["cop_cds", "wekeo_ecmwf"],
         "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
-        "CAMS_GFE_GFAS": ["cop_ads", "dedl"],
+        "CAMS_GFE_GFAS": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CAMS_GRF": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CAMS_GRF_AUX": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CAMS_SOLAR_RADIATION": ["cop_ads", "dedl", "wekeo_ecmwf"],

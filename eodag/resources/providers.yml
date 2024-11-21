@@ -2298,13 +2298,13 @@
       dataset: cams-global-atmospheric-composition-forecasts
       type: forecast
       format: grib
-      variable: ammonium_aerosol_optical_depth_550nm
+      variable: 10m_u_component_of_wind
       time: '00:00'
       leadtime_hour: '0'
     CAMS_GFE_GFAS:
       dataset: cams-global-fire-emissions-gfas
       format: grib
-      variable: altitude_of_plume_bottom
+      variable: wildfire_combustion_rate
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
       model: ensemble
@@ -2784,9 +2784,9 @@
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
-      processing_level: level_2
+      processing_level: level_3
       variable: xco2
-      sensor_and_algorithm: merged_emma
+      sensor_and_algorithm: merged_obs4mips
       version: '4_5'
       metadata_mapping:
         <<: *day_month_year
@@ -2801,9 +2801,9 @@
         <<: *month_year
     SATELLITE_METHANE:
       dataset: satellite-methane
-      processing_level: level_2
+      processing_level: level_3
       variable: xch4
-      sensor_and_algorithm: merged_emma
+      sensor_and_algorithm: merged_obs4mips
       version: '4_5'
       metadata_mapping:
         <<: *day_month_year
@@ -4385,10 +4385,10 @@
         - '{{"productIdentifier": "{id}"}}'
         - '{$.id#remove_extension}'
       startTimeFromAscendingNode:
-        - '{{"dtstart": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+        - '{{"startdate": "{startTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.startdate'
       completionTimeFromAscendingNode:
-        - '{{"dtend": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
+        - '{{"enddate": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - '$.properties.enddate'
       downloadLink: '$.properties.location'
       title: '$.id'
@@ -4415,7 +4415,7 @@
         - '{{"system": "{system}"}}'
         - '$.null'
       format:
-        - '{{"format": "{format}"}}'
+        - '{{"data_format": "{format}"}}'
         - '$.null'
       pressure_level:
         - '{{"pressure_level": {pressure_level}}}'
@@ -4525,7 +4525,7 @@
       processingLevel:
         - level_2
       version:
-        - "4.0"
+        - "4_0"
       variable: xco2
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
@@ -4571,7 +4571,7 @@
       processingLevel:
         - level_2
       version:
-        - "4.0"
+        - "4_0"
       variable: xch4
       sensor_and_algorithm: sciamachy_wfmd
       format: zip
@@ -5242,7 +5242,7 @@
         - forecast
       format: grib
       variable:
-        - ammonium_aerosol_optical_depth_550nm
+        - 10m_u_component_of_wind
       time:
         - '00:00'
       leadtime_hour:
@@ -5255,6 +5255,23 @@
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS"}}'
+    CAMS_GFE_GFAS:
+      productType: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
+      format: grib
+      variable:
+        - wildfire_combustion_rate
+      time:
+        - '00:00'
+      leadtime_hour:
+        - '0'
+      metadata_mapping:
+        id: '$.id'
+        type:
+          - '{{"type": {type}}}'
+          - '$.null'
+        <<: *variable_list
+        defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS"}}'
     CAMS_SOLAR_RADIATION:
       productType: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
       sky_type: clear
