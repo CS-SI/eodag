@@ -3911,8 +3911,8 @@
           "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
           "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
         }}
-      - $.properties.startDate
-    completionTimeFromAscendingNode: $.properties.endDate
+      - $.properties.startdate
+    completionTimeFromAscendingNode: $.properties.enddate
   anchor_year_month: &month_year
     startTimeFromAscendingNode:
       - |
@@ -3920,14 +3920,14 @@
           "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
           "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
         }}
-      - $.properties.startDate
-    completionTimeFromAscendingNode: $.properties.endDate
+      - $.properties.startdate
+    completionTimeFromAscendingNode: $.properties.enddate
   anchor_variable_list: &variable_list
     variable:
       - '{{"variable": {variable}}}'
       - '$.null'
   search: !plugin
-    type: ECMWFSearch
+    type: WekeoECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
     need_auth: true
@@ -4134,8 +4134,8 @@
               "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"],
               "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"]
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:SATELLITE_FIRE_BURNED_AREA"}}'
     SATELLITE_METHANE:
       productType: EO:ECMWF:DAT:SATELLITE_METHANE
@@ -4426,8 +4426,8 @@
             {{
               "hydrological_year": {startTimeFromAscendingNode#get_hydrological_year}
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         version:
           - '{{"product_version": "{version}"}}'
           - '$.null'
@@ -4487,8 +4487,8 @@
               "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"],
               "time": {startTimeFromAscendingNode#get_ecmwf_time}
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4504,6 +4504,7 @@
       pressure_level:
         - "1"
       format: grib
+      download_format: zip
       metadata_mapping:
         id: '$.id'
         startTimeFromAscendingNode:
@@ -4514,8 +4515,8 @@
               "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"],
               "time": {startTimeFromAscendingNode#get_ecmwf_time}
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4529,6 +4530,7 @@
       variable:
         - 10m_u_component_of_wind
       format: grib
+      download_format: zip
       time:
         - "00:00"
       metadata_mapping:
@@ -4539,8 +4541,8 @@
               "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
               "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4556,6 +4558,7 @@
       pressure_level:
         - "1"
       format: grib
+      download_format: zip
       time:
         - "00:00"
       metadata_mapping:
@@ -4566,8 +4569,8 @@
               "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
               "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4579,6 +4582,7 @@
       variable:
         - 2m_dewpoint_temperature
       format: grib
+      download_format: zip
       metadata_mapping:
         id: '$.id'
         month:
@@ -4592,8 +4596,8 @@
               "day": {startTimeFromAscendingNode#to_datetime_dict(list)}["day"],
               "time": {startTimeFromAscendingNode#get_ecmwf_time}
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_LAND"}}'
@@ -4604,6 +4608,7 @@
       variable:
         - 2m_dewpoint_temperature
       format: grib
+      download_format: zip
       time:
         - "00:00"
       metadata_mapping:
@@ -4614,8 +4619,8 @@
               "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"],
               "month": {startTimeFromAscendingNode#to_datetime_dict(list)}["month"]
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         providerProductType:
           - '{{"product_type": {providerProductType}}}'
           - '$.null'
@@ -4650,8 +4655,8 @@
             {{
               "year": {startTimeFromAscendingNode#to_datetime_dict(list)}["year"]
             }}
-          - $.properties.startDate
-        completionTimeFromAscendingNode: $.properties.endDate
+          - $.properties.startdate
+        completionTimeFromAscendingNode: $.properties.enddate
         <<: *variable_list
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES"}}'

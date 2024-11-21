@@ -60,8 +60,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.base import Search
-from eodag.plugins.search.qssearch import PostJsonSearch
+from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import (
@@ -396,12 +395,8 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
-        # quickfix for wekeo_ecmwf
-        if self.config.api_endpoint:
-            return super().do_search(*args, **kwargs)
-        else:
-            # no real search. We fake it all
-            return [{}]
+        # no real search. We fake it all
+        return [{}]
 
     def query(
         self,
@@ -433,21 +428,17 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
-        # quickfix for wekeo_ecmwf
-        if not self.config.api_endpoint:
-            # parse kwargs as properties as they might be needed to build the query
-            parsed_properties = properties_from_json(
-                kwargs,
-                self.config.metadata_mapping,
-            )
-            available_properties = {
-                # We strip values of superfluous quotes (added by mapping converter to_geojson).
-                k: strip_quotes(v)
-                for k, v in parsed_properties.items()
-                if v not in [NOT_AVAILABLE, NOT_MAPPED]
-            }
-        else:
-            available_properties = kwargs
+        # parse kwargs as properties as they might be needed to build the query
+        parsed_properties = properties_from_json(
+            kwargs,
+            self.config.metadata_mapping,
+        )
+        available_properties = {
+            # We strip values of superfluous quotes (added by mapping converter to_geojson).
+            k: strip_quotes(v)
+            for k, v in parsed_properties.items()
+            if v not in [NOT_AVAILABLE, NOT_MAPPED]
+        }
 
         # build and return the query
         return super().build_query_string(
@@ -955,9 +946,6 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: Search arguments
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
-        # quickfix for wekeo_ecmwf
-        if self.config.api_endpoint and "wekeo" in self.provider:
-            return super().normalize_results(results, **kwargs)
 
         product_type = kwargs.get("productType")
 
@@ -1090,7 +1078,7 @@ class MeteoblueSearch(ECMWFSearch):
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
     object.
 
-    The available configuration parameters inherits from parent classes, with some a particularity
+    The available configuration parameters are inherited from parent classes, with some a particularity
     for pagination for this plugin.
 
     :param provider: An eodag providers configuration dictionary
@@ -1140,32 +1128,74 @@ class MeteoblueSearch(ECMWFSearch):
 
         return [response.json()]
 
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters
 
-# legacy. Used by ecmwf_cmems ??
-def fetch_constraints(constraints_url: str, plugin: Search) -> List[Dict[Any, Any]]:
+        :param product_type: product type id
+        :param kwargs: keyword arguments to be used in the query string
+        :return: formatted query params and encode query string
+        """
+        return QueryStringSearch.build_query_string(
+            self, product_type=product_type, **kwargs
+        )
+
+
+class WekeoECMWFSearch(ECMWFSearch):
     """
-    Fetches the constraints from a provider
+    WekeoECMWFSearch search plugin.
 
-    :param constraints_url: url from which the constraints can be fetched
-    :param plugin: api or search plugin of the provider
-    :returns: list of constraints fetched from the provider
+    This plugin, which inherits from :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`,
+    performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
+    object. In contrast to ECMWFSearch or MeteoblueSearch, the products are only build with information
+    returned by the provider.
+
+    The available configuration parameters are inherited from parent classes, with some a particularity
+    for pagination for this plugin.
+
+    :param provider: An eodag providers configuration dictionary
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
+              (**mandatory**): The configuration of how the pagination is done on the provider. For
+              this plugin it has the node:
+
+                * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
+                  additional parameters needed to perform search. These parameters won't be included in
+                  the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
+                  will be passed to a :meth:`str.format` method before being loaded as json.
     """
-    auth = (
-        plugin.auth
-        if hasattr(plugin, "auth") and isinstance(plugin.auth, AuthBase)
-        else None
-    )
-    constraints_data = fetch_json(constraints_url, auth=auth)
 
-    config = plugin.config.__dict__
-    if (
-        "constraints_entry" in config
-        and config["constraints_entry"]
-        and config["constraints_entry"] in constraints_data
-    ):
-        constraints = constraints_data[config["constraints_entry"]]
-    elif config.get("stop_without_constraints_entry_key", False):
-        return []
-    else:
-        constraints = constraints_data
-    return constraints
+    def normalize_results(
+        self, results: RawSearchResult, **kwargs: Any
+    ) -> List[EOProduct]:
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :param kwargs: Search arguments
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        """
+        return PostJsonSearch.normalize_results(self, results, **kwargs)
+
+    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+        """Should perform the actual search request.
+
+        :param args: arguments to be used in the search
+        :param kwargs: keyword arguments to be used in the search
+        :return: list containing the results from the provider in json format
+        """
+        return QueryStringSearch.do_search(self, *args, **kwargs)
+
+    def build_query_string(
+        self, product_type: str, **kwargs: Any
+    ) -> Tuple[Dict[str, Any], str]:
+        """Build The query string using the search parameters
+
+        :param product_type: product type id
+        :param kwargs: keyword arguments to be used in the query string
+        :return: formatted query params and encode query string
+        """
+        return QueryStringSearch.build_query_string(
+            self, product_type=product_type, **kwargs
+        )

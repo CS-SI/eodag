@@ -109,6 +109,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |PostJsonSearchWithStacQueryables| replace:: :class:`~eodag.plugins.search.qssearch.PostJsonSearchWithStacQueryables`
 .. |ECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
 .. |MeteoblueSearch| replace:: :class:`~eodag.plugins.search.build_search_result.MeteoblueSearch`
+.. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
 
