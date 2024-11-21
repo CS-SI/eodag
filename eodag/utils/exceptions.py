@@ -17,24 +17,16 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from typing import Optional, Set
 
-    from typing_extensions import Annotated, Doc
+    from typing_extensions import Doc, Self
 
 
 class EodagError(Exception):
     """General EODAG error"""
-
-
-class ValidationError(EodagError):
-    """Error validating data"""
-
-    def __init__(self, message: str, parameters: Set[str] = set()) -> None:
-        self.message = message
-        self.parameters = parameters
 
 
 class PluginNotFoundError(EodagError):
@@ -74,35 +66,8 @@ class AuthenticationError(EodagError):
     authenticating a user"""
 
 
-class DownloadError(EodagError):
-    """An error indicating something wrong with the download process"""
-
-
 class NotAvailableError(EodagError):
     """An error indicating that the product is not available for download"""
-
-
-class RequestError(EodagError):
-    """An error indicating that a request has failed. Usually eodag functions
-    and methods should catch and skip this"""
-
-    status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
-
-    @classmethod
-    def from_error(cls, error: Exception, msg: Optional[str] = None):
-        """Generate a RequestError from an Exception"""
-        status_code = getattr(error, "code", None)
-        text = getattr(error, "msg", None)
-
-        if response := getattr(error, "response", None):
-            status_code = response.status_code
-            text = response.text
-
-        text = text or str(error)
-
-        e = cls(msg, text) if msg else cls(text)
-        e.status_code = status_code
-        return e
 
 
 class NoMatchingProductType(EodagError):
@@ -112,6 +77,51 @@ class NoMatchingProductType(EodagError):
 
 class STACOpenerError(EodagError):
     """An error indicating that a STAC file could not be opened"""
+
+
+class RequestError(EodagError):
+    """An error indicating that a request has failed. Usually eodag functions
+    and methods should catch and skip this"""
+
+    status_code: Annotated[Optional[int], Doc("HTTP status code")] = None
+
+    @classmethod
+    def from_error(cls, error: Exception, msg: Optional[str] = None) -> Self:
+        """Generate a RequestError from an Exception"""
+        status_code = getattr(error, "code", None)
+        text = getattr(error, "msg", None)
+
+        response = getattr(error, "response", None)
+        # Explicitly test for None because response objects are considered false if they
+        # have a status code other than 200
+        if response is not None:
+            status_code = response.status_code
+            text = " ".join([text or "", response.text])
+
+        text = text or str(error)
+
+        e = cls(msg, text) if msg else cls(text)
+        e.status_code = status_code
+        return e
+
+
+class ValidationError(RequestError):
+    """Error validating data"""
+
+    def __init__(self, message: str, parameters: Set[str] = set()) -> None:
+        self.message = message
+        self.parameters = parameters
+
+    @classmethod
+    def from_error(cls, error: Exception, msg: Optional[str] = None) -> Self:
+        """Override parent from_error to handle ValidationError specificities."""
+        setattr(error, "msg", msg)
+        validation_error = super().from_error(error)
+        return validation_error
+
+
+class DownloadError(RequestError):
+    """An error indicating something wrong with the download process"""
 
 
 class TimeOutError(RequestError):

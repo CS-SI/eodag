@@ -8,11 +8,11 @@ Description
 
 Products from the following providers are made avaiable through ``eodag``:
 
-* `astraea_eod <https://eod-catalog-svc-prod.astraea.earth/api.html>`_: Astraea Earth OnDemand STAC API
 * `aws_eos <https://eos.com/>`_: EOS search for Amazon public datasets
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space
+* `cop_ewds <https://ewds.climate.copernicus.eu>`_: CEMS Early Warning Data Store
 * `cop_marine <https://marine.copernicus.eu>`_: Copernicus Marine Service
 * `creodias <https://creodias.eu/>`_: CloudFerro DIAS
 * `creodias_s3 <https://creodias.eu/>`_: CloudFerro DIAS data through S3 protocol
@@ -23,6 +23,7 @@ Products from the following providers are made avaiable through ``eodag``:
   Storage download
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `eumetsat_ds <https://data.eumetsat.int>`_: EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
+* `geodes <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
 * `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS

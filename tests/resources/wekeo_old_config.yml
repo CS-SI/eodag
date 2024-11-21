@@ -10,7 +10,6 @@ wekeo_old:
     need_auth: true
     auth_error_code: 401
     results_entry: content
-    two_passes_id_search: true
     dates_required: true
     ssl_verify: true
     pagination:

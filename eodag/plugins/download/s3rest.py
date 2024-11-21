@@ -62,23 +62,28 @@ logger = logging.getLogger("eodag.download.s3rest")
 
 class S3RestDownload(Download):
     """Http download on S3-like object storage location
-    for example using Mundi REST API (free account)
+
+    For example using Mundi REST API (free account)
     https://mundiwebservices.com/keystoneapi/uploads/documents/CWS-DATA-MUT-087-EN-Mundi_Download_v1.1.pdf#page=13
 
-    Re-use AwsDownload bucket some handling methods
+    Re-use AwsDownload bucket and some handling methods
 
     :param provider: provider name
     :param config: Download plugin configuration:
 
-        * ``config.base_uri`` (str) - default endpoint url
-        * ``config.extract`` (bool) - (optional) extract downloaded archive or not
-        * ``config.auth_error_code`` (int) - (optional) authentication error code
-        * ``config.bucket_path_level`` (int) - (optional) bucket location index in path.split('/')
-        * ``config.order_enabled`` (bool) - (optional) wether order is enabled or not if product is `OFFLINE`
-        * ``config.order_method`` (str) - (optional) HTTP request method, GET (default) or POST
-        * ``config.order_headers`` (dict) - (optional) order request headers
-        * ``config.order_on_response`` (dict) - (optional) edit or add new product properties
-        * ``config.order_status`` (:class:`~eodag.config.PluginConfig.OrderStatus`) - Order status handling
+        * :attr:`~eodag.config.PluginConfig.base_uri` (``str``) (**mandatory**): default endpoint url
+        * :attr:`~eodag.config.PluginConfig.extract` (``bool``): extract downloaded archive or not
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): authentication error code
+        * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): bucket location index in ``path.split('/')``
+        * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): whether order is enabled
+          or not if product is `OFFLINE`
+        * :attr:`~eodag.config.PluginConfig.order_method` (``str``) HTTP request method, ``GET`` (default) or ``POST``
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): order request headers
+        * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
+          a typed dictionary containing the key :attr:`~eodag.config.PluginConfig.OrderOnResponse.metadata_mapping`
+          which can be used to add new product properties based on the data in response to the order request
+        * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
+          Order status handling
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

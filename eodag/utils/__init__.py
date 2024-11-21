@@ -79,15 +79,11 @@ from urllib.parse import (  # noqa; noqa
 )
 from urllib.request import url2pathname
 
-if sys.version_info >= (3, 9):
-    from typing import Annotated, get_args, get_origin  # noqa
-else:
-    from typing_extensions import Annotated, get_args, get_origin  # type: ignore # noqa
-
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
     from typing_extensions import Unpack  # noqa
+
 
 import click
 import orjson
@@ -110,7 +106,7 @@ from eodag.utils.exceptions import MisconfiguredError
 if TYPE_CHECKING:
     from jsonpath_ng import JSONPath
 
-    from eodag.api.product import EOProduct
+    from eodag.api.product._product import EOProduct
 
 
 logger = py_logging.getLogger("eodag.utils")
@@ -124,6 +120,10 @@ USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
 HTTP_REQ_TIMEOUT = 5  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
+
+REQ_RETRY_TOTAL = 3
+REQ_RETRY_BACKOFF_FACTOR = 2
+REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
 
 # default wait times in minutes
 DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
@@ -237,9 +237,10 @@ class FloatRange(click.types.FloatParamType):
 def slugify(value: Any, allow_unicode: bool = False) -> str:
     """Copied from Django Source code, only modifying last line (no need for safe
     strings).
+
     source: https://github.com/django/django/blob/master/django/utils/text.py
 
-    Convert to ASCII if 'allow_unicode' is False. Convert spaces to hyphens.
+    Convert to ASCII if ``allow_unicode`` is ``False``. Convert spaces to hyphens.
     Remove characters that aren't alphanumerics, underscores, or hyphens.
     Convert to lowercase. Also strip leading and trailing whitespace.
     """
@@ -298,7 +299,7 @@ def strip_accents(s: str) -> str:
 
 def uri_to_path(uri: str) -> str:
     """
-    Convert a file URI (e.g. 'file:///tmp') to a local path (e.g. '/tmp')
+    Convert a file URI (e.g. ``file:///tmp``) to a local path (e.g. ``/tmp``)
     """
     if not uri.startswith("file"):
         raise ValueError("A file URI must be provided (e.g. 'file:///tmp'")
@@ -333,10 +334,10 @@ def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) ->
 
 
 def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
-    """Merge two mappings with string keys, values from `mapping2` overriding values
-    from `mapping1`.
+    """Merge two mappings with string keys, values from ``mapping2`` overriding values
+    from ``mapping1``.
 
-    Do its best to detect the key in `mapping1` to override. For example::
+    Do its best to detect the key in ``mapping1`` to override. For example:
 
     >>> mapping2 = {"keya": "new"}
     >>> mapping1 = {"keyA": "obsolete"}
@@ -344,12 +345,11 @@ def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
     >>> mapping1
     {'keyA': 'new'}
 
-    If mapping2 has a key that cannot be detected in mapping1, this new key is added
-    to mapping1 as is.
+    If ``mapping2`` has a key that cannot be detected in ``mapping1``, this new key is
+    added to ``mapping1`` as is.
 
     :param mapping1: The mapping containing values to be overridden
-    :param mapping2: The mapping containing values that will override the
-                     first mapping
+    :param mapping2: The mapping containing values that will override the first mapping
     """
     # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
     m1_keys_lowercase = {key.lower(): key for key in mapping1}
@@ -416,7 +416,7 @@ def get_timestamp(date_time: str) -> float:
     If the datetime has no offset, it is assumed to be an UTC datetime.
 
     :param date_time: The datetime string to return as timestamp
-    :returns: The timestamp corresponding to the date_time string in seconds
+    :returns: The timestamp corresponding to the ``date_time`` string in seconds
     """
     dt = isoparse(date_time)
     if not dt.tzinfo:
@@ -425,7 +425,7 @@ def get_timestamp(date_time: str) -> float:
 
 
 def datetime_range(start: dt, end: dt) -> Iterator[dt]:
-    """Generator function for all dates in-between start and end date."""
+    """Generator function for all dates in-between ``start`` and ``end`` date."""
     delta = end - start
     for nday in range(delta.days + 1):
         yield start + datetime.timedelta(days=nday)
@@ -445,15 +445,15 @@ class DownloadedCallback:
 class ProgressCallback(tqdm):
     """A callable used to render progress to users for long running processes.
 
-    It inherits from `tqdm.auto.tqdm`, and accepts the same arguments on
-    instantiation: `iterable`, `desc`, `total`, `leave`, `file`, `ncols`,
-    `mininterval`, `maxinterval`, `miniters`, `ascii`, `disable`, `unit`,
-    `unit_scale`, `dynamic_ncols`, `smoothing`, `bar_format`, `initial`,
-    `position`, `postfix`, `unit_divisor`.
+    It inherits from :class:`tqdm.auto.tqdm`, and accepts the same arguments on
+    instantiation: ``iterable``, ``desc``, ``total``, ``leave``, ``file``, ``ncols``,
+    ``mininterval``, ``maxinterval``, ``miniters``, ``ascii``, ``disable``, ``unit``,
+    ``unit_scale``, ``dynamic_ncols``, ``smoothing``, ``bar_format``, ``initial``,
+    ``position``, ``postfix``, ``unit_divisor``.
 
-    It can be globally disabled using `eodag.utils.logging.setup_logging(0)` or
-    `eodag.utils.logging.setup_logging(level, no_progress_bar=True)`, and
-    individually disabled using `disable=True`.
+    It can be globally disabled using ``eodag.utils.logging.setup_logging(0)`` or
+    ``eodag.utils.logging.setup_logging(level, no_progress_bar=True)``, and
+    individually disabled using ``disable=True``.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -488,8 +488,8 @@ class ProgressCallback(tqdm):
         """Returns another progress callback using the same initial
         keyword-arguments.
 
-        Optional `args` and `kwargs` parameters will be used to create a
-        new `~eodag.utils.ProgressCallback` instance, overriding initial
+        Optional ``args`` and ``kwargs`` parameters will be used to create a
+        new :class:`~eodag.utils.ProgressCallback` instance, overriding initial
         `kwargs`.
         """
 
@@ -511,7 +511,7 @@ def get_progress_callback() -> tqdm:
 
 
 def repeatfunc(func: Callable[..., Any], n: int, *args: Any) -> starmap:
-    """Call `func` `n` times with `args`"""
+    """Call ``func`` ``n`` times with ``args``"""
     return starmap(func, repeat(args, n))
 
 
@@ -526,12 +526,12 @@ def makedirs(dirpath: str) -> None:
 
 
 def rename_subfolder(dirpath: str, name: str) -> None:
-    """Rename first subfolder found in dirpath with given name,
-    raise RuntimeError if no subfolder can be found
+    """Rename first subfolder found in ``dirpath`` with given ``name``,
+    raise :class:`RuntimeError` if no subfolder can be found
 
     :param dirpath: path to the directory containing the subfolder
     :param name: new name of the subfolder
-    :raises: RuntimeError
+    :raises: :class:`RuntimeError`
 
     Example:
 
@@ -545,16 +545,20 @@ def rename_subfolder(dirpath: str, name: str) -> None:
     ...     rename_subfolder(tmpdir, "otherfolder")
     ...     assert not os.path.isdir(somefolder) and os.path.isdir(otherfolder)
 
-    Before:
+    Before::
+
         $ tree <tmp-folder>
         <tmp-folder>
         └── somefolder
             └── somefile
-    After:
+
+    After::
+
         $ tree <tmp-folder>
         <tmp-folder>
         └── otherfolder
             └── somefile
+
     """
     try:
         subdir, *_ = (p for p in glob(os.path.join(dirpath, "*")) if os.path.isdir(p))
@@ -570,7 +574,7 @@ def rename_subfolder(dirpath: str, name: str) -> None:
 def format_dict_items(
     config_dict: Dict[str, Any], **format_variables: Any
 ) -> Dict[Any, Any]:
-    r"""Recursive apply string.format(\**format_variables) to dict elements
+    r"""Recursively apply :meth:`str.format` to ``**format_variables`` on ``config_dict`` values
 
     >>> format_dict_items(
     ...     {"foo": {"bar": "{a}"}, "baz": ["{b}?", "{b}!"]},
@@ -588,7 +592,7 @@ def format_dict_items(
 def jsonpath_parse_dict_items(
     jsonpath_dict: Dict[str, Any], values_dict: Dict[str, Any]
 ) -> Dict[Any, Any]:
-    """Recursive parse jsonpath elements in dict
+    """Recursively parse :class:`jsonpath_ng.JSONPath` elements in dict
 
     >>> import jsonpath_ng.ext as jsonpath
     >>> jsonpath_parse_dict_items(
@@ -597,7 +601,7 @@ def jsonpath_parse_dict_items(
     ... ) == {'foo': {'bar': 'baz'}, 'qux': ['quux', 'quux']}
     True
 
-    :param jsonpath_dict: Dictionary having values that need to be parsed
+    :param jsonpath_dict: Dictionary having :class:`jsonpath_ng.JSONPath` values that need to be parsed
     :param values_dict: Values dict used as args for parsing
     :returns: Updated dict
     """
@@ -611,7 +615,7 @@ def update_nested_dict(
     allow_empty_values: bool = False,
     allow_extend_duplicates: bool = True,
 ) -> Dict[Any, Any]:
-    """Update recursively old_dict items with new_dict ones
+    """Update recursively ``old_dict`` items with ``new_dict`` ones
 
     >>> update_nested_dict(
     ...     {"a": {"a.a": 1, "a.b": 2}, "b": 3},
@@ -873,7 +877,7 @@ def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
 
 
 def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
-    """Get jsonpath for "$.foo.bar" like string
+    """Get :class:`jsonpath_ng.JSONPath` for ``$.foo.bar`` like string
 
     >>> string_to_jsonpath(None, "$.foo.bar")
     Child(Child(Root(), Fields('foo')), Fields('bar'))
@@ -887,7 +891,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
     Fields('foo')
 
     :param args: Last arg as input string value, to be converted
-    :param force: force conversion even if input string is not detected as a jsonpath
+    :param force: force conversion even if input string is not detected as a :class:`jsonpath_ng.JSONPath`
     :returns: Parsed value
     """
     path_str: str = args[-1]
@@ -950,7 +954,7 @@ def string_to_jsonpath(*args: Any, force: bool = False) -> Union[str, JSONPath]:
 
 
 def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
-    """Format "{foo}" like string
+    """Format ``"{foo}"``-like string
 
     >>> format_string(None, "foo {bar}, {baz} ?", **{"bar": "qux", "baz": "quux"})
     'foo qux, quux ?'
@@ -988,7 +992,7 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
 def parse_jsonpath(
     key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: Dict[str, Any]
 ) -> Optional[str]:
-    """Parse jsonpah in jsonpath_obj using values_dict
+    """Parse jsonpah in ``jsonpath_obj`` using ``values_dict``
 
     >>> import jsonpath_ng.ext as jsonpath
     >>> parse_jsonpath(None, parse("$.foo.bar"), **{"foo": {"bar": "baz"}})
@@ -1030,10 +1034,10 @@ def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]
 def get_geometry_from_various(
     locations_config: List[Dict[str, Any]] = [], **query_args: Any
 ) -> BaseGeometry:
-    """Creates a shapely geometry using given query kwargs arguments
+    """Creates a ``shapely.geometry`` using given query kwargs arguments
 
     :param locations_config: (optional) EODAG locations configuration
-    :param query_args: Query kwargs arguments from core.search() method
+    :param query_args: Query kwargs arguments from :meth:`~eodag.api.core.EODataAccessGateway.search`
     :returns: shapely Geometry found
     :raises: :class:`ValueError`
     """
@@ -1117,7 +1121,7 @@ def get_geometry_from_various(
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data: Any, status_code: int) -> None:
+    def __init__(self, json_data: Any = None, status_code: int = 200) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
@@ -1126,10 +1130,21 @@ class MockResponse:
         """Return json data"""
         return self.json_data
 
+    def __iter__(self):
+        yield self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
-            raise HTTPError(response=Response())
+            response = Response()
+            response.status_code = self.status_code
+            raise HTTPError(response=response)
 
 
 def md5sum(file_path: str) -> str:
@@ -1163,7 +1178,7 @@ def obj_md5sum(data: Any) -> str:
 
 @functools.lru_cache()
 def cached_parse(str_to_parse: str) -> JSONPath:
-    """Cached jsonpath_ng.ext.parse
+    """Cached :func:`jsonpath_ng.ext.parse`
 
     >>> cached_parse.cache_clear()
     >>> cached_parse("$.foo")
@@ -1179,8 +1194,8 @@ def cached_parse(str_to_parse: str) -> JSONPath:
     >>> cached_parse.cache_info()
     CacheInfo(hits=1, misses=2, maxsize=128, currsize=2)
 
-    :param str_to_parse: string to parse as jsonpath
-    :returns: parsed jsonpath
+    :param str_to_parse: string to parse as :class:`jsonpath_ng.JSONPath`
+    :returns: parsed :class:`jsonpath_ng.JSONPath`
     """
     return parse(str_to_parse)
 
@@ -1194,7 +1209,7 @@ def _mutable_cached_yaml_load(config_path: str) -> Any:
 
 
 def cached_yaml_load(config_path: str) -> Dict[str, Any]:
-    """Cached yaml.load
+    """Cached :func:`yaml.load`
 
     :param config_path: path to the yaml configuration file
     :returns: loaded yaml configuration
@@ -1209,7 +1224,7 @@ def _mutable_cached_yaml_load_all(config_path: str) -> List[Any]:
 
 
 def cached_yaml_load_all(config_path: str) -> List[Any]:
-    """Cached yaml.load_all
+    """Cached :func:`yaml.load_all`
 
     Load all configurations stored in the configuration file as separated yaml documents
 
@@ -1274,7 +1289,8 @@ def flatten_top_directories(
 
 def deepcopy(sth: Any) -> Any:
     """Customized and faster deepcopy inspired by https://stackoverflow.com/a/45858907
-    `_copy_list` and `_copy_dict` available for the moment
+
+    ``_copy_list`` and ``_copy_dict`` dispatchers available for the moment
 
     :param sth: Object to copy
     :returns: Copied object
@@ -1339,7 +1355,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
 
     :param value: the scalar value to convert
     :param new_type: the wanted type
-    :returns: scalar value converted to new_type
+    :returns: scalar ``value`` converted to ``new_type``
     """
     if isinstance(value, str) and new_type is bool:
         # Bool is a type with special meaning in Python, thus the special
@@ -1385,8 +1401,9 @@ def guess_extension(type: str) -> Optional[str]:
 
 def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     """
-    Returns an SSL context based on ssl_verify argument.
-    :param ssl_verify: ssl_verify parameter
+    Returns an SSL context based on ``ssl_verify`` argument.
+
+    :param ssl_verify: :attr:`~eodag.config.PluginConfig.ssl_verify` parameter
     :returns: An SSL context object.
     """
     ctx = ssl.create_default_context()

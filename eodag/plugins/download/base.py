@@ -81,15 +81,15 @@ class Download(PluginTopic):
 
     - download data in the ``output_dir`` folder defined in the plugin's
       configuration or passed through kwargs
-    - extract products from their archive (if relevant) if ``extract`` is set to True
-      (True by default)
+    - extract products from their archive (if relevant) if ``extract`` is set to ``True``
+      (``True`` by default)
     - save a product in an archive/directory (in ``output_dir``) whose name must be
       the product's ``title`` property
     - update the product's ``location`` attribute once its data is downloaded (and
       eventually after it's extracted) to the product's location given as a file URI
-      (e.g. 'file:///tmp/product_folder' on Linux or
-      'file:///C:/Users/username/AppData/LOcal/Temp' on Windows)
-    - save a *record* file in the directory ``output_dir/.downloaded`` whose name
+      (e.g. ``file:///tmp/product_folder`` on Linux or
+      ``file:///C:/Users/username/AppData/Local/Temp`` on Windows)
+    - save a *record* file in the directory ``{output_dir}/.downloaded`` whose name
       is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
       attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
@@ -130,8 +130,8 @@ class Download(PluginTopic):
                         and will override any other values defined in a configuration
                         file or with environment variables.
         :returns: The absolute path to the downloaded product in the local filesystem
-            (e.g. '/tmp/product.zip' on Linux or
-            'C:\\Users\\username\\AppData\\Local\\Temp\\product.zip' on Windows)
+            (e.g. ``/tmp/product.zip`` on Linux or
+            ``C:\\Users\\username\\AppData\\Local\\Temp\\product.zip`` on Windows)
         """
         raise NotImplementedError(
             "A Download plugin must implement a method named download"
@@ -155,8 +155,8 @@ class Download(PluginTopic):
         :param wait: (optional) If download fails, wait time in minutes between two download tries
         :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
                         to download
-        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
-                        and `dl_url_params` (dict) can be provided as additional kwargs
+        :param kwargs: ``output_dir`` (str), ``extract`` (bool), ``delete_archive`` (bool)
+                        and ``dl_url_params`` (dict) can be provided as additional kwargs
                         and will override any other values defined in a configuration
                         file or with environment variables.
         :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
@@ -233,9 +233,13 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
+        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+        old_record_filename = os.path.join(download_records_dir, url_hash)
         record_filename = os.path.join(
             download_records_dir, self.generate_record_hash(product)
         )
+        if os.path.isfile(old_record_filename):
+            os.rename(old_record_filename, record_filename)
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info(
                 f"Product already downloaded: {fs_path}",
@@ -422,10 +426,10 @@ class Download(PluginTopic):
 
             tmp_dir.cleanup()
 
-            if delete_archive:
+            if delete_archive and os.path.isfile(fs_path):
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
-            else:
+            elif os.path.isfile(fs_path):
                 logger.info(
                     f"Archive deletion is deactivated, keeping {os.path.basename(fs_path)}"
                 )
@@ -458,7 +462,7 @@ class Download(PluginTopic):
         :param auth: (optional) authenticated object
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
-                                    :class:`~eodag.api.product.DownloadedCallback` and override
+                                    :class:`~eodag.utils.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :param progress_callback: (optional) A progress callback

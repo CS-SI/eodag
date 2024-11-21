@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from unittest import mock
 
 import geojson
@@ -44,23 +44,23 @@ logger = logging.getLogger("eodag.search.static_stac_search")
 class StaticStacSearch(StacSearch):
     """Static STAC Catalog search plugin
 
-    The available configuration parameters for this plugin are
-    (to be set in provider configuration):
-
-        - **api_endpoint**: (mandatory) path to the catalog (url or local system path)
-
-        - **max_connections**: (optional) Maximum number of connections for HTTP requests,
-          defaut is 100.
-
-        - **timeout**: (mandatory) Timeout in seconds for each internal HTTP request,
-          default is 5.
-
     This plugin first loads all STAC items found in the catalog, and converts them to
-    EOProducts using StacSearch.
+    EOProducts using :class:`~eodag.plugins.search.qssearch.StacSearch`.
     Then it uses crunchers to only keep products matching query parameters.
 
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
+    The plugin inherits the configuration parameters from :class:`~eodag.plugins.search.qssearch.PostJsonSearch`
+    (via the :class:`~eodag.plugins.search.qssearch.StacSearch` inheritance) with the following particularities:
+
+    :param provider: provider name
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): path to the catalog;
+          in contrast to the api_endpoint for other plugin types this can be a url or local system path.
+        * :attr:`~eodag.config.PluginConfig.max_connections` (``int``): Maximum number of concurrent
+          connections for HTTP requests; default: ``100``
+        * :attr:`~eodag.config.PluginConfig.timeout` (``int``): Timeout in seconds for each
+          internal HTTP request; default: ``5``
+
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -88,19 +88,18 @@ class StaticStacSearch(StacSearch):
             getattr(self.config, "discover_product_types", {}).get("fetch_url")
             == "{api_endpoint}/../collections"
         ):
-            self.config.discover_product_types = {"fetch_url": None}
+            self.config.discover_product_types = {}
 
     def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
 
         :returns: configuration dict containing fetched product types information
         """
-        fetch_url = cast(
-            str,
-            self.config.discover_product_types["fetch_url"].format(
-                **self.config.__dict__
-            ),
-        )
+        unformatted_fetch_url = self.config.discover_product_types.get("fetch_url")
+        if unformatted_fetch_url is None:
+            return None
+        fetch_url = unformatted_fetch_url.format(**self.config.__dict__)
+
         collections = fetch_stac_collections(
             fetch_url,
             collection=kwargs.get("q"),

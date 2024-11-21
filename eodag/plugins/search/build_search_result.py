@@ -20,7 +20,18 @@ from __future__ import annotations
 import hashlib
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, cast
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    cast,
+    get_args,
+)
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -30,7 +41,6 @@ from dateutil.tz import tzutc
 from jsonpath_ng import Child, Fields, Root
 from pydantic import create_model
 from pydantic.fields import FieldInfo
-from typing_extensions import get_args
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -48,7 +58,6 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.queryables import CommonQueryables
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
-    Annotated,
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
@@ -72,21 +81,16 @@ class BuildPostSearchResult(PostJsonSearch):
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
     object.
 
-    The available configuration parameters inherits from parent classes, with particularly
-    for this plugin:
+    The available configuration parameters are inherited from parent classes
+    (:class:`~eodag.plugins.search.qssearch.PostJsonSearch` and
+    :class:`~eodag.plugins.search.qssearch.QueryStringSearch`), with particularly for this plugin:
 
-        - **api_endpoint**: (mandatory) The endpoint of the provider's search interface
+    :param provider: provider name
+    :param config: Search plugin configuration:
 
-        - **pagination**: The configuration of how the pagination is done
-          on the provider. It is a tree with the following nodes:
+        * :attr:`~eodag.config.PluginConfig.remove_from_query` (``List[str]``): List of parameters
+          used to parse metadata but that must not be included to the query
 
-          - *next_page_query_obj*: (optional) The additional parameters needed to perform
-            search. These paramaters won't be included in result. This must be a json dict
-            formatted like `{{"foo":"bar"}}` because it will be passed to a `.format()`
-            method before being loaded as json.
-
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
     """
 
     def count_hits(
@@ -179,7 +183,7 @@ class BuildPostSearchResult(PostJsonSearch):
         result.update(results.product_type_def_params)
         result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
 
-        # parse porperties
+        # parse properties
         parsed_properties = properties_from_json(
             result,
             self.config.metadata_mapping,
@@ -240,19 +244,18 @@ class BuildSearchResult(BuildPostSearchResult):
     This plugin builds a single :class:`~eodag.api.search_result.SearchResult` object
     using given query parameters as product properties.
 
-    The available configuration parameters inherits from parent classes, with particularly
-    for this plugin:
+    The available configuration parameters inherits from parent classes
+    (:class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult`,
+    :class:`~eodag.plugins.search.qssearch.PostJsonSearch` and
+    :class:`~eodag.plugins.search.qssearch.QueryStringSearch`), with particularly for this plugin:
 
-        - **end_date_excluded**: Set to `False` if provider does not include end date to
-          search
+    :param provider: provider name
+    :param config: Search plugin configuration:
 
-        - **remove_from_query**: List of parameters used to parse metadata but that must
-          not be included to the query
+        * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to ``False`` if provider
+          does not include end date in the search request; In this case, if the end date is at midnight,
+          the previous day will be used. default: ``True``
 
-        - **constraints_file_url**: url of the constraint file used to build queryables
-
-    :param provider: An eodag providers configuration dictionary
-    :param config: Path to the user configuration file
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:

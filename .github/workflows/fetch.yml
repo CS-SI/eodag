@@ -17,30 +17,23 @@ jobs:
       with:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
       with:
-        python-version: "3.8"
-    - name: Update pip
-      run: python -m pip install --upgrade pip
-    - name: Get pip cache dir
-      id: pip-cache
-      shell: bash
-      run: echo "DIR=$(pip cache dir)" >> $GITHUB_OUTPUT
-    - name: Get current week number
-      id: get-week
-      shell: bash
-      run: echo "WEEK=$(date +'%V')" >> $GITHUB_OUTPUT
-    - name: Pip cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.pip-cache.outputs.DIR }}
-        key: ${{ runner.os }}-pip-${{ steps.get-week.outputs.WEEK }}-${{ hashFiles('setup.cfg') }}
-    - name: Install eodag
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
+    - name: Install eodag in venv
       run: |
-        python -m pip install ".[all-providers]"
+        uv venv
+        source .venv/bin/activate
+        uv pip install ".[all-providers]"
     - name: Fetch and update external product types reference
+      env:
+        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
+        EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__PASSWORD }}
       run: |
+        source .venv/bin/activate
         export JSON_OUTPUT_FILE="eodag/resources/ext_product_types.json"
         export JSON_REF_FILE=$(python -c "import eodag; print(eodag.config.EXT_PRODUCT_TYPES_CONF_URI)")
         eodag -vvv discover --storage ${JSON_OUTPUT_FILE}
@@ -58,7 +51,7 @@ jobs:
         echo "commit [${COMMIT_SHA}](${COMMIT_URL})" >> $GITHUB_STEP_SUMMARY
         echo '```diff' >> $GITHUB_STEP_SUMMARY
         git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
-        (diff <(curl ${JSON_REF_FILE}) <(cat ${JSON_OUTPUT_FILE}) || true) >> $GITHUB_STEP_SUMMARY
+        (diff <(curl ${JSON_REF_FILE} | jq) <(cat ${JSON_OUTPUT_FILE} | jq) || true) >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         # truncated PR body (too long causes error)
         full_update_summary=$(cat $GITHUB_STEP_SUMMARY)

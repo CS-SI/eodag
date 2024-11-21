@@ -113,7 +113,7 @@ def fetch_stac_items(
 
     :param stac_path: A STAC object filepath
     :param recursive: (optional) Browse recursively in child nodes if True
-    :param max_connections: (optional) Maximum number of connections for HTTP requests
+    :param max_connections: (optional) Maximum number of connections for concurrent HTTP requests
     :param timeout: (optional) Timeout in seconds for each internal HTTP request
     :param ssl_verify: (optional) SSL Verification for HTTP request
     :returns: The items found in `stac_path`

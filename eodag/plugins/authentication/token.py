@@ -28,7 +28,13 @@ from requests.auth import AuthBase
 from urllib3 import Retry
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT
+from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
+    REQ_RETRY_BACKOFF_FACTOR,
+    REQ_RETRY_STATUS_FORCELIST,
+    REQ_RETRY_TOTAL,
+    USER_AGENT,
+)
 from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
@@ -41,7 +47,36 @@ logger = logging.getLogger("eodag.authentication.token")
 
 
 class TokenAuth(Authentication):
-    """TokenAuth authentication plugin"""
+    """TokenAuth authentication plugin - fetches a token which is added to search/download requests
+
+    :param provider: provider name
+    :param config: Authentication plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): TokenAuth
+        * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``) (**mandatory**): url used to fetch
+          the access token with user/password
+        * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
+          access token with a refresh token
+        * :attr:`~eodag.config.PluginConfig.token_type` (``str``): type of the token (``json``
+          or ``text``); default: ``text``
+        * :attr:`~eodag.config.PluginConfig.token_key` (``str``): (mandatory if token_type=json)
+          key to get the access token in the response to the token request
+        * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): key to get the refresh
+          token in the response to the token request
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
+          should be verified in the requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
+          returned in case of an authentication error
+        * :attr:`~eodag.config.PluginConfig.req_data` (``Dict[str, Any]``): if the credentials
+          should be sent as data in the post request, the json structure can be given in this parameter
+        * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
+          total number of retries to allow; default: ``3``
+        * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
+          ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+          ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
+          ``[401, 429, 500, 502, 503, 504]``
+    """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(TokenAuth, self).__init__(provider, config)
@@ -117,10 +152,18 @@ class TokenAuth(Authentication):
         self,
         session: requests.Session,
     ) -> requests.Response:
+        retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
+        retry_backoff_factor = getattr(
+            self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR
+        )
+        retry_status_forcelist = getattr(
+            self.config, "retry_status_forcelist", REQ_RETRY_STATUS_FORCELIST
+        )
+
         retries = Retry(
-            total=3,
-            backoff_factor=2,
-            status_forcelist=[401, 429, 500, 502, 503, 504],
+            total=retry_total,
+            backoff_factor=retry_backoff_factor,
+            status_forcelist=retry_status_forcelist,
         )
 
         # append headers to req if some are specified in config

@@ -323,6 +323,7 @@ class RequestTestCase(unittest.TestCase):
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
         search_result: SearchResult = None,
+        expected_status_code: int = 200,
     ) -> httpx.Response:
         if search_result:
             mock_search.return_value = search_result
@@ -354,7 +355,7 @@ class RequestTestCase(unittest.TestCase):
         elif expected_search_kwargs is not None:
             mock_search.assert_called_once_with(**expected_search_kwargs)
 
-        self.assertEqual(200, response.status_code, response.text)
+        self.assertEqual(expected_status_code, response.status_code, response.text)
 
         return response
 
@@ -1150,6 +1151,34 @@ class RequestTestCase(unittest.TestCase):
             expected_file
         ), f"File {expected_file} should have been deleted"
 
+    @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.base.Download._stream_download_dict",
+        autospec=True,
+    )
+    def test_error_handler_supports_request_exception_with_status_code_none(
+        self, mock_stream_download: Mock, mock_auth: Mock
+    ):
+        """
+        A RequestError with a status code set to None (the default value) should not
+        crash the server. This test ensures that it doesn't crash the server and that a
+        500 status code is returned to the user.
+        """
+        # Make _stream_download_dict reaise an exception object with a status_code
+        # attribute set to None
+        exception = RequestError()
+        exception.status_code = None
+        mock_stream_download.side_effect = exception
+
+        response = self._request_valid_raw(
+            f"collections/{self.tested_product_type}/items/foo/download?provider=peps",
+            expected_status_code=500,
+        )
+        self.assertIn("RequestError", response.text)
+
     def test_root(self):
         """Request to / should return a valid response"""
         resp_json = self._request_valid("", check_links=False)
@@ -1228,7 +1257,7 @@ class RequestTestCase(unittest.TestCase):
             stac_common_queryables,
         )
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_queryables_with_provider(self, mock_requests_get: Mock):
         """Request to /queryables with a valid provider as parameter should return a valid response."""
         queryables_path = os.path.join(
@@ -1260,6 +1289,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
         mock_requests_get.assert_called_once_with(
+            mock.ANY,
             url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,
@@ -1340,10 +1370,6 @@ class RequestTestCase(unittest.TestCase):
                 "EO:ESA:DAT:SENTINEL-1"
             )
 
-            stac_common_queryables = list(StacQueryables.default_properties.keys())
-            # when product type is given, "collection" item is not used
-            stac_common_queryables.remove("collection")
-
             responses.add(
                 responses.GET,
                 planetary_computer_queryables_url,
@@ -1357,13 +1383,13 @@ class RequestTestCase(unittest.TestCase):
                 json=wekeo_main_constraints,
             )
 
-            # no provider is specified with the product type (2 providers get a queryables or constraints file
+            # no provider is specified with the product type (3 providers get a queryables or constraints file
             # among available providers for S1_SAR_GRD for the moment): queryables intersection returned
             res_product_type_no_provider = self._request_valid(
                 "collections/S1_SAR_GRD/queryables",
                 check_links=False,
             )
-            self.assertEqual(len(responses.calls), 2)
+            self.assertEqual(len(responses.calls), 3)
 
             # check the mock call on planetary_computer
             self.assertEqual(
@@ -1403,11 +1429,6 @@ class RequestTestCase(unittest.TestCase):
             )
             self.assertFalse(res_product_type_no_provider["additionalProperties"])
 
-            # properties from stac common queryables are added and are the only ones of the response
-            self.assertListEqual(
-                list(res_product_type_no_provider["properties"].keys()),
-                stac_common_queryables,
-            )
             # no property are added from providers queryables because none of them
             # is shared with all providers for this product type
             pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
@@ -1438,7 +1459,7 @@ class RequestTestCase(unittest.TestCase):
 
         self.assertEqual(404, response.status_code)
 
-    @mock.patch("eodag.plugins.search.qssearch.requests.get", autospec=True)
+    @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
     def test_product_type_queryables_with_provider(self, mock_requests_get):
         """Request a collection-specific list of queryables for a given provider
         using a queryables file should return a valid response."""
@@ -1474,6 +1495,7 @@ class RequestTestCase(unittest.TestCase):
         )
 
         mock_requests_get.assert_called_once_with(
+            mock.ANY,
             url=planetary_computer_queryables_url,
             timeout=HTTP_REQ_TIMEOUT,
             headers=USER_AGENT,

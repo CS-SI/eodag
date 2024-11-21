@@ -37,10 +37,13 @@ logger = logging.getLogger("eodag.crunch.date")
 class FilterDate(Crunch):
     """FilterDate cruncher: filter products by date
 
+    Allows to filter out products that are older than a start date (optional) or more recent than an end date
+    (optional).
+
     :param config: Crunch configuration, may contain :
 
-                   - `start`: (optional) start sensing time in iso format
-                   - `end`: (optional) end sensing time in iso format
+        * ``start`` (``str``): start sensing time in iso format
+        * ``end`` (``str``): end sensing time in iso format
     """
 
     @staticmethod

@@ -1,8 +1,46 @@
 Release history
 ===============
 
-3.0.0 (2024-10-10)
-------------------
+v3.0.1 (2024-11-06)
+-------------------
+
+Providers and product types updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``geodes`` as new provider (:pull:`1357`)(:pull:`1363`)
+* ``cop_ewds`` as new provider (:pull:`1331`)
+* Removed ``astraea_eod`` provider (:pull:`1383`)
+* Fixed ``S2_MSI_L1C`` search-by-id for ``earth_search`` (:pull:`1053`)
+* MSG product types added (:pull:`1348`)
+* Fixed order for some ``dedl`` product-types (:pull:`1358`)
+
+Plugins new features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Authenticate only when needed in :class:`~eodag.plugins.download.http.HTTPDownload` (:pull:`1370`)
+* Various fixes for ``cop_marine`` (:pull:`1336`)(:pull:`1364`)
+* OpenID token expiration fix and ``oidc_config_url`` usage (:pull:`1346`)
+* Concurrent requests for ``wekeo_cmems`` product-types fetch (:pull:`1374`)
+* Error is raised when :class:`~eodag.plugins.download.http.HTTPDownload` order fails (:pull:`1338`)
+
+Miscellaneous
+^^^^^^^^^^^^^
+* **[build]** Add ``python3.13`` and drop ``python3.8`` support (:pull:`1344`)
+* **[docs]** `Plugins <https://eodag.readthedocs.io/en/latest/plugins.html>`_ and `utils\
+  <https://eodag.readthedocs.io/en/latest/api_reference/utils.html>`_ documention update (:pull:`1297`)
+* **[docs]**  `conda optional dependencies\
+  <https://eodag.readthedocs.io/en/latest/getting_started_guide/install.html#conda>`_  handling (:pull:`1343`)
+* **[docs]**  Fixed ``auxdata`` reference in tutorials (:pull:`1372`, thanks `@emmanuel-ferdman\
+  <https://github.com/emmanuel-ferdman>`_)
+* **[ci]** Tests speedup using ``uv`` and ``tox-uv`` (:pull:`1347`)
+* **[ci]** ``wekeo`` product types included in external product types reference (:pull:`1377`)
+* Various minor fixes and improvements (:pull:`1298`)(:pull:`1335`)(:pull:`1340`)(:pull:`1341`)(:pull:`1351`)
+  (:pull:`1367`)(:pull:`1365`)(:pull:`1368`)(:pull:`1379`)
+* External product types reference updates (:pull:`1342`)(:pull:`1356`)(:pull:`1359`)(:pull:`1360`)(:pull:`1362`)
+  (:pull:`1366`)(:pull:`1369`)(:pull:`1373`)(:pull:`1375`)(:pull:`1378`)(:pull:`1381`)(:pull:`1384`)
+
+v3.0.0 (2024-10-10)
+-------------------
 
 |:warning:| Breaking changes since last stable (`v2.12.1 <changelog.rst#v2-12-1-2024-03-05>`_)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

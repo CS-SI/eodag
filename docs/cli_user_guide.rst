@@ -156,8 +156,8 @@ For example, the following search request will first search for a product type f
 .. code-block:: console
 
         eodag discover
-        eodag discover -p astraea_eod
-        eodag discover -p astraea_eod --storage my_product_types_conf.json
+        eodag discover -p planetary_computer
+        eodag discover -p planetary_computer --storage my_product_types_conf.json
 
 This file can then be used in EODAG using the environment variable ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE``.
 

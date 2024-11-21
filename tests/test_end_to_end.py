@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import datetime
-import glob
 import hashlib
 import multiprocessing
 import os
@@ -55,15 +54,15 @@ PEPS_SEARCH_ARGS = [
     "2020-08-16",
     [137.772897, 13.134202, 153.749135, 23.885986],
 ]
-AWSEOS_SEARCH_ARGS = [
-    "aws_eos",
+GEODES_SEARCH_ARGS = [
+    "geodes",
     "S2_MSI_L1C",
-    "2020-01-01",
-    "2020-01-15",
+    "2024-08-08",
+    "2024-08-16",
     [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
 ]
-ASTRAE_EOD_SEARCH_ARGS = [
-    "astraea_eod",
+AWSEOS_SEARCH_ARGS = [
+    "aws_eos",
     "S2_MSI_L1C",
     "2020-01-01",
     "2020-01-15",
@@ -179,7 +178,7 @@ COP_CDS_SEARCH_ARGS = [
     "cop_cds",
     "ERA5_SL",
     "2021-01-01",
-    "2021-01-05",
+    "2021-01-02",
     # no need of an additional post-processing area extraction
     [-180, -90, 180, 90],
 ]
@@ -187,6 +186,13 @@ COP_CDS_SEARCH_KWARGS = {
     # request for grib file instead of netcdf
     "format": "grib",
 }
+COP_EWDS_SEARCH_ARGS = [
+    "cop_ewds",
+    "EFAS_SEASONAL",
+    "2021-01-01",
+    "2021-01-05",
+    [-180, -90, 180, 90],
+]
 SARA_SEARCH_ARGS = [
     "sara",
     "S2_MSI_L1C",
@@ -372,7 +378,12 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         max_wait_time = timeout_sec
         while (
-            not glob.glob("%s/[!quicklooks]*" % self.tmp_download_path)
+            sum(
+                f.stat().st_size
+                for f in Path(self.tmp_download_path).glob("**/[!quicklooks]*")
+                if f.is_file()
+            )
+            <= 0
             and max_wait_time > 0
         ):
             # check every 2s if download has start
@@ -429,6 +440,11 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
+    def test_end_to_end_search_download_geodes(self):
+        product = self.execute_search(*GEODES_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
     def test_end_to_end_search_download_creodias(self):
         product = self.execute_search(*CREODIAS_SEARCH_ARGS)
         self.eodag.providers_config["creodias"].auth.credentials[
@@ -476,11 +492,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    def test_end_to_end_search_download_astraea_eod(self):
-        product = self.execute_search(*ASTRAE_EOD_SEARCH_ARGS)
-        expected_filename = "{}".format(product.properties["title"])
-        self.execute_download(product, expected_filename, wait_sec=15)
-
     def test_end_to_end_search_download_earth_search(self):
         product = self.execute_search(*EARTH_SEARCH_SEARCH_ARGS)
         expected_filename = "{}".format(product.properties["title"])
@@ -520,6 +531,11 @@ class TestEODagEndToEnd(EndToEndBase):
             *COP_CDS_SEARCH_ARGS, search_kwargs_dict=COP_CDS_SEARCH_KWARGS
         )
         expected_filename = "{}.grib".format(product.properties["title"])
+        self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_cop_ewds(self):
+        product = self.execute_search(*COP_EWDS_SEARCH_ARGS)
+        expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
     def test_end_to_end_search_download_sara(self):
@@ -606,11 +622,6 @@ class TestEODagEndToEnd(EndToEndBase):
                 msg=f"tileIdentifier not mapped for {provider}",
             )
 
-    def test_end_to_end_search_all_astraea_eod_iterate(self):
-        # 23/03/2021: Got 39 products for this search
-        results = self.execute_search_all(*ASTRAE_EOD_SEARCH_ARGS, items_per_page=10)
-        self.assertGreater(len(results), 10)
-
     def test_end_to_end_discover_product_types_creodias(self):
         """discover_product_types() must return an external product types configuration for creodias"""
         provider = "creodias"
@@ -630,40 +641,6 @@ class TestEODagEndToEnd(EndToEndBase):
         # check that all pre-configured product types are listed by provider
         provider_product_types = [
             v["collection"]
-            for k, v in self.eodag.providers_config[provider].products.items()
-            if k != GENERIC_PRODUCT_TYPE
-        ]
-        for provider_product_type in provider_product_types:
-            self.assertIn(
-                provider_product_type,
-                ext_product_types_conf[provider]["providers_config"],
-            )
-
-    def test_end_to_end_discover_product_types_astraea_eod(self):
-        """discover_product_types() must return an external product types configuration for astraea_eod"""
-        provider = "astraea_eod"
-        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
-        self.assertEqual(
-            "sentinel1_l1c_grd",
-            ext_product_types_conf[provider]["providers_config"]["sentinel1_l1c_grd"][
-                "productType"
-            ],
-        )
-        self.assertEqual(
-            "Sentinel-1 L1C GRD",
-            ext_product_types_conf[provider]["product_types_config"][
-                "sentinel1_l1c_grd"
-            ]["title"],
-        )
-        self.assertEqual(
-            "CC-BY-SA-3.0",
-            ext_product_types_conf[provider]["product_types_config"][
-                "sentinel1_l1c_grd"
-            ]["license"],
-        )
-        # check that all pre-configured product types are listed by provider
-        provider_product_types = [
-            v["productType"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]

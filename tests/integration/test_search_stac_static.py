@@ -62,8 +62,8 @@ class TestSearchStacStatic(unittest.TestCase):
         self.singlefile_cat = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")
         self.singlefile_cat_len = 5
 
-        self.stac_provider = "astraea_eod"
-        self.product_type = "S2_MSI_L1C"
+        self.stac_provider = "planetary_computer"
+        self.product_type = "S2_MSI_L2A"
 
         self.extent_big = {"lonmin": -55, "lonmax": -53, "latmin": 2, "latmax": 5}
         self.extent_small = {"lonmin": -55, "lonmax": -54.5, "latmin": 2, "latmax": 2.5}

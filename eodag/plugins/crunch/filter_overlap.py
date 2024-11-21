@@ -40,14 +40,12 @@ class FilterOverlap(Crunch):
 
     Filter products, retaining only those that are overlapping with the search_extent
 
-    :param config: Crunch configuration, may contain :
+    :param config: Crunch configuration may contain the following parameters which are mutually exclusive:
 
-                   - `minimum_overlap` : minimal overlap percentage
-                   - `contains` : True if product geometry contains the search area
-                   - `intersects` : True if product geometry intersects the search area
-                   - `within` : True if product geometry is within the search area
-
-                   These configuration parameters are mutually exclusive.
+        * ``minimum_overlap`` (``Union[float, str]``): minimal overlap percentage; default: ``"0"``
+        * ``contains`` (``bool``): ``True`` if product geometry contains the search area; default: ``False``
+        * ``intersects`` (``bool``): ``True`` if product geometry intersects the search area; default: ``False``
+        * ``within`` (``bool``): ``True`` if product geometry is within the search area; default: ``False``
     """
 
     def proceed(

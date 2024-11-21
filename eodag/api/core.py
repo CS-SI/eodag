@@ -24,7 +24,18 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 import geojson
 import pkg_resources
@@ -102,7 +113,7 @@ if TYPE_CHECKING:
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
     from eodag.types.download_args import DownloadConf
-    from eodag.utils import Annotated, DownloadedCallback, ProgressCallback, Unpack
+    from eodag.utils import DownloadedCallback, ProgressCallback, Unpack
 
 logger = logging.getLogger("eodag.core")
 
@@ -911,7 +922,7 @@ class EODataAccessGateway:
                             new_product_types.append(new_product_type)
                 if new_product_types:
                     logger.debug(
-                        f"Added product types {str(new_product_types)} for {provider}"
+                        f"Added {len(new_product_types)} product types for {provider}"
                     )
 
             elif provider not in self.providers_config:
@@ -1550,7 +1561,7 @@ class EODataAccessGateway:
             try:
                 product_type = self.get_product_type_from_alias(product_type)
             except NoMatchingProductType:
-                logger.warning("product type %s not found", product_type)
+                logger.debug("product type %s not found", product_type)
         get_search_plugins_kwargs = dict(provider=provider, product_type=product_type)
         search_plugins = self._plugins_manager.get_search_plugins(
             **get_search_plugins_kwargs
@@ -1918,7 +1929,7 @@ class EODataAccessGateway:
                             eo_product.product_type
                         )
                 except NoMatchingProductType:
-                    logger.warning("product type %s not found", eo_product.product_type)
+                    logger.debug("product type %s not found", eo_product.product_type)
 
                 if eo_product.search_intersection is not None:
                     download_plugin = self._plugins_manager.get_download_plugin(
@@ -2036,7 +2047,7 @@ class EODataAccessGateway:
         :param search_result: A collection of EO products resulting from a search
         :param downloaded_callback: (optional) A method or a callable object which takes
                                     as parameter the ``product``. You can use the base class
-                                    :class:`~eodag.api.product.DownloadedCallback` and override
+                                    :class:`~eodag.utils.DownloadedCallback` and override
                                     its ``__call__`` method. Will be called each time a product
                                     finishes downloading
         :param progress_callback: (optional) A method or a callable object
@@ -2144,7 +2155,7 @@ class EODataAccessGateway:
 
         :param filename: A filename containing features encoded as a geojson
         :param recursive: (optional) Browse recursively in child nodes if True
-        :param max_connections: (optional) Maximum number of connections for HTTP requests
+        :param max_connections: (optional) Maximum number of connections for concurrent HTTP requests
         :param provider: (optional) Data provider
         :param productType: (optional) Data product type
         :param timeout: (optional) Timeout in seconds for each internal HTTP request
