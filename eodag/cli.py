@@ -53,6 +53,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 import click
 
 from eodag.api.core import EODataAccessGateway
+from eodag.rest.utils import LIVENESS_PROBE_PATH
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
@@ -68,6 +69,18 @@ CRUNCHERS = [
     "FilterProperty",
     "FilterDate",
 ]
+
+
+class LivenessFilter:
+    """
+    Filter out requests to the liveness probe endpoint
+    """
+
+    def filter(self, record):
+        """
+        Filter method required by the Python logging API.
+        """
+        return LIVENESS_PROBE_PATH not in record.getMessage()
 
 
 class MutuallyExclusiveOption(click.Option):
@@ -691,8 +704,10 @@ def serve_rest(
 
         logging_config = uvicorn.config.LOGGING_CONFIG
         uvicorn_fmt = "%(asctime)-15s %(name)-32s [%(levelname)-8s] %(message)s"
+        logging_config["filters"] = {"liveness": {"()": LivenessFilter}}
         logging_config["formatters"]["access"]["fmt"] = uvicorn_fmt
         logging_config["formatters"]["default"]["fmt"] = uvicorn_fmt
+        logging_config["loggers"]["uvicorn.access"]["filters"] = ["liveness"]
 
         eodag_formatter = logging.Formatter(
             "%(asctime)-15s %(name)-32s [%(levelname)-8s] (tid=%(thread)d) %(message)s"

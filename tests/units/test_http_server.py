@@ -171,6 +171,11 @@ class RequestTestCase(unittest.TestCase):
         resp_json = json.loads(response.content.decode("utf-8"))
         self.assertEqual(resp_json["links"][0]["href"], "httpz://bar/")
 
+    def test_liveness_probe(self):
+        response = self.app.get("/_mgmt/ping")
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(response.json()["success"])
+
     def mock_search_result(self):
         """generate eodag_api.search mock results"""
         search_result = SearchResult.from_geojson(
