@@ -53,12 +53,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Set
 import click
 
 from eodag.api.core import EODataAccessGateway
-from eodag.utils import (
-    DEFAULT_ITEMS_PER_PAGE,
-    DEFAULT_PAGE,
-    LIVENESS_PROBE_PATH,
-    parse_qs,
-)
+from eodag.rest.utils import LIVENESS_PROBE_PATH
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
