@@ -70,7 +70,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables
@@ -1774,12 +1774,12 @@ class EODataAccessGateway:
         for plugin in self._plugins_manager.get_search_plugins(
             product_type=product_type, provider=provider
         ):
-            # exclude BuildPostSearchResult plugins from search fallback for unknow product_type
+            # exclude MeteoblueSearch plugins from search fallback for unknown product_type
             if (
                 provider != plugin.provider
                 and preferred_provider != plugin.provider
                 and product_type not in self.product_types_config
-                and isinstance(plugin, BuildPostSearchResult)
+                and isinstance(plugin, MeteoblueSearch)
             ):
                 continue
             search_plugins.append(plugin)

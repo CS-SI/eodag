@@ -208,12 +208,20 @@ def keywords_to_mdt(
     keywords: List[str], prefix: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Make metadata mapping dict from a list of keywords*
+    Make metadata mapping dict from a list of keywords
 
     prefix:keyword:
         - keyword
         - $."prefix:keyword"
 
+    >>> keywords_to_mdt(["month", "year"])
+    {'month': ['month', '$."month"'], 'year': ['year', '$."year"']}
+    >>> keywords_to_mdt(["month", "year"], "ecmwf")
+    {'ecmwf:month': ['month', '$."ecmwf:month"'], 'ecmwf:year': ['year', '$."ecmwf:year"']}
+
+    :param keywords: List of keywords to be converted
+    :param prefix: prefix to be added to the parameter in the mapping
+    :return: metadata mapping dict
     """
     mdt: Dict[str, Any] = {}
     for keyword in keywords:
@@ -223,7 +231,17 @@ def keywords_to_mdt(
 
 
 def strip_quotes(value: Any) -> Any:
-    """Strip superfluous quotes from elements (addded by mapping converter to_geojson)."""
+    """Strip superfluous quotes from elements (added by mapping converter to_geojson).
+
+    >>> strip_quotes("'abc'")
+    'abc'
+    >>> strip_quotes(["'abc'", '"def'])
+    ['abc', 'def']
+
+    :param value: value from which quotes should be removed (should be either str or list)
+    :return: value without quotes
+    :raises: NotImplementedError
+    """
     if isinstance(value, (list, tuple)):
         return [strip_quotes(v) for v in value]
     elif isinstance(value, dict):
@@ -234,9 +252,10 @@ def strip_quotes(value: Any) -> Any:
 
 def _update_properties_from_element(
     prop: Dict[str, Any], element: Dict[str, Any], values: List[str]
-):
+) -> None:
     """updates a property dict with the given values based on the information from the element dict
-    e.g. the type is set based on the type of the element"""
+    e.g. the type is set based on the type of the element
+    """
     # multichoice elements are transformed into array
     if element["type"] in ("StringListWidget", "StringListArrayWidget"):
         prop["type"] = "array"
@@ -371,7 +390,12 @@ class ECMWFSearch(PostJsonSearch):
                 ] = product_type_metadata_mapping
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
-        """Should perform the actual search request."""
+        """Should perform the actual search request.
+
+        :param args: arguments to be used in the search
+        :param kwargs: keyword arguments to be used in the search
+        :return: list containing the results from the provider in json format
+        """
         # quickfix for wekeo_ecmwf
         if self.config.api_endpoint:
             return super().do_search(*args, **kwargs)
@@ -384,7 +408,11 @@ class ECMWFSearch(PostJsonSearch):
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
-        """Build ready-to-download SearchResult"""
+        """Build ready-to-download SearchResult
+
+        :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information needed for the search
+        :param kwargs: keyword arguments to be used in the search
+        """
         product_type = prep.product_type
         if not product_type:
             product_type = kwargs.get("productType", None)
@@ -399,7 +427,12 @@ class ECMWFSearch(PostJsonSearch):
     def build_query_string(
         self, product_type: str, **kwargs: Any
     ) -> Tuple[Dict[str, Any], str]:
-        """Build The query string using the search parameters"""
+        """Build The query string using the search parameters
+
+        :param product_type: product type id
+        :param kwargs: keyword arguments to be used in the query string
+        :return: formatted query params and encode query string
+        """
         # quickfix for wekeo_ecmwf
         if not self.config.api_endpoint:
             # parse kwargs as properties as they might be needed to build the query
@@ -432,6 +465,7 @@ class ECMWFSearch(PostJsonSearch):
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
+        :param product_type: (optional) product type id
         """
         _dc_qs = params.get("_dc_qs", None)
         if _dc_qs is not None:
@@ -638,6 +672,11 @@ class ECMWFSearch(PostJsonSearch):
         """
         Filter constraints using input_keywords. Return list of available queryables.
         All constraint entries must have the same parameters.
+
+        :param constraints: list of constraints received from the provider
+        :param input_keywords: dict of input parameters given by the user
+        :param form_keywords: list of keyword names from the provider form endpoint
+        :return: dict with available values for each parameter
         """
         # get ordered constraint keywords
         constraints_keywords = list(
@@ -751,6 +790,11 @@ class ECMWFSearch(PostJsonSearch):
         """
         Generate Annotated field definitions from form entries and available values
         Used by Copernicus services like cop_cds, cop_ads, cop_ewds.
+
+        :param form: data fetched from the form endpoint of the provider
+        :param available_values: available values for each parameter
+        :param defaults: default values for the parameters
+        :return: dict of annotated queryables
         """
         queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
 
@@ -832,6 +876,11 @@ class ECMWFSearch(PostJsonSearch):
         """
         Generate Annotated field definitions from available values.
         Used by ECMWF data providers like dedt_lumi.
+
+        :param available_values: available values for each parameter
+        :param required_keywords: list of required parameters
+        :param defaults: default values for the parameters
+        :return: dict of annotated queryables
         """
         # Rename keywords from form with metadata mapping.
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
@@ -863,7 +912,12 @@ class ECMWFSearch(PostJsonSearch):
     def format_as_provider_keyword(
         self, product_type: str, properties: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Return provider equivalent keyword names from EODAG keywords."""
+        """Return provider equivalent keyword names from EODAG keywords.
+
+        :param product_type: product type id
+        :param properties: dict of properties to be formatted
+        :return: dict of formatted properties
+        """
         parsed_properties = properties_from_json(
             properties,
             self.config.metadata_mapping,
@@ -878,6 +932,7 @@ class ECMWFSearch(PostJsonSearch):
     def _fetch_data(self, url: str) -> Any:
         """
         fetches from a provider elements like constraints or forms.
+
         :param url: url from which the constraints can be fetched
         :returns: json file content fetched from the provider
         """
@@ -1019,12 +1074,17 @@ class ECMWFSearch(PostJsonSearch):
     def count_hits(
         self, count_url: Optional[str] = None, result_type: Optional[str] = None
     ) -> int:
-        """Count method that will always return 1."""
+        """Count method that will always return 1.
+
+        :param count_url: not used, only here because this method overwrites count_hits from the parent class
+        :param result_type: not used, only here because this method overwrites count_hits from the parent class
+        :return: always 1
+        """
         return 1
 
 
-class BuildPostSearchResult(ECMWFSearch):
-    """BuildPostSearchResult search plugin.
+class MeteoblueSearch(ECMWFSearch):
+    """MeteoblueSearch search plugin.
 
     This plugin, which inherits from :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`,
     performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
@@ -1051,14 +1111,25 @@ class BuildPostSearchResult(ECMWFSearch):
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
     ) -> Tuple[List[str], int]:
-        """Wraps PostJsonSearch.collect_search_urls to force product count to 1"""
+        """Wraps PostJsonSearch.collect_search_urls to force product count to 1
+
+        :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
+        :param kwargs: keyword arguments used in the search
+        :return: list of search url and number of results
+        """
         urls, _ = super().collect_search_urls(prep, **kwargs)
         return urls, 1
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
     ) -> List[Dict[str, Any]]:
-        """Perform the actual search request, and return result in a single element."""
+        """Perform the actual search request, and return result in a single element.
+
+        :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
+        :param kwargs: keyword arguments to be used in the search
+        :return: list containing the results from the provider in json format
+        """
+
         prep.url = prep.search_urls[0]
         prep.info_message = f"Sending search request: {prep.url}"
         prep.exception_message = (

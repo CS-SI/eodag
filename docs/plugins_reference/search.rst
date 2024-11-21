@@ -23,6 +23,6 @@ This table lists all the search plugins currently available:
    cop_marine.CopMarineSearch
    creodias_s3.CreodiasS3Search
    build_search_result.ECMWFSearch
-   build_search_result.BuildPostSearchResult
+   build_search_result.MeteoblueSearch
    data_request_search.DataRequestSearch
    csw.CSWSearch

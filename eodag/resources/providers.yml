@@ -2785,7 +2785,7 @@
   description: Meteoblue
   url: https://www.meteoblue.com
   search: !plugin
-    type: BuildPostSearchResult
+    type: MeteoblueSearch
     api_endpoint: 'https://my.meteoblue.com/dataset/query'
     need_auth: true
     ssl_verify: true

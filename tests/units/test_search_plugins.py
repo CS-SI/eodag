@@ -1833,13 +1833,13 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         )
 
 
-class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
+class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
     def setUp(self, mock_requests_get):
-        super(TestSearchPluginBuildPostSearchResult, self).setUp()
+        super(TestSearchPluginMeteoblueSearch, self).setUp()
         # enable long diffs in test reports
         self.maxDiff = None
-        # One of the providers that has a BuildPostSearchResult Search plugin
+        # One of the providers that has a MeteoblueSearch Search plugin
         provider = "meteoblue"
         self.search_plugin = self.get_search_plugin(provider=provider)
         self.auth_plugin = self.get_auth_plugin(self.search_plugin)
@@ -1850,7 +1850,7 @@ class TestSearchPluginBuildPostSearchResult(BaseSearchPluginTest):
     def test_plugins_search_buildpostsearchresult_count_and_search(
         self, mock_requests_post
     ):
-        """A query with a BuildPostSearchResult must return a single result"""
+        """A query with a MeteoblueSearch must return a single result"""
 
         # custom query for meteoblue
         custom_query = {"queries": {"foo": "bar"}}

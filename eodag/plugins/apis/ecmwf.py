@@ -74,7 +74,7 @@ class EcmwfApi(Api, ECMWFSearch):
     query).
 
     This class inherits from :class:`~eodag.plugins.apis.base.Api` for compatibility and
-    :class:`~eodag.plugins.search.build_search_result.BuildPostSearchResult` for the creation
+    :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` for the creation
     of the search result.
 
     :param provider: provider name
