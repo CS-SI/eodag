@@ -435,7 +435,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: Dict[str, Union[str, List[str]]]
     #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
-    constraints_file_url: str
+    constraints_url: str
     #: :class:`~eodag.plugins.search.base.Search`
     #: Key which is used in the eodag configuration to map the eodag product type to the provider product type
     constraints_file_dataset_key: str

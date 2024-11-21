@@ -1088,10 +1088,10 @@ class MeteoblueSearch(ECMWFSearch):
           (**mandatory**): The configuration of how the pagination is done on the provider. For
           this plugin it has the node:
 
-            * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
-              additional parameters needed to perform search. These parameters won't be included in
-              the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
-              will be passed to a :meth:`str.format` method before being loaded as json.
+          * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
+            additional parameters needed to perform search. These parameters won't be included in
+            the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
+            will be passed to a :meth:`str.format` method before being loaded as json.
     """
 
     def collect_search_urls(
@@ -1158,13 +1158,13 @@ class WekeoECMWFSearch(ECMWFSearch):
     :param config: Search plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
-              (**mandatory**): The configuration of how the pagination is done on the provider. For
-              this plugin it has the node:
+          (**mandatory**): The configuration of how the pagination is done on the provider. For
+          this plugin it has the node:
 
-                * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
-                  additional parameters needed to perform search. These parameters won't be included in
-                  the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
-                  will be passed to a :meth:`str.format` method before being loaded as json.
+          * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
+            additional parameters needed to perform search. These parameters won't be included in
+            the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
+            will be passed to a :meth:`str.format` method before being loaded as json.
     """
 
     def normalize_results(
