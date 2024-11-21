@@ -179,6 +179,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
           values matching a regex
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
+        - ``to_lower``: Convert a string to lowercase
+        - ``to_upper``: Convert a string to uppercase
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``split_cop_dem_id``: get the bbox by splitting the product id
@@ -557,6 +559,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 for x in args.split(",")
             ]
             return string[cmin:cmax:cstep]
+
+        @staticmethod
+        def convert_to_lower(string: str) -> str:
+            """Convert a string to lowercase."""
+            return string.lower()
+
+        @staticmethod
+        def convert_to_upper(string: str) -> str:
+            """Convert a string to uppercase."""
+            return string.upper()
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:
