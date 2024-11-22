@@ -24,7 +24,15 @@ from urllib.parse import urlparse
 
 
 def str_as_href(link: str) -> str:
-    """URL to html link"""
+    """URL to html link
+
+    :param link: URL to format
+    :returns: HMLT formatted link
+
+    >>> str_as_href("http://foo.bar")
+    "<a href='http://foo.bar' target='_blank'>http://foo.bar</a>"
+
+    """
     if urlparse(link).scheme in ("file", "http", "https", "s3"):
         return f"<a href='{link}' target='_blank'>{link}</a>"
     else:
@@ -32,7 +40,13 @@ def str_as_href(link: str) -> str:
 
 
 def html_table(input: Any, depth: Optional[int] = None) -> str:
-    """Transform input to HTML table"""
+    """Transform input object to HTML table
+
+    :param input: input object to represent
+    :param depth: maximum depth level until which nested objects should be represented
+                  in new tables (unlimited by default)
+    :returns: HTML table
+    """
     if isinstance(input, collections.abc.Mapping):
         return dict_to_html_table(input, depth=depth)
     elif isinstance(input, collections.abc.Sequence) and not isinstance(input, str):
@@ -48,7 +62,14 @@ def dict_to_html_table(
     depth: Optional[int] = None,
     brackets: bool = True,
 ) -> str:
-    """Transform input dict to HTML table"""
+    """Transform input dict to HTML table
+
+    :param input_dict: input dict to represent
+    :param depth: maximum depth level until which nested objects should be represented
+                  in new tables (unlimited by default)
+    :param brackets: whether surrounding brackets should be displayed or not
+    :returns: HTML table
+    """
     opening_bracket = "<span style='color: grey;'>{</span>" if brackets else ""
     closing_bracket = "<span style='color: grey;'>}</span>" if brackets else ""
     indent = "10px" if brackets else "0"
@@ -91,7 +112,13 @@ def dict_to_html_table(
 def list_to_html_table(
     input_list: collections.abc.Sequence, depth: Optional[int] = None
 ) -> str:
-    """Transform input list to HTML table"""
+    """Transform input list to HTML table
+
+    :param input_list: input list to represent
+    :param depth: maximum depth level until which nested objects should be represented
+                  in new tables (unlimited by default)
+    :returns: HTML table
+    """
     if depth is not None:
         depth -= 1
     separator = (
@@ -104,8 +131,8 @@ def list_to_html_table(
         + separator.join(
             [
                 f"""<span style='text-align: left;'>{
-                html_table(v, depth=depth)
-            }</span>
+                    html_table(v, depth=depth)
+                }</span>
             """
                 for v in input_list
             ]
