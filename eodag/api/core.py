@@ -2391,6 +2391,7 @@ class EODataAccessGateway:
         Checks if additional properties are allowed for the given product type provider configuration
         will be true if no product type if given or if no provider is given and there are several providers possible
         will be false if the provider uses constraints
+
         :param product_type: (optional) product type selected
         :param provider: (optional) provider selected
         :return: if additional properties are allowed
@@ -2403,7 +2404,7 @@ class EODataAccessGateway:
         if not provider and len(plugins) != 1:
             return True
         plugin_config = plugins[0].config
-        if getattr(plugin_config, "constraints_url", ""):
+        if getattr(plugin_config, "discover_queryables", {}).get("constraints_url", ""):
             return False
         return True
 

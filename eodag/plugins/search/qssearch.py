@@ -278,13 +278,9 @@ class QueryStringSearch(Search):
 
         * :attr:`~eodag.config.PluginConfig.constraints_file_url` (``str``): url to fetch the constraints for a specific
           product type, can be an http url or a path to a file; the constraints are used to build queryables
-        * :attr:`~eodag.config.PluginConfig.constraints_file_dataset_key` (``str``): key which is used in the eodag
-          configuration to map the eodag product type to the provider product type; default: ``dataset``
         * :attr:`~eodag.config.PluginConfig.constraints_entry` (``str``): key in the json result where the constraints
           can be found; if not given, it is assumed that the constraints are on top level of the result, i.e.
           the result is an array of constraints
-        * :attr:`~eodag.config.PluginConfig.stop_without_constraints_entry_key` (``bool``): if true only a provider
-          result containing `constraints_entry` is accepted as valid and used to create constraints; default: ``False``
     """
 
     extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {

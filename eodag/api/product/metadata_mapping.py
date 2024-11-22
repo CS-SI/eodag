@@ -1543,6 +1543,7 @@ def eodag_key_from_provider_key(
 ) -> str:
     """Get eodag key  for provider key based on the metadata mapping if the provider key
     appears in the metadata mapping, otherwise the provider key is returned
+
     :param provider_key: name of the variable received from the provider
     :param metadata_mapping: metadata mapping of the provider"""
     for mm, mv in metadata_mapping.items():

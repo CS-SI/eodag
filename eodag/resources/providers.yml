@@ -1989,8 +1989,11 @@
     dates_required: true
     remove_from_query:
       - dataset
-    constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json"
-    form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json"
+      form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
     metadata_mapping:
       productType: '$.productType'
       title: '$.id'
@@ -2245,8 +2248,11 @@
     remove_from_query:
       - dataset
       - date
-    constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json
-    form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json
+      form_url: https://cds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
     metadata_mapping:
       productType: $.productType
       title: $.id
@@ -4946,10 +4952,11 @@
         missionEndDate: '$.metadata._source.tempextent_end'
         processingLevel: '$.null'
         keywords: '$.metadata._source.keywords'
-    constraints_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
-    constraints_file_dataset_key: productType
-    constraints_entry: constraints
-    stop_without_constraints_entry_key: true
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/{dataset}'
+      constraints_entry: constraints
     metadata_mapping:
       productType:
         - '{{"dataset_id": "{productType}"}}'
@@ -5396,7 +5403,7 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{ecmwf:dataset}.json"
+      constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{ecmwf:dataset}.json"
     metadata_mapping:
       productType: destination-earth
       storageStatus: OFFLINE
@@ -6652,8 +6659,8 @@
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
-    constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json
-    form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
+      constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/constraints.json
+      form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{ecmwf:dataset}/form.json
     metadata_mapping:
       productType: $.productType
       title: $.id

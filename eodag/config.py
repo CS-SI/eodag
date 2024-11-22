@@ -307,6 +307,10 @@ class PluginConfig(yaml.YAMLObject):
         result_type: str
         #: JsonPath to retrieve the queryables from the provider result
         results_entry: str
+        #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
+        constraints_url: str
+        #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
+        constraints_entry: str
 
     class OrderOnResponse(TypedDict):
         """Configuration for order on-response during download"""
@@ -434,17 +438,6 @@ class PluginConfig(yaml.YAMLObject):
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: Dict[str, Union[str, List[str]]]
-    #: :class:`~eodag.plugins.search.base.Search` URL of the constraint file used to build queryables
-    constraints_url: str
-    #: :class:`~eodag.plugins.search.base.Search`
-    #: Key which is used in the eodag configuration to map the eodag product type to the provider product type
-    constraints_file_dataset_key: str
-    #: :class:`~eodag.plugins.search.base.Search` Key in the json result where the constraints can be found
-    constraints_entry: str
-    #: :class:`~eodag.plugins.search.base.Search`
-    #: Whether only a provider result containing constraints_entry is accepted as valid and used to create constraints
-    #: or not
-    stop_without_constraints_entry_key: bool
     #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
     remove_from_queryables: List[str]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string

@@ -331,8 +331,16 @@ class ECMWFSearch(PostJsonSearch):
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
-        * :attr:`~eodag.config.PluginConfig.constraints_url` (``str``): url of the constraint file
-          used to build queryables
+        * :attr:`~eodag.config.PluginConfig.discover_queryables`
+          (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
+          provider queryables endpoint; It has the following keys:
+
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` (``str``): url to fetch the queryables valid
+            for all product types
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.product_type_fetch_url` (``str``): url to fetch the
+            queryables for a specific product type
+          * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
+            used to build queryables
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -545,11 +553,15 @@ class ECMWFSearch(PostJsonSearch):
         self._preprocess_search_params(processed_kwargs, product_type)
 
         constraints_url = format_metadata(
-            getattr(self.config, "constraints_url", ""), **kwargs
+            getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
+            **kwargs,
         )
         constraints: List[Dict[str, Any]] = self.fetch_data(constraints_url)
 
-        form_url = format_metadata(getattr(self.config, "form_url", ""), **kwargs)
+        form_url = format_metadata(
+            getattr(self.config, "discover_queryables", {}).get("form_url", ""),
+            **kwargs,
+        )
         form = self.fetch_data(form_url)
 
         formated_kwargs = self.format_as_provider_keyword(
