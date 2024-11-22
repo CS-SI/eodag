@@ -662,7 +662,9 @@ class ECMWFSearch(PostJsonSearch):
         if queryables.pop("area", None):
             queryables["geom"] = Annotated[
                 Union[str, Dict[str, float], BaseGeometry],
-                Field("Read EODAG documentation for all supported geometry format."),
+                Field(
+                    description="Read EODAG documentation for all supported geometry format."
+                ),
             ]
 
         return queryables
