@@ -188,7 +188,7 @@ def json_field_definition_to_python(
         if isinstance(items, list):
             python_type = Tuple[  # type: ignore
                 tuple(
-                    json_field_definition_to_python(item, required=True)
+                    json_field_definition_to_python(item, required=required)
                     for item in items
                 )
             ]
