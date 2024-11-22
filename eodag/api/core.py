@@ -51,7 +51,6 @@ from eodag.api.product.metadata_mapping import (
     ONLINE_STATUS,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.api.product.queryables import QueryablesDict
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -73,7 +72,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, Queryables
+from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
 from eodag.types.whoosh import EODAGQueryParser
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -2386,7 +2385,7 @@ class EODataAccessGateway:
 
     def _has_queryables_additional_properties(
         self, product_type: Optional[str], provider: Optional[str]
-    ):
+    ) -> bool:
         """
         Checks if additional properties are allowed for the given product type provider configuration
         will be true if no product type if given or if no provider is given and there are several providers possible

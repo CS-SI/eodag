@@ -352,9 +352,11 @@ class Search(PluginTopic):
     def queryables_from_metadata_mapping(
         self,
         product_type: Optional[str] = None,
-    ):
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from product type metadata mapping.
+        :param product_type: product type id (optional)
+        :returns: dict of annotated queryables
         """
         metadata_mapping: Dict[str, Any] = deepcopy(
             self.get_metadata_mapping(product_type)

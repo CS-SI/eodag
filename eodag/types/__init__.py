@@ -338,7 +338,12 @@ def model_fields_to_annotated(
 def annotated_dict_to_model(
     model_name: str, annotated_fields: Dict[str, Annotated[Any, FieldInfo]]
 ) -> BaseModel:
-    """Convert a dictionnary of Annotated values to a Pydantic BaseModel."""
+    """Convert a dictionnary of Annotated values to a Pydantic BaseModel.
+    :param model_name: name of the model to be created
+    :param annotated_fields: dict containing the parameters and annotated values that should become
+                             the properties of the model
+    :returns: pydantic model
+    """
     fields = {
         name: (field.__args__[0], field.__metadata__[0])
         for name, field in annotated_fields.items()

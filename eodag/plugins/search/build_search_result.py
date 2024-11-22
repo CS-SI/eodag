@@ -415,6 +415,7 @@ class ECMWFSearch(PostJsonSearch):
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information needed for the search
         :param kwargs: keyword arguments to be used in the search
+        :returns: list of products and number of products (optional)
         """
         product_type = prep.product_type
         if not product_type:
