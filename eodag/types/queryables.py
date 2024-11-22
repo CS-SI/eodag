@@ -65,7 +65,10 @@ class CommonQueryables(BaseModel):
 
 
 class Queryables(CommonQueryables):
-    """A class representing all search queryable properties."""
+    """A class representing all search queryable properties.
+
+    Parameters default value is set to ``None`` to have them not required.
+    """
 
     start: Annotated[
         Union[datetime, date], Field(None, alias="startTimeFromAscendingNode")
