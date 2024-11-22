@@ -15,6 +15,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
+
 from collections import UserDict
 from datetime import date, datetime
 from typing import Annotated, Any, Optional, Union
@@ -156,7 +158,7 @@ class QueryablesDict(UserDict):
         self.additional_properties = additional_properties
         super().__init__(kwargs)
 
-    def _repr_html_(self, embedded=False):
+    def _repr_html_(self, embedded: bool = False) -> str:
         thead = (
             f"""<thead><tr><td style='text-align: left; color: grey;'>
                 {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={
@@ -204,11 +206,12 @@ class QueryablesDict(UserDict):
             + "</tbody></table>"
         )
 
-    def get_model(self, model_name="Queryables"):
+    def get_model(self, model_name: str = "Queryables") -> BaseModel:
         """
         Converts object from :class:`eodag.api.product.QueryablesDict` to :class:`pydantic.BaseModel`
         so that validation can be performed
 
+        :param model_name: name used for :class:`pydantic.BaseModel` creation
         :return: pydantic BaseModel of the queryables dict
         """
         return annotated_dict_to_model(model_name, self.data)
