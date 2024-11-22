@@ -23,8 +23,10 @@ from annotated_types import Lt
 from pydantic import BaseModel, Field
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
+from pydantic_core import PydanticUndefined
 
 from eodag.types import annotated_dict_to_model, model_fields_to_annotated
+from eodag.utils.repr import remove_class_repr, shorter_type_repr
 
 Percentage = Annotated[PositiveInt, Lt(100)]
 
@@ -154,12 +156,13 @@ class QueryablesDict(UserDict):
         self.additional_properties = additional_properties
         super().__init__(kwargs)
 
-    def _repr_html_(self, embedded: bool = False):
+    def _repr_html_(self, embedded=False):
         thead = (
             f"""<thead><tr><td style='text-align: left; color: grey;'>
-                        {type(self).__name__}&ensp;({len(self)})
-                        </td></tr></thead>
-                    """
+                {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={
+                self.additional_properties}
+                </td></tr></thead>
+            """
             if not embedded
             else ""
         )
@@ -170,34 +173,42 @@ class QueryablesDict(UserDict):
                 [
                     f"""<tr {tr_style}><td style='text-align: left;'>
                         <details><summary style='color: grey;'>
-                            <span style='color: black'>'{k}'</span>:&ensp;
-                            {{
-                                {"'alias': '<span style='color: black'>" + v.__metadata__[0].alias + "</span>',&ensp;"
-                if v.__metadata__[0].alias else ""}
-                                {"'type': '<span style='color: black'>" + str(v.__args__[0]) + "</span>',&ensp;"
-                if not hasattr(v.__args__[0], "__name__") or v.__args__[0].__name__ == "Union" else(
-                                "'type': '<span style='color: black'>" + v.__args__[0].__name__ + "</span>',&ensp;")}
-                                {"'default': '<span style='color: black'>" +
-                                 str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
-                if v.__metadata__[0].get_default() else ""}
-                                {"'required': '<span style='color: black'>" +
-                                 str(v.__metadata__[0].is_required()) + "</span>',&ensp;"}
-                            }}
-                        </summary>
-                        </details>
-                        </td></tr>
-                        """
+                        <span style='color: black'>'{k}'</span>:&ensp;
+                        typing.Annotated[{
+                        "<span style='color: black'>" + shorter_type_repr(v.__args__[0]) + "</span>,&ensp;"
+                    }
+                    FieldInfo({"'default': '<span style='color: black'>"
+                               + str(v.__metadata__[0].get_default()) + "</span>',&ensp;"
+                               if v.__metadata__[0].get_default()
+                               and v.__metadata__[0].get_default() != PydanticUndefined else ""}
+                            {"'required': <span style='color: black'>"
+                             + str(v.__metadata__[0].is_required()) + "</span>,"}
+                            ...
+                        )]
+                    </summary>
+                        <span style='color: grey'>typing.Annotated[</span><table style='margin: 0;'>
+                            <tr style='background-color: transparent;'>
+                                <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
+                                {remove_class_repr(str(v.__args__[0]))},</td>
+                            </tr><tr style='background-color: transparent;'>
+                                <td style='padding: 5px 0 0 10px; text-align: left; vertical-align:top;'>
+                                {v.__metadata__[0].__repr__()}</td>
+                            </tr>
+                        </table><span style='color: grey'>]</span>
+                    </details>
+                    </td></tr>
+                    """
                     for k, v in self.items()
                 ]
             )
             + "</tbody></table>"
         )
 
-    def get_model(self) -> BaseModel:
+    def get_model(self, model_name="Queryables"):
         """
         Converts object from :class:`eodag.api.product.QueryablesDict` to :class:`pydantic.BaseModel`
         so that validation can be performed
 
-        :returns: pydantic BaseModel of the queryables dict
+        :return: pydantic BaseModel of the queryables dict
         """
-        return annotated_dict_to_model("Queryables", self.data)
+        return annotated_dict_to_model(model_name, self.data)

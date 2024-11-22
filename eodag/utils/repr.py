@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import collections.abc
+import re
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -111,3 +112,34 @@ def list_to_html_table(
         )
         + "<span style='color: grey;'>]</span>"
     )
+
+
+def remove_class_repr(type_repr: str) -> str:
+    """Removes class tag from type representation
+
+    :param type_repr: input type representation
+    :returns: type without class tag
+
+    >>> remove_class_repr(str(type("foo")))
+    'str'
+    """
+    return re.sub(r"<class '(\w+)'>", r"\1", type_repr)
+
+
+def shorter_type_repr(long_type: str) -> str:
+    """Shorten long type representation
+
+    :param long_type: long type representation
+    :returns: type reprensentation shortened
+
+    >>> import typing
+    >>> shorter_type_repr(str(typing.Literal["foo", "bar"]))
+    "Literal['foo', ...]"
+    """
+    # shorten lists
+    shorter = re.sub(r",[^\[^\]]+\]", ", ...]", str(long_type))
+    # remove class prefix
+    shorter = remove_class_repr(shorter)
+    # remove parent objects
+    shorter = re.sub(r"\w+\.", "", shorter)
+    return shorter
