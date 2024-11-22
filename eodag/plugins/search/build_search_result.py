@@ -663,7 +663,8 @@ class ECMWFSearch(PostJsonSearch):
             queryables["geom"] = Annotated[
                 Union[str, Dict[str, float], BaseGeometry],
                 Field(
-                    description="Read EODAG documentation for all supported geometry format."
+                    None,
+                    description="Read EODAG documentation for all supported geometry format.",
                 ),
             ]
 
