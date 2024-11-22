@@ -1536,8 +1536,7 @@ class TestCore(TestCoreBase):
         self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
         self.assertIn("product_type", spans[0].text)
-        self.assertIn("productType", spans[1].text)
-        self.assertIn("str", spans[2].text)
+        self.assertIn("str", spans[1].text)
 
     def test_available_sortables(self):
         """available_sortables must return available sortable(s) and its (their)
