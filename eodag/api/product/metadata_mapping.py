@@ -1545,7 +1545,9 @@ def eodag_key_from_provider_key(
     appears in the metadata mapping, otherwise the provider key is returned
 
     :param provider_key: name of the variable received from the provider
-    :param metadata_mapping: metadata mapping of the provider"""
+    :param metadata_mapping: metadata mapping of the provider
+    :returns: eodag key
+    """
     for mm, mv in metadata_mapping.items():
         if isinstance(mv, list) and len(mv) > 1 and provider_key == mv[0]:
             return mm

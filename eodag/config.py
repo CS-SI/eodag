@@ -479,6 +479,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.csw.CSWSearch`
     #: OGC Catalogue Service version
     version: str
+    #: :class:`~eodag.plugins.apis.ecmwf.EcmwfApi` url of the authentication endpoint
+    auth_endpoint: str
 
     # download ---------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.download.base.Download` Default endpoint url
