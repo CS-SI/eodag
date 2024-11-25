@@ -329,6 +329,7 @@ class Search(PluginTopic):
         self,
         filters: Dict[str, Any],
         product_type: Optional[str] = None,
+        alias: Optional[str] = None,
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """
         Get queryables
@@ -347,11 +348,10 @@ class Search(PluginTopic):
         try:
             return self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError:
-            return self.queryables_from_metadata_mapping(product_type)
+            return self.queryables_from_metadata_mapping(product_type, alias)
 
     def queryables_from_metadata_mapping(
-        self,
-        product_type: Optional[str] = None,
+        self, product_type: Optional[str] = None, alias: Optional[str] = None
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from product type metadata mapping.
@@ -373,6 +373,10 @@ class Search(PluginTopic):
         eodag_queryables = copy_deepcopy(
             model_fields_to_annotated(Queryables.model_fields)
         )
+        # add default value for product type
+        if product_type:
+            eodag_queryables.pop("productType")
+            eodag_queryables["productType"] = Annotated[str, Field(default=alias)]
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None

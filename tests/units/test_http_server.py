@@ -1583,7 +1583,7 @@ class RequestTestCase(unittest.TestCase):
             "min", processing_level
         )  # none values are left out in serialization
 
-    @mock.patch("eodag.utils.requests.requests.get", autospec=True)
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_product_type_queryables_from_constraints(self, mock_requests_get: Mock):
         """Request a collection-specific list of queryables for a given provider
         using a constraints file should return a valid response."""
@@ -1624,6 +1624,7 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.assert_has_calls(
             [
                 call(
+                    mock.ANY,
                     "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
                     "reanalysis-era5-single-levels/constraints.json",
                     headers=USER_AGENT,
@@ -1633,6 +1634,7 @@ class RequestTestCase(unittest.TestCase):
                 call().raise_for_status(),
                 call().json(),
                 call(
+                    mock.ANY,
                     "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
                     "reanalysis-era5-single-levels/form.json",
                     headers=USER_AGENT,

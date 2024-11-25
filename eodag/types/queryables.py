@@ -36,7 +36,7 @@ Percentage = Annotated[PositiveInt, Lt(100)]
 class CommonQueryables(BaseModel):
     """A class representing search common queryable properties."""
 
-    product_type: Annotated[str, Field(alias="productType")]
+    productType: Annotated[str, Field()]
 
     @classmethod
     def get_queryable_from_alias(cls, value: str) -> str:

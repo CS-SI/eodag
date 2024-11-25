@@ -27,6 +27,7 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 from requests.exceptions import RequestException
 
@@ -327,7 +328,7 @@ class TestUtils(unittest.TestCase):
         # distant
         file_url = "https://foo.bar"
         with unittest.mock.patch(
-            "eodag.utils.requests.requests.get",
+            "eodag.utils.requests.requests.sessions.Session.get",
             autospec=True,
         ) as mock_get:
             mock_get.return_value = unittest.mock.Mock()
@@ -335,6 +336,7 @@ class TestUtils(unittest.TestCase):
             file_content = fetch_json(file_url)
             self.assertEqual(file_content["foo"], "bar")
             mock_get.assert_called_once_with(
+                mock.ANY,
                 file_url,
                 headers=USER_AGENT,
                 auth=None,

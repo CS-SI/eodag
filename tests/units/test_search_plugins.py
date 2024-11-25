@@ -688,7 +688,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 auth=None,
             )
 
-    @mock.patch("eodag.utils.requests.requests.get", autospec=True)
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
         self, mock_requests_get
     ):
@@ -723,6 +723,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertIsNotNone(queryables)
 
         mock_requests_get.assert_called_once_with(
+            mock.ANY,
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
             "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             headers=USER_AGENT,
@@ -2422,7 +2423,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
-    @mock.patch("eodag.utils.requests.requests.get", autospec=True)
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_plugins_search_ecmwfsearch_discover_queryables(self, mock_requests_get):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
@@ -2461,6 +2462,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         mock_requests_get.assert_has_calls(
             [
                 call(
+                    mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/constraints.json",
                     headers=USER_AGENT,
@@ -2470,6 +2472,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 call().raise_for_status(),
                 call().json(),
                 call(
+                    mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/form.json",
                     headers=USER_AGENT,

@@ -219,9 +219,10 @@ class EODataAccessGateway:
                         "eodag",
                         os.path.join("resources", "locations_conf_template.yml"),
                     )
-                    with open(locations_conf_template) as infile, open(
-                        locations_conf_path, "w"
-                    ) as outfile:
+                    with (
+                        open(locations_conf_template) as infile,
+                        open(locations_conf_path, "w") as outfile,
+                    ):
                         # The template contains paths in the form of:
                         # /path/to/locations/file.shp
                         path_template = "/path/to/locations/"
@@ -2260,7 +2261,7 @@ class EODataAccessGateway:
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
     def _get_queryables_for_product_type(
-        self, product_type: str, plugin: Search, **kwargs: Any
+        self, product_type: str, pt_alias: str, plugin: Search, **kwargs: Any
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
         self._attach_product_type_config(plugin, product_type)
         if getattr(plugin.config, "need_auth", False) and (
@@ -2275,7 +2276,9 @@ class EODataAccessGateway:
                 )
         if "productType" not in kwargs:
             kwargs["productType"] = product_type
-        return plugin.list_queryables(filters=kwargs, product_type=product_type)
+        return plugin.list_queryables(
+            filters=kwargs, product_type=product_type, alias=pt_alias
+        )
 
     def list_queryables(
         self, provider: Optional[str] = None, **kwargs: Any
@@ -2297,17 +2300,17 @@ class EODataAccessGateway:
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
         product_type: Optional[str] = kwargs.get("productType")
+        pt_alias: Optional[str] = product_type
 
         if product_type:
+            if product_type not in available_product_types:
+                raise UnsupportedProductType(f"{product_type} is not available.")
             try:
                 kwargs["productType"] = product_type = self.get_product_type_from_alias(
                     product_type
                 )
             except NoMatchingProductType as e:
-                raise UnsupportedProductType(f"{product_type} is not available") from e
-
-        if product_type and product_type not in available_product_types:
-            self.fetch_product_types_list(provider)
+                raise UnsupportedProductType(f"{product_type} is not available.") from e
 
         if not provider and not product_type:
             return QueryablesDict(
@@ -2320,7 +2323,7 @@ class EODataAccessGateway:
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             if product_type:
                 plugin_queryables = self._get_queryables_for_product_type(
-                    product_type, plugin, **kwargs
+                    product_type, pt_alias, plugin, **kwargs
                 )
                 if plugin_queryables:
                     providers_queryables[plugin.provider] = plugin_queryables
@@ -2345,7 +2348,7 @@ class EODataAccessGateway:
                 standard_queryables = model_fields_to_annotated(Queryables.model_fields)
                 for pt in available_product_types:
                     product_type_queryables = self._get_queryables_for_product_type(
-                        pt, plugin, **kwargs
+                        pt, pt_alias, plugin, **kwargs
                     )
                     if product_type_queryables:
                         if not all_queryable_keys:

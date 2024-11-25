@@ -595,6 +595,7 @@ async def get_queryables(
         # productType is either simply removed or replaced by collection later.
         if "productType" in properties:
             properties.pop("productType")
+        if "productType" in required:
             required.remove("productType")
 
         stac_properties: Dict[str, Any] = {}

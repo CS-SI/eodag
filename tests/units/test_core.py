@@ -1446,6 +1446,18 @@ class TestCore(TestCoreBase):
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_s1grd.additional_properties)
+        # result should be the same if alias is used
+        products = self.dag.product_types_config
+        products["S1_SAR_GRD"]["alias"] = "S1_SG"
+        queryables_peps_s1grd_alias = self.dag.list_queryables(
+            provider="peps", productType="S1_SG"
+        )
+        self.assertEqual(len(queryables_peps_s1grd), len(queryables_peps_s1grd_alias))
+        self.assertEqual(
+            "S1_SG",
+            queryables_peps_s1grd_alias["productType"].__metadata__[0].get_default(),
+        )
+        products["S1_SAR_GRD"].pop("alias")
 
         # when a product type is specified but not the provider, the intersection of the queryables of all providers
         # having the product type in its config is returned, using queryables of the provider with the highest priority
@@ -1535,8 +1547,12 @@ class TestCore(TestCoreBase):
         queryables_repr = html.fromstring(queryables._repr_html_())
         self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
-        self.assertIn("product_type", spans[0].text)
-        self.assertIn("str", spans[1].text)
+        product_type_present = False
+        for i, span in enumerate(spans):
+            if "productType" in span.text:
+                product_type_present = True
+                self.assertIn("str", spans[i + 1].text)
+        self.assertTrue(product_type_present)
 
     def test_available_sortables(self):
         """available_sortables must return available sortable(s) and its (their)
