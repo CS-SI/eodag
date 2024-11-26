@@ -1029,6 +1029,8 @@ class ECMWFSearch(PostJsonSearch):
         if (
             "startTimeFromAscendingNode" in parsed_properties
             and parsed_properties["startTimeFromAscendingNode"] != "Not Available"
+            and "completionTimeFromAscendingNode" in parsed_properties
+            and parsed_properties["completionTimeFromAscendingNode"] != "Not Available"
         ):
             product_id = "%s_%s_%s_%s" % (
                 id_prefix,
@@ -1036,6 +1038,17 @@ class ECMWFSearch(PostJsonSearch):
                 .split("T")[0]
                 .replace("-", ""),
                 parsed_properties["completionTimeFromAscendingNode"]
+                .split("T")[0]
+                .replace("-", ""),
+                query_hash,
+            )
+        elif (
+            "startTimeFromAscendingNode" in parsed_properties
+            and parsed_properties["startTimeFromAscendingNode"] != "Not Available"
+        ):
+            product_id = "%s_%s_%s" % (
+                id_prefix,
+                parsed_properties["startTimeFromAscendingNode"]
                 .split("T")[0]
                 .replace("-", ""),
                 query_hash,

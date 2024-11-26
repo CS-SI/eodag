@@ -988,15 +988,24 @@ def properties_from_json(
                     if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
-                    if (
-                        extracted_value == NOT_AVAILABLE
-                        and NOT_AVAILABLE not in conversion_or_none
-                    ):
-                        continue
-                    properties[metadata] = format_metadata(
-                        "{%s%s%s}" % (metadata, SEP, conversion_or_none),
-                        **{metadata: extracted_value},
-                    )
+                    if extracted_value == NOT_AVAILABLE:
+                        # try if value can be formatted even if it is not available
+                        try:
+                            properties[metadata] = format_metadata(
+                                "{%s%s%s}" % (metadata, SEP, conversion_or_none),
+                                **{metadata: extracted_value},
+                            )
+                        except ValueError:
+                            logger.debug(
+                                f"{metadata}: {extracted_value} could not be formatted with {conversion_or_none}"
+                            )
+                            continue
+                    else:
+                        # in this case formatting should work, otherwise something is wrong in the mapping
+                        properties[metadata] = format_metadata(
+                            "{%s%s%s}" % (metadata, SEP, conversion_or_none),
+                            **{metadata: extracted_value},
+                        )
         # properties as python objects when possible (format_metadata returns only strings)
         try:
             properties[metadata] = ast.literal_eval(properties[metadata])
