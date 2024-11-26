@@ -651,12 +651,15 @@ async def get_queryables(
             ].model_dump()
 
         additional_properties = python_queryables.additional_properties
+        description = "Queryable names for the EODAG STAC API Item Search filter. "
+        description += python_queryables.additional_information
 
         return StacQueryables(
             q_id=request.state.url,
             additional_properties=additional_properties,
             properties=stac_properties,
             required=required or None,
+            description=description,
         ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
     hashed_queryables = hash(params.model_dump_json())

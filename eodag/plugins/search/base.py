@@ -325,9 +325,24 @@ class Search(PluginTopic):
                 sort_by_qs += parsed_sort_by_tpl
         return (sort_by_qs, sort_by_qp)
 
+    def _get_product_type_queryables(
+        self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        default_values: Dict[str, Any] = deepcopy(
+            getattr(self.config, "products", {}).get(product_type, {})
+        )
+        default_values.pop("metadata_mapping", None)
+        try:
+            filters["productType"] = product_type
+            return self.discover_queryables(**{**default_values, **filters}) or {}
+        except NotImplementedError:
+            return self.queryables_from_metadata_mapping(product_type, alias)
+
     def list_queryables(
         self,
         filters: Dict[str, Any],
+        available_product_types: List[Any],
+        product_type_configs: Dict[str, Dict[str, Any]],
         product_type: Optional[str] = None,
         alias: Optional[str] = None,
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
@@ -335,20 +350,33 @@ class Search(PluginTopic):
         Get queryables
 
         :param filters: Additional filters for queryables.
+        :param available_product_types: list of available product types
+        :param product_type_configs: dict containing the product type information for all used product types
         :param product_type: (optional) The product type.
+        :param alias: (optional) alias of the product type
 
         :return: A dictionary containing the queryable properties, associating parameters to their
                 annotated type.
         """
-        default_values: Dict[str, Any] = deepcopy(
-            getattr(self.config, "products", {}).get(product_type, {})
-        )
-        default_values.pop("metadata_mapping", None)
 
-        try:
-            return self.discover_queryables(**{**default_values, **filters}) or {}
-        except NotImplementedError:
-            return self.queryables_from_metadata_mapping(product_type, alias)
+        if product_type or getattr(self.config, "discover_queryables", {}).get(
+            "fetch_url", ""
+        ):
+            if product_type:
+                self.config.product_type_config = product_type_configs[product_type]
+            return self._get_product_type_queryables(product_type, alias, filters)
+        else:
+            all_queryables: Dict[str, Any] = {}
+            for pt in available_product_types:
+                self.config.product_type_config = product_type_configs[pt]
+                pt_queryables = self._get_product_type_queryables(pt, None, filters)
+                # only use key and type because values and defaults will vary between product types
+                pt_queryables_neutral = {
+                    k: Annotated[v.__args__[0], Field(default=None)]
+                    for k, v in pt_queryables.items()
+                }
+                all_queryables.update(pt_queryables_neutral)
+            return all_queryables
 
     def queryables_from_metadata_mapping(
         self, product_type: Optional[str] = None, alias: Optional[str] = None
@@ -356,6 +384,7 @@ class Search(PluginTopic):
         """
         Extract queryable parameters from product type metadata mapping.
         :param product_type: product type id (optional)
+        :param alias: (optional) alias of the product type
         :returns: dict of annotated queryables
         """
         metadata_mapping: Dict[str, Any] = deepcopy(
@@ -374,7 +403,7 @@ class Search(PluginTopic):
             model_fields_to_annotated(Queryables.model_fields)
         )
         # add default value for product type
-        if product_type:
+        if alias:
             eodag_queryables.pop("productType")
             eodag_queryables["productType"] = Annotated[str, Field(default=alias)]
         for k, v in eodag_queryables.items():

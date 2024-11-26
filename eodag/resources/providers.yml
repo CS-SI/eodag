@@ -2360,9 +2360,9 @@
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
     SATELLITE_CARBON_DIOXIDE:
       "ecmwf:dataset": satellite-carbon-dioxide
-      "ecmwf:processing_level": level_3
+      "ecmwf:processing_level": level_2
       "ecmwf:variable": xco2
-      "ecmwf:sensor_and_algorithm": merged_obs4mips
+      "ecmwf:sensor_and_algorithm": merged_emma
       "ecmwf:version": '"4_5"'
       metadata_mapping:
         <<: *day_month_year
@@ -2377,9 +2377,9 @@
         <<: *month_year
     SATELLITE_METHANE:
       "ecmwf:dataset": satellite-methane
-      "ecmwf:processing_level": level_3
+      "ecmwf:processing_level": level_2
       "ecmwf:variable": xch4
-      "ecmwf:sensor_and_algorithm": merged_obs4mips
+      "ecmwf:sensor_and_algorithm": merged_emma
       "ecmwf:version": '"4_5"'
       metadata_mapping:
         <<: *day_month_year

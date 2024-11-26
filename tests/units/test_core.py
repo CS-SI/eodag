@@ -1431,7 +1431,9 @@ class TestCore(TestCoreBase):
         self.assertLess(len(queryables_peps_none), len(expected_longer_result))
         for key, queryable in queryables_peps_none.items():
             # compare obj.__repr__
-            self.assertEqual(str(expected_longer_result[key]), str(queryable))
+            self.assertEqual(
+                expected_longer_result[key].__args__[0], queryable.__args__[0]
+            )
         self.assertTrue(queryables_peps_none.additional_properties)
 
         queryables_peps_s1grd = self.dag.list_queryables(
@@ -1459,23 +1461,23 @@ class TestCore(TestCoreBase):
         )
         products["S1_SAR_GRD"].pop("alias")
 
-        # when a product type is specified but not the provider, the intersection of the queryables of all providers
-        # having the product type in its config is returned, using queryables of the provider with the highest priority
+        # when a product type is specified but not the provider, the union of the queryables of all providers
+        # having the product type in its config is returned
         queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
-        self.assertLess(len(queryables_none_s1grd), len(queryables_peps_none))
-        self.assertLessEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
+        self.assertGreater(len(queryables_none_s1grd), len(queryables_peps_none))
+        self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
         self.assertLess(len(queryables_none_s1grd), len(expected_longer_result))
         # check that peps gets the highest priority
         self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
-        for key, queryable in queryables_none_s1grd.items():
+        for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
             if key == "productType":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
-            # queryables intersection comes from peps's queryables
-            self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
+            # queryables for provider peps are in queryables for all providers
+            self.assertEqual(str(queryable), str(queryables_none_s1grd[key]))
         self.assertTrue(queryables_none_s1grd.additional_properties)
 
         # model_validate should validate input parameters using the queryables result

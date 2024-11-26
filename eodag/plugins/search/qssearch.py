@@ -1486,6 +1486,7 @@ class PostJsonSearch(QueryStringSearch):
                 for tp in time_params:
                     if tp not in keywords:
                         in_keywords = False
+                        break
                 if not in_keywords:
                     keywords[
                         "startTimeFromAscendingNode"

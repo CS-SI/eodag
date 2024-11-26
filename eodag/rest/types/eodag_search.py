@@ -368,7 +368,7 @@ class EODAGSearch(BaseModel):
     ) -> str:
         """Get the alias of a field in a Pydantic model"""
         # quick fix. TODO: refactor of EODAGSearch.
-        if field_name in ("productType", "id"):
+        if field_name in ("productType", "id", "start_datetime", "end_datetime"):
             return field_name
         # another quick fix to handle different names of geometry
         if field_name == "geometry":

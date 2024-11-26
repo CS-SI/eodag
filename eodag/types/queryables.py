@@ -43,7 +43,7 @@ class CommonQueryables(BaseModel):
         """Get queryable parameter from alias
 
         >>> CommonQueryables.get_queryable_from_alias('productType')
-        'product_type'
+        'productType'
         """
         alias_map = {
             field_info.alias: name
@@ -157,18 +157,28 @@ class QueryablesDict(UserDict):
     """
 
     additional_properties: bool = Field(True)
+    additional_information: str = Field("")
 
-    def __init__(self, additional_properties: bool, **kwargs):
+    def __init__(
+        self, additional_properties: bool, additional_information: str = "", **kwargs
+    ):
         self.additional_properties = additional_properties
+        self.additional_information = additional_information
         super().__init__(kwargs)
 
     def _repr_html_(self, embedded: bool = False) -> str:
+        add_info = (
+            f"&ensp;additional_information={self.additional_information}"
+            if self.additional_information
+            else ""
+        )
         thead = (
             f"""<thead><tr><td style='text-align: left; color: grey;'>
                 {type(self).__name__}&ensp;({len(self)})&ensp;-&ensp;additional_properties={
                 self.additional_properties}
-                </td></tr></thead>
             """
+            + add_info
+            + "</td></tr></thead>"
             if not embedded
             else ""
         )

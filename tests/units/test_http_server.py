@@ -1428,7 +1428,6 @@ class RequestTestCase(unittest.TestCase):
             self.assertTrue(res_product_type_no_provider["additionalProperties"])
 
             res_list = list(res_product_type_no_provider["properties"].keys())
-            res_list.sort()
             expected = [
                 "platform",
                 "datetime",
@@ -1436,11 +1435,20 @@ class RequestTestCase(unittest.TestCase):
                 "end_datetime",
                 "geometry",
                 "bbox",
+                "constellation",
+                "instruments",
+                "gsd",
+                "eo:cloud_cover",
+                "eo:snow_cover",
+                "processing:level",
+                "sat:orbit_state",
+                "sat:absolute_orbit",
+                "sar:instrument_mode",
             ]
-            expected.sort()
-            self.assertListEqual(expected, res_list)
-            # no property are added from providers queryables because none of them
-            # is shared with all providers for this product type
+            for value in expected:
+                self.assertIn(value, res_list)
+
+            # stac format processing:level is in result
             pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
             pl_s1_sar_grd_wekeo_main_queryable = "processingLevel"
             stac_pl_property = "processing:level"
@@ -1450,9 +1458,7 @@ class RequestTestCase(unittest.TestCase):
             )
             for constraint in wekeo_main_constraints["constraints"]:
                 self.assertNotIn(pl_s1_sar_grd_wekeo_main_queryable, constraint)
-            self.assertNotIn(
-                stac_pl_property, res_product_type_no_provider["properties"]
-            )
+            self.assertIn(stac_pl_property, res_product_type_no_provider["properties"])
 
         run()
 
@@ -1592,6 +1598,7 @@ class RequestTestCase(unittest.TestCase):
             constraints = json.load(f)
         for const in constraints:
             const["variable"].append("10m_u_component_of_wind")
+
         form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
         with open(form_path) as f:
             form = json.load(f)

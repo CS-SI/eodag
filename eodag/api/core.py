@@ -32,7 +32,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Set,
     Tuple,
     Union,
 )
@@ -41,7 +40,7 @@ import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from pydantic.fields import Field, FieldInfo
+from pydantic.fields import FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -72,7 +71,7 @@ from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables, Queryables, QueryablesDict
+from eodag.types.queryables import CommonQueryables, QueryablesDict
 from eodag.types.whoosh import EODAGQueryParser
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -2260,26 +2259,6 @@ class EODataAccessGateway:
         plugin_conf.update({key.replace("-", "_"): val for key, val in options.items()})
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
-    def _get_queryables_for_product_type(
-        self, product_type: str, pt_alias: str, plugin: Search, **kwargs: Any
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
-        self._attach_product_type_config(plugin, product_type)
-        if getattr(plugin.config, "need_auth", False) and (
-            auth := self._plugins_manager.get_auth_plugin(plugin)
-        ):
-            try:
-                plugin.auth = auth.authenticate()
-            except AuthenticationError:
-                logger.debug(
-                    "queryables from provider %s could not be fetched due to an authentication error",
-                    plugin.provider,
-                )
-        if "productType" not in kwargs:
-            kwargs["productType"] = product_type
-        return plugin.list_queryables(
-            filters=kwargs, product_type=product_type, alias=pt_alias
-        )
-
     def list_queryables(
         self, provider: Optional[str] = None, **kwargs: Any
     ) -> QueryablesDict:
@@ -2318,73 +2297,52 @@ class EODataAccessGateway:
                 **model_fields_to_annotated(CommonQueryables.model_fields),
             )
 
-        providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
+            # attach product type config
+            product_type_configs = {}
             if product_type:
-                plugin_queryables = self._get_queryables_for_product_type(
-                    product_type, pt_alias, plugin, **kwargs
-                )
-                if plugin_queryables:
-                    providers_queryables[plugin.provider] = plugin_queryables
-            elif getattr(plugin.config, "discover_queryables", {}).get("fetch_url", ""):
-                # the provider has a generic /queryables endpoint
-                if getattr(plugin.config, "need_auth", False) and (
-                    auth := self._plugins_manager.get_auth_plugin(plugin)
-                ):
-                    try:
-                        plugin.auth = auth.authenticate()
-                    except AuthenticationError:
-                        logger.debug(
-                            "queryables from provider %s could not be fetched due to an authentication error",
-                            plugin.provider,
-                        )
-                plugin_queryables = plugin.list_queryables(kwargs)
-                if plugin_queryables:
-                    providers_queryables[plugin.provider] = plugin_queryables
+                self._attach_product_type_config(plugin, product_type)
+                product_type_configs[product_type] = plugin.config.product_type_config
             else:
-                # if no product type is given use an intersection for all product types of the provider
-                all_queryable_keys: Optional[Set[str]] = None
-                standard_queryables = model_fields_to_annotated(Queryables.model_fields)
                 for pt in available_product_types:
-                    product_type_queryables = self._get_queryables_for_product_type(
-                        pt, pt_alias, plugin, **kwargs
+                    self._attach_product_type_config(plugin, pt)
+                    product_type_configs[pt] = plugin.config.product_type_config
+
+            # authenticate if required
+            if getattr(plugin.config, "need_auth", False) and (
+                auth := self._plugins_manager.get_auth_plugin(plugin)
+            ):
+                try:
+                    plugin.auth = auth.authenticate()
+                except AuthenticationError:
+                    logger.debug(
+                        "queryables from provider %s could not be fetched due to an authentication error",
+                        plugin.provider,
                     )
-                    if product_type_queryables:
-                        if not all_queryable_keys:
-                            all_queryable_keys = set(product_type_queryables.keys())
-                        else:
-                            all_queryable_keys = set.intersection(
-                                all_queryable_keys, set(product_type_queryables.keys())
-                            )
-                    if all_queryable_keys:
-                        providers_queryables[plugin.provider] = {
-                            k: standard_queryables[k]
-                            if k in standard_queryables
-                            else Annotated[
-                                Any,
-                                Field(
-                                    description=f"{k} - Set the collection parameter to get possible values"
-                                ),
-                            ]
-                            for k in all_queryable_keys
-                        }
-        if providers_queryables:
-            queryable_keys: Set[str] = set.intersection(  # type: ignore
-                *[set(q.keys()) for q in providers_queryables.values()]
+            plugin_queryables = plugin.list_queryables(
+                kwargs,
+                available_product_types,
+                product_type_configs,
+                product_type,
+                pt_alias,
             )
-            queryables = {
-                k: v
-                for k, v in list(providers_queryables.values())[0].items()
-                if k in queryable_keys
-            }
-        else:
-            queryables = {}
+            queryables.update(plugin_queryables)
 
         additional_properties = self._has_queryables_additional_properties(
             product_type, provider
         )
-        return QueryablesDict(additional_properties=additional_properties, **queryables)
+        additional_info = (
+            "Please select a product type to get the possible values of the parameters!"
+            if not product_type
+            else ""
+        )
+        return QueryablesDict(
+            additional_properties=additional_properties,
+            additional_information=additional_info,
+            **queryables,
+        )
 
     def _has_queryables_additional_properties(
         self, product_type: Optional[str], provider: Optional[str]
