@@ -582,7 +582,9 @@ async def get_queryables(
 
     async def _fetch() -> Dict[str, Any]:
         python_queryables = eodag_api.list_queryables(
-            provider=provider, **params.model_dump(exclude_none=True, by_alias=True)
+            provider=provider,
+            fetch_providers=False,
+            **params.model_dump(exclude_none=True, by_alias=True),
         )
 
         python_queryables_json = python_queryables.get_model().model_json_schema(
