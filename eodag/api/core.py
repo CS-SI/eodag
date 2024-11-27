@@ -2267,17 +2267,24 @@ class EODataAccessGateway:
         :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         """
+        # only fetch providers if product type is not found
         available_product_types = [
             pt["ID"]
-            for pt in self.list_product_types(
-                provider=provider, fetch_providers=fetch_providers
-            )
+            for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
         product_type: Optional[str] = kwargs.get("productType")
         pt_alias: Optional[str] = product_type
 
         if product_type:
             if product_type not in available_product_types:
+                if fetch_providers:
+                    # fetch providers and try again
+                    available_product_types = [
+                        pt["ID"]
+                        for pt in self.list_product_types(
+                            provider=provider, fetch_providers=True
+                        )
+                    ]
                 raise UnsupportedProductType(f"{product_type} is not available.")
             try:
                 kwargs["productType"] = product_type = self.get_product_type_from_alias(
