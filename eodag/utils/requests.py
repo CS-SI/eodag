@@ -61,7 +61,7 @@ def fetch_json(
         )
         res.raise_for_status()
     except requests.exceptions.Timeout as exc:
-        raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        raise TimeOutError(exc, timeout=timeout) from exc
     except requests.exceptions.RequestException as exc:
         raise RequestError.from_error(exc, f"Unable to fetch {url}") from exc
     else:

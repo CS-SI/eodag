@@ -64,6 +64,7 @@ from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables
 from eodag.utils import (
+    HTTP_REQ_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
@@ -954,7 +955,8 @@ class ECMWFSearch(PostJsonSearch):
             if hasattr(self, "auth") and isinstance(self.auth, AuthBase)
             else None
         )
-        return fetch_json(url, auth=auth)
+        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+        return fetch_json(url, auth=auth, timeout=timeout)
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
