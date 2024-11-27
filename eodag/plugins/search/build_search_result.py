@@ -1228,7 +1228,13 @@ class WekeoECMWFSearch(ECMWFSearch):
         :param kwargs: Search arguments
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
-        return PostJsonSearch.normalize_results(self, results, **kwargs)
+        normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
+
+        normalized[0].properties["_dc_qs"] = quote_plus(
+            orjson.dumps(results.query_params)
+        )
+
+        return normalized
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request.
