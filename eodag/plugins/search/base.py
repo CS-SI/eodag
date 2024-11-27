@@ -31,7 +31,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import Queryables
+from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
@@ -345,7 +345,7 @@ class Search(PluginTopic):
         product_type_configs: Dict[str, Dict[str, Any]],
         product_type: Optional[str] = None,
         alias: Optional[str] = None,
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+    ) -> QueryablesDict:
         """
         Get queryables
 
@@ -358,13 +358,28 @@ class Search(PluginTopic):
         :return: A dictionary containing the queryable properties, associating parameters to their
                 annotated type.
         """
-
+        additional_info = (
+            "Please select a product type to get the possible values of the parameters!"
+            if not product_type
+            else ""
+        )
         if product_type or getattr(self.config, "discover_queryables", {}).get(
             "fetch_url", ""
         ):
             if product_type:
                 self.config.product_type_config = product_type_configs[product_type]
-            return self._get_product_type_queryables(product_type, alias, filters)
+            queryables = self._get_product_type_queryables(product_type, alias, filters)
+            if getattr(self.config, "discover_queryables", {}).get(
+                "constraints_url", ""
+            ):
+                additional_properties = False
+            else:
+                additional_properties = True
+            return QueryablesDict(
+                additional_properties=additional_properties,
+                additional_information=additional_info,
+                **queryables,
+            )
         else:
             all_queryables: Dict[str, Any] = {}
             for pt in available_product_types:
@@ -376,7 +391,11 @@ class Search(PluginTopic):
                     for k, v in pt_queryables.items()
                 }
                 all_queryables.update(pt_queryables_neutral)
-            return all_queryables
+            return QueryablesDict(
+                additional_properties=True,
+                additional_information=additional_info,
+                **all_queryables,
+            )
 
     def queryables_from_metadata_mapping(
         self, product_type: Optional[str] = None, alias: Optional[str] = None

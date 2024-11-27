@@ -1630,8 +1630,6 @@ class PostJsonSearch(QueryStringSearch):
         raw_search_result.product_type_def_params = prep.product_type_def_params
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
-        if count and not total_items:
-            total_items = len(eo_products)
         return eo_products, total_items
 
     def normalize_results(

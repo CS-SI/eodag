@@ -24,23 +24,12 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from pydantic.fields import FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -2260,11 +2249,15 @@ class EODataAccessGateway:
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
     def list_queryables(
-        self, provider: Optional[str] = None, **kwargs: Any
+        self,
+        provider: Optional[str] = None,
+        fetch_providers: bool = True,
+        **kwargs: Any,
     ) -> QueryablesDict:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
+        :param fetch_providers: If new product types should be fetched from the providers; default: True
         :param kwargs: additional filters for queryables (`productType` or other search
                        arguments)
 
@@ -2276,7 +2269,9 @@ class EODataAccessGateway:
         """
         available_product_types = [
             pt["ID"]
-            for pt in self.list_product_types(provider=provider, fetch_providers=False)
+            for pt in self.list_product_types(
+                provider=provider, fetch_providers=fetch_providers
+            )
         ]
         product_type: Optional[str] = kwargs.get("productType")
         pt_alias: Optional[str] = product_type
@@ -2297,7 +2292,9 @@ class EODataAccessGateway:
                 **model_fields_to_annotated(CommonQueryables.model_fields),
             )
 
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        queryables: QueryablesDict = QueryablesDict(
+            additional_properties=True, additional_information="", **{}
+        )
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             # attach product type config
@@ -2329,44 +2326,14 @@ class EODataAccessGateway:
                 pt_alias,
             )
             queryables.update(plugin_queryables)
+            if not plugin_queryables.additional_properties:
+                queryables.additional_properties = False
+            if plugin_queryables.additional_information:
+                queryables.additional_information += (
+                    f"{provider}: {plugin_queryables.additional_information}"
+                )
 
-        additional_properties = self._has_queryables_additional_properties(
-            product_type, provider
-        )
-        additional_info = (
-            "Please select a product type to get the possible values of the parameters!"
-            if not product_type
-            else ""
-        )
-        return QueryablesDict(
-            additional_properties=additional_properties,
-            additional_information=additional_info,
-            **queryables,
-        )
-
-    def _has_queryables_additional_properties(
-        self, product_type: Optional[str], provider: Optional[str]
-    ) -> bool:
-        """
-        Checks if additional properties are allowed for the given product type provider configuration
-        will be true if no product type if given or if no provider is given and there are several providers possible
-        will be false if the provider uses constraints
-
-        :param product_type: (optional) product type selected
-        :param provider: (optional) provider selected
-        :return: if additional properties are allowed
-        """
-        if not product_type:
-            return True
-        plugins = [
-            p for p in self._plugins_manager.get_search_plugins(product_type, provider)
-        ]
-        if not provider and len(plugins) != 1:
-            return True
-        plugin_config = plugins[0].config
-        if getattr(plugin_config, "discover_queryables", {}).get("constraints_url", ""):
-            return False
-        return True
+        return queryables
 
     def available_sortables(self) -> Dict[str, Optional[ProviderSortables]]:
         """For each provider, gives its available sortable parameter(s) and its maximum

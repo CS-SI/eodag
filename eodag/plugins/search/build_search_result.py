@@ -421,8 +421,11 @@ class ECMWFSearch(PostJsonSearch):
         if not product_type:
             product_type = kwargs.get("productType", None)
         self._preprocess_search_params(kwargs, product_type)
+        result, num_items = super().query(prep, **kwargs)
+        if prep.count and not num_items:
+            num_items = 1
 
-        return super().query(prep, **kwargs)
+        return result, num_items
 
     def clear(self) -> None:
         """Clear search context"""
