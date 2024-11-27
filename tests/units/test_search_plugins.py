@@ -728,7 +728,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
             headers=USER_AGENT,
             auth=None,
-            timeout=5,
+            timeout=60,
         )
 
         # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
@@ -777,13 +777,13 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         # with additional param
         queryables = search_plugin.discover_queryables(
             productType="ERA5_SL_MONTHLY",
-            variable="a",
+            **{"ecmwf:variable": "a"},
         )
         self.assertIsNotNone(queryables)
 
         self.assertEqual(10, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
-        queryable = queryables.get("variable")
+        queryable = queryables.get("ecmwf:variable")
         if queryable is not None:
             self.assertEqual("a", queryable.__metadata__[0].get_default())
             self.assertFalse(queryable.__metadata__[0].is_required())
