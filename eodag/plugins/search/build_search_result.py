@@ -553,6 +553,11 @@ class ECMWFSearch(PostJsonSearch):
             product_type_config.get("ecmwf:dataset", None)
             or product_type_config["productType"]
         )
+        if "start" in kwargs:
+            kwargs["startTimeFromAscendingNode"] = kwargs.pop("start")
+        if "end" in kwargs:
+            kwargs["completionTimeFromAscendingNode"] = kwargs.pop("end")
+
         # extract default datetime
         processed_kwargs = deepcopy(kwargs)
         self._preprocess_search_params(processed_kwargs, product_type)
@@ -574,10 +579,16 @@ class ECMWFSearch(PostJsonSearch):
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
         for key in kwargs:
-            if "ecmwf:" in key:
-                formated_kwargs[key.split(":")[1]] = kwargs[key]
-            else:
+            if key.startswith("ecmwf:"):
+                formated_kwargs[key.replace("ecmwf:", "")] = kwargs[key]
+            elif key in (
+                "startTimeFromAscendingNode",
+                "completionTimeFromAscendingNode",
+                "geom",
+            ):
                 formated_kwargs[key] = kwargs[key]
+            else:
+                raise ValidationError(f"{key} in not a queryable parameter")
 
         # we use non empty kwargs as default to integrate user inputs
         # it is needed because pydantic json schema does not represent "value"
@@ -625,11 +636,17 @@ class ECMWFSearch(PostJsonSearch):
         # constraints might not include all queryables)
         for keyword in kwargs:
             if (
-                keyword not in available_values
+                keyword
+                not in available_values.keys()
+                | product_type_config.keys()
+                | {
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "geom",
+                }
                 and keyword.replace("ecmwf:", "") not in available_values
-                and keyword not in product_type_config
             ):
-                raise ValidationError(f"{keyword} in not a queryable parameter")
+                raise ValidationError(f"{keyword} is not a queryable parameter")
 
         # generate queryables
         if form:
@@ -763,22 +780,23 @@ class ECMWFSearch(PostJsonSearch):
                 allowed_values = list(
                     {value for c in constraints for value in c.get(keyword, [])}
                 )
+                # restore ecmwf: prefix before raising error
+                keyword = f"ecmwf:{keyword}"
+
+                all_keywords_str = ""
                 if len(parsed_keywords) > 1:
                     keywords = [
-                        f"{k}={pk}"
+                        f"ecmwf:{k}={pk}"
                         for k in parsed_keywords
                         if (pk := input_keywords.get(k))
                     ]
-                    raise ValidationError(
-                        f"{keyword}={values} is not available with"
-                        f" {', '.join(keywords)}."
-                        f" Allowed values are {', '.join(allowed_values)}."
-                    )
-                else:
-                    raise ValidationError(
-                        f"{values} is not available in {keyword}."
-                        + f" Allowed values are {', '.join(allowed_values)}."
-                    )
+                    all_keywords_str = f" with {', '.join(keywords)}"
+
+                raise ValidationError(
+                    f"{keyword}={values} is not available"
+                    f"{all_keywords_str}."
+                    f" Allowed values are {', '.join(allowed_values)}."
+                )
 
             parsed_keywords.append(keyword)
             constraints = filtered_constraints
