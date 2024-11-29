@@ -427,6 +427,12 @@ class ECMWFSearch(PostJsonSearch):
         if not product_type:
             product_type = kwargs.get("productType", None)
         self._preprocess_search_params(kwargs, product_type)
+
+        kwargs = {
+            "ecmwf:" + k if k in ECMWF_KEYWORDS + COP_DS_KEYWORDS else k: v
+            for k, v in kwargs.items()
+        }
+
         result, num_items = super().query(prep, **kwargs)
         if prep.count and not num_items:
             num_items = 1
