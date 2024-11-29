@@ -1943,23 +1943,14 @@
         metadata_mapping:
           downloadLink: $.json.asset.value.href
     products:
-      CAMS_GAC_FORECAST:
-      CAMS_GFE_GFAS:
-      CAMS_EU_AIR_QUALITY_FORECAST:
       CAMS_EU_AIR_QUALITY_RE:
         extract: true
       CAMS_GRF:
         extract: true
       CAMS_GRF_AUX:
         extract: true
-      CAMS_SOLAR_RADIATION:
-      CAMS_GREENHOUSE_EGG4_MONTHLY:
-      CAMS_GREENHOUSE_EGG4:
-      CAMS_GREENHOUSE_INVERSION:
       CAMS_GLOBAL_EMISSIONS:
         extract: true
-      CAMS_EAC4:
-      CAMS_EAC4_MONTHLY:
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
@@ -2188,7 +2179,10 @@
     products:
       AG_ERA5:
         extract: true
+<<<<<<< HEAD
       UERRA_EUROPE_SL:
+=======
+>>>>>>> be1be030 (fix(providers): remove empty products)
       GLACIERS_DIST_RANDOLPH:
         extract: true
       SATELLITE_CARBON_DIOXIDE:
@@ -2197,12 +2191,6 @@
         extract: true
       SATELLITE_METHANE:
         extract: true
-      SEASONAL_POSTPROCESSED_PL:
-      SEASONAL_POSTPROCESSED_SL:
-      SEASONAL_ORIGINAL_SL:
-      SEASONAL_ORIGINAL_PL:
-      SEASONAL_MONTHLY_PL:
-      SEASONAL_MONTHLY_SL:
       SIS_HYDRO_MET_PROJ:
         extract: true
   search: !plugin
@@ -5520,10 +5508,6 @@
       on_success:
         metadata_mapping:
           downloadLink: '{orderStatusLink}'
-    products:
-      DT_EXTREMES:
-      DT_CLIMATE_ADAPTATION:
-      FIRE_HISTORICAL:
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
@@ -6607,8 +6591,6 @@
         need_search: true
         metadata_mapping:
           downloadLink: $.json.asset.value.href
-    products:
-      FIRE_HISTORICAL:
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
