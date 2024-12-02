@@ -165,6 +165,7 @@ COP_DS_KEYWORDS = [
     "hmonth",
     "horizontal_resolution",
     "hydrological_model",
+    "hydrological_year",
     "hyear",
     "input_observations",
     "leadtime_hour",
