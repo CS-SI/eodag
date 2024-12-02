@@ -52,7 +52,6 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
-    eodag_key_from_provider_key,
     format_metadata,
     format_query_params,
     mtd_cfg_as_conversion_and_querypath,
@@ -315,6 +314,11 @@ def _update_properties_from_element(
 
     if description := element.get("help"):
         prop["description"] = description
+
+
+def ecmwf_format(v: str) -> str:
+    """Add ECMWF prefix to value v if v is a ECMWF keyword."""
+    return "ecmwf:" + v if v in ECMWF_KEYWORDS + COP_DS_KEYWORDS else v
 
 
 class ECMWFSearch(PostJsonSearch):
@@ -879,15 +883,11 @@ class ECMWFSearch(PostJsonSearch):
             if default and prop["type"] == "string" and isinstance(default, list):
                 default = ",".join(default)
 
-            # rename keywords from form with metadata mapping.
-            # needed to map constraints like "xxxx" to eodag parameter "cop_cds:xxxx"
-            key = eodag_key_from_provider_key(name, self.config.metadata_mapping)
-
             is_required = bool(element.get("required"))
             if is_required:
                 required_list.append(name)
 
-            queryables[key] = Annotated[
+            queryables[ecmwf_format(name)] = Annotated[
                 get_args(
                     json_field_definition_to_python(
                         prop,
@@ -916,16 +916,13 @@ class ECMWFSearch(PostJsonSearch):
         """
         # Rename keywords from form with metadata mapping.
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-        required = [
-            eodag_key_from_provider_key(k, self.config.metadata_mapping)
-            for k in required_keywords
-        ]
+        required = [ecmwf_format(k) for k in required_keywords]
 
         queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
         for name, values in available_values.items():
             # Rename keywords from form with metadata mapping.
             # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-            key = eodag_key_from_provider_key(name, self.config.metadata_mapping)
+            key = ecmwf_format(name)
 
             default = defaults.get(key)
 
@@ -1231,12 +1228,22 @@ class WekeoECMWFSearch(ECMWFSearch):
         :param kwargs: Search arguments
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
+
+        # formating of orderLink requires access to the productType value.
+        results.data = [
+            {**result, **results.product_type_def_params} for result in results
+        ]
+
         normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
 
-        if len(normalized) > 0:
-            normalized[0].properties["_dc_qs"] = quote_plus(
-                orjson.dumps(results.query_params)
-            )
+        if not normalized:
+            return normalized
+
+        query_params_encoded = quote_plus(orjson.dumps(results.query_params))
+        for product in normalized:
+            properties = {**product.properties, **results.query_params}
+            properties["_dc_qs"] = query_params_encoded
+            product.properties = {ecmwf_format(k): v for k, v in properties.items()}
 
         return normalized
 
@@ -1258,6 +1265,15 @@ class WekeoECMWFSearch(ECMWFSearch):
         :param kwargs: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
+        # Reorder kwargs to make sure year/month/day/time if set overwrite default datetime.
+        # strip_quotes to remove duplicated quotes like "'1_1'" produced by convertors like to_geojson.
+        priority_keys = [
+            "startTimeFromAscendingNode",
+            "completionTimeFromAscendingNode",
+        ]
+        ordered_kwargs = {k: kwargs[k] for k in priority_keys if k in kwargs}
+        ordered_kwargs.update({k: strip_quotes(v) for k, v in kwargs.items()})
+
         return QueryStringSearch.build_query_string(
-            self, product_type=product_type, **kwargs
+            self, product_type=product_type, **ordered_kwargs
         )
