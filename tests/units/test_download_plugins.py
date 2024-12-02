@@ -2252,3 +2252,55 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
         self.assertEqual(mock_check_manifest_file_list.call_count, 0)
         self.assertEqual(mock_flatten_top_directories.call_count, 1)
+
+    @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.finalize_s2_safe_product", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_chunk_dest_path", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.download.creodias_s3.CreodiasS3Download._get_authenticated_objects_from_auth_keys",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
+    def test_plugins_download_creodias_s3_withou_assets(
+        self,
+        mock_requests_get,
+        mock_get_authenticated_objects,
+        mock_get_chunk_dest_path,
+        mock_finalize_s2_safe_product,
+        mock_check_manifest_file_list,
+        mock_flatten_top_directories,
+    ):
+        product = EOProduct(
+            "creodias_s3",
+            dict(
+                geometry="POINT (0 0)",
+                title="dummy_product",
+                id="dummy",
+                productIdentifier="/eodata/01/a.tar",
+            ),
+        )
+        product.location = product.remote_location = "a"
+        plugin = self.get_download_plugin(product)
+        product.properties["tileInfo"] = "http://example.com/tileInfo.json"
+        # authenticated objects mock
+        mock_get_authenticated_objects.return_value.keys.return_value = ["a.tar"]
+        mock_get_authenticated_objects.return_value.filter.side_effect = (
+            lambda *x, **y: [mock.Mock(size=0, key=y["Prefix"])]
+        )
+
+        plugin.download(product, output_dir=self.output_dir, auth={})
+
+        mock_get_authenticated_objects.assert_called_once_with(
+            plugin, "eodata", "01", {}
+        )
+        self.assertEqual(mock_get_chunk_dest_path.call_count, 1)
+        self.assertEqual(mock_finalize_s2_safe_product.call_count, 0)
+        self.assertEqual(mock_check_manifest_file_list.call_count, 0)
+        self.assertEqual(mock_flatten_top_directories.call_count, 1)

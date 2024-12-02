@@ -60,7 +60,7 @@ def patched_register_downloader(self, downloader, authenticator):
 
 
 def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
-    product.assets = {}
+    product.assets = AssetsDict(product)
     prefix = (
         product.properties.get("productIdentifier", None).replace("/eodata/", "") + "/"
     )
@@ -82,27 +82,32 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                 )
             logger.debug("Listing assets in %s", prefix)
             product.assets = AssetsDict(product)
-            for asset in auth.s3_client.list_objects(
+            s3_res = auth.s3_client.list_objects(
                 Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
-            )["Contents"]:
-                asset_basename = (
-                    asset["Key"].split("/")[-1] if "/" in asset["Key"] else asset["Key"]
-                )
-
-                if len(asset_basename) > 0 and asset_basename not in product.assets:
-                    role = (
-                        "data"
-                        if asset_basename.split(".")[-1] in DATA_EXTENSIONS
-                        else "metadata"
+            )
+            # check if product path has assets or is already a file
+            if "Contents" in s3_res:
+                for asset in s3_res["Contents"]:
+                    asset_basename = (
+                        asset["Key"].split("/")[-1]
+                        if "/" in asset["Key"]
+                        else asset["Key"]
                     )
 
-                    product.assets[asset_basename] = {
-                        "title": asset_basename,
-                        "roles": [role],
-                        "href": f"s3://{config.s3_bucket}/{asset['Key']}",
-                    }
-                    if mime_type := guess_file_type(asset["Key"]):
-                        product.assets[asset_basename]["type"] = mime_type
+                    if len(asset_basename) > 0 and asset_basename not in product.assets:
+                        role = (
+                            "data"
+                            if asset_basename.split(".")[-1] in DATA_EXTENSIONS
+                            else "metadata"
+                        )
+
+                        product.assets[asset_basename] = {
+                            "title": asset_basename,
+                            "roles": [role],
+                            "href": f"s3://{config.s3_bucket}/{asset['Key']}",
+                        }
+                        if mime_type := guess_file_type(asset["Key"]):
+                            product.assets[asset_basename]["type"] = mime_type
             # update driver
             product.driver = product.get_driver()
 

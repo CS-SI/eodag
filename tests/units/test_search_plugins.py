@@ -37,6 +37,7 @@ from pydantic_core import PydanticUndefined
 from requests import RequestException
 from typing_extensions import get_args
 
+from build.lib.eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import UnsupportedProductType
@@ -2178,9 +2179,21 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             }
             product.register_downloader(download_plugin, auth_plugin)
         assets = res[0][0].assets
+        self.assertEquals(3, len(assets))
         # check if s3 links have been created correctly
         for asset in assets.values():
             self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
+
+        # no occur should occur and assets should be empty if list_objects does not have content
+        # (this situation will occur if the product does not have assets but is a tar file)
+        stubber.add_response("list_objects", {})
+        download_plugin = self.plugins_manager.get_download_plugin(res[0][0])
+        auth_plugin = self.plugins_manager.get_auth_plugin(download_plugin, res[0][0])
+        res[0][0].driver = None
+        res[0][0].assets = AssetsDict(res[0][0])
+        res[0][0].register_downloader(download_plugin, auth_plugin)
+        self.assertIsNotNone(res[0][0].driver)
+        self.assertEquals(0, len(res[0][0].assets))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
