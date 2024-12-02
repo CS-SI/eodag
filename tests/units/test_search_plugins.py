@@ -37,7 +37,7 @@ from pydantic_core import PydanticUndefined
 from requests import RequestException
 from typing_extensions import get_args
 
-from build.lib.eodag.api.product import AssetsDict
+from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import UnsupportedProductType
