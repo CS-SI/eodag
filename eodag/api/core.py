@@ -24,24 +24,12 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import geojson
 import pkg_resources
 import yaml.parser
 from pkg_resources import resource_filename
-from pydantic.fields import FieldInfo
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import create_in, exists_in, open_dir
@@ -69,10 +57,10 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import BuildPostSearchResult
+from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables
+from eodag.types.queryables import CommonQueryables, QueryablesDict
 from eodag.types.whoosh import EODAGQueryParser
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -84,7 +72,6 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
-    copy_deepcopy,
     get_geometry_from_various,
     makedirs,
     obj_md5sum,
@@ -93,6 +80,7 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import (
+    AuthenticationError,
     EodagError,
     NoMatchingProductType,
     PluginImplementationError,
@@ -219,9 +207,10 @@ class EODataAccessGateway:
                         "eodag",
                         os.path.join("resources", "locations_conf_template.yml"),
                     )
-                    with open(locations_conf_template) as infile, open(
-                        locations_conf_path, "w"
-                    ) as outfile:
+                    with (
+                        open(locations_conf_template) as infile,
+                        open(locations_conf_path, "w") as outfile,
+                    ):
                         # The template contains paths in the form of:
                         # /path/to/locations/file.shp
                         path_template = "/path/to/locations/"
@@ -1773,12 +1762,12 @@ class EODataAccessGateway:
         for plugin in self._plugins_manager.get_search_plugins(
             product_type=product_type, provider=provider
         ):
-            # exclude BuildPostSearchResult plugins from search fallback for unknow product_type
+            # exclude MeteoblueSearch plugins from search fallback for unknown product_type
             if (
                 provider != plugin.provider
                 and preferred_provider != plugin.provider
                 and product_type not in self.product_types_config
-                and isinstance(plugin, BuildPostSearchResult)
+                and isinstance(plugin, MeteoblueSearch)
             ):
                 continue
             search_plugins.append(plugin)
@@ -1801,27 +1790,7 @@ class EODataAccessGateway:
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
-            try:
-                search_plugin.config.product_type_config = dict(
-                    [
-                        p
-                        for p in self.list_product_types(
-                            search_plugin.provider, fetch_providers=False
-                        )
-                        if p["_id"] == product_type
-                    ][0],
-                    **{"productType": product_type},
-                )
-                # If the product isn't in the catalog, it's a generic product type.
-            except IndexError:
-                # Construct the GENERIC_PRODUCT_TYPE metadata
-                search_plugin.config.product_type_config = dict(
-                    ID=GENERIC_PRODUCT_TYPE,
-                    **self.product_types_config[GENERIC_PRODUCT_TYPE],
-                    productType=product_type,
-                )
-            # Remove the ID since this is equal to productType.
-            search_plugin.config.product_type_config.pop("ID", None)
+            self._attach_product_type_config(search_plugin, product_type)
 
         return search_plugins, kwargs
 
@@ -2280,67 +2249,96 @@ class EODataAccessGateway:
         return self._plugins_manager.get_crunch_plugin(name, **plugin_conf)
 
     def list_queryables(
-        self, provider: Optional[str] = None, **kwargs: Any
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        self,
+        provider: Optional[str] = None,
+        fetch_providers: bool = True,
+        **kwargs: Any,
+    ) -> QueryablesDict:
         """Fetch the queryable properties for a given product type and/or provider.
 
         :param provider: (optional) The provider.
+        :param fetch_providers: If new product types should be fetched from the providers; default: True
         :param kwargs: additional filters for queryables (`productType` or other search
                        arguments)
 
         :raises UnsupportedProductType: If the specified product type is not available for the
                                         provider.
 
-        :returns: A dict containing the EODAG queryable properties, associating
-                  parameters to their annotated type
+        :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
+                  properties, associating parameters to their annotated type, and a additional_properties attribute
         """
+        # only fetch providers if product type is not found
         available_product_types = [
             pt["ID"]
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
-        product_type = kwargs.get("productType")
+        product_type: Optional[str] = kwargs.get("productType")
+        pt_alias: Optional[str] = product_type
 
         if product_type:
+            if product_type not in available_product_types:
+                if fetch_providers:
+                    # fetch providers and try again
+                    available_product_types = [
+                        pt["ID"]
+                        for pt in self.list_product_types(
+                            provider=provider, fetch_providers=True
+                        )
+                    ]
+                raise UnsupportedProductType(f"{product_type} is not available.")
             try:
                 kwargs["productType"] = product_type = self.get_product_type_from_alias(
                     product_type
                 )
             except NoMatchingProductType as e:
-                raise UnsupportedProductType(f"{product_type} is not available") from e
-
-        if product_type and product_type not in available_product_types:
-            self.fetch_product_types_list()
+                raise UnsupportedProductType(f"{product_type} is not available.") from e
 
         if not provider and not product_type:
-            return model_fields_to_annotated(CommonQueryables.model_fields)
+            return QueryablesDict(
+                additional_properties=True,
+                **model_fields_to_annotated(CommonQueryables.model_fields),
+            )
 
-        providers_queryables: Dict[str, Dict[str, Annotated[Any, FieldInfo]]] = {}
+        queryables: QueryablesDict = QueryablesDict(
+            additional_properties=True, additional_information="", **{}
+        )
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
+            # attach product type config
+            product_type_configs = {}
+            if product_type:
+                self._attach_product_type_config(plugin, product_type)
+                product_type_configs[product_type] = plugin.config.product_type_config
+            else:
+                for pt in available_product_types:
+                    self._attach_product_type_config(plugin, pt)
+                    product_type_configs[pt] = plugin.config.product_type_config
+
+            # authenticate if required
             if getattr(plugin.config, "need_auth", False) and (
                 auth := self._plugins_manager.get_auth_plugin(plugin)
             ):
-                plugin.auth = auth.authenticate()
-            providers_queryables[plugin.provider] = plugin.list_queryables(
-                filters=kwargs, product_type=product_type
+                try:
+                    plugin.auth = auth.authenticate()
+                except AuthenticationError:
+                    logger.debug(
+                        "queryables from provider %s could not be fetched due to an authentication error",
+                        plugin.provider,
+                    )
+            plugin_queryables = plugin.list_queryables(
+                kwargs,
+                available_product_types,
+                product_type_configs,
+                product_type,
+                pt_alias,
             )
-
-        queryable_keys: Set[str] = set.intersection(  # type: ignore
-            *[set(q.keys()) for q in providers_queryables.values()]
-        )
-        queryables = {
-            k: v
-            for k, v in list(providers_queryables.values())[0].items()
-            if k in queryable_keys
-        }
-
-        # always keep at least CommonQueryables
-        common_queryables = copy_deepcopy(CommonQueryables.model_fields)
-        for key, queryable in common_queryables.items():
-            if key in kwargs:
-                queryable.default = kwargs[key]
-
-        queryables.update(model_fields_to_annotated(common_queryables))
+            queryables.update(plugin_queryables)
+            if not plugin_queryables.additional_properties:
+                queryables.additional_properties = False
+            if plugin_queryables.additional_information:
+                queryables.additional_information += (
+                    f"{provider}: {plugin_queryables.additional_information}"
+                )
 
         return queryables
 
@@ -2375,3 +2373,30 @@ class EODataAccessGateway:
                 ],
             }
         return sortables
+
+    def _attach_product_type_config(self, plugin: Search, product_type: str) -> None:
+        """
+        Attach product_types_config to plugin config. This dict contains product
+        type metadata that will also be stored in each product's properties.
+        """
+        try:
+            plugin.config.product_type_config = dict(
+                [
+                    p
+                    for p in self.list_product_types(
+                        plugin.provider, fetch_providers=False
+                    )
+                    if p["_id"] == product_type
+                ][0],
+                **{"productType": product_type},
+            )
+            # If the product isn't in the catalog, it's a generic product type.
+        except IndexError:
+            # Construct the GENERIC_PRODUCT_TYPE metadata
+            plugin.config.product_type_config = dict(
+                ID=GENERIC_PRODUCT_TYPE,
+                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                productType=product_type,
+            )
+        # Remove the ID since this is equal to productType.
+        plugin.config.product_type_config.pop("ID", None)

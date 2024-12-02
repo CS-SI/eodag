@@ -25,7 +25,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, List, Optional, Union
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import geojson
 import httpx
@@ -327,7 +327,7 @@ class RequestTestCase(unittest.TestCase):
         method: str = "GET",
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
-        search_result: SearchResult = None,
+        search_result: Optional[SearchResult] = None,
         expected_status_code: int = 200,
     ) -> httpx.Response:
         if search_result:
@@ -374,7 +374,7 @@ class RequestTestCase(unittest.TestCase):
         post_data: Optional[Any] = None,
         search_call_count: Optional[int] = None,
         check_links: bool = True,
-        search_result: SearchResult = None,
+        search_result: Optional[SearchResult] = None,
     ) -> Any:
         response = self._request_valid_raw(
             url,
@@ -1328,13 +1328,6 @@ class RequestTestCase(unittest.TestCase):
                 provider_stac_queryable, res_no_product_type_with_provider["properties"]
             )
 
-        # properties from eodag general provider metadata mapping may be added (here an example with orbitDirection)
-        stac_od_property = "sat:orbit_state"
-        self.assertNotIn(
-            stac_od_property, provider_stac_queryables_from_queryables_file
-        )
-        self.assertIn(stac_od_property, res_no_product_type_with_provider["properties"])
-
     def test_queryables_with_provider_error(self):
         """Request to /queryables with a wrong provider as parameter should return a UnsupportedProvider error."""
         response = self.app.get(
@@ -1432,10 +1425,30 @@ class RequestTestCase(unittest.TestCase):
                     "additionalProperties",
                 ],
             )
-            self.assertFalse(res_product_type_no_provider["additionalProperties"])
+            self.assertTrue(res_product_type_no_provider["additionalProperties"])
 
-            # no property are added from providers queryables because none of them
-            # is shared with all providers for this product type
+            res_list = list(res_product_type_no_provider["properties"].keys())
+            expected = [
+                "platform",
+                "datetime",
+                "start_datetime",
+                "end_datetime",
+                "geometry",
+                "bbox",
+                "constellation",
+                "instruments",
+                "gsd",
+                "eo:cloud_cover",
+                "eo:snow_cover",
+                "processing:level",
+                "sat:orbit_state",
+                "sat:absolute_orbit",
+                "sar:instrument_mode",
+            ]
+            for value in expected:
+                self.assertIn(value, res_list)
+
+            # stac format processing:level is in result
             pl_s1_sar_grd_planetary_computer_queryable = "s1:processing_level"
             pl_s1_sar_grd_wekeo_main_queryable = "processingLevel"
             stac_pl_property = "processing:level"
@@ -1445,9 +1458,7 @@ class RequestTestCase(unittest.TestCase):
             )
             for constraint in wekeo_main_constraints["constraints"]:
                 self.assertNotIn(pl_s1_sar_grd_wekeo_main_queryable, constraint)
-            self.assertNotIn(
-                stac_pl_property, res_product_type_no_provider["properties"]
-            )
+            self.assertIn(stac_pl_property, res_product_type_no_provider["properties"])
 
         run()
 
@@ -1465,7 +1476,13 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(404, response.status_code)
 
     @mock.patch("eodag.plugins.search.qssearch.requests.Session.get", autospec=True)
-    def test_product_type_queryables_with_provider(self, mock_requests_get):
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
+        autospec=True,
+    )
+    def test_product_type_queryables_with_provider(
+        self, mock_discover_queryables_ecmwf, mock_requests_get
+    ):
         """Request a collection-specific list of queryables for a given provider
         using a queryables file should return a valid response."""
         queryables_path = os.path.join(
@@ -1520,7 +1537,7 @@ class RequestTestCase(unittest.TestCase):
                 "additionalProperties",
             ],
         )
-        self.assertFalse(res_product_type_with_provider["additionalProperties"])
+        self.assertTrue(res_product_type_with_provider["additionalProperties"])
 
         # properties from stac common queryables are added
         for p in stac_common_queryables:
@@ -1544,12 +1561,13 @@ class RequestTestCase(unittest.TestCase):
             res_product_type_with_provider["properties"][stac_psi_property]["type"],
         )
 
-        # properties from eodag provider metadata mapping may be added (here an example with orbitDirection)
-        stac_od_property = "sat:orbit_state"
-        self.assertNotIn(
-            stac_od_property, provider_stac_queryables_from_queryables_file
+        # provider + product type with constraints -> additionalProperties = False
+        mock_discover_queryables_ecmwf.return_value = {}
+        res_product_type_with_provider = self._request_valid(
+            "collections/ERA5_SL/queryables?provider=cop_cds",
+            check_links=False,
         )
-        self.assertIn(stac_od_property, res_product_type_with_provider["properties"])
+        self.assertFalse(res_product_type_with_provider["additionalProperties"])
 
     def test_stac_queryables_type(self):
         res = self._request_valid(
@@ -1559,22 +1577,20 @@ class RequestTestCase(unittest.TestCase):
         self.assertIn("eo:cloud_cover", res["properties"])
         cloud_cover = res["properties"]["eo:cloud_cover"]
         self.assertIn("type", cloud_cover)
-        self.assertListEqual(["integer", "null"], cloud_cover["type"])
-        self.assertIn("min", cloud_cover)
-        self.assertListEqual([0, None], cloud_cover["min"])
-        self.assertIn("max", cloud_cover)
-        self.assertListEqual([100, None], cloud_cover["max"])
+        self.assertEqual("integer", cloud_cover["type"])
+        self.assertIn("exclusiveMinimum", cloud_cover)
+        self.assertEqual(0, cloud_cover["exclusiveMinimum"])
+        self.assertIn("exclusiveMaximum", cloud_cover)
+        self.assertEqual(100, cloud_cover["exclusiveMaximum"])
         self.assertIn("processing:level", res["properties"])
         processing_level = res["properties"]["processing:level"]
-        self.assertListEqual(["string", "null"], processing_level["type"])
+        self.assertEqual("string", processing_level["type"])
         self.assertNotIn(
             "min", processing_level
         )  # none values are left out in serialization
 
-    @mock.patch("eodag.utils.requests.requests.Session.get", autospec=True)
-    def test_product_type_queryables_from_constraints(
-        self, mock_requests_session_constraints: Mock
-    ):
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
+    def test_product_type_queryables_from_constraints(self, mock_requests_get: Mock):
         """Request a collection-specific list of queryables for a given provider
         using a constraints file should return a valid response."""
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
@@ -1582,13 +1598,12 @@ class RequestTestCase(unittest.TestCase):
             constraints = json.load(f)
         for const in constraints:
             const["variable"].append("10m_u_component_of_wind")
-        mock_requests_session_constraints.return_value = MockResponse(
-            constraints, status_code=200
-        )
 
-        stac_common_queryables = list(StacQueryables.default_properties.keys())
-        # when product type is given, "collection" item is not used
-        stac_common_queryables.remove("collection")
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock_requests_get.return_value.json.side_effect = [constraints, form]
+
         provider_queryables_from_constraints_file = [
             "year",
             "month",
@@ -1597,32 +1612,45 @@ class RequestTestCase(unittest.TestCase):
             "variable",
             "leadtime_hour",
             "type",
-            "api_product_type",
+            "product_type",
         ]
         # queryables properties not shared by all constraints must be removed
         not_shared_properties = ["leadtime_hour", "type"]
         provider_queryables_from_constraints_file = [
-            f"cop_cds:{properties}"
+            f"ecmwf:{properties}"
             for properties in provider_queryables_from_constraints_file
             if properties not in not_shared_properties
         ]
-        default_provider_stac_properties = [
-            "cop_cds:api_product_type",
-            "cop_cds:format",
-        ]
+        default_provider_stac_properties = ["ecmwf:product_type", "ecmwf:data_format"]
 
         res = self._request_valid(
             "collections/ERA5_SL/queryables?provider=cop_cds",
             check_links=False,
         )
 
-        mock_requests_session_constraints.assert_called_once_with(
-            mock.ANY,
-            "https://cds-beta.climate.copernicus.eu/api/catalogue/v1/collections/"
-            "reanalysis-era5-single-levels/constraints.json",
-            headers=USER_AGENT,
-            auth=None,
-            timeout=5,
+        mock_requests_get.assert_has_calls(
+            [
+                call(
+                    mock.ANY,
+                    "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
+                    "reanalysis-era5-single-levels/constraints.json",
+                    headers=USER_AGENT,
+                    auth=None,
+                    timeout=5,
+                ),
+                call().raise_for_status(),
+                call().json(),
+                call(
+                    mock.ANY,
+                    "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
+                    "reanalysis-era5-single-levels/form.json",
+                    headers=USER_AGENT,
+                    auth=None,
+                    timeout=5,
+                ),
+                call().raise_for_status(),
+                call().json(),
+            ]
         )
 
         # the response is in StacQueryables class format
@@ -1639,10 +1667,6 @@ class RequestTestCase(unittest.TestCase):
             ],
         )
         self.assertFalse(res["additionalProperties"])
-
-        # properties from stac common queryables are added
-        for p in stac_common_queryables:
-            self.assertIn(p, list(res["properties"].keys()))
 
         # properties from provider product type queryables and default properties are added
         # (here the ones of ERA5_SL for cop_cds)

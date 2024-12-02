@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from copy import copy as copy_copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -75,9 +75,9 @@ from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
-from eodag.types.queryables import CommonQueryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
+    DEFAULT_MISSION_START_DATE,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     REQ_RETRY_BACKOFF_FACTOR,
@@ -93,10 +93,6 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
     urlencode,
-)
-from eodag.utils.constraints import (
-    fetch_constraints,
-    get_constraint_queryables_with_additional_params,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -282,13 +278,9 @@ class QueryStringSearch(Search):
 
         * :attr:`~eodag.config.PluginConfig.constraints_file_url` (``str``): url to fetch the constraints for a specific
           product type, can be an http url or a path to a file; the constraints are used to build queryables
-        * :attr:`~eodag.config.PluginConfig.constraints_file_dataset_key` (``str``): key which is used in the eodag
-          configuration to map the eodag product type to the provider product type; default: ``dataset``
         * :attr:`~eodag.config.PluginConfig.constraints_entry` (``str``): key in the json result where the constraints
           can be found; if not given, it is assumed that the constraints are on top level of the result, i.e.
           the result is an array of constraints
-        * :attr:`~eodag.config.PluginConfig.stop_without_constraints_entry_key` (``bool``): if true only a provider
-          result containing `constraints_entry` is accepted as valid and used to create constraints; default: ``False``
     """
 
     extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {
@@ -641,7 +633,11 @@ class QueryStringSearch(Search):
                                     ][kf]
                                 )
                                 for kf in keywords_fields
-                                if conf_update_dict["product_types_config"][
+                                if kf
+                                in conf_update_dict["product_types_config"][
+                                    generic_product_type_id
+                                ]
+                                and conf_update_dict["product_types_config"][
                                     generic_product_type_id
                                 ][kf]
                                 != NOT_AVAILABLE
@@ -722,102 +718,6 @@ class QueryStringSearch(Search):
             product_data,
             self.config.discover_product_types["single_product_type_parsable_metadata"],
         )
-
-    def discover_queryables(
-        self, **kwargs: Any
-    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
-        """Fetch queryables list from provider using its constraints file
-
-        :param kwargs: additional filters for queryables (`productType` and other search
-                       arguments)
-        :returns: fetched queryable parameters dict
-        """
-        product_type = kwargs.pop("productType", None)
-        if not product_type:
-            return {}
-        constraints_file_url = getattr(self.config, "constraints_file_url", "")
-        if not constraints_file_url:
-            return {}
-
-        constraints_file_dataset_key = getattr(
-            self.config, "constraints_file_dataset_key", "dataset"
-        )
-        provider_product_type = self.config.products.get(product_type, {}).get(
-            constraints_file_dataset_key, None
-        )
-
-        # defaults
-        default_queryables = self._get_defaults_as_queryables(product_type)
-        # remove unwanted queryables
-        for param in getattr(self.config, "remove_from_queryables", []):
-            default_queryables.pop(param, None)
-
-        non_empty_kwargs = {k: v for k, v in kwargs.items() if v}
-
-        if "{" in constraints_file_url:
-            constraints_file_url = constraints_file_url.format(
-                dataset=provider_product_type
-            )
-        constraints = fetch_constraints(constraints_file_url, self)
-        if not constraints:
-            return default_queryables
-
-        constraint_params: Dict[str, Dict[str, Set[Any]]] = {}
-        if len(kwargs) == 0:
-            # get values from constraints without additional filters
-            for constraint in constraints:
-                for key in constraint.keys():
-                    if key in constraint_params:
-                        constraint_params[key]["enum"].update(constraint[key])
-                    else:
-                        constraint_params[key] = {"enum": set(constraint[key])}
-        else:
-            # get values from constraints with additional filters
-            constraints_input_params = {k: v for k, v in non_empty_kwargs.items()}
-            constraint_params = get_constraint_queryables_with_additional_params(
-                constraints, constraints_input_params, self, product_type
-            )
-            # query params that are not in constraints but might be default queryables
-            if len(constraint_params) == 1 and "not_available" in constraint_params:
-                not_queryables = set()
-                for constraint_param in constraint_params["not_available"]["enum"]:
-                    param = CommonQueryables.get_queryable_from_alias(constraint_param)
-                    if param in dict(
-                        CommonQueryables.model_fields, **default_queryables
-                    ):
-                        non_empty_kwargs.pop(constraint_param)
-                    else:
-                        not_queryables.add(constraint_param)
-                if not_queryables:
-                    raise ValidationError(
-                        f"parameter(s) {str(not_queryables)} not queryable"
-                    )
-                else:
-                    # get constraints again without common queryables
-                    constraint_params = (
-                        get_constraint_queryables_with_additional_params(
-                            constraints, non_empty_kwargs, self, product_type
-                        )
-                    )
-
-        field_definitions: Dict[str, Any] = dict()
-        for json_param, json_mtd in constraint_params.items():
-            param = (
-                get_queryable_from_provider(
-                    json_param, self.get_metadata_mapping(product_type)
-                )
-                or json_param
-            )
-            default = kwargs.get(param, None) or self.config.products.get(
-                product_type, {}
-            ).get(param, None)
-            annotated_def = json_field_definition_to_python(
-                json_mtd, default_value=default, required=True
-            )
-            field_definitions[param] = get_args(annotated_def)
-
-        python_queryables = create_model("m", **field_definitions).model_fields
-        return dict(default_queryables, **model_fields_to_annotated(python_queryables))
 
     def query(
         self,
@@ -1524,54 +1424,53 @@ class PostJsonSearch(QueryStringSearch):
     """
 
     def _get_default_end_date_from_start_date(
-        self, start_datetime: str, product_type: str
+        self, start_datetime: str, product_type_conf: Dict[str, Any]
     ) -> str:
-        default_end_date = self.config.products.get(product_type, {}).get(
-            "_default_end_date", None
-        )
-        if default_end_date:
-            return default_end_date
         try:
             start_date = datetime.fromisoformat(start_datetime)
         except ValueError:
             start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
-        product_type_conf = self.config.products[product_type]
-        if (
-            "metadata_mapping" in product_type_conf
-            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
-        ):
-            mapping = product_type_conf["metadata_mapping"][
-                "startTimeFromAscendingNode"
-            ]
+        if "completionTimeFromAscendingNode" in product_type_conf:
+            mapping = product_type_conf["completionTimeFromAscendingNode"]
+            # if date is mapped to year/month/(day), use end_date = start_date  else start_date + 1 day
+            # (default dates are only needed for ecmwf products where selected timespans should not be too large)
             if isinstance(mapping, list) and "year" in mapping[0]:
-                # if date is mapped to year/month/(day), use end_date = start_date to avoid large requests
                 end_date = start_date
-                return end_date.isoformat()
+            else:
+                end_date = start_date + timedelta(days=1)
+            return end_date.isoformat()
         return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
 
-    def _check_date_params(self, keywords: Dict[str, Any], product_type: str) -> None:
+    def _check_date_params(
+        self, keywords: Dict[str, Any], product_type: Optional[str]
+    ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
         if (
             "startTimeFromAscendingNode"
             and "completionTimeFromAscendingNode" in keywords
         ):
             return
+
+        product_type_conf = getattr(self.config, "metadata_mapping", {})
+        if (
+            product_type
+            and product_type in self.config.products
+            and "metadata_mapping" in self.config.products[product_type]
+        ):
+            product_type_conf = self.config.products[product_type]["metadata_mapping"]
         # start time given, end time missing
         if "startTimeFromAscendingNode" in keywords:
             keywords[
                 "completionTimeFromAscendingNode"
             ] = self._get_default_end_date_from_start_date(
-                keywords["startTimeFromAscendingNode"], product_type
+                keywords["startTimeFromAscendingNode"], product_type_conf
             )
             return
-        product_type_conf = self.config.products[product_type]
-        if (
-            "metadata_mapping" in product_type_conf
-            and "startTimeFromAscendingNode" in product_type_conf["metadata_mapping"]
-        ):
-            mapping = product_type_conf["metadata_mapping"][
-                "startTimeFromAscendingNode"
-            ]
+
+        if "completionTimeFromAscendingNode" in product_type_conf:
+            mapping = product_type_conf["startTimeFromAscendingNode"]
+            if not isinstance(mapping, list):
+                mapping = product_type_conf["completionTimeFromAscendingNode"]
             if isinstance(mapping, list):
                 # get time parameters (date, year, month, ...) from metadata mapping
                 input_mapping = mapping[0].replace("{{", "").replace("}}", "")
@@ -1587,16 +1486,17 @@ class PostJsonSearch(QueryStringSearch):
                 for tp in time_params:
                     if tp not in keywords:
                         in_keywords = False
+                        break
                 if not in_keywords:
                     keywords[
                         "startTimeFromAscendingNode"
                     ] = self.get_product_type_cfg_value(
-                        "missionStartDate", today().isoformat()
+                        "missionStartDate", DEFAULT_MISSION_START_DATE
                     )
                     keywords[
                         "completionTimeFromAscendingNode"
                     ] = self._get_default_end_date_from_start_date(
-                        keywords["startTimeFromAscendingNode"], product_type
+                        keywords["startTimeFromAscendingNode"], product_type_conf
                     )
 
     def query(
@@ -1605,7 +1505,7 @@ class PostJsonSearch(QueryStringSearch):
         **kwargs: Any,
     ) -> Tuple[List[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface"""
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType", "")
         count = prep.count
         # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
         kwargs.pop("product_type", None)
@@ -1720,6 +1620,7 @@ class PostJsonSearch(QueryStringSearch):
             # do not try to extract total_items from search results if count is False
             del prep.total_items_nb
             del prep.need_count
+
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
@@ -2072,6 +1973,10 @@ class StacSearch(PostJsonSearch):
                 field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields
+            # replace geometry by geom
+            geom_queryable = python_queryables.pop("geometry", None)
+            if geom_queryable:
+                python_queryables["geom"] = geom_queryable
 
         return model_fields_to_annotated(python_queryables)
 

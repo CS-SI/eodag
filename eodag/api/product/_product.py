@@ -525,22 +525,21 @@ class EOProduct:
                 <tr style='background-color: transparent;'>
                     <td style='text-align: left; vertical-align: top;'>
                         {dict_to_html_table({
-                            "provider": self.provider,
-                            "product_type": self.product_type,
-                            "properties[&quot;id&quot;]": self.properties.get('id', None),
-                            "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
-                                'startTimeFromAscendingNode', None
-                            ),
-                            "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
-                                'completionTimeFromAscendingNode', None
-                            ),
-                        }, brackets=False)}
-                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({
-                            len(self.properties)
-                        })</summary>{dict_to_html_table(self.properties, depth=1)}</details>
-                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({
-                            len(self.assets)
-                        })</summary>{self.assets._repr_html_(embeded=True)}</details>
+                         "provider": self.provider,
+                         "product_type": self.product_type,
+                         "properties[&quot;id&quot;]": self.properties.get('id', None),
+                         "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
+                             'startTimeFromAscendingNode', None
+                         ),
+                         "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
+                             'completionTimeFromAscendingNode', None
+                         ),
+                         }, brackets=False)}
+                        <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(
+                             self.properties)})</summary>{
+                                 dict_to_html_table(self.properties, depth=1)}</details>
+                        <details><summary style='color: grey; margin-top: 10px;'>assets:&ensp;({len(
+                                     self.assets)})</summary>{self.assets._repr_html_(embeded=True)}</details>
                     </td>
                     <td {geom_style} title='geometry'>geometry<br />{self.geometry._repr_svg_()}</td>
                     <td {thumbnail_style} title='properties[&quot;thumbnail&quot;]'>{thumbnail_html}</td>

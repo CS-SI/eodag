@@ -98,12 +98,12 @@ class AssetsDict(UserDict):
                 <details><summary style='color: grey;'>
                     <span style='color: black'>'{k}'</span>:&ensp;
                     {{
-                        {"'roles': '<span style='color: black'>"+str(v['roles'])+"</span>',&ensp;"
-                            if v.get("roles") else ""}
-                        {"'type': '"+str(v['type'])+"',&ensp;"
-                            if v.get("type") else ""}
-                        {"'title': '<span style='color: black'>"+str(v['title'])+"</span>',&ensp;"
-                            if v.get("title") else ""}
+                        {"'roles': '<span style='color: black'>" + str(v['roles']) + "</span>',&ensp;"
+                         if v.get("roles") else ""}
+                        {"'type': '" + str(v['type']) + "',&ensp;"
+                         if v.get("type") else ""}
+                        {"'title': '<span style='color: black'>" + str(v['title']) + "</span>',&ensp;"
+                         if v.get("title") else ""}
                         ...
                     }}
                 </summary>

@@ -825,7 +825,7 @@ S3_EFR_BC002:
   keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,EFR,BC002
   sensorType: OPTICAL
   license: proprietary
-  title:  OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
+  title: OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-04-25T00:00:00Z"
   missionEndDate: "2019-10-29T00:00:00Z"
 
@@ -871,7 +871,7 @@ S3_ERR_BC002:
   keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,ERR,BC002
   sensorType: OPTICAL
   license: proprietary
-  title:  OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
+  title: OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-04-25T00:00:00Z"
   missionEndDate: "2019-10-29T00:00:00Z"
 
@@ -1296,7 +1296,7 @@ S3_SRA_1B_BC005:
   keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,BC005
   sensorType: RADAR
   license: proprietary
-  title:  SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
+  title: SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-05-05T00:00:00Z"
   missionEndDate: "2023-03-09T00:00:00Z"
 
@@ -1339,7 +1339,7 @@ S3_SRA_BS_BC005:
   keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES,BC005
   sensorType: RADAR
   license: proprietary
-  title:  SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
+  title: SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-05-05T00:00:00Z"
   missionEndDate: "2023-03-09T00:00:00Z"
 
@@ -1680,7 +1680,7 @@ S5P_L1B_IR_UVN:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD1:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 1.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1701,7 +1701,7 @@ S5P_L1B_RA_BD1:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD2:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 2.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1722,7 +1722,7 @@ S5P_L1B_RA_BD2:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD3:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 3.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1743,7 +1743,7 @@ S5P_L1B_RA_BD3:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD4:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 4.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1764,7 +1764,7 @@ S5P_L1B_RA_BD4:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD5:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 5.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1785,7 +1785,7 @@ S5P_L1B_RA_BD5:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD6:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 6.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1806,7 +1806,7 @@ S5P_L1B_RA_BD6:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD7:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 7.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1827,7 +1827,7 @@ S5P_L1B_RA_BD7:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD8:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 8.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -2396,7 +2396,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS European air quality forecasts
-  missionStartDate: "2020-08-26T00:00:00Z"
+  missionStartDate: "2021-11-22T00:00:00Z"
 
 CAMS_GFE_GFAS:
   abstract: |
@@ -2699,7 +2699,7 @@ ERA5_SL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5 hourly data on single levels from 1940 to present
-  missionStartDate: "1940-01-01T00:00:00Z"
+  missionStartDate: "1940-01-01T09:00:00Z"
 
 ERA5_SL_MONTHLY:
   abstract: |
@@ -2866,7 +2866,7 @@ ERA5_LAND:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5-Land hourly data from 1950 to present
-  missionStartDate: "1950-01-01T01:00:00Z"
+  missionStartDate: "1950-01-02T00:00:00Z"
 
 ERA5_LAND_MONTHLY:
   abstract: |
@@ -2974,7 +2974,7 @@ GLACIERS_DIST_RANDOLPH:
   license: proprietary
   title: Glaciers distribution data from the Randolph Glacier Inventory for year 2000
   missionStartDate: "2000-01-01T00:00:00Z"
-  missionEndDate:  "2000-12-31T23:59:00Z"
+  missionEndDate: "2000-12-31T23:59:00Z"
 
 GRIDDED_GLACIERS_MASS_CHANGE:
   abstract: |
@@ -3014,7 +3014,6 @@ GRIDDED_GLACIERS_MASS_CHANGE:
   title: Glacier mass change gridded data from 1976 to present derived from the Fluctuations of Glaciers Database
   missionStartDate: "1975-01-01T00:00:00Z"
 
-
 SATELLITE_CARBON_DIOXIDE:
   abstract: |
     This dataset provides observations of atmospheric carbon dioxide (CO2)\namounts obtained from observations
@@ -3053,7 +3052,7 @@ SATELLITE_CARBON_DIOXIDE:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Carbon dioxide data from 2002 to present derived from satellite observations
-  missionStartDate: "2002-10-01T00:00:00Z"
+  missionStartDate: "2003-01-10T00:00:00Z"
   missionEndDate: "2022-12-31T23:59:59"
 
 SATELLITE_FIRE_BURNED_AREA:
@@ -3124,8 +3123,8 @@ SATELLITE_METHANE:
   keywords: ECMWF,CDS,C3S,methane
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: Methane data from 2002 to present derived from satellite observations
-  missionStartDate: "2002-10-01T00:00:00Z"
+  title: Methane data from 2003 to present derived from satellite observations
+  missionStartDate: "2003-01-06T00:00:00Z"
 
 SATELLITE_SEA_ICE_EDGE_TYPE:
   abstract: |
@@ -3840,7 +3839,6 @@ EFAS_FORECAST:
   license: proprietary
   title: River discharge and related forecasted data by the European Flood Awareness System
   missionStartDate: "2018-10-11T00:00:00Z"
-  missionEndDate: "2023-09-19T00:00:00Z"
 
 EFAS_HISTORICAL:
   abstract: |
@@ -4258,8 +4256,6 @@ EEA_DAILY_VI:
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
 
-
-
 # MARK: METEOBLUE ----------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
   abstract: |
@@ -4310,7 +4306,8 @@ DT_EXTREMES:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Weather and Geophysical Extremes Digital Twin (DT)
-  missionStartDate: "2020-01-01T00:00:00Z"
+  missionStartDate: "2024-04-04T00:00:00Z"
+  missionEndDate: "2024-06-07T00:00:00Z"
 DT_CLIMATE_ADAPTATION:
   abstract: |
     The Digital Twin on Climate Change Adaptation support the analysis and testing of

@@ -30,7 +30,7 @@ logger = logging.getLogger("eodag.utils.requests")
 
 
 def fetch_json(
-    file_url: str,
+    url: str,
     req_session: Optional[requests.Session] = None,
     auth: Optional[requests.auth.AuthBase] = None,
     timeout: float = HTTP_REQ_TIMEOUT,
@@ -38,32 +38,32 @@ def fetch_json(
     """
     Fetches http/distant or local json file
 
-    :param file_url: url from which the file can be fetched
+    :param url: url from which the file can be fetched
     :param req_session: (optional) requests session
     :param auth: (optional) authenticated object if request needs authentication
     :param timeout: (optional) authenticated object
     :returns: json file content
     """
     if req_session is None:
-        req_session = requests.Session()
+        req_session = requests.sessions.Session()
     try:
-        if not file_url.lower().startswith("http"):
-            file_url = path_to_uri(os.path.abspath(file_url))
+        if not url.lower().startswith("http"):
+            url = path_to_uri(os.path.abspath(url))
             req_session.mount("file://", LocalFileAdapter())
 
         headers = USER_AGENT
-        logger.debug(f"fetching {file_url}")
+        logger.debug(f"fetching {url}")
         res = req_session.get(
-            file_url,
+            url,
             headers=headers,
             auth=auth,
             timeout=timeout,
         )
         res.raise_for_status()
     except requests.exceptions.Timeout as exc:
-        raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+        raise TimeOutError(exc, timeout=timeout) from exc
     except requests.exceptions.RequestException as exc:
-        raise RequestError.from_error(exc, f"Unable to fetch {file_url}") from exc
+        raise RequestError.from_error(exc, f"Unable to fetch {url}") from exc
     else:
         return res.json()
 
@@ -100,8 +100,8 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
     ) -> requests.Response:
         """Wraps a file, described in request, in a Response object.
 
-        :param req: The PreparedRequest being "sent".
-        :param kwargs: (not used) additionnal arguments of the request
+        :param request: The PreparedRequest being "sent".
+        :param kwargs: (not used) additional arguments of the request
         :returns: a Response object containing the file
         """
         response = requests.Response()

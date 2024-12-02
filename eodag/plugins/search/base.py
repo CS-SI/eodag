@@ -31,7 +31,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
 from eodag.types import model_fields_to_annotated
-from eodag.types.queryables import Queryables
+from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
@@ -325,34 +325,92 @@ class Search(PluginTopic):
                 sort_by_qs += parsed_sort_by_tpl
         return (sort_by_qs, sort_by_qp)
 
-    def list_queryables(
-        self,
-        filters: Dict[str, Any],
-        product_type: Optional[str] = None,
+    def _get_product_type_queryables(
+        self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
     ) -> Dict[str, Annotated[Any, FieldInfo]]:
-        """
-        Get queryables
-
-        :param filters: Additional filters for queryables.
-        :param product_type: (optional) The product type.
-
-        :return: A dictionary containing the queryable properties, associating parameters to their
-                annotated type.
-        """
         default_values: Dict[str, Any] = deepcopy(
             getattr(self.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
-
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
         try:
-            queryables = self.discover_queryables(**{**default_values, **filters}) or {}
+            filters["productType"] = product_type
+            return self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError:
-            pass
+            return self.queryables_from_metadata_mapping(product_type, alias)
 
+    def list_queryables(
+        self,
+        filters: Dict[str, Any],
+        available_product_types: List[Any],
+        product_type_configs: Dict[str, Dict[str, Any]],
+        product_type: Optional[str] = None,
+        alias: Optional[str] = None,
+    ) -> QueryablesDict:
+        """
+        Get queryables
+
+        :param filters: Additional filters for queryables.
+        :param available_product_types: list of available product types
+        :param product_type_configs: dict containing the product type information for all used product types
+        :param product_type: (optional) The product type.
+        :param alias: (optional) alias of the product type
+
+        :return: A dictionary containing the queryable properties, associating parameters to their
+                annotated type.
+        """
+        additional_info = (
+            "Please select a product type to get the possible values of the parameters!"
+            if not product_type
+            else ""
+        )
+        if product_type or getattr(self.config, "discover_queryables", {}).get(
+            "fetch_url", ""
+        ):
+            if product_type:
+                self.config.product_type_config = product_type_configs[product_type]
+            queryables = self._get_product_type_queryables(product_type, alias, filters)
+            if getattr(self.config, "discover_queryables", {}).get(
+                "constraints_url", ""
+            ):
+                additional_properties = False
+            else:
+                additional_properties = True
+            return QueryablesDict(
+                additional_properties=additional_properties,
+                additional_information=additional_info,
+                **queryables,
+            )
+        else:
+            all_queryables: Dict[str, Any] = {}
+            for pt in available_product_types:
+                self.config.product_type_config = product_type_configs[pt]
+                pt_queryables = self._get_product_type_queryables(pt, None, filters)
+                # only use key and type because values and defaults will vary between product types
+                pt_queryables_neutral = {
+                    k: Annotated[v.__args__[0], Field(default=None)]
+                    for k, v in pt_queryables.items()
+                }
+                all_queryables.update(pt_queryables_neutral)
+            return QueryablesDict(
+                additional_properties=True,
+                additional_information=additional_info,
+                **all_queryables,
+            )
+
+    def queryables_from_metadata_mapping(
+        self, product_type: Optional[str] = None, alias: Optional[str] = None
+    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        """
+        Extract queryable parameters from product type metadata mapping.
+        :param product_type: product type id (optional)
+        :param alias: (optional) alias of the product type
+        :returns: dict of annotated queryables
+        """
         metadata_mapping: Dict[str, Any] = deepcopy(
             self.get_metadata_mapping(product_type)
         )
+
+        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
 
         for param in list(metadata_mapping.keys()):
             if NOT_MAPPED in metadata_mapping[param] or not isinstance(
@@ -363,28 +421,18 @@ class Search(PluginTopic):
         eodag_queryables = copy_deepcopy(
             model_fields_to_annotated(Queryables.model_fields)
         )
+        # add default value for product type
+        if alias:
+            eodag_queryables.pop("productType")
+            eodag_queryables["productType"] = Annotated[str, Field(default=alias)]
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None
             )
             if not isinstance(eodag_queryable_field_info, FieldInfo):
                 continue
-            # keep default field info of eodag queryables
-            if k in filters and k in queryables:
-                queryable_field_info = (
-                    get_args(queryables[k])[1]
-                    if len(get_args(queryables[k])) > 1
-                    else None
-                )
-                if not isinstance(queryable_field_info, FieldInfo):
-                    continue
-                queryable_field_info.default = filters[k]
-                continue
-            if k in queryables:
-                continue
             if eodag_queryable_field_info.is_required() or (
                 (eodag_queryable_field_info.alias or k) in metadata_mapping
             ):
                 queryables[k] = v
-
         return queryables

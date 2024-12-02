@@ -29,11 +29,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
 
+from lxml import html
 from pkg_resources import DistributionNotFound, resource_filename
+from pydantic import ValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
+from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
@@ -1397,22 +1400,16 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_queryables",
-        autospec=True,
-    )
-    @mock.patch(
         "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
     )
     def test_list_queryables(
         self,
         mock_stacsearch_discover_queryables: Mock,
-        mock_qssearch_discover_queryables: Mock,
         mock_fetch_product_types_list: Mock,
         mock_auth_plugin: Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
         mock_stacsearch_discover_queryables.return_value = {}
-        mock_qssearch_discover_queryables.return_value = {}
 
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
@@ -1426,6 +1423,7 @@ class TestCore(TestCoreBase):
         for key, queryable in queryables_none_none.items():
             # compare obj.__repr__
             self.assertEqual(str(expected_result[key]), str(queryable))
+        self.assertTrue(queryables_none_none.additional_properties)
 
         queryables_peps_none = self.dag.list_queryables(provider="peps")
         expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
@@ -1433,13 +1431,15 @@ class TestCore(TestCoreBase):
         self.assertLess(len(queryables_peps_none), len(expected_longer_result))
         for key, queryable in queryables_peps_none.items():
             # compare obj.__repr__
-            self.assertEqual(str(expected_longer_result[key]), str(queryable))
+            self.assertEqual(
+                expected_longer_result[key].__args__[0], queryable.__args__[0]
+            )
+        self.assertTrue(queryables_peps_none.additional_properties)
 
         queryables_peps_s1grd = self.dag.list_queryables(
             provider="peps", productType="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
-        self.assertLess(len(queryables_peps_s1grd), len(queryables_peps_none))
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
@@ -1447,27 +1447,51 @@ class TestCore(TestCoreBase):
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
+        self.assertTrue(queryables_peps_s1grd.additional_properties)
+        # result should be the same if alias is used
+        products = self.dag.product_types_config
+        products["S1_SAR_GRD"]["alias"] = "S1_SG"
+        queryables_peps_s1grd_alias = self.dag.list_queryables(
+            provider="peps", productType="S1_SG"
+        )
+        self.assertEqual(len(queryables_peps_s1grd), len(queryables_peps_s1grd_alias))
+        self.assertEqual(
+            "S1_SG",
+            queryables_peps_s1grd_alias["productType"].__metadata__[0].get_default(),
+        )
+        products["S1_SAR_GRD"].pop("alias")
 
-        # when a product type is specified but not the provider, the intersection of the queryables of all providers
-        # having the product type in its config is returned, using queryables of the provider with the highest priority
+        # when a product type is specified but not the provider, the union of the queryables of all providers
+        # having the product type in its config is returned
         queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
         self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_none_none))
-        self.assertLess(len(queryables_none_s1grd), len(queryables_peps_none))
-        self.assertLessEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
+        self.assertGreater(len(queryables_none_s1grd), len(queryables_peps_none))
+        self.assertGreaterEqual(len(queryables_none_s1grd), len(queryables_peps_s1grd))
         self.assertLess(len(queryables_none_s1grd), len(expected_longer_result))
         # check that peps gets the highest priority
         self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
-        for key, queryable in queryables_none_s1grd.items():
+        for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
             if key == "productType":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
-            # queryables intersection comes from peps's queryables
-            self.assertEqual(str(queryable), str(queryables_peps_s1grd[key]))
+            # queryables for provider peps are in queryables for all providers
+            self.assertEqual(str(queryable), str(queryables_none_s1grd[key]))
+        self.assertTrue(queryables_none_s1grd.additional_properties)
+
+        # model_validate should validate input parameters using the queryables result
+        queryables_validated = queryables_peps_s1grd.get_model().model_validate(
+            {"productType": "S1_SAR_GRD", "snowCover": 50}
+        )
+        self.assertIn("snowCover", queryables_validated.__dict__)
+        with self.assertRaises(ValidationError):
+            queryables_peps_s1grd.get_model().model_validate(
+                {"productType": "S1_SAR_GRD", "snowCover": 500}
+            )
 
     @mock.patch(
-        "eodag.plugins.search.build_search_result.BuildSearchResult.discover_queryables",
+        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
         autospec=True,
     )
     def test_list_queryables_with_constraints(self, mock_discover_queryables: Mock):
@@ -1480,36 +1504,57 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "productType": "ERA5_SL",
-            "api_product_type": "reanalysis",
-            "dataset": "reanalysis-era5-single-levels",
-            "format": "grib",
-            "variable": "10m_u_component_of_wind",
+            "ecmwf:product_type": "reanalysis",
+            "ecmwf:dataset": "reanalysis-era5-single-levels",
+            "ecmwf:data_format": "grib",
+            "ecmwf:download_format": "zip",
+            "ecmwf:variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", month="02")
+        res = self.dag.list_queryables(
+            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:month": "02"}
+        )
         params = {
             "productType": "ERA5_SL",
-            "api_product_type": "reanalysis",
-            "dataset": "reanalysis-era5-single-levels",
-            "format": "grib",
-            "variable": "10m_u_component_of_wind",
-            "month": "02",
+            "ecmwf:product_type": "reanalysis",
+            "ecmwf:dataset": "reanalysis-era5-single-levels",
+            "ecmwf:data_format": "grib",
+            "ecmwf:download_format": "zip",
+            "ecmwf:variable": "10m_u_component_of_wind",
+            "ecmwf:month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
+        self.assertFalse(res.additional_properties)
         mock_discover_queryables.reset_mock()
 
         # unset default values
-        self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL", format=None)
+        self.dag.list_queryables(
+            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:data_format": ""}
+        )
         defaults = {
             "productType": "ERA5_SL",
-            "api_product_type": "reanalysis",
-            "dataset": "reanalysis-era5-single-levels",
-            "variable": "10m_u_component_of_wind",
-            "format": None,
+            "ecmwf:product_type": "reanalysis",
+            "ecmwf:dataset": "reanalysis-era5-single-levels",
+            "ecmwf:variable": "10m_u_component_of_wind",
+            "ecmwf:data_format": "",
+            "ecmwf:download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+
+    def test_queryables_repr(self):
+        queryables = self.dag.list_queryables(provider="peps", productType="S1_SAR_GRD")
+        self.assertIsInstance(queryables, QueryablesDict)
+        queryables_repr = html.fromstring(queryables._repr_html_())
+        self.assertIn("QueryablesDict", queryables_repr.xpath("//thead/tr/td")[0].text)
+        spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
+        product_type_present = False
+        for i, span in enumerate(spans):
+            if "productType" in span.text:
+                product_type_present = True
+                self.assertIn("str", spans[i + 1].text)
+        self.assertTrue(product_type_present)
 
     def test_available_sortables(self):
         """available_sortables must return available sortable(s) and its (their)
