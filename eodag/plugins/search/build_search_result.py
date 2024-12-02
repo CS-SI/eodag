@@ -1230,9 +1230,10 @@ class WekeoECMWFSearch(ECMWFSearch):
         """
         normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
 
-        normalized[0].properties["_dc_qs"] = quote_plus(
-            orjson.dumps(results.query_params)
-        )
+        if len(normalized) > 0:
+            normalized[0].properties["_dc_qs"] = quote_plus(
+                orjson.dumps(results.query_params)
+            )
 
         return normalized
 
