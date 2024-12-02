@@ -2179,7 +2179,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
             }
             product.register_downloader(download_plugin, auth_plugin)
         assets = res[0][0].assets
-        self.assertEquals(3, len(assets))
+        self.assertEqual(3, len(assets))
         # check if s3 links have been created correctly
         for asset in assets.values():
             self.assertIn("s3://eodata/Sentinel-1/SAR/GRD/2014/10/10", asset["href"])
@@ -2193,7 +2193,7 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         res[0][0].assets = AssetsDict(res[0][0])
         res[0][0].register_downloader(download_plugin, auth_plugin)
         self.assertIsNotNone(res[0][0].driver)
-        self.assertEquals(0, len(res[0][0].assets))
+        self.assertEqual(0, len(res[0][0].assets))
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
