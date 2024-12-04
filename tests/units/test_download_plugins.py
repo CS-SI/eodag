@@ -2268,7 +2268,7 @@ class TestDownloadPluginCreodiasS3(BaseDownloadPluginTest):
         autospec=True,
     )
     @mock.patch("eodag.plugins.download.aws.requests.get", autospec=True)
-    def test_plugins_download_creodias_s3_withou_assets(
+    def test_plugins_download_creodias_s3_without_assets(
         self,
         mock_requests_get,
         mock_get_authenticated_objects,

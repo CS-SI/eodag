@@ -76,7 +76,8 @@ class CreodiasS3Download(AwsDownload):
         ignore_assets: Optional[bool] = False,
     ) -> List[Tuple[str, Optional[str]]]:
         """
-        retrieves the bucket names and path prefixes for the assets
+        Retrieves the bucket names and path prefixes for the assets
+
         :param product: product for which the assets shall be downloaded
         :param asset_filter: text for which the assets should be filtered
         :param ignore_assets: if product instead of individual assets should be used
@@ -108,7 +109,7 @@ class CreodiasS3Download(AwsDownload):
                     )
                 )
         else:
-            # if not assets are given, use productIdentifier to get S3 path for download
+            # if no assets are given, use productIdentifier to get S3 path for download
             s3_url = "s3:/" + product.properties["productIdentifier"]
             bucket_names_and_prefixes = [
                 self.get_product_bucket_name_and_prefix(product, s3_url)
