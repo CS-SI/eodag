@@ -482,7 +482,8 @@ class AwsDownload(Download):
         ignore_assets: Optional[bool] = False,
     ) -> List[Tuple[str, Optional[str]]]:
         """
-        retrieves the bucket names and path prefixes for the assets
+        Retrieves the bucket names and path prefixes for the assets
+
         :param product: product for which the assets shall be downloaded
         :param asset_filter: text for which the assets should be filtered
         :param ignore_assets: if product instead of individual assets should be used
