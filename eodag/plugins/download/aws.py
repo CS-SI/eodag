@@ -482,7 +482,8 @@ class AwsDownload(Download):
         ignore_assets: Optional[bool] = False,
     ) -> List[Tuple[str, Optional[str]]]:
         """
-        retrieves the bucket names and path prefixes for the assets
+        Retrieves the bucket names and path prefixes for the assets
+
         :param product: product for which the assets shall be downloaded
         :param asset_filter: text for which the assets should be filtered
         :param ignore_assets: if product instead of individual assets should be used
@@ -731,12 +732,12 @@ class AwsDownload(Download):
             else sanitize(product.properties.get("id", "download"))
         )
 
-        if len(assets_values) == 1:
+        if len(assets_values) <= 1:
             first_chunks_tuple = next(chunks_tuples)
             # update headers
             filename = os.path.basename(list(unique_product_chunks)[0].key)
             headers = {"content-disposition": f"attachment; filename={filename}"}
-            if assets_values[0].get("type", None):
+            if assets_values and assets_values[0].get("type", None):
                 headers["content-type"] = assets_values[0]["type"]
 
             return StreamResponse(
@@ -799,7 +800,6 @@ class AwsDownload(Download):
             common_path = self._get_commonpath(
                 product, unique_product_chunks, build_safe
             )
-
         for product_chunk in unique_product_chunks:
             try:
                 chunk_rel_path = self.get_chunk_dest_path(
@@ -817,8 +817,7 @@ class AwsDownload(Download):
                 # out of SAFE format chunk
                 logger.warning(e)
                 continue
-
-            if len(assets_values) == 1:
+            if len(assets_values) <= 1:
                 yield from get_chunk_parts(product_chunk, progress_callback)
             else:
                 yield (
