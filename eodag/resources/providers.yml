@@ -2179,10 +2179,6 @@
     products:
       AG_ERA5:
         extract: true
-<<<<<<< HEAD
-      UERRA_EUROPE_SL:
-=======
->>>>>>> be1be030 (fix(providers): remove empty products)
       GLACIERS_DIST_RANDOLPH:
         extract: true
       SATELLITE_CARBON_DIOXIDE:
