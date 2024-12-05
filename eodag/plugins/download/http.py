@@ -913,7 +913,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> tuple[str, Callable[[], Any]] | None:
+    ) -> Union[tuple[str, Callable[[], Any]], None]:
         """
         Fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
