@@ -369,7 +369,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         when the result is a non-zip file with a '.zip' outputs extension"""
 
         plugin = self.get_download_plugin(self.product)
-        output_extension = getattr(plugin.config, "output_extension", ".zip")
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
 
@@ -385,19 +384,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             progress_callback=progress_callback,
         )
 
-        self.assertTrue(
-            path == os.path.join(self.output_dir, "dummy_product")
-            and os.path.isdir(path)
-            and output_extension == ".zip"
-        )
+        # Verify output directory
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
 
+        # Verify output file
         file_path = os.path.join(path, os.listdir(path)[0])
-        self.assertTrue(
-            len(os.listdir(path)) == 1
-            and os.path.isfile(file_path)
-            and file_path.find(".zip") == -1
-            and not (zipfile.is_zipfile(file_path) or tarfile.is_tarfile(file_path))
-        )
+        self.assertEqual(len(os.listdir(path)), 1)
+        self.assertNotIn(".zip", file_path)
+        self.assertFalse(zipfile.is_zipfile(file_path))
+        self.assertFalse(tarfile.is_tarfile(file_path))
 
         # check if the hidden directory ".downloaded" have been created with the one of the product
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
@@ -408,7 +404,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             None,
             progress_callback,
             output_dir=self.output_dir,
-            output_extension=None,
         )
 
     @mock.patch(
@@ -437,7 +432,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_stream_download.return_value = ("dummy_product.nc", gen)
 
         plugin = self.get_download_plugin(product)
-        output_extension = getattr(plugin.config, "output_extension", ".zip")
         product.location = product.remote_location = "http://somewhere"
         product.properties["id"] = "someproduct"
         progress_callback = ProgressCallback(disable=True)
@@ -446,21 +440,22 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             product, output_dir=self.output_dir, progress_callback=progress_callback
         )
 
-        self.assertTrue(
-            path == os.path.join(self.output_dir, "dummy_product")
-            and os.path.isdir(path)
-            and not output_extension == ".zip"
-        )
+        # Verify output directory
+        expected_path = os.path.join(self.output_dir, "dummy_product")
+        self.assertIsNotNone(path)
+        self.assertEqual(path, expected_path)
+        self.assertTrue(os.path.isdir(path))
 
+        # Verify output file
         file_path = os.path.join(path, os.listdir(path)[0])
-        self.assertTrue(
-            len(os.listdir(path)) == 1
-            and os.path.isfile(file_path)
-            and file_path.find(".zip") == -1
-            and not (zipfile.is_zipfile(file_path) or tarfile.is_tarfile(file_path))
-        )
+        self.assertEqual(len(os.listdir(path)), 1)
+        self.assertTrue(os.path.isfile(file_path))
+        self.assertNotIn(".zip", file_path)
+        self.assertFalse(zipfile.is_zipfile(file_path))
+        self.assertFalse(tarfile.is_tarfile(file_path))
 
-        # check if the hidden directory ".downloaded" have been created with the one of the product
+        # check if the hidden directory ".downloaded" have been created with the one of
+        # the product
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
 
         mock_stream_download.assert_called_once_with(
@@ -469,7 +464,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             None,
             progress_callback,
             output_dir=self.output_dir,
-            output_extension=output_extension,
         )
 
     @mock.patch(

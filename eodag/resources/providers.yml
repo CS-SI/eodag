@@ -55,31 +55,22 @@
     # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
     LANDSAT_C2L1:
       dataset: landsat_ot_c2_l1
-      output_extension: .tar.gz
     LANDSAT_C2L2:
       dataset: landsat_ot_c2_l2
-      output_extension: .tar.gz
     LANDSAT_TM_C1:
       dataset: landsat_tm_c1
-      output_extension: .tar.gz
     LANDSAT_TM_C2L1:
       dataset: landsat_tm_c2_l1
-      output_extension: .tar.gz
     LANDSAT_TM_C2L2:
       dataset: landsat_tm_c2_l2
-      output_extension: .tar.gz
     LANDSAT_ETM_C1:
       dataset: landsat_etm_c1
-      output_extension: .tar.gz
     LANDSAT_ETM_C2L1:
       dataset: landsat_etm_c2_l1
-      output_extension: .tar.gz
     LANDSAT_ETM_C2L2:
       dataset: landsat_etm_c2_l2
-      output_extension: .tar.gz
     S2_MSI_L1C:
       dataset: SENTINEL_2A
-      output_extension: .zip
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 
@@ -1953,35 +1944,22 @@
           downloadLink: $.json.asset.value.href
     products:
       CAMS_GAC_FORECAST:
-        output_extension: .grib
       CAMS_GFE_GFAS:
-        output_extension: .grib
       CAMS_EU_AIR_QUALITY_FORECAST:
-        output_extension: .grib
       CAMS_EU_AIR_QUALITY_RE:
-        output_extension: .zip
         extract: true
       CAMS_GRF:
-        output_extension: .zip
         extract: true
       CAMS_GRF_AUX:
-        output_extension: .zip
         extract: true
       CAMS_SOLAR_RADIATION:
-        output_extension: .csv
       CAMS_GREENHOUSE_EGG4_MONTHLY:
-        output_extension: .grib
       CAMS_GREENHOUSE_EGG4:
-        output_extension: .grib
       CAMS_GREENHOUSE_INVERSION:
-        output_extension: .grib
       CAMS_GLOBAL_EMISSIONS:
-        output_extension: .zip
         extract: true
       CAMS_EAC4:
-        output_extension: .grib
       CAMS_EAC4_MONTHLY:
-        output_extension: .grib
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
@@ -2209,36 +2187,23 @@
           downloadLink: $.json.asset.value.href
     products:
       AG_ERA5:
-        output_extension: .zip
         extract: true
       UERRA_EUROPE_SL:
-        output_extension: .grib
       GLACIERS_DIST_RANDOLPH:
-        output_extension: .zip
         extract: true
       SATELLITE_CARBON_DIOXIDE:
-        output_extension: .zip
         extract: true
       SATELLITE_FIRE_BURNED_AREA:
-        output_extension: .zip
         extract: true
       SATELLITE_METHANE:
-        output_extension: .zip
         extract: true
       SEASONAL_POSTPROCESSED_PL:
-        output_extension: .grib
       SEASONAL_POSTPROCESSED_SL:
-        output_extension: .grib
       SEASONAL_ORIGINAL_SL:
-        output_extension: .grib
       SEASONAL_ORIGINAL_PL:
-        output_extension: .grib
       SEASONAL_MONTHLY_PL:
-        output_extension: .grib
       SEASONAL_MONTHLY_SL:
-        output_extension: .grib
       SIS_HYDRO_MET_PROJ:
-        output_extension: .zip
         extract: true
   search: !plugin
     type: ECMWFSearch
@@ -2872,7 +2837,6 @@
           orderId: '$.json.id'
           downloadLink: 'http://queueresults.meteoblue.com/{orderId}'
           downloadMethod: '{$.null#replace_str("Not Available","GET")}'
-    output_extension: .nc
   auth: !plugin
     type: HttpQueryStringAuth
     matching_url: https?://[a-z]+.meteoblue.com
@@ -5472,9 +5436,7 @@
     no_auth_download: True
     products:
       DT_EXTREMES:
-        output_extension: .grib
       DT_CLIMATE_ADAPTATION:
-        output_extension: .grib
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
     matching_url: https://[-\w\.]+.dte.destination-earth.eu
@@ -5560,11 +5522,8 @@
           downloadLink: '{orderStatusLink}'
     products:
       DT_EXTREMES:
-        output_extension: .grib
       DT_CLIMATE_ADAPTATION:
-        output_extension: .grib
       FIRE_HISTORICAL:
-        output_extension: .grib
   auth: !plugin
     type: OIDCTokenExchangeAuth
     matching_url: https://[-\w\.]+.data.destination-earth.eu
@@ -6650,7 +6609,6 @@
           downloadLink: $.json.asset.value.href
     products:
       FIRE_HISTORICAL:
-        output_extension: .grib
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
