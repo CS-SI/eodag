@@ -343,16 +343,7 @@ class Download(PluginTopic):
             if delete_archive is not None
             else getattr(self.config, "delete_archive", True)
         )
-        output_extension = kwargs.pop("output_extension", ".zip")
-
-        if output_extension:
-            product_path = (
-                fs_path[: fs_path.index(output_extension)]
-                if output_extension in fs_path
-                else fs_path
-            )
-        else:
-            product_path, _ = os.path.splitext(fs_path)
+        product_path, _ = os.path.splitext(fs_path)
         product_path_exists = os.path.exists(product_path)
         if product_path_exists and os.path.isfile(product_path):
             logger.info(
