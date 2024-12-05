@@ -202,7 +202,7 @@ class Download(PluginTopic):
             or getattr(self.config, "output_dir", tempfile.gettempdir())
             or tempfile.gettempdir()
         )
-        output_extension = kwargs.get("output_extension", None) or getattr(
+        output_extension = kwargs.get("output_extension") or getattr(
             self.config, "output_extension", ""
         )
 
