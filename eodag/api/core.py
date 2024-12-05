@@ -32,7 +32,7 @@ import yaml.parser
 from pkg_resources import resource_filename
 from whoosh import analysis, fields
 from whoosh.fields import Schema
-from whoosh.index import create_in, exists_in, open_dir
+from whoosh.index import exists_in, open_dir
 from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import (
@@ -61,7 +61,7 @@ from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, QueryablesDict
-from eodag.types.whoosh import EODAGQueryParser
+from eodag.types.whoosh import EODAGQueryParser, create_in
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
