@@ -306,13 +306,18 @@ class EODataAccessGateway:
                     product_type, **{"md5": self.product_types_config_md5}
                 )
                 # add to index
-                ix_writer.add_document(
-                    **{
-                        k: v
-                        for k, v in versioned_product_type.items()
-                        if k in product_types_schema.names()
-                    }
-                )
+                try:
+                    ix_writer.add_document(
+                        **{
+                            k: v
+                            for k, v in versioned_product_type.items()
+                            if k in product_types_schema.names()
+                        }
+                    )
+                except TypeError as e:
+                    logger.error(
+                        f"Cannot write product type {product_type['ID']} into index. e={e} product_type={product_type}"
+                    )
             ix_writer.commit()
 
     def set_preferred_provider(self, provider: str) -> None:
