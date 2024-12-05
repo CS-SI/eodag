@@ -587,13 +587,6 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        output_extension = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        ).get("output_extension", None) or getattr(
-            self.config, "output_extension", None
-        )
-        kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
-
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
