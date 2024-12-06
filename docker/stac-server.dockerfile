@@ -24,7 +24,8 @@ ENV \
 
 # update system
 RUN apt-get update \
-    && apt-get upgrade -y
+    && apt-get upgrade -y \
+    && echo "Build time: $(date)" > /dev/null
 
 # reconfigure timezone
 RUN echo $TZ > /etc/timezone && \
