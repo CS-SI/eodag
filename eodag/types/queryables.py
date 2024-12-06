@@ -161,7 +161,7 @@ class QueryablesDict(UserDict[str, Any]):
 
     def __init__(
         self,
-        additional_properties: bool,
+        additional_properties: bool = True,
         additional_information: str = "",
         **kwargs: Any,
     ):

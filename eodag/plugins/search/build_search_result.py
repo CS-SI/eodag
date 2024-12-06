@@ -61,7 +61,7 @@ from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python
-from eodag.types.queryables import Queryables
+from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     deepcopy,
@@ -542,6 +542,20 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+
+    def _get_product_type_queryables(
+        self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
+    ) -> QueryablesDict:
+        """Override to set additional_properties to false."""
+        default_values: Dict[str, Any] = deepcopy(
+            getattr(self.config, "products", {}).get(product_type, {})
+        )
+        default_values.pop("metadata_mapping", None)
+
+        filters["productType"] = product_type
+        queryables = self.discover_queryables(**{**default_values, **filters}) or {}
+
+        return QueryablesDict(additional_properties=False, **queryables)
 
     def discover_queryables(
         self, **kwargs: Any
