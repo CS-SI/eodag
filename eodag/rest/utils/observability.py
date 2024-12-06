@@ -27,7 +27,7 @@ export OTEL_METRIC_EXPORT_INTERVAL="5000"
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from opentelemetry import metrics, trace
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
@@ -56,7 +56,7 @@ logger = logging.getLogger("eodag.rest.utils.observability")
 
 def instrument_server(
     eodag_api: EODataAccessGateway,
-    fastapi_app: FastAPI = None,
+    fastapi_app: Optional[FastAPI] = None,
 ) -> None:
     """Instrument EODAG server."""
     # Start OTLP exporter
