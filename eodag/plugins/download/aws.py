@@ -78,7 +78,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from boto3.resources.collection import ResourceCollection
 
-    from eodag.api.product import EOProduct
+    from eodag.api.product import Asset, EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
     from eodag.types.download_args import DownloadConf
@@ -762,7 +762,7 @@ class AwsDownload(Download):
         product: EOProduct,
         build_safe: bool,
         progress_callback: ProgressCallback,
-        assets_values: List[Dict[str, Any]],
+        assets_values: List[Asset],
     ) -> Iterator[Any]:
         """Yield product data chunks"""
 
@@ -770,9 +770,13 @@ class AwsDownload(Download):
         modified_at = datetime.now()
         perms = 0o600
 
-        def get_chunk_parts(
-            product_chunk: Any, progress_callback: ProgressCallback
-        ) -> Any:
+        wrapped_progress_callback = self.progress_callback_decorator(
+            progress_callback,
+            provider=self.provider,
+            product_type=product.product_type,
+        )
+
+        def get_chunk_parts(product_chunk: Any, progress_callback: Any) -> Any:
             try:
                 chunk_start = 0
                 chunk_end = chunk_start + chunk_size - 1
@@ -824,14 +828,14 @@ class AwsDownload(Download):
                 continue
 
             if len(assets_values) == 1:
-                yield from get_chunk_parts(product_chunk, progress_callback)
+                yield from get_chunk_parts(product_chunk, wrapped_progress_callback)
             else:
                 yield (
                     chunk_rel_path,
                     modified_at,
                     perms,
                     ZIP_AUTO(product_chunk.size),
-                    get_chunk_parts(product_chunk, progress_callback),
+                    get_chunk_parts(product_chunk, wrapped_progress_callback),
                 )
 
     def _get_commonpath(

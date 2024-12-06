@@ -696,7 +696,7 @@ class Download(PluginTopic):
 
     def progress_callback_decorator(
         self, progress_callback: ProgressCallback, **decorator_kwargs: Any
-    ) -> Callable[[Any, Any], None]:
+    ) -> Callable[[Any], None]:
         """No-op decorator for the progress_callback.
 
         Patching this function can be useful, for example, to implement automatic
