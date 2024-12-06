@@ -28,3 +28,16 @@ services:
       - eodag-stac-network
     ports:
       - "5000:5000"
+    depends_on:
+      - otel-collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.90.1
+    container_name: otel_collector
+    restart: unless-stopped
+    volumes:
+      - ./docker/otelcol_config.yml:/etc/otelcol-contrib/config.yaml
+    networks:
+      - eodag-stac-network
+    ports:
+      - "4318:4318"
+      - "8000:8000"
