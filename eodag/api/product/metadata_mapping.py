@@ -1326,8 +1326,8 @@ def format_query_params(
                     query_params[eodag_search_key] = formatted_query_param
             else:
                 provider_search_key, provider_value = parts
-                query_params.setdefault(provider_search_key, []).append(
-                    format_metadata(provider_value, product_type, **query_dict)
+                query_params[provider_search_key] = format_metadata(
+                    provider_value, product_type, **query_dict
                 )
         else:
             query_params[provider_search_key] = user_input
