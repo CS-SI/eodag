@@ -33,7 +33,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 from urllib.parse import quote_plus, unquote_plus
 
@@ -41,7 +40,6 @@ import geojson
 import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
-from jsonpath_ng import Child, Fields, Root
 from pydantic import Field
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
@@ -52,9 +50,9 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
+    OFFLINE_STATUS,
     format_metadata,
     format_query_params,
-    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
@@ -204,50 +202,19 @@ COP_DS_KEYWORDS = [
 ]
 
 
-def keywords_to_mdt(
-    keywords: List[str], prefix: Optional[str] = None
-) -> Dict[str, Any]:
+def ecmwf_mtd() -> Dict[str, Any]:
     """
-    Make metadata mapping dict from a list of keywords
+    Make metadata mapping dict from a list of defined ECMWF Keywords
 
-    prefix:keyword:
+    We automatically add the #to_geojson convert to prevent modification of entries by eval() in the metadata mapping.
+
+    keyword:
         - keyword
-        - $."prefix:keyword"
+        - $."keyword"#to_geojson
 
-    >>> keywords_to_mdt(["month", "year"])
-    {'month': ['month', '$."month"'], 'year': ['year', '$."year"']}
-    >>> keywords_to_mdt(["month", "year"], "ecmwf")
-    {'ecmwf:month': ['month', '$."ecmwf:month"'], 'ecmwf:year': ['year', '$."ecmwf:year"']}
-
-    :param keywords: List of keywords to be converted
-    :param prefix: prefix to be added to the parameter in the mapping
     :return: metadata mapping dict
     """
-    mdt: Dict[str, Any] = {}
-    for keyword in keywords:
-        key = f"{prefix}:{keyword}" if prefix else keyword
-        mdt[key] = [keyword, f'$."{key}"']
-    return mdt
-
-
-def strip_quotes(value: Any) -> Any:
-    """Strip superfluous quotes from elements (added by mapping converter to_geojson).
-
-    >>> strip_quotes("'abc'")
-    'abc'
-    >>> strip_quotes(["'abc'", '"def'])
-    ['abc', 'def']
-
-    :param value: value from which quotes should be removed (should be either str or list)
-    :return: value without quotes
-    :raises: NotImplementedError
-    """
-    if isinstance(value, (list, tuple)):
-        return [strip_quotes(v) for v in value]
-    elif isinstance(value, dict):
-        raise NotImplementedError("Dict value is not supported.")
-    else:
-        return str(value).strip("'\"")
+    return {k: [k, f'{{$."{k}"#to_geojson}}'] for k in ECMWF_KEYWORDS + COP_DS_KEYWORDS}
 
 
 def _update_properties_from_element(
@@ -354,53 +321,22 @@ class ECMWFSearch(PostJsonSearch):
         self.fetch_data = functools.lru_cache()(self._fetch_data)
 
         config.metadata_mapping = {
-            **keywords_to_mdt(ECMWF_KEYWORDS + COP_DS_KEYWORDS, "ecmwf"),
+            **ecmwf_mtd(),
+            **{
+                "id": "$.id",
+                "title": "$.id",
+                "storageStatus": OFFLINE_STATUS,
+                "downloadLink": "$.null",
+            },
             **config.metadata_mapping,
         }
 
         super().__init__(provider, config)
 
+        # ECMWF providers do not feature any api_endpoint or next_page_query_obj.
+        # Searched is faked by EODAG.
         self.config.__dict__.setdefault("api_endpoint", "")
-
-        # needed by QueryStringSearch.build_query_string / format_free_text_search
-        self.config.__dict__.setdefault("free_text_search_operations", {})
-        # needed for compatibility
         self.config.pagination.setdefault("next_page_query_obj", "{{}}")
-
-        # parse jsonpath on init: product type specific metadata-mapping
-        for product_type in self.config.products.keys():
-            if "metadata_mapping" in self.config.products[product_type].keys():
-                self.config.products[product_type][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[product_type]["metadata_mapping"]
-                )
-                # Complete and ready to use product type specific metadata-mapping
-                product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
-
-                # update config using provider product type definition metadata_mapping
-                # from another product
-                other_product_for_mapping = cast(
-                    str,
-                    self.config.products[product_type].get(
-                        "metadata_mapping_from_product", ""
-                    ),
-                )
-                if other_product_for_mapping:
-                    other_product_type_def_params = self.get_product_type_def_params(
-                        other_product_for_mapping,
-                    )
-                    product_type_metadata_mapping.update(
-                        other_product_type_def_params.get("metadata_mapping", {})
-                    )
-                # from current product
-                product_type_metadata_mapping.update(
-                    self.config.products[product_type]["metadata_mapping"]
-                )
-
-                self.config.products[product_type][
-                    "metadata_mapping"
-                ] = product_type_metadata_mapping
 
     def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
         """Should perform the actual search request.
@@ -426,7 +362,7 @@ class ECMWFSearch(PostJsonSearch):
         product_type = prep.product_type
         if not product_type:
             product_type = kwargs.get("productType", None)
-        self._preprocess_search_params(kwargs, product_type)
+        kwargs = self._preprocess_search_params(kwargs, product_type)
         result, num_items = super().query(prep, **kwargs)
         if prep.count and not num_items:
             num_items = 1
@@ -438,34 +374,32 @@ class ECMWFSearch(PostJsonSearch):
         super().clear()
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id
-        :param kwargs: keyword arguments to be used in the query string
+        :param query_dict: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
-        # parse kwargs as properties as they might be needed to build the query
-        parsed_properties = properties_from_json(
-            kwargs,
-            self.config.metadata_mapping,
+        query_dict["_date"] = (
+            f"{query_dict.get('startTimeFromAscendingNode')}/{query_dict.get('completionTimeFromAscendingNode')}"
         )
-        available_properties = {
-            # We strip values of superfluous quotes (added by mapping converter to_geojson).
-            k: strip_quotes(v)
-            for k, v in parsed_properties.items()
-            if v not in [NOT_AVAILABLE, NOT_MAPPED]
-        }
+
+        # Reorder kwargs to make sure year/month/day/time if set overwrite default datetime.
+        priority_keys = [
+            "startTimeFromAscendingNode",
+            "completionTimeFromAscendingNode",
+        ]
+        ordered_kwargs = {k: query_dict[k] for k in priority_keys if k in query_dict}
+        ordered_kwargs.update(query_dict)
 
         # build and return the query
-        return super().build_query_string(
-            product_type=product_type, **available_properties
-        )
+        return super().build_query_string(product_type, ordered_kwargs)
 
     def _preprocess_search_params(
         self, params: Dict[str, Any], product_type: Optional[str]
-    ) -> None:
+    ) -> Dict[str, Any]:
         """Preprocess search parameters before making a request to the CDS API.
 
         This method is responsible for checking and updating the provided search parameters
@@ -498,11 +432,7 @@ class ECMWFSearch(PostJsonSearch):
             if "/" in _dc_qp.get("area", ""):
                 params["geometry"] = _dc_qp["area"].split("/")
 
-        non_none_params = {k: v for k, v in params.items() if v}
-
-        # productType
-        dataset = params.get("ecmwf:dataset", None)
-        params["productType"] = non_none_params.get("productType", dataset)
+        params = {k.removeprefix("ecmwf:"): v for k, v in params.items() if v}
 
         # dates
         # check if default dates have to be added
@@ -543,17 +473,14 @@ class ECMWFSearch(PostJsonSearch):
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
 
+        return params
+
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
     ) -> QueryablesDict:
         """Override to set additional_properties to false."""
-        default_values: Dict[str, Any] = deepcopy(
-            getattr(self.config, "products", {}).get(product_type, {})
-        )
-        default_values.pop("metadata_mapping", None)
-
         filters["productType"] = product_type
-        queryables = self.discover_queryables(**{**default_values, **filters}) or {}
+        queryables = self.discover_queryables(**filters) or {}
 
         return QueryablesDict(additional_properties=False, **queryables)
 
@@ -567,59 +494,66 @@ class ECMWFSearch(PostJsonSearch):
         :returns: fetched queryable parameters dict
         """
         product_type = kwargs.pop("productType")
-        product_type_config = self.config.products.get(product_type, {})
-        provider_product_type = (
-            product_type_config.get("ecmwf:dataset", None)
-            or product_type_config["productType"]
-        )
-        if "start" in kwargs:
-            kwargs["startTimeFromAscendingNode"] = kwargs.pop("start")
-        if "end" in kwargs:
-            kwargs["completionTimeFromAscendingNode"] = kwargs.pop("end")
+
+        pt_config = self.get_product_type_def_params(product_type)
+
+        default_values = deepcopy(pt_config)
+        default_values.pop("metadata_mapping", None)
+        filters = {**default_values, **kwargs}
+
+        if "start" in filters:
+            filters["startTimeFromAscendingNode"] = filters.pop("start")
+        if "end" in filters:
+            filters["completionTimeFromAscendingNode"] = filters.pop("end")
 
         # extract default datetime
-        processed_kwargs = deepcopy(kwargs)
-        self._preprocess_search_params(processed_kwargs, product_type)
+        processed_filters = self._preprocess_search_params(
+            deepcopy(filters), product_type
+        )
 
         constraints_url = format_metadata(
             getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
-            **kwargs,
+            **filters,
         )
         constraints: List[Dict[str, Any]] = self.fetch_data(constraints_url)
 
         form_url = format_metadata(
             getattr(self.config, "discover_queryables", {}).get("form_url", ""),
-            **kwargs,
+            **filters,
         )
         form = self.fetch_data(form_url)
 
-        formated_kwargs = self.format_as_provider_keyword(
-            product_type, processed_kwargs
+        # formated_filters = format_query_params(product_type, self.config, processed_filters)
+        formated_filters = self.format_as_provider_keyword(
+            product_type, processed_filters
         )
         # we re-apply kwargs input to consider override of year, month, day and time.
-        for key in kwargs:
+        for key, value in {
+            **{ecmwf_format(k): v for k, v in default_values.items()},
+            **kwargs,
+        }.items():
             if key.startswith("ecmwf:"):
-                formated_kwargs[key.replace("ecmwf:", "")] = kwargs[key]
+                formated_filters[key.replace("ecmwf:", "")] = value
             elif key in (
                 "startTimeFromAscendingNode",
                 "completionTimeFromAscendingNode",
                 "geom",
             ):
-                formated_kwargs[key] = kwargs[key]
+                formated_filters[key] = value
             else:
                 raise ValidationError(f"{key} is not a queryable parameter")
 
-        # we use non empty kwargs as default to integrate user inputs
+        # we use non empty filters as default to integrate user inputs
         # it is needed because pydantic json schema does not represent "value"
         # but only "default"
         non_empty_formated: Dict[str, Any] = {
             k: v
-            for k, v in formated_kwargs.items()
+            for k, v in formated_filters.items()
             if v and (not isinstance(v, list) or all(v))
         }
-        non_empty_kwargs: Dict[str, Any] = {
+        non_empty_filters: Dict[str, Any] = {
             k: v
-            for k, v in processed_kwargs.items()
+            for k, v in processed_filters.items()
             if v and (not isinstance(v, list) or all(v))
         }
 
@@ -645,7 +579,7 @@ class ECMWFSearch(PostJsonSearch):
             if not values_url:
                 return self.queryables_from_metadata_mapping(product_type)
             if "{" in values_url:
-                values_url = values_url.format(productType=provider_product_type)
+                values_url = values_url.format(**filters)
             data = self.fetch_data(values_url)
             available_values = data["constraints"]
             required_keywords = data.get("required", [])
@@ -653,11 +587,11 @@ class ECMWFSearch(PostJsonSearch):
         # To check if all keywords are queryable parameters, we check if they are in the
         # available values or the product type config (available values calculated from the
         # constraints might not include all queryables)
-        for keyword in kwargs:
+        for keyword in filters:
             if (
                 keyword
                 not in available_values.keys()
-                | product_type_config.keys()
+                | pt_config.keys()
                 | {
                     "startTimeFromAscendingNode",
                     "completionTimeFromAscendingNode",
@@ -676,7 +610,7 @@ class ECMWFSearch(PostJsonSearch):
             )
         else:
             queryables = self.queryables_by_values(
-                available_values, list(required_keywords), non_empty_kwargs
+                available_values, list(required_keywords), non_empty_formated
             )
 
         # ecmwf:date is replaced by start and end.
@@ -689,11 +623,11 @@ class ECMWFSearch(PostJsonSearch):
             queryables.update(
                 {
                     "start": Queryables.get_with_default(
-                        "start", non_empty_kwargs.get("startTimeFromAscendingNode")
+                        "start", non_empty_filters.get("startTimeFromAscendingNode")
                     ),
                     "end": Queryables.get_with_default(
                         "end",
-                        non_empty_kwargs.get("completionTimeFromAscendingNode"),
+                        non_empty_filters.get("completionTimeFromAscendingNode"),
                     ),
                 }
             )
@@ -761,7 +695,7 @@ class ECMWFSearch(PostJsonSearch):
             # ECMWF accept values with /to/. We need to split it to an array
             # ECMWF accept values in format val1/val2. We need to split it to an array
             sep = re.compile(r"/to/|/")
-            filter_v = [i for v in filter_v for i in sep.split(strip_quotes(v))]
+            filter_v = [i for v in filter_v for i in sep.split(v)]
 
             # special handling for time 0000 converted to 0 by pre-formating with metadata_mapping
             if keyword.split(":")[-1] == "time":
@@ -887,10 +821,6 @@ class ECMWFSearch(PostJsonSearch):
             if name == "area" and isinstance(default, dict):
                 default = list(default.values())
 
-            if default:
-                # We strip values of superfluous quotes (addded by mapping converter to_geojson).
-                default = strip_quotes(default)
-
             # sometimes form returns default as array instead of string
             if default and prop["type"] == "string" and isinstance(default, list):
                 default = ",".join(default)
@@ -936,13 +866,11 @@ class ECMWFSearch(PostJsonSearch):
             # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
             key = ecmwf_format(name)
 
-            default = defaults.get(key)
-
             queryables[key] = Annotated[
                 get_args(
                     json_field_definition_to_python(
                         {"type": "string", "title": name, "enum": values},
-                        default_value=strip_quotes(default) if default else None,
+                        default_value=defaults.get(name),
                         required=bool(key in required),
                     )
                 )
@@ -959,16 +887,26 @@ class ECMWFSearch(PostJsonSearch):
         :param properties: dict of properties to be formatted
         :return: dict of formatted properties
         """
-        parsed_properties = properties_from_json(
-            properties,
-            self.config.metadata_mapping,
+        properties["productType"] = product_type
+
+        # provider product type specific conf
+        product_type_def_params = self.get_product_type_def_params(
+            product_type, **properties
         )
-        available_properties = {
-            k: v
-            for k, v in parsed_properties.items()
-            if v not in [NOT_AVAILABLE, NOT_MAPPED]
-        }
-        return format_query_params(product_type, self.config, available_properties)
+
+        # Add to the query, the queryable parameters set in the provider product type definition
+        properties.update(
+            {
+                k: v
+                for k, v in product_type_def_params.items()
+                if k not in properties.keys()
+                and k in self.config.metadata_mapping.keys()
+                and isinstance(self.config.metadata_mapping[k], list)
+            }
+        )
+        qp, _ = self.build_query_string(product_type, properties)
+
+        return qp
 
     def _fetch_data(self, url: str) -> Any:
         """
@@ -1056,67 +994,45 @@ class ECMWFSearch(PostJsonSearch):
             discovery_config=getattr(self.config, "discover_metadata", {}),
         )
 
-        if not product_type:
-            product_type = parsed_properties.get("productType", None)
+        properties = {
+            # use product_type_config as default properties
+            **getattr(self.config, "product_type_config", {}),
+            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
+        }
+
+        def slugify(date_str: str) -> str:
+            return date_str.split("T")[0].replace("-", "")
 
         # build product id
         id_prefix = (product_type or self.provider).upper()
         if (
-            "startTimeFromAscendingNode" in parsed_properties
-            and parsed_properties["startTimeFromAscendingNode"] != "Not Available"
-            and "completionTimeFromAscendingNode" in parsed_properties
-            and parsed_properties["completionTimeFromAscendingNode"] != "Not Available"
+            "startTimeFromAscendingNode" in properties
+            and "completionTimeFromAscendingNode" in properties
         ):
             product_id = "%s_%s_%s_%s" % (
                 id_prefix,
-                parsed_properties["startTimeFromAscendingNode"]
-                .split("T")[0]
-                .replace("-", ""),
-                parsed_properties["completionTimeFromAscendingNode"]
-                .split("T")[0]
-                .replace("-", ""),
+                slugify(properties["startTimeFromAscendingNode"]),
+                slugify(properties["completionTimeFromAscendingNode"]),
                 query_hash,
             )
-        elif (
-            "startTimeFromAscendingNode" in parsed_properties
-            and parsed_properties["startTimeFromAscendingNode"] != "Not Available"
-        ):
+        elif "startTimeFromAscendingNode" in properties:
             product_id = "%s_%s_%s" % (
                 id_prefix,
-                parsed_properties["startTimeFromAscendingNode"]
-                .split("T")[0]
-                .replace("-", ""),
+                slugify(properties["startTimeFromAscendingNode"]),
                 query_hash,
             )
         else:
             product_id = f"{id_prefix}_{query_hash}"
 
-        parsed_properties["id"] = parsed_properties["title"] = product_id
+        properties["id"] = properties["title"] = product_id
 
-        # update downloadLink and orderLink
-        parsed_properties["_dc_qs"] = quote_plus(qs)
-        if parsed_properties["downloadLink"] != "Not Available":
-            parsed_properties["downloadLink"] += f"?{qs}"
-
-        # parse metadata needing downloadLink
-        dl_path = Fields("downloadLink")
-        dl_path_from_root = Child(Root(), dl_path)
-        for param, mapping in self.config.metadata_mapping.items():
-            if dl_path in mapping or dl_path_from_root in mapping:
-                parsed_properties.update(
-                    properties_from_json(parsed_properties, {param: mapping})
-                )
-
-        # use product_type_config as default properties
-        parsed_properties = dict(
-            getattr(self.config, "product_type_config", {}),
-            **parsed_properties,
-        )
+        # used by server mode to generate downloadlink href
+        properties["_dc_qs"] = quote_plus(qs)
 
         product = EOProduct(
             provider=self.provider,
             productType=product_type,
-            properties=parsed_properties,
+            properties=properties,
         )
 
         return [
@@ -1193,17 +1109,15 @@ class MeteoblueSearch(ECMWFSearch):
         return [response.json()]
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id
-        :param kwargs: keyword arguments to be used in the query string
+        :param query_dict: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
-        return QueryStringSearch.build_query_string(
-            self, product_type=product_type, **kwargs
-        )
+        return QueryStringSearch.build_query_string(self, product_type, query_dict)
 
 
 class WekeoECMWFSearch(ECMWFSearch):
@@ -1267,25 +1181,3 @@ class WekeoECMWFSearch(ECMWFSearch):
         :return: list containing the results from the provider in json format
         """
         return QueryStringSearch.do_search(self, *args, **kwargs)
-
-    def build_query_string(
-        self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
-        """Build The query string using the search parameters
-
-        :param product_type: product type id
-        :param kwargs: keyword arguments to be used in the query string
-        :return: formatted query params and encode query string
-        """
-        # Reorder kwargs to make sure year/month/day/time if set overwrite default datetime.
-        # strip_quotes to remove duplicated quotes like "'1_1'" produced by convertors like to_geojson.
-        priority_keys = [
-            "startTimeFromAscendingNode",
-            "completionTimeFromAscendingNode",
-        ]
-        ordered_kwargs = {k: kwargs[k] for k in priority_keys if k in kwargs}
-        ordered_kwargs.update({k: strip_quotes(v) for k, v in kwargs.items()})
-
-        return QueryStringSearch.build_query_string(
-            self, product_type=product_type, **ordered_kwargs
-        )
