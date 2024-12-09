@@ -372,7 +372,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         def gen():
             yield b"a"
 
-        mock_stream_download.return_value = ("dummy_product.nc", gen)
+        self.product.filename = "dummy_product.nc"
+        mock_stream_download.return_value = gen
         progress_callback = ProgressCallback(disable=True)
 
         path = plugin.download(
@@ -426,7 +427,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         def gen():
             yield b"a"
 
-        mock_stream_download.return_value = ("dummy_product.nc", gen)
+        product.filename = "dummy_product.nc"
+        mock_stream_download.return_value = gen
 
         plugin = self.get_download_plugin(product)
         product.location = product.remote_location = "http://somewhere"
@@ -488,7 +490,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         def gen():
             yield b"a"
 
-        mock_stream_download.return_value = ("dummy_product.nc", gen)
+        mock_stream_download.return_value = gen
+        self.product.filename = "dummy_product.nc"
 
         # download asset if ignore_assets = False
         plugin.config.ignore_assets = False
