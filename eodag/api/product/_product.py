@@ -116,6 +116,7 @@ class EOProduct:
     properties: Dict[str, Any]
     product_type: Optional[str]
     location: str
+    filename: str
     remote_location: str
     search_kwargs: Any
     geometry: BaseGeometry

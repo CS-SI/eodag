@@ -631,9 +631,9 @@ class HTTPDownload(Download):
             is_empty = True
             result = self._stream_download(product, auth, progress_callback, **kwargs)
             if result is not None and fs_path is not None:
-                filename, chunk_iterator = result
+                chunk_iterator = result
 
-                ext = Path(filename).suffix
+                ext = Path(product.filename).suffix
                 path = Path(fs_path).with_suffix(ext)
 
                 with open(path, "wb") as fhandle:
@@ -797,10 +797,11 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        result = self._stream_download(product, auth, progress_callback, **kwargs)
-        if result is None:
+        chunk_iterator = self._stream_download(
+            product, auth, progress_callback, **kwargs
+        )
+        if chunk_iterator is None:
             raise DownloadError(f"download of {product.properties['id']} is empty")
-        filename, chunk_iterator = result
         # start reading chunks to set product.headers
         try:
             chunks = chunk_iterator()
@@ -913,7 +914,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Union[tuple[str, Callable[[], Any]], None]:
+    ) -> Union[Callable[[], Any], None]:
         """
         Fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
@@ -1017,7 +1018,8 @@ class HTTPDownload(Download):
                         progress_callback(len(chunk))
                         yield chunk
 
-            return filename, iteration_wrapper
+            product.filename = filename
+            return iteration_wrapper
 
     def _stream_download_assets(
         self,
