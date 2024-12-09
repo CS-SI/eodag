@@ -122,6 +122,10 @@ class EOProduct:
     search_intersection: Optional[BaseGeometry]
     assets: AssetsDict
 
+    driver: DatasetDriver
+    downloader: Optional[Union[Api, Download]] = None
+    downloader_auth: Optional[Authentication] = None
+
     def __init__(
         self, provider: str, properties: Dict[str, Any], **kwargs: Any
     ) -> None:
@@ -136,18 +140,10 @@ class EOProduct:
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
         }
-        if "geometry" not in properties or (
-            (
-                properties["geometry"] == NOT_AVAILABLE
-                or properties["geometry"] == NOT_MAPPED
-            )
-            and "defaultGeometry" not in properties
-        ):
-            raise MisconfiguredError(
-                f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
-            )
-        elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
-            product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
+
+        default_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
+        if properties.get("geometry") in (None, NOT_AVAILABLE, NOT_MAPPED):
+            product_geometry = default_geometry
         else:
             product_geometry = properties["geometry"]
 
@@ -171,8 +167,6 @@ class EOProduct:
                 )
                 self.search_intersection = None
         self.driver = self.get_driver()
-        self.downloader: Optional[Union[Api, Download]] = None
-        self.downloader_auth: Optional[Authentication] = None
 
     def as_dict(self) -> Dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson

@@ -327,16 +327,18 @@ class Search(PluginTopic):
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+    ) -> QueryablesDict:
         default_values: Dict[str, Any] = deepcopy(
             getattr(self.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
         try:
             filters["productType"] = product_type
-            return self.discover_queryables(**{**default_values, **filters}) or {}
+            queryables = self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError:
-            return self.queryables_from_metadata_mapping(product_type, alias)
+            queryables = self.queryables_from_metadata_mapping(product_type, alias)
+
+        return QueryablesDict(**queryables)
 
     def list_queryables(
         self,
@@ -369,17 +371,9 @@ class Search(PluginTopic):
             if product_type:
                 self.config.product_type_config = product_type_configs[product_type]
             queryables = self._get_product_type_queryables(product_type, alias, filters)
-            if getattr(self.config, "discover_queryables", {}).get(
-                "constraints_url", ""
-            ):
-                additional_properties = False
-            else:
-                additional_properties = True
-            return QueryablesDict(
-                additional_properties=additional_properties,
-                additional_information=additional_info,
-                **queryables,
-            )
+            queryables.additional_information = additional_info
+
+            return queryables
         else:
             all_queryables: Dict[str, Any] = {}
             for pt in available_product_types:
