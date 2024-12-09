@@ -130,6 +130,7 @@ Site contents
    :caption: For Developers/Contributors
 
    add_provider
+   add_product_type
    plugins
    params_mapping
    contribute
