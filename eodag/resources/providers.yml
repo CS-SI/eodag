@@ -1920,7 +1920,6 @@
     type: HTTPDownload
     timeout: 30
     ssl_verify: true
-    extract: false
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -1942,15 +1941,6 @@
         need_search: true
         metadata_mapping:
           downloadLink: $.json.asset.value.href
-    products:
-      CAMS_EU_AIR_QUALITY_RE:
-        extract: true
-      CAMS_GRF:
-        extract: true
-      CAMS_GRF_AUX:
-        extract: true
-      CAMS_GLOBAL_EMISSIONS:
-        extract: true
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
@@ -2154,7 +2144,6 @@
     type: HTTPDownload
     timeout: 30
     ssl_verify: true
-    extract: false
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -2176,19 +2165,6 @@
         need_search: true
         metadata_mapping:
           downloadLink: $.json.asset.value.href
-    products:
-      AG_ERA5:
-        extract: true
-      GLACIERS_DIST_RANDOLPH:
-        extract: true
-      SATELLITE_CARBON_DIOXIDE:
-        extract: true
-      SATELLITE_FIRE_BURNED_AREA:
-        extract: true
-      SATELLITE_METHANE:
-        extract: true
-      SIS_HYDRO_MET_PROJ:
-        extract: true
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
