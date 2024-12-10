@@ -98,7 +98,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "ecmwf:expver": "prod",
             "ecmwf:type": "cf",
             "ecmwf:levtype": "sfc",
-            "ecmwf:origin": "ecmf",
+            "ecmwf:origin": "ecmwf",
             "ecmwf:grid": "0.5/0.5",
             "ecmwf:param": "59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/"
             + "228002/228039/228139/228141/228144/228164/228228",
@@ -107,7 +107,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "ecmwf:target": "output",
         }
         self.custom_query_params = {
-            "ecmwf:origin": "ecmf",
+            "ecmwf:origin": "ecmwf",
             "ecmwf:levtype": "sfc",
             "ecmwf:number": "1",
             "ecmwf:expver": "prod",
