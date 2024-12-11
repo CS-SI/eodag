@@ -375,7 +375,7 @@ class UsgsApi(Api):
         logger.debug(f"Downloading {req_url}")
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
-        @self._download_retry(product, wait, timeout)
+        @self._order_download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
             fs_path: str,

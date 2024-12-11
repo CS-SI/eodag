@@ -1188,7 +1188,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get(self, mock_request):
-        """HTTPDownload.order_download() must request using orderLink and GET protocol"""
+        """HTTPDownload._order() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["orderLink"] = "http://somewhere/order"
@@ -1202,7 +1202,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
             auth = auth_plugin.authenticate()
 
-            plugin.order_download(self.product, auth=auth)
+            plugin._order(self.product, auth=auth)
 
             mock_request.assert_called_once_with(
                 method="GET",
@@ -1220,7 +1220,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_get_raises_if_request_500(self, mock_request):
-        """HTTPDownload.order_download() must raise an error if request to backend
+        """HTTPDownload._order() must raise an error if request to backend
         provider failed"""
 
         # Configure mock to raise an error
@@ -1236,7 +1236,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Verify that a DownloadError is raised
         with self.assertRaises(DownloadError) as context:
-            plugin.order_download(self.product, auth=auth)
+            plugin._order(self.product, auth=auth)
         self.assertIn("could not be ordered", str(context.exception))
 
         mock_request.assert_called_once_with(
@@ -1267,7 +1267,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Test the function, expecting ValidationError to be raised
         with self.assertRaises(ValidationError) as context:
-            plugin.order_download(self.product, auth=auth)
+            plugin._order(self.product, auth=auth)
         self.assertIn("could not be ordered", str(context.exception))
 
         mock_request.assert_called_once_with(
@@ -1281,7 +1281,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
     @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
     def test_plugins_download_http_order_post(self, mock_request):
-        """HTTPDownload.order_download() must request using orderLink and POST protocol"""
+        """HTTPDownload._order() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
@@ -1293,7 +1293,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # orderLink without query query args
         self.product.properties["orderLink"] = "http://somewhere/order"
-        plugin.order_download(self.product, auth=auth)
+        plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url=self.product.properties["orderLink"],
@@ -1305,7 +1305,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # orderLink with query query args
         mock_request.reset_mock()
         self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
-        plugin.order_download(self.product, auth=auth)
+        plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url="http://somewhere/order",
@@ -1321,7 +1321,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties[
             "orderLink"
         ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
-        plugin.order_download(self.product, auth=auth)
+        plugin._order(self.product, auth=auth)
         mock_request.assert_called_once_with(
             method="POST",
             url="http://somewhere/order",
@@ -1336,7 +1336,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def test_plugins_download_http_order_status(self):
-        """HTTPDownload.order_download_status() must request status using orderStatusLink"""
+        """HTTPDownload._order_status() must request status using orderStatusLink"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {
@@ -1363,7 +1363,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
 
             with self.assertRaises(DownloadError):
-                plugin.order_download_status(self.product, auth=auth)
+                plugin._order_status(self.product, auth=auth)
 
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
@@ -1376,7 +1376,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_order_status_get_raises_if_request_500(
         self, mock_request
     ):
-        """HTTPDownload.order_download() must raise an error if request to backend
+        """HTTPDownload._order() must raise an error if request to backend
         provider failed"""
 
         # Configure mock to raise an error
@@ -1393,7 +1393,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Verify that a DownloadError is raised
         with self.assertRaises(DownloadError) as context:
-            plugin.order_download_status(self.product, auth=auth)
+            plugin._order_status(self.product, auth=auth)
         self.assertIn("order status could not be checked", str(context.exception))
 
         mock_request.assert_called_once_with(
@@ -1428,7 +1428,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         # Test the function, expecting ValidationError to be raised
         with self.assertRaises(ValidationError) as context:
-            plugin.order_download_status(self.product, auth=auth)
+            plugin._order_status(self.product, auth=auth)
         self.assertIn("order status could not be checked", str(context.exception))
 
         mock_request.assert_called_once_with(
@@ -1442,7 +1442,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def test_plugins_download_http_order_status_search_again(self):
-        """HTTPDownload.order_download_status() must search again after success if needed"""
+        """HTTPDownload._order_status() must search again after success if needed"""
         plugin = self.get_download_plugin(self.product)
         plugin.config.order_status = {
             "metadata_mapping": {"status": "$.json.status"},
@@ -1484,7 +1484,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 ),
             )
 
-            plugin.order_download_status(self.product, auth=auth)
+            plugin._order_status(self.product, auth=auth)
 
             self.assertEqual(
                 self.product.properties["downloadLink"], "http://new-download-link"
@@ -2020,12 +2020,8 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
             productType="S2_MSI_L1C",
         )
 
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload.order_download_status", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload.order_download", autospec=True
-    )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload._order_status", autospec=True)
+    @mock.patch("eodag.plugins.download.http.HTTPDownload._order", autospec=True)
     def test_plugins_download_s3rest_online(self, mock_order, mock_order_status):
         """S3RestDownload.download() must create outputfiles"""
 
@@ -2092,12 +2088,8 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         mock_order.assert_not_called()
         mock_order_status.assert_not_called()
 
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload.order_download_status", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.download.http.HTTPDownload.order_download", autospec=True
-    )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload._order_status", autospec=True)
+    @mock.patch("eodag.plugins.download.http.HTTPDownload._order", autospec=True)
     def test_plugins_download_s3rest_offline(self, mock_order, mock_order_status):
         """S3RestDownload.download() must order offline products"""
 
