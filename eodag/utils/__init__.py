@@ -126,8 +126,8 @@ REQ_RETRY_BACKOFF_FACTOR = 2
 REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
 
 # default wait times in minutes
-DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
-DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
+DEFAULT_DOWNLOAD_WAIT = 0.2  # in minutes
+DEFAULT_DOWNLOAD_TIMEOUT = 10  # in minutes
 
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
