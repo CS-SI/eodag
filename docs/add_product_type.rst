@@ -32,7 +32,7 @@ products of the corresponding type.
 The following lines need to be indented because they make a dictionary of
 configuration information for the product type we are defining. Each bit of
 information can usually be found on the provider's catalog. Note how the value
-used for the ``keywords`` entry brigns together values from other entries such
+used for the ``keywords`` entry brings together values from other entries such
 as ``instrument``, ``processingLevel``, ``platform``, etc.
 
 Add product type to a provider
@@ -75,7 +75,7 @@ With the example above, when searching for products of the type
 ``CBERS4_AWFI_L2``, the search will be performed by default as if we had
 specified the instrument AWFI, the collection cbers4 and the processingLevel 2.
 Each of those parameters can be overridden when performing an actual search. Note
-that this is **not necessary going to be sent as is** to the provider as this may be
+that this is **not necessarily going to be sent as is** to the provider as this may be
 be further processed by a metadata mapping:
 
 .. code-block:: yaml
