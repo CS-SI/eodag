@@ -6525,8 +6525,8 @@
         - '$.properties."spaceborne:polarization"'
       # Custom parameters (not defined in the base document referenced above)
       id:
-        - '{{"query":{{"accessService:endpointURL":{{"contains":"{id}"}}}}}}'
-        - '{$.properties."accessService:endpointURL"#replace_str(r"^.*\/(\w+)\.zip$",r"\1")}'
+        - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
+        - '$.properties.identifier'
       geometry:
         - '{{"intersects":{geometry#to_geojson}}}'
         - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
