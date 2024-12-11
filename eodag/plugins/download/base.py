@@ -112,8 +112,8 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         r"""
@@ -142,8 +142,8 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
@@ -448,8 +448,8 @@ class Download(PluginTopic):
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
@@ -590,7 +590,7 @@ class Download(PluginTopic):
         return paths
 
     def _order_download_retry(
-        self, product: EOProduct, wait: int, timeout: int
+        self, product: EOProduct, wait: float, timeout: float
     ) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """
         Order download retry decorator.

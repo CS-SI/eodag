@@ -566,8 +566,8 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download a product using HTTP protocol.
@@ -632,8 +632,8 @@ class HTTPDownload(Download):
             product: EOProduct,
             auth: AuthBase,
             progress_callback: ProgressCallback,
-            wait: int,
-            timeout: int,
+            wait: float,
+            timeout: float,
             **kwargs: Unpack[DownloadConf],
         ) -> None:
             chunks = self._stream_download(product, auth, progress_callback, **kwargs)
@@ -759,8 +759,8 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
@@ -924,8 +924,8 @@ class HTTPDownload(Download):
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> None:
         """
         Order product and poll to check its status
@@ -1404,8 +1404,8 @@ class HTTPDownload(Download):
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ):
         """
