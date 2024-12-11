@@ -202,8 +202,8 @@ class Download(PluginTopic):
             or getattr(self.config, "output_dir", tempfile.gettempdir())
             or tempfile.gettempdir()
         )
-        output_extension = kwargs.get("output_extension", None) or getattr(
-            self.config, "output_extension", ".zip"
+        output_extension = kwargs.get("output_extension") or getattr(
+            self.config, "output_extension", ""
         )
 
         # Strong asumption made here: all products downloaded will be zip files
@@ -343,13 +343,7 @@ class Download(PluginTopic):
             if delete_archive is not None
             else getattr(self.config, "delete_archive", True)
         )
-        output_extension = kwargs.pop("output_extension", ".zip")
-
-        product_path = (
-            fs_path[: fs_path.index(output_extension)]
-            if output_extension in fs_path
-            else fs_path
-        )
+        product_path, _ = os.path.splitext(fs_path)
         product_path_exists = os.path.exists(product_path)
         if product_path_exists and os.path.isfile(product_path):
             logger.info(
