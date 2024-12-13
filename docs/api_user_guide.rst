@@ -25,7 +25,8 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/api_user_guide/2_providers_products_available.ipynb
    notebooks/api_user_guide/3_configuration.ipynb
    notebooks/api_user_guide/4_search.ipynb
-   notebooks/api_user_guide/5_serialize_deserialize.ipynb
-   notebooks/api_user_guide/6_crunch.ipynb
-   notebooks/api_user_guide/7_download.ipynb
-   notebooks/api_user_guide/8_post_process.ipynb
+   notebooks/api_user_guide/5_queryables.ipynb
+   notebooks/api_user_guide/6_serialize_deserialize.ipynb
+   notebooks/api_user_guide/7_crunch.ipynb
+   notebooks/api_user_guide/8_download.ipynb
+   notebooks/api_user_guide/9_post_process.ipynb
