@@ -233,10 +233,10 @@ Core features and fixes
 * Configurable download timeout (:pull:`1124`)
 * `Search by id <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#id-and-provider>`_ now
   uses :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
-  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_
+  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_crunch.html#Filter-by-property>`_
   (:pull:`1099`).
 * Free text search available for all fields when `guessing a produc type
-  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`),
+  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_crunch.html#Filter-by-property>`_ (:pull:`1070`),
   mission dates filtering support (:pull:`1222`)
 * Configurable requests ``ssl_verify`` (:pull:`1045`)
 * Download record hash independent from provider (:pull:`1023`)
