@@ -1412,17 +1412,33 @@ class StreamResponse:
 
 
 def guess_file_type(file: str) -> Optional[str]:
-    """guess the mime type of a file or URL based on its extension"""
+    """guess the mime type of a file or URL based on its extension
+
+    >>> guess_file_type('path/to/foo.jp2')
+    'image/jp2'
+
+    :param file: file url or path
+    :returns: guessed mime type
+    """
     mimetypes.add_type("text/xml", ".xsd")
     mimetypes.add_type("application/x-grib", ".grib")
+    mimetypes.add_type("application/x-grib2", ".grib2")
     mime_type, _ = mimetypes.guess_type(file, False)
     return mime_type
 
 
 def guess_extension(type: str) -> Optional[str]:
-    """guess extension from mime type"""
+    """guess extension from mime type
+
+    >>> guess_extension('image/jp2')
+    '.jp2'
+
+    :param type: mime type
+    :returns: guessed file extension
+    """
     mimetypes.add_type("text/xml", ".xsd")
     mimetypes.add_type("application/x-grib", ".grib")
+    mimetypes.add_type("application/x-grib2", ".grib2")
     return mimetypes.guess_extension(type, strict=False)
 
 
