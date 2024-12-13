@@ -1414,7 +1414,7 @@ class StreamResponse:
 def guess_file_type(file: str) -> Optional[str]:
     """guess the mime type of a file or URL based on its extension
 
-    >>> guess_file_type('path/to/foo.jp2')
+    >>> guess_file_type('foo.jp2')
     'image/jp2'
 
     :param file: file url or path
