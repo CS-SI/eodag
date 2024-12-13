@@ -143,6 +143,13 @@ DEFAULT_MAX_ITEMS_PER_PAGE = 50
 # default product-types start date
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
 
+# update missing mimetypes
+mimetypes.add_type("text/xml", ".xsd")
+mimetypes.add_type("application/x-grib", ".grib")
+mimetypes.add_type("application/x-grib2", ".grib2")
+# jp2 is missing on windows
+mimetypes.add_type("image/jp2", ".jp2")
+
 
 def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
     """Simple decorator to mark functions/methods/classes as deprecated.
@@ -1412,33 +1419,32 @@ class StreamResponse:
 
 
 def guess_file_type(file: str) -> Optional[str]:
-    """guess the mime type of a file or URL based on its extension
+    """Guess the mime type of a file or URL based on its extension,
+    using eodag extended mimetypes definition
 
-    >>> guess_file_type('foo.jp2')
-    'image/jp2'
+    >>> guess_file_type('foo.tiff')
+    'image/tiff'
+    >>> guess_file_type('foo.grib')
+    'application/x-grib'
 
     :param file: file url or path
     :returns: guessed mime type
     """
-    mimetypes.add_type("text/xml", ".xsd")
-    mimetypes.add_type("application/x-grib", ".grib")
-    mimetypes.add_type("application/x-grib2", ".grib2")
     mime_type, _ = mimetypes.guess_type(file, False)
     return mime_type
 
 
 def guess_extension(type: str) -> Optional[str]:
-    """guess extension from mime type
+    """Guess extension from mime type, using eodag extended mimetypes definition
 
-    >>> guess_extension('image/jp2')
-    '.jp2'
+    >>> guess_extension('image/tiff')
+    '.tiff'
+    >>> guess_extension('application/x-grib')
+    '.grib'
 
     :param type: mime type
     :returns: guessed file extension
     """
-    mimetypes.add_type("text/xml", ".xsd")
-    mimetypes.add_type("application/x-grib", ".grib")
-    mimetypes.add_type("application/x-grib2", ".grib2")
     return mimetypes.guess_extension(type, strict=False)
 
 
