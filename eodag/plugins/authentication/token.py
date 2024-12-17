@@ -92,25 +92,27 @@ class TokenAuth(Authentication):
                 **self.config.credentials
             )
 
-            # Note:
+            # Format headers if needed with values from the credentials. Note:
             # if only 'headers' is given, it will be used for both token retrieve and authentication.
             # if 'retrieve_headers' is given, it will be used for token retrieve only.
             # if both are given, 'retrieve_headers' will be used for token retrieve and 'headers' for authentication.
-            #
-            # Format headers if needed with values from the credentials.
-            # For the authentication headers: use and empty dict if undefined.
+
+            # If the authentication headers are undefined or None: use an empty dict.
             # And don't format '{token}' now, it will be done later.
+            raw_headers = getattr(self.config, "headers", None) or {}
             self.config.headers = {
                 header: value.format(**{"token": "{token}", **self.config.credentials})
-                for header, value in getattr(self.config, "headers", {}).items()
+                for header, value in raw_headers.items()
             }
-            try:
+
+            # If the retrieve headers are undefined, their attribute must not be set in self.config.
+            # If they are defined but empty, use an empty dict instead of None.
+            if hasattr(self.config, "retrieve_headers"):
+                raw_retrieve_headers = self.config.retrieve_headers or {}
                 self.config.retrieve_headers = {
                     header: value.format(**self.config.credentials)
-                    for header, value in self.config.retrieve_headers.items()
+                    for header, value in raw_retrieve_headers.items()
                 }
-            except AttributeError:
-                pass
 
         except KeyError as e:
             raise MisconfiguredError(

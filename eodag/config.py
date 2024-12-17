@@ -534,6 +534,9 @@ class PluginConfig(yaml.YAMLObject):
     #: Dictionary containing all keys/value pairs that should be added to the headers
     headers: Dict[str, str]
     #: :class:`~eodag.plugins.authentication.base.Authentication`
+    #: Dictionary containing all keys/value pairs that should be added to the headers for token retrieve only
+    retrieve_headers: Dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: The key pointing to the token in the response from the token server
     token_key: str
     #: :class:`~eodag.plugins.authentication.base.Authentication`
