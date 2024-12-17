@@ -149,7 +149,7 @@ class HTTPDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(HTTPDownload, self).__init__(provider, config)
 
-    def order_download(
+    def _order(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -273,7 +273,7 @@ class HTTPDownload(Download):
 
         return json_response
 
-    def order_download_status(
+    def _order_status(
         self,
         product: EOProduct,
         auth: Optional[AuthBase] = None,
@@ -566,8 +566,8 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download a product using HTTP protocol.
@@ -627,13 +627,13 @@ class HTTPDownload(Download):
 
         url = product.remote_location
 
-        @self._download_retry(product, wait, timeout)
+        @self._order_download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
             auth: AuthBase,
             progress_callback: ProgressCallback,
-            wait: int,
-            timeout: int,
+            wait: float,
+            timeout: float,
             **kwargs: Unpack[DownloadConf],
         ) -> None:
             chunks = self._stream_download(product, auth, progress_callback, **kwargs)
@@ -759,8 +759,8 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
@@ -902,6 +902,44 @@ class HTTPDownload(Download):
             else:
                 logger.error("Error while getting resource :\n%s", tb.format_exc())
 
+    def _order_request(
+        self,
+        product: EOProduct,
+        auth: Optional[AuthBase],
+    ) -> None:
+        if (
+            "orderLink" in product.properties
+            and product.properties.get("storageStatus") == OFFLINE_STATUS
+            and not product.properties.get("orderStatus")
+        ):
+            self._order(product=product, auth=auth)
+
+        if (
+            product.properties.get("orderStatusLink", None)
+            and product.properties.get("storageStatus") != ONLINE_STATUS
+        ):
+            self._order_status(product=product, auth=auth)
+
+    def order(
+        self,
+        product: EOProduct,
+        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
+    ) -> None:
+        """
+        Order product and poll to check its status
+
+        :param product: The EO product to download
+        :param auth: (optional) authenticated object
+        :param wait: (optional) Wait time in minutes between two order status check
+        :param timeout: (optional) Maximum time in minutes before stop checking
+                        order status
+        """
+        self._order_download_retry(product, wait, timeout)(self._order_request)(
+            product, auth
+        )
+
     def _stream_download(
         self,
         product: EOProduct,
@@ -910,8 +948,9 @@ class HTTPDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         """
-        fetches a zip file containing the assets of a given product as a stream
+        Fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
+
         :param product: product for which the assets should be downloaded
         :param auth: The configuration of a plugin of type Authentication
         :param progress_callback: A method or a callable object
@@ -928,18 +967,8 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         ordered_message = ""
-        if (
-            "orderLink" in product.properties
-            and product.properties.get("storageStatus") == OFFLINE_STATUS
-            and not product.properties.get("orderStatus")
-        ):
-            self.order_download(product=product, auth=auth)
-
-        if (
-            product.properties.get("orderStatusLink", None)
-            and product.properties.get("storageStatus") != ONLINE_STATUS
-        ):
-            self.order_download_status(product=product, auth=auth)
+        # retry handled at download level
+        self._order_request(product, auth)
 
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
@@ -1380,8 +1409,8 @@ class HTTPDownload(Download):
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ):
         """

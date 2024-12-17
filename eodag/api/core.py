@@ -2007,8 +2007,8 @@ class EODataAccessGateway:
         search_result: SearchResult,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """Download all products resulting from a search.
@@ -2170,8 +2170,8 @@ class EODataAccessGateway:
         self,
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> str:
         """Download a single product.

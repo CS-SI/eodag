@@ -113,8 +113,8 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         r"""
@@ -143,8 +143,8 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
@@ -449,8 +449,8 @@ class Download(PluginTopic):
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
@@ -590,14 +590,14 @@ class Download(PluginTopic):
 
         return paths
 
-    def _download_retry(
-        self, product: EOProduct, wait: int, timeout: int
+    def _order_download_retry(
+        self, product: EOProduct, wait: float, timeout: float
     ) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """
-        Download retry decorator.
+        Order download retry decorator.
 
-        Retries the wrapped  download method after `wait` minutes if a NotAvailableError
-        exception is thrown until `timeout` minutes.
+        Retries the wrapped order_download method after ``wait`` minutes if a
+        ``NotAvailableError`` exception is thrown until ``timeout`` minutes.
 
         :param product: The EO product to download
         :param wait: If download fails, wait time in minutes between two download tries
@@ -606,7 +606,7 @@ class Download(PluginTopic):
         :returns: decorator
         """
 
-        def decorator(download: Callable[..., T]) -> Callable[..., T]:
+        def decorator(order_download: Callable[..., T]) -> Callable[..., T]:
             def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
                 start_time = datetime.now()
@@ -623,7 +623,7 @@ class Download(PluginTopic):
                     if datetime_now >= product.next_try:
                         product.next_try += timedelta(minutes=wait)
                         try:
-                            return download(*args, **kwargs)
+                            return order_download(*args, **kwargs)
 
                         except NotAvailableError as e:
                             if not getattr(self.config, "order_enabled", False):
@@ -639,7 +639,7 @@ class Download(PluginTopic):
                         ).seconds
                         retry_count += 1
                         retry_info = (
-                            f"[Retry #{retry_count}] Waited {wait_seconds}s, trying again to download ordered product"
+                            f"[Retry #{retry_count}] Waited {wait_seconds}s, checking order status again"
                             f" (retry every {wait}' for {timeout}')"
                         )
                         logger.info(not_available_info)
@@ -661,8 +661,8 @@ class Download(PluginTopic):
                         ).microseconds / 1e6
                         retry_count += 1
                         retry_info = (
-                            f"[Retry #{retry_count}] Waiting {wait_seconds}s until next download try"
-                            f" for ordered product (retry every {wait}' for {timeout}')"
+                            f"[Retry #{retry_count}] Waiting {wait_seconds}s until next order status check"
+                            f" (retry every {wait}' for {timeout}')"
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
@@ -683,12 +683,12 @@ class Download(PluginTopic):
                         logger.info(not_available_info)
                         raise NotAvailableError(
                             f"{product.properties['title']} is not available ({product.properties['storageStatus']})"
-                            f" and could not be downloaded, timeout reached"
+                            f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:
                         raise NotAvailableError(not_available_info)
 
-                return download(*args, **kwargs)
+                return order_download(*args, **kwargs)
 
             return download_and_retry
 
