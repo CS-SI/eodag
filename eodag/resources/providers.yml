@@ -2290,7 +2290,7 @@
       "ecmwf:product_type": reanalysis
       "ecmwf:variable": 10m_u_component_of_wind
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_PL:
@@ -2298,7 +2298,7 @@
       "ecmwf:product_type": reanalysis
       "ecmwf:variable": geopotential
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_PL_MONTHLY:
@@ -2307,14 +2307,14 @@
       "ecmwf:variable": divergence
       "ecmwf:pressure_level": '1'
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *month_year_time
     ERA5_LAND:
       "ecmwf:dataset": reanalysis-era5-land
       "ecmwf:variable": 2m_dewpoint_temperature
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *day_month_year_time
     ERA5_LAND_MONTHLY:
@@ -2322,14 +2322,14 @@
       "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
       "ecmwf:variable": 2m_dewpoint_temperature
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *month_year_time
     ERA5_SL_MONTHLY:
       "ecmwf:dataset": reanalysis-era5-single-levels-monthly-means
       "ecmwf:product_type": monthly_averaged_reanalysis_by_hour_of_day
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *month_year_time
     UERRA_EUROPE_SL:
@@ -2386,7 +2386,7 @@
     SATELLITE_SEA_ICE_EDGE_TYPE:
       "ecmwf:dataset": satellite-sea-ice-edge-type
       "ecmwf:cdr_type": cdr
-      "ecwmf:region": northern_hemisphere
+      "ecmwf:region": northern_hemisphere
       "ecmwf:variable":
         - sea_ice_edge
         - sea_ice_type
@@ -6579,6 +6579,16 @@
   roles:
     - host
   url: https://ewds.climate.copernicus.eu
+  anchor_time_day_month_year: &time_day_month_year
+    completionTimeFromAscendingNode:
+      - |
+        {{
+          "year": {_date#interval_to_datetime_dict}["year"],
+          "month": {_date#interval_to_datetime_dict}["month"],
+          "day": {_date#interval_to_datetime_dict}["day"],
+          "time": {startTimeFromAscendingNode#get_ecmwf_time}
+        }}
+      - '{$.completionTimeFromAscendingNode#to_iso_date}'
   anchor_day_month_year: &day_month_year
     completionTimeFromAscendingNode:
       - |
@@ -6594,6 +6604,16 @@
         {{
           "year": {_date#interval_to_datetime_dict}["year"],
           "month": {_date#interval_to_datetime_dict}["month"]
+        }}
+      - '{$.completionTimeFromAscendingNode#to_iso_date}'
+  anchor_time_hday_hmonth_hyear: &time_hday_hmonth_hyear
+    completionTimeFromAscendingNode:
+      - |
+        {{
+          "hyear": {_date#interval_to_datetime_dict}["year"],
+          "hmonth": {_date#interval_to_datetime_dict}["month"],
+          "hday": {_date#interval_to_datetime_dict}["day"],
+          "time": {startTimeFromAscendingNode#get_ecmwf_time}
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   anchor_hday_hmonth_hyear: &hday_hmonth_hyear
@@ -6686,17 +6706,16 @@
     EFAS_HISTORICAL:
       "ecmwf:dataset": efas-historical
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:model_levels": surface_level
       "ecmwf:variable": snow_depth_water_equivalent
       "ecmwf:system_version": version_5_0
-      "ecmwf:time": 00:00
       metadata_mapping:
-        <<: *hday_hmonth_hyear
+        <<: *time_hday_hmonth_hyear
     EFAS_FORECAST:
       "ecmwf:dataset": efas-forecast
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:system_version": operational
       "ecmwf:originating_centre": ecmwf
       "ecmwf:product_type": control_forecast
@@ -6704,15 +6723,14 @@
         - river_discharge_in_the_last_6_hours
         - river_discharge_in_the_last_24_hours
       "ecmwf:model_levels": surface_level
-      "ecmwf:time": 00:00
       "ecmwf:leadtime_hour": '24'
       metadata_mapping:
-        <<: *day_month_year
+        <<: *time_day_month_year
     EFAS_SEASONAL:
       "ecmwf:dataset": efas-seasonal
       "ecmwf:system_version": operational
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:model_levels": surface_level
       "ecmwf:leadtime_hour": '24'
@@ -6722,19 +6740,18 @@
       "ecmwf:dataset": efas-reforecast
       "ecmwf:system_version": version_5_0
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:product_type": control_forecast
       "ecmwf:variable": river_discharge_in_the_last_6_hours
       "ecmwf:model_levels": surface_level
       "ecmwf:leadtime_hour": '6'
-      "ecmwf:day": '27'
       metadata_mapping:
-        <<: *hmonth_hyear
+        <<: *hday_hmonth_hyear
     EFAS_SEASONAL_REFORECAST:
       "ecmwf:dataset": efas-seasonal-reforecast
       "ecmwf:system_version": version_5_0
       "ecmwf:data_format": grib
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:model_levels": surface_level
       "ecmwf:leadtime_hour": '24'
@@ -6745,7 +6762,7 @@
       "ecmwf:system_version": version_4_0
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:data_format": grib2
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:hydrological_model": lisflood
       "ecmwf:product_type": consolidated
       metadata_mapping:
@@ -6758,14 +6775,14 @@
       "ecmwf:hydrological_model": htessel_lisflood
       "ecmwf:product_type": control_forecast
       "ecmwf:leadtime_hour": '24'
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       metadata_mapping:
         <<: *day_month_year
     GLOFAS_SEASONAL:
       "ecmwf:dataset": cems-glofas-seasonal
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:data_format": grib2
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:system_version": operational
       "ecmwf:hydrological_model": lisflood
       "ecmwf:leadtime_hour": '24'
@@ -6774,25 +6791,24 @@
     GLOFAS_SEASONAL_REFORECAST:
       "ecmwf:dataset": cems-glofas-seasonal-reforecast
       "ecmwf:data_format": grib2
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:system_version": version_4_0
       "ecmwf:hydrological_model": lisflood
       "ecmwf:leadtime_hour": '24'
-      "ecmwf:day": '27'
       metadata_mapping:
         <<: *hmonth_hyear
     GLOFAS_REFORECAST:
       "ecmwf:dataset": cems-glofas-reforecast
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:data_format": grib2
-      "ecmwf:download_format": zip
+      "ecmwf:download_format": unarchived
       "ecmwf:system_version": version_4_0
       "ecmwf:hydrological_model": lisflood
       "ecmwf:product_type": control_reforecast
       "ecmwf:leadtime_hour": '24'
       metadata_mapping:
-        <<: *hmonth_hyear
+        <<: *hday_hmonth_hyear
     FIRE_HISTORICAL:
       "ecmwf:dataset": cems-fire-historical-v1
       "ecmwf:grid": original_grid
