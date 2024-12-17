@@ -775,7 +775,7 @@ class QueryStringSearch(Search):
                 }
             )
 
-        qp, qs = self.build_query_string(product_type, **keywords)
+        qp, qs = self.build_query_string(product_type, keywords)
 
         prep.query_params = qp
         prep.query_string = qs
@@ -809,15 +809,15 @@ class QueryStringSearch(Search):
             self.config.metadata_mapping.update(metadata_mapping)
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        query_params = format_query_params(product_type, self.config, kwargs)
+        query_params = format_query_params(product_type, self.config, query_dict)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        def quote_via(x: Any, *_args, **_kwargs) -> str:
+        def quote_via(x: Any, *_args: Any, **_kwargs: Any) -> str:
             return x
 
         return (
@@ -1551,7 +1551,7 @@ class PostJsonSearch(QueryStringSearch):
             if getattr(self.config, "dates_required", False):
                 self._check_date_params(keywords, product_type)
 
-            qp, _ = self.build_query_string(product_type, **keywords)
+            qp, _ = self.build_query_string(product_type, keywords)
 
         for query_param, query_value in qp.items():
             if (
@@ -1834,24 +1834,24 @@ class StacSearch(PostJsonSearch):
         self.config.results_entry = results_entry
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
 
         # handle opened time intervals
         if any(
-            k in kwargs
-            for k in ("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
+            q in query_dict
+            for q in ("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
         ):
-            kwargs.setdefault("startTimeFromAscendingNode", "..")
-            kwargs.setdefault("completionTimeFromAscendingNode", "..")
+            query_dict.setdefault("startTimeFromAscendingNode", "..")
+            query_dict.setdefault("completionTimeFromAscendingNode", "..")
 
-        query_params = format_query_params(product_type, self.config, kwargs)
+        query_params = format_query_params(product_type, self.config, query_dict)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        def quote_via(x: Any, *_args, **_kwargs) -> str:
+        def quote_via(x: Any, *_args: Any, **_kwargs: Any) -> str:
             return x
 
         return (
@@ -1990,7 +1990,7 @@ class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
         PostJsonSearch.__init__(self, provider, config)
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], str]:
         """Build The query string using the search parameters"""
-        return PostJsonSearch.build_query_string(self, product_type, **kwargs)
+        return PostJsonSearch.build_query_string(self, product_type, query_dict)

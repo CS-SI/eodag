@@ -148,7 +148,7 @@ class Queryables(CommonQueryables):
     incidenceAngleVariation: Annotated[float, Field(None)]
 
 
-class QueryablesDict(UserDict):
+class QueryablesDict(UserDict[str, Any]):
     """Class inheriting from UserDict which contains queryables with their annotated type;
 
     :param additional_properties: if additional properties (properties not given in EODAG config)
@@ -160,7 +160,10 @@ class QueryablesDict(UserDict):
     additional_information: str = Field("")
 
     def __init__(
-        self, additional_properties: bool, additional_information: str = "", **kwargs
+        self,
+        additional_properties: bool = True,
+        additional_information: str = "",
+        **kwargs: Any,
     ):
         self.additional_properties = additional_properties
         self.additional_information = additional_information
