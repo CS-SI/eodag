@@ -91,11 +91,31 @@ class TokenAuth(Authentication):
             self.config.auth_uri = self.config.auth_uri.format(
                 **self.config.credentials
             )
-            # format headers if needed (and accepts {token} to be formatted later)
-            self.config.headers = {
-                header: value.format(**{"token": "{token}", **self.config.credentials})
-                for header, value in getattr(self.config, "headers", {}).items()
-            }
+
+            # Note:
+            # if only 'headers' is given, it will be used for both token retrieve and authentication.
+            # if 'retrieve_headers' is given, it will be used for token retrieve only.
+            # if both are given, 'retrieve_headers' will be used for token retrieve and 'headers' for authentication.
+            #
+            # Format headers if needed with values from the credentials.
+            # Don't format '{token}', we allow it to be formatted later.
+            for attr_name in "headers", "retrieve_headers":
+                if attr_dict := getattr(self.config, attr_name, None):
+                    setattr(
+                        self.config,
+                        attr_name,
+                        {
+                            header: value.format(
+                                **{"token": "{token}", **self.config.credentials}
+                            )
+                            for header, value in attr_dict.items()
+                        },
+                    )
+
+            # If headers for authentication are undefined: use an empty dict
+            if not hasattr(self.config, "headers"):
+                self.config.headers = {}
+
         except KeyError as e:
             raise MisconfiguredError(
                 f"Missing credentials inputs for provider {self.provider}: {e}"
@@ -166,10 +186,14 @@ class TokenAuth(Authentication):
             status_forcelist=retry_status_forcelist,
         )
 
+        # Use the headers for retrieval if defined, else the headers for authentication
+        try:
+            headers = self.config.retrieve_headers
+        except AttributeError:
+            headers = self.config.headers
+
         # append headers to req if some are specified in config
-        req_kwargs: Dict[str, Any] = {
-            "headers": dict(self.config.headers, **USER_AGENT)
-        }
+        req_kwargs: Dict[str, Any] = {"headers": dict(headers, **USER_AGENT)}
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         if self.refresh_token:
