@@ -55,6 +55,10 @@ class TokenAuth(Authentication):
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): TokenAuth
         * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``) (**mandatory**): url used to fetch
           the access token with user/password
+        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``): Dictionary containing all
+          keys/value pairs that should be added to the headers
+        * :attr:`~eodag.config.PluginConfig.retrieve_headers` (``Dict[str, str]``): Dictionary containing all
+          keys/value pairs that should be added to the headers for token retrieve only
         * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
           access token with a refresh token
         * :attr:`~eodag.config.PluginConfig.token_type` (``str``): type of the token (``json``
