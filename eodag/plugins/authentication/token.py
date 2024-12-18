@@ -47,7 +47,12 @@ logger = logging.getLogger("eodag.authentication.token")
 
 
 class TokenAuth(Authentication):
-    """TokenAuth authentication plugin - fetches a token which is added to search/download requests
+    """TokenAuth authentication plugin - fetches a token which is added to search/download requests.
+
+    When using headers, if only :attr:`~eodag.config.PluginConfig.headers` is given, it will be used for both token
+    retrieve and authentication. If :attr:`~eodag.config.PluginConfig.retrieve_headers` is given, it will be used for
+    token retrieve only. If both are given, :attr:`~eodag.config.PluginConfig.retrieve_headers` will be used for token
+    retrieve and :attr:`~eodag.config.PluginConfig.headers` for authentication.
 
     :param provider: provider name
     :param config: Authentication plugin configuration:
