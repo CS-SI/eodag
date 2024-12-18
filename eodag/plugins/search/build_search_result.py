@@ -67,7 +67,7 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_sort,
     get_geometry_from_various,
-    is_range_in_range,
+    is_in_range,
 )
 from eodag.utils.exceptions import ValidationError
 from eodag.utils.requests import fetch_json
@@ -768,11 +768,10 @@ class ECMWFSearch(PostJsonSearch):
                 # Filter based on the presence of any value in filter_v
                 entry_values = entry.get(keyword, [])
 
-                # date constraint may be intervals. We identify intervals with a "/" in the value
-                # we assume that if the first value is an interval, all values are intervals
                 present_values = []
-                if keyword == "date" and "/" in entry[keyword][0]:
-                    if any(is_range_in_range(x, values[0]) for x in entry[keyword]):
+                if keyword == "date":
+                    # date constraint may be intervals. We identify intervals with a "/" in the value
+                    if any(is_in_range(x, "/".join(filter_v)) for x in entry[keyword]):
                         present_values = filter_v
                 else:
                     present_values = [

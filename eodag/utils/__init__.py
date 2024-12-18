@@ -438,22 +438,24 @@ def datetime_range(start: dt, end: dt) -> Iterator[dt]:
         yield start + datetime.timedelta(days=nday)
 
 
-def is_range_in_range(valid_range: str, check_range: str) -> bool:
+def is_in_range(valid_range: str, check_range: str) -> bool:
     """Check if the check_range is completely within the valid_range.
 
     This function checks if both the start and end dates of the check_range
     are within the start and end dates of the valid_range.
 
-    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
-    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
+    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD' or 'YYYY-MM-DD'.
+    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD' or 'YYYY-MM-DD'.
     :returns: True if check_range is within valid_range, otherwise False.
     """
-    if "/" not in valid_range or "/" not in check_range:
-        return False
 
-    # Split the date ranges into start and end dates
-    start_valid, end_valid = valid_range.split("/")
-    start_check, end_check = check_range.split("/")
+    def parse_range(date_range: str):
+        if "/" in date_range:
+            return date_range.split("/")
+        return date_range, date_range
+
+    start_valid, end_valid = parse_range(valid_range)
+    start_check, end_check = parse_range(check_range)
 
     # Convert the strings to datetime objects using fromisoformat
     start_valid_dt = datetime.datetime.fromisoformat(start_valid)
@@ -1396,8 +1398,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
         # case
         if value.capitalize() not in ("True", "False"):
             raise ValueError(
-                "Only true or false strings (case insensitive) are "
-                "allowed for booleans"
+                "Only true or false strings (case insensitive) are allowed for booleans"
             )
         # Get the real Python value of the boolean. e.g: value='tRuE'
         # => eval(value.capitalize())=True.
