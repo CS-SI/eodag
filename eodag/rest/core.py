@@ -726,11 +726,16 @@ def eodag_api_init() -> None:
             constellation: Union[str, List[str]] = ext_col.get("summaries", {}).get(
                 "constellation"
             )
+            processing_level: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+                "processing:level"
+            )
             # Check if platform or constellation are lists and join them into a string if they are
             if isinstance(platform, list):
                 platform = ",".join(platform)
             if isinstance(constellation, list):
                 constellation = ",".join(constellation)
+            if isinstance(processing_level, list):
+                processing_level = ",".join(processing_level)
 
             update_fields = {
                 "title": ext_col.get("title"),
@@ -741,7 +746,7 @@ def eodag_api_init() -> None:
                 ),
                 "platform": constellation,
                 "platformSerialIdentifier": platform,
-                "processingLevel": ext_col.get("summaries", {}).get("processing:level"),
+                "processingLevel": processing_level,
                 "license": ext_col["license"],
                 "missionStartDate": ext_col["extent"]["temporal"]["interval"][0][0],
                 "missionEndDate": ext_col["extent"]["temporal"]["interval"][-1][1],
