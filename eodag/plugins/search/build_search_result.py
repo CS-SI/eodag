@@ -476,20 +476,20 @@ class ECMWFSearch(PostJsonSearch):
         if _dc_qs is not None:
             # if available, update search params using datacube query-string
             _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
-            if "/to/" in _dc_qp.get("date", ""):
-                (
-                    params["startTimeFromAscendingNode"],
-                    params["completionTimeFromAscendingNode"],
-                ) = _dc_qp["date"].split("/to/")
-            elif "/" in _dc_qp.get("date", ""):
-                (
-                    params["startTimeFromAscendingNode"],
-                    params["completionTimeFromAscendingNode"],
-                ) = _dc_qp["date"].split("/")
-            elif _dc_qp.get("date", None):
-                params["startTimeFromAscendingNode"] = params[
-                    "completionTimeFromAscendingNode"
-                ] = _dc_qp["date"]
+
+            if date := _dc_qp.get("date"):
+                if isinstance(date, list) and date:
+                    date = date[0]
+
+                if "/to/" in date:
+                    start, end = date.split("/to/")
+                elif "/" in date:
+                    start, end = date.split("/")
+                else:
+                    start = end = date
+
+                params["startTimeFromAscendingNode"] = start
+                params["completionTimeFromAscendingNode"] = end
 
             if "/" in _dc_qp.get("area", ""):
                 params["geometry"] = _dc_qp["area"].split("/")
