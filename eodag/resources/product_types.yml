@@ -1495,6 +1495,24 @@ S3_LAN_LI:
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
 
+# MARK: MTG
+MSG_LST:
+  abstract: |
+    The full archive of MSG/SEVIRI data was reprocessed to provide the user
+    community a consistent, homogeneous and continuous Data Record of the
+    15-min Land Surface Temperature (LST) for the period 2004-2015. This Data
+    Record was obtained with the best version of its equivalent NRT product
+    (MLST) which can also complement the time series from 2016 onwards.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L3
+  keywords: SEVIRI,L3,MSG
+  sensorType: OPTICAL
+  license: proprietary
+  title:  Land Surface Temperature Climate Data Record - MSG
+  missionStartDate: "2021-01-21T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
