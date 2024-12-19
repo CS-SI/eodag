@@ -75,8 +75,7 @@ With the example above, when searching for products of the type
 ``CBERS4_AWFI_L2``, the search will be performed by default as if we had
 specified the instrument ``AWFI``, the collection ``cbers4`` and the processingLevel ``2``.
 Each of those parameters can be overridden when performing an actual search. Note
-that this is **not necessarily going to be sent as is** to the provider as this may be
-be further processed by a metadata mapping:
+that parameters have to be named following the common model used in EODAG (see `Parameters mapping <params_mapping.rst>`_). Part of the provider search metadata mapping can also be overridden per product-type, by adding a ``metadata_mapping`` section to the product type definition:
 
 .. code-block:: yaml
 
