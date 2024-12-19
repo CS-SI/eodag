@@ -73,7 +73,7 @@ product type:
 
 With the example above, when searching for products of the type
 ``CBERS4_AWFI_L2``, the search will be performed by default as if we had
-specified the instrument AWFI, the collection cbers4 and the processingLevel 2.
+specified the instrument ``AWFI``, the collection ``cbers4`` and the processingLevel ``2``.
 Each of those parameters can be overridden when performing an actual search. Note
 that this is **not necessarily going to be sent as is** to the provider as this may be
 be further processed by a metadata mapping:
