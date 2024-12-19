@@ -2273,7 +2273,7 @@ class EODataAccessGateway:
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         """
         # only fetch providers if product type is not found
-        available_product_types = [
+        available_product_types: List[str] = [
             pt["ID"]
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
@@ -2305,12 +2305,12 @@ class EODataAccessGateway:
             )
 
         queryables: QueryablesDict = QueryablesDict(
-            additional_properties=True, additional_information="", **{}
+            additional_properties=False, additional_information="", **{}
         )
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             # attach product type config
-            product_type_configs = {}
+            product_type_configs: Dict[str, Any] = {}
             if product_type:
                 self._attach_product_type_config(plugin, product_type)
                 product_type_configs[product_type] = plugin.config.product_type_config
@@ -2330,6 +2330,7 @@ class EODataAccessGateway:
                         "queryables from provider %s could not be fetched due to an authentication error",
                         plugin.provider,
                     )
+
             plugin_queryables = plugin.list_queryables(
                 kwargs,
                 available_product_types,
@@ -2337,13 +2338,17 @@ class EODataAccessGateway:
                 product_type,
                 pt_alias,
             )
-            queryables.update(plugin_queryables)
-            if not plugin_queryables.additional_properties:
-                queryables.additional_properties = False
+
+            information = queryables.additional_information
             if plugin_queryables.additional_information:
-                queryables.additional_information += (
-                    f"{provider}: {plugin_queryables.additional_information}"
-                )
+                information += f"{provider}: {plugin_queryables.additional_information}"
+
+            queryables = QueryablesDict(
+                queryables.additional_properties
+                or plugin_queryables.additional_properties,
+                information,
+                **{**plugin_queryables, **queryables},
+            )
 
         return queryables
 
