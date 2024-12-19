@@ -1507,11 +1507,37 @@ MSG_LST:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L3
-  keywords: SEVIRI,L3,MSG
+  keywords: SEVIRI,L3,MSG,Vegetation,Land
   sensorType: OPTICAL
   license: proprietary
   title:  Land Surface Temperature Climate Data Record - MSG
   missionStartDate: "2021-01-21T00:00:00Z"
+
+MSG_LST_DIR:
+  abstract: |
+    Land Surface Temperature (LST) is the radiative skin temperature over land.
+    LST plays an important role in the physics of land surface as it is
+    involved in the processes of energy and water exchange with the atmosphere.
+    LST is useful for the scientific community, namely for those dealing with
+    meteorological and climate models. Accurate values of LST are also of
+    special interest in a wide range of areas related to land surface
+    processes, including meteorology, hydrology, agrometeorology, climatology
+    and environmental studies. Land Surface Emissivity (EM), a crucial
+    parameter for LST retrieval from space, is independently estimated as a
+    function of (satellite derived) Fraction of Vegetation Cover (FVC) and land
+    cover classification. In the most recent version of the dataset,
+    information on the expected deviation of LST estimates from SEVIRI/MSG with
+    respect to a reference view – here considered to be nadir view – has been
+    added to the original product (LSA-001) as an extra data layer (LSA-004).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: SEVIRI,L2,MSG,Vegetation,Land
+  sensorType: OPTICAL
+  license: proprietary
+  title:   Land Surface Temperature with Directional Effects - MSG
+  missionStartDate: "2005-01-16T00:00:00Z"
 
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments

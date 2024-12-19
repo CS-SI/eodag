@@ -6259,6 +6259,8 @@
       parentIdentifier: EO:EUM:DAT:0405
     MSG_LST:
       parentIdentifier: EO:EUM:DAT:0088
+    MSG_LST_DIR:
+      parentIdentifier: EO:EUM:DAT:0394
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
