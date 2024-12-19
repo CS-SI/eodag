@@ -6263,6 +6263,8 @@
       parentIdentifier: EO:EUM:DAT:0394
     MFG_GSA_57:
       parentIdentifier: EO:EUM:DAT:0301
+    MFG_GSA_63:
+      parentIdentifier: EO:EUM:DAT:0302
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
