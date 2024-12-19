@@ -25,7 +25,7 @@ To add a new product type to EODAG, you must add an entry to the file ``eodag/re
       title: CBERS-4 AWFI Level-2
 
 The first line ``CBERS4_AWFI_L2:`` is a YAML key corresponding to the name by
-which the product will be referred to within EODag. Note the use of uppercase
+which the product will be referred to within EODAG. Note the use of uppercase
 and underscores to separate words. This name will be used when searching for
 products of the corresponding type.
 
