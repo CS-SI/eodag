@@ -6,7 +6,7 @@ Add a product type
 Add product type definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To add a new product type to EODag, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an example:
+To add a new product type to EODAG, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an example:
 
 .. code-block:: yaml
 
