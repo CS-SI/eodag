@@ -31,7 +31,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     Iterator,
     List,
@@ -637,9 +636,9 @@ class HTTPDownload(Download):
                 path = Path(fs_path).with_suffix(ext)
 
                 with open(path, "wb") as fhandle:
-                    chunks = chunk_iterator()
-                    for chunk in chunks:
+                    for chunk in chunk_iterator:
                         is_empty = False
+                        progress_callback(len(chunk))
                         fhandle.write(chunk)
                 self.stream.close()  # Closing response stream
 
@@ -804,15 +803,14 @@ class HTTPDownload(Download):
             raise DownloadError(f"download of {product.properties['id']} is empty")
         # start reading chunks to set product.headers
         try:
-            chunks = chunk_iterator()
-            first_chunk = next(chunks)
+            first_chunk = next(chunk_iterator)
         except StopIteration:
             # product is empty file
             logger.error("product %s is empty", product.properties["id"])
             raise NotAvailableError(f"product {product.properties['id']} is empty")
 
         return StreamResponse(
-            content=chain(iter([first_chunk]), chunks),
+            content=chain(iter([first_chunk]), chunk_iterator),
             headers=product.headers,
         )
 
@@ -914,7 +912,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Union[Callable[[], Any], None]:
+    ) -> Union[Iterator[Any], None]:
         """
         Fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
@@ -1012,14 +1010,8 @@ class HTTPDownload(Download):
 
             progress_callback.reset(total=stream_size)
 
-            def iteration_wrapper():
-                for chunk in self.stream.iter_content(chunk_size=64 * 1024):
-                    if chunk:
-                        progress_callback(len(chunk))
-                        yield chunk
-
             product.filename = filename
-            return iteration_wrapper
+            return self.stream.iter_content(chunk_size=64 * 1024)
 
     def _stream_download_assets(
         self,
