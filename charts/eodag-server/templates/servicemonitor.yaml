@@ -1,0 +1,37 @@
+{{- if and .Values.otel.enabled .Values.otel.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      {{- if .Values.otel.serviceMonitor.interval }}
+      interval: {{ .Values.otel.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.otel.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.otel.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.otel.serviceMonitor.relabelings }}
+      relabelings:
+      {{- include "common.tplvalues.render" (dict "value" .Values.otel.serviceMonitor.relabelings "context" $) | nindent 8 }}
+      {{- end }}
+      {{- if .Values.otel.serviceMonitor.relabelings }}
+      metricRelabelings:
+      {{- include "common.tplvalues.render" (dict "value" .Values.otel.serviceMonitor.metricRelabelings "context" $) | nindent 8 }}
+      {{- end }}
+  namespaceSelector:
+    matchNames:
+      - {{ include "common.names.namespace" . }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+{{- end }}
