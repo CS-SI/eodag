@@ -1599,6 +1599,55 @@ MSG_MFG_GSA_0:
   title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
   missionStartDate: "1982-02-10T00:00:00Z"
 
+HIRS_FDR_1_MULTI:
+  abstract: |
+    This is Release 1 of the Fundamental Data Record (FDR) brightness
+    temperatures from the High Resolution Infrared Radiation Sounder (HIRS) on
+    board NOAA and Metop satellites. The data record covers more than 40 years
+    from 29 October 1978 to 31 December 2020. Release 1 provides recalibrated
+    Level 1c brightness temperatures based on the V4.0 calibration method
+    developed by Cao et al. (2007). This method was implemented into the
+    NWP-SAF software ATOVS and AVHRR processing Package (AAPP). This software
+    was consistently used to recalibrate and reprocess data from all HIRS
+    instruments on board TIROS-N, NOAA-06 to NOAA-19, Metop-A, and Metop-B. The
+    polygons, required for the data tailoring, show problems with non-continues
+    data. Some polygons of the HIRS data record are found to be incorrect.
+    However, this does not affect the correctness of the data itself. This is a
+    Fundamental Data Record (FDR).
+  instrument: HIRS
+  platform: Metop,TIROS,NOAA
+  platformSerialIdentifier: Metop,TIROS,NOAA
+  processingLevel: L1
+  keywords: HIRS,L2,HIRS,TIROS,Metop,NOAA,Sounder
+  sensorType: Sounder
+  license: proprietary
+  title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
+  missionStartDate: "1978-10-29T00:00:00Z"
+
+MSG_OCA_CDR:
+  abstract: |
+    The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
+    period from 2004 up to 2019, providing a homogenous cloud properties time
+    series. It is generated at full Meteosat repeat cycle (15 minutes)
+    fequency. Cloud properties retrieved by OCA are cloud top pressure, cloud
+    optical thickness, and cloud effective radius, together with uncertainties.
+    The OCA algorithm has been slightly adapted for climate data record
+    processing. The adaptation mainly consists in the usage of different
+    inputs, because the one used for Near Real Time (NRT) were not available
+    for the reprocessing (cloud mask, clear sky reflectance map) and also not
+    homogenous (reanalysis) over the complete time period. it extends the NRT
+    data record more than 9 years back in time. This is a Thematic Climate Data
+    Record (TCDR).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic
+  sensorType: MSG
+  license: proprietary
+  title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
+  missionStartDate: "2004-01-19T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:

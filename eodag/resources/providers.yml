@@ -6265,6 +6265,12 @@
       parentIdentifier: EO:EUM:DAT:0301
     MFG_GSA_63:
       parentIdentifier: EO:EUM:DAT:0302
+    MSG_MFG_GSA_0:
+      parentIdentifier: EO:EUM:DAT:0300
+    HIRS_FDR_1_MULTI:
+      parentIdentifier: EO:EUM:DAT:0647
+    MSG_OCA_CDR:
+      parentIdentifier: EO:EUM:DAT:0617
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
