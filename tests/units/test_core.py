@@ -1507,7 +1507,7 @@ class TestCore(TestCoreBase):
             "ecmwf:product_type": "reanalysis",
             "ecmwf:dataset": "reanalysis-era5-single-levels",
             "ecmwf:data_format": "grib",
-            "ecmwf:download_format": "zip",
+            "ecmwf:download_format": "unarchived",
             "ecmwf:variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
@@ -1521,7 +1521,7 @@ class TestCore(TestCoreBase):
             "ecmwf:product_type": "reanalysis",
             "ecmwf:dataset": "reanalysis-era5-single-levels",
             "ecmwf:data_format": "grib",
-            "ecmwf:download_format": "zip",
+            "ecmwf:download_format": "unarchived",
             "ecmwf:variable": "10m_u_component_of_wind",
             "ecmwf:month": "02",
         }
@@ -1539,7 +1539,7 @@ class TestCore(TestCoreBase):
             "ecmwf:dataset": "reanalysis-era5-single-levels",
             "ecmwf:variable": "10m_u_component_of_wind",
             "ecmwf:data_format": "",
-            "ecmwf:download_format": "zip",
+            "ecmwf:download_format": "unarchived",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
