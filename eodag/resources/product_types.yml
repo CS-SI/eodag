@@ -1679,10 +1679,60 @@ MTG_LI_AF:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,Lightning,Weather
+  keywords: MTG,L2,LI,AF,Lightning,Weather,Flashes
   sensorType: Lightning Imager
   license: proprietary
   title:  LI Accumulated Flashes - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_LFL:
+  abstract: |
+    LI Level 2 Lightning Flashes (LFL) contains LI flashes. The definition of a
+    flash is shared by LI and GLM; collections of groups that are correlated in
+    space and time within the two windows of 330 milliseconds (temporal window)
+    and 16.5km (space window), respectively. Even if the definition of a flash
+    is not uniform among all lightning location systems, the simple fact that a
+    flash is a collection of groups/strokes correlated in space and time
+    somewhat mitigates the differences in the way different types of lightning
+    sensors interpret different lightning processes. This makes flash datasets
+    of different lightning location systems more comparable than group/stroke
+    datasets.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LFL,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Lightning Flashes - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_LGR:
+  abstract: |
+    LI Level 2 Lightning Groups (LGR) contains LI groups. These are closely
+    related to other similar space-born instruments. The definition of a group is
+    shared by LI, GLM and ISS-LIS groups: collections of pixel-based lightning
+    events that are acquired within the same acquisition frame and are spatially
+    clustered. LI groups provide users with information about the time-slicing
+    imaging (over the LI acquisition time, ie one millisecond) of lightning
+    optical emissions. When comparing LI groups with either GLM or ISS-LIS
+    groups, users must consider the differences in design between instruments,
+    such as integration time and spatial sampling/resolution. Both GLM and
+    ISS-LIS acquire over two milliseconds. When observing the same storm, this
+    difference in design can potentially create considerable differences in the
+    total number of groups, as well as differences between the acquisition times
+    of the groups. In addition, differences will be found also for the
+    geolocation of groups. In general, the discrepancies mentioned above are
+    expected to be of the order of a few milliseconds for the group time and of
+    the order of a few kilometres for the group geolocation.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Lightning Groups - MTG - 0 degree
   missionStartDate: "2024-07-08T00:00:00Z"
 
 # MARK: S3 SYNERGY

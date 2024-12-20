@@ -6275,6 +6275,10 @@
       parentIdentifier: EO:EUM:DAT:0853
     MTG_LI_AF:
       parentIdentifier: EO:EUM:DAT:0686
+    MTG_LI_LFL:
+      parentIdentifier: EO:EUM:DAT:0691
+    MTG_LI_LGR:
+      parentIdentifier: EO:EUM:DAT:0782
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
