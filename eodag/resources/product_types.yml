@@ -1646,6 +1646,21 @@ MSG_OCA_CDR:
   title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
   missionStartDate: "2004-01-19T00:00:00Z"
 
+S6_RADIO_OCCULTATION:
+  abstract: |
+    Jason-CS/Sentinel-6 Radio Occultation Level 1B product, providing a bending
+    angle versus impact parameter profile, as well as other relevant
+    information derived from the observation.
+  instrument: GNSS-RO
+  platform: Sentinel-6
+  platformSerialIdentifier: Sentinel-6
+  processingLevel: L1
+  keywords: Sentinel-6,L1,GNSS-RO,Radio,Occultation
+  sensorType: Radio Occultation
+  license: proprietary
+  title: Radio Occultation Level 1B Products - Sentinel-6
+  missionStartDate: "2021-11-19T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:

@@ -6271,6 +6271,8 @@
       parentIdentifier: EO:EUM:DAT:0647
     MSG_OCA_CDR:
       parentIdentifier: EO:EUM:DAT:0617
+    S6_RADIO_OCCULTATION:
+      parentIdentifier: EO:EUM:DAT:0853
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
