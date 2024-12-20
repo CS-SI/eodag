@@ -1759,6 +1759,24 @@ MTG_LI_AFA:
   title: LI Accumulated Flash Area - MTG - 0 degree
   missionStartDate: "2024-07-08T00:00:00Z"
 
+MTG_LI_AFR:
+  abstract: |
+    LI Level 2 Accumulated Flash Radiance (AFR) is meant to describe the
+    pixel-by-pixel variation of the optical emission accumulated over 30 sec
+    within the FCI 2km grid. This stems from the events contributing to LI
+    Level 2 Accumulated Flashes (AF) (each one contributing with its radiance)
+    and it can be thought of as the 'appearance' of the accumulated optical
+    emissions over 30 sec as seen by LI.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Accumulated Flash Radiance - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
