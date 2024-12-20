@@ -33,7 +33,6 @@ import requests
 import responses
 import yaml
 from botocore.stub import Stubber
-from pydantic_core import PydanticUndefined
 from requests import RequestException
 from typing_extensions import get_args
 
@@ -688,106 +687,6 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 auth=None,
             )
 
-    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
-    def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
-        self, mock_requests_get
-    ):
-        # One of the providers that has discover_queryables() configured with QueryStringSearch
-        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
-        self.assertEqual("WekeoECMWFSearch", search_plugin.__class__.__name__)
-        self.assertEqual(
-            "ECMWFSearch",
-            search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
-        )
-
-        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
-        with open(constraints_path) as f:
-            constraints = json.load(f)
-        wekeo_ecmwf_constraints = {"constraints": constraints[0]}
-        mock_requests_get.return_value = MockResponse(
-            wekeo_ecmwf_constraints, status_code=200
-        )
-
-        provider_queryables_from_constraints_file = [
-            "ecmwf:year",
-            "ecmwf:month",
-            "ecmwf:day",
-            "ecmwf:time",
-            "ecmwf:variable",
-            "ecmwf:leadtime_hour",
-            "ecmwf:type",
-            "ecmwf:product_type",
-        ]
-
-        queryables = search_plugin.discover_queryables(productType="ERA5_SL_MONTHLY")
-        self.assertIsNotNone(queryables)
-
-        mock_requests_get.assert_called_once_with(
-            mock.ANY,
-            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
-            "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
-            headers=USER_AGENT,
-            auth=None,
-            timeout=60,
-        )
-
-        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
-        for provider_queryable in provider_queryables_from_constraints_file:
-            provider_queryable = (
-                get_queryable_from_provider(
-                    provider_queryable,
-                    search_plugin.get_metadata_mapping("ERA5_SL_MONTHLY"),
-                )
-                or provider_queryable
-            )
-            self.assertIn(provider_queryable, queryables)
-
-        # default properties in provider config are added and must be default values of the queryables
-        for property, default_value in search_plugin.config.products[
-            "ERA5_SL_MONTHLY"
-        ].items():
-            queryable = queryables.get(property)
-            if queryable is not None:
-                self.assertEqual(default_value, queryable.__metadata__[0].get_default())
-                # queryables with default values are not required
-                self.assertFalse(queryable.__metadata__[0].is_required())
-
-        # queryables without default values are required
-        queryable = queryables.get("month")
-        if queryable is not None:
-            self.assertEqual(PydanticUndefined, queryable.__metadata__[0].get_default())
-            self.assertTrue(queryable.__metadata__[0].is_required())
-
-        # check that queryable constraints from the constraints file are in queryable info
-        # (here it is a case where all constraints of "variable" queryable can be taken into account)
-        queryable = queryables.get("variable")
-        if queryable is not None:
-            variable_constraints = []
-            for constraint in constraints:
-                if "variable" in constraint:
-                    variable_constraints.extend(constraint["variable"])
-            # remove queryable constraints duplicates to make the assertion works
-            self.assertSetEqual(
-                set(variable_constraints), set(queryable.__origin__.__args__)
-            )
-
-        # reset mock
-        mock_requests_get.reset_mock()
-
-        # with additional param
-        queryables = search_plugin.discover_queryables(
-            productType="ERA5_SL_MONTHLY",
-            **{"ecmwf:variable": "a"},
-        )
-        self.assertIsNotNone(queryables)
-
-        self.assertEqual(10, len(queryables))
-        # default properties called in function arguments are added and must be default values of the queryables
-        queryable = queryables.get("ecmwf:variable")
-        if queryable is not None:
-            self.assertEqual("a", queryable.__metadata__[0].get_default())
-            self.assertFalse(queryable.__metadata__[0].is_required())
-
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def setUp(self):
@@ -1031,23 +930,25 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         search_plugin.query(
             prep=PreparedSearch(),
             productType="ERA5_SL",
-            year=2020,
-            month=["02"],
-            day=["20", "21"],
-            time=["01:00"],
+            **{
+                "ecmwf:year": "2020",
+                "ecmwf:month": ["02"],
+                "ecmwf:day": ["20", "21"],
+                "ecmwf:time": ["01:00"],
+            },
         )
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
-                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "year": 2020,
+                "year": "2020",
                 "month": ["02"],
                 "day": ["20", "21"],
                 "time": ["01:00"],
-                "product_type": ["ensemble_mean"],
-                "variable": ["10m_u_component_of_wind"],
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "product_type": "ensemble_mean",
+                "variable": "10m_u_component_of_wind",
+                "download_format": "unarchived",
                 "data_format": "grib",
-                "download_format": "zip",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1064,15 +965,15 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
-                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "year": "2021",
+                "year": ["2021"],
                 "month": ["02"],
                 "day": ["01"],
                 "time": ["03:00"],
-                "product_type": ["ensemble_mean"],
-                "variable": ["10m_u_component_of_wind"],
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "product_type": "ensemble_mean",
+                "variable": "10m_u_component_of_wind",
+                "download_format": "unarchived",
                 "data_format": "grib",
-                "download_format": "zip",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1103,15 +1004,15 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
-                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "year": "1940",
+                "year": ["1940"],
                 "month": ["01"],
                 "day": ["01"],
                 "time": ["00:00"],
-                "product_type": ["ensemble_mean"],
-                "variable": ["10m_u_component_of_wind"],
+                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "product_type": "ensemble_mean",
+                "variable": "10m_u_component_of_wind",
+                "download_format": "unarchived",
                 "data_format": "grib",
-                "download_format": "zip",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1142,12 +1043,12 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         mock_request.assert_called_with(
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
-                "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
-                "data_format": "grib",
-                "variable": ["2m_dewpoint_temperature"],
-                "time": ["00:00"],
                 "startdate": "2003-01-01T00:00:00.000Z",
                 "enddate": "2003-01-02T00:00:00.000Z",
+                "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
+                "data_format": "grib",
+                "variable": "2m_dewpoint_temperature",
+                "time": "00:00",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -1202,9 +1103,9 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "productType": product_type,
             "startTimeFromAscendingNode": "1980-01-01",
             "completionTimeFromAscendingNode": "1981-12-31",
-            "variable": "glacier_mass_change",
-            "format": "zip",
-            "version": "wgms_fog_2022_09",
+            "ecmwf:variable": "glacier_mass_change",
+            "ecmwf:data_format": "zip",
+            "ecmwf:product_version": "wgms_fog_2022_09",
         }
         expected_query_params = {
             "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
@@ -1220,10 +1121,10 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # Test #2: using parameter hydrological_year (single value)
         search_criteria = {
             "productType": product_type,
-            "variable": "glacier_mass_change",
-            "format": "zip",
-            "version": "wgms_fog_2022_09",
-            "hydrological_year": ["2020_21"],
+            "ecmwf:variable": "glacier_mass_change",
+            "ecmwf:data_format": "zip",
+            "ecmwf:product_version": "wgms_fog_2022_09",
+            "ecmwf:hydrological_year": ["2020_21"],
         }
         expected_query_params = {
             "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
@@ -1239,10 +1140,10 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         # Test #3: using parameter hydrological_year (multiple values)
         search_criteria = {
             "productType": product_type,
-            "variable": "glacier_mass_change",
-            "format": "zip",
-            "version": "wgms_fog_2022_09",
-            "hydrological_year": ["1990_91", "2020_21"],
+            "ecmwf:variable": "glacier_mass_change",
+            "ecmwf:data_format": "zip",
+            "ecmwf:product_version": "wgms_fog_2022_09",
+            "ecmwf:hydrological_year": ["1990_91", "2020_21"],
         }
         expected_query_params = {
             "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
@@ -1887,7 +1788,11 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             products[0].properties["orderLink"],
             f"{endpoint}?"
             + json.dumps(
-                {"geometry": default_geom, "runOnJobQueue": True, **custom_query}
+                {
+                    "geometry": default_geom,
+                    "runOnJobQueue": True,
+                    **custom_query,
+                }
             ),
         )
 
@@ -2751,7 +2656,6 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_with_dates(self, mock_requests_get):
-
         mock_requests_get.return_value.json.side_effect = [
             self.product_data,
             self.dataset1_data,
