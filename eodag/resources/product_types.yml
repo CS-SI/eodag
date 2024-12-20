@@ -507,6 +507,7 @@ S1_SAR_OCN:
   missionStartDate: "2014-04-03T00:00:00Z"
 
 S1_SAR_GRD:
+  alias: EO.ESA.DAT.SENTINEL-1.L1_GRD
   abstract: |
     Level-1 Ground Range Detected (GRD) products consist of focused SAR data that has been detected, multi-looked and
     projected to ground range using an Earth ellipsoid model. Phase information is lost. The resulting product has
@@ -615,6 +616,7 @@ S1_SAR_RAW:
 
 # MARK: Sentinel 2 ---------------------------------------------------------------------
 S2_MSI_L1C:
+  alias: EO.ESA.DAT.SENTINEL-2.MSI.L1C
   abstract: |
     The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
     using a Digital Elevation Model (DEM) to project the image in cartographic geometry. Per-pixel radiometric
@@ -1576,6 +1578,26 @@ MFG_GSA_63:
   license: proprietary
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
   missionStartDate: "1998-07-10T00:00:00Z"
+
+MSG_MFG_GSA_0:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
+    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
+    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
+    albedo (WSA) with the corresponding uncertainties as explained in the
+    Product User Guide (PUM). The data record validation and limitations are
+    provided in the Validation Report (VR). The products are available in
+    netCDF4 format. This release contains products generated with Meteosat-2 to
+    Meteosat-10.
+  instrument: MVIRI,SEVIRI
+  platform: MFG,MSG
+  platformSerialIdentifier: MFG,MSG
+  processingLevel: L2
+  keywords: MVIRI,SEVIRI,L2,MFG,Climate,Thematic
+  sensorType: OPTICAL
+  license: proprietary
+  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
+  missionStartDate: "1982-02-10T00:00:00Z"
 
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
@@ -2605,6 +2627,7 @@ CAMS_EAC4:
   license: proprietary
   title: CAMS global reanalysis (EAC4)
   missionStartDate: "2003-01-01T00:00:00Z"
+  alias: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
 
 CAMS_GRF_AUX:
   abstract: |
@@ -2782,6 +2805,7 @@ ERA5_SL:
   license: proprietary
   title: ERA5 hourly data on single levels from 1940 to present
   missionStartDate: "1940-01-01T09:00:00Z"
+  alias: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
 
 ERA5_SL_MONTHLY:
   abstract: |
@@ -2863,6 +2887,7 @@ ERA5_PL:
   license: proprietary
   title: ERA5 hourly data on pressure levels from 1940 to present
   missionStartDate: "1940-01-01T00:00:00Z"
+  alias: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
 
 ERA5_PL_MONTHLY:
   abstract: |
@@ -4405,6 +4430,7 @@ DT_CLIMATE_ADAPTATION:
   license: proprietary
   title: Climate Change Adaptation Digital Twin (DT)
   missionStartDate: "2020-01-01T00:00:00Z"
+  alias: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
 
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:
