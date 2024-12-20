@@ -1735,6 +1735,30 @@ MTG_LI_LGR:
   title:  LI Lightning Groups - MTG - 0 degree
   missionStartDate: "2024-07-08T00:00:00Z"
 
+MTG_LI_AFA:
+  abstract: |
+    LI Level 2 Accumulated Flash Area (AFA) provides the user with data about
+    flash mapping by using the area covered by the optical emission of each
+    flash in LI Level 2 Lightning Flashes (LFL). It is important to keep in
+    mind that each flash is treated as a flat (uniform) optical emission in
+    this data. Accumulated Flash Area allows one to monitor the regions within
+    a cloud top from which lightning-related optical emissions over 30 sec are
+    emerging and accumulating and to know the number of flashes that were
+    observed within the FCI grid pixels composing those regions. For example,
+    from the Accumulated Flash Area, one can derive the flash rate for each
+    pixel of the FCI 2km grid. This is a considerable improvement compared to
+    the simple description of the flash using the variable flash_footprint
+    available in Lightning Flashes.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title: LI Accumulated Flash Area - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
