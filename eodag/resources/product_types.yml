@@ -1799,6 +1799,64 @@ MTG_LI_LEF:
   title:  LI Lightning Events Filtered - MTG - 0 degree
   missionStartDate: "2024-07-08T00:00:00Z"
 
+MTG_FCI_NR:
+  abstract: |
+    The rectified (Level 1c) Meteosat FCI full disc image data in normal
+    spatial (FDHSI) resolution. The FCI instrument consists of 16 imaging
+    spectral channels ranging from 0.4 µm to 13.3 µm with the channel at 3.8 µm
+    having an extended dynamic range dedicated to fire monitoring. The spatial
+    resolution is 1km for visible and near-infrared channels and 2 km for
+    infrared channels. FCI Level 1c rectified radiance dataset consists of a
+    set of files that contain the level 1c science data rectified to a
+    reference grid together with the auxiliary data associated with the
+    processing configuration and the quality assessment of the dataset. Level
+    1c image data here corresponds to initially geolocated and radiometrically
+    pre-processed image data, without full georeferencing and cal/val in
+    spatial and spectral domains applied. The data are ready for further
+    processing and testing, e.g. value chains and initial tests for extracting
+    meteorological products, however, we generally do not recommend the
+    generation of Level 2 products due to known limitations in the Level 1c
+    data.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L1
+  keywords: MTG,L1,FCI,Atmosphere,Ocean,Land
+  sensorType: Imager
+  license: proprietary
+  title: FCI Level 1c Normal Resolution Image Data - MTG - 0 degree
+  missionStartDate: "2024-09-24T00:00:00Z"
+
+MTG_FCI_HR:
+  abstract: |
+    The rectified (Level 1c) Meteosat FCI full disc image data in high spatial
+    (HRFI) resolution.The FCI instrument consists of 16 imaging spectral
+    channels ranging from 0.4 µm to 13.3 µm with the channel at 3.8 µm having
+    an extended dynamic range dedicated to fire monitoring. The high-resolution
+    HRFI dataset has 4 spectral channels at VIS 0.6 µm, NIR 2.2 µm, IR 3.8 µm
+    and IR 13.3 µm with a spatial resolution of 0.5 km for visible and
+    near-infrared channels and 1 km for infrared channels. FCI Level 1c
+    rectified radiance dataset consists of a set of files that contain the
+    level 1c science data rectified to a reference grid together with the
+    auxiliary data associated with the processing configuration and the quality
+    assessment of the dataset. Level 1c image data here corresponds to
+    initially geolocated and radiometrically pre-processed image data, without
+    full georeferencing and cal/val in spatial and spectral domains applied.
+    The data are ready for further processing and testing, e.g. value chains
+    and initial tests for extracting meteorological products, however, we
+    generally do not recommend the generation of Level 2 products due to known
+    limitations in the Level 1c data. A selection of single channel data are
+    visualised in our EUMETView service.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L1
+  keywords: MTG,L1,FCI,Atmosphere,Ocean,Land
+  sensorType: Imager
+  license: proprietary
+  title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
+  missionStartDate: "2024-09-24T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
