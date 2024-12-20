@@ -1539,24 +1539,15 @@ class PostJsonSearch(QueryStringSearch):
             )
 
             # Add to the query, the queryable parameters set in the provider product type definition
-            for k, v in prep.product_type_def_params.items():
-                if (
-                    k not in keywords
+            keywords.update(
+                {
+                    k: v
+                    for k, v in prep.product_type_def_params.items()
+                    if k not in keywords.keys()
                     and k in self.config.metadata_mapping.keys()
                     and isinstance(self.config.metadata_mapping[k], list)
-                ):
-                    keywords[k] = v
-                if ":" in k:
-                    var_without_prefix = k.split(":")[1]
-                    if (
-                        var_without_prefix in keywords
-                        and k in self.config.metadata_mapping.keys()
-                        and isinstance(self.config.metadata_mapping[k], list)
-                    ):
-                        keywords[k] = keywords[var_without_prefix]
-                        prep.product_type_def_params[k] = keywords[var_without_prefix]
-                        keywords.pop(var_without_prefix)
-
+                }
+            )
             if getattr(self.config, "dates_required", False):
                 self._check_date_params(keywords, product_type)
 
@@ -1624,7 +1615,6 @@ class PostJsonSearch(QueryStringSearch):
         ):
             return ([], 0) if prep.count else ([], None)
         prep.query_params = dict(qp, **sort_by_qp)
-        print(prep.query_params)
         prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
         if not count and getattr(prep, "need_count", False):
             # do not try to extract total_items from search results if count is False
