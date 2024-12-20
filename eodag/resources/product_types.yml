@@ -1777,6 +1777,28 @@ MTG_LI_AFR:
   title:  LI Accumulated Flash Radiance - MTG - 0 degree
   missionStartDate: "2024-07-08T00:00:00Z"
 
+MTG_LI_LEF:
+  abstract: |
+    LI Level 2 Ligthning Events Filtered (LEF) is one of the initial products,
+    along with Lightning Flashes (LFL) and Lightning Groups (LGR), and provides
+    the finest scale over which LI can monitor lightning activity. Lightning
+    Flashes and Lightning Groups contain two variables that provide the size of
+    each group and flash in units of LI pixels, ie number_of_events and
+    flash_footprint, respectively. To compute the exact physical size of a
+    group/flash, users should use the information available in Ligthning Events
+    Filtered. One can derive such a descriptor only by knowing which events
+    compose a group/flash and employing the physical size of the projection of
+    each event on the Earth's surface for the computation.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Lightning Events Filtered - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
