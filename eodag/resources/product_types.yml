@@ -507,7 +507,6 @@ S1_SAR_OCN:
   missionStartDate: "2014-04-03T00:00:00Z"
 
 S1_SAR_GRD:
-  alias: EO.ESA.DAT.SENTINEL-1.L1_GRD
   abstract: |
     Level-1 Ground Range Detected (GRD) products consist of focused SAR data that has been detected, multi-looked and
     projected to ground range using an Earth ellipsoid model. Phase information is lost. The resulting product has
@@ -616,7 +615,6 @@ S1_SAR_RAW:
 
 # MARK: Sentinel 2 ---------------------------------------------------------------------
 S2_MSI_L1C:
-  alias: EO.ESA.DAT.SENTINEL-2.MSI.L1C
   abstract: |
     The Level-1C product is composed of 100x100 km2 tiles (ortho-images in UTM/WGS84 projection). It results from
     using a Digital Elevation Model (DEM) to project the image in cartographic geometry. Per-pixel radiometric
@@ -2676,7 +2674,6 @@ CAMS_EAC4:
   license: proprietary
   title: CAMS global reanalysis (EAC4)
   missionStartDate: "2003-01-01T00:00:00Z"
-  alias: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
 
 CAMS_GRF_AUX:
   abstract: |
@@ -2854,7 +2851,6 @@ ERA5_SL:
   license: proprietary
   title: ERA5 hourly data on single levels from 1940 to present
   missionStartDate: "1940-01-01T09:00:00Z"
-  alias: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
 
 ERA5_SL_MONTHLY:
   abstract: |
@@ -2936,7 +2932,6 @@ ERA5_PL:
   license: proprietary
   title: ERA5 hourly data on pressure levels from 1940 to present
   missionStartDate: "1940-01-01T00:00:00Z"
-  alias: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
 
 ERA5_PL_MONTHLY:
   abstract: |
@@ -4479,7 +4474,6 @@ DT_CLIMATE_ADAPTATION:
   license: proprietary
   title: Climate Change Adaptation Digital Twin (DT)
   missionStartDate: "2020-01-01T00:00:00Z"
-  alias: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
 
 # MARK: METOP --------------------------------------------------------------------------
 METOP_AMSU_L1:
