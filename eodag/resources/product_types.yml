@@ -1799,7 +1799,7 @@ MTG_LI_LEF:
   title:  LI Lightning Events Filtered - MTG - 0 degree
   missionStartDate: "2024-07-08T00:00:00Z"
 
-MTG_FCI_NR:
+MTG_FCI_FDHSI:
   abstract: |
     The rectified (Level 1c) Meteosat FCI full disc image data in normal
     spatial (FDHSI) resolution. The FCI instrument consists of 16 imaging
@@ -1827,7 +1827,7 @@ MTG_FCI_NR:
   title: FCI Level 1c Normal Resolution Image Data - MTG - 0 degree
   missionStartDate: "2024-09-24T00:00:00Z"
 
-MTG_FCI_HR:
+MTG_FCI_HRFI:
   abstract: |
     The rectified (Level 1c) Meteosat FCI full disc image data in high spatial
     (HRFI) resolution.The FCI instrument consists of 16 imaging spectral

@@ -6285,9 +6285,9 @@
       parentIdentifier: EO:EUM:DAT:0688
     MTG_LI_LEF:
       parentIdentifier: EO:EUM:DAT:0690
-    MTG_FCI_NR:
+    MTG_FCI_FDHSI:
       parentIdentifier: EO:EUM:DAT:0662
-    MTG_FCI_HR:
+    MTG_FCI_HRFI:
       parentIdentifier: EO:EUM:DAT:0665
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
