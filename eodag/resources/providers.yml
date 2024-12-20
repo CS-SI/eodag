@@ -6273,6 +6273,8 @@
       parentIdentifier: EO:EUM:DAT:0617
     S6_RADIO_OCCULTATION:
       parentIdentifier: EO:EUM:DAT:0853
+    MTG_LI_AF:
+      parentIdentifier: EO:EUM:DAT:0686
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
