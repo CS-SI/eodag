@@ -116,7 +116,7 @@ class DataRequestSearch(Search):
             (``Dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
             from the provider result
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_properties`
-            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result that are not
+            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
             product type metadata
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url` (``str``): url to fetch
             data for a single collection; used if product type metadata is not available from the endpoint given in

@@ -287,8 +287,10 @@ class PluginConfig(yaml.YAMLObject):
         #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
         #: result
         generic_product_type_parsable_metadata: Dict[str, str]
-        #: Mapping for product type properties which can be parsed from the result that are not product type metadata
+        #: Mapping for product type properties which can be parsed from the result and are not product type metadata
         generic_product_type_parsable_properties: Dict[str, str]
+        #: Mapping for product type properties which cannot be parsed from the result and are not product type metadata
+        generic_product_type_unparsable_properties: Dict[str, str]
         #: URL to fetch data for a single collection
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection

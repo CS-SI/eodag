@@ -186,7 +186,10 @@ class QueryStringSearch(Search):
             (``Dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
             from the provider result
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_properties`
-            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result that are not
+            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
+            product type metadata
+          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_unparsable_properties`
+            (``Dict[str, str]``): mapping for product type properties which cannot be parsed from the result and are not
             product type metadata
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url` (``str``): url to fetch
             data for a single collection; used if product type metadata is not available from the endpoint given in
@@ -1038,9 +1041,13 @@ class QueryStringSearch(Search):
                         logger.debug(
                             "Could not extract total_items_nb from search results"
                         )
-            if getattr(self.config, "merge_responses", False):
+            if (
+                getattr(self.config, "merge_responses", False)
+                and self.config.result_type == "json"
+            ):
+                json_result = cast(list[dict[str, Any]], result)
                 results = (
-                    [dict(r, **result[i]) for i, r in enumerate(results)]
+                    [dict(r, **json_result[i]) for i, r in enumerate(results)]
                     if results
                     else result
                 )
