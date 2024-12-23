@@ -696,7 +696,9 @@ def serve_rest(
         try:
             pid = os.fork()
         except OSError as e:
-            raise Exception("%s [%d]" % (e.strerror, e.errno))
+            raise Exception(
+                "%s [%d]" % (e.strerror, e.errno) if e.errno is not None else e.strerror
+            )
 
         if pid == 0:
             os.setsid()
