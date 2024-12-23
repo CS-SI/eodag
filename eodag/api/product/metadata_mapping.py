@@ -849,7 +849,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             date_object_second_year = date_object + relativedelta(years=1)
             return [
-                f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
+                f"{date_object.strftime('%Y')}_{date_object_second_year.strftime('%y')}"
             ]
 
         @staticmethod
@@ -1544,23 +1544,6 @@ def get_provider_queryable_key(
         return ""
     else:
         return eodag_key
-
-
-def eodag_key_from_provider_key(
-    provider_key: str,
-    metadata_mapping: Dict[str, Union[List[Any], str]],
-) -> str:
-    """Get eodag key  for provider key based on the metadata mapping if the provider key
-    appears in the metadata mapping, otherwise the provider key is returned
-
-    :param provider_key: name of the variable received from the provider
-    :param metadata_mapping: metadata mapping of the provider
-    :returns: eodag key
-    """
-    for mm, mv in metadata_mapping.items():
-        if isinstance(mv, list) and len(mv) > 1 and provider_key == mv[0]:
-            return mm
-    return provider_key
 
 
 # Keys taken from OpenSearch extension for Earth Observation http://docs.opengeospatial.org/is/13-026r9/13-026r9.html
