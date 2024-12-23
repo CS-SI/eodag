@@ -109,7 +109,7 @@ The notebooks listed below are **always executed** by `nbsphinx`:
 
 * `<notebooks/api_user_guide/2_providers_products_available.ipynb>`_
 * `<notebooks/api_user_guide/3_configuration.ipynb>`_
-* `<notebooks/api_user_guide/6_crunch.ipynb>`_
+* `<notebooks/api_user_guide/7_crunch.ipynb>`_
 
 For the other notebooks, their **cell output as long as their widget state** need so be saved.
 If not, the outputs and the widgets (e.g. progress bar) won't be displayed in the online documentation.
