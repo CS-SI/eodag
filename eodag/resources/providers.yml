@@ -6527,6 +6527,9 @@
       id:
         - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
         - '$.properties.identifier'
+      tileIdentifier:
+        - '{{"query":{{"spaceborne:tile":{{"eq":"T{tileIdentifier}"}}}}}}'
+        - '$.properties."spaceborne:tile".`sub(/^T(.*)$/, \\1)`'
       geometry:
         - '{{"intersects":{geometry#to_geojson}}}'
         - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
