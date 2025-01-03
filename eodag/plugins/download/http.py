@@ -628,10 +628,10 @@ class HTTPDownload(Download):
             **kwargs: Unpack[DownloadConf],
         ) -> os.PathLike:
             is_empty = True
-            result = self._stream_download(product, auth, progress_callback, **kwargs)
-            if result is not None and fs_path is not None:
-                chunk_iterator = result
-
+            chunk_iterator = self._stream_download(
+                product, auth, progress_callback, **kwargs
+            )
+            if fs_path is not None:
                 ext = Path(product.filename).suffix
                 path = Path(fs_path).with_suffix(ext)
 
@@ -799,8 +799,7 @@ class HTTPDownload(Download):
         chunk_iterator = self._stream_download(
             product, auth, progress_callback, **kwargs
         )
-        if chunk_iterator is None:
-            raise DownloadError(f"download of {product.properties['id']} is empty")
+
         # start reading chunks to set product.headers
         try:
             first_chunk = next(chunk_iterator)
@@ -912,7 +911,7 @@ class HTTPDownload(Download):
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Union[Iterator[Any], None]:
+    ) -> Iterator[Any]:
         """
         Fetches a zip file containing the assets of a given product as a stream
         and returns a generator yielding the chunks of the file
@@ -981,7 +980,9 @@ class HTTPDownload(Download):
             raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
         except RequestException as e:
             self._process_exception(e, product, ordered_message)
-            return None
+            raise DownloadError(
+                f"download of {product.properties['id']} is empty"
+            ) from e
         else:
             # check if product was ordered
 
