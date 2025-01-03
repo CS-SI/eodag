@@ -295,53 +295,46 @@ class TestEOProduct(EODagTestCase):
         """eoproduct.download must save the product at output_dir and create a .downloaded dir"""  # noqa
         # Setup
         product = self._dummy_downloadable_product()
-        try:
-            with self.assertLogs(level="INFO") as cm:
-                # Download
-                product_dir_path = product.download()
-                self.assertIn(
-                    "Download url: %s" % product.remote_location, str(cm.output)
-                )
-                self.assertIn(
-                    "Remote location of the product is still available", str(cm.output)
-                )
+        with self.assertLogs(level="INFO") as cm:
+            # Download
+            product_dir_path = product.download()
+            self.addCleanup(self._clean_product, product_dir_path)
+            self.assertIn("Download url: %s" % product.remote_location, str(cm.output))
+            self.assertIn(
+                "Remote location of the product is still available", str(cm.output)
+            )
 
-            # Check that the mocked request was properly called.
-            self.requests_request.assert_called_once()
-            download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
-            # A .downloaded folder should be created, including a text file that
-            # lists the downloaded product by their url
-            self.assertTrue(download_records_dir.is_dir())
-            files_in_records_dir = list(download_records_dir.iterdir())
-            self.assertEqual(len(files_in_records_dir), 1)
-            records_file = files_in_records_dir[0]
-            actual_download_url = records_file.read_text()
-            self.assertEqual(actual_download_url, self.download_url)
-            # Since extraction is True by default, check that the returned path is the
-            # product's directory.
-            self.assertTrue(os.path.isdir(product_dir_path))
-            # Check that the ZIP file is still there
-            product_dir_path = pathlib.Path(product_dir_path)
-            product_zip = product_dir_path.parent / (product_dir_path.name + ".zip")
-            self.assertTrue(zipfile.is_zipfile(product_zip))
-            # check that product is not downloaded again
-            with self.assertLogs(level="INFO") as cm:
-                product.download()
-                self.assertIn(
-                    "Product already present on this platform", str(cm.output)
-                )
-            # check that product is not downloaded again even if location has not been updated
-            product.location = product.remote_location
-            with self.assertLogs(level="INFO") as cm:
-                product.download()
-                self.assertIn("Product already downloaded", str(cm.output))
-                self.assertIn(
-                    "Extraction cancelled, destination directory already exists",
-                    str(cm.output),
-                )
-        finally:
-            # Teardown
-            self._clean_product(product_dir_path)
+        # Check that the mocked request was properly called.
+        self.requests_request.assert_called_once()
+        download_records_dir = pathlib.Path(product_dir_path).parent / ".downloaded"
+        # A .downloaded folder should be created, including a text file that
+        # lists the downloaded product by their url
+        self.assertTrue(download_records_dir.is_dir())
+        files_in_records_dir = list(download_records_dir.iterdir())
+        self.assertEqual(len(files_in_records_dir), 1)
+        records_file = files_in_records_dir[0]
+        actual_download_url = records_file.read_text()
+        self.assertEqual(actual_download_url, self.download_url)
+        # Since extraction is True by default, check that the returned path is the
+        # product's directory.
+        self.assertTrue(os.path.isdir(product_dir_path))
+        # Check that the ZIP file is still there
+        product_dir_path = pathlib.Path(product_dir_path)
+        product_zip = product_dir_path.parent / (product_dir_path.name + ".zip")
+        self.assertTrue(zipfile.is_zipfile(product_zip))
+        # check that product is not downloaded again
+        with self.assertLogs(level="INFO") as cm:
+            product.download()
+            self.assertIn("Product already present on this platform", str(cm.output))
+        # check that product is not downloaded again even if location has not been updated
+        product.location = product.remote_location
+        with self.assertLogs(level="INFO") as cm:
+            product.download()
+            self.assertIn("Product already downloaded", str(cm.output))
+            self.assertIn(
+                "Extraction cancelled, destination directory already exists",
+                str(cm.output),
+            )
 
     def test_eoproduct_download_http_delete_archive(self):
         """eoproduct.download must delete the downloaded archive"""  # noqa
@@ -375,21 +368,17 @@ class TestEOProduct(EODagTestCase):
         """eoproduct.download over must be able to extract a product"""
         # Setup
         product = self._dummy_downloadable_product(extract=True)
-        try:
-            # Download
-            product_dir_path = product.download()
-            product_dir_path = pathlib.Path(product_dir_path)
-            # The returned path must be a directory.
-            self.assertTrue(product_dir_path.is_dir())
-            # Check that the extracted dir has at least one file, there are more
-            # but that should be enough.
-            self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
-            # The zip file should be around
-            product_zip_file = product_dir_path.with_suffix(".zip")
-            self.assertTrue(product_zip_file.is_file)
-        finally:
-            # Teardown
-            self._clean_product(product_dir_path)
+        product_dir_path = product.download()
+        self.addCleanup(self._clean_product, product_dir_path)
+        product_dir_path = pathlib.Path(product_dir_path)
+        # The returned path must be a directory.
+        self.assertTrue(product_dir_path.is_dir())
+        # Check that the extracted dir has at least one file, there are more
+        # but that should be enough.
+        self.assertGreaterEqual(len(list(product_dir_path.glob("**/*"))), 1)
+        # The zip file should be around
+        product_zip_file = product_dir_path.with_suffix(".zip")
+        self.assertTrue(product_zip_file.is_file)
 
     # TODO: add a test on tarfiles extraction
 

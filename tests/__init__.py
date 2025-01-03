@@ -25,6 +25,7 @@ import tempfile
 import unittest
 from collections import OrderedDict, namedtuple
 from io import StringIO
+from pathlib import Path
 from unittest import mock  # PY3
 
 from owslib.etree import etree
@@ -304,12 +305,12 @@ class EODagTestCase(unittest.TestCase):
     ):
         self._set_download_simulation()
         self.tmp_download_dir = tempfile.TemporaryDirectory()
+        if output_dir is None:
+            output_dir = str(Path(self.tmp_download_dir.name).parent)
         dl_config = config.PluginConfig.from_mapping(
             {
                 "base_uri": "fake_base_uri" if base_uri is None else base_uri,
-                "output_dir": self.tmp_download_dir.name
-                if output_dir is None
-                else output_dir,
+                "output_dir": output_dir,
                 "extract": True if extract is None else extract,
                 "delete_archive": False if delete_archive is None else delete_archive,
             }
@@ -321,6 +322,8 @@ class EODagTestCase(unittest.TestCase):
         return product
 
     def _clean_product(self, product_path):
+        if os.path.exists(product_path):
+            shutil.rmtree(product_path)
         self.tmp_download_dir.cleanup()
 
     def _set_download_simulation(self):
@@ -335,7 +338,10 @@ class EODagTestCase(unittest.TestCase):
                 with open(self.local_product_as_archive_path, "rb") as fh:
                     response.__zip_buffer = io.BytesIO(fh.read())
                 cl = response.__zip_buffer.getbuffer().nbytes
-                response.headers = {"content-length": cl}
+                response.headers = {
+                    "content-length": cl,
+                    "content-disposition": "attachment; filename=foobar.zip",
+                }
                 response.url = "http://foo.bar"
 
             def __enter__(response):
@@ -353,6 +359,9 @@ class EODagTestCase(unittest.TestCase):
                         yield chunk
 
             def raise_for_status(response):
+                pass
+
+            def close(response):
                 pass
 
         return Response()

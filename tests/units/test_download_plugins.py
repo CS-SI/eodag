@@ -23,7 +23,6 @@ import stat
 import tarfile
 import unittest
 import zipfile
-from itertools import chain
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
 from typing import Any, Callable, Dict
@@ -175,7 +174,7 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
         """Download._prepare_download must use collision avoidance suffix"""
 
         self.product.properties["title"] = "needs sanitïze"
-        self.product.properties["id"] = "alsô"
+        self.product.properties["id"] = "alsô.zip"
         self.product.location = self.product.remote_location = "somewhere"
 
         plugin = self.get_download_plugin(self.product)
@@ -211,7 +210,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     self.__zip_buffer = io.BytesIO(fh.read())
                 cl = self.__zip_buffer.getbuffer().nbytes
                 self.headers = {"content-length": cl}
-                self.url = "http://foo.bar"
+                self.url = "http://foo.bar/product.zip"
 
             def __enter__(self):
                 return self
@@ -228,6 +227,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                         yield chunk
 
             def raise_for_status(self):
+                pass
+
+            def close(self):
                 pass
 
         return Response()
@@ -329,103 +331,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             eoproduct_props,
             product_type,
         )
-        output_extension = getattr(
-            product.downloader.config, "output_extension", ".zip"
-        )
         path = product.download()
 
-        self.assertTrue(
-            path == os.path.join(self.output_dir, product.properties["title"] + ".zip")
-            and os.path.isfile(path)
-            and output_extension == ".zip"
-            and zipfile.is_zipfile(path)
+        expected_path = os.path.join(
+            self.output_dir, product.properties["title"] + ".zip"
         )
-
-        # check if the hidden directory ".downloaded" have been created with the product zip file
-        self.assertEqual(len(os.listdir(self.output_dir)), 2)
-
-        mock_requests_session.assert_called_once_with(
-            mock.ANY,
-            "get",
-            product.remote_location,
-            stream=True,
-            auth=None,
-            params={},
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            verify=True,
-        )
-
-    @mock.patch("eodag.plugins.download.http.requests.Session.request", autospec=True)
-    def test_plugins_download_http_tar_file_with_zip_extension_ok(
-        self, mock_requests_session
-    ):
-        """HTTPDownload.download() must change the outputs extension from '.zip' to '.tar' and keep the content
-        of the output as it is when it is a tar file and outputs extension is set to '.zip'"""
-
-        provider = "wekeo_main"
-        download_url = (
-            "https://prism-dem-open.copernicus.eu/pd-desk-open-access/prismDownload/"
-            "COP-DEM_GLO-30-DGED__2022_1/Copernicus_DSM_10_S90_00_W141_00.tar"
-        )
-        local_filename = "Copernicus_DSM_10_S90_00_W141_00"
-        local_product_as_archive_path = os.path.abspath(
-            os.path.join(
-                TEST_RESOURCES_PATH,
-                "products",
-                "as_archive",
-                "{}.tar".format(local_filename),
-            )
-        )
-        product_type = "COP_DEM_GLO30_DGED"
-        platform = None
-        instrument = None
-
-        eoproduct_props = {
-            "id": "Copernicus_DSM_10_S90_00_W141_00",
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [
-                    [
-                        [-142, -89],
-                        [-142, -87],
-                        [-140, -87],
-                        [-140, -89],
-                        [-142, -89],
-                    ]
-                ],
-            },
-            "productType": product_type,
-            "platform": "TerraSAR",
-            "platformSerialIdentifier": platform,
-            "instrument": instrument,
-            "title": local_filename,
-            "downloadLink": download_url,
-        }
-
-        # Put an empty string as value of properties which are not relevant for the test
-        eoproduct_props.update(
-            {key: "" for key in DEFAULT_METADATA_MAPPING if key not in eoproduct_props}
-        )
-
-        product = self._dummy_downloadable_product(
-            mock_requests_session,
-            local_product_as_archive_path,
-            provider,
-            eoproduct_props,
-            product_type,
-        )
-        output_extension = getattr(
-            product.downloader.config, "output_extension", ".zip"
-        )
-        path = product.download()
-
-        self.assertTrue(
-            path == os.path.join(self.output_dir, product.properties["title"] + ".tar")
-            and os.path.isfile(path)
-            and output_extension == ".zip"
-            and tarfile.is_tarfile(path)
-        )
+        self.assertEqual(path, expected_path)
+        self.assertTrue(os.path.isfile(path))
+        self.assertTrue(zipfile.is_zipfile(path))
 
         # check if the hidden directory ".downloaded" have been created with the product zip file
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
@@ -445,17 +358,19 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
     def test_plugins_download_http_nonzip_file_with_zip_extension_ok(
-        self, mock_stream_download
+        self, mock_stream, mock_stream_download
     ):
         """HTTPDownload.download() must create an output directory
         when the result is a non-zip file with a '.zip' outputs extension"""
 
         plugin = self.get_download_plugin(self.product)
-        output_extension = getattr(plugin.config, "output_extension", ".zip")
         self.product.location = self.product.remote_location = "http://somewhere"
         self.product.properties["id"] = "someproduct"
-        mock_stream_download.return_value = chain(iter([b"a"]))
+
+        self.product.filename = "dummy_product.nc"
+        mock_stream_download.return_value = [b"a"]
         progress_callback = ProgressCallback(disable=True)
 
         path = plugin.download(
@@ -464,19 +379,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             progress_callback=progress_callback,
         )
 
-        self.assertTrue(
-            path == os.path.join(self.output_dir, "dummy_product")
-            and os.path.isdir(path)
-            and output_extension == ".zip"
-        )
+        # Verify output directory
+        self.assertEqual(path, os.path.join(self.output_dir, "dummy_product"))
+        self.assertTrue(os.path.isdir(path))
 
+        # Verify output file
         file_path = os.path.join(path, os.listdir(path)[0])
-        self.assertTrue(
-            len(os.listdir(path)) == 1
-            and os.path.isfile(file_path)
-            and file_path.find(".zip") == -1
-            and not (zipfile.is_zipfile(file_path) or tarfile.is_tarfile(file_path))
-        )
+        self.assertEqual(len(os.listdir(path)), 1)
+        self.assertNotIn(".zip", file_path)
+        self.assertFalse(zipfile.is_zipfile(file_path))
+        self.assertFalse(tarfile.is_tarfile(file_path))
 
         # check if the hidden directory ".downloaded" have been created with the one of the product
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
@@ -487,14 +399,14 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             None,
             progress_callback,
             output_dir=self.output_dir,
-            output_extension=output_extension,
         )
 
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
     def test_plugins_download_http_file_without_zip_extension_ok(
-        self, mock_stream_download
+        self, mock_stream, mock_stream_download
     ):
         """HTTPDownload.download() must create an output directory
         when the result is a file without a '.zip' outputs extension"""
@@ -509,10 +421,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             ),
         )
 
-        mock_stream_download.return_value = chain(iter([b"a"]))
+        product.filename = "dummy_product.nc"
+        mock_stream_download.return_value = [b"a"]
 
         plugin = self.get_download_plugin(product)
-        output_extension = getattr(plugin.config, "output_extension", ".zip")
         product.location = product.remote_location = "http://somewhere"
         product.properties["id"] = "someproduct"
         progress_callback = ProgressCallback(disable=True)
@@ -521,21 +433,22 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             product, output_dir=self.output_dir, progress_callback=progress_callback
         )
 
-        self.assertTrue(
-            path == os.path.join(self.output_dir, "dummy_product")
-            and os.path.isdir(path)
-            and not output_extension == ".zip"
-        )
+        # Verify output directory
+        expected_path = os.path.join(self.output_dir, "dummy_product")
+        self.assertIsNotNone(path)
+        self.assertEqual(path, expected_path)
+        self.assertTrue(os.path.isdir(path))
 
+        # Verify output file
         file_path = os.path.join(path, os.listdir(path)[0])
-        self.assertTrue(
-            len(os.listdir(path)) == 1
-            and os.path.isfile(file_path)
-            and file_path.find(".zip") == -1
-            and not (zipfile.is_zipfile(file_path) or tarfile.is_tarfile(file_path))
-        )
+        self.assertEqual(len(os.listdir(path)), 1)
+        self.assertTrue(os.path.isfile(file_path))
+        self.assertNotIn(".zip", file_path)
+        self.assertFalse(zipfile.is_zipfile(file_path))
+        self.assertFalse(tarfile.is_tarfile(file_path))
 
-        # check if the hidden directory ".downloaded" have been created with the one of the product
+        # check if the hidden directory ".downloaded" have been created with the one of
+        # the product
         self.assertEqual(len(os.listdir(self.output_dir)), 2)
 
         mock_stream_download.assert_called_once_with(
@@ -544,16 +457,16 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             None,
             progress_callback,
             output_dir=self.output_dir,
-            output_extension=output_extension,
         )
 
     @mock.patch(
         "eodag.plugins.download.http.HTTPDownload._stream_download", autospec=True
     )
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.stream", create=True)
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_ignore_assets(
-        self, mock_requests_get, mock_requests_head, mock_stream_download
+        self, mock_requests_get, mock_requests_head, mock_stream, mock_stream_download
     ):
         """HTTPDownload.download() must ignore assets if configured to"""
 
@@ -567,7 +480,9 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_get.return_value.__enter__.return_value.iter_content.side_effect = lambda *x, **y: io.BytesIO(
             b"some content"
         )
-        mock_stream_download.return_value = chain(iter([b"a"]))
+
+        mock_stream_download.return_value = [b"a"]
+        self.product.filename = "dummy_product.nc"
 
         # download asset if ignore_assets = False
         plugin.config.ignore_assets = False

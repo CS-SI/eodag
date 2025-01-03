@@ -27,6 +27,7 @@ from datetime import datetime
 from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -122,8 +123,6 @@ class HTTPDownload(Download):
           default: ``5``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.output_extension` (``str``): which extension should be used for the
-          downloaded file
         * :attr:`~eodag.config.PluginConfig.no_auth_download` (``bool``): if the download should be done without
           authentication; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to be ordered to download it;
@@ -140,9 +139,8 @@ class HTTPDownload(Download):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
         * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type specific config; the
-          keys are the product types, the values are dictionaries which can contain the keys
-          :attr:`~eodag.config.PluginConfig.output_extension` and :attr:`~eodag.config.PluginConfig.extract` to
-          overwrite the provider config for a specific product type
+          keys are the product types, the values are dictionaries which can contain the key
+          :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific product type
 
     """
 
@@ -585,13 +583,6 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        output_extension = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        ).get("output_extension", None) or getattr(
-            self.config, "output_extension", ".zip"
-        )
-        kwargs["output_extension"] = kwargs.get("output_extension", output_extension)
-
         fs_path, record_filename = self._prepare_download(
             product,
             progress_callback=progress_callback,
@@ -610,7 +601,7 @@ class HTTPDownload(Download):
             try:
                 fs_path = self._download_assets(
                     product,
-                    fs_path.replace(".zip", ""),
+                    fs_path,
                     record_filename,
                     auth,
                     progress_callback,
@@ -635,74 +626,54 @@ class HTTPDownload(Download):
             wait: float,
             timeout: float,
             **kwargs: Unpack[DownloadConf],
-        ) -> None:
-            chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+        ) -> os.PathLike:
             is_empty = True
+            chunk_iterator = self._stream_download(
+                product, auth, progress_callback, **kwargs
+            )
+            if fs_path is not None:
+                ext = Path(product.filename).suffix
+                path = Path(fs_path).with_suffix(ext)
 
-            with open(fs_path, "wb") as fhandle:
-                for chunk in chunks:
-                    is_empty = False
-                    fhandle.write(chunk)
+                with open(path, "wb") as fhandle:
+                    for chunk in chunk_iterator:
+                        is_empty = False
+                        progress_callback(len(chunk))
+                        fhandle.write(chunk)
+                self.stream.close()  # Closing response stream
 
-            if is_empty:
-                raise DownloadError(f"product {product.properties['id']} is empty")
+                if is_empty:
+                    raise DownloadError(f"product {product.properties['id']} is empty")
 
-        download_request(product, auth, progress_callback, wait, timeout, **kwargs)
+                return path
+            else:
+                raise DownloadError(
+                    f"download of product {product.properties['id']} failed"
+                )
+
+        path = download_request(
+            product, auth, progress_callback, wait, timeout, **kwargs
+        )
 
         with open(record_filename, "w") as fh:
             fh.write(url)
         logger.debug("Download recorded in %s", record_filename)
 
-        # Check that the downloaded file is really a zip file
-        if not zipfile.is_zipfile(fs_path) and output_extension == ".zip":
-            logger.warning(
-                "Downloaded product is not a Zip File. Please check its file type before using it"
-            )
-            new_fs_path = os.path.join(
-                os.path.dirname(fs_path),
-                sanitize(product.properties["title"]),
-            )
-            if os.path.isfile(fs_path) and not tarfile.is_tarfile(fs_path):
-                if not os.path.isdir(new_fs_path):
-                    os.makedirs(new_fs_path)
-                shutil.move(fs_path, new_fs_path)
-                file_path = os.path.join(new_fs_path, os.path.basename(fs_path))
-                new_file_path = file_path[: file_path.index(".zip")]
-                shutil.move(file_path, new_file_path)
-            # in the case where the outputs extension has not been set
-            # to ".tar" in the product type nor provider configuration
-            elif tarfile.is_tarfile(fs_path):
-                if not new_fs_path.endswith(".tar"):
-                    new_fs_path += ".tar"
-                shutil.move(fs_path, new_fs_path)
-                kwargs["output_extension"] = ".tar"
-                product_path = self._finalize(
-                    new_fs_path,
-                    progress_callback=progress_callback,
-                    **kwargs,
-                )
-                product.location = path_to_uri(product_path)
-                return product_path
-            else:
-                # not a file (dir with zip extension)
-                shutil.move(fs_path, new_fs_path)
-            product.location = path_to_uri(new_fs_path)
-            return new_fs_path
-
-        if os.path.isfile(fs_path) and not (
-            zipfile.is_zipfile(fs_path) or tarfile.is_tarfile(fs_path)
+        if os.path.isfile(path) and not (
+            zipfile.is_zipfile(path) or tarfile.is_tarfile(path)
         ):
             new_fs_path = os.path.join(
-                os.path.dirname(fs_path),
+                os.path.dirname(path),
                 sanitize(product.properties["title"]),
             )
             if not os.path.isdir(new_fs_path):
                 os.makedirs(new_fs_path)
-            shutil.move(fs_path, new_fs_path)
+            shutil.move(path, new_fs_path)
             product.location = path_to_uri(new_fs_path)
             return new_fs_path
+
         product_path = self._finalize(
-            fs_path,
+            str(path),
             progress_callback=progress_callback,
             **kwargs,
         )
@@ -743,15 +714,6 @@ class HTTPDownload(Download):
                     ext = guess_extension(content_type)
                     if ext:
                         filename += ext
-                else:
-                    output_extension: Optional[str] = (
-                        getattr(self.config, "products", {})
-                        .get(product.product_type, {})
-                        .get("output_extension")
-                    )
-                    if output_extension:
-                        filename += output_extension
-
         return filename
 
     def _stream_download_dict(
@@ -834,17 +796,20 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunks = self._stream_download(product, auth, progress_callback, **kwargs)
+        chunk_iterator = self._stream_download(
+            product, auth, progress_callback, **kwargs
+        )
+
         # start reading chunks to set product.headers
         try:
-            first_chunk = next(chunks)
+            first_chunk = next(chunk_iterator)
         except StopIteration:
             # product is empty file
             logger.error("product %s is empty", product.properties["id"])
             raise NotAvailableError(f"product {product.properties['id']} is empty")
 
         return StreamResponse(
-            content=chain(iter([first_chunk]), chunks),
+            content=chain(iter([first_chunk]), chunk_iterator),
             headers=product.headers,
         )
 
@@ -998,7 +963,7 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        with s.request(
+        self.stream = s.request(
             req_method,
             req_url,
             stream=True,
@@ -1008,48 +973,46 @@ class HTTPDownload(Download):
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=ssl_verify,
             **req_kwargs,
-        ) as self.stream:
-            try:
-                self.stream.raise_for_status()
-            except requests.exceptions.Timeout as exc:
-                raise TimeOutError(
-                    exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT
-                ) from exc
-            except RequestException as e:
-                self._process_exception(e, product, ordered_message)
-            else:
-                # check if product was ordered
+        )
+        try:
+            self.stream.raise_for_status()
+        except requests.exceptions.Timeout as exc:
+            raise TimeOutError(exc, timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT) from exc
+        except RequestException as e:
+            self._process_exception(e, product, ordered_message)
+            raise DownloadError(
+                f"download of {product.properties['id']} is empty"
+            ) from e
+        else:
+            # check if product was ordered
 
-                if getattr(
-                    self.stream, "status_code", None
-                ) is not None and self.stream.status_code == getattr(
-                    self.config, "order_status", {}
-                ).get(
-                    "ordered", {}
-                ).get(
-                    "http_code"
-                ):
-                    product.properties["storageStatus"] = "ORDERED"
-                    self._process_exception(None, product, ordered_message)
-                stream_size = self._check_stream_size(product) or None
+            if getattr(
+                self.stream, "status_code", None
+            ) is not None and self.stream.status_code == getattr(
+                self.config, "order_status", {}
+            ).get(
+                "ordered", {}
+            ).get(
+                "http_code"
+            ):
+                product.properties["storageStatus"] = "ORDERED"
+                self._process_exception(None, product, ordered_message)
+            stream_size = self._check_stream_size(product) or None
 
-                product.headers = self.stream.headers
-                filename = self._check_product_filename(product) or None
-                product.headers[
-                    "content-disposition"
-                ] = f"attachment; filename={filename}"
-                content_type = product.headers.get("Content-Type")
-                guessed_content_type = (
-                    guess_file_type(filename) if filename and not content_type else None
-                )
-                if guessed_content_type is not None:
-                    product.headers["Content-Type"] = guessed_content_type
+            product.headers = self.stream.headers
+            filename = self._check_product_filename(product)
+            product.headers["content-disposition"] = f"attachment; filename={filename}"
+            content_type = product.headers.get("Content-Type")
+            guessed_content_type = (
+                guess_file_type(filename) if filename and not content_type else None
+            )
+            if guessed_content_type is not None:
+                product.headers["Content-Type"] = guessed_content_type
 
-                progress_callback.reset(total=stream_size)
-                for chunk in self.stream.iter_content(chunk_size=64 * 1024):
-                    if chunk:
-                        progress_callback(len(chunk))
-                        yield chunk
+            progress_callback.reset(total=stream_size)
+
+            product.filename = filename
+            return self.stream.iter_content(chunk_size=64 * 1024)
 
     def _stream_download_assets(
         self,
