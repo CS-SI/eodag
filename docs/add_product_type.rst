@@ -6,14 +6,15 @@ Add a product type
 Add product type definition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To add a new product type to EODAG, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an example:
+To add a new product type to EODAG, you must add an entry to the file ``eodag/resources/product_types.yml``. Here is an
+example:
 
 .. code-block:: yaml
 
     CBERS4_AWFI_L2:
       abstract: |
-        China-Brazil Earth Resources Satellite, CBERS-4 AWFI camera Level-2 product. System corrected images, expect some
-        translation error.
+        China-Brazil Earth Resources Satellite, CBERS-4 AWFI camera Level-2 product. System corrected images, expect
+        some translation error.
       instrument: AWFI
       platform: CBERS
       platformSerialIdentifier: CBERS-4
@@ -38,7 +39,7 @@ as ``instrument``, ``processingLevel``, ``platform``, etc.
 Add product type to a provider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the file ``eodag/resources/providers.yml``, add the product to the ``products``
+In the file ``eodag/resources/providers.yml``, add the product-type to the ``products``
 entry of a provider:
 
 .. code-block:: yaml
@@ -51,10 +52,10 @@ entry of a provider:
         # ...
         CBERS4_AWFI_L2:
           # ...
-          # product configuration comes here
+          # product-type configuration comes here
           # ...
 
-Then for each product listed under the ``products`` entry, you may
+Then for each product-type listed under the ``products`` entry, you may
 specify default parameters that will be used when searching for products of this
 product type:
 
@@ -71,11 +72,14 @@ product type:
           collection: cbers4
           processingLevel: 2
 
-With the example above, when searching for products of the type
-``CBERS4_AWFI_L2``, the search will be performed by default as if we had
-specified the instrument ``AWFI``, the collection ``cbers4`` and the processingLevel ``2``.
-Each of those parameters can be overridden when performing an actual search. Note
-that parameters have to be named following the common model used in EODAG (see `Parameters mapping <params_mapping.rst>`_). Part of the provider search metadata mapping can also be overridden per product-type, by adding a ``metadata_mapping`` section to the product type definition:
+With the example above, when searching for products of the type ``CBERS4_AWFI_L2``, the
+search will be performed by default as if we had specified the instrument ``AWFI``, the
+collection ``cbers4`` and the processingLevel ``2``.
+Each of those parameters can be overridden when performing an actual search. Note that
+parameters have to be named following the common model used in EODAG (see
+`Parameters mapping <params_mapping.rst>`_). Part of the provider search metadata
+mapping can also be overridden per product-type, by adding a ``metadata_mapping``
+section to the product type definition:
 
 .. code-block:: yaml
 
@@ -97,4 +101,5 @@ in the context of this provider can be specified in two ways:
 
 - ``metadata_mapping_from_product`` will include an existing metadata mapping
   from another product
-- ``metadata_mapping`` will contain a metadata mapping as documented in the `section on parameters mapping <params_mapping.html>`_
+- ``metadata_mapping`` will contain a metadata mapping as documented in the
+  `section on parameters mapping <params_mapping.rst>`_
