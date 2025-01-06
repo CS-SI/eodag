@@ -1591,7 +1591,7 @@ MSG_MFG_GSA_0:
   platform: MFG,MSG
   platformSerialIdentifier: MFG,MSG
   processingLevel: L2
-  keywords: MVIRI,SEVIRI,L2,MFG,Climate,Thematic
+  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
   sensorType: OPTICAL
   license: proprietary
   title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
@@ -1615,8 +1615,8 @@ HIRS_FDR_1_MULTI:
   instrument: HIRS
   platform: Metop,TIROS,NOAA
   platformSerialIdentifier: Metop,TIROS,NOAA
-  processingLevel: L1
-  keywords: HIRS,L2,HIRS,TIROS,Metop,NOAA,Sounder
+  processingLevel: L1C
+  keywords: HIRS,L1C,HIRS,TIROS,Metop,NOAA,Sounder,FDR
   sensorType: Sounder
   license: proprietary
   title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
@@ -1640,7 +1640,7 @@ MSG_OCA_CDR:
   platform: MSG
   platformSerialIdentifier: MSG
   processingLevel: L2
-  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic
+  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
   sensorType: MSG
   license: proprietary
   title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
@@ -1654,8 +1654,8 @@ S6_RADIO_OCCULTATION:
   instrument: GNSS-RO
   platform: Sentinel-6
   platformSerialIdentifier: Sentinel-6
-  processingLevel: L1
-  keywords: Sentinel-6,L1,GNSS-RO,Radio,Occultation
+  processingLevel: L1B
+  keywords: Sentinel-6,L1B,GNSS-RO,Radio,Occultation
   sensorType: Radio Occultation
   license: proprietary
   title: Radio Occultation Level 1B Products - Sentinel-6
@@ -1729,7 +1729,7 @@ MTG_LI_LGR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  keywords: MTG,L2,LI,LGR,Lightning,Weather,groups
   sensorType: Lightning Imager
   license: proprietary
   title:  LI Lightning Groups - MTG - 0 degree
@@ -1753,7 +1753,7 @@ MTG_LI_AFA:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  keywords: MTG,L2,LI,AFA,Lightning,Weather,Flashes,Accumulated
   sensorType: Lightning Imager
   license: proprietary
   title: LI Accumulated Flash Area - MTG - 0 degree
@@ -1771,7 +1771,7 @@ MTG_LI_AFR:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  keywords: MTG,L2,LI,AFR,Lightning,Weather,Flashes,Accumulated,Radiance
   sensorType: Lightning Imager
   license: proprietary
   title:  LI Accumulated Flash Radiance - MTG - 0 degree
@@ -1793,7 +1793,7 @@ MTG_LI_LEF:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L2
-  keywords: MTG,L2,LI,LGR,Lightning,Weather,Flashes
+  keywords: MTG,L2,LI,LEF,Lightning,Weather,Flashes,Filtered
   sensorType: Lightning Imager
   license: proprietary
   title:  LI Lightning Events Filtered - MTG - 0 degree
@@ -1821,7 +1821,7 @@ MTG_FCI_FDHSI:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L1
-  keywords: MTG,L1,FCI,Atmosphere,Ocean,Land
+  keywords: MTG,L1,FCI,FDHSI,Atmosphere,Ocean,Land
   sensorType: Imager
   license: proprietary
   title: FCI Level 1c Normal Resolution Image Data - MTG - 0 degree
@@ -1851,7 +1851,7 @@ MTG_FCI_HRFI:
   platform: MTG
   platformSerialIdentifier: MTG
   processingLevel: L1
-  keywords: MTG,L1,FCI,Atmosphere,Ocean,Land
+  keywords: MTG,L1,FCI,HRFI,Atmosphere,Ocean,Land
   sensorType: Imager
   license: proprietary
   title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
