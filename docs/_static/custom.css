@@ -91,3 +91,8 @@ dl.attribute dt {
 dl.attribute dd {
     grid-column-start: 2;
 }
+
+.nboutput table {
+    margin-left: unset;
+    margin-right: unset;
+}
