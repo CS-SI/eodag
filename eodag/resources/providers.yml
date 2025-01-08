@@ -2765,6 +2765,7 @@
       timeIntervalsAlignment:
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
     NEMSAUTO_TCDC:
+      productType: NEMSAUTO
       queries: [{'domain':'NEMSAUTO','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
       format: netCDF
       units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
