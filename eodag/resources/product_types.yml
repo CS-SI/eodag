@@ -2758,7 +2758,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS European air quality forecasts
-  missionStartDate: "2021-11-22T00:00:00Z"
+  missionStartDate: "2022-01-03T00:00:00Z"
 
 CAMS_GFE_GFAS:
   abstract: |
