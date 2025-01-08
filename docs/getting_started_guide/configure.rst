@@ -313,7 +313,7 @@ will be stored and used if further authentication tries fail:
    dag._plugins_manager.get_auth_plugin("creodias").authenticate()
 
 Please note that authentication mechanism is already included in
-`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_download.html>`_ , so you could
+`download methods <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/8_download.html>`_ , so you could
 also directly execute a download to retrieve the token while the OTP is still valid.
 
 Use OTP through CLI

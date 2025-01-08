@@ -589,7 +589,9 @@ class ECMWFSearch(PostJsonSearch):
             ):
                 formated_kwargs[key] = kwargs[key]
             else:
-                raise ValidationError(f"{key} is not a queryable parameter")
+                raise ValidationError(
+                    f"{key} is not a queryable parameter for {self.provider}"
+                )
 
         # we use non empty kwargs as default to integrate user inputs
         # it is needed because pydantic json schema does not represent "value"
