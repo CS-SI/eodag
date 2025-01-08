@@ -6172,6 +6172,38 @@
       parentIdentifier: EO:EUM:DAT:0394
     MSG_AMVR02:
       parentIdentifier: EO:EUM:DAT:0405
+    MSG_LST:
+      parentIdentifier: EO:EUM:DAT:0088
+    MSG_LST_DIR:
+      parentIdentifier: EO:EUM:DAT:0394
+    MFG_GSA_57:
+      parentIdentifier: EO:EUM:DAT:0301
+    MFG_GSA_63:
+      parentIdentifier: EO:EUM:DAT:0302
+    MSG_MFG_GSA_0:
+      parentIdentifier: EO:EUM:DAT:0300
+    HIRS_FDR_1_MULTI:
+      parentIdentifier: EO:EUM:DAT:0647
+    MSG_OCA_CDR:
+      parentIdentifier: EO:EUM:DAT:0617
+    S6_RADIO_OCCULTATION:
+      parentIdentifier: EO:EUM:DAT:0853
+    MTG_LI_AF:
+      parentIdentifier: EO:EUM:DAT:0686
+    MTG_LI_LFL:
+      parentIdentifier: EO:EUM:DAT:0691
+    MTG_LI_LGR:
+      parentIdentifier: EO:EUM:DAT:0782
+    MTG_LI_AFA:
+      parentIdentifier: EO:EUM:DAT:0687
+    MTG_LI_AFR:
+      parentIdentifier: EO:EUM:DAT:0688
+    MTG_LI_LEF:
+      parentIdentifier: EO:EUM:DAT:0690
+    MTG_FCI_FDHSI:
+      parentIdentifier: EO:EUM:DAT:0662
+    MTG_FCI_HRFI:
+      parentIdentifier: EO:EUM:DAT:0665
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
