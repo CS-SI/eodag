@@ -1495,24 +1495,7 @@ S3_LAN_LI:
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
 
-# MARK: MTG
-MSG_LST:
-  abstract: |
-    The full archive of MSG/SEVIRI data was reprocessed to provide the user
-    community a consistent, homogeneous and continuous Data Record of the
-    15-min Land Surface Temperature (LST) for the period 2004-2015. This Data
-    Record was obtained with the best version of its equivalent NRT product
-    (MLST) which can also complement the time series from 2016 onwards.
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L3
-  keywords: SEVIRI,L3,MSG,Vegetation,Land
-  sensorType: OPTICAL
-  license: other
-  title:  Land Surface Temperature Climate Data Record - MSG
-  missionStartDate: "2021-01-21T00:00:00Z"
-
+# MARK: MFG
 MFG_GSA_57:
   abstract: |
     Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
@@ -1531,6 +1514,7 @@ MFG_GSA_57:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 57 degree
   missionStartDate: "2006-12-07T00:00:00Z"
+  missionEndDate: "2017-03-30T23:59:59Z"
 
 MFG_GSA_63:
   abstract: |
@@ -1550,6 +1534,7 @@ MFG_GSA_63:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
   missionStartDate: "1998-07-10T00:00:00Z"
+  missionEndDate: "2007-04-10T23:59:59Z"
 
 MSG_MFG_GSA_0:
   abstract: |
@@ -1570,6 +1555,7 @@ MSG_MFG_GSA_0:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
   missionStartDate: "1982-02-10T00:00:00Z"
+  missionEndDate: "2017-12-31T23:59:59Z"
 
 HIRS_FDR_1_MULTI:
   abstract: |
@@ -1595,6 +1581,7 @@ HIRS_FDR_1_MULTI:
   license: other
   title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
   missionStartDate: "1978-10-29T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
 
 MSG_OCA_CDR:
   abstract: |
@@ -1619,6 +1606,7 @@ MSG_OCA_CDR:
   license: other
   title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
   missionStartDate: "2004-01-19T00:00:00Z"
+  missionEndDate: "2019-08-31T23:59:59Z"
 
 S6_RADIO_OCCULTATION:
   abstract: |
@@ -5219,6 +5207,7 @@ MSG_LSA_LST_CDR:
   license: other
   title: Land Surface Temperature Climate Data Record - MSG
   missionStartDate: "2004-01-21T00:00:00Z"
+  missionEndDate: "2015-12-31T00:00:00Z"
 
 MSG_LSA_LSTDE:
   abstract: |
