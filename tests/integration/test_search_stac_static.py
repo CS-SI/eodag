@@ -382,6 +382,11 @@ class TestSearchStacStatic(unittest.TestCase):
         )
         self.assertEqual(len(filtered_items), 1)
 
+        with self.assertLogs(level="WARNING") as cm:
+            filtered_items = items.filter_property(foo="bar")
+            self.assertIn("foo not found in EOProduct", str(cm.output))
+            self.assertEqual(len(filtered_items), 0)
+
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
