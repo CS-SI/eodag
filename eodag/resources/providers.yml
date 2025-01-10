@@ -6443,7 +6443,7 @@
         - '{{"query":{{"spaceborne:satelliteSensor":{{"eq":"{instrument}"}}}}}}'
         - '$.properties."spaceborne:satelliteSensor"'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '{$.properties."accessService:endpointURL"#replace_str(r"^.*\/(\w+)\.zip$",r"\1")}'
+      title: '$.properties.identifier'
       keyword: '$.properties."spaceborne:keywords"'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
@@ -6476,15 +6476,15 @@
         - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
         - '$.properties.identifier'
       tileIdentifier:
-        - '{{"query":{{"spaceborne:tile":{{"eq":"T{tileIdentifier}"}}}}}}'
-        - '$.properties."spaceborne:tile".`sub(/^T(.*)$/, \\1)`'
+        - '{{"query":{{"spaceborne:tile":{{"contains":"{tileIdentifier}"}}}}}}'
+        - '{$.properties."spaceborne:tile"#replace_str(r"^T?(.*)$",r"\1")}'
       geometry:
         - '{{"intersects":{geometry#to_geojson}}}'
         - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
       providerProductType:
         - '{{"query":{{"spaceborne:productType":{{"eq":"{providerProductType}"}}}}}}'
         - '$.null'
-      downloadLink: '$.assets[?(@.roles[0] == "data")].href'
+      downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # storageStatus set to ONLINE for consistency between providers
