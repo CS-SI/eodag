@@ -6637,8 +6637,8 @@
       "ecmwf:download_format": zip
       "ecmwf:model_levels": surface_level
       "ecmwf:variable": snow_depth_water_equivalent
-      "ecmwf:system_version": version_5_0
-      "ecmwf:time": 00:00
+      "ecmwf:system_version": version_4_0
+      "ecmwf:time": 06:00
       metadata_mapping:
         <<: *hday_hmonth_hyear
     EFAS_FORECAST:
@@ -6668,14 +6668,14 @@
         <<: *month_year
     EFAS_REFORECAST:
       "ecmwf:dataset": efas-reforecast
-      "ecmwf:system_version": version_5_0
+      "ecmwf:system_version": version_4_0
       "ecmwf:data_format": grib
       "ecmwf:download_format": zip
       "ecmwf:product_type": control_forecast
       "ecmwf:variable": river_discharge_in_the_last_6_hours
       "ecmwf:model_levels": surface_level
-      "ecmwf:leadtime_hour": '6'
-      "ecmwf:day": '27'
+      "ecmwf:leadtime_hour": '0'
+      "ecmwf:hday": '03'
       metadata_mapping:
         <<: *hmonth_hyear
     EFAS_SEASONAL_REFORECAST:
@@ -6715,7 +6715,7 @@
       "ecmwf:data_format": grib2
       "ecmwf:download_format": zip
       "ecmwf:system_version": operational
-      "ecmwf:hydrological_model": lisflood
+      "ecmwf:hydrological_model": htessel_lisflood
       "ecmwf:leadtime_hour": '24'
       metadata_mapping:
         <<: *month_year
@@ -6727,7 +6727,7 @@
       "ecmwf:system_version": version_4_0
       "ecmwf:hydrological_model": lisflood
       "ecmwf:leadtime_hour": '24'
-      "ecmwf:day": '27'
+      "ecmwf:hday": '27'
       metadata_mapping:
         <<: *hmonth_hyear
     GLOFAS_REFORECAST:
@@ -6735,10 +6735,11 @@
       "ecmwf:variable": river_discharge_in_the_last_24_hours
       "ecmwf:data_format": grib2
       "ecmwf:download_format": zip
-      "ecmwf:system_version": version_4_0
+      "ecmwf:system_version": version_3_1
       "ecmwf:hydrological_model": lisflood
       "ecmwf:product_type": control_reforecast
       "ecmwf:leadtime_hour": '24'
+      "ecmwf:hday": '03'
       metadata_mapping:
         <<: *hmonth_hyear
     FIRE_HISTORICAL:
