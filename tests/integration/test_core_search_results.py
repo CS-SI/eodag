@@ -241,6 +241,36 @@ class TestCoreSearchResults(EODagTestCase):
             for product_path in products_paths:
                 self._clean_product(product_path)
 
+    def test_download_all_callback_and_skipped(self):
+        """Download.download_all must skip products on download error and update callback on downloaded"""
+        product = self._dummy_downloadable_product()
+        product_skipped = self._dummy_downloadable_product(
+            self._dummy_product(
+                properties={**self.eoproduct_props, "id": "undownloadable"}
+            )
+        )
+        product_skipped.downloader.download = mock.MagicMock(side_effect=Exception)
+        search_result = SearchResult([product_skipped, product])
+
+        def downloaded_callback_func(product):
+            self.assertTrue(product in search_result)
+            downloaded_callback_func.times_called += 1
+
+        downloaded_callback_func.times_called = 0
+
+        try:
+            self.assertEqual(downloaded_callback_func.times_called, 0)
+            with self.assertLogs(level="ERROR") as cm:
+                products_paths = self.dag.download_all(
+                    search_result, downloaded_callback=downloaded_callback_func
+                )
+                self.assertIn("EOProduct(id=undownloadable", str(cm.output))
+            self.assertEqual(len(products_paths), 1)
+            self.assertEqual(downloaded_callback_func.times_called, 1)
+        finally:
+            for product_path in products_paths:
+                self._clean_product(product_path)
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
