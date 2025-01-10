@@ -539,7 +539,7 @@ class Download(PluginTopic):
                             )
                             raise
 
-                        except RuntimeError:
+                        except (RuntimeError, Exception):
                             import traceback as tb
 
                             logger.error(
@@ -547,16 +547,9 @@ class Download(PluginTopic):
                                 "Skipping it"
                             )
                             logger.debug(f"\n{tb.format_exc()}")
-                            stop_time = datetime.now()
 
-                        except Exception:
-                            import traceback as tb
-
-                            logger.warning(
-                                f"A problem occurred during download of product: {product}. "
-                                "Skipping it",
-                            )
-                            logger.debug(f"\n{tb.format_exc()}")
+                            # product skipped, to not retry it
+                            products.remove(product)
 
                 if (
                     len(products) > 0
