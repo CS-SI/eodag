@@ -33,6 +33,7 @@ import requests
 import responses
 import yaml
 from botocore.stub import Stubber
+from pydantic_core import PydanticUndefined
 from requests import RequestException
 from typing_extensions import get_args
 
@@ -2452,6 +2453,108 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         mock_requests_get.assert_not_called()
 
         self.assertEqual(11, len(queryables))
+        # default properties called in function arguments are added and must be default values of the queryables
+        queryable = queryables.get("ecmwf:variable")
+        if queryable is not None:
+            self.assertEqual("a", queryable.__metadata__[0].get_default())
+            self.assertFalse(queryable.__metadata__[0].is_required())
+
+    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
+    def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
+        self, mock_requests_get
+    ):
+        # One of the providers that has discover_queryables() configured with QueryStringSearch
+        search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
+        self.assertEqual("WekeoECMWFSearch", search_plugin.__class__.__name__)
+        self.assertEqual(
+            "ECMWFSearch",
+            search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
+        )
+
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        wekeo_ecmwf_constraints = {"constraints": constraints[0]}
+        mock_requests_get.return_value = MockResponse(
+            wekeo_ecmwf_constraints, status_code=200
+        )
+
+        provider_queryables_from_constraints_file = [
+            "ecmwf:year",
+            "ecmwf:month",
+            "ecmwf:day",
+            "ecmwf:time",
+            "ecmwf:variable",
+            "ecmwf:leadtime_hour",
+            "ecmwf:type",
+            "ecmwf:product_type",
+        ]
+
+        queryables = search_plugin._get_product_type_queryables(
+            product_type="ERA5_SL_MONTHLY", alias=None, filters={}
+        )
+        self.assertIsNotNone(queryables)
+
+        mock_requests_get.assert_called_once_with(
+            mock.ANY,
+            "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
+            "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS",
+            headers=USER_AGENT,
+            auth=None,
+            timeout=60,
+        )
+
+        # queryables from provider constraints file are added (here the ones of ERA5_SL_MONTHLY for wekeo_ecmwf)
+        for provider_queryable in provider_queryables_from_constraints_file:
+            provider_queryable = (
+                get_queryable_from_provider(
+                    provider_queryable,
+                    search_plugin.get_metadata_mapping("ERA5_SL_MONTHLY"),
+                )
+                or provider_queryable
+            )
+            self.assertIn(provider_queryable, queryables)
+
+        # default properties in provider config are added and must be default values of the queryables
+        for property, default_value in search_plugin.config.products[
+            "ERA5_SL_MONTHLY"
+        ].items():
+            queryable = queryables.get(property)
+            if queryable is not None:
+                self.assertEqual(default_value, queryable.__metadata__[0].get_default())
+                # queryables with default values are not required
+                self.assertFalse(queryable.__metadata__[0].is_required())
+
+        # queryables without default values are required
+        queryable = queryables.get("month")
+        if queryable is not None:
+            self.assertEqual(PydanticUndefined, queryable.__metadata__[0].get_default())
+            self.assertTrue(queryable.__metadata__[0].is_required())
+
+        # check that queryable constraints from the constraints file are in queryable info
+        # (here it is a case where all constraints of "variable" queryable can be taken into account)
+        queryable = queryables.get("variable")
+        if queryable is not None:
+            variable_constraints = []
+            for constraint in constraints:
+                if "variable" in constraint:
+                    variable_constraints.extend(constraint["variable"])
+            # remove queryable constraints duplicates to make the assertion works
+            self.assertSetEqual(
+                set(variable_constraints), set(queryable.__origin__.__args__)
+            )
+
+        # reset mock
+        mock_requests_get.reset_mock()
+
+        # with additional param
+        queryables = search_plugin.discover_queryables(
+            productType="ERA5_SL_MONTHLY",
+            **{"ecmwf:variable": "a"},
+        )
+        self.assertIsNotNone(queryables)
+
+        self.assertEqual(10, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:
