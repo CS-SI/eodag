@@ -78,10 +78,9 @@ class FilterProperty(Crunch):
         for product in products:
             if property_key not in product.properties.keys():
                 logger.warning(
-                    "%s not found in product.properties, filtering disabled.",
-                    property_key,
+                    f"{property_key} not found in {product}.properties, product skipped",
                 )
-                return products
+                continue
             if operator_method(product.properties[property_key], property_value):
                 add_to_filtered(product)
 
