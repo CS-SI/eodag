@@ -112,8 +112,8 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         r"""
@@ -142,8 +142,8 @@ class Download(PluginTopic):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         r"""
@@ -202,8 +202,8 @@ class Download(PluginTopic):
             or getattr(self.config, "output_dir", tempfile.gettempdir())
             or tempfile.gettempdir()
         )
-        output_extension = kwargs.get("output_extension", None) or getattr(
-            self.config, "output_extension", ".zip"
+        output_extension = kwargs.get("output_extension") or getattr(
+            self.config, "output_extension", ""
         )
 
         # Strong asumption made here: all products downloaded will be zip files
@@ -233,9 +233,13 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
+        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+        old_record_filename = os.path.join(download_records_dir, url_hash)
         record_filename = os.path.join(
             download_records_dir, self.generate_record_hash(product)
         )
+        if os.path.isfile(old_record_filename):
+            os.rename(old_record_filename, record_filename)
         if os.path.isfile(record_filename) and os.path.isfile(fs_path):
             logger.info(
                 f"Product already downloaded: {fs_path}",
@@ -339,13 +343,7 @@ class Download(PluginTopic):
             if delete_archive is not None
             else getattr(self.config, "delete_archive", True)
         )
-        output_extension = kwargs.pop("output_extension", ".zip")
-
-        product_path = (
-            fs_path[: fs_path.index(output_extension)]
-            if output_extension in fs_path
-            else fs_path
-        )
+        product_path, _ = os.path.splitext(fs_path)
         product_path_exists = os.path.exists(product_path)
         if product_path_exists and os.path.isfile(product_path):
             logger.info(
@@ -422,10 +420,10 @@ class Download(PluginTopic):
 
             tmp_dir.cleanup()
 
-            if delete_archive:
+            if delete_archive and os.path.isfile(fs_path):
                 logger.info(f"Deleting archive {os.path.basename(fs_path)}")
                 os.unlink(fs_path)
-            else:
+            elif os.path.isfile(fs_path):
                 logger.info(
                     f"Archive deletion is deactivated, keeping {os.path.basename(fs_path)}"
                 )
@@ -444,8 +442,8 @@ class Download(PluginTopic):
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> List[str]:
         """
@@ -541,7 +539,7 @@ class Download(PluginTopic):
                             )
                             raise
 
-                        except RuntimeError:
+                        except (RuntimeError, Exception):
                             import traceback as tb
 
                             logger.error(
@@ -549,16 +547,9 @@ class Download(PluginTopic):
                                 "Skipping it"
                             )
                             logger.debug(f"\n{tb.format_exc()}")
-                            stop_time = datetime.now()
 
-                        except Exception:
-                            import traceback as tb
-
-                            logger.warning(
-                                f"A problem occurred during download of product: {product}. "
-                                "Skipping it",
-                            )
-                            logger.debug(f"\n{tb.format_exc()}")
+                            # product skipped, to not retry it
+                            products.remove(product)
 
                 if (
                     len(products) > 0
@@ -585,14 +576,14 @@ class Download(PluginTopic):
 
         return paths
 
-    def _download_retry(
-        self, product: EOProduct, wait: int, timeout: int
+    def _order_download_retry(
+        self, product: EOProduct, wait: float, timeout: float
     ) -> Callable[[Callable[..., T]], Callable[..., T]]:
         """
-        Download retry decorator.
+        Order download retry decorator.
 
-        Retries the wrapped  download method after `wait` minutes if a NotAvailableError
-        exception is thrown until `timeout` minutes.
+        Retries the wrapped order_download method after ``wait`` minutes if a
+        ``NotAvailableError`` exception is thrown until ``timeout`` minutes.
 
         :param product: The EO product to download
         :param wait: If download fails, wait time in minutes between two download tries
@@ -601,7 +592,7 @@ class Download(PluginTopic):
         :returns: decorator
         """
 
-        def decorator(download: Callable[..., T]) -> Callable[..., T]:
+        def decorator(order_download: Callable[..., T]) -> Callable[..., T]:
             def download_and_retry(*args: Any, **kwargs: Unpack[DownloadConf]) -> T:
                 # initiate retry loop
                 start_time = datetime.now()
@@ -618,7 +609,7 @@ class Download(PluginTopic):
                     if datetime_now >= product.next_try:
                         product.next_try += timedelta(minutes=wait)
                         try:
-                            return download(*args, **kwargs)
+                            return order_download(*args, **kwargs)
 
                         except NotAvailableError as e:
                             if not getattr(self.config, "order_enabled", False):
@@ -634,7 +625,7 @@ class Download(PluginTopic):
                         ).seconds
                         retry_count += 1
                         retry_info = (
-                            f"[Retry #{retry_count}] Waited {wait_seconds}s, trying again to download ordered product"
+                            f"[Retry #{retry_count}] Waited {wait_seconds}s, checking order status again"
                             f" (retry every {wait}' for {timeout}')"
                         )
                         logger.info(not_available_info)
@@ -656,8 +647,8 @@ class Download(PluginTopic):
                         ).microseconds / 1e6
                         retry_count += 1
                         retry_info = (
-                            f"[Retry #{retry_count}] Waiting {wait_seconds}s until next download try"
-                            f" for ordered product (retry every {wait}' for {timeout}')"
+                            f"[Retry #{retry_count}] Waiting {wait_seconds}s until next order status check"
+                            f" (retry every {wait}' for {timeout}')"
                         )
                         logger.info(not_available_info)
                         # Retry-After info from Response header
@@ -678,12 +669,12 @@ class Download(PluginTopic):
                         logger.info(not_available_info)
                         raise NotAvailableError(
                             f"{product.properties['title']} is not available ({product.properties['storageStatus']})"
-                            f" and could not be downloaded, timeout reached"
+                            f" and order was not successfull, timeout reached"
                         )
                     elif datetime_now >= stop_time:
                         raise NotAvailableError(not_available_info)
 
-                return download(*args, **kwargs)
+                return order_download(*args, **kwargs)
 
             return download_and_retry
 

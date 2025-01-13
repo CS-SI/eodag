@@ -131,14 +131,12 @@ class StacQueryables(BaseModel):
         default="Queryable names for the EODAG STAC API Item Search filter."
     )
     default_properties: ClassVar[Dict[str, StacQueryableProperty]] = {
-        "id": StacQueryableProperty(
-            description="ID",
-            ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/id",
-        ),
         "collection": StacQueryableProperty(
             description="Collection",
             ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/collection",
-        ),
+        )
+    }
+    possible_properties: ClassVar[Dict[str, StacQueryableProperty]] = {
         "geometry": StacQueryableProperty(
             description="Geometry",
             ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
@@ -154,7 +152,8 @@ class StacQueryables(BaseModel):
             items={"type": "number"},
         ),
     }
-    properties: Dict[str, StacQueryableProperty] = Field()
+    properties: Dict[str, Any] = Field()
+    required: Optional[List[str]] = Field(None)
     additional_properties: bool = Field(
         default=True, serialization_alias="additionalProperties"
     )

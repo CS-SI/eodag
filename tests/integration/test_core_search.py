@@ -200,7 +200,7 @@ class TestCoreSearch(unittest.TestCase):
         self, mock_fetch_product_types_list, mock_authenticate, mock_post, mock_request
     ):
         mock_request.return_value = MockResponse({"results": []})
-        # BuildPostSearchResult / meteoblue
+        # MeteoblueSearch / meteoblue
         self.dag.set_preferred_provider("meteoblue")
         self.assertRaises(RequestError, self.dag.search, raise_errors=True)
         # search iterator

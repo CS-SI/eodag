@@ -84,6 +84,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import Unpack  # noqa
 
+
 import click
 import orjson
 import shapefile
@@ -125,8 +126,8 @@ REQ_RETRY_BACKOFF_FACTOR = 2
 REQ_RETRY_STATUS_FORCELIST = [401, 429, 500, 502, 503, 504]
 
 # default wait times in minutes
-DEFAULT_DOWNLOAD_WAIT = 2  # in minutes
-DEFAULT_DOWNLOAD_TIMEOUT = 20  # in minutes
+DEFAULT_DOWNLOAD_WAIT = 0.2  # in minutes
+DEFAULT_DOWNLOAD_TIMEOUT = 10  # in minutes
 
 JSONPATH_MATCH = re.compile(r"^[\{\(]*\$(\..*)*$")
 WORKABLE_JSONPATH_MATCH = re.compile(r"^\$(\.[a-zA-Z0-9-_:\.\[\]\"\(\)=\?\*]+)*$")
@@ -141,6 +142,13 @@ DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 # default product-types start date
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
+
+# update missing mimetypes
+mimetypes.add_type("text/xml", ".xsd")
+mimetypes.add_type("application/x-grib", ".grib")
+mimetypes.add_type("application/x-grib2", ".grib2")
+# jp2 is missing on windows
+mimetypes.add_type("image/jp2", ".jp2")
 
 
 def _deprecated(reason: str = "", version: Optional[str] = None) -> Callable[..., Any]:
@@ -428,6 +436,33 @@ def datetime_range(start: dt, end: dt) -> Iterator[dt]:
     delta = end - start
     for nday in range(delta.days + 1):
         yield start + datetime.timedelta(days=nday)
+
+
+def is_range_in_range(valid_range: str, check_range: str) -> bool:
+    """Check if the check_range is completely within the valid_range.
+
+    This function checks if both the start and end dates of the check_range
+    are within the start and end dates of the valid_range.
+
+    :param valid_range: The valid date range in the format 'YYYY-MM-DD/YYYY-MM-DD'.
+    :param check_range: The date range to check in the format 'YYYY-MM-DD/YYYY-MM-DD'.
+    :returns: True if check_range is within valid_range, otherwise False.
+    """
+    if "/" not in valid_range or "/" not in check_range:
+        return False
+
+    # Split the date ranges into start and end dates
+    start_valid, end_valid = valid_range.split("/")
+    start_check, end_check = check_range.split("/")
+
+    # Convert the strings to datetime objects using fromisoformat
+    start_valid_dt = datetime.datetime.fromisoformat(start_valid)
+    end_valid_dt = datetime.datetime.fromisoformat(end_valid)
+    start_check_dt = datetime.datetime.fromisoformat(start_check)
+    end_check_dt = datetime.datetime.fromisoformat(end_check)
+
+    # Check if check_range is within valid_range
+    return start_valid_dt <= start_check_dt and end_valid_dt >= end_check_dt
 
 
 class DownloadedCallback:
@@ -1120,7 +1155,7 @@ def get_geometry_from_various(
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data: Any, status_code: int) -> None:
+    def __init__(self, json_data: Any = None, status_code: int = 200) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
@@ -1129,10 +1164,21 @@ class MockResponse:
         """Return json data"""
         return self.json_data
 
+    def __iter__(self):
+        yield self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
     def raise_for_status(self) -> None:
         """raises an exception when the status is not ok"""
         if self.status_code != 200:
-            raise HTTPError(response=Response())
+            response = Response()
+            response.status_code = self.status_code
+            raise HTTPError(response=response)
 
 
 def md5sum(file_path: str) -> str:
@@ -1373,17 +1419,32 @@ class StreamResponse:
 
 
 def guess_file_type(file: str) -> Optional[str]:
-    """guess the mime type of a file or URL based on its extension"""
-    mimetypes.add_type("text/xml", ".xsd")
-    mimetypes.add_type("application/x-grib", ".grib")
+    """Guess the mime type of a file or URL based on its extension,
+    using eodag extended mimetypes definition
+
+    >>> guess_file_type('foo.tiff')
+    'image/tiff'
+    >>> guess_file_type('foo.grib')
+    'application/x-grib'
+
+    :param file: file url or path
+    :returns: guessed mime type
+    """
     mime_type, _ = mimetypes.guess_type(file, False)
     return mime_type
 
 
 def guess_extension(type: str) -> Optional[str]:
-    """guess extension from mime type"""
-    mimetypes.add_type("text/xml", ".xsd")
-    mimetypes.add_type("application/x-grib", ".grib")
+    """Guess extension from mime type, using eodag extended mimetypes definition
+
+    >>> guess_extension('image/tiff')
+    '.tiff'
+    >>> guess_extension('application/x-grib')
+    '.grib'
+
+    :param type: mime type
+    :returns: guessed file extension
+    """
     return mimetypes.guess_extension(type, strict=False)
 
 

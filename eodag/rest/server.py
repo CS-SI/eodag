@@ -61,7 +61,12 @@ from eodag.rest.core import (
 from eodag.rest.errors import add_exception_handlers
 from eodag.rest.types.queryables import QueryablesGetParams
 from eodag.rest.types.stac_search import SearchPostRequest, sortby2list
-from eodag.rest.utils import format_pydantic_error, str2json, str2list
+from eodag.rest.utils import (
+    LIVENESS_PROBE_PATH,
+    format_pydantic_error,
+    str2json,
+    str2list,
+)
 from eodag.utils import parse_header, update_nested_dict
 
 if TYPE_CHECKING:
@@ -118,6 +123,17 @@ app = FastAPI(lifespan=lifespan, title="EODAG", docs_url="/api.html")
 
 # conf from resources/stac_api.yml
 stac_api_config = load_stac_api_config()
+
+
+@router.api_route(
+    methods=["GET", "HEAD"],
+    path=LIVENESS_PROBE_PATH,
+    include_in_schema=False,
+    status_code=200,
+)
+async def liveness_probe(request: Request) -> Dict[str, bool]:
+    "Endpoint meant to be used as liveness probe by deployment platforms"
+    return {"success": True}
 
 
 @router.api_route(
@@ -375,13 +391,24 @@ async def list_collection_queryables(
     :returns: A json object containing the list of available queryable properties for the specified collection.
     """
     logger.info(f"{request.method} {request.state.url}")
-    additional_params = dict(request.query_params)
+    # split by `,` to handle list of parameters
+    additional_params = {k: v.split(",") for k, v in dict(request.query_params).items()}
     provider = additional_params.pop("provider", None)
+
+    datetime = additional_params.pop("datetime", None)
 
     queryables = await get_queryables(
         request,
-        QueryablesGetParams(collection=collection_id, **additional_params),
-        provider=provider,
+        QueryablesGetParams.model_validate(
+            {
+                **additional_params,
+                **{
+                    "collection": collection_id,
+                    "datetime": datetime[0] if datetime else None,
+                },
+            }
+        ),
+        provider=provider[0] if provider else None,
     )
 
     return ORJSONResponse(queryables)

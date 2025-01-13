@@ -40,6 +40,7 @@ from typing import (
 import geojson
 import orjson
 import pyproj
+import shapely
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import UTC, tzutc
@@ -179,6 +180,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``recursive_sub_str``: recursively substitue in the structure (e.g. dict)
           values matching a regex
         - ``slice_str``: slice a string (equivalent to s[start, end, step])
+        - ``to_lower``: Convert a string to lowercase
+        - ``to_upper``: Convert a string to uppercase
         - ``fake_l2a_title_from_l1c``: used to generate SAFE format metadata for data from AWS
         - ``s2msil2a_title_to_aws_productinfo``: used to generate SAFE format metadata for data from AWS
         - ``split_cop_dem_id``: get the bbox by splitting the product id
@@ -363,6 +366,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_to_nwse_bounds(input_geom: BaseGeometry) -> List[float]:
+            if isinstance(input_geom, str):
+                input_geom = shapely.wkt.loads(input_geom)
             return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
 
         @staticmethod
@@ -557,6 +562,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 for x in args.split(",")
             ]
             return string[cmin:cmax:cstep]
+
+        @staticmethod
+        def convert_to_lower(string: str) -> str:
+            """Convert a string to lowercase."""
+            return string.lower()
+
+        @staticmethod
+        def convert_to_upper(string: str) -> str:
+            """Convert a string to uppercase."""
+            return string.upper()
 
         @staticmethod
         def convert_fake_l2a_title_from_l1c(string: str) -> str:
@@ -834,7 +849,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             date_object = datetime.strptime(utc_date, "%Y-%m-%dT%H:%M:%S.%fZ")
             date_object_second_year = date_object + relativedelta(years=1)
             return [
-                f'{date_object.strftime("%Y")}_{date_object_second_year.strftime("%y")}'
+                f"{date_object.strftime('%Y')}_{date_object_second_year.strftime('%y')}"
             ]
 
         @staticmethod
@@ -902,10 +917,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return assets_dict
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
-    if re.search(r"{[a-zA-Z0-9_-]*:[a-zA-Z0-9_-]*}", search_param):
-        search_param = re.sub(
-            r"{([a-zA-Z0-9_-]*):([a-zA-Z0-9_-]*)}", r"{\1_COLON_\2}", search_param
-        )
+    if re.search(r"{[\w-]*:[\w#-]*}", search_param):
+        search_param = re.sub(r"{([\w-]*):([\w#-]*)}", r"{\1_COLON_\2}", search_param)
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
@@ -975,10 +988,24 @@ def properties_from_json(
                     if re.search(r"({[^{}:]+})+", conversion_or_none):
                         conversion_or_none = conversion_or_none.format(**properties)
 
-                    properties[metadata] = format_metadata(
-                        "{%s%s%s}" % (metadata, SEP, conversion_or_none),
-                        **{metadata: extracted_value},
-                    )
+                    if extracted_value == NOT_AVAILABLE:
+                        # try if value can be formatted even if it is not available
+                        try:
+                            properties[metadata] = format_metadata(
+                                "{%s%s%s}" % (metadata, SEP, conversion_or_none),
+                                **{metadata: extracted_value},
+                            )
+                        except ValueError:
+                            logger.debug(
+                                f"{metadata}: {extracted_value} could not be formatted with {conversion_or_none}"
+                            )
+                            continue
+                    else:
+                        # in this case formatting should work, otherwise something is wrong in the mapping
+                        properties[metadata] = format_metadata(
+                            "{%s%s%s}" % (metadata, SEP, conversion_or_none),
+                            **{metadata: extracted_value},
+                        )
         # properties as python objects when possible (format_metadata returns only strings)
         try:
             properties[metadata] = ast.literal_eval(properties[metadata])
@@ -1462,7 +1489,7 @@ def get_queryable_from_provider(
     :param metadata_mapping: metadata-mapping configuration
     :returns: EODAG configured queryable parameter or None
     """
-    pattern = rf"\b{provider_queryable}\b"
+    pattern = rf"\"{provider_queryable}\""
     # if 1:1 mapping exists privilege this one instead of other mapping
     # e.g. provider queryable = year -> use year and not date in which year also appears
     mapping_values = [
@@ -1498,7 +1525,8 @@ def get_provider_queryable_key(
     provider_queryables: Dict[str, Any],
     metadata_mapping: Dict[str, Union[List[Any], str]],
 ) -> str:
-    """finds the provider queryable corresponding to the given eodag key based on the metadata mapping
+    """Finds the provider queryable corresponding to the given eodag key based on the metadata mapping
+
     :param eodag_key: key in eodag
     :param provider_queryables: queryables returned from the provider
     :param metadata_mapping: metadata mapping from which the keys are retrieved

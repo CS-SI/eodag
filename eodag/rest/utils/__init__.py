@@ -55,6 +55,9 @@ __all__ = ["get_date", "get_datetime"]
 
 logger = logging.getLogger("eodag.rest.utils")
 
+# Path of the liveness endpoint
+LIVENESS_PROBE_PATH = "/_mgmt/ping"
+
 
 class Cruncher(NamedTuple):
     """Type hinted Cruncher namedTuple"""

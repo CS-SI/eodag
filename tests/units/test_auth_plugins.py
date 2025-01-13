@@ -89,6 +89,21 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         },
                     },
                 },
+                "provider_text_token_retrieve_header": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "headers": {
+                            "Content-Type": "application/json;charset=UTF-8",
+                            "Accept": "application/json",
+                            "foo": "{foo}",
+                        },
+                        "retrieve_headers": {
+                            "Authorization": "Bearer {auth_for_token}",
+                        },
+                    },
+                },
                 "provider_json_token_simple_url": {
                     "products": {"foo_product": {}},
                     "auth": {
@@ -182,6 +197,46 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         self.assertIsNone(kwargs["auth"])
         self.assertDictEqual(
             kwargs["headers"], dict(auth_plugin.config.headers, **USER_AGENT)
+        )
+
+        # check if token is integrated to the request
+        req = mock.Mock(headers={})
+        auth(req)
+        self.assertEqual(req.headers["Authorization"], "Bearer this_is_test_token")
+        self.assertEqual(req.headers["foo"], "bar")
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_text_token_retrieve_authenticate(
+        self, mock_requests_post
+    ):
+        """TokenAuth.authenticate must return a RequestsTokenAuth object using text token and a retrieve headers"""
+        auth_plugin = self.get_auth_plugin("provider_text_token_retrieve_header")
+
+        auth_plugin.config.credentials = {
+            "foo": "bar",
+            "baz": "qux",
+            "auth_for_token": "a_token",
+        }
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.text = "this_is_test_token"
+
+        # check if returned auth object is an instance of requests.AuthBase
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+
+        # check token post request call arguments
+        args, kwargs = mock_requests_post.call_args
+        self.assertEqual(kwargs["url"], auth_plugin.config.auth_uri)
+        self.assertDictEqual(
+            kwargs["data"], {"foo": "bar", "baz": "qux", "auth_for_token": "a_token"}
+        )
+        self.assertIsNone(kwargs["auth"])
+        self.assertDictEqual(
+            kwargs["headers"], dict(auth_plugin.config.retrieve_headers, **USER_AGENT)
         )
 
         # check if token is integrated to the request

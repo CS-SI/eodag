@@ -27,12 +27,12 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 from requests.exceptions import RequestException
 
 from tests.context import (
     HTTP_REQ_TIMEOUT,
-    TEST_RESOURCES_PATH,
     USER_AGENT,
     DownloadedCallback,
     ProgressCallback,
@@ -323,16 +323,12 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(deep_copied["a"][0]["b"][0], 0)
 
     def test_fetch_json(self):
-        """fetch_json must be able to fetch a distant or local json file"""
-        # local
-        file_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
-        file_content = fetch_json(file_path)
-        self.assertEqual(file_content[0]["year"][0], "2000")
+        """fetch_json must be able to fetch a distant json file"""
 
         # distant
         file_url = "https://foo.bar"
         with unittest.mock.patch(
-            "eodag.utils.requests.requests.Session.get",
+            "eodag.utils.requests.requests.sessions.Session.get",
             autospec=True,
         ) as mock_get:
             mock_get.return_value = unittest.mock.Mock()
@@ -340,7 +336,7 @@ class TestUtils(unittest.TestCase):
             file_content = fetch_json(file_url)
             self.assertEqual(file_content["foo"], "bar")
             mock_get.assert_called_once_with(
-                unittest.mock.ANY,
+                mock.ANY,
                 file_url,
                 headers=USER_AGENT,
                 auth=None,
@@ -349,7 +345,7 @@ class TestUtils(unittest.TestCase):
 
         # distant error
         with unittest.mock.patch(
-            "eodag.utils.requests.requests.Session.get",
+            "eodag.utils.requests.requests.get",
             autospec=True,
             side_effect=RequestException,
         ) as mock_get:

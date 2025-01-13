@@ -68,10 +68,10 @@ class OIDCRefreshTokenBase(Authentication):
         self.session = requests.Session()
 
         self.access_token = ""
-        self.access_token_expiration = datetime.min
+        self.access_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
 
         self.refresh_token = ""
-        self.refresh_token_expiration = datetime.min
+        self.refresh_token_expiration = datetime.min.replace(tzinfo=timezone.utc)
 
         try:
             response = requests.get(self.config.oidc_config_url)

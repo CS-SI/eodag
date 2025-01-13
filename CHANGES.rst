@@ -1,6 +1,57 @@
 Release history
 ===============
 
+v3.1.0b1 (2025-01-13)
+---------------------
+
+Core features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* Updated `queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/5_queryables.html>`_ mechanism
+  and ecmwf-like plugins (:pull:`1397`)(:pull:`1427`)(:pull:`1462`)
+* Order and download polling times update (:pull:`1440`)
+* Do not retry downloading skipped products during download_all (:pull:`1465`)
+* Renamed record files that were using previous mechanism (:pull:`1396`, thanks `@gasparakos\
+  <https://github.com/gasparakos>`_)
+* New ``to_lower()`` and ``to_upper()`` `parameters mapping\
+  <https://eodag.readthedocs.io/en/latest/params_mapping.html#formatters>`_ methods (:pull:`1410`, thanks
+  `@jgaucher-cs <https://github.com/jgaucher-cs>`_)
+
+Providers and product types updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``geodes`` updated ``id`` (:pull:`1441`) and ``tileIdentifier`` parameters (:pull:`1457`), and metadata mapping fix
+  (:pull:`1468`)
+* New MTG product types for ``eumetsat_ds`` (:pull:`1455`)
+* ``FIRE_HISTORICAL`` on ``wekeo_ecmwf`` (:pull:`1392`)
+* Various product types metadata-mapping and default values updates: for ``cop_ads`` and ``wekeo_ecmwf`` (:pull:`1389`),
+  GLOFAS and EFAS product types (:pull:`1467`), ``EEA_DAILY_VI`` on ``wekeo_main`` (:pull:`1464`)
+
+Plugins new features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Removed default :class:`~eodag.plugins.download.http.HTTPDownload` zip extension (:pull:`1400`)
+* Order and poll without downloading (:pull:`1437`)
+* :class:`~eodag.plugins.authentication.token.TokenAuth` distinct headers for token retrieve and authentication
+  (:pull:`1451`, thanks `@jgaucher-cs <https://github.com/jgaucher-cs>`_)
+* Compare only offset-aware datetimes on openid authentication plugins (:pull:`1418`)
+* Fixed ``creodias_s3`` search and download when no asset is available (:pull:`1425`)
+
+Server mode
+^^^^^^^^^^^
+
+* Dedicated liveness endpoint added (:pull:`1353`)
+* Processing level parsing fix in external STAC collections (:pull:`1429`)
+
+Miscellaneous
+^^^^^^^^^^^^^
+* **[docs]** `Queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/5_queryables.html>`_
+  documentation in a dedicated section (:pull:`1447`)
+* Various minor fixes and improvements (:pull:`1390`)(:pull:`1403`)(:pull:`1411`)(:pull:`1415`)(:pull:`1419`)
+  (:pull:`1428`)(:pull:`1430`)(:pull:`1434`)(:pull:`1445`)(:pull:`1448`)(:pull:`1458`)(:pull:`1466`)
+* External product types reference updates (:pull:`1387`)(:pull:`1391`)(:pull:`1401`)(:pull:`1404`)(:pull:`1406`)
+  (:pull:`1408`)(:pull:`1416`)(:pull:`1424`)(:pull:`1453`)(:pull:`1459`)
+
 v3.0.1 (2024-11-06)
 -------------------
 
@@ -233,10 +284,10 @@ Core features and fixes
 * Configurable download timeout (:pull:`1124`)
 * `Search by id <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#id-and-provider>`_ now
   uses :meth:`~eodag.api.core.EODataAccessGateway.search_all` and
-  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_
+  `crunch <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_crunch.html#Filter-by-property>`_
   (:pull:`1099`).
 * Free text search available for all fields when `guessing a produc type
-  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/6_crunch.html#Filter-by-property>`_ (:pull:`1070`),
+  <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/7_crunch.html#Filter-by-property>`_ (:pull:`1070`),
   mission dates filtering support (:pull:`1222`)
 * Configurable requests ``ssl_verify`` (:pull:`1045`)
 * Download record hash independent from provider (:pull:`1023`)

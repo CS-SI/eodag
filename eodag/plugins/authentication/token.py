@@ -47,7 +47,12 @@ logger = logging.getLogger("eodag.authentication.token")
 
 
 class TokenAuth(Authentication):
-    """TokenAuth authentication plugin - fetches a token which is added to search/download requests
+    """TokenAuth authentication plugin - fetches a token which is added to search/download requests.
+
+    When using headers, if only :attr:`~eodag.config.PluginConfig.headers` is given, it will be used for both token
+    retrieve and authentication. If :attr:`~eodag.config.PluginConfig.retrieve_headers` is given, it will be used for
+    token retrieve only. If both are given, :attr:`~eodag.config.PluginConfig.retrieve_headers` will be used for token
+    retrieve and :attr:`~eodag.config.PluginConfig.headers` for authentication.
 
     :param provider: provider name
     :param config: Authentication plugin configuration:
@@ -55,6 +60,10 @@ class TokenAuth(Authentication):
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): TokenAuth
         * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``) (**mandatory**): url used to fetch
           the access token with user/password
+        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``): Dictionary containing all
+          keys/value pairs that should be added to the headers
+        * :attr:`~eodag.config.PluginConfig.retrieve_headers` (``Dict[str, str]``): Dictionary containing all
+          keys/value pairs that should be added to the headers for token retrieve only
         * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
           access token with a refresh token
         * :attr:`~eodag.config.PluginConfig.token_type` (``str``): type of the token (``json``
@@ -91,11 +100,29 @@ class TokenAuth(Authentication):
             self.config.auth_uri = self.config.auth_uri.format(
                 **self.config.credentials
             )
-            # format headers if needed (and accepts {token} to be formatted later)
+
+            # Format headers if needed with values from the credentials. Note:
+            # if only 'headers' is given, it will be used for both token retrieve and authentication.
+            # if 'retrieve_headers' is given, it will be used for token retrieve only.
+            # if both are given, 'retrieve_headers' will be used for token retrieve and 'headers' for authentication.
+
+            # If the authentication headers are undefined or None: use an empty dict.
+            # And don't format '{token}' now, it will be done later.
+            raw_headers = getattr(self.config, "headers", None) or {}
             self.config.headers = {
                 header: value.format(**{"token": "{token}", **self.config.credentials})
-                for header, value in getattr(self.config, "headers", {}).items()
+                for header, value in raw_headers.items()
             }
+
+            # If the retrieve headers are undefined, their attribute must not be set in self.config.
+            # If they are defined but empty, use an empty dict instead of None.
+            if hasattr(self.config, "retrieve_headers"):
+                raw_retrieve_headers = self.config.retrieve_headers or {}
+                self.config.retrieve_headers = {
+                    header: value.format(**self.config.credentials)
+                    for header, value in raw_retrieve_headers.items()
+                }
+
         except KeyError as e:
             raise MisconfiguredError(
                 f"Missing credentials inputs for provider {self.provider}: {e}"
@@ -166,10 +193,14 @@ class TokenAuth(Authentication):
             status_forcelist=retry_status_forcelist,
         )
 
+        # Use the headers for retrieval if defined, else the headers for authentication
+        try:
+            headers = self.config.retrieve_headers
+        except AttributeError:
+            headers = self.config.headers
+
         # append headers to req if some are specified in config
-        req_kwargs: Dict[str, Any] = {
-            "headers": dict(self.config.headers, **USER_AGENT)
-        }
+        req_kwargs: Dict[str, Any] = {"headers": dict(headers, **USER_AGENT)}
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         if self.refresh_token:

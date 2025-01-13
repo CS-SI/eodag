@@ -95,8 +95,8 @@ class S3RestDownload(Download):
         product: EOProduct,
         auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        wait: int = DEFAULT_DOWNLOAD_WAIT,
-        timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> Optional[str]:
         """Download method for S3 REST API.
@@ -130,9 +130,9 @@ class S3RestDownload(Download):
             and "storageStatus" in product.properties
             and product.properties["storageStatus"] != ONLINE_STATUS
         ):
-            self.http_download_plugin.order_download(product=product, auth=auth)
+            self.http_download_plugin._order(product=product, auth=auth)
 
-        @self._download_retry(product, wait, timeout)
+        @self._order_download_retry(product, wait, timeout)
         def download_request(
             product: EOProduct,
             auth: AuthBase,
@@ -142,9 +142,7 @@ class S3RestDownload(Download):
         ):
             # check order status
             if product.properties.get("orderStatusLink", None):
-                self.http_download_plugin.order_download_status(
-                    product=product, auth=auth
-                )
+                self.http_download_plugin._order_status(product=product, auth=auth)
 
             # get bucket urls
             bucket_name, prefix = get_bucket_name_and_prefix(

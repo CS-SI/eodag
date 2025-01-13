@@ -825,7 +825,7 @@ S3_EFR_BC002:
   keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,EFR,BC002
   sensorType: OPTICAL
   license: proprietary
-  title:  OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
+  title: OLCI Level 1B Full Resolution (version BC002) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-04-25T00:00:00Z"
   missionEndDate: "2019-10-29T00:00:00Z"
 
@@ -871,7 +871,7 @@ S3_ERR_BC002:
   keywords: OLCI,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,ERR,BC002
   sensorType: OPTICAL
   license: proprietary
-  title:  OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
+  title: OLCI Level 1B Reduced Resolution (version BC002) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-04-25T00:00:00Z"
   missionEndDate: "2019-10-29T00:00:00Z"
 
@@ -1296,7 +1296,7 @@ S3_SRA_1B_BC005:
   keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,BC005
   sensorType: RADAR
   license: proprietary
-  title:  SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
+  title: SRAL Level 1B (version BC005) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-05-05T00:00:00Z"
   missionEndDate: "2023-03-09T00:00:00Z"
 
@@ -1339,7 +1339,7 @@ S3_SRA_BS_BC005:
   keywords: SRA,SRAL,SENTINEL,SENTINEL3,S3,S3A,S3B,L1,L1B,REPROCESSED,STACK,ECHOES,BC005
   sensorType: RADAR
   license: proprietary
-  title:  SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
+  title: SRAL Level 1B Stack Echoes (version BC005) - Sentinel-3 - Reprocessed
   missionStartDate: "2016-05-05T00:00:00Z"
   missionEndDate: "2023-03-09T00:00:00Z"
 
@@ -1494,6 +1494,368 @@ S3_LAN_LI:
   license: proprietary
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
+
+# MARK: MTG
+MSG_LST:
+  abstract: |
+    The full archive of MSG/SEVIRI data was reprocessed to provide the user
+    community a consistent, homogeneous and continuous Data Record of the
+    15-min Land Surface Temperature (LST) for the period 2004-2015. This Data
+    Record was obtained with the best version of its equivalent NRT product
+    (MLST) which can also complement the time series from 2016 onwards.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L3
+  keywords: SEVIRI,L3,MSG,Vegetation,Land
+  sensorType: OPTICAL
+  license: proprietary
+  title:  Land Surface Temperature Climate Data Record - MSG
+  missionStartDate: "2021-01-21T00:00:00Z"
+
+MSG_LST_DIR:
+  abstract: |
+    Land Surface Temperature (LST) is the radiative skin temperature over land.
+    LST plays an important role in the physics of land surface as it is
+    involved in the processes of energy and water exchange with the atmosphere.
+    LST is useful for the scientific community, namely for those dealing with
+    meteorological and climate models. Accurate values of LST are also of
+    special interest in a wide range of areas related to land surface
+    processes, including meteorology, hydrology, agrometeorology, climatology
+    and environmental studies. Land Surface Emissivity (EM), a crucial
+    parameter for LST retrieval from space, is independently estimated as a
+    function of (satellite derived) Fraction of Vegetation Cover (FVC) and land
+    cover classification. In the most recent version of the dataset,
+    information on the expected deviation of LST estimates from SEVIRI/MSG with
+    respect to a reference view – here considered to be nadir view – has been
+    added to the original product (LSA-001) as an extra data layer (LSA-004).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: SEVIRI,L2,MSG,Vegetation,Land
+  sensorType: OPTICAL
+  license: proprietary
+  title:   Land Surface Temperature with Directional Effects - MSG
+  missionStartDate: "2005-01-16T00:00:00Z"
+
+MFG_GSA_57:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
+    Generation (MFG) Level 2 land surface albedo. The variables estimated are
+    black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding
+    uncertainties as explained in the Product User Guide (PUM). The data record
+    validation and limitations are provided in the Validation Report (VR). The
+    products are available in netCDF4 format. This release contains products
+    generated with Meteosat-7.
+  instrument: MVIRI
+  platform: MFG
+  platformSerialIdentifier: MFG
+  processingLevel: L2
+  keywords: MVIRI,L2,MFG,Climate,Thematic
+  sensorType: OPTICAL
+  license: proprietary
+  title: GSA Level 2 Climate Data Record Release 2 - MFG - 57 degree
+  missionStartDate: "2006-12-07T00:00:00Z"
+
+MFG_GSA_63:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
+    Generation (MFG) Level 2 land surface albedo. The variables estimated are
+    black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding
+    uncertainties as explained in the Product User Guide (PUM). The data record
+    validation and limitations are provided in the Validation Report (VR). The
+    products are available in netCDF4 format. This release contains products
+    generated with Meteosat-5.
+  instrument: MVIRI
+  platform: MFG
+  platformSerialIdentifier: MFG
+  processingLevel: L2
+  keywords: MVIRI,L2,MFG,Climate,Thematic
+  sensorType: OPTICAL
+  license: proprietary
+  title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
+  missionStartDate: "1998-07-10T00:00:00Z"
+
+MSG_MFG_GSA_0:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
+    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
+    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
+    albedo (WSA) with the corresponding uncertainties as explained in the
+    Product User Guide (PUM). The data record validation and limitations are
+    provided in the Validation Report (VR). The products are available in
+    netCDF4 format. This release contains products generated with Meteosat-2 to
+    Meteosat-10.
+  instrument: MVIRI,SEVIRI
+  platform: MFG,MSG
+  platformSerialIdentifier: MFG,MSG
+  processingLevel: L2
+  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
+  sensorType: OPTICAL
+  license: proprietary
+  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
+  missionStartDate: "1982-02-10T00:00:00Z"
+
+HIRS_FDR_1_MULTI:
+  abstract: |
+    This is Release 1 of the Fundamental Data Record (FDR) brightness
+    temperatures from the High Resolution Infrared Radiation Sounder (HIRS) on
+    board NOAA and Metop satellites. The data record covers more than 40 years
+    from 29 October 1978 to 31 December 2020. Release 1 provides recalibrated
+    Level 1c brightness temperatures based on the V4.0 calibration method
+    developed by Cao et al. (2007). This method was implemented into the
+    NWP-SAF software ATOVS and AVHRR processing Package (AAPP). This software
+    was consistently used to recalibrate and reprocess data from all HIRS
+    instruments on board TIROS-N, NOAA-06 to NOAA-19, Metop-A, and Metop-B. The
+    polygons, required for the data tailoring, show problems with non-continues
+    data. Some polygons of the HIRS data record are found to be incorrect.
+    However, this does not affect the correctness of the data itself. This is a
+    Fundamental Data Record (FDR).
+  instrument: HIRS
+  platform: Metop,TIROS,NOAA
+  platformSerialIdentifier: Metop,TIROS,NOAA
+  processingLevel: L1C
+  keywords: HIRS,L1C,HIRS,TIROS,Metop,NOAA,Sounder,FDR
+  sensorType: Sounder
+  license: proprietary
+  title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
+  missionStartDate: "1978-10-29T00:00:00Z"
+
+MSG_OCA_CDR:
+  abstract: |
+    The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
+    period from 2004 up to 2019, providing a homogenous cloud properties time
+    series. It is generated at full Meteosat repeat cycle (15 minutes)
+    fequency. Cloud properties retrieved by OCA are cloud top pressure, cloud
+    optical thickness, and cloud effective radius, together with uncertainties.
+    The OCA algorithm has been slightly adapted for climate data record
+    processing. The adaptation mainly consists in the usage of different
+    inputs, because the one used for Near Real Time (NRT) were not available
+    for the reprocessing (cloud mask, clear sky reflectance map) and also not
+    homogenous (reanalysis) over the complete time period. it extends the NRT
+    data record more than 9 years back in time. This is a Thematic Climate Data
+    Record (TCDR).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
+  sensorType: MSG
+  license: proprietary
+  title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
+  missionStartDate: "2004-01-19T00:00:00Z"
+
+S6_RADIO_OCCULTATION:
+  abstract: |
+    Jason-CS/Sentinel-6 Radio Occultation Level 1B product, providing a bending
+    angle versus impact parameter profile, as well as other relevant
+    information derived from the observation.
+  instrument: GNSS-RO
+  platform: Sentinel-6
+  platformSerialIdentifier: Sentinel-6
+  processingLevel: L1B
+  keywords: Sentinel-6,L1B,GNSS-RO,Radio,Occultation
+  sensorType: Radio Occultation
+  license: proprietary
+  title: Radio Occultation Level 1B Products - Sentinel-6
+  missionStartDate: "2021-11-19T00:00:00Z"
+
+MTG_LI_AF:
+  abstract: |
+    LI Level 2 Accumulated Flashes (AF) complements the LI Level 2 Accumulated
+    Flash Area (AFA) by providing one with the variation of the number of
+    events within those regions reported to have lightning flashes in the
+    Accumulated Flash Area (AFA). Accumulated Flashes provide users with data
+    about the mapping of the number of LI events/detections rather than the
+    mapping of flashes. One should keep in mind that the absolute value within
+    each pixel of the Accumulated Flashes has no real physical meaning; it is
+    rather a proxy for the pixel-by-pixel variation of the number of events. It
+    is worth noting that one can derive the flash rate over a region
+    encompassing a complete lightning feature (not within an FCI grid pixel) in
+    Accumulated Flashes; this stems from the definition in Accumulated
+    (gridded) data.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,AF,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Accumulated Flashes - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_LFL:
+  abstract: |
+    LI Level 2 Lightning Flashes (LFL) contains LI flashes. The definition of a
+    flash is shared by LI and GLM; collections of groups that are correlated in
+    space and time within the two windows of 330 milliseconds (temporal window)
+    and 16.5km (space window), respectively. Even if the definition of a flash
+    is not uniform among all lightning location systems, the simple fact that a
+    flash is a collection of groups/strokes correlated in space and time
+    somewhat mitigates the differences in the way different types of lightning
+    sensors interpret different lightning processes. This makes flash datasets
+    of different lightning location systems more comparable than group/stroke
+    datasets.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LFL,Lightning,Weather,Flashes
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Lightning Flashes - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_LGR:
+  abstract: |
+    LI Level 2 Lightning Groups (LGR) contains LI groups. These are closely
+    related to other similar space-born instruments. The definition of a group is
+    shared by LI, GLM and ISS-LIS groups: collections of pixel-based lightning
+    events that are acquired within the same acquisition frame and are spatially
+    clustered. LI groups provide users with information about the time-slicing
+    imaging (over the LI acquisition time, ie one millisecond) of lightning
+    optical emissions. When comparing LI groups with either GLM or ISS-LIS
+    groups, users must consider the differences in design between instruments,
+    such as integration time and spatial sampling/resolution. Both GLM and
+    ISS-LIS acquire over two milliseconds. When observing the same storm, this
+    difference in design can potentially create considerable differences in the
+    total number of groups, as well as differences between the acquisition times
+    of the groups. In addition, differences will be found also for the
+    geolocation of groups. In general, the discrepancies mentioned above are
+    expected to be of the order of a few milliseconds for the group time and of
+    the order of a few kilometres for the group geolocation.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LGR,Lightning,Weather,groups
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Lightning Groups - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_AFA:
+  abstract: |
+    LI Level 2 Accumulated Flash Area (AFA) provides the user with data about
+    flash mapping by using the area covered by the optical emission of each
+    flash in LI Level 2 Lightning Flashes (LFL). It is important to keep in
+    mind that each flash is treated as a flat (uniform) optical emission in
+    this data. Accumulated Flash Area allows one to monitor the regions within
+    a cloud top from which lightning-related optical emissions over 30 sec are
+    emerging and accumulating and to know the number of flashes that were
+    observed within the FCI grid pixels composing those regions. For example,
+    from the Accumulated Flash Area, one can derive the flash rate for each
+    pixel of the FCI 2km grid. This is a considerable improvement compared to
+    the simple description of the flash using the variable flash_footprint
+    available in Lightning Flashes.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,AFA,Lightning,Weather,Flashes,Accumulated
+  sensorType: Lightning Imager
+  license: proprietary
+  title: LI Accumulated Flash Area - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_AFR:
+  abstract: |
+    LI Level 2 Accumulated Flash Radiance (AFR) is meant to describe the
+    pixel-by-pixel variation of the optical emission accumulated over 30 sec
+    within the FCI 2km grid. This stems from the events contributing to LI
+    Level 2 Accumulated Flashes (AF) (each one contributing with its radiance)
+    and it can be thought of as the 'appearance' of the accumulated optical
+    emissions over 30 sec as seen by LI.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,AFR,Lightning,Weather,Flashes,Accumulated,Radiance
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Accumulated Flash Radiance - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_LI_LEF:
+  abstract: |
+    LI Level 2 Ligthning Events Filtered (LEF) is one of the initial products,
+    along with Lightning Flashes (LFL) and Lightning Groups (LGR), and provides
+    the finest scale over which LI can monitor lightning activity. Lightning
+    Flashes and Lightning Groups contain two variables that provide the size of
+    each group and flash in units of LI pixels, ie number_of_events and
+    flash_footprint, respectively. To compute the exact physical size of a
+    group/flash, users should use the information available in Ligthning Events
+    Filtered. One can derive such a descriptor only by knowing which events
+    compose a group/flash and employing the physical size of the projection of
+    each event on the Earth's surface for the computation.
+  instrument: LI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,LI,LEF,Lightning,Weather,Flashes,Filtered
+  sensorType: Lightning Imager
+  license: proprietary
+  title:  LI Lightning Events Filtered - MTG - 0 degree
+  missionStartDate: "2024-07-08T00:00:00Z"
+
+MTG_FCI_FDHSI:
+  abstract: |
+    The rectified (Level 1c) Meteosat FCI full disc image data in normal
+    spatial (FDHSI) resolution. The FCI instrument consists of 16 imaging
+    spectral channels ranging from 0.4 µm to 13.3 µm with the channel at 3.8 µm
+    having an extended dynamic range dedicated to fire monitoring. The spatial
+    resolution is 1km for visible and near-infrared channels and 2 km for
+    infrared channels. FCI Level 1c rectified radiance dataset consists of a
+    set of files that contain the level 1c science data rectified to a
+    reference grid together with the auxiliary data associated with the
+    processing configuration and the quality assessment of the dataset. Level
+    1c image data here corresponds to initially geolocated and radiometrically
+    pre-processed image data, without full georeferencing and cal/val in
+    spatial and spectral domains applied. The data are ready for further
+    processing and testing, e.g. value chains and initial tests for extracting
+    meteorological products, however, we generally do not recommend the
+    generation of Level 2 products due to known limitations in the Level 1c
+    data.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L1
+  keywords: MTG,L1,FCI,FDHSI,Atmosphere,Ocean,Land
+  sensorType: Imager
+  license: proprietary
+  title: FCI Level 1c Normal Resolution Image Data - MTG - 0 degree
+  missionStartDate: "2024-09-24T00:00:00Z"
+
+MTG_FCI_HRFI:
+  abstract: |
+    The rectified (Level 1c) Meteosat FCI full disc image data in high spatial
+    (HRFI) resolution.The FCI instrument consists of 16 imaging spectral
+    channels ranging from 0.4 µm to 13.3 µm with the channel at 3.8 µm having
+    an extended dynamic range dedicated to fire monitoring. The high-resolution
+    HRFI dataset has 4 spectral channels at VIS 0.6 µm, NIR 2.2 µm, IR 3.8 µm
+    and IR 13.3 µm with a spatial resolution of 0.5 km for visible and
+    near-infrared channels and 1 km for infrared channels. FCI Level 1c
+    rectified radiance dataset consists of a set of files that contain the
+    level 1c science data rectified to a reference grid together with the
+    auxiliary data associated with the processing configuration and the quality
+    assessment of the dataset. Level 1c image data here corresponds to
+    initially geolocated and radiometrically pre-processed image data, without
+    full georeferencing and cal/val in spatial and spectral domains applied.
+    The data are ready for further processing and testing, e.g. value chains
+    and initial tests for extracting meteorological products, however, we
+    generally do not recommend the generation of Level 2 products due to known
+    limitations in the Level 1c data. A selection of single channel data are
+    visualised in our EUMETView service.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L1
+  keywords: MTG,L1,FCI,HRFI,Atmosphere,Ocean,Land
+  sensorType: Imager
+  license: proprietary
+  title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
+  missionStartDate: "2024-09-24T00:00:00Z"
 
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
@@ -1680,7 +2042,7 @@ S5P_L1B_IR_UVN:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD1:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 1.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1701,7 +2063,7 @@ S5P_L1B_RA_BD1:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD2:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 2.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1722,7 +2084,7 @@ S5P_L1B_RA_BD2:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD3:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 3.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1743,7 +2105,7 @@ S5P_L1B_RA_BD3:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD4:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 4.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1764,7 +2126,7 @@ S5P_L1B_RA_BD4:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD5:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 5.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1785,7 +2147,7 @@ S5P_L1B_RA_BD5:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD6:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 6.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1806,7 +2168,7 @@ S5P_L1B_RA_BD6:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD7:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 7.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -1827,7 +2189,7 @@ S5P_L1B_RA_BD7:
   missionStartDate: "2017-10-13T00:00:00Z"
 
 S5P_L1B_RA_BD8:
-  abstract:  |
+  abstract: |
     Sentinel-5 Precursor Level 1B Radiances for spectral band 8.
     TROPOMI utilises a single telescope to form an image of the target area onto a rectangular slit that acts as the
     entrance slit of the spectrometer system. There are four different spectrometers, each with its own optics and
@@ -2375,7 +2737,7 @@ CAMS_GAC_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS global atmospheric composition forecasts
-  missionStartDate: "2015-01-02T00:00:00Z"
+  missionStartDate: "2015-01-01T00:00:00Z"
 
 CAMS_EU_AIR_QUALITY_FORECAST:
   abstract: |
@@ -2396,7 +2758,7 @@ CAMS_EU_AIR_QUALITY_FORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: CAMS European air quality forecasts
-  missionStartDate: "2020-08-26T00:00:00Z"
+  missionStartDate: "2022-01-03T00:00:00Z"
 
 CAMS_GFE_GFAS:
   abstract: |
@@ -2699,7 +3061,7 @@ ERA5_SL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5 hourly data on single levels from 1940 to present
-  missionStartDate: "1940-01-01T00:00:00Z"
+  missionStartDate: "1940-01-01T09:00:00Z"
 
 ERA5_SL_MONTHLY:
   abstract: |
@@ -2866,7 +3228,7 @@ ERA5_LAND:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: ERA5-Land hourly data from 1950 to present
-  missionStartDate: "1950-01-01T01:00:00Z"
+  missionStartDate: "1950-01-02T00:00:00Z"
 
 ERA5_LAND_MONTHLY:
   abstract: |
@@ -2974,7 +3336,7 @@ GLACIERS_DIST_RANDOLPH:
   license: proprietary
   title: Glaciers distribution data from the Randolph Glacier Inventory for year 2000
   missionStartDate: "2000-01-01T00:00:00Z"
-  missionEndDate:  "2000-12-31T23:59:00Z"
+  missionEndDate: "2000-12-31T23:59:00Z"
 
 GRIDDED_GLACIERS_MASS_CHANGE:
   abstract: |
@@ -3014,7 +3376,6 @@ GRIDDED_GLACIERS_MASS_CHANGE:
   title: Glacier mass change gridded data from 1976 to present derived from the Fluctuations of Glaciers Database
   missionStartDate: "1975-01-01T00:00:00Z"
 
-
 SATELLITE_CARBON_DIOXIDE:
   abstract: |
     This dataset provides observations of atmospheric carbon dioxide (CO2)\namounts obtained from observations
@@ -3053,7 +3414,7 @@ SATELLITE_CARBON_DIOXIDE:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Carbon dioxide data from 2002 to present derived from satellite observations
-  missionStartDate: "2002-10-01T00:00:00Z"
+  missionStartDate: "2003-01-10T00:00:00Z"
   missionEndDate: "2022-12-31T23:59:59"
 
 SATELLITE_FIRE_BURNED_AREA:
@@ -3124,8 +3485,8 @@ SATELLITE_METHANE:
   keywords: ECMWF,CDS,C3S,methane
   sensorType: ATMOSPHERIC
   license: proprietary
-  title: Methane data from 2002 to present derived from satellite observations
-  missionStartDate: "2002-10-01T00:00:00Z"
+  title: Methane data from 2003 to present derived from satellite observations
+  missionStartDate: "2003-01-06T00:00:00Z"
 
 SATELLITE_SEA_ICE_EDGE_TYPE:
   abstract: |
@@ -3634,7 +3995,7 @@ FIRE_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Fire danger indices historical data from the Copernicus Emergency Management Service
-  missionStartDate: "1940-01-03T00:00:00Z"
+  missionStartDate: "1940-03-01T00:00:00Z"
 
 FIRE_SEASONAL:
   abstract: |
@@ -3736,8 +4097,8 @@ GLOFAS_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the Global Flood Awareness System
-  missionStartDate: "2003-03-27T00:00:00Z"
-  missionEndDate: "2018-12-30T23:59:00Z"
+  missionStartDate: "1999-01-03T00:00:00Z"
+  missionEndDate: "2023-11-25T23:59:59Z"
 
 GLOFAS_SEASONAL:
   abstract: |
@@ -3767,7 +4128,7 @@ GLOFAS_SEASONAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecasts of river discharge and related data by the Global Flood Awareness System
-  missionStartDate: "2021-06-01T00:00:00Z"
+  missionStartDate: "2020-12-01T00:00:00Z"
 
 GLOFAS_SEASONAL_REFORECAST:
   abstract: |
@@ -3840,7 +4201,6 @@ EFAS_FORECAST:
   license: proprietary
   title: River discharge and related forecasted data by the European Flood Awareness System
   missionStartDate: "2018-10-11T00:00:00Z"
-  missionEndDate: "2023-09-19T00:00:00Z"
 
 EFAS_HISTORICAL:
   abstract: |
@@ -3873,7 +4233,7 @@ EFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the European Flood Awareness System
-  missionStartDate: "1992-01-02T00:00:00Z"
+  missionStartDate: "1991-01-01T00:00:00Z"
 
 EFAS_REFORECAST:
   abstract: |
@@ -3909,8 +4269,8 @@ EFAS_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the European Flood Awareness System
-  missionStartDate: "2003-03-27T00:00:00Z"
-  missionEndDate: "2018-12-30T00:00:00Z"
+  missionStartDate: "1999-01-03T00:00:00Z"
+  missionEndDate: "2023-11-21T23:59:59Z"
 
 EFAS_SEASONAL:
   abstract: |
@@ -4258,8 +4618,6 @@ EEA_DAILY_VI:
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
 
-
-
 # MARK: METEOBLUE ----------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
   abstract: |
@@ -4310,7 +4668,8 @@ DT_EXTREMES:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Weather and Geophysical Extremes Digital Twin (DT)
-  missionStartDate: "2020-01-01T00:00:00Z"
+  missionStartDate: "2024-04-04T00:00:00Z"
+  missionEndDate: "2024-06-07T00:00:00Z"
 DT_CLIMATE_ADAPTATION:
   abstract: |
     The Digital Twin on Climate Change Adaptation support the analysis and testing of

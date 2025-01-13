@@ -33,7 +33,6 @@ from requests.models import Response as RequestsResponse
 import eodag
 from eodag import EOProduct
 from eodag.api.product.metadata_mapping import (
-    DEFAULT_METADATA_MAPPING,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
     ONLINE_STATUS,
@@ -54,11 +53,7 @@ from eodag.rest.constants import (
 from eodag.rest.errors import ResponseSearchError
 from eodag.rest.stac import StacCatalog, StacCollection, StacCommon, StacItem
 from eodag.rest.types.eodag_search import EODAGSearch
-from eodag.rest.types.queryables import (
-    QueryablesGetParams,
-    StacQueryableProperty,
-    StacQueryables,
-)
+from eodag.rest.types.queryables import QueryablesGetParams, StacQueryables
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils import (
     Cruncher,
@@ -193,28 +188,18 @@ def search_stac_items(
         results.number_matched = len(results)
         total = len(results)
 
-    elif time_interval_overlap(eodag_args, catalog):
-        criteria = {
-            **catalog.search_args,
-            **eodag_args.model_dump(exclude_none=True),
-        }
+    else:
+        criteria = eodag_args.model_dump(exclude_none=True)
         # remove provider prefixes
-        stac_extensions = stac_config["extensions"]
-        keys_to_update = {}
-        for key in criteria:
+        # quickfix for ecmwf fake extension to not impact items creation
+        stac_extensions = list(stac_config["extensions"].keys()) + ["ecmwf"]
+        for key in list(criteria):
             if ":" in key and key.split(":")[0] not in stac_extensions:
                 new_key = key.split(":")[1]
-                keys_to_update[key] = new_key
-        for key, new_key in keys_to_update.items():
-            criteria[new_key] = criteria[key]
-            criteria.pop(key)
+                criteria[new_key] = criteria.pop(key)
 
         results = eodag_api.search(count=True, **criteria)
         total = results.number_matched or 0
-    else:
-        # return empty results
-        results = SearchResult([], 0)
-        total = 0
 
     if len(results) == 0 and results.errors:
         raise ResponseSearchError(results.errors)
@@ -342,13 +327,11 @@ def _order_and_update(
     if (
         product.properties.get("storageStatus") != ONLINE_STATUS
         and NOT_AVAILABLE in product.properties.get("orderStatusLink", "")
-        and hasattr(product.downloader, "order_download")
+        and hasattr(product.downloader, "_order")
     ):
         # first order
         logger.debug("Order product")
-        order_status_dict = product.downloader.order_download(
-            product=product, auth=auth
-        )
+        order_status_dict = product.downloader._order(product=product, auth=auth)
         query_args.update(order_status_dict or {})
 
     if (
@@ -359,11 +342,11 @@ def _order_and_update(
         product.properties["storageStatus"] = STAGING_STATUS
 
     if product.properties.get("storageStatus") == STAGING_STATUS and hasattr(
-        product.downloader, "order_download_status"
+        product.downloader, "_order_status"
     ):
         # check order status if needed
         logger.debug("Checking product order status")
-        product.downloader.order_download_status(product=product, auth=auth)
+        product.downloader._order_status(product=product, auth=auth)
 
     if product.properties.get("storageStatus") != ONLINE_STATUS:
         raise NotAvailableError("Product is not available yet")
@@ -417,7 +400,10 @@ async def all_collections(
         # # parse f-strings
         format_args = deepcopy(stac_config)
         format_args["collections"].update(
-            {"url": stac_collection.url, "root": stac_collection.root}
+            {
+                "url": stac_collection.url,
+                "root": stac_collection.root,
+            }
         )
 
         collections["links"] = [
@@ -495,7 +481,10 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
     # check if time filtering appears both in search arguments and catalog
     # (for catalogs built by date: i.e. `year/2020/month/05`)
     if not set(["start", "end"]) <= set(eodag_args.model_dump().keys()) or not set(
-        ["start", "end"]
+        [
+            "start",
+            "end",
+        ]
     ) <= set(catalog.search_args.keys()):
         return True
 
@@ -591,51 +580,87 @@ async def get_queryables(
 
     async def _fetch() -> Dict[str, Any]:
         python_queryables = eodag_api.list_queryables(
-            provider=provider, **params.model_dump(exclude_none=True, by_alias=True)
+            provider=provider,
+            fetch_providers=False,
+            **params.model_dump(exclude_none=True, by_alias=True),
         )
-        python_queryables.pop("start")
-        python_queryables.pop("end")
 
-        # productType and id are already default in stac collection and id
-        python_queryables.pop("productType", None)
-        python_queryables.pop("id", None)
-
-        stac_queryables: Dict[str, StacQueryableProperty] = deepcopy(
-            StacQueryables.default_properties
+        python_queryables_json = python_queryables.get_model().model_json_schema(
+            by_alias=True
         )
+
+        properties: Dict[str, Any] = python_queryables_json["properties"]
+        required: List[str] = python_queryables_json.get("required") or []
+
+        # productType is either simply removed or replaced by collection later.
+        if "productType" in properties:
+            properties.pop("productType")
+        if "productType" in required:
+            required.remove("productType")
+
+        stac_properties: Dict[str, Any] = {}
+
         # get stac default properties to set prefixes
         stac_item_properties = list(stac_config["item"]["properties"].values())
-        stac_item_properties.extend(list(stac_queryables.keys()))
-        ignore = stac_config["metadata_ignore"]
-        stac_item_properties.extend(ignore)
-        default_mapping = DEFAULT_METADATA_MAPPING.keys()
-        for param, queryable in python_queryables.items():
-            if param in default_mapping and not any(
+        stac_item_properties.extend(stac_config["metadata_ignore"])
+        for param, queryable in properties.items():
+            # convert key to STAC format
+            if param in OSEO_METADATA_MAPPING.keys() and not any(
                 param in str(prop) for prop in stac_item_properties
             ):
                 param = f"oseo:{param}"
             stac_param = EODAGSearch.to_stac(param, stac_item_properties, provider)
-            # only keep "datetime" queryable for dates
-            if stac_param in stac_queryables or stac_param in (
-                "start_datetime",
-                "end_datetime",
-            ):
-                continue
 
-            stac_queryables[
-                stac_param
-            ] = StacQueryableProperty.from_python_field_definition(
-                stac_param, queryable
+            queryable["title"] = stac_param.split(":")[-1]
+
+            # remove null default values
+            if not queryable.get("default"):
+                queryable.pop("default", None)
+
+            stac_properties[stac_param] = queryable
+            required = list(map(lambda x: x.replace(param, stac_param), required))
+
+        # due to certain metadata mappings we might only get end_datetime but we can
+        # assume that start_datetime is also available
+        if (
+            "end_datetime" in stac_properties
+            and "start_datetime" not in stac_properties
+        ):
+            stac_properties["start_datetime"] = deepcopy(
+                stac_properties["end_datetime"]
             )
+            stac_properties["start_datetime"]["title"] = "start_datetime"
+        # if we can search by start_datetime we can search by datetime
+        if "start_datetime" in stac_properties:
+            stac_properties["datetime"] = StacQueryables.possible_properties[
+                "datetime"
+            ].model_dump()
 
-        if params.collection:
-            stac_queryables.pop("collection")
+        # format spatial extend properties to STAC format.
+        if "geometry" in stac_properties:
+            stac_properties["bbox"] = StacQueryables.possible_properties[
+                "bbox"
+            ].model_dump()
+            stac_properties["geometry"] = StacQueryables.possible_properties[
+                "geometry"
+            ].model_dump()
+
+        if not params.collection:
+            stac_properties["collection"] = StacQueryables.default_properties[
+                "collection"
+            ].model_dump()
+
+        additional_properties = python_queryables.additional_properties
+        description = "Queryable names for the EODAG STAC API Item Search filter. "
+        description += python_queryables.additional_information
 
         return StacQueryables(
             q_id=request.state.url,
-            additional_properties=bool(not params.collection),
-            properties=stac_queryables,
-        ).model_dump(mode="json", by_alias=True)
+            additional_properties=additional_properties,
+            properties=stac_properties,
+            required=required or None,
+            description=description,
+        ).model_dump(mode="json", by_alias=True, exclude_none=True)
 
     hashed_queryables = hash(params.model_dump_json())
     return await cached(
@@ -701,11 +726,16 @@ def eodag_api_init() -> None:
             constellation: Union[str, List[str]] = ext_col.get("summaries", {}).get(
                 "constellation"
             )
+            processing_level: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+                "processing:level"
+            )
             # Check if platform or constellation are lists and join them into a string if they are
             if isinstance(platform, list):
                 platform = ",".join(platform)
             if isinstance(constellation, list):
                 constellation = ",".join(constellation)
+            if isinstance(processing_level, list):
+                processing_level = ",".join(processing_level)
 
             update_fields = {
                 "title": ext_col.get("title"),
@@ -716,7 +746,7 @@ def eodag_api_init() -> None:
                 ),
                 "platform": constellation,
                 "platformSerialIdentifier": platform,
-                "processingLevel": ext_col.get("summaries", {}).get("processing:level"),
+                "processingLevel": processing_level,
                 "license": ext_col["license"],
                 "missionStartDate": ext_col["extent"]["temporal"]["interval"][0][0],
                 "missionEndDate": ext_col["extent"]["temporal"]["interval"][-1][1],
