@@ -4097,8 +4097,8 @@ GLOFAS_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the Global Flood Awareness System
-  missionStartDate: "2003-03-27T00:00:00Z"
-  missionEndDate: "2018-12-30T23:59:00Z"
+  missionStartDate: "1999-01-03T00:00:00Z"
+  missionEndDate: "2023-11-25T23:59:59Z"
 
 GLOFAS_SEASONAL:
   abstract: |
@@ -4128,7 +4128,7 @@ GLOFAS_SEASONAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Seasonal forecasts of river discharge and related data by the Global Flood Awareness System
-  missionStartDate: "2021-06-01T00:00:00Z"
+  missionStartDate: "2020-12-01T00:00:00Z"
 
 GLOFAS_SEASONAL_REFORECAST:
   abstract: |
@@ -4233,7 +4233,7 @@ EFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: River discharge and related historical data from the European Flood Awareness System
-  missionStartDate: "1992-01-02T00:00:00Z"
+  missionStartDate: "1991-01-01T00:00:00Z"
 
 EFAS_REFORECAST:
   abstract: |
@@ -4269,8 +4269,8 @@ EFAS_REFORECAST:
   sensorType: ATMOSPHERIC
   license: proprietary
   title: Reforecasts of river discharge and related data by the European Flood Awareness System
-  missionStartDate: "2003-03-27T00:00:00Z"
-  missionEndDate: "2018-12-30T00:00:00Z"
+  missionStartDate: "1999-01-03T00:00:00Z"
+  missionEndDate: "2023-11-21T23:59:59Z"
 
 EFAS_SEASONAL:
   abstract: |
