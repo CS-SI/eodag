@@ -874,9 +874,6 @@ class ECMWFSearch(PostJsonSearch):
                 if fields and (comment := fields[0].get("comment")):
                     prop["description"] = comment
 
-                if d := details.get("default"):
-                    default = default or (d[0] if fields else d)
-
             if name == "area" and isinstance(default, dict):
                 default = list(default.values())
 
