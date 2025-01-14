@@ -2983,6 +2983,78 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             )
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_search_by_id_no_dates_in_id(
+        self, mock_requests_get
+    ):
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        search_plugin.config.products = {
+            "PRODUCT_A": {
+                "productType": "PRODUCT_A",
+                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+            }
+        }
+
+        with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
+            s3_stub.return_value = self.s3
+            stubber = Stubber(self.s3)
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response1,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDN_20210101.nc",
+                    "Prefix": "native/PRODUCT_A/dataset-number-one",
+                },
+            )
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response3,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-two",
+                    "Marker": "native/PRODUCT_A/dataset-number-two/item_846282_niznjvnqkrf.nc",
+                },
+            )
+            stubber.activate()
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A", id="item_846282_niznjvnqkrf"
+            )
+            mock_requests_get.assert_has_calls(
+                calls=[
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                    ),
+                    call().json(),
+                ]
+            )
+            self.assertEqual(1, num_total)
+            self.assertEqual("item_846282_niznjvnqkrf", result[0].properties["id"])
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):
         exc = requests.RequestException()
         exc.errno = 404
