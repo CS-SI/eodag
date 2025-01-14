@@ -82,6 +82,8 @@ COLLECTION_PROPERTIES = [
     "missionEndDate",
     "keywords",
     "stacCollection",
+    "alias",
+    "productType",
 ]
 IGNORED_ITEM_PROPERTIES = [
     "_id",
