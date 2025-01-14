@@ -656,7 +656,9 @@ class ECMWFSearch(PostJsonSearch):
                     "completionTimeFromAscendingNode",
                     "geom",
                 }
-                and keyword.replace("ecmwf:", "") not in available_values
+                and keyword not in [f["name"] for f in form]
+                and keyword.replace("ecmwf:", "")
+                not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
                 raise ValidationError(f"{keyword} is not a queryable parameter")
 
