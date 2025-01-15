@@ -4785,6 +4785,7 @@
   search: !plugin
     type: ECMWFSearch
     ssl_verify: true
+    dates_required: True
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
