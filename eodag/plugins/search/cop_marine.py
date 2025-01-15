@@ -186,10 +186,20 @@ class CopMarineSearch(StaticStacSearch):
         dataset_item: Dict[str, Any],
         collection_dict: Dict[str, Any],
     ):
+        # try to find date(s) in product id
+        item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", product_id)
+        if not item_dates:
+            item_dates = re.findall(r"_(\d{4})(0[1-9]|1[0-2])", product_id)
+        use_dataset_dates = not bool(item_dates)
         for obj in collection_objects["Contents"]:
             if product_id in obj["Key"]:
                 return self._create_product(
-                    product_type, obj["Key"], s3_url, dataset_item, collection_dict
+                    product_type,
+                    obj["Key"],
+                    s3_url,
+                    dataset_item,
+                    collection_dict,
+                    use_dataset_dates,
                 )
         return None
 
