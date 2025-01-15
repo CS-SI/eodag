@@ -2304,9 +2304,9 @@ class EODataAccessGateway:
                 **model_fields_to_annotated(CommonQueryables.model_fields),
             )
 
-        queryables: QueryablesDict = QueryablesDict(
-            additional_properties=False, additional_information="", **{}
-        )
+        additional_properties = False
+        additional_information = []
+        queryable_properties: dict[str, Any] = {}
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             # attach product type config
@@ -2339,18 +2339,20 @@ class EODataAccessGateway:
                 pt_alias,
             )
 
-            information = queryables.additional_information
             if plugin_queryables.additional_information:
-                information += f"{provider}: {plugin_queryables.additional_information}"
-
-            queryables = QueryablesDict(
-                queryables.additional_properties
-                or plugin_queryables.additional_properties,
-                information,
-                **{**plugin_queryables, **queryables},
+                additional_information.append(
+                    f"{plugin.provider}: {plugin_queryables.additional_information}"
+                )
+            queryable_properties = {**plugin_queryables, **queryable_properties}
+            additional_properties = (
+                additional_properties or plugin_queryables.additional_properties
             )
 
-        return queryables
+        return QueryablesDict(
+            additional_properties=additional_properties,
+            additional_information=" | ".join(additional_information),
+            **queryable_properties,
+        )
 
     def available_sortables(self) -> Dict[str, Optional[ProviderSortables]]:
         """For each provider, gives its available sortable parameter(s) and its maximum
