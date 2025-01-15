@@ -605,6 +605,46 @@ def rename_subfolder(dirpath: str, name: str) -> None:
     )
 
 
+def rename_with_version(file_path: str, suffix: str = "old") -> str:
+    """
+    Renames a file by appending and incrementing a version number if a conflict exists.
+
+    :param file_path: full path of the file to rename
+    :param suffix: suffix preceding version number in case of name conflict
+    :returns: new file path with the version appended or incremented
+
+    Example:
+
+    >>> import tempfile
+    >>> from pathlib import Path
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     file_path = (Path(tmpdir) / "foo.txt")
+    ...     file_path.touch()
+    ...     (Path(tmpdir) / "foo_old1.txt").touch()
+    ...     expected = str(Path(tmpdir) / "foo_old2.txt")
+    ...     assert expected == rename_with_version(str(file_path))
+
+    """
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"The file '{file_path}' does not exist.")
+
+    dir_path, file_name = os.path.split(file_path)
+    file_base, file_ext = os.path.splitext(file_name)
+
+    new_file_path = file_path
+
+    # loop and iterate on conflicting existing files
+    version = 0
+    while os.path.exists(new_file_path):
+        version += 1
+        new_file_name = f"{file_base}_{suffix}{version}{file_ext}"
+        new_file_path = os.path.join(dir_path, new_file_name)
+
+    # Rename the file
+    os.rename(file_path, new_file_path)
+    return new_file_path
+
+
 def format_dict_items(
     config_dict: Dict[str, Any], **format_variables: Any
 ) -> Dict[Any, Any]:

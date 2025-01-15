@@ -72,6 +72,7 @@ from eodag.utils import (
     guess_file_type,
     parse_header,
     path_to_uri,
+    rename_with_version,
     sanitize,
     string_to_jsonpath,
     uri_to_path,
@@ -666,6 +667,8 @@ class HTTPDownload(Download):
                 os.path.dirname(path),
                 sanitize(product.properties["title"]),
             )
+            if os.path.isfile(new_fs_path):
+                rename_with_version(new_fs_path)
             if not os.path.isdir(new_fs_path):
                 os.makedirs(new_fs_path)
             shutil.move(path, new_fs_path)
