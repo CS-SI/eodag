@@ -794,7 +794,7 @@ def dict_items_recursive_apply(
             )
         elif any(isinstance(dict_v, t) for t in (list, tuple)):
             result_dict[dict_k] = list_items_recursive_apply(
-                dict_v, apply_method, **apply_method_parameters
+                list(dict_v), apply_method, **apply_method_parameters
             )
         else:
             result_dict[dict_k] = apply_method(
