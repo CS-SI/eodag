@@ -237,6 +237,8 @@ def strip_quotes(value: Any) -> Any:
     'abc'
     >>> strip_quotes(["'abc'", '"def'])
     ['abc', 'def']
+    >>> strip_quotes({"'abc'": 'def"'})
+    {'abc': 'def'}
 
     :param value: value from which quotes should be removed (should be either str or list)
     :return: value without quotes
@@ -245,7 +247,7 @@ def strip_quotes(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [strip_quotes(v) for v in value]
     elif isinstance(value, dict):
-        raise NotImplementedError("Dict value is not supported.")
+        return {strip_quotes(k): strip_quotes(v) for k, v in value.items()}
     else:
         return str(value).strip("'\"")
 
