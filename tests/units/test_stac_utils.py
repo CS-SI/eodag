@@ -162,7 +162,7 @@ class TestStacUtils(unittest.TestCase):
 
     def test_list_to_str_list(self):
         """
-        list_to_str_list convert a List[Any] to a List[str].
+        list_to_str_list convert a list[Any] to a list[str].
         It raises a TypeError if the convertion cannot be done
         """
         self.assertEqual(self.rest_utils.list_to_str_list([1, 2, 3]), ["1", "2", "3"])

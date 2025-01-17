@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, List, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import requests
 
@@ -226,7 +226,7 @@ class DataRequestSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """
         performs the search for a provider where several steps are required to fetch the data
         """
@@ -454,14 +454,14 @@ class DataRequestSearch(Search):
         data_request_id: str,
         product_type: str,
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], int]:
+    ) -> tuple[list[EOProduct], int]:
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]
         logger.debug(
             "Adapting %s plugin results to eodag product representation" % len(results)
         )
-        products: List[EOProduct] = []
+        products: list[EOProduct] = []
         for result in results:
             product = EOProduct(
                 self.provider,

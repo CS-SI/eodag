@@ -56,7 +56,6 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Type,
@@ -766,10 +765,10 @@ def update_nested_dict(
 
 
 def items_recursive_apply(
-    input_obj: Union[dict[Any, Any], List[Any]],
+    input_obj: Union[dict[Any, Any], list[Any]],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> Union[dict[Any, Any], List[Any]]:
+) -> Union[dict[Any, Any], list[Any]]:
     """Recursive apply method to items contained in input object (dict or list)
 
     >>> items_recursive_apply(
@@ -843,10 +842,10 @@ def dict_items_recursive_apply(
 
 
 def list_items_recursive_apply(
-    config_list: List[Any],
+    config_list: list[Any],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> List[Any]:
+) -> list[Any]:
     """Recursive apply method to list elements
 
     >>> list_items_recursive_apply(
@@ -879,8 +878,8 @@ def list_items_recursive_apply(
 
 
 def items_recursive_sort(
-    input_obj: Union[List[Any], dict[Any, Any]],
-) -> Union[List[Any], dict[Any, Any]]:
+    input_obj: Union[list[Any], dict[Any, Any]],
+) -> Union[list[Any], dict[Any, Any]]:
     """Recursive sort dict items contained in input object (dict or list)
 
     >>> items_recursive_sort(
@@ -927,7 +926,7 @@ def dict_items_recursive_sort(config_dict: dict[Any, Any]) -> dict[Any, Any]:
     return dict(sorted(result_dict.items()))
 
 
-def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
+def list_items_recursive_sort(config_list: list[Any]) -> list[Any]:
     """Recursive sort dicts in list elements
 
     >>> list_items_recursive_sort(["b", {2: 0, 0: 1, 1: 2}])
@@ -936,7 +935,7 @@ def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
     :param config_list: Input list containing nested lists/dicts
     :returns: Updated list
     """
-    result_list: List[Any] = deepcopy(config_list)
+    result_list: list[Any] = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_sort(list_v)
@@ -1082,7 +1081,7 @@ def parse_jsonpath(
         return jsonpath_obj
 
 
-def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, dict[Any, Any]]:
+def nested_pairs2dict(pairs: Union[list[Any], Any]) -> Union[Any, dict[Any, Any]]:
     """Create a dict using nested pairs
 
     >>> nested_pairs2dict([["foo", [["bar", "baz"]]]])
@@ -1104,7 +1103,7 @@ def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, dict[Any, Any]
 
 
 def get_geometry_from_various(
-    locations_config: List[dict[str, Any]] = [], **query_args: Any
+    locations_config: list[dict[str, Any]] = [], **query_args: Any
 ) -> BaseGeometry:
     """Creates a ``shapely.geometry`` using given query kwargs arguments
 
@@ -1290,12 +1289,12 @@ def cached_yaml_load(config_path: str) -> dict[str, Any]:
 
 
 @functools.lru_cache()
-def _mutable_cached_yaml_load_all(config_path: str) -> List[Any]:
+def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
     with open(config_path, "r") as fh:
         return list(yaml.load_all(fh, Loader=yaml.Loader))
 
 
-def cached_yaml_load_all(config_path: str) -> List[Any]:
+def cached_yaml_load_all(config_path: str) -> list[Any]:
     """Cached :func:`yaml.load_all`
 
     Load all configurations stored in the configuration file as separated yaml documents
@@ -1370,7 +1369,7 @@ def deepcopy(sth: Any) -> Any:
     _dispatcher: dict[Type[Any], Callable[..., Any]] = {}
 
     def _copy_list(
-        input_list: List[Any], dispatch: dict[Type[Any], Callable[..., Any]]
+        input_list: list[Any], dispatch: dict[Type[Any], Callable[..., Any]]
     ):
         ret = input_list.copy()
         for idx, item in enumerate(ret):

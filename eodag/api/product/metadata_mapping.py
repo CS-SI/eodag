@@ -23,17 +23,7 @@ import logging
 import re
 from datetime import datetime, timedelta
 from string import Formatter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AnyStr,
-    Callable,
-    Iterator,
-    List,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, AnyStr, Callable, Iterator, Optional, Union, cast
 
 import geojson
 import orjson
@@ -86,8 +76,8 @@ DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 
 def get_metadata_path(
-    map_value: Union[str, List[str]],
-) -> tuple[Union[List[str], None], str]:
+    map_value: Union[str, list[str]],
+) -> tuple[Union[list[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
 
@@ -135,12 +125,12 @@ def get_metadata_path(
     return None, path
 
 
-def get_metadata_path_value(map_value: Union[str, List[str]]) -> str:
+def get_metadata_path_value(map_value: Union[str, list[str]]) -> str:
     """Get raw metadata path without converter"""
     return map_value[1] if isinstance(map_value, list) else map_value
 
 
-def get_search_param(map_value: List[str]) -> str:
+def get_search_param(map_value: list[str]) -> str:
     """See :func:`~eodag.api.product.metadata_mapping.get_metadata_path`
 
     :param map_value: The value originating from the definition of `metadata_mapping`
@@ -333,7 +323,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return wkt_value
 
         @staticmethod
-        def convert_to_bounds_lists(input_geom: BaseGeometry) -> List[List[float]]:
+        def convert_to_bounds_lists(input_geom: BaseGeometry) -> list[list[float]]:
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
                 # sort with larger one at first (stac-browser only plots first one)
@@ -343,7 +333,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return [list(input_geom.bounds[0:4])]
 
         @staticmethod
-        def convert_to_bounds(input_geom_unformatted: Any) -> List[float]:
+        def convert_to_bounds(input_geom_unformatted: Any) -> list[float]:
             input_geom = get_geometry_from_various(geometry=input_geom_unformatted)
             if isinstance(input_geom, MultiPolygon):
                 geoms = [geom for geom in input_geom.geoms]
@@ -363,7 +353,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return list(input_geom.bounds[0:4])
 
         @staticmethod
-        def convert_to_nwse_bounds(input_geom: BaseGeometry) -> List[float]:
+        def convert_to_nwse_bounds(input_geom: BaseGeometry) -> list[float]:
             if isinstance(input_geom, str):
                 input_geom = shapely.wkt.loads(input_geom)
             return list(input_geom.bounds[-1:] + input_geom.bounds[:-1])
@@ -447,7 +437,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                         else:
                             yield e
 
-                polygons_list: List[Polygon] = []
+                polygons_list: list[Polygon] = []
                 for elem in flatten_elements(georss[0]):
                     coords_list = elem.text.split()
                     polygon_args = [
@@ -512,8 +502,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_recursive_sub_str(
-            input_obj: Union[dict[Any, Any], List[Any]], args: str
-        ) -> Union[dict[Any, Any], List[Any]]:
+            input_obj: Union[dict[Any, Any], list[Any]], args: str
+        ) -> Union[dict[Any, Any], list[Any]]:
             old, new = ast.literal_eval(args)
             return items_recursive_apply(
                 input_obj,
@@ -615,7 +605,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_split_id_into_s1_params(product_id: str) -> dict[str, str]:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
+            parts: list[str] = re.split(r"_(?!_)", product_id)
             if len(parts) < 9:
                 logger.error(
                     "id %s does not match expected Sentinel-1 id format", product_id
@@ -650,7 +640,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> dict[str, str]:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
+            parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
             start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
@@ -667,7 +657,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_split_id_into_s5p_params(product_id: str) -> dict[str, str]:
-            parts: List[str] = re.split(r"_(?!_)", product_id)
+            parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {
                 "productType": product_id[9:19],
                 "processingMode": parts[1],
@@ -684,7 +674,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_split_cop_dem_id(product_id: str) -> List[int]:
+        def convert_split_cop_dem_id(product_id: str) -> list[int]:
             parts = product_id.split("_")
             lattitude = parts[3]
             longitude = parts[5]
@@ -723,7 +713,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_datetime_dict(
             date: str, format: str
-        ) -> dict[str, Union[List[str], str]]:
+        ) -> dict[str, Union[list[str], str]]:
             """Convert a date (str) to a dictionary where values are in the format given in argument
 
             date == "2021-04-21T18:27:19.123Z" and format == "list" => {
@@ -775,7 +765,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_interval_to_datetime_dict(
             date: str, separator: str = "/"
-        ) -> dict[str, List[str]]:
+        ) -> dict[str, list[str]]:
             """Convert a date interval ('/' separated str) to a dictionary where values are lists
 
             date == "2021-04-21/2021-04-22" => {
@@ -815,7 +805,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             }
 
         @staticmethod
-        def convert_get_ecmwf_time(date: str) -> List[str]:
+        def convert_get_ecmwf_time(date: str) -> list[str]:
             """Get the time of a date (str) in the ECMWF format (["HH:00"])
 
             "2021-04-21T18:27:19.123Z" => ["18:00"]
@@ -859,7 +849,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_assets_list_to_dict(
-            assets_list: List[dict[str, str]], asset_name_key: str = "title"
+            assets_list: list[dict[str, str]], asset_name_key: str = "title"
         ) -> dict[str, dict[str, str]]:
             """Convert a list of assets to a dictionary where keys represent
             name of assets and are found among values of asset dictionaries.
@@ -887,7 +877,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 "asset3": {"href": "qux", "title": "qux-title", "name": "asset3"},
             }
             """
-            asset_names: List[str] = []
+            asset_names: list[str] = []
             assets_dict: dict[str, dict[str, str]] = {}
 
             for asset in assets_list:
@@ -897,7 +887,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
             # we only keep the equivalent of the path basename in the case where the
             # asset name has a path pattern and this basename is only found once
-            immutable_asset_indexes: List[int] = []
+            immutable_asset_indexes: list[int] = []
             for i, asset_name in enumerate(asset_names):
                 if i in immutable_asset_indexes:
                     continue
@@ -1479,7 +1469,7 @@ def _get_queryables(
 
 
 def get_queryable_from_provider(
-    provider_queryable: str, metadata_mapping: dict[str, Union[str, List[str]]]
+    provider_queryable: str, metadata_mapping: dict[str, Union[str, list[str]]]
 ) -> Optional[str]:
     """Get EODAG configured queryable parameter from provider queryable parameter
 
@@ -1503,7 +1493,7 @@ def get_queryable_from_provider(
 
 
 def get_provider_queryable_path(
-    queryable: str, metadata_mapping: dict[str, Union[str, List[str]]]
+    queryable: str, metadata_mapping: dict[str, Union[str, list[str]]]
 ) -> Optional[str]:
     """Get EODAG configured queryable path from its parameter
 
@@ -1521,7 +1511,7 @@ def get_provider_queryable_path(
 def get_provider_queryable_key(
     eodag_key: str,
     provider_queryables: dict[str, Any],
-    metadata_mapping: dict[str, Union[List[Any], str]],
+    metadata_mapping: dict[str, Union[list[Any], str]],
 ) -> str:
     """Finds the provider queryable corresponding to the given eodag key based on the metadata mapping
 

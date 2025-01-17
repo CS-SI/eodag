@@ -204,7 +204,7 @@ class TestCoreSearchResults(EODagTestCase):
             [first_search, second_search, third_search]
         )
 
-        # The returned value is a List[SearchResult]
+        # The returned value is a list[SearchResult]
         self.assertIsInstance(grouped_searches, list)
         self.assertTrue(all(isinstance(sr, SearchResult) for sr in grouped_searches))
         # We expect three groups because we have given products that have

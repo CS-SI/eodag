@@ -26,7 +26,7 @@ import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -436,7 +436,7 @@ class Download(PluginTopic):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Base download_all method.
 
@@ -465,7 +465,7 @@ class Download(PluginTopic):
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
-        paths: List[str] = []
+        paths: list[str] = []
         # initiate retry loop
         start_time = datetime.now()
         stop_time = start_time + timedelta(minutes=timeout)

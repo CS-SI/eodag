@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import (
     AliasChoices,
@@ -73,8 +73,8 @@ class EODAGSearch(BaseModel):
 
     productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
-    ids: Optional[List[str]] = Field(None)
-    id: Optional[List[str]] = Field(
+    ids: Optional[list[str]] = Field(None)
+    id: Optional[list[str]] = Field(
         None, alias="ids"
     )  # TODO: remove when updating queryables
     geom: Optional[Geometry] = Field(None, alias="geometry")
@@ -101,7 +101,7 @@ class EODAGSearch(BaseModel):
     orbitNumber: Optional[int] = Field(None, alias="sat:absolute_orbit")
     # TODO: colision in property name. Need to handle "sar:product_type"
     sensorMode: Optional[str] = Field(None, alias="sar:instrument_mode")
-    polarizationChannels: Optional[List[str]] = Field(None, alias="sar:polarizations")
+    polarizationChannels: Optional[list[str]] = Field(None, alias="sar:polarizations")
     dopplerFrequency: Optional[str] = Field(None, alias="sar:frequency_band")
     doi: Optional[str] = Field(None, alias="sci:doi")
     illuminationElevationAngle: Optional[float] = Field(
@@ -110,7 +110,7 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
-    sort_by: Optional[List[tuple[str, str]]] = Field(None, alias="sortby")
+    sort_by: Optional[list[tuple[str, str]]] = Field(None, alias="sortby")
     raise_errors: bool = False
 
     _to_eodag_map: dict[str, str]
@@ -191,7 +191,7 @@ class EODAGSearch(BaseModel):
             return values
 
         query_props: dict[str, Any] = {}
-        errors: List[InitErrorDetails] = []
+        errors: list[InitErrorDetails] = []
         for property_name, conditions in cast(dict[str, Any], query).items():
             # Remove the prefix "properties." if present
             prop = property_name.replace("properties.", "", 1)
@@ -256,7 +256,7 @@ class EODAGSearch(BaseModel):
         if not filter_:
             return values
 
-        errors: List[InitErrorDetails] = []
+        errors: list[InitErrorDetails] = []
         try:
             parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
         except (ValueError, NotImplementedError) as e:
@@ -298,7 +298,7 @@ class EODAGSearch(BaseModel):
 
     @field_validator("instrument", mode="before")
     @classmethod
-    def join_instruments(cls, v: Union[str, List[str]]) -> str:
+    def join_instruments(cls, v: Union[str, list[str]]) -> str:
         """convert instruments to instrument"""
         if isinstance(v, list):
             return ",".join(v)
@@ -308,8 +308,8 @@ class EODAGSearch(BaseModel):
     @classmethod
     def parse_sortby(
         cls,
-        sortby_post_params: List[dict[str, str]],
-    ) -> List[tuple[str, str]]:
+        sortby_post_params: list[dict[str, str]],
+    ) -> list[tuple[str, str]]:
         """
         Convert STAC POST sortby to EODAG sort_by
         """
@@ -363,7 +363,7 @@ class EODAGSearch(BaseModel):
     def to_stac(
         cls,
         field_name: str,
-        stac_item_properties: Optional[List[str]] = None,
+        stac_item_properties: Optional[list[str]] = None,
         provider: Optional[str] = None,
     ) -> str:
         """Get the alias of a field in a Pydantic model"""

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Iterable, Optional, Union
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -46,17 +46,17 @@ class SearchResult(UserList):
     :ivar number_matched: Estimated total number of matching results
     """
 
-    data: List[EOProduct]
+    data: list[EOProduct]
 
     errors: Annotated[
-        List[tuple[str, Exception]], Doc("Tuple of provider name, exception")
+        list[tuple[str, Exception]], Doc("Tuple of provider name, exception")
     ]
 
     def __init__(
         self,
-        products: List[EOProduct],
+        products: list[EOProduct],
         number_matched: Optional[int] = None,
-        errors: List[tuple[str, Exception]] = [],
+        errors: list[tuple[str, Exception]] = [],
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
@@ -220,9 +220,9 @@ class RawSearchResult(UserList):
     :param results: A list of raw/unparsed search results
     """
 
-    data: List[Any]
+    data: list[Any]
     query_params: dict[str, Any]
     product_type_def_params: dict[str, Any]
 
-    def __init__(self, results: List[Any]) -> None:
+    def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

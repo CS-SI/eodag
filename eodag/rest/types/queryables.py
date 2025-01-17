@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, List, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -77,12 +77,12 @@ class StacQueryableProperty(BaseModel):
 
     description: str
     ref: Optional[str] = Field(default=None, serialization_alias="$ref")
-    type: Optional[Union[str, List[str]]] = None
-    enum: Optional[List[Any]] = None
+    type: Optional[Union[str, list[str]]] = None
+    enum: Optional[list[Any]] = None
     value: Optional[Any] = None
-    min: Optional[Union[int, List[Union[int, None]]]] = None
-    max: Optional[Union[int, List[Union[int, None]]]] = None
-    oneOf: Optional[List[Any]] = None
+    min: Optional[Union[int, list[Union[int, None]]]] = None
+    max: Optional[Union[int, list[Union[int, None]]]] = None
+    oneOf: Optional[list[Any]] = None
     items: Optional[Any] = None
 
     @classmethod
@@ -153,7 +153,7 @@ class StacQueryables(BaseModel):
         ),
     }
     properties: dict[str, Any] = Field()
-    required: Optional[List[str]] = Field(None)
+    required: Optional[list[str]] = Field(None)
     additional_properties: bool = Field(
         default=True, serialization_alias="additionalProperties"
     )

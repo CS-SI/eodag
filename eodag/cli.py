@@ -48,7 +48,7 @@ import shutil
 import sys
 import textwrap
 from importlib.metadata import metadata
-from typing import TYPE_CHECKING, Any, List, Mapping, Set
+from typing import TYPE_CHECKING, Any, Mapping, Set
 
 import click
 
@@ -104,7 +104,7 @@ class MutuallyExclusiveOption(click.Option):
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
 
     def handle_parse_result(
-        self, ctx: Context, opts: Mapping[str, Any], args: List[str]
+        self, ctx: Context, opts: Mapping[str, Any], args: list[str]
     ):
         """Raise error or use parent handle_parse_result()"""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:

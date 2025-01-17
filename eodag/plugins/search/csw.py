@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -62,7 +62,7 @@ class CSWSearch(Search):
         * :attr:`~eodag.config.PluginConfig.version` (``str``): OGC Catalogue Service version; default: ``2.0.2``
         * :attr:`~eodag.config.PluginConfig.search_definition` (``dict[str, Any]``) (**mandatory**):
 
-          * **product_type_tags** (``List[dict[str, Any]``): dict of product type tags
+          * **product_type_tags** (``list[dict[str, Any]``): dict of product type tags
           * **resource_location_filter** (``str``): regex string
           * **date_tags** (``dict[str, Any]``): tags for start and end
 
@@ -107,7 +107,7 @@ class CSWSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
@@ -117,7 +117,7 @@ class CSWSearch(Search):
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
         else:
             self.__init_catalog()
-        results: List[EOProduct] = []
+        results: list[EOProduct] = []
         if self.catalog:
             provider_product_type = self.config.products[product_type]["productType"]
             for product_type_def in self.config.search_definition["product_type_tags"]:
@@ -232,9 +232,9 @@ class CSWSearch(Search):
         product_type_def: dict[str, Any],
         product_type: str,
         params: dict[str, Any],
-    ) -> Union[List[OgcExpression], List[List[OgcExpression]]]:
+    ) -> Union[list[OgcExpression], list[list[OgcExpression]]]:
         """Translates eodag search to CSW constraints using owslib constraint classes"""
-        constraints: List[OgcExpression] = []
+        constraints: list[OgcExpression] = []
         # How the match should be performed (fuzzy, prefix, postfix or exact).
         # defaults to fuzzy
         pt_tag, matching = (

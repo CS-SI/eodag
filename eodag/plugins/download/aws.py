@@ -28,7 +28,6 @@ from typing import (
     Any,
     Callable,
     Iterator,
-    List,
     Match,
     Optional,
     Set,
@@ -478,7 +477,7 @@ class AwsDownload(Download):
         product: EOProduct,
         asset_filter: Optional[str] = None,
         ignore_assets: Optional[bool] = False,
-    ) -> List[tuple[str, Optional[str]]]:
+    ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
 
@@ -520,7 +519,7 @@ class AwsDownload(Download):
 
     def _do_authentication(
         self,
-        bucket_names_and_prefixes: List[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
     ) -> tuple[dict[str, Any], ResourceCollection]:
         """
@@ -589,7 +588,7 @@ class AwsDownload(Download):
 
     def _get_unique_products(
         self,
-        bucket_names_and_prefixes: List[tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
         authenticated_objects: dict[str, Any],
         asset_filter: Optional[str],
         ignore_assets: bool,
@@ -604,7 +603,7 @@ class AwsDownload(Download):
         :param product: product that shall be downloaded
         :return: set of product chunks that can be downloaded
         """
-        product_chunks: List[Any] = []
+        product_chunks: list[Any] = []
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
             if bucket_name in authenticated_objects.keys():
@@ -756,7 +755,7 @@ class AwsDownload(Download):
         product: EOProduct,
         build_safe: bool,
         progress_callback: ProgressCallback,
-        assets_values: List[dict[str, Any]],
+        assets_values: list[dict[str, Any]],
     ) -> Iterator[Any]:
         """Yield product data chunks"""
 
@@ -874,7 +873,7 @@ class AwsDownload(Download):
         :param auth_dict: Dictionary containing authentication keys
         :returns: The boto3 authenticated objects
         """
-        auth_methods: List[
+        auth_methods: list[
             Callable[[str, str, S3SessionKwargs], Optional[ResourceCollection]]
         ] = [
             self._get_authenticated_objects_unsigned,
@@ -1321,7 +1320,7 @@ class AwsDownload(Download):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         download_all using parent (base plugin) method
         """

@@ -26,7 +26,6 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    List,
     Optional,
     Sequence,
     Set,
@@ -126,7 +125,7 @@ class QueryStringSearch(Search):
           authentication error; only used if ``need_auth=true``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.dont_quote` (``List[str]``): characters that should not be quoted in the
+        * :attr:`~eodag.config.PluginConfig.dont_quote` (``list[str]``): characters that should not be quoted in the
           url params
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
@@ -134,7 +133,7 @@ class QueryStringSearch(Search):
           total number of retries to allow; default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
           ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
-        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): :class:`urllib3.util.Retry`
           ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
           ``[401, 429, 500, 502, 503, 504]``
         * :attr:`~eodag.config.PluginConfig.literal_search_params` (``dict[str, str]``): A mapping of (search_param =>
@@ -202,7 +201,7 @@ class QueryStringSearch(Search):
         * :attr:`~eodag.config.PluginConfig.sort` (:class:`~eodag.config.PluginConfig.Sort`): configuration for sorting
           the results. It contains the keys:
 
-          * :attr:`~eodag.config.PluginConfig.Sort.sort_by_default` (``List[Tuple(str, Literal["ASC", "DESC"])]``):
+          * :attr:`~eodag.config.PluginConfig.Sort.sort_by_default` (``list[Tuple(str, Literal["ASC", "DESC"])]``):
             parameter and sort order by which the result will be sorted by default (if the user does not enter a
             ``sort_by`` parameter); if not given the result will use the default sorting of the provider; Attention:
             for some providers sorting might cause a timeout if no filters are used. In that case no default
@@ -295,7 +294,7 @@ class QueryStringSearch(Search):
         self.config.__dict__.setdefault("results_entry", "features")
         self.config.__dict__.setdefault("pagination", {})
         self.config.__dict__.setdefault("free_text_search_operations", {})
-        self.search_urls: List[str] = []
+        self.search_urls: list[str] = []
         self.query_params: dict[str, str] = dict()
         self.query_string = ""
         self.next_page_url = None
@@ -724,7 +723,7 @@ class QueryStringSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface
 
         :param prep: Object collecting needed information for search.
@@ -830,7 +829,7 @@ class QueryStringSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(page=None, items_per_page=None),
         **kwargs: Any,
-    ) -> tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
         page = prep.page
         items_per_page = prep.items_per_page
@@ -899,7 +898,7 @@ class QueryStringSearch(Search):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Perform the actual search request.
 
         If there is a specified number of items per page, return the results as soon
@@ -916,7 +915,7 @@ class QueryStringSearch(Search):
                     "total_items_nb_key_path"
                 ]
 
-        results: List[Any] = []
+        results: list[Any] = []
         for search_url in prep.search_urls:
             single_search_prep = copy_copy(prep)
             single_search_prep.url = search_url
@@ -1067,14 +1066,14 @@ class QueryStringSearch(Search):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
         normalize_remaining_count = len(results)
         logger.debug(
             "Adapting %s plugin results to eodag product representation"
             % normalize_remaining_count
         )
-        products: List[EOProduct] = []
+        products: list[EOProduct] = []
         for result in results:
             product = EOProduct(
                 self.provider,
@@ -1329,7 +1328,7 @@ class ODataV4Search(QueryStringSearch):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(), **kwargs: Any
-    ) -> List[Any]:
+    ) -> list[Any]:
         """A two step search can be performed if the metadata are not given into the search result"""
 
         if getattr(self.config, "per_product_metadata_query", False):
@@ -1372,7 +1371,7 @@ class ODataV4Search(QueryStringSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results
 
         If configured, a metadata pre-mapping can be applied to simplify further metadata extraction.
@@ -1508,7 +1507,7 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", "")
         count = prep.count
@@ -1639,7 +1638,7 @@ class PostJsonSearch(QueryStringSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)
         for product in normalized:
@@ -1674,12 +1673,12 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
         page = prep.page
         items_per_page = prep.items_per_page
         count = prep.count
-        urls: List[str] = []
+        urls: list[str] = []
         total_results = 0 if count else None
 
         if "count_endpoint" not in self.config.pagination:

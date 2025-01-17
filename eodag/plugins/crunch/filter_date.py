@@ -21,7 +21,7 @@ import datetime
 import logging
 import time
 from datetime import datetime as dt
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import dateutil.parser
 from dateutil import tz
@@ -57,8 +57,8 @@ class FilterDate(Crunch):
         return dateutil.parser.parse(start_date)
 
     def proceed(
-        self, products: List[EOProduct], **search_params: Any
-    ) -> List[EOProduct]:
+        self, products: list[EOProduct], **search_params: Any
+    ) -> list[EOProduct]:
         """Execute crunch: Filter products between start and end dates.
 
         :param products: A list of products resulting from a search
@@ -89,7 +89,7 @@ class FilterDate(Crunch):
         if not filter_start and not filter_end:
             return products
 
-        filtered: List[EOProduct] = []
+        filtered: list[EOProduct] = []
         for product in products:
 
             # product start date

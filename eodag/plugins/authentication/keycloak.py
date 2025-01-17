@@ -56,7 +56,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
           token should be added to the query string (``qs``) or to the header (``header``)
         * :attr:`~eodag.config.PluginConfig.token_qs_key` (``str``): (**mandatory if token_provision=qs**)
           key of the param added to the query string
-        * :attr:`~eodag.config.PluginConfig.allowed_audiences` (``List[str]``) (**mandatory**):
+        * :attr:`~eodag.config.PluginConfig.allowed_audiences` (``list[str]``) (**mandatory**):
           The allowed audiences that have to be present in the user token.
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
           returned in case of an authentication error

@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
 import geojson
 from pydantic import (
@@ -96,8 +96,8 @@ class SearchPostRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     provider: Optional[str] = None
-    collections: Optional[List[str]] = None
-    ids: Optional[List[str]] = None
+    collections: Optional[list[str]] = None
+    ids: Optional[list[str]] = None
     bbox: Optional[BBox] = None
     intersects: Optional[Geometry] = None
     datetime: Optional[str] = None
@@ -115,7 +115,7 @@ class SearchPostRequest(BaseModel):
         description="The language used for filtering.",
         validate_default=True,
     )
-    sortby: Optional[List[SortBy]] = None
+    sortby: Optional[list[SortBy]] = None
     crunch: Optional[str] = None
 
     @field_serializer("intersects")
@@ -160,7 +160,7 @@ class SearchPostRequest(BaseModel):
 
     @field_validator("ids", "collections", mode="before")
     @classmethod
-    def str_to_str_list(cls, v: Union[str, List[str]]) -> List[str]:
+    def str_to_str_list(cls, v: Union[str, list[str]]) -> list[str]:
         """Convert ids and collections strings to list of strings"""
         if isinstance(v, str):
             return [i.strip() for i in v.split(",")]
@@ -214,7 +214,7 @@ class SearchPostRequest(BaseModel):
             # Single date is interpreted as end date
             values = ["..", v]
 
-        dates: List[str] = []
+        dates: list[str] = []
         for value in values:
             if value == ".." or value == "":
                 dates.append("..")
@@ -257,13 +257,13 @@ class SearchPostRequest(BaseModel):
 
 def sortby2list(
     v: Optional[str],
-) -> Optional[List[SortBy]]:
+) -> Optional[list[SortBy]]:
     """
     Convert sortby filter parameter GET syntax to POST syntax
     """
     if not v:
         return None
-    sortby: List[SortBy] = []
+    sortby: list[SortBy] = []
     for sortby_param in v.split(","):
         sortby_param = sortby_param.strip()
         direction: Direction = "desc" if sortby_param.startswith("-") else "asc"

@@ -21,7 +21,7 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import (
     parse_qs,
     quote,
@@ -231,7 +231,7 @@ class StacItem(StacCommon):
 
     def __get_item_list(
         self, search_results: SearchResult, catalog: dict[str, Any]
-    ) -> List[dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Build STAC items list from EODAG search results
 
         :param search_results: EODAG search results
@@ -266,7 +266,7 @@ class StacItem(StacCommon):
         ]
         ignored_props = COLLECTION_PROPERTIES + item_props + IGNORED_ITEM_PROPERTIES
 
-        item_list: List[dict[str, Any]] = []
+        item_list: list[dict[str, Any]] = []
         for product in search_results:
             product_dict = deepcopy(product.__dict__)
 
@@ -703,7 +703,7 @@ class StacCollection(StacCommon):
             root=root,
         )
 
-    def __list_product_type_providers(self, product_type: dict[str, Any]) -> List[str]:
+    def __list_product_type_providers(self, product_type: dict[str, Any]) -> list[str]:
         """Retrieve a list of providers for a given product type.
 
         :param product_type: Dictionary containing information about the product type.
@@ -817,7 +817,7 @@ class StacCollection(StacCommon):
         instrument: Optional[str] = None,
         constellation: Optional[str] = None,
         datetime: Optional[str] = None,
-    ) -> List[dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Build STAC collections list
 
         :param filters: (optional) Additional filters for collections search
@@ -852,7 +852,7 @@ class StacCollection(StacCommon):
             product_types = all_pt
 
         # list product types with all metadata using guessed ids
-        collection_list: List[dict[str, Any]] = []
+        collection_list: list[dict[str, Any]] = []
         for product_type in product_types:
             stac_collection = self.__generate_stac_collection(
                 collection_model, product_type
@@ -893,7 +893,7 @@ class StacCatalog(StacCommon):
 
         self.shp_location_config = eodag_api.locations_config
         self.search_args: dict[str, Any] = {}
-        self.children: List[dict[str, Any]] = []
+        self.children: list[dict[str, Any]] = []
 
         self.catalog_config = deepcopy(stac_config["catalog"])
 

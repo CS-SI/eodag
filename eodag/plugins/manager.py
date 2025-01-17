@@ -21,7 +21,7 @@ import logging
 import re
 from operator import attrgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Type, Union, cast
 
 import pkg_resources
 
@@ -74,9 +74,9 @@ class PluginManager:
 
     supported_topics = set(PLUGINS_TOPICS_KEYS)
 
-    product_type_to_provider_config_map: dict[str, List[ProviderConfig]]
+    product_type_to_provider_config_map: dict[str, list[ProviderConfig]]
 
-    skipped_plugins: List[str]
+    skipped_plugins: list[str]
 
     def __init__(self, providers_config: dict[str, ProviderConfig]) -> None:
         self.skipped_plugins = []
@@ -201,7 +201,7 @@ class PluginManager:
                 )
             return plugin
 
-        configs: Optional[List[ProviderConfig]]
+        configs: Optional[list[ProviderConfig]]
         if product_type:
             configs = self.product_type_to_provider_config_map.get(product_type)
             if not configs:

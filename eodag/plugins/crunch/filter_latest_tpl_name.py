@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, List, Match, Optional, cast
+from typing import TYPE_CHECKING, Any, Match, Optional, cast
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
@@ -54,16 +54,16 @@ class FilterLatestByName(Crunch):
         self.name_pattern = re.compile(name_pattern)
 
     def proceed(
-        self, products: List[EOProduct], **search_params: Any
-    ) -> List[EOProduct]:
+        self, products: list[EOProduct], **search_params: Any
+    ) -> list[EOProduct]:
         """Execute crunch: Filter Search results to get only the latest product, based on the name of the product
 
         :param products: A list of products resulting from a search
         :returns: The filtered products
         """
         logger.debug("Starting products filtering")
-        processed: List[str] = []
-        filtered: List[EOProduct] = []
+        processed: list[str] = []
+        filtered: list[EOProduct] = []
         for product in products:
             match = cast(
                 Optional[Match[Any]],

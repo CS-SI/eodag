@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -139,7 +139,7 @@ class UsgsApi(Api):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Search for data on USGS catalogues"""
         page = prep.page if prep.page is not None else DEFAULT_PAGE
         items_per_page = (
@@ -176,7 +176,7 @@ class UsgsApi(Api):
         else:
             footprint = geom
 
-        final: List[EOProduct] = []
+        final: list[EOProduct] = []
         if footprint and len(footprint.keys()) == 4:  # a rectangle (or bbox)
             lower_left = {
                 "longitude": footprint["lonmin"],
@@ -341,7 +341,7 @@ class UsgsApi(Api):
             product.properties["productId"],
         )
 
-        req_urls: List[str] = []
+        req_urls: list[str] = []
         try:
             if len(download_request_results["data"]["preparingDownloads"]) > 0:
                 req_urls.extend(
@@ -471,7 +471,7 @@ class UsgsApi(Api):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Download all using parent (base plugin) method
         """

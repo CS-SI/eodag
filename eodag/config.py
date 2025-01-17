@@ -26,7 +26,6 @@ from typing import (
     Any,
     ItemsView,
     Iterator,
-    List,
     Literal,
     Optional,
     TypedDict,
@@ -125,7 +124,7 @@ class ProviderConfig(yaml.YAMLObject):
     name: str
     group: str
     priority: int = 0  # Set default priority to 0
-    roles: List[str]
+    roles: list[str]
     description: str
     url: str
     api: PluginConfig
@@ -238,7 +237,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for sort during search"""
 
         #: Default sort settings
-        sort_by_default: List[tuple[str, str]]
+        sort_by_default: list[tuple[str, str]]
         #: F-string template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to sort search
         #: results
         sort_by_tpl: str
@@ -316,7 +315,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for order on-response during download"""
 
         #: Parameters metadata-mapping to apply to the order response
-        metadata_mapping: dict[str, Union[str, List[str]]]
+        metadata_mapping: dict[str, Union[str, list[str]]]
 
     class OrderStatusSuccess(TypedDict):
         """
@@ -361,7 +360,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Key in the success response that gives access to the result
         results_entry: str
         #: Metadata-mapping to apply to the success status result
-        metadata_mapping: dict[str, Union[str, List[str]]]
+        metadata_mapping: dict[str, Union[str, list[str]]]
 
     class OrderStatus(TypedDict, total=False):
         """Configuration for order status during download"""
@@ -369,7 +368,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Order status request configuration
         request: PluginConfig.OrderStatusRequest
         #: Metadata-mapping used to parse order status response
-        metadata_mapping: dict[str, Union[str, List[str]]]
+        metadata_mapping: dict[str, Union[str, list[str]]]
         #: Configuration to identify order status success during download
         success: PluginConfig.OrderStatusSuccess
         #: Part of the order status response that tells there is an error
@@ -398,7 +397,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.base.PluginTopic` Default s3 bucket
     s3_bucket: str
     #: :class:`~eodag.plugins.base.PluginTopic` Authentication error codes
-    auth_error_code: Union[int, List[int]]
+    auth_error_code: Union[int, list[int]]
     #: :class:`~eodag.plugins.base.PluginTopic` Time to wait until request timeout in seconds
     timeout: float
     #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``total`` parameter,
@@ -409,7 +408,7 @@ class PluginConfig(yaml.YAMLObject):
     retry_backoff_factor: int
     #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
     #: list of integer HTTP status codes that we should force a retry on
-    retry_status_forcelist: List[int]
+    retry_status_forcelist: list[int]
 
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
@@ -437,13 +436,13 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
-    metadata_mapping: dict[str, Union[str, List[str]]]
+    metadata_mapping: dict[str, Union[str, list[str]]]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
-    remove_from_queryables: List[str]
+    remove_from_queryables: list[str]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string
     literal_search_params: dict[str, str]
     #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Characters that should not be quoted in the url params
-    dont_quote: List[str]
+    dont_quote: list[str]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
     free_text_search_operations: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Set to ``True`` if the metadata is not given in the search
@@ -466,7 +465,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
     merge_responses: bool
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
-    collection: List[str]
+    collection: list[str]
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
@@ -475,7 +474,7 @@ class PluginConfig(yaml.YAMLObject):
     end_date_excluded: bool
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: List of parameters used to parse metadata but that must not be included to the query
-    remove_from_query: List[str]
+    remove_from_query: list[str]
     #: :class:`~eodag.plugins.search.csw.CSWSearch`
     #: OGC Catalogue Service version
     version: str
@@ -559,7 +558,7 @@ class PluginConfig(yaml.YAMLObject):
     #: The OIDC provider's ``.well-known/openid-configuration`` url.
     oidc_config_url: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase` The OIDC token audiences
-    allowed_audiences: List[str]
+    allowed_audiences: list[str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Whether a user consent is needed during the authentication or not
     user_consent_needed: str
@@ -689,7 +688,7 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it
-        providers_configs: List[ProviderConfig] = cached_yaml_load_all(config_path)
+        providers_configs: list[ProviderConfig] = cached_yaml_load_all(config_path)
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e

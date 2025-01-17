@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 from eodag.utils.exceptions import PluginNotFoundError
 
@@ -36,14 +36,14 @@ class EODAGPluginMount(type):
             # So, since this is a new plugin type, not an implementation, this
             # class shouldn't be registered as a plugin. Instead, it sets up a
             # list where plugins can be registered later.
-            cls.plugins: List[EODAGPluginMount] = []
+            cls.plugins: list[EODAGPluginMount] = []
         else:
             # This must be a plugin implementation, which should be registered.
             # Simply appending it to the list is all that's needed to keep
             # track of it later.
             cls.plugins.append(cls)
 
-    def get_plugins(cls, *args: Any, **kwargs: Any) -> List[EODAGPluginMount]:
+    def get_plugins(cls, *args: Any, **kwargs: Any) -> list[EODAGPluginMount]:
         """Get plugins"""
         return [plugin(*args, **kwargs) for plugin in cls.plugins]
 

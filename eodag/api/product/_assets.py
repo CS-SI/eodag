@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from eodag.utils.exceptions import NotAvailableError
 from eodag.utils.repr import dict_to_html_table
@@ -56,7 +56,7 @@ class AssetsDict(UserDict):
         """
         return {k: v.as_dict() for k, v in self.data.items()}
 
-    def get_values(self, asset_filter: str = "") -> List[Asset]:
+    def get_values(self, asset_filter: str = "") -> list[Asset]:
         """
         retrieves the assets matching the given filter
 

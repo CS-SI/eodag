@@ -17,7 +17,7 @@
 # limitations under the License.
 import re
 from datetime import datetime
-from typing import Annotated, Any, List, Optional, Union, cast
+from typing import Annotated, Any, Optional, Union, cast
 
 from annotated_types import MinLen
 from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
@@ -31,10 +31,10 @@ from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import ValidationError
 
 NumType = Union[float, int]
-GeomArgs = Union[List[NumType], tuple[NumType], dict[str, NumType], str, BaseGeometry]
+GeomArgs = Union[list[NumType], tuple[NumType], dict[str, NumType], str, BaseGeometry]
 
 PositiveInt = conint(gt=0)
-SortByList = Annotated[List[tuple[str, str]], MinLen(1)]
+SortByList = Annotated[list[tuple[str, str]], MinLen(1)]
 
 
 class SearchArgs(BaseModel):

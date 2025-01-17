@@ -22,7 +22,6 @@ from __future__ import annotations
 from typing import (
     Annotated,
     Any,
-    List,
     Literal,
     Optional,
     TypedDict,
@@ -51,7 +50,7 @@ JSON_TYPES_MAPPING: dict[str, type] = {
 }
 
 
-def json_type_to_python(json_type: Union[str, List[str]]) -> type:
+def json_type_to_python(json_type: Union[str, list[str]]) -> type:
     """Get python type from json type https://spec.openapis.org/oas/v3.1.0#data-types
 
     >>> json_type_to_python("number")
@@ -106,7 +105,7 @@ def _get_type_info_from_annotated(
 
 def python_type_to_json(
     python_type: type,
-) -> Optional[Union[str, List[dict[str, Any]]]]:
+) -> Optional[Union[str, list[dict[str, Any]]]]:
     """Get json type from python https://spec.openapis.org/oas/v3.1.0#data-types
 
     >>> python_type_to_json(int)
@@ -195,7 +194,7 @@ def json_field_definition_to_python(
 
     if enum:
         literal = Literal[tuple(sorted(enum))]  # type: ignore
-        python_type = List[literal] if python_type in (list, set) else literal  # type: ignore
+        python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
 
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
@@ -362,7 +361,7 @@ class ProviderSortables(TypedDict):
     :param max_sort_params: (optional) The allowed maximum number of sortable(s) in a search request with the provider
     """
 
-    sortables: List[str]
+    sortables: list[str]
     max_sort_params: Annotated[Optional[int], Gt(0)]
 
 

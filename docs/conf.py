@@ -23,7 +23,7 @@ import os
 import re
 from datetime import datetime
 from importlib.metadata import metadata
-from typing import Any, List
+from typing import Any
 
 # -- General configuration ------------------------------------------------
 
@@ -168,7 +168,7 @@ html_css_files = [
     "custom.css",
 ]
 
-html_js_files: List[Any] = []
+html_js_files: list[Any] = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.

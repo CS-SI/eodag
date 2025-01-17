@@ -16,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime as dt
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 from pygeofilter import ast
 from pygeofilter.backends.evaluator import Evaluator, handle
 from pygeofilter.values import Geometry, Interval
 
-simpleNode = Union[ast.Attribute, str, int, complex, float, List[Any], tuple[Any, ...]]
+simpleNode = Union[ast.Attribute, str, int, complex, float, list[Any], tuple[Any, ...]]
 
 
 class EodagEvaluator(Evaluator):
@@ -46,7 +46,7 @@ class EodagEvaluator(Evaluator):
         return node.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @handle(Interval)
-    def interval(self, _, *interval: Any) -> List[Any]:
+    def interval(self, _, *interval: Any) -> list[Any]:
         """handle datetime interval"""
         return list(interval)
 

@@ -48,7 +48,7 @@ from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Union
+    from typing import Any, Optional, Union
 
     from requests.auth import AuthBase
 
@@ -105,7 +105,7 @@ class EcmwfApi(Api, ECMWFSearch):
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
         self.config.__dict__.setdefault("api_endpoint", "")
 
-    def do_search(self, *args: Any, **kwargs: Any) -> List[dict[str, Any]]:
+    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         """Should perform the actual search request."""
         return [{}]
 
@@ -113,7 +113,7 @@ class EcmwfApi(Api, ECMWFSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
         # check productType, dates, geometry, use defaults if not specified
@@ -272,7 +272,7 @@ class EcmwfApi(Api, ECMWFSearch):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Download all using parent (base plugin) method
         """

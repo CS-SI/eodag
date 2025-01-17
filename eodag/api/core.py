@@ -24,7 +24,7 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
 import pkg_resources
@@ -565,7 +565,7 @@ class EODataAccessGateway:
             main_locations_config = locations_config[main_key]
 
             logger.info("Locations configuration loaded from %s" % locations_conf_path)
-            self.locations_config: List[dict[str, Any]] = main_locations_config
+            self.locations_config: list[dict[str, Any]] = main_locations_config
         else:
             logger.info(
                 "Could not load locations configuration from %s" % locations_conf_path
@@ -574,7 +574,7 @@ class EODataAccessGateway:
 
     def list_product_types(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> List[dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Lists supported product types.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -588,7 +588,7 @@ class EODataAccessGateway:
             # First, update product types list if possible
             self.fetch_product_types_list(provider=provider)
 
-        product_types: List[dict[str, Any]] = []
+        product_types: list[dict[str, Any]] = []
 
         providers_configs = (
             list(self.providers_config.values())
@@ -869,7 +869,7 @@ class EODataAccessGateway:
                         provider,
                     )
                     continue
-                new_product_types: List[str] = []
+                new_product_types: list[str] = []
                 for (
                     new_product_type,
                     new_product_type_conf,
@@ -932,7 +932,7 @@ class EODataAccessGateway:
 
     def available_providers(
         self, product_type: Optional[str] = None, by_group: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """Gives the sorted list of the available providers or groups
 
         The providers or groups are sorted first by their priority level in descending order,
@@ -1026,7 +1026,7 @@ class EODataAccessGateway:
         missionStartDate: Optional[str] = None,
         missionEndDate: Optional[str] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Find EODAG product type IDs that best match a set of search parameters.
 
@@ -1084,7 +1084,7 @@ class EODataAccessGateway:
             query = p.parse(text)
             results = searcher.search(query, limit=None)
 
-            guesses: List[dict[str, str]] = [dict(r) for r in results or []]
+            guesses: list[dict[str, str]] = [dict(r) for r in results or []]
 
         # datetime filtering
         if missionStartDate or missionEndDate:
@@ -1205,7 +1205,7 @@ class EODataAccessGateway:
             items_per_page=items_per_page,
         )
 
-        errors: List[tuple[str, Exception]] = []
+        errors: list[tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1655,7 +1655,7 @@ class EODataAccessGateway:
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         **kwargs: Any,
-    ) -> tuple[List[Union[Search, Api]], dict[str, Any]]:
+    ) -> tuple[list[Union[Search, Api]], dict[str, Any]]:
         """Internal method to prepare the search kwargs and get the search plugins.
 
         Product query:
@@ -1763,7 +1763,7 @@ class EODataAccessGateway:
 
         preferred_provider = self.get_preferred_provider()[0]
 
-        search_plugins: List[Union[Search, Api]] = []
+        search_plugins: list[Union[Search, Api]] = []
         for plugin in self._plugins_manager.get_search_plugins(
             product_type=product_type, provider=provider
         ):
@@ -1833,10 +1833,10 @@ class EODataAccessGateway:
                 max_items_per_page,
             )
 
-        results: List[EOProduct] = []
+        results: list[EOProduct] = []
         total_results: Optional[int] = 0 if count else None
 
-        errors: List[tuple[str, Exception]] = []
+        errors: list[tuple[str, Exception]] = []
 
         try:
             prep = PreparedSearch(count=count)
@@ -1984,7 +1984,7 @@ class EODataAccessGateway:
         return results
 
     @staticmethod
-    def group_by_extent(searches: List[SearchResult]) -> List[SearchResult]:
+    def group_by_extent(searches: list[SearchResult]) -> list[SearchResult]:
         """Combines multiple SearchResults and return a list of SearchResults grouped
         by extent (i.e. bounding box).
 
@@ -2015,7 +2015,7 @@ class EODataAccessGateway:
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """Download all products resulting from a search.
 
         :param search_result: A collection of EO products resulting from a search
@@ -2273,7 +2273,7 @@ class EODataAccessGateway:
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         """
         # only fetch providers if product type is not found
-        available_product_types: List[str] = [
+        available_product_types: list[str] = [
             pt["ID"]
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]

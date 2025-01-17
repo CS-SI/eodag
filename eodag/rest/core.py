@@ -77,7 +77,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, List, Optional, Union
+    from typing import Any, Optional, Union
 
     from fastapi import Request
     from requests.auth import AuthBase
@@ -116,12 +116,12 @@ def get_home_page_content(base_url: str, ipp: Optional[int] = None) -> str:
     reason="Function internally used by get_home_page_content, also deprecated",
     version="2.6.1",
 )
-def format_product_types(product_types: List[dict[str, Any]]) -> str:
+def format_product_types(product_types: list[dict[str, Any]]) -> str:
     """Format product_types
 
     :param product_types: A list of EODAG product types as returned by the core api
     """
-    result: List[str] = []
+    result: list[str] = []
     for pt in product_types:
         result.append(f'* *__{pt["ID"]}__*: {pt["abstract"]}')
     return "\n".join(sorted(result))
@@ -353,7 +353,7 @@ def _order_and_update(
 
 
 @lru_cache(maxsize=1)
-def get_detailled_collections_list() -> List[dict[str, Any]]:
+def get_detailled_collections_list() -> list[dict[str, Any]]:
     """Returns detailled collections / product_types list as a list of
     config dicts
 
@@ -590,7 +590,7 @@ async def get_queryables(
         )
 
         properties: dict[str, Any] = python_queryables_json["properties"]
-        required: List[str] = python_queryables_json.get("required") or []
+        required: list[str] = python_queryables_json.get("required") or []
 
         # productType is either simply removed or replaced by collection later.
         if "productType" in properties:
@@ -720,13 +720,13 @@ def eodag_api_init() -> None:
             ext_col = StacCollection.ext_stac_collections.get(key)
             if not ext_col:
                 continue
-            platform: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+            platform: Union[str, list[str]] = ext_col.get("summaries", {}).get(
                 "platform"
             )
-            constellation: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+            constellation: Union[str, list[str]] = ext_col.get("summaries", {}).get(
                 "constellation"
             )
-            processing_level: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+            processing_level: Union[str, list[str]] = ext_col.get("summaries", {}).get(
                 "processing:level"
             )
             # Check if platform or constellation are lists and join them into a string if they are

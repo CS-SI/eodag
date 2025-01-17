@@ -28,7 +28,7 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Optional, TypedDict, Union, cast
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -176,7 +176,7 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         OrderKwargs = TypedDict(
-            "OrderKwargs", {"json": dict[str, Union[Any, List[str]]]}, total=False
+            "OrderKwargs", {"json": dict[str, Union[Any, list[str]]]}, total=False
         )
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
@@ -1013,7 +1013,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        assets_values: List[Asset] = [],
+        assets_values: list[Asset] = [],
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         if progress_callback is None:
@@ -1283,7 +1283,7 @@ class HTTPDownload(Download):
 
     def _get_asset_sizes(
         self,
-        assets_values: List[Asset],
+        assets_values: list[Asset],
         auth: Optional[AuthBase],
         params: Optional[dict[str, str]],
         zipped: bool = False,

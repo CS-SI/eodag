@@ -20,7 +20,7 @@ from __future__ import annotations
 import datetime
 import logging
 import time
-from typing import TYPE_CHECKING, Any, List, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import dateutil.parser
 from shapely import geometry
@@ -54,8 +54,8 @@ class FilterLatestIntersect(Crunch):
         return dateutil.parser.parse(start_date)
 
     def proceed(
-        self, products: List[EOProduct], **search_params: dict[str, Any]
-    ) -> List[EOProduct]:
+        self, products: list[EOProduct], **search_params: dict[str, Any]
+    ) -> list[EOProduct]:
         """Execute crunch:
         Filter latest products (the ones with a the highest start date) that intersect search extent.
 
@@ -69,7 +69,7 @@ class FilterLatestIntersect(Crunch):
             return []
         # Warning: May crash if startTimeFromAscendingNode is not in the appropriate format
         products.sort(key=self.sort_product_by_start_date, reverse=True)
-        filtered: List[EOProduct] = []
+        filtered: list[EOProduct] = []
         add_to_filtered = filtered.append
         footprint: Union[dict[str, Any], BaseGeometry, Any] = search_params.get(
             "geometry"

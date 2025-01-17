@@ -15,8 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List
-
 from whoosh.fields import Schema
 from whoosh.index import _DEF_INDEX_NAME, FileIndex
 from whoosh.matching import NullMatcher
@@ -52,7 +50,7 @@ class EODAGQueryParser(QueryParser):
 
     def __init__(
         self,
-        filters: List[str],
+        filters: list[str],
         schema: Schema,
     ):
         """

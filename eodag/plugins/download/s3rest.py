@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -271,7 +271,7 @@ class S3RestDownload(Download):
                 os.remove(record_filename)
 
             # total size for progress_callback
-            size_list: List[int] = [
+            size_list: list[int] = [
                 int(node.firstChild.nodeValue)  # type: ignore[attr-defined]
                 for node in xmldoc.getElementsByTagName("Size")
                 if node.firstChild is not None

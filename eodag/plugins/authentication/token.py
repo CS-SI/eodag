@@ -82,7 +82,7 @@ class TokenAuth(Authentication):
           total number of retries to allow; default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
           ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
-        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): :class:`urllib3.util.Retry`
           ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
           ``[401, 429, 500, 502, 503, 504]``
     """
