@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 from unittest import mock
 
 import geojson
@@ -90,7 +90,7 @@ class StaticStacSearch(StacSearch):
         ):
             self.config.discover_product_types = {}
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
         """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
 
         :returns: configuration dict containing fetched product types information

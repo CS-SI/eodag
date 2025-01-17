@@ -28,7 +28,6 @@ from typing import (
     Any,
     AnyStr,
     Callable,
-    Dict,
     Iterator,
     List,
     Optional,
@@ -474,7 +473,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_longitude_latitude(
             input_geom_unformatted: Any,
-        ) -> Dict[str, float]:
+        ) -> dict[str, float]:
             bounds = MetadataFormatter.convert_to_bounds(input_geom_unformatted)
             lon = (bounds[0] + bounds[2]) / 2
             lat = (bounds[1] + bounds[3]) / 2
@@ -514,8 +513,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_recursive_sub_str(
-            input_obj: Union[Dict[Any, Any], List[Any]], args: str
-        ) -> Union[Dict[Any, Any], List[Any]]:
+            input_obj: Union[dict[Any, Any], List[Any]], args: str
+        ) -> Union[dict[Any, Any], List[Any]]:
             old, new = ast.literal_eval(args)
             return items_recursive_apply(
                 input_obj,
@@ -525,8 +524,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_dict_update(
-            input_dict: Dict[Any, Any], args: str
-        ) -> Dict[Any, Any]:
+            input_dict: dict[Any, Any], args: str
+        ) -> dict[Any, Any]:
             """Converts"""
             new_items_list = ast.literal_eval(args)
 
@@ -536,8 +535,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_dict_filter(
-            input_dict: Dict[Any, Any], jsonpath_filter_str: str
-        ) -> Dict[Any, Any]:
+            input_dict: dict[Any, Any], jsonpath_filter_str: str
+        ) -> dict[Any, Any]:
             """Fitlers dict items using jsonpath"""
 
             jsonpath_filter = string_to_jsonpath(jsonpath_filter_str, force=True)
@@ -616,7 +615,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
-        def convert_split_id_into_s1_params(product_id: str) -> Dict[str, str]:
+        def convert_split_id_into_s1_params(product_id: str) -> dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             if len(parts) < 9:
                 logger.error(
@@ -651,7 +650,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_split_id_into_s3_params(product_id: str) -> Dict[str, str]:
+        def convert_split_id_into_s3_params(product_id: str) -> dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
@@ -668,7 +667,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
-        def convert_split_id_into_s5p_params(product_id: str) -> Dict[str, str]:
+        def convert_split_id_into_s5p_params(product_id: str) -> dict[str, str]:
             parts: List[str] = re.split(r"_(?!_)", product_id)
             params = {
                 "productType": product_id[9:19],
@@ -725,7 +724,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_datetime_dict(
             date: str, format: str
-        ) -> Dict[str, Union[List[str], str]]:
+        ) -> dict[str, Union[List[str], str]]:
             """Convert a date (str) to a dictionary where values are in the format given in argument
 
             date == "2021-04-21T18:27:19.123Z" and format == "list" => {
@@ -777,7 +776,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_interval_to_datetime_dict(
             date: str, separator: str = "/"
-        ) -> Dict[str, List[str]]:
+        ) -> dict[str, List[str]]:
             """Convert a date interval ('/' separated str) to a dictionary where values are lists
 
             date == "2021-04-21/2021-04-22" => {
@@ -861,8 +860,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_assets_list_to_dict(
-            assets_list: List[Dict[str, str]], asset_name_key: str = "title"
-        ) -> Dict[str, Dict[str, str]]:
+            assets_list: List[dict[str, str]], asset_name_key: str = "title"
+        ) -> dict[str, dict[str, str]]:
             """Convert a list of assets to a dictionary where keys represent
             name of assets and are found among values of asset dictionaries.
 
@@ -890,7 +889,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             }
             """
             asset_names: List[str] = []
-            assets_dict: Dict[str, Dict[str, str]] = {}
+            assets_dict: dict[str, dict[str, str]] = {}
 
             for asset in assets_list:
                 asset_name = asset[asset_name_key]
@@ -925,10 +924,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
 
 def properties_from_json(
-    json: Dict[str, Any],
-    mapping: Dict[str, Any],
-    discovery_config: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    json: dict[str, Any],
+    mapping: dict[str, Any],
+    discovery_config: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
     """Extract properties from a provider json result.
 
     :param json: The representation of a provider result as a json object
@@ -941,7 +940,7 @@ def properties_from_json(
                              `discovery_path` (String representation of jsonpath)
     :returns: The metadata of the :class:`~eodag.api.product._product.EOProduct`
     """
-    properties: Dict[str, Any] = {}
+    properties: dict[str, Any] = {}
     templates = {}
     used_jsonpaths = []
     for metadata, value in mapping.items():
@@ -1085,8 +1084,8 @@ def properties_from_xml(
     xml_as_text: AnyStr,
     mapping: Any,
     empty_ns_prefix: str = "ns",
-    discovery_config: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    discovery_config: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
     """Extract properties from a provider xml result.
 
     :param xml_as_text: The representation of a provider result as xml
@@ -1104,7 +1103,7 @@ def properties_from_xml(
                              `discovery_path` (String representation of xpath)
     :returns: the metadata of the :class:`~eodag.api.product._product.EOProduct`
     """
-    properties: Dict[str, Any] = {}
+    properties: dict[str, Any] = {}
     templates = {}
     used_xpaths = []
     root = etree.XML(xml_as_text)
@@ -1232,10 +1231,10 @@ def properties_from_xml(
 
 
 def mtd_cfg_as_conversion_and_querypath(
-    src_dict: Dict[str, Any],
-    dest_dict: Dict[str, Any] = {},
+    src_dict: dict[str, Any],
+    dest_dict: dict[str, Any] = {},
     result_type: str = "json",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Metadata configuration dictionary to querypath with conversion dictionary
     Transform every src_dict value from jsonpath_str to tuple `(conversion, jsonpath_object)`
     or from xpath_str to tuple `(conversion, xpath_str)`
@@ -1283,8 +1282,8 @@ def mtd_cfg_as_conversion_and_querypath(
 
 
 def format_query_params(
-    product_type: str, config: PluginConfig, query_dict: Dict[str, Any]
-) -> Dict[str, Any]:
+    product_type: str, config: PluginConfig, query_dict: dict[str, Any]
+) -> dict[str, Any]:
     """format the search parameters to query parameters"""
     if "raise_errors" in query_dict.keys():
         del query_dict["raise_errors"]
@@ -1296,7 +1295,7 @@ def format_query_params(
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
 
-    query_params: Dict[str, Any] = {}
+    query_params: dict[str, Any] = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
     queryables = _get_queryables(query_dict, config, product_type_metadata_mapping)
@@ -1386,10 +1385,10 @@ def _resolve_hashes(formatted_query_param: str) -> str:
 
 
 def _format_free_text_search(
-    config: PluginConfig, metadata_mapping: Dict[str, Any], **kwargs: Any
-) -> Dict[str, Any]:
+    config: PluginConfig, metadata_mapping: dict[str, Any], **kwargs: Any
+) -> dict[str, Any]:
     """Build the free text search parameter using the search parameters"""
-    query_params: Dict[str, Any] = {}
+    query_params: dict[str, Any] = {}
     if not getattr(config, "free_text_search_operations", None):
         return query_params
     for param, operations_config in config.free_text_search_operations.items():
@@ -1428,13 +1427,13 @@ def _format_free_text_search(
 
 
 def _get_queryables(
-    search_params: Dict[str, Any],
+    search_params: dict[str, Any],
     config: PluginConfig,
-    metadata_mapping: Dict[str, Any],
-) -> Dict[str, Any]:
+    metadata_mapping: dict[str, Any],
+) -> dict[str, Any]:
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")
-    queryables: Dict[str, Any] = {}
+    queryables: dict[str, Any] = {}
     for eodag_search_key, user_input in search_params.items():
         if user_input is not None:
             md_mapping = metadata_mapping.get(eodag_search_key, (None, NOT_MAPPED))
@@ -1481,7 +1480,7 @@ def _get_queryables(
 
 
 def get_queryable_from_provider(
-    provider_queryable: str, metadata_mapping: Dict[str, Union[str, List[str]]]
+    provider_queryable: str, metadata_mapping: dict[str, Union[str, List[str]]]
 ) -> Optional[str]:
     """Get EODAG configured queryable parameter from provider queryable parameter
 
@@ -1505,7 +1504,7 @@ def get_queryable_from_provider(
 
 
 def get_provider_queryable_path(
-    queryable: str, metadata_mapping: Dict[str, Union[str, List[str]]]
+    queryable: str, metadata_mapping: dict[str, Union[str, List[str]]]
 ) -> Optional[str]:
     """Get EODAG configured queryable path from its parameter
 
@@ -1522,8 +1521,8 @@ def get_provider_queryable_path(
 
 def get_provider_queryable_key(
     eodag_key: str,
-    provider_queryables: Dict[str, Any],
-    metadata_mapping: Dict[str, Union[List[Any], str]],
+    provider_queryables: dict[str, Any],
+    metadata_mapping: dict[str, Union[List[Any], str]],
 ) -> str:
     """Finds the provider queryable corresponding to the given eodag key based on the metadata mapping
 

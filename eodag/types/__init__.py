@@ -22,7 +22,6 @@ from __future__ import annotations
 from typing import (
     Annotated,
     Any,
-    Dict,
     List,
     Literal,
     Optional,
@@ -42,7 +41,7 @@ from eodag.utils.exceptions import ValidationError
 
 # Types mapping from JSON Schema and OpenAPI 3.1.0 specifications to Python
 # See https://spec.openapis.org/oas/v3.1.0#data-types
-JSON_TYPES_MAPPING: Dict[str, type] = {
+JSON_TYPES_MAPPING: dict[str, type] = {
     "boolean": bool,
     "integer": int,
     "number": float,
@@ -85,7 +84,7 @@ def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> Tuple[str, Any]:
 
 def _get_type_info_from_annotated(
     annotated_type: Annotated[type, Any],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Retrieves type information from an annotated object
 
     :param annotated_type: annotated object
@@ -108,7 +107,7 @@ def _get_type_info_from_annotated(
 
 def python_type_to_json(
     python_type: type,
-) -> Optional[Union[str, List[Dict[str, Any]]]]:
+) -> Optional[Union[str, List[dict[str, Any]]]]:
     """Get json type from python https://spec.openapis.org/oas/v3.1.0#data-types
 
     >>> python_type_to_json(int)
@@ -149,7 +148,7 @@ def python_type_to_json(
 
 
 def json_field_definition_to_python(
-    json_field_definition: Dict[str, Any],
+    json_field_definition: dict[str, Any],
     default_value: Optional[Any] = None,
     required: Optional[bool] = False,
 ) -> Annotated[Any, FieldInfo]:
@@ -210,7 +209,7 @@ def json_field_definition_to_python(
 
 def python_field_definition_to_json(
     python_field_definition: Annotated[Any, FieldInfo],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get json field definition from python `typing.Annotated`
 
     >>> from pydantic import Field
@@ -231,7 +230,7 @@ def python_field_definition_to_json(
             "%s must be an instance of Annotated" % python_field_definition
         )
 
-    json_field_definition: Dict[str, Any] = dict()
+    json_field_definition: dict[str, Any] = dict()
 
     python_field_args = get_args(python_field_definition)
 
@@ -311,8 +310,8 @@ def python_field_definition_to_json(
 
 
 def model_fields_to_annotated(
-    model_fields: Dict[str, FieldInfo],
-) -> Dict[str, Annotated[Any, FieldInfo]]:
+    model_fields: dict[str, FieldInfo],
+) -> dict[str, Annotated[Any, FieldInfo]]:
     """Convert BaseModel.model_fields from FieldInfo to Annotated
 
     >>> from pydantic import create_model
@@ -326,7 +325,7 @@ def model_fields_to_annotated(
     :param model_fields: BaseModel.model_fields to convert
     :returns: Annotated tuple usable as create_model argument
     """
-    annotated_model_fields: Dict[str, Annotated[Any, FieldInfo]] = dict()
+    annotated_model_fields: dict[str, Annotated[Any, FieldInfo]] = dict()
     for param, field_info in model_fields.items():
         field_type = field_info.annotation or type(None)
         new_field_info = copy_deepcopy(field_info)
@@ -336,7 +335,7 @@ def model_fields_to_annotated(
 
 
 def annotated_dict_to_model(
-    model_name: str, annotated_fields: Dict[str, Annotated[Any, FieldInfo]]
+    model_name: str, annotated_fields: dict[str, Annotated[Any, FieldInfo]]
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 

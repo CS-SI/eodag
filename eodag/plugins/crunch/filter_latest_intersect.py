@@ -20,7 +20,7 @@ from __future__ import annotations
 import datetime
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, List, Union
 
 import dateutil.parser
 from shapely import geometry
@@ -54,14 +54,14 @@ class FilterLatestIntersect(Crunch):
         return dateutil.parser.parse(start_date)
 
     def proceed(
-        self, products: List[EOProduct], **search_params: Dict[str, Any]
+        self, products: List[EOProduct], **search_params: dict[str, Any]
     ) -> List[EOProduct]:
         """Execute crunch:
         Filter latest products (the ones with a the highest start date) that intersect search extent.
 
         :param products: A list of products resulting from a search
         :param search_params: Search criteria that must contain ``geometry`` or ``geom`` parameters having value of
-                              type :class:`shapely.geometry.base.BaseGeometry` or ``Dict[str, Any]``
+                              type :class:`shapely.geometry.base.BaseGeometry` or ``dict[str, Any]``
         :returns: The filtered products
         """
         logger.debug("Start filtering for latest products")
@@ -71,7 +71,7 @@ class FilterLatestIntersect(Crunch):
         products.sort(key=self.sort_product_by_start_date, reverse=True)
         filtered: List[EOProduct] = []
         add_to_filtered = filtered.append
-        footprint: Union[Dict[str, Any], BaseGeometry, Any] = search_params.get(
+        footprint: Union[dict[str, Any], BaseGeometry, Any] = search_params.get(
             "geometry"
         ) or search_params.get("geom")
         if not footprint:

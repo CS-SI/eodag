@@ -19,17 +19,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Annotated, Any, List, Literal, Optional, Tuple, Union
 
 import geojson
 from pydantic import (
@@ -117,8 +107,8 @@ class SearchPostRequest(BaseModel):
     page: Optional[PositiveInt] = Field(  # type: ignore
         default=None, description="Page number, must be a positive integer."
     )
-    query: Optional[Dict[str, Any]] = None
-    filter: Optional[Dict[str, Any]] = None
+    query: Optional[dict[str, Any]] = None
+    filter: Optional[dict[str, Any]] = None
     filter_lang: Optional[str] = Field(
         default=None,
         alias="filter-lang",
@@ -131,7 +121,7 @@ class SearchPostRequest(BaseModel):
     @field_serializer("intersects")
     def serialize_intersects(
         self, intersects: Optional[Geometry]
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Serialize intersects from shapely to a proper dict"""
         if intersects:
             return geojson.loads(geojson.dumps(intersects))  # type: ignore
@@ -150,7 +140,7 @@ class SearchPostRequest(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def only_one_spatial(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def only_one_spatial(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Check bbox and intersects are not both supplied."""
         if "intersects" in values and "bbox" in values:
             raise ValueError("intersects and bbox parameters are mutually exclusive")
@@ -178,7 +168,7 @@ class SearchPostRequest(BaseModel):
 
     @field_validator("intersects", mode="before")
     @classmethod
-    def validate_intersects(cls, v: Union[Dict[str, Any], Geometry]) -> Geometry:
+    def validate_intersects(cls, v: Union[dict[str, Any], Geometry]) -> Geometry:
         """Verify format of intersects"""
         if isinstance(v, BaseGeometry):
             return v

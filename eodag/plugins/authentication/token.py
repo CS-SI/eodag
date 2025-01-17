@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import requests
@@ -60,9 +60,9 @@ class TokenAuth(Authentication):
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): TokenAuth
         * :attr:`~eodag.config.PluginConfig.auth_uri` (``str``) (**mandatory**): url used to fetch
           the access token with user/password
-        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``): Dictionary containing all
+        * :attr:`~eodag.config.PluginConfig.headers` (``dict[str, str]``): Dictionary containing all
           keys/value pairs that should be added to the headers
-        * :attr:`~eodag.config.PluginConfig.retrieve_headers` (``Dict[str, str]``): Dictionary containing all
+        * :attr:`~eodag.config.PluginConfig.retrieve_headers` (``dict[str, str]``): Dictionary containing all
           keys/value pairs that should be added to the headers for token retrieve only
         * :attr:`~eodag.config.PluginConfig.refresh_uri` (``str``) : url used to fetch the
           access token with a refresh token
@@ -76,7 +76,7 @@ class TokenAuth(Authentication):
           should be verified in the requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
           returned in case of an authentication error
-        * :attr:`~eodag.config.PluginConfig.req_data` (``Dict[str, Any]``): if the credentials
+        * :attr:`~eodag.config.PluginConfig.req_data` (``dict[str, Any]``): if the credentials
           should be sent as data in the post request, the json structure can be given in this parameter
         * :attr:`~eodag.config.PluginConfig.retry_total` (``int``): :class:`urllib3.util.Retry` ``total`` parameter,
           total number of retries to allow; default: ``3``
@@ -200,7 +200,7 @@ class TokenAuth(Authentication):
             headers = self.config.headers
 
         # append headers to req if some are specified in config
-        req_kwargs: Dict[str, Any] = {"headers": dict(headers, **USER_AGENT)}
+        req_kwargs: dict[str, Any] = {"headers": dict(headers, **USER_AGENT)}
         ssl_verify = getattr(self.config, "ssl_verify", True)
 
         if self.refresh_token:
@@ -260,7 +260,7 @@ class RequestsTokenAuth(AuthBase):
         token: str,
         where: str,
         qs_key: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> None:
         self.token = token
         self.where = where

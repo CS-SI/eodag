@@ -22,7 +22,7 @@ import os
 import re
 import sys
 import unittest
-from typing import Any, Dict, Iterator, Set
+from typing import Any, Iterator, Set
 
 import importlib_metadata
 from packaging.requirements import Requirement
@@ -109,7 +109,7 @@ def get_resulting_extras(setup_cfg_path: str, extra: str) -> Set[str]:
     return extras
 
 
-def get_entrypoints_extras(setup_cfg_path: str) -> Dict[str, str]:
+def get_entrypoints_extras(setup_cfg_path: str) -> dict[str, str]:
     """Get entrypoints and associated extra from the given setup.cfg file path"""
     config = configparser.ConfigParser()
     config.read(setup_cfg_path)

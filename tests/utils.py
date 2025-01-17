@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 # All tests files should import mock from this place
 from unittest import mock
@@ -62,7 +62,7 @@ def write_eodag_conf_with_fake_credentials(config_file):
 
 def mock_request(
     url: str,
-    body: Optional[Dict[str, Any]] = None,
+    body: Optional[dict[str, Any]] = None,
     method: Optional[Literal["GET", "POST"]] = "GET",
 ) -> mock.Mock:
     parsed_url = urlparse(url)

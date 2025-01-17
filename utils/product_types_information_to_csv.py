@@ -20,7 +20,7 @@ from __future__ import annotations
 import csv
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, List
 
 from eodag.api.core import EODataAccessGateway
 from eodag.config import load_default_config
@@ -77,7 +77,7 @@ def product_types_info_to_csv(
         product_types_writer.writeheader()
 
         # create product types table rows
-        product_types_rows: Dict[str, Any] = {}
+        product_types_rows: dict[str, Any] = {}
         for product_type_name in product_types_names:
             product_types_rows[product_type_name] = {"product type": product_type_name}
             for metadata_param in metadata_params:

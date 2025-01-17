@@ -24,7 +24,7 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Union
 
 import geojson
 import pkg_resources
@@ -185,7 +185,7 @@ class EODataAccessGateway:
         self._plugins_manager.rebuild(self.providers_config)
 
         # store pruned providers configs
-        self._pruned_providers_config: Dict[str, Any] = {}
+        self._pruned_providers_config: dict[str, Any] = {}
         # filter out providers needing auth that have no credentials set
         self._prune_providers_list()
 
@@ -351,7 +351,7 @@ class EODataAccessGateway:
     def update_providers_config(
         self,
         yaml_conf: Optional[str] = None,
-        dict_conf: Optional[Dict[str, Any]] = None,
+        dict_conf: Optional[dict[str, Any]] = None,
     ) -> None:
         """Update providers configuration with given input.
         Can be used to add a provider to existing configuration or update
@@ -397,12 +397,12 @@ class EODataAccessGateway:
         name: str,
         url: Optional[str] = None,
         priority: Optional[int] = None,
-        search: Dict[str, Any] = {"type": "StacSearch"},
-        products: Dict[str, Any] = {
+        search: dict[str, Any] = {"type": "StacSearch"},
+        products: dict[str, Any] = {
             GENERIC_PRODUCT_TYPE: {"productType": "{productType}"}
         },
-        download: Dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
-        **kwargs: Dict[str, Any],
+        download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        **kwargs: dict[str, Any],
     ):
         """Adds a new provider.
 
@@ -421,7 +421,7 @@ class EODataAccessGateway:
         :param download: Download :class:`~eodag.config.PluginConfig` mapping
         :param kwargs: Additional :class:`~eodag.config.ProviderConfig` mapping
         """
-        conf_dict: Dict[str, Any] = {
+        conf_dict: dict[str, Any] = {
             name: {
                 "url": url,
                 "search": {"type": "StacSearch", **search},
@@ -565,7 +565,7 @@ class EODataAccessGateway:
             main_locations_config = locations_config[main_key]
 
             logger.info("Locations configuration loaded from %s" % locations_conf_path)
-            self.locations_config: List[Dict[str, Any]] = main_locations_config
+            self.locations_config: List[dict[str, Any]] = main_locations_config
         else:
             logger.info(
                 "Could not load locations configuration from %s" % locations_conf_path
@@ -574,7 +574,7 @@ class EODataAccessGateway:
 
     def list_product_types(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> List[Dict[str, Any]]:
+    ) -> List[dict[str, Any]]:
         """Lists supported product types.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -588,7 +588,7 @@ class EODataAccessGateway:
             # First, update product types list if possible
             self.fetch_product_types_list(provider=provider)
 
-        product_types: List[Dict[str, Any]] = []
+        product_types: List[dict[str, Any]] = []
 
         providers_configs = (
             list(self.providers_config.values())
@@ -644,7 +644,7 @@ class EODataAccessGateway:
             providers_to_fetch = [provider]
 
         # providers discovery confs that are fetchable
-        providers_discovery_configs_fetchable: Dict[str, Any] = {}
+        providers_discovery_configs_fetchable: dict[str, Any] = {}
         # check if any provider has not already been fetched for product types
         already_fetched = True
         for provider_to_fetch in providers_to_fetch:
@@ -767,7 +767,7 @@ class EODataAccessGateway:
 
     def discover_product_types(
         self, provider: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Fetch providers for product types
 
         :param provider: The name of a provider or provider-group to fetch. Defaults to
@@ -787,7 +787,7 @@ class EODataAccessGateway:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
-        ext_product_types_conf: Dict[str, Any] = {}
+        ext_product_types_conf: dict[str, Any] = {}
         providers_to_fetch = [
             p
             for p in (
@@ -800,7 +800,7 @@ class EODataAccessGateway:
                 else self.available_providers()
             )
         ]
-        kwargs: Dict[str, Any] = {}
+        kwargs: dict[str, Any] = {}
         for provider in providers_to_fetch:
             if hasattr(self.providers_config[provider], "search"):
                 search_plugin_config = self.providers_config[provider].search
@@ -841,7 +841,7 @@ class EODataAccessGateway:
         return sort_dict(ext_product_types_conf)
 
     def update_product_types_list(
-        self, ext_product_types_conf: Dict[str, Optional[Dict[str, Dict[str, Any]]]]
+        self, ext_product_types_conf: dict[str, Optional[dict[str, dict[str, Any]]]]
     ) -> None:
         """Update eodag product types list
 
@@ -959,7 +959,7 @@ class EODataAccessGateway:
 
         # If by_group is True, keep only the highest priority for each group
         if by_group:
-            group_priority: Dict[str, int] = {}
+            group_priority: dict[str, int] = {}
             for name, priority in providers:
                 if name not in group_priority or priority > group_priority[name]:
                     group_priority[name] = priority
@@ -1084,7 +1084,7 @@ class EODataAccessGateway:
             query = p.parse(text)
             results = searcher.search(query, limit=None)
 
-            guesses: List[Dict[str, str]] = [dict(r) for r in results or []]
+            guesses: List[dict[str, str]] = [dict(r) for r in results or []]
 
         # datetime filtering
         if missionStartDate or missionEndDate:
@@ -1125,8 +1125,8 @@ class EODataAccessGateway:
         raise_errors: bool = False,
         start: Optional[str] = None,
         end: Optional[str] = None,
-        geom: Optional[Union[str, Dict[str, float], BaseGeometry]] = None,
-        locations: Optional[Dict[str, str]] = None,
+        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
+        locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         count: bool = False,
         **kwargs: Any,
@@ -1234,8 +1234,8 @@ class EODataAccessGateway:
         items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
         start: Optional[str] = None,
         end: Optional[str] = None,
-        geom: Optional[Union[str, Dict[str, float], BaseGeometry]] = None,
-        locations: Optional[Dict[str, str]] = None,
+        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
+        locations: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Iterator[SearchResult]:
         """Iterate over the pages of a products search.
@@ -1411,8 +1411,8 @@ class EODataAccessGateway:
         items_per_page: Optional[int] = None,
         start: Optional[str] = None,
         end: Optional[str] = None,
-        geom: Optional[Union[str, Dict[str, float], BaseGeometry]] = None,
-        locations: Optional[Dict[str, str]] = None,
+        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
+        locations: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Search and return all the products matching the search criteria.
@@ -1633,7 +1633,7 @@ class EODataAccessGateway:
         if not getattr(plugin.config, "discover_product_types", {}).get("fetch_url"):
             return None
 
-        kwargs: Dict[str, Any] = {"productType": product_type}
+        kwargs: dict[str, Any] = {"productType": product_type}
 
         # append auth if needed
         if getattr(plugin.config, "need_auth", False):
@@ -1651,11 +1651,11 @@ class EODataAccessGateway:
         self,
         start: Optional[str] = None,
         end: Optional[str] = None,
-        geom: Optional[Union[str, Dict[str, float], BaseGeometry]] = None,
-        locations: Optional[Dict[str, str]] = None,
+        geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
+        locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[List[Union[Search, Api]], Dict[str, Any]]:
+    ) -> Tuple[List[Union[Search, Api]], dict[str, Any]]:
         """Internal method to prepare the search kwargs and get the search plugins.
 
         Product query:
@@ -1993,7 +1993,7 @@ class EODataAccessGateway:
         """
         # Dict with extents as keys, each extent being defined by a str
         # "{minx}{miny}{maxx}{maxy}" (each float rounded to 2 dec).
-        products_grouped_by_extent: Dict[str, Any] = {}
+        products_grouped_by_extent: dict[str, Any] = {}
 
         for search in searches:
             for product in search:
@@ -2310,7 +2310,7 @@ class EODataAccessGateway:
 
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             # attach product type config
-            product_type_configs: Dict[str, Any] = {}
+            product_type_configs: dict[str, Any] = {}
             if product_type:
                 self._attach_product_type_config(plugin, product_type)
                 product_type_configs[product_type] = plugin.config.product_type_config
@@ -2354,7 +2354,7 @@ class EODataAccessGateway:
             **queryable_properties,
         )
 
-    def available_sortables(self) -> Dict[str, Optional[ProviderSortables]]:
+    def available_sortables(self) -> dict[str, Optional[ProviderSortables]]:
         """For each provider, gives its available sortable parameter(s) and its maximum
         number of them if it supports the sorting feature, otherwise gives None.
 
@@ -2362,7 +2362,7 @@ class EODataAccessGateway:
                   its (their) maximum number as value(s).
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        sortables: Dict[str, Optional[ProviderSortables]] = {}
+        sortables: dict[str, Optional[ProviderSortables]] = {}
         provider_search_plugins = self._plugins_manager.get_search_plugins()
         for provider_search_plugin in provider_search_plugins:
             provider = provider_search_plugin.provider

@@ -41,7 +41,7 @@ class OIDCTokenExchangeAuth(Authentication):
     :param provider: provider name
     :param config: Authentication plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.subject` (``Dict[str, Any]``) (**mandatory**):
+        * :attr:`~eodag.config.PluginConfig.subject` (``dict[str, Any]``) (**mandatory**):
           The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin
           configuration used to retrieve subject token
         * :attr:`~eodag.config.PluginConfig.subject_issuer` (``str``) (**mandatory**): Identifies

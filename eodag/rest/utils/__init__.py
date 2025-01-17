@@ -27,7 +27,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterator,
     List,
     NamedTuple,
@@ -90,7 +89,7 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
 
 def is_dict_str_any(var: Any) -> bool:
     """Verify whether the variable is of type dict[str, Any]"""
-    if isinstance(var, Dict):
+    if isinstance(var, dict):
         return all(isinstance(k, str) for k in var.keys())  # type: ignore
     return False
 
@@ -102,7 +101,7 @@ def str2list(v: Optional[str]) -> Optional[List[str]]:
     return None
 
 
-def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def str2json(k: str, v: Optional[str] = None) -> Optional[dict[str, Any]]:
     """decoding a URL parameter and then parsing it as JSON."""
     if not v:
         return None
@@ -138,7 +137,7 @@ def get_next_link(
     search_request: SearchPostRequest,
     total_results: Optional[int],
     items_per_page: int,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Generate next link URL and body"""
     body = search_request.model_dump(exclude_none=True)
     if "bbox" in body:
@@ -159,7 +158,7 @@ def get_next_link(
         params["page"] = str(page + 1)
         url += f"?{urlencode(params)}"
 
-    next: Dict[str, Any] = {
+    next: dict[str, Any] = {
         "rel": "next",
         "href": url,
         "title": "Next page",

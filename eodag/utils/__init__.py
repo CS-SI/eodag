@@ -54,7 +54,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
     List,
@@ -322,7 +321,7 @@ def path_to_uri(path: str) -> str:
     return Path(path).as_uri()
 
 
-def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) -> None:
+def mutate_dict_in_place(func: Callable[[Any], Any], mapping: dict[Any, Any]) -> None:
     """Apply func to values of mapping.
 
     The mapping object's values are modified in-place. The function is recursive,
@@ -340,7 +339,7 @@ def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) ->
             mapping[key] = func(value)
 
 
-def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
+def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
     """Merge two mappings with string keys, values from ``mapping2`` overriding values
     from ``mapping1``.
 
@@ -646,8 +645,8 @@ def rename_with_version(file_path: str, suffix: str = "old") -> str:
 
 
 def format_dict_items(
-    config_dict: Dict[str, Any], **format_variables: Any
-) -> Dict[Any, Any]:
+    config_dict: dict[str, Any], **format_variables: Any
+) -> dict[Any, Any]:
     r"""Recursively apply :meth:`str.format` to ``**format_variables`` on ``config_dict`` values
 
     >>> format_dict_items(
@@ -664,8 +663,8 @@ def format_dict_items(
 
 
 def jsonpath_parse_dict_items(
-    jsonpath_dict: Dict[str, Any], values_dict: Dict[str, Any]
-) -> Dict[Any, Any]:
+    jsonpath_dict: dict[str, Any], values_dict: dict[str, Any]
+) -> dict[Any, Any]:
     """Recursively parse :class:`jsonpath_ng.JSONPath` elements in dict
 
     >>> import jsonpath_ng.ext as jsonpath
@@ -683,12 +682,12 @@ def jsonpath_parse_dict_items(
 
 
 def update_nested_dict(
-    old_dict: Dict[Any, Any],
-    new_dict: Dict[Any, Any],
+    old_dict: dict[Any, Any],
+    new_dict: dict[Any, Any],
     extend_list_values: bool = False,
     allow_empty_values: bool = False,
     allow_extend_duplicates: bool = True,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     """Update recursively ``old_dict`` items with ``new_dict`` ones
 
     >>> update_nested_dict(
@@ -768,10 +767,10 @@ def update_nested_dict(
 
 
 def items_recursive_apply(
-    input_obj: Union[Dict[Any, Any], List[Any]],
+    input_obj: Union[dict[Any, Any], List[Any]],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> Union[Dict[Any, Any], List[Any]]:
+) -> Union[dict[Any, Any], List[Any]]:
     """Recursive apply method to items contained in input object (dict or list)
 
     >>> items_recursive_apply(
@@ -809,10 +808,10 @@ def items_recursive_apply(
 
 
 def dict_items_recursive_apply(
-    config_dict: Dict[Any, Any],
+    config_dict: dict[Any, Any],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     """Recursive apply method to dict elements
 
     >>> dict_items_recursive_apply(
@@ -826,7 +825,7 @@ def dict_items_recursive_apply(
     :param apply_method_parameters: Optional parameters passed to the method
     :returns: Updated dict
     """
-    result_dict: Dict[Any, Any] = deepcopy(config_dict)
+    result_dict: dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_apply(
@@ -881,8 +880,8 @@ def list_items_recursive_apply(
 
 
 def items_recursive_sort(
-    input_obj: Union[List[Any], Dict[Any, Any]],
-) -> Union[List[Any], Dict[Any, Any]]:
+    input_obj: Union[List[Any], dict[Any, Any]],
+) -> Union[List[Any], dict[Any, Any]]:
     """Recursive sort dict items contained in input object (dict or list)
 
     >>> items_recursive_sort(
@@ -906,7 +905,7 @@ def items_recursive_sort(
         return input_obj
 
 
-def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
+def dict_items_recursive_sort(config_dict: dict[Any, Any]) -> dict[Any, Any]:
     """Recursive sort dict elements
 
     >>> dict_items_recursive_sort(
@@ -917,7 +916,7 @@ def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     :param config_dict: Input nested dictionary
     :returns: Updated dict
     """
-    result_dict: Dict[Any, Any] = deepcopy(config_dict)
+    result_dict: dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_sort(dict_v)
@@ -1064,7 +1063,7 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
 
 
 def parse_jsonpath(
-    key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: Dict[str, Any]
+    key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: dict[str, Any]
 ) -> Optional[str]:
     """Parse jsonpah in ``jsonpath_obj`` using ``values_dict``
 
@@ -1084,7 +1083,7 @@ def parse_jsonpath(
         return jsonpath_obj
 
 
-def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]]:
+def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, dict[Any, Any]]:
     """Create a dict using nested pairs
 
     >>> nested_pairs2dict([["foo", [["bar", "baz"]]]])
@@ -1106,7 +1105,7 @@ def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]
 
 
 def get_geometry_from_various(
-    locations_config: List[Dict[str, Any]] = [], **query_args: Any
+    locations_config: List[dict[str, Any]] = [], **query_args: Any
 ) -> BaseGeometry:
     """Creates a ``shapely.geometry`` using given query kwargs arguments
 
@@ -1282,7 +1281,7 @@ def _mutable_cached_yaml_load(config_path: str) -> Any:
         return yaml.load(fh, Loader=yaml.SafeLoader)
 
 
-def cached_yaml_load(config_path: str) -> Dict[str, Any]:
+def cached_yaml_load(config_path: str) -> dict[str, Any]:
     """Cached :func:`yaml.load`
 
     :param config_path: path to the yaml configuration file
@@ -1369,10 +1368,10 @@ def deepcopy(sth: Any) -> Any:
     :param sth: Object to copy
     :returns: Copied object
     """
-    _dispatcher: Dict[Type[Any], Callable[..., Any]] = {}
+    _dispatcher: dict[Type[Any], Callable[..., Any]] = {}
 
     def _copy_list(
-        input_list: List[Any], dispatch: Dict[Type[Any], Callable[..., Any]]
+        input_list: List[Any], dispatch: dict[Type[Any], Callable[..., Any]]
     ):
         ret = input_list.copy()
         for idx, item in enumerate(ret):
@@ -1382,7 +1381,7 @@ def deepcopy(sth: Any) -> Any:
         return ret
 
     def _copy_dict(
-        input_dict: Dict[Any, Any], dispatch: Dict[Type[Any], Callable[..., Any]]
+        input_dict: dict[Any, Any], dispatch: dict[Type[Any], Callable[..., Any]]
     ):
         ret = input_dict.copy()
         for key, value in ret.items():
@@ -1505,7 +1504,7 @@ def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     return ctx
 
 
-def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+def sort_dict(input_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Recursively sorts a dict by keys.
 
@@ -1521,7 +1520,7 @@ def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def dict_md5sum(input_dict: Dict[str, Any]) -> str:
+def dict_md5sum(input_dict: dict[str, Any]) -> str:
     """
     Hash nested dictionary
 

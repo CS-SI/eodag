@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 import requests
 
@@ -130,7 +130,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             key=getattr(self.config, "token_qs_key", None),
         )
 
-    def _request_new_token(self) -> Dict[str, Any]:
+    def _request_new_token(self) -> dict[str, Any]:
         logger.debug("fetching new access token")
         req_data = {
             "client_id": self.config.client_id,
@@ -154,7 +154,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             return self._request_new_token_error(e)
         return response.json()
 
-    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+    def _get_token_with_refresh_token(self) -> dict[str, str]:
         logger.debug("fetching access token with refresh token")
         req_data = {
             "client_id": self.config.client_id,

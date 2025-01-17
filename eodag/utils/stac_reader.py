@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 import socket
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -108,7 +108,7 @@ def fetch_stac_items(
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
     ssl_verify: bool = True,
-) -> List[Dict[str, Any]]:
+) -> List[dict[str, Any]]:
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
@@ -144,7 +144,7 @@ def _fetch_stac_items_from_catalog(
     _text_opener: Callable[[str, bool], Any],
 ) -> List[Any]:
     """Fetch items from a STAC catalog"""
-    items: List[Dict[Any, Any]] = []
+    items: List[dict[Any, Any]] = []
 
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
@@ -188,7 +188,7 @@ def fetch_stac_collections(
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
     ssl_verify: bool = True,
-) -> List[Dict[str, Any]]:
+) -> List[dict[str, Any]]:
     """Fetch STAC collection(s) from a catalog.
 
     :param stac_path: A STAC object filepath
@@ -219,7 +219,7 @@ def _fetch_stac_collections_from_catalog(
     _text_opener: Callable[[str, bool], Any],
 ) -> List[Any]:
     """Fetch collections from a STAC catalog"""
-    collections: List[Dict[Any, Any]] = []
+    collections: List[dict[Any, Any]] = []
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
     hrefs: List[Optional[str]] = [

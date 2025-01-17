@@ -18,17 +18,7 @@
 from __future__ import annotations
 
 from collections import UserList
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Iterable, List, Optional, Tuple, Union
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -92,7 +82,7 @@ class SearchResult(UserList):
         return self.crunch(FilterDate(dict(start=start, end=end)))
 
     def filter_latest_intersect(
-        self, geometry: Union[Dict[str, Any], BaseGeometry, Any]
+        self, geometry: Union[dict[str, Any], BaseGeometry, Any]
     ) -> SearchResult:
         """
         Apply :class:`~eodag.plugins.crunch.filter_latest_intersect.FilterLatestIntersect` crunch,
@@ -148,7 +138,7 @@ class SearchResult(UserList):
         return self.filter_property(storageStatus="ONLINE")
 
     @staticmethod
-    def from_geojson(feature_collection: Dict[str, Any]) -> SearchResult:
+    def from_geojson(feature_collection: dict[str, Any]) -> SearchResult:
         """Builds an :class:`~eodag.api.search_result.SearchResult` object from its representation as geojson
 
         :param feature_collection: A collection representing a search result.
@@ -161,7 +151,7 @@ class SearchResult(UserList):
             ]
         )
 
-    def as_geojson_object(self) -> Dict[str, Any]:
+    def as_geojson_object(self) -> dict[str, Any]:
         """GeoJSON representation of SearchResult"""
         return {
             "type": "FeatureCollection",
@@ -182,7 +172,7 @@ class SearchResult(UserList):
         return self.as_shapely_geometry_object().wkt
 
     @property
-    def __geo_interface__(self) -> Dict[str, Any]:
+    def __geo_interface__(self) -> dict[str, Any]:
         """Implements the geo-interface protocol.
 
         See https://gist.github.com/sgillies/2217756
@@ -231,8 +221,8 @@ class RawSearchResult(UserList):
     """
 
     data: List[Any]
-    query_params: Dict[str, Any]
-    product_type_def_params: Dict[str, Any]
+    query_params: dict[str, Any]
+    product_type_def_params: dict[str, Any]
 
     def __init__(self, results: List[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

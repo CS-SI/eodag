@@ -17,7 +17,7 @@
 # limitations under the License
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
@@ -32,7 +32,7 @@ class Crunch(PluginTopic):
     :param config: Crunch configuration
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]]) -> None:
+    def __init__(self, config: Optional[dict[str, Any]]) -> None:
         self.config = PluginConfig()
         self.config.__dict__ = config if config is not None else {}
 

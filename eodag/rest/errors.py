@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
@@ -60,12 +60,12 @@ class ResponseSearchError(Exception):
         self._errors = errors
 
     @property
-    def errors(self) -> List[Dict[str, Union[str, int]]]:
+    def errors(self) -> List[dict[str, Union[str, int]]]:
         """return errors as a list of dict"""
-        error_list: List[Dict[str, Union[str, int]]] = []
+        error_list: List[dict[str, Union[str, int]]] = []
         for name, exception in self._errors:
 
-            error_dict: Dict[str, Union[str, int]] = {
+            error_dict: dict[str, Union[str, int]] = {
                 "provider": name,
                 "error": exception.__class__.__name__,
             }

@@ -131,7 +131,7 @@ class TestStacUtils(unittest.TestCase):
         )
 
     def test_is_dict_str_any(self):
-        """is_dict_str_any verifies whether the input variable is of type Dict[str, Any]"""
+        """is_dict_str_any verifies whether the input variable is of type dict[str, Any]"""
         self.assertTrue(
             self.rest_utils.is_dict_str_any({"key1": "value1", "key2": "value2"})
         )

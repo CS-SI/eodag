@@ -28,17 +28,7 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, TypedDict, Union, cast
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -113,7 +103,7 @@ class HTTPDownload(Download):
           extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
           authentication error
-        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``Dict[str, Any]``): parameters to be
+        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``dict[str, Any]``): parameters to be
           added to the query params of the request
         * :attr:`~eodag.config.PluginConfig.archive_depth` (``int``): level in extracted path tree where to find data;
           default: ``1``
@@ -132,7 +122,7 @@ class HTTPDownload(Download):
           the search plugin used for the provider; default: ``False``
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
           or ``POST``); default: ``GET``
-        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): headers to be added to the order
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): headers to be added to the order
           request
         * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
           a typed dictionary containing the key ``metadata_mapping`` which can be used to add new product properties
@@ -140,7 +130,7 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
-        * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type specific config; the
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type specific config; the
           keys are the product types, the values are dictionaries which can contain the key
           :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific product type
 
@@ -154,7 +144,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is OFFLINE
@@ -186,7 +176,7 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         OrderKwargs = TypedDict(
-            "OrderKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
+            "OrderKwargs", {"json": dict[str, Union[Any, List[str]]]}, total=False
         )
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
@@ -238,7 +228,7 @@ class HTTPDownload(Download):
 
     def order_response_process(
         self, response: Response, product: EOProduct
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Process order response
 
         :param response: The order response
@@ -302,7 +292,7 @@ class HTTPDownload(Download):
         def _request(
             url: str,
             method: str = "GET",
-            headers: Optional[Dict[str, Any]] = None,
+            headers: Optional[dict[str, Any]] = None,
             json: Optional[Any] = None,
             timeout: int = HTTP_REQ_TIMEOUT,
         ) -> Response:
@@ -338,7 +328,7 @@ class HTTPDownload(Download):
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=timeout) from exc
 
-        status_request: Dict[str, Any] = status_config.get("request", {})
+        status_request: dict[str, Any] = status_config.get("request", {})
         status_request_method = str(status_request.get("method", "GET")).upper()
 
         if status_request_method == "POST":
@@ -355,8 +345,8 @@ class HTTPDownload(Download):
 
         # check header for success before full status request
         skip_parsing_status_response = False
-        status_dict: Dict[str, Any] = {}
-        config_on_success: Dict[str, Any] = status_config.get("on_success", {})
+        status_dict: dict[str, Any] = {}
+        config_on_success: dict[str, Any] = status_config.get("on_success", {})
         on_success_mm = config_on_success.get("metadata_mapping", {})
 
         status_response_content_needed = (
@@ -440,13 +430,13 @@ class HTTPDownload(Download):
             product.properties["orderStatus"] = status_dict.get("status")
 
             # handle status error
-            errors: Dict[str, Any] = status_config.get("error", {})
+            errors: dict[str, Any] = status_config.get("error", {})
             if errors and errors.items() <= status_dict.items():
                 raise DownloadError(
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
-        success_status: Dict[str, Any] = status_config.get("success", {}).get("status")
+        success_status: dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
         if (success_status and success_status != status_dict.get("status")) or (
             success_code and success_code != response.status_code
@@ -955,7 +945,7 @@ class HTTPDownload(Download):
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             req_url = parts._replace(query="").geturl()
-            req_kwargs: Dict[str, Any] = {"json": query_dict} if query_dict else {}
+            req_kwargs: dict[str, Any] = {"json": query_dict} if query_dict else {}
         else:
             req_url = url
             req_kwargs = {}
@@ -1295,7 +1285,7 @@ class HTTPDownload(Download):
         self,
         assets_values: List[Asset],
         auth: Optional[AuthBase],
-        params: Optional[Dict[str, str]],
+        params: Optional[dict[str, str]],
         zipped: bool = False,
     ) -> int:
         total_size = 0

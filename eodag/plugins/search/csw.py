@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -60,13 +60,13 @@ class CSWSearch(Search):
         * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): The endpoint of the
           provider's search interface
         * :attr:`~eodag.config.PluginConfig.version` (``str``): OGC Catalogue Service version; default: ``2.0.2``
-        * :attr:`~eodag.config.PluginConfig.search_definition` (``Dict[str, Any]``) (**mandatory**):
+        * :attr:`~eodag.config.PluginConfig.search_definition` (``dict[str, Any]``) (**mandatory**):
 
-          * **product_type_tags** (``List[Dict[str, Any]``): dict of product type tags
+          * **product_type_tags** (``List[dict[str, Any]``): dict of product type tags
           * **resource_location_filter** (``str``): regex string
-          * **date_tags** (``Dict[str, Any]``): tags for start and end
+          * **date_tags** (``dict[str, Any]``): tags for start and end
 
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Any]``): The search plugins of this kind can
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Any]``): The search plugins of this kind can
           detect when a metadata mapping is "query-able", and get the semantics of how to format the query string
           parameter that enables to make a query on the corresponding metadata. To make a metadata query-able,
           just configure it in the metadata mapping to be a list of 2 items, the first one being the
@@ -229,9 +229,9 @@ class CSWSearch(Search):
 
     def __convert_query_params(
         self,
-        product_type_def: Dict[str, Any],
+        product_type_def: dict[str, Any],
         product_type: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> Union[List[OgcExpression], List[List[OgcExpression]]]:
         """Translates eodag search to CSW constraints using owslib constraint classes"""
         constraints: List[OgcExpression] = []

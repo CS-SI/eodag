@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Match, Optional, cast
+from typing import TYPE_CHECKING, Any, List, Match, Optional, cast
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
@@ -42,7 +42,7 @@ class FilterLatestByName(Crunch):
 
     NAME_PATTERN_CONSTRAINT = re.compile(r"\(\?P<tileid>\\d\{6\}\)")
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         super(FilterLatestByName, self).__init__(config)
         name_pattern = config.pop("name_pattern")
         if not self.NAME_PATTERN_CONSTRAINT.search(name_pattern):

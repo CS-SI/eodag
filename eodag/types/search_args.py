@@ -17,7 +17,7 @@
 # limitations under the License.
 import re
 from datetime import datetime
-from typing import Annotated, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Annotated, Any, List, Optional, Tuple, Union, cast
 
 from annotated_types import MinLen
 from pydantic import BaseModel, ConfigDict, Field, conint, field_validator
@@ -31,7 +31,7 @@ from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import ValidationError
 
 NumType = Union[float, int]
-GeomArgs = Union[List[NumType], Tuple[NumType], Dict[str, NumType], str, BaseGeometry]
+GeomArgs = Union[List[NumType], Tuple[NumType], dict[str, NumType], str, BaseGeometry]
 
 PositiveInt = conint(gt=0)
 SortByList = Annotated[List[Tuple[str, str]], MinLen(1)]
@@ -48,7 +48,7 @@ class SearchArgs(BaseModel):
     start: Optional[str] = Field(None)
     end: Optional[str] = Field(None)
     geom: Optional[BaseGeometry] = Field(None)
-    locations: Optional[Dict[str, str]] = Field(None)
+    locations: Optional[dict[str, str]] = Field(None)
     page: Optional[int] = Field(DEFAULT_PAGE, gt=0)  # type: ignore
     items_per_page: Optional[PositiveInt] = Field(DEFAULT_ITEMS_PER_PAGE)  # type: ignore
     sort_by: Optional[SortByList] = Field(None)  # type: ignore
