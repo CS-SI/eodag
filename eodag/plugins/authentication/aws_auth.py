@@ -81,7 +81,7 @@ class AwsAuth(Authentication):
             {
                 k: getattr(self, k)
                 for k in S3SessionKwargs.__annotations__
-                if getattr(self, k, None) is not None
+                if getattr(self, k, None)
             },
         )
         return auth_dict
