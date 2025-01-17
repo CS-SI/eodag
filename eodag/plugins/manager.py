@@ -21,7 +21,7 @@ import logging
 import re
 from operator import attrgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import pkg_resources
 
@@ -437,7 +437,7 @@ class PluginManager:
         self,
         provider: str,
         plugin_conf: PluginConfig,
-        topic_class: Type[PluginTopic],
+        topic_class: type[PluginTopic],
     ) -> Union[Api, Search, Download, Authentication, Crunch]:
         """Build the plugin of the given topic with the given plugin configuration and
         registered as the given provider

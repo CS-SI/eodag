@@ -58,7 +58,6 @@ from typing import (
     Iterator,
     Mapping,
     Optional,
-    Type,
     Union,
     cast,
 )
@@ -1366,10 +1365,10 @@ def deepcopy(sth: Any) -> Any:
     :param sth: Object to copy
     :returns: Copied object
     """
-    _dispatcher: dict[Type[Any], Callable[..., Any]] = {}
+    _dispatcher: dict[type[Any], Callable[..., Any]] = {}
 
     def _copy_list(
-        input_list: list[Any], dispatch: dict[Type[Any], Callable[..., Any]]
+        input_list: list[Any], dispatch: dict[type[Any], Callable[..., Any]]
     ):
         ret = input_list.copy()
         for idx, item in enumerate(ret):
@@ -1379,7 +1378,7 @@ def deepcopy(sth: Any) -> Any:
         return ret
 
     def _copy_dict(
-        input_dict: dict[Any, Any], dispatch: dict[Type[Any], Callable[..., Any]]
+        input_dict: dict[Any, Any], dispatch: dict[type[Any], Callable[..., Any]]
     ):
         ret = input_dict.copy()
         for key, value in ret.items():
