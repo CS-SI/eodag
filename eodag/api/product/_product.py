@@ -500,9 +500,7 @@ class EOProduct:
                 if all([criteria(self) for criteria in driver_conf["criteria"]]):
                     return driver_conf["driver"]
         except TypeError:
-            logger.warning(
-                "Drivers definition seems out-of-date, please update eodag-cube"
-            )
+            logger.info("No driver matching")
             pass
         return NoDriver()
 

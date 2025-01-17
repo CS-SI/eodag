@@ -16,14 +16,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """EODAG drivers package"""
-from eodag.api.product.drivers.base import DatasetDriver, NoDriver
+from __future__ import annotations
 
-try:
-    from eodag_cube.api.product.drivers import (  # pyright: ignore[reportMissingImports]
-        DRIVERS,
-    )
-except ImportError:
-    DRIVERS = []
+from typing import Callable, TypedDict
+
+from eodag.api.product.drivers.base import DatasetDriver, NoDriver
+from eodag.api.product.drivers.generic import GenericDriver
+from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
+from eodag.api.product.drivers.stac_assets import StacAssets
+
+DriverCriteria = TypedDict(
+    "DriverCriteria",
+    {
+        "criteria": list[Callable[..., bool]],
+        "driver": DatasetDriver,
+    },
+)
+
+DRIVERS: list[DriverCriteria] = [
+    {
+        "criteria": [
+            lambda prod: True if len(getattr(prod, "assets", {})) > 0 else False
+        ],
+        "driver": StacAssets(),
+    },
+    {
+        "criteria": [lambda prod: True if "assets" in prod.properties else False],
+        "driver": StacAssets(),
+    },
+    {
+        "criteria": [
+            lambda prod: True
+            if getattr(prod, "product_type") == "S2_MSI_L1C"
+            else False
+        ],
+        "driver": Sentinel2L1C(),
+    },
+    {
+        "criteria": [lambda prod: True],
+        "driver": GenericDriver(),
+    },
+]
 
 # exportable content
 __all__ = ["DRIVERS", "DatasetDriver", "NoDriver"]
