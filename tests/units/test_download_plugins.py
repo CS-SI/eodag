@@ -719,6 +719,38 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
         )
 
+    @mock.patch(
+        "eodag.plugins.download.http.ProgressCallback.__call__",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_stream_zip_interrupt(
+        self, mock_requests_get, mock_requests_head, mock_progress_callback
+    ):
+        """HTTPDownload.download() must download assets to a temporary file"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        self.product.assets.update({"any": {"href": "http://somewhere/anything"}})
+
+        # first asset returns error
+        mock_requests_get.return_value = MockResponse(status_code=404)
+        mock_requests_head.return_value.headers = {
+            "content-disposition": "",
+            "Content-length": "10",
+        }
+
+        with self.assertRaises(DownloadError):
+            plugin._stream_download_dict(self.product, output_dir=self.output_dir)
+        # Interrupted download
+        # Product location not changed
+        self.assertEqual(self.product.location, "http://somewhere")
+        self.assertEqual(self.product.remote_location, "http://somewhere")
+
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
     def test_plugins_download_http_assets_resume(
