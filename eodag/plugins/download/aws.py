@@ -23,7 +23,7 @@ import re
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Match, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 
 import boto3
 import requests
@@ -1118,7 +1118,7 @@ class AwsDownload(Download):
         s1_title_suffix: Optional[str] = None
         # S2 common
         if product.product_type and "S2_MSI" in product.product_type:
-            title_search: Optional[Match[str]] = re.search(
+            title_search: Optional[re.Match[str]] = re.search(
                 r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
                 product.properties["title"],
             )

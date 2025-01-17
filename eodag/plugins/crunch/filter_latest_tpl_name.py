@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Match, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from eodag.plugins.crunch.base import Crunch
 from eodag.utils.exceptions import ValidationError
@@ -66,7 +66,7 @@ class FilterLatestByName(Crunch):
         filtered: list[EOProduct] = []
         for product in products:
             match = cast(
-                Optional[Match[Any]],
+                Optional[re.Match[Any]],
                 self.name_pattern.match(product.properties["title"]),
             )
             if match:
