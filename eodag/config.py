@@ -453,14 +453,7 @@ class PluginConfig(yaml.YAMLObject):
     per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
     metadata_pre_mapping: PluginConfig.MetadataPreMapping
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
-    data_request_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
-    status_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: URL to fetch the search result when the data request is done
-    result_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
+    #: :class:`~eodag.plugins.search.data_request_search.ECMWFSearch`
     #: if date parameters are mandatory in the request
     dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
