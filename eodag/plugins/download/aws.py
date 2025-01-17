@@ -33,7 +33,6 @@ from typing import (
     Match,
     Optional,
     Set,
-    Tuple,
     Union,
     cast,
 )
@@ -407,7 +406,7 @@ class AwsDownload(Download):
         product: EOProduct,
         progress_callback: ProgressCallback,
         **kwargs: Unpack[DownloadConf],
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str]]:
         """
         preparation for the download:
         - check if file was already downloaded
@@ -480,7 +479,7 @@ class AwsDownload(Download):
         product: EOProduct,
         asset_filter: Optional[str] = None,
         ignore_assets: Optional[bool] = False,
-    ) -> List[Tuple[str, Optional[str]]]:
+    ) -> List[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
 
@@ -522,9 +521,9 @@ class AwsDownload(Download):
 
     def _do_authentication(
         self,
-        bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: List[tuple[str, Optional[str]]],
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-    ) -> Tuple[Dict[str, Any], ResourceCollection]:
+    ) -> tuple[Dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
@@ -591,7 +590,7 @@ class AwsDownload(Download):
 
     def _get_unique_products(
         self,
-        bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
+        bucket_names_and_prefixes: List[tuple[str, Optional[str]]],
         authenticated_objects: Dict[str, Any],
         asset_filter: Optional[str],
         ignore_assets: bool,
@@ -1000,7 +999,7 @@ class AwsDownload(Download):
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None
-    ) -> Tuple[str, Optional[str]]:
+    ) -> tuple[str, Optional[str]]:
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download

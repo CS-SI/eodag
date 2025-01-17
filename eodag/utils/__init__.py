@@ -59,7 +59,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Tuple,
     Type,
     Union,
     cast,
@@ -1309,7 +1308,7 @@ def cached_yaml_load_all(config_path: str) -> List[Any]:
 
 def get_bucket_name_and_prefix(
     url: str, bucket_path_level: Optional[int] = None
-) -> Tuple[Optional[str], Optional[str]]:
+) -> tuple[Optional[str], Optional[str]]:
     """Extract bucket name and prefix from URL
 
     :param url: (optional) URL to use as product.location

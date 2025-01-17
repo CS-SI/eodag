@@ -23,17 +23,7 @@ import logging
 import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, List, Optional, Set, Union, cast
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -415,7 +405,7 @@ class ECMWFSearch(PostJsonSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information needed for the search
@@ -438,7 +428,7 @@ class ECMWFSearch(PostJsonSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id
@@ -1163,7 +1153,7 @@ class MeteoblueSearch(ECMWFSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[str], int]:
+    ) -> tuple[List[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
@@ -1195,7 +1185,7 @@ class MeteoblueSearch(ECMWFSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id
@@ -1271,7 +1261,7 @@ class WekeoECMWFSearch(ECMWFSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id

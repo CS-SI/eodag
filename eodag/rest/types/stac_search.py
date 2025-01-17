@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, List, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Annotated, Any, List, Literal, Optional, Union
 
 import geojson
 from pydantic import (
@@ -53,8 +53,8 @@ if TYPE_CHECKING:
 NumType = Union[float, int]
 
 BBox = Union[
-    Tuple[NumType, NumType, NumType, NumType],
-    Tuple[NumType, NumType, NumType, NumType, NumType, NumType],
+    tuple[NumType, NumType, NumType, NumType],
+    tuple[NumType, NumType, NumType, NumType, NumType, NumType],
 ]
 
 Geometry = Union[

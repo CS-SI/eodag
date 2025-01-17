@@ -31,7 +31,6 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Tuple,
     Union,
     cast,
 )
@@ -88,7 +87,7 @@ DEFAULT_GEOMETRY = "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))"
 
 def get_metadata_path(
     map_value: Union[str, List[str]],
-) -> Tuple[Union[List[str], None], str]:
+) -> tuple[Union[List[str], None], str]:
     """Return the jsonpath or xpath to the value of a EO product metadata in a provider
     search result.
 

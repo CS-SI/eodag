@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 import requests
 
@@ -226,7 +226,7 @@ class DataRequestSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """
         performs the search for a provider where several steps are required to fetch the data
         """
@@ -454,7 +454,7 @@ class DataRequestSearch(Search):
         data_request_id: str,
         product_type: str,
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], int]:
+    ) -> tuple[List[EOProduct], int]:
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]

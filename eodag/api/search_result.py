@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Annotated, Any, Iterable, List, Optional, Union
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -49,14 +49,14 @@ class SearchResult(UserList):
     data: List[EOProduct]
 
     errors: Annotated[
-        List[Tuple[str, Exception]], Doc("Tuple of provider name, exception")
+        List[tuple[str, Exception]], Doc("Tuple of provider name, exception")
     ]
 
     def __init__(
         self,
         products: List[EOProduct],
         number_matched: Optional[int] = None,
-        errors: List[Tuple[str, Exception]] = [],
+        errors: List[tuple[str, Exception]] = [],
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched

@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any, List
 
 from eodag.utils.exceptions import PluginNotFoundError
 
@@ -29,7 +29,7 @@ class EODAGPluginMount(type):
     """Plugin mount"""
 
     def __init__(
-        cls, name: str, bases: Tuple[type, ...], attrs: dict[str, Any]
+        cls, name: str, bases: tuple[type, ...], attrs: dict[str, Any]
     ) -> None:
         if not hasattr(cls, "plugins"):
             # This branch only executes when processing the mount point itself.

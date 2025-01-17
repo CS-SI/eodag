@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional
 from unittest import mock
 
 import geojson
@@ -127,7 +127,7 @@ class StaticStacSearch(StacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
 
         # only return 1 page if pagination is disabled

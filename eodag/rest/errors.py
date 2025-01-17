@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import List, Tuple, Union
+from typing import List, Union
 
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
@@ -56,7 +56,7 @@ logger = logging.getLogger("eodag.rest.server")
 class ResponseSearchError(Exception):
     """Represent a EODAG search error response"""
 
-    def __init__(self, errors: List[Tuple[str, Exception]]) -> None:
+    def __init__(self, errors: List[tuple[str, Exception]]) -> None:
         self._errors = errors
 
     @property

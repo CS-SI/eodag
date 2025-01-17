@@ -43,7 +43,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Tuple, Union
+    from typing import Any, Dict, List, Optional, Union
 
     from requests.auth import AuthBase
 
@@ -91,7 +91,7 @@ class Search(PluginTopic):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Implementation of how the products must be searched goes here.
 
         This method must return a tuple with (1) a list of :class:`~eodag.api.product._product.EOProduct` instances
@@ -234,7 +234,7 @@ class Search(PluginTopic):
 
     def build_sort_by(
         self, sort_by_arg: SortByList
-    ) -> Tuple[str, Dict[str, List[Dict[str, str]]]]:
+    ) -> tuple[str, Dict[str, List[Dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
         the ``sort_by`` argument into a provider-specific string or dictionary
 
@@ -250,7 +250,7 @@ class Search(PluginTopic):
         sort_by_qs: str = ""
         sort_by_qp: Dict[str, Any] = {}
 
-        provider_sort_by_tuples_used: List[Tuple[str, str]] = []
+        provider_sort_by_tuples_used: List[tuple[str, str]] = []
         for eodag_sort_by_tuple in sort_by_arg:
             eodag_sort_param = eodag_sort_by_tuple[0]
             provider_sort_param = self.config.sort["sort_param_mapping"].get(
@@ -283,7 +283,7 @@ class Search(PluginTopic):
                 if eodag_sort_order == "ASC"
                 else self.config.sort["sort_order_mapping"]["descending"]
             )
-            provider_sort_by_tuple: Tuple[str, str] = (
+            provider_sort_by_tuple: tuple[str, str] = (
                 provider_sort_param,
                 provider_sort_order,
             )

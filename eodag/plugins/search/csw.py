@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -107,7 +107,7 @@ class CSWSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:

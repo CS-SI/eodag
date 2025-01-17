@@ -16,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime as dt
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 
 from pygeofilter import ast
 from pygeofilter.backends.evaluator import Evaluator, handle
 from pygeofilter.values import Geometry, Interval
 
-simpleNode = Union[ast.Attribute, str, int, complex, float, List[Any], Tuple[Any, ...]]
+simpleNode = Union[ast.Attribute, str, int, complex, float, List[Any], tuple[Any, ...]]
 
 
 class EodagEvaluator(Evaluator):

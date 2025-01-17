@@ -30,7 +30,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     TypedDict,
     cast,
     get_args,
@@ -725,7 +724,7 @@ class QueryStringSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface
 
         :param prep: Object collecting needed information for search.
@@ -812,7 +811,7 @@ class QueryStringSearch(Search):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
         query_params = format_query_params(product_type, self.config, kwargs)
@@ -831,7 +830,7 @@ class QueryStringSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(page=None, items_per_page=None),
         **kwargs: Any,
-    ) -> Tuple[List[str], Optional[int]]:
+    ) -> tuple[List[str], Optional[int]]:
         """Build paginated urls"""
         page = prep.page
         items_per_page = prep.items_per_page
@@ -1133,7 +1132,7 @@ class QueryStringSearch(Search):
                 total_results = int(count_results)
         return total_results
 
-    def get_collections(self, prep: PreparedSearch, **kwargs: Any) -> Tuple[str, ...]:
+    def get_collections(self, prep: PreparedSearch, **kwargs: Any) -> tuple[str, ...]:
         """Get the collection to which the product belongs"""
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
         # /asset_publisher/Ac0d/content/change-of
@@ -1509,7 +1508,7 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", "")
         count = prep.count
@@ -1675,7 +1674,7 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[str], Optional[int]]:
+    ) -> tuple[List[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
         page = prep.page
         items_per_page = prep.items_per_page
@@ -1841,7 +1840,7 @@ class StacSearch(PostJsonSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
 
@@ -1997,6 +1996,6 @@ class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         return PostJsonSearch.build_query_string(self, product_type, **kwargs)

@@ -30,7 +30,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Tuple,
     TypedDict,
     Union,
     ValuesView,
@@ -165,7 +164,7 @@ class ProviderConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys: Union[Tuple[str, ...], Dict[str, Any]]) -> None:
+    def validate(config_keys: Union[tuple[str, ...], Dict[str, Any]]) -> None:
         """Validate a :class:`~eodag.config.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
@@ -240,7 +239,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for sort during search"""
 
         #: Default sort settings
-        sort_by_default: List[Tuple[str, str]]
+        sort_by_default: List[tuple[str, str]]
         #: F-string template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to sort search
         #: results
         sort_by_tpl: str
@@ -647,7 +646,7 @@ class PluginConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys: Tuple[Any, ...]) -> None:
+    def validate(config_keys: tuple[Any, ...]) -> None:
         """Validate a :class:`~eodag.config.PluginConfig`"""
         if "type" not in config_keys:
             raise ValidationError(

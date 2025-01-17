@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -139,7 +139,7 @@ class UsgsApi(Api):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Search for data on USGS catalogues"""
         page = prep.page if prep.page is not None else DEFAULT_PAGE
         items_per_page = (

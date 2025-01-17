@@ -21,18 +21,7 @@ import logging
 import re
 from operator import attrgetter
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Type, Union, cast
 
 import pkg_resources
 
@@ -152,7 +141,7 @@ class PluginManager:
             self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
-        self._built_plugins_cache: Dict[Tuple[str, str, str], Any] = {}
+        self._built_plugins_cache: Dict[tuple[str, str, str], Any] = {}
 
     def build_product_type_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""

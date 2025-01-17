@@ -24,7 +24,7 @@ import re
 import shutil
 import tempfile
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Union
 
 import geojson
 import pkg_resources
@@ -335,7 +335,7 @@ class EODataAccessGateway:
             new_priority = max_priority + 1
             self._plugins_manager.set_priority(provider, new_priority)
 
-    def get_preferred_provider(self) -> Tuple[str, int]:
+    def get_preferred_provider(self) -> tuple[str, int]:
         """Get the provider currently set as the preferred one for searching
         products, along with its priority.
 
@@ -1205,7 +1205,7 @@ class EODataAccessGateway:
             items_per_page=items_per_page,
         )
 
-        errors: List[Tuple[str, Exception]] = []
+        errors: List[tuple[str, Exception]] = []
         # Loop over available providers and return the first non-empty results
         for i, search_plugin in enumerate(search_plugins):
             search_plugin.clear()
@@ -1655,7 +1655,7 @@ class EODataAccessGateway:
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[List[Union[Search, Api]], dict[str, Any]]:
+    ) -> tuple[List[Union[Search, Api]], dict[str, Any]]:
         """Internal method to prepare the search kwargs and get the search plugins.
 
         Product query:
@@ -1836,7 +1836,7 @@ class EODataAccessGateway:
         results: List[EOProduct] = []
         total_results: Optional[int] = 0 if count else None
 
-        errors: List[Tuple[str, Exception]] = []
+        errors: List[tuple[str, Exception]] = []
 
         try:
             prep = PreparedSearch(count=count)

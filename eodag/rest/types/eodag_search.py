@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Union, cast
 
 from pydantic import (
     AliasChoices,
@@ -110,7 +110,7 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
-    sort_by: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
+    sort_by: Optional[List[tuple[str, str]]] = Field(None, alias="sortby")
     raise_errors: bool = False
 
     _to_eodag_map: dict[str, str]
@@ -309,7 +309,7 @@ class EODAGSearch(BaseModel):
     def parse_sortby(
         cls,
         sortby_post_params: List[dict[str, str]],
-    ) -> List[Tuple[str, str]]:
+    ) -> List[tuple[str, str]]:
         """
         Convert STAC POST sortby to EODAG sort_by
         """

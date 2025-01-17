@@ -26,7 +26,7 @@ import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, Union
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -161,7 +161,7 @@ class Download(PluginTopic):
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str]]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download

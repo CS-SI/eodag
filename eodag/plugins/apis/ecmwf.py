@@ -48,7 +48,7 @@ from eodag.utils.exceptions import AuthenticationError, DownloadError
 from eodag.utils.logging import get_logging_verbose
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Tuple, Union
+    from typing import Any, Dict, List, Optional, Union
 
     from requests.auth import AuthBase
 
@@ -113,7 +113,7 @@ class EcmwfApi(Api, ECMWFSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult"""
 
         # check productType, dates, geometry, use defaults if not specified

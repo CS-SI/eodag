@@ -22,7 +22,7 @@ import logging
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 from urllib.parse import urlsplit
 
 import boto3
@@ -134,7 +134,7 @@ class CopMarineSearch(StaticStacSearch):
 
     def _get_product_type_info(
         self, product_type: str
-    ) -> Tuple[dict[str, Any], List[dict[str, Any]]]:
+    ) -> tuple[dict[str, Any], List[dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
         fetch_url = cast(str, self.config.discover_product_types["fetch_url"]).format(
@@ -288,7 +288,7 @@ class CopMarineSearch(StaticStacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[List[EOProduct], Optional[int]]:
         """
         Implementation of search for the Copernicus Marine provider
         :param prep: object containing search parameterds

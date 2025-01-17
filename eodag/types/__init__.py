@@ -25,7 +25,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Tuple,
     TypedDict,
     Union,
     get_args,
@@ -69,7 +68,7 @@ def json_type_to_python(json_type: Union[str, List[str]]) -> type:
         return type(None)
 
 
-def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> Tuple[str, Any]:
+def _get_min_or_max(type_info: Union[Lt, Gt, Any]) -> tuple[str, Any]:
     """Checks if the value from an Annotated object is a minimum or maximum
 
     :param type_info: info from Annotated
@@ -185,7 +184,7 @@ def json_field_definition_to_python(
     if python_type in (list, set):
         items = json_field_definition.get("items", None)
         if isinstance(items, list):
-            python_type = Tuple[  # type: ignore
+            python_type = tuple[  # type: ignore
                 tuple(
                     json_field_definition_to_python(item, required=required)
                     for item in items

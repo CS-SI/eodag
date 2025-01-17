@@ -22,7 +22,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 import requests
 from requests import RequestException
@@ -356,7 +356,7 @@ class EOProduct:
 
     def _init_progress_bar(
         self, progress_callback: Optional[ProgressCallback]
-    ) -> Tuple[ProgressCallback, bool]:
+    ) -> tuple[ProgressCallback, bool]:
         # progress bar init
         if progress_callback is None:
             progress_callback = ProgressCallback(position=1)
