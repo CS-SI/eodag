@@ -23,7 +23,7 @@ import os
 import re
 from datetime import datetime
 from importlib.metadata import metadata
-from typing import Any, Dict, List
+from typing import Any, List
 
 # -- General configuration ------------------------------------------------
 
@@ -184,7 +184,7 @@ htmlhelp_basename = "eodagdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements: Dict[str, str] = {
+latex_elements: dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

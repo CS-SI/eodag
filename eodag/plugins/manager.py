@@ -21,7 +21,7 @@ import logging
 import re
 from operator import attrgetter
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Type, Union, cast
 
 import pkg_resources
 
@@ -74,11 +74,11 @@ class PluginManager:
 
     supported_topics = set(PLUGINS_TOPICS_KEYS)
 
-    product_type_to_provider_config_map: Dict[str, List[ProviderConfig]]
+    product_type_to_provider_config_map: dict[str, List[ProviderConfig]]
 
     skipped_plugins: List[str]
 
-    def __init__(self, providers_config: Dict[str, ProviderConfig]) -> None:
+    def __init__(self, providers_config: dict[str, ProviderConfig]) -> None:
         self.skipped_plugins = []
         self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular
@@ -134,14 +134,14 @@ class PluginManager:
         self.rebuild()
 
     def rebuild(
-        self, providers_config: Optional[Dict[str, ProviderConfig]] = None
+        self, providers_config: Optional[dict[str, ProviderConfig]] = None
     ) -> None:
         """(Re)Build plugin manager mapping and cache"""
         if providers_config is not None:
             self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
-        self._built_plugins_cache: Dict[tuple[str, str, str], Any] = {}
+        self._built_plugins_cache: dict[tuple[str, str, str], Any] = {}
 
     def build_product_type_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""

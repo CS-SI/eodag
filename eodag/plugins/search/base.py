@@ -43,7 +43,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Union
+    from typing import Any, List, Optional, Union
 
     from requests.auth import AuthBase
 
@@ -63,7 +63,7 @@ class Search(PluginTopic):
 
     auth: Union[AuthBase, S3SessionKwargs]
     next_page_url: Optional[str]
-    next_page_query_obj: Optional[Dict[str, Any]]
+    next_page_query_obj: Optional[dict[str, Any]]
     total_items_nb: int
     need_count: bool
     _request: Any  # needed by deprecated load_stac_items
@@ -72,7 +72,7 @@ class Search(PluginTopic):
         super(Search, self).__init__(provider, config)
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas: Dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
+        metas: dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata
         if self.config.metadata_mapping:
@@ -100,13 +100,13 @@ class Search(PluginTopic):
         """
         raise NotImplementedError("A Search plugin must implement a method named query")
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf"""
         return None
 
     def discover_queryables(
         self, **kwargs: Any
-    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using :attr:`~eodag.config.PluginConfig.discover_queryables` conf
 
         :param kwargs: additional filters for queryables (``productType`` and other search
@@ -119,7 +119,7 @@ class Search(PluginTopic):
 
     def _get_defaults_as_queryables(
         self, product_type: str
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+    ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Return given product type default settings as queryables
 
@@ -129,7 +129,7 @@ class Search(PluginTopic):
         defaults = deepcopy(self.config.products.get(product_type, {}))
         defaults.pop("metadata_mapping", None)
 
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        queryables: dict[str, Annotated[Any, FieldInfo]] = {}
         for parameter, value in defaults.items():
             queryables[parameter] = Annotated[type(value), Field(default=value)]
         return queryables
@@ -151,7 +151,7 @@ class Search(PluginTopic):
 
     def get_product_type_def_params(
         self, product_type: str, **kwargs: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get the provider product type definition parameters and specific settings
 
         :param product_type: the desired product type
@@ -201,7 +201,7 @@ class Search(PluginTopic):
 
     def get_metadata_mapping(
         self, product_type: Optional[str] = None
-    ) -> Dict[str, Union[str, List[str]]]:
+    ) -> dict[str, Union[str, List[str]]]:
         """Get the plugin metadata mapping configuration (product type specific if exists)
 
         :param product_type: the desired product type
@@ -213,7 +213,7 @@ class Search(PluginTopic):
             )
         return self.config.metadata_mapping
 
-    def get_sort_by_arg(self, kwargs: Dict[str, Any]) -> Optional[SortByList]:
+    def get_sort_by_arg(self, kwargs: dict[str, Any]) -> Optional[SortByList]:
         """Extract the ``sort_by`` argument from the kwargs or the provider default sort configuration
 
         :param kwargs: Search arguments
@@ -234,7 +234,7 @@ class Search(PluginTopic):
 
     def build_sort_by(
         self, sort_by_arg: SortByList
-    ) -> tuple[str, Dict[str, List[Dict[str, str]]]]:
+    ) -> tuple[str, dict[str, List[dict[str, str]]]]:
         """Build the sorting part of the query string or body by transforming
         the ``sort_by`` argument into a provider-specific string or dictionary
 
@@ -248,7 +248,7 @@ class Search(PluginTopic):
         sort_by_arg = list(dict.fromkeys(sort_by_arg))
 
         sort_by_qs: str = ""
-        sort_by_qp: Dict[str, Any] = {}
+        sort_by_qp: dict[str, Any] = {}
 
         provider_sort_by_tuples_used: List[tuple[str, str]] = []
         for eodag_sort_by_tuple in sort_by_arg:
@@ -316,7 +316,7 @@ class Search(PluginTopic):
                 sort_order=provider_sort_by_tuple[1],
             )
             try:
-                parsed_sort_by_tpl_dict: Dict[str, Any] = orjson.loads(
+                parsed_sort_by_tpl_dict: dict[str, Any] = orjson.loads(
                     parsed_sort_by_tpl
                 )
                 sort_by_qp = update_nested_dict(
@@ -327,9 +327,9 @@ class Search(PluginTopic):
         return (sort_by_qs, sort_by_qp)
 
     def _get_product_type_queryables(
-        self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
+        self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
     ) -> QueryablesDict:
-        default_values: Dict[str, Any] = deepcopy(
+        default_values: dict[str, Any] = deepcopy(
             getattr(self.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
@@ -343,9 +343,9 @@ class Search(PluginTopic):
 
     def list_queryables(
         self,
-        filters: Dict[str, Any],
+        filters: dict[str, Any],
         available_product_types: List[Any],
-        product_type_configs: Dict[str, Dict[str, Any]],
+        product_type_configs: dict[str, dict[str, Any]],
         product_type: Optional[str] = None,
         alias: Optional[str] = None,
     ) -> QueryablesDict:
@@ -376,7 +376,7 @@ class Search(PluginTopic):
 
             return queryables
         else:
-            all_queryables: Dict[str, Any] = {}
+            all_queryables: dict[str, Any] = {}
             for pt in available_product_types:
                 self.config.product_type_config = product_type_configs[pt]
                 pt_queryables = self._get_product_type_queryables(pt, None, filters)
@@ -394,18 +394,18 @@ class Search(PluginTopic):
 
     def queryables_from_metadata_mapping(
         self, product_type: Optional[str] = None, alias: Optional[str] = None
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+    ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Extract queryable parameters from product type metadata mapping.
         :param product_type: product type id (optional)
         :param alias: (optional) alias of the product type
         :returns: dict of annotated queryables
         """
-        metadata_mapping: Dict[str, Any] = deepcopy(
+        metadata_mapping: dict[str, Any] = deepcopy(
             self.get_metadata_mapping(product_type)
         )
 
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        queryables: dict[str, Annotated[Any, FieldInfo]] = {}
 
         for param in list(metadata_mapping.keys()):
             if NOT_MAPPED in metadata_mapping[param] or not isinstance(

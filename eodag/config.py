@@ -24,7 +24,6 @@ from inspect import isclass
 from typing import (
     Annotated,
     Any,
-    Dict,
     ItemsView,
     Iterator,
     List,
@@ -78,7 +77,7 @@ class SimpleYamlProxyConfig:
 
     def __init__(self, conf_file_path: str) -> None:
         try:
-            self.source: Dict[str, Any] = cached_yaml_load(conf_file_path)
+            self.source: dict[str, Any] = cached_yaml_load(conf_file_path)
         except yaml.parser.ParserError as e:
             print("Unable to load user configuration file")
             raise e
@@ -131,7 +130,7 @@ class ProviderConfig(yaml.YAMLObject):
     url: str
     api: PluginConfig
     search: PluginConfig
-    products: Dict[str, Any]
+    products: dict[str, Any]
     download: PluginConfig
     auth: PluginConfig
     search_auth: PluginConfig
@@ -153,7 +152,7 @@ class ProviderConfig(yaml.YAMLObject):
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: Dict[str, Any]) -> ProviderConfig:
+    def from_mapping(cls, mapping: dict[str, Any]) -> ProviderConfig:
         """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
         cls.validate(mapping)
         for key in PLUGINS_TOPICS_KEYS:
@@ -164,7 +163,7 @@ class ProviderConfig(yaml.YAMLObject):
         return c
 
     @staticmethod
-    def validate(config_keys: Union[tuple[str, ...], Dict[str, Any]]) -> None:
+    def validate(config_keys: Union[tuple[str, ...], dict[str, Any]]) -> None:
         """Validate a :class:`~eodag.config.ProviderConfig`
 
         :param config_keys: The configurations keys to validate
@@ -180,7 +179,7 @@ class ProviderConfig(yaml.YAMLObject):
                 "type of plugin"
             )
 
-    def update(self, mapping: Optional[Dict[str, Any]]) -> None:
+    def update(self, mapping: Optional[dict[str, Any]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
@@ -196,7 +195,7 @@ class ProviderConfig(yaml.YAMLObject):
             },
         )
         for key in PLUGINS_TOPICS_KEYS:
-            current_value: Optional[Dict[str, Any]] = getattr(self, key, None)
+            current_value: Optional[dict[str, Any]] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
                 current_value.update(mapping_value)
@@ -244,9 +243,9 @@ class PluginConfig(yaml.YAMLObject):
         #: results
         sort_by_tpl: str
         #: Mapping between eodag and provider query parameters used for sort
-        sort_param_mapping: Dict[str, str]
+        sort_param_mapping: dict[str, str]
         #: Mapping between eodag and provider sort-order parameters
-        sort_order_mapping: Dict[Literal["ascending", "descending"], str]
+        sort_order_mapping: dict[Literal["ascending", "descending"], str]
         #: Maximum number of allowed sort parameters per request
         max_sort_params: Annotated[int, Gt(0)]
 
@@ -270,7 +269,7 @@ class PluginConfig(yaml.YAMLObject):
         #: HTTP method used to fetch product types
         fetch_method: str
         #: Request body to fetch product types using POST method
-        fetch_body: Dict[str, Any]
+        fetch_body: dict[str, Any]
         #: Maximum number of connections for concurrent HTTP requests
         max_connections: int
         #: The f-string template for pagination requests.
@@ -285,17 +284,17 @@ class PluginConfig(yaml.YAMLObject):
         generic_product_type_id: str
         #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
         #: result
-        generic_product_type_parsable_metadata: Dict[str, str]
+        generic_product_type_parsable_metadata: dict[str, str]
         #: Mapping for product type properties which can be parsed from the result and are not product type metadata
-        generic_product_type_parsable_properties: Dict[str, str]
+        generic_product_type_parsable_properties: dict[str, str]
         #: Mapping for product type properties which cannot be parsed from the result and are not product type metadata
-        generic_product_type_unparsable_properties: Dict[str, str]
+        generic_product_type_unparsable_properties: dict[str, str]
         #: URL to fetch data for a single collection
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
         #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url
-        single_product_type_parsable_metadata: Dict[str, str]
+        single_product_type_parsable_metadata: dict[str, str]
 
     class DiscoverQueryables(TypedDict, total=False):
         """Configuration for queryables discovery"""
@@ -317,7 +316,7 @@ class PluginConfig(yaml.YAMLObject):
         """Configuration for order on-response during download"""
 
         #: Parameters metadata-mapping to apply to the order response
-        metadata_mapping: Dict[str, Union[str, List[str]]]
+        metadata_mapping: dict[str, Union[str, List[str]]]
 
     class OrderStatusSuccess(TypedDict):
         """
@@ -350,7 +349,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Request HTTP method
         method: str
         #: Request hearders
-        headers: Dict[str, Any]
+        headers: dict[str, Any]
 
     class OrderStatusOnSuccess(TypedDict, total=False):
         """Configuration for order status on-success during download"""
@@ -362,7 +361,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Key in the success response that gives access to the result
         results_entry: str
         #: Metadata-mapping to apply to the success status result
-        metadata_mapping: Dict[str, Union[str, List[str]]]
+        metadata_mapping: dict[str, Union[str, List[str]]]
 
     class OrderStatus(TypedDict, total=False):
         """Configuration for order status during download"""
@@ -370,11 +369,11 @@ class PluginConfig(yaml.YAMLObject):
         #: Order status request configuration
         request: PluginConfig.OrderStatusRequest
         #: Metadata-mapping used to parse order status response
-        metadata_mapping: Dict[str, Union[str, List[str]]]
+        metadata_mapping: dict[str, Union[str, List[str]]]
         #: Configuration to identify order status success during download
         success: PluginConfig.OrderStatusSuccess
         #: Part of the order status response that tells there is an error
-        error: Dict[str, Any]
+        error: dict[str, Any]
         #: Configuration to identify order status ordered during download
         ordered: PluginConfig.OrderStatusOrdered
         #: Configuration for order status on-success during download
@@ -416,7 +415,7 @@ class PluginConfig(yaml.YAMLObject):
     # copied from ProviderConfig in PluginManager.get_search_plugins()
     priority: int
     # per product type metadata-mapping, set in core._prepare_search
-    product_type_config: Dict[str, Any]
+    product_type_config: dict[str, Any]
 
     #: :class:`~eodag.plugins.search.base.Search` Plugin API endpoint
     api_endpoint: str
@@ -438,15 +437,15 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
-    metadata_mapping: Dict[str, Union[str, List[str]]]
+    metadata_mapping: dict[str, Union[str, List[str]]]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
     remove_from_queryables: List[str]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string
-    literal_search_params: Dict[str, str]
+    literal_search_params: dict[str, str]
     #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Characters that should not be quoted in the url params
     dont_quote: List[str]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
-    free_text_search_operations: Dict[str, Any]
+    free_text_search_operations: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Set to ``True`` if the metadata is not given in the search
     #: result and a two step search has to be performed
     per_product_metadata_query: bool
@@ -463,7 +462,7 @@ class PluginConfig(yaml.YAMLObject):
     #: if date parameters are mandatory in the request
     dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
-    search_definition: Dict[str, Any]
+    search_definition: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
     merge_responses: bool
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Collections names (`aws_eos` specific)
@@ -500,13 +499,13 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
     ignore_assets: bool
     #: :class:`~eodag.plugins.download.base.Download` Product type specific configuration
-    products: Dict[str, Dict[str, Any]]
+    products: dict[str, dict[str, Any]]
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not
     order_enabled: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` HTTP request method for the order request
     order_method: str
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Headers to be added to the order request
-    order_headers: Dict[str, str]
+    order_headers: dict[str, str]
     #: :class:`~eodag.plugins.download.http.HTTPDownload`
     #: Dictionary containing the key :attr:`~eodag.config.PluginConfig.metadata_mapping` which can be used to add new
     #: product properties based on the data in response to the order request
@@ -517,7 +516,7 @@ class PluginConfig(yaml.YAMLObject):
     #: Do not authenticate the download request but only the order and order status ones
     no_auth_download: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
-    dl_url_params: Dict[str, str]
+    dl_url_params: dict[str, str]
     #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
@@ -528,15 +527,15 @@ class PluginConfig(yaml.YAMLObject):
 
     # auth -------------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication credentials dictionary
-    credentials: Dict[str, str]
+    credentials: dict[str, str]
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication URL
     auth_uri: str
     #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: Dictionary containing all keys/value pairs that should be added to the headers
-    headers: Dict[str, str]
+    headers: dict[str, str]
     #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: Dictionary containing all keys/value pairs that should be added to the headers for token retrieve only
-    retrieve_headers: Dict[str, str]
+    retrieve_headers: dict[str, str]
     #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: The key pointing to the token in the response from the token server
     token_key: str
@@ -548,7 +547,7 @@ class PluginConfig(yaml.YAMLObject):
     matching_url: str
     #: :class:`~eodag.plugins.authentication.base.Authentication` Part of the search or download plugin configuration
     #: that needs authentication
-    matching_conf: Dict[str, Any]
+    matching_conf: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
     #: How the token should be used in the request
     token_provision: str
@@ -584,16 +583,16 @@ class PluginConfig(yaml.YAMLObject):
     user_consent_form_xpath: str
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: The data that will be passed with the POST request on the form 'action' URL
-    user_consent_form_data: Dict[str, str]
+    user_consent_form_data: dict[str, str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Additional data to be passed to the login POST request
-    additional_login_form_data: Dict[str, str]
+    additional_login_form_data: dict[str, str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Key/value pairs of patterns/messages used for Authentication errors
-    exchange_url_error_pattern: Dict[str, str]
+    exchange_url_error_pattern: dict[str, str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: A mapping between OIDC url query string and token handler query string params
-    token_exchange_params: Dict[str, str]
+    token_exchange_params: dict[str, str]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: Refers to the name of the query param to be used in the query request
     token_qs_key: str
@@ -607,7 +606,7 @@ class PluginConfig(yaml.YAMLObject):
     signed_url_key: str
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: Credentials json structure if they should be sent as POST data
-    req_data: Dict[str, Any]
+    req_data: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: URL used to fetch the access token with a refresh token
     refresh_uri: str
@@ -617,7 +616,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin configuration
     #: used to retrieve subject token
-    subject: Dict[str, Any]
+    subject: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: Identifies the issuer of the `subject_token`
     subject_issuer: str
@@ -639,7 +638,7 @@ class PluginConfig(yaml.YAMLObject):
         return loader.construct_yaml_object(node, cls)
 
     @classmethod
-    def from_mapping(cls, mapping: Dict[str, Any]) -> PluginConfig:
+    def from_mapping(cls, mapping: dict[str, Any]) -> PluginConfig:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
         c = cls()
         c.__dict__.update(mapping)
@@ -653,7 +652,7 @@ class PluginConfig(yaml.YAMLObject):
                 "A Plugin config must specify the Plugin it configures"
             )
 
-    def update(self, mapping: Optional[Dict[Any, Any]]) -> None:
+    def update(self, mapping: Optional[dict[Any, Any]]) -> None:
         """Update the configuration parameters with values from `mapping`
 
         :param mapping: The mapping from which to override configuration parameters
@@ -665,7 +664,7 @@ class PluginConfig(yaml.YAMLObject):
         )
 
 
-def load_default_config() -> Dict[str, ProviderConfig]:
+def load_default_config() -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
@@ -679,14 +678,14 @@ def load_default_config() -> Dict[str, ProviderConfig]:
     return load_config(eodag_providers_cfg_file)
 
 
-def load_config(config_path: str) -> Dict[str, ProviderConfig]:
+def load_config(config_path: str) -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary from a given file
 
     :param config_path: The path to the provider config file
     :returns: The default provider's configuration
     """
     logger.debug("Loading configuration from %s", config_path)
-    config: Dict[str, ProviderConfig] = {}
+    config: dict[str, ProviderConfig] = {}
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it
@@ -713,7 +712,7 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
 
 
 def share_credentials(
-    providers_config: Dict[str, ProviderConfig],
+    providers_config: dict[str, ProviderConfig],
 ) -> None:
     """Share credentials between plugins having the same matching criteria
 
@@ -757,7 +756,7 @@ def share_credentials(
 
 def provider_config_init(
     provider_config: ProviderConfig,
-    stac_search_default_conf: Optional[Dict[str, Any]] = None,
+    stac_search_default_conf: Optional[dict[str, Any]] = None,
 ) -> None:
     """Applies some default values to provider config
 
@@ -795,7 +794,7 @@ def provider_config_init(
         pass
 
 
-def override_config_from_file(config: Dict[str, Any], file_path: str) -> None:
+def override_config_from_file(config: dict[str, Any], file_path: str) -> None:
     """Override a configuration with the values in a file
 
     :param config: An eodag providers configuration dictionary
@@ -813,14 +812,14 @@ def override_config_from_file(config: Dict[str, Any], file_path: str) -> None:
     override_config_from_mapping(config, config_in_file)
 
 
-def override_config_from_env(config: Dict[str, Any]) -> None:
+def override_config_from_env(config: dict[str, Any]) -> None:
     """Override a configuration with environment variables values
 
     :param config: An eodag providers configuration dictionary
     """
 
     def build_mapping_from_env(
-        env_var: str, env_value: str, mapping: Dict[str, Any]
+        env_var: str, env_value: str, mapping: dict[str, Any]
     ) -> None:
         """Recursively build a dictionary from an environment variable.
 
@@ -871,7 +870,7 @@ def override_config_from_env(config: Dict[str, Any]) -> None:
             new_map = mapping.setdefault(parts[0], {})
             build_mapping_from_env("__".join(parts[1:]), env_value, new_map)
 
-    mapping_from_env: Dict[str, Any] = {}
+    mapping_from_env: dict[str, Any] = {}
     for env_var in os.environ:
         if env_var.startswith("EODAG__"):
             build_mapping_from_env(
@@ -884,7 +883,7 @@ def override_config_from_env(config: Dict[str, Any]) -> None:
 
 
 def override_config_from_mapping(
-    config: Dict[str, Any], mapping: Dict[str, Any]
+    config: dict[str, Any], mapping: dict[str, Any]
 ) -> None:
     """Override a configuration with the values in a mapping
 
@@ -922,7 +921,7 @@ def override_config_from_mapping(
                 )
 
         # try overriding conf
-        old_conf: Optional[Dict[str, Any]] = config.get(provider)
+        old_conf: Optional[dict[str, Any]] = config.get(provider)
         if old_conf is not None:
             old_conf.update(new_conf)
         else:
@@ -943,7 +942,7 @@ def override_config_from_mapping(
                 logger.debug(tb.format_exc())
 
 
-def merge_configs(config: Dict[str, Any], other_config: Dict[str, Any]) -> None:
+def merge_configs(config: dict[str, Any], other_config: dict[str, Any]) -> None:
     """Override a configuration with the values of another configuration
 
     :param config: An eodag providers configuration dictionary
@@ -975,7 +974,7 @@ def merge_configs(config: Dict[str, Any], other_config: Dict[str, Any]) -> None:
             config[provider] = new_conf
 
 
-def load_yml_config(yml_path: str) -> Dict[Any, Any]:
+def load_yml_config(yml_path: str) -> dict[Any, Any]:
     """Load a conf dictionary from given yml absolute path
 
     :returns: The yml configuration file
@@ -984,7 +983,7 @@ def load_yml_config(yml_path: str) -> Dict[Any, Any]:
     return dict_items_recursive_apply(config.source, string_to_jsonpath)
 
 
-def load_stac_config() -> Dict[str, Any]:
+def load_stac_config() -> dict[str, Any]:
     """Load the stac configuration into a dictionary
 
     :returns: The stac configuration
@@ -994,7 +993,7 @@ def load_stac_config() -> Dict[str, Any]:
     )
 
 
-def load_stac_api_config() -> Dict[str, Any]:
+def load_stac_api_config() -> dict[str, Any]:
     """Load the stac API configuration into a dictionary
 
     :returns: The stac API configuration
@@ -1004,7 +1003,7 @@ def load_stac_api_config() -> Dict[str, Any]:
     )
 
 
-def load_stac_provider_config() -> Dict[str, Any]:
+def load_stac_provider_config() -> dict[str, Any]:
     """Load the stac provider configuration into a dictionary
 
     :returns: The stac provider configuration
@@ -1016,7 +1015,7 @@ def load_stac_provider_config() -> Dict[str, Any]:
 
 def get_ext_product_types_conf(
     conf_uri: str = EXT_PRODUCT_TYPES_CONF_URI,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Read external product types conf
 
     :param conf_uri: URI to local or remote configuration file

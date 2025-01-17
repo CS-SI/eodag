@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Union, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -87,7 +87,7 @@ class UsgsApi(Api):
           file should be extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to
           be ordered to download it; default: ``False``
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Union[str, list]]``): how
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Union[str, list]]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
           is given, the first one is the mapping eodag parameter -> provider query parameters
@@ -100,7 +100,7 @@ class UsgsApi(Api):
         # Same method as in base.py, Search.__init__()
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas: Dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
+        metas: dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata.
         metas.update(self.config.metadata_mapping)
@@ -165,7 +165,7 @@ class UsgsApi(Api):
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
         end_date = kwargs.pop("completionTimeFromAscendingNode", None)
         geom = kwargs.pop("geometry", None)
-        footprint: Dict[str, str] = {}
+        footprint: dict[str, str] = {}
         if hasattr(geom, "bounds"):
             (
                 footprint["lonmin"],

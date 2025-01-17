@@ -79,7 +79,7 @@ class S3RestDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): whether order is enabled
           or not if product is `OFFLINE`
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``) HTTP request method, ``GET`` (default) or ``POST``
-        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): order request headers
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): order request headers
         * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
           a typed dictionary containing the key :attr:`~eodag.config.PluginConfig.OrderOnResponse.metadata_mapping`
           which can be used to add new product properties based on the data in response to the order request

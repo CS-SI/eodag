@@ -36,7 +36,7 @@ class Authentication(PluginTopic):
 
         * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with search plugin endpoint or
           download link
-        * :attr:`~eodag.config.PluginConfig.matching_conf` (``Dict[str, Any]``): Part of the search or download plugin
+        * :attr:`~eodag.config.PluginConfig.matching_conf` (``dict[str, Any]``): Part of the search or download plugin
           configuration that needs authentication and helps identifying it
     """
 

@@ -22,7 +22,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import requests
 from requests import RequestException
@@ -113,7 +113,7 @@ class EOProduct:
     """
 
     provider: str
-    properties: Dict[str, Any]
+    properties: dict[str, Any]
     product_type: Optional[str]
     location: str
     filename: str
@@ -124,7 +124,7 @@ class EOProduct:
     assets: AssetsDict
 
     def __init__(
-        self, provider: str, properties: Dict[str, Any], **kwargs: Any
+        self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
         self.provider = provider
         self.product_type = kwargs.get("productType")
@@ -175,7 +175,7 @@ class EOProduct:
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
 
@@ -186,7 +186,7 @@ class EOProduct:
         if self.search_intersection is not None:
             search_intersection = geometry.mapping(self.search_intersection)
 
-        geojson_repr: Dict[str, Any] = {
+        geojson_repr: dict[str, Any] = {
             "type": "Feature",
             "geometry": geometry.mapping(self.geometry),
             "id": self.properties["id"],
@@ -206,7 +206,7 @@ class EOProduct:
         return geojson_repr
 
     @classmethod
-    def from_geojson(cls, feature: Dict[str, Any]) -> EOProduct:
+    def from_geojson(cls, feature: dict[str, Any]) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
 

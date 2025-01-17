@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Union
+    from typing import Any, List, Optional, Union
 
     from requests.auth import AuthBase
 
@@ -47,9 +47,9 @@ class PreparedSearch:
     exception_message: Optional[str] = None
 
     need_count: bool = field(init=False, repr=False)
-    query_params: Dict[str, Any] = field(init=False, repr=False)
+    query_params: dict[str, Any] = field(init=False, repr=False)
     query_string: str = field(init=False, repr=False)
     search_urls: List[str] = field(init=False, repr=False)
-    product_type_def_params: Dict[str, Any] = field(init=False, repr=False)
+    product_type_def_params: dict[str, Any] = field(init=False, repr=False)
     total_items_nb: int = field(init=False, repr=False)
     sort_by_qs: str = field(init=False, repr=False)

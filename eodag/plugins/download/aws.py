@@ -27,7 +27,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterator,
     List,
     Match,
@@ -229,14 +228,14 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the
           path part of the url the bucket can be found; If no bucket_path_level is given, the bucket
           is taken from the first element of the netloc part.
-        * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type
           specific config; the keys are the product types, the values are dictionaries which can contain the keys:
 
           * **default_bucket** (``str``): bucket where the product type can be found
           * **complementary_url_key** (``str``): keys to add additional urls
           * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
             be created; used for Sentinel products; default: False
-          * **fetch_metadata** (``Dict[str, Any]``): config for metadata to be fetched for the SAFE product
+          * **fetch_metadata** (``dict[str, Any]``): config for metadata to be fetched for the SAFE product
 
     """
 
@@ -523,7 +522,7 @@ class AwsDownload(Download):
         self,
         bucket_names_and_prefixes: List[tuple[str, Optional[str]]],
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-    ) -> tuple[Dict[str, Any], ResourceCollection]:
+    ) -> tuple[dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
@@ -537,7 +536,7 @@ class AwsDownload(Download):
             )
         if auth is None:
             auth = {}
-        authenticated_objects: Dict[str, Any] = {}
+        authenticated_objects: dict[str, Any] = {}
         auth_error_messages: Set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
             try:
@@ -591,7 +590,7 @@ class AwsDownload(Download):
     def _get_unique_products(
         self,
         bucket_names_and_prefixes: List[tuple[str, Optional[str]]],
-        authenticated_objects: Dict[str, Any],
+        authenticated_objects: dict[str, Any],
         asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
@@ -636,7 +635,7 @@ class AwsDownload(Download):
 
     def _raise_if_auth_error(self, exception: ClientError) -> None:
         """Raises an error if given exception is an authentication error"""
-        err = cast(Dict[str, str], exception.response["Error"])
+        err = cast(dict[str, str], exception.response["Error"])
         if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
             raise AuthenticationError(
                 f"Please check your credentials for {self.provider}.",
@@ -757,7 +756,7 @@ class AwsDownload(Download):
         product: EOProduct,
         build_safe: bool,
         progress_callback: ProgressCallback,
-        assets_values: List[Dict[str, Any]],
+        assets_values: List[dict[str, Any]],
     ) -> Iterator[Any]:
         """Yield product data chunks"""
 
@@ -839,7 +838,7 @@ class AwsDownload(Download):
 
     def get_rio_env(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get rasterio environment variables needed for data access authentication.
 
         :param bucket_name: Bucket containg objects
