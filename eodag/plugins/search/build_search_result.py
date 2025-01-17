@@ -41,6 +41,7 @@ import geojson
 import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
+from dateutil.utils import today
 from jsonpath_ng import Child, Fields, Root
 from pydantic import Field
 from pydantic.fields import FieldInfo
@@ -63,6 +64,7 @@ from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import (
+    DEFAULT_MISSION_START_DATE,
     HTTP_REQ_TIMEOUT,
     deepcopy,
     dict_items_recursive_sort,
@@ -542,6 +544,83 @@ class ECMWFSearch(PostJsonSearch):
         # geometry
         if "geometry" in params:
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
+
+    def _check_date_params(
+        self, keywords: Dict[str, Any], product_type: Optional[str]
+    ) -> None:
+        """checks if start and end date are present in the keywords and adds them if not"""
+        if (
+            "startTimeFromAscendingNode"
+            and "completionTimeFromAscendingNode" in keywords
+        ):
+            return
+
+        product_type_mm = getattr(self.config, "metadata_mapping", {})
+        if (
+            product_type
+            and product_type in self.config.products
+            and "metadata_mapping" in self.config.products[product_type]
+        ):
+            product_type_mm = self.config.products[product_type]["metadata_mapping"]
+
+        # start time given, end time missing
+        if "startTimeFromAscendingNode" in keywords:
+            keywords[
+                "completionTimeFromAscendingNode"
+            ] = self._get_default_end_date_from_start_date(
+                keywords["startTimeFromAscendingNode"], product_type_mm
+            )
+            return
+
+        if "completionTimeFromAscendingNode" in product_type_mm:
+            mapping = product_type_mm["startTimeFromAscendingNode"]
+            if not isinstance(mapping, list):
+                mapping = product_type_mm["completionTimeFromAscendingNode"]
+            if isinstance(mapping, list):
+                # get time parameters (date, year, month, ...) from metadata mapping
+                input_mapping = mapping[0].replace("{{", "").replace("}}", "")
+                time_params = [
+                    values.split(":")[0].strip() for values in input_mapping.split(",")
+                ]
+                time_params = [
+                    tp.replace('"', "").replace("'", "") for tp in time_params
+                ]
+                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
+                # no default date is required
+                in_keywords = True
+                for tp in time_params:
+                    if tp not in keywords:
+                        in_keywords = False
+                        break
+                if not in_keywords:
+                    keywords[
+                        "startTimeFromAscendingNode"
+                    ] = self.get_product_type_cfg_value(
+                        "missionStartDate", DEFAULT_MISSION_START_DATE
+                    )
+                    keywords[
+                        "completionTimeFromAscendingNode"
+                    ] = self._get_default_end_date_from_start_date(
+                        keywords["startTimeFromAscendingNode"], product_type_mm
+                    )
+
+    def _get_default_end_date_from_start_date(
+        self, start_datetime: str, product_type_mm: Dict[str, Any]
+    ) -> str:
+        try:
+            start_date = datetime.fromisoformat(start_datetime)
+        except ValueError:
+            start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
+        if "completionTimeFromAscendingNode" in product_type_mm:
+            mapping = product_type_mm["completionTimeFromAscendingNode"]
+            # if date is mapped to year/month/(day), use end_date = start_date  else start_date + 1 day
+            # (default dates are only needed for ecmwf products where selected timespans should not be too large)
+            if isinstance(mapping, list) and "year" in mapping[0]:
+                end_date = start_date
+            else:
+                end_date = start_date + timedelta(days=1)
+            return end_date.isoformat()
+        return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
