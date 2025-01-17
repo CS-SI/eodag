@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import operator
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 from eodag.plugins.crunch.base import Crunch
 
@@ -42,8 +42,8 @@ class FilterProperty(Crunch):
     """
 
     def proceed(
-        self, products: List[EOProduct], **search_params: Any
-    ) -> List[EOProduct]:
+        self, products: list[EOProduct], **search_params: Any
+    ) -> list[EOProduct]:
         """Execute crunch: Filter products, retaining only those that match property filtering
 
         :param products: A list of products resulting from a search
@@ -72,7 +72,7 @@ class FilterProperty(Crunch):
             property_key,
             property_value,
         )
-        filtered: List[EOProduct] = []
+        filtered: list[EOProduct] = []
         add_to_filtered = filtered.append
 
         for product in products:

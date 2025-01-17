@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import (
     BaseModel,
@@ -39,6 +39,6 @@ class CollectionsSearchRequest(BaseModel):
     constellation: Optional[str] = Field(default=None)
 
     @model_serializer(mode="wrap")
-    def _serialize(self, handler: SerializerFunctionWrapHandler) -> Dict[str, Any]:
-        dumped: Dict[str, Any] = handler(self)
+    def _serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        dumped: dict[str, Any] = handler(self)
         return {EODAGSearch.to_eodag(k): v for k, v in dumped.items()}

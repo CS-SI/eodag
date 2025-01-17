@@ -24,7 +24,7 @@ import socket
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from unittest.mock import Mock, call
 
 import geojson
@@ -322,7 +322,7 @@ class RequestTestCase(unittest.TestCase):
         url: str,
         mock_search: Mock,
         expected_search_kwargs: Union[
-            List[Dict[str, Any]], Dict[str, Any], None
+            list[dict[str, Any]], dict[str, Any], None
         ] = None,
         method: str = "GET",
         post_data: Optional[Any] = None,
@@ -368,7 +368,7 @@ class RequestTestCase(unittest.TestCase):
         self,
         url: str,
         expected_search_kwargs: Union[
-            List[Dict[str, Any]], Dict[str, Any], None
+            list[dict[str, Any]], dict[str, Any], None
         ] = None,
         method: str = "GET",
         post_data: Optional[Any] = None,

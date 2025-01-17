@@ -25,7 +25,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 from unittest import mock
 
 import responses
@@ -244,7 +244,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def _dummy_product(
-        self, provider: str, properties: Dict[str, Any], productType: str
+        self, provider: str, properties: dict[str, Any], productType: str
     ):
         return EOProduct(
             provider,
@@ -257,7 +257,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_session: Callable[[], None],
         local_product_as_archive_path: str,
         provider: str,
-        properties: Dict[str, Any],
+        properties: dict[str, Any],
         productType: str,
     ):
         self._set_download_simulation(

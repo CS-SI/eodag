@@ -77,7 +77,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Union
+    from typing import Any, Optional, Union
 
     from fastapi import Request
     from requests.auth import AuthBase
@@ -116,12 +116,12 @@ def get_home_page_content(base_url: str, ipp: Optional[int] = None) -> str:
     reason="Function internally used by get_home_page_content, also deprecated",
     version="2.6.1",
 )
-def format_product_types(product_types: List[Dict[str, Any]]) -> str:
+def format_product_types(product_types: list[dict[str, Any]]) -> str:
     """Format product_types
 
     :param product_types: A list of EODAG product types as returned by the core api
     """
-    result: List[str] = []
+    result: list[str] = []
     for pt in product_types:
         result.append(f'* *__{pt["ID"]}__*: {pt["abstract"]}')
     return "\n".join(sorted(result))
@@ -130,7 +130,7 @@ def format_product_types(product_types: List[Dict[str, Any]]) -> str:
 def search_stac_items(
     request: Request,
     search_request: SearchPostRequest,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Search and retrieve STAC items based on the given search request.
 
@@ -309,8 +309,8 @@ def download_stac_item(
 
 def _order_and_update(
     product: EOProduct,
-    auth: Union[AuthBase, Dict[str, str], None],
-    query_args: Dict[str, Any],
+    auth: Union[AuthBase, dict[str, str], None],
+    query_args: dict[str, Any],
 ) -> None:
     """Order product if needed and update given kwargs with order-status-dict"""
     if product.properties.get("storageStatus") != ONLINE_STATUS and hasattr(
@@ -353,7 +353,7 @@ def _order_and_update(
 
 
 @lru_cache(maxsize=1)
-def get_detailled_collections_list() -> List[Dict[str, Any]]:
+def get_detailled_collections_list() -> list[dict[str, Any]]:
     """Returns detailled collections / product_types list as a list of
     config dicts
 
@@ -370,7 +370,7 @@ async def all_collections(
     instrument: Optional[str] = None,
     constellation: Optional[str] = None,
     datetime: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build STAC collections
 
     :param url: Requested URL
@@ -380,7 +380,7 @@ async def all_collections(
     :returns: Collections dictionary
     """
 
-    async def _fetch() -> Dict[str, Any]:
+    async def _fetch() -> dict[str, Any]:
         stac_collection = StacCollection(
             url=request.state.url,
             stac_config=stac_config,
@@ -422,7 +422,7 @@ async def all_collections(
 
 async def get_collection(
     request: Request, collection_id: str, provider: Optional[str] = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build STAC collection by id
 
     :param url: Requested URL
@@ -432,7 +432,7 @@ async def get_collection(
     :returns: Collection dictionary
     """
 
-    async def _fetch() -> Dict[str, Any]:
+    async def _fetch() -> dict[str, Any]:
         stac_collection = StacCollection(
             url=request.state.url,
             stac_config=stac_config,
@@ -455,7 +455,7 @@ async def get_stac_catalogs(
     request: Request,
     url: str,
     provider: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Build STAC catalog
 
     :param url: Requested URL
@@ -464,7 +464,7 @@ async def get_stac_catalogs(
     :returns: Catalog dictionary
     """
 
-    async def _fetch() -> Dict[str, Any]:
+    async def _fetch() -> dict[str, Any]:
         return StacCatalog(
             url=url,
             stac_config=stac_config,
@@ -523,7 +523,7 @@ def time_interval_overlap(eodag_args: EODAGSearch, catalog: StacCatalog) -> bool
 
 
 @lru_cache(maxsize=1)
-def get_stac_conformance() -> Dict[str, str]:
+def get_stac_conformance() -> dict[str, str]:
     """Build STAC conformance
 
     :returns: conformance dictionary
@@ -540,7 +540,7 @@ def get_stac_api_version() -> str:
 
 
 @lru_cache(maxsize=1)
-def get_stac_extension_oseo(url: str) -> Dict[str, str]:
+def get_stac_extension_oseo(url: str) -> dict[str, str]:
     """Build STAC OGC / OpenSearch Extension for EO
 
     :param url: Requested URL
@@ -571,14 +571,14 @@ async def get_queryables(
     request: Request,
     params: QueryablesGetParams,
     provider: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Fetch the queryable properties for a collection.
 
     :param collection_id: The ID of the collection.
     :returns: A set containing the STAC standardized queryable properties for a collection.
     """
 
-    async def _fetch() -> Dict[str, Any]:
+    async def _fetch() -> dict[str, Any]:
         python_queryables = eodag_api.list_queryables(
             provider=provider,
             fetch_providers=False,
@@ -589,8 +589,8 @@ async def get_queryables(
             by_alias=True
         )
 
-        properties: Dict[str, Any] = python_queryables_json["properties"]
-        required: List[str] = python_queryables_json.get("required") or []
+        properties: dict[str, Any] = python_queryables_json["properties"]
+        required: list[str] = python_queryables_json.get("required") or []
 
         # productType is either simply removed or replaced by collection later.
         if "productType" in properties:
@@ -598,7 +598,7 @@ async def get_queryables(
         if "productType" in required:
             required.remove("productType")
 
-        stac_properties: Dict[str, Any] = {}
+        stac_properties: dict[str, Any] = {}
 
         # get stac default properties to set prefixes
         stac_item_properties = list(stac_config["item"]["properties"].values())
@@ -687,7 +687,7 @@ def crunch_products(
             f'Unknown crunch name. Use one of: {", ".join(crunchers.keys())}'
         )
 
-    cruncher_config: Dict[str, Any] = {}
+    cruncher_config: dict[str, Any] = {}
     for config_param in cruncher.config_params:
         config_param_value = kwargs.get(config_param)
         if not config_param_value:
@@ -720,13 +720,13 @@ def eodag_api_init() -> None:
             ext_col = StacCollection.ext_stac_collections.get(key)
             if not ext_col:
                 continue
-            platform: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+            platform: Union[str, list[str]] = ext_col.get("summaries", {}).get(
                 "platform"
             )
-            constellation: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+            constellation: Union[str, list[str]] = ext_col.get("summaries", {}).get(
                 "constellation"
             )
-            processing_level: Union[str, List[str]] = ext_col.get("summaries", {}).get(
+            processing_level: Union[str, list[str]] = ext_col.get("summaries", {}).get(
                 "processing:level"
             )
             # Check if platform or constellation are lists and join them into a string if they are

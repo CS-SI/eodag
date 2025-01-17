@@ -131,7 +131,7 @@ class TestStacUtils(unittest.TestCase):
         )
 
     def test_is_dict_str_any(self):
-        """is_dict_str_any verifies whether the input variable is of type Dict[str, Any]"""
+        """is_dict_str_any verifies whether the input variable is of type dict[str, Any]"""
         self.assertTrue(
             self.rest_utils.is_dict_str_any({"key1": "value1", "key2": "value2"})
         )
@@ -162,7 +162,7 @@ class TestStacUtils(unittest.TestCase):
 
     def test_list_to_str_list(self):
         """
-        list_to_str_list convert a List[Any] to a List[str].
+        list_to_str_list convert a list[Any] to a list[str].
         It raises a TypeError if the convertion cannot be done
         """
         self.assertEqual(self.rest_utils.list_to_str_list([1, 2, 3]), ["1", "2", "3"])

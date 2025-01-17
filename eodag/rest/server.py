@@ -23,15 +23,7 @@ import re
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from json import JSONDecodeError
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Awaitable,
-    Callable,
-    Dict,
-    Optional,
-)
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Awaitable, Callable, Optional
 
 from fastapi import APIRouter as FastAPIRouter
 from fastapi import FastAPI, HTTPException, Request
@@ -131,7 +123,7 @@ stac_api_config = load_stac_api_config()
     include_in_schema=False,
     status_code=200,
 )
-async def liveness_probe(request: Request) -> Dict[str, bool]:
+async def liveness_probe(request: Request) -> dict[str, bool]:
     "Endpoint meant to be used as liveness probe by deployment platforms"
     return {"success": True}
 
@@ -139,7 +131,7 @@ async def liveness_probe(request: Request) -> Dict[str, bool]:
 @router.api_route(
     methods=["GET", "HEAD"], path="/api", tags=["Capabilities"], include_in_schema=False
 )
-async def eodag_openapi(request: Request) -> Dict[str, Any]:
+async def eodag_openapi(request: Request) -> dict[str, Any]:
     """Customized openapi"""
     logger.debug("URL: /api")
     if app.openapi_schema:

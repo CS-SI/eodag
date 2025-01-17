@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Any, Callable, Coroutine, Dict, TypeVar, cast
+from typing import Any, Callable, Coroutine, TypeVar, cast
 
 import orjson
 from cachetools import LRUCache
@@ -48,7 +48,7 @@ async def cached(
     host_cache_key = f"{cache_key}:{host}"
 
     try:
-        c: Dict[str, Any] = request.app.state.cache
+        c: dict[str, Any] = request.app.state.cache
 
         if cached := c.get(host_cache_key):
             logger.debug("Cache result hit")

@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 import socket
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Optional, Union
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -108,7 +108,7 @@ def fetch_stac_items(
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
     ssl_verify: bool = True,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Fetch STAC item from a single item file or items from a catalog.
 
     :param stac_path: A STAC object filepath
@@ -142,13 +142,13 @@ def _fetch_stac_items_from_catalog(
     recursive: bool,
     max_connections: int,
     _text_opener: Callable[[str, bool], Any],
-) -> List[Any]:
+) -> list[Any]:
     """Fetch items from a STAC catalog"""
-    items: List[Dict[Any, Any]] = []
+    items: list[dict[Any, Any]] = []
 
     # pystac cannot yet return links from a single file catalog, see:
     # https://github.com/stac-utils/pystac/issues/256
-    extensions: Optional[Union[List[str], str]] = getattr(cat, "stac_extensions", None)
+    extensions: Optional[Union[list[str], str]] = getattr(cat, "stac_extensions", None)
     if extensions:
         extensions = extensions if isinstance(extensions, list) else [extensions]
         if "single-file-stac" in extensions:
@@ -157,7 +157,7 @@ def _fetch_stac_items_from_catalog(
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
     if not recursive:
-        hrefs: List[Optional[str]] = [
+        hrefs: list[Optional[str]] = [
             link.get_absolute_href() for link in cat.get_item_links()
         ]
     else:
@@ -188,7 +188,7 @@ def fetch_stac_collections(
     max_connections: int = 100,
     timeout: int = HTTP_REQ_TIMEOUT,
     ssl_verify: bool = True,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Fetch STAC collection(s) from a catalog.
 
     :param stac_path: A STAC object filepath
@@ -217,12 +217,12 @@ def _fetch_stac_collections_from_catalog(
     collection: Optional[str],
     max_connections: int,
     _text_opener: Callable[[str, bool], Any],
-) -> List[Any]:
+) -> list[Any]:
     """Fetch collections from a STAC catalog"""
-    collections: List[Dict[Any, Any]] = []
+    collections: list[dict[Any, Any]] = []
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
-    hrefs: List[Optional[str]] = [
+    hrefs: list[Optional[str]] = [
         link.get_absolute_href()
         for link in cat.get_child_links()
         if collection is not None and link.title == collection

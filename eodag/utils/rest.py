@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import datetime
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import dateutil.parser
 from dateutil import tz
@@ -35,7 +35,7 @@ RFC3339_PATTERN = (
 )
 
 
-def get_datetime(arguments: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+def get_datetime(arguments: dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
     """Get start and end dates from a dict containing `/` separated dates in `datetime` item
 
     :param arguments: dict containing a single date or `/` separated dates in `datetime` item

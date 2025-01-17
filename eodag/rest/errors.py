@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 from fastapi import FastAPI, Request
 from fastapi.responses import ORJSONResponse
@@ -56,16 +56,16 @@ logger = logging.getLogger("eodag.rest.server")
 class ResponseSearchError(Exception):
     """Represent a EODAG search error response"""
 
-    def __init__(self, errors: List[Tuple[str, Exception]]) -> None:
+    def __init__(self, errors: list[tuple[str, Exception]]) -> None:
         self._errors = errors
 
     @property
-    def errors(self) -> List[Dict[str, Union[str, int]]]:
+    def errors(self) -> list[dict[str, Union[str, int]]]:
         """return errors as a list of dict"""
-        error_list: List[Dict[str, Union[str, int]]] = []
+        error_list: list[dict[str, Union[str, int]]] = []
         for name, exception in self._errors:
 
-            error_dict: Dict[str, Union[str, int]] = {
+            error_dict: dict[str, Union[str, int]] = {
                 "provider": name,
                 "error": exception.__class__.__name__,
             }

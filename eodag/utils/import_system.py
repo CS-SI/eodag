@@ -21,14 +21,14 @@ import importlib
 import pkgutil
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, Generator, Tuple
+from typing import TYPE_CHECKING, Any, Generator
 
 if TYPE_CHECKING:
     from types import ModuleType
 
 
 def import_all_modules(
-    base_package: ModuleType, depth: int = 1, exclude: Tuple[str, ...] = ()
+    base_package: ModuleType, depth: int = 1, exclude: tuple[str, ...] = ()
 ) -> None:
     """Import all modules in base_package, including modules in the sub-packages up to `depth` and excluding modules in
     `exclude`.

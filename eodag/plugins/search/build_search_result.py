@@ -23,18 +23,7 @@ import logging
 import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -205,8 +194,8 @@ COP_DS_KEYWORDS = [
 
 
 def keywords_to_mdt(
-    keywords: List[str], prefix: Optional[str] = None
-) -> Dict[str, Any]:
+    keywords: list[str], prefix: Optional[str] = None
+) -> dict[str, Any]:
     """
     Make metadata mapping dict from a list of keywords
 
@@ -223,7 +212,7 @@ def keywords_to_mdt(
     :param prefix: prefix to be added to the parameter in the mapping
     :return: metadata mapping dict
     """
-    mdt: Dict[str, Any] = {}
+    mdt: dict[str, Any] = {}
     for keyword in keywords:
         key = f"{prefix}:{keyword}" if prefix else keyword
         mdt[key] = [keyword, f'$."{key}"']
@@ -251,7 +240,7 @@ def strip_quotes(value: Any) -> Any:
 
 
 def _update_properties_from_element(
-    prop: Dict[str, Any], element: Dict[str, Any], values: List[str]
+    prop: dict[str, Any], element: dict[str, Any], values: list[str]
 ) -> None:
     """updates a property dict with the given values based on the information from the element dict
     e.g. the type is set based on the type of the element
@@ -333,7 +322,7 @@ class ECMWFSearch(PostJsonSearch):
     :param provider: An eodag providers configuration dictionary
     :param config: Search plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.remove_from_query` (``List[str]``): List of parameters
+        * :attr:`~eodag.config.PluginConfig.remove_from_query` (``list[str]``): List of parameters
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
@@ -402,7 +391,7 @@ class ECMWFSearch(PostJsonSearch):
                     "metadata_mapping"
                 ] = product_type_metadata_mapping
 
-    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -416,7 +405,7 @@ class ECMWFSearch(PostJsonSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Build ready-to-download SearchResult
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information needed for the search
@@ -439,7 +428,7 @@ class ECMWFSearch(PostJsonSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id
@@ -464,7 +453,7 @@ class ECMWFSearch(PostJsonSearch):
         )
 
     def _preprocess_search_params(
-        self, params: Dict[str, Any], product_type: Optional[str]
+        self, params: dict[str, Any], product_type: Optional[str]
     ) -> None:
         """Preprocess search parameters before making a request to the CDS API.
 
@@ -544,10 +533,10 @@ class ECMWFSearch(PostJsonSearch):
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
 
     def _get_product_type_queryables(
-        self, product_type: Optional[str], alias: Optional[str], filters: Dict[str, Any]
+        self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
     ) -> QueryablesDict:
         """Override to set additional_properties to false."""
-        default_values: Dict[str, Any] = deepcopy(
+        default_values: dict[str, Any] = deepcopy(
             getattr(self.config, "products", {}).get(product_type, {})
         )
         default_values.pop("metadata_mapping", None)
@@ -559,7 +548,7 @@ class ECMWFSearch(PostJsonSearch):
 
     def discover_queryables(
         self, **kwargs: Any
-    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using its constraints file
 
         :param kwargs: additional filters for queryables (`productType` and other search
@@ -585,7 +574,7 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
             **kwargs,
         )
-        constraints: List[Dict[str, Any]] = self.fetch_data(constraints_url)
+        constraints: list[dict[str, Any]] = self.fetch_data(constraints_url)
 
         form_url = format_metadata(
             getattr(self.config, "discover_queryables", {}).get("form_url", ""),
@@ -614,18 +603,18 @@ class ECMWFSearch(PostJsonSearch):
         # we use non empty kwargs as default to integrate user inputs
         # it is needed because pydantic json schema does not represent "value"
         # but only "default"
-        non_empty_formated: Dict[str, Any] = {
+        non_empty_formated: dict[str, Any] = {
             k: v
             for k, v in formated_kwargs.items()
             if v and (not isinstance(v, list) or all(v))
         }
-        non_empty_kwargs: Dict[str, Any] = {
+        non_empty_kwargs: dict[str, Any] = {
             k: v
             for k, v in processed_kwargs.items()
             if v and (not isinstance(v, list) or all(v))
         }
 
-        required_keywords: Set[str] = set()
+        required_keywords: set[str] = set()
 
         # calculate available values
         if constraints:
@@ -703,7 +692,7 @@ class ECMWFSearch(PostJsonSearch):
         # area is geom in EODAG.
         if queryables.pop("area", None):
             queryables["geom"] = Annotated[
-                Union[str, Dict[str, float], BaseGeometry],
+                Union[str, dict[str, float], BaseGeometry],
                 Field(
                     None,
                     description="Read EODAG documentation for all supported geometry format.",
@@ -714,10 +703,10 @@ class ECMWFSearch(PostJsonSearch):
 
     def available_values_from_constraints(
         self,
-        constraints: list[Dict[str, Any]],
-        input_keywords: Dict[str, Any],
-        form_keywords: List[str],
-    ) -> Dict[str, List[str]]:
+        constraints: list[dict[str, Any]],
+        input_keywords: dict[str, Any],
+        form_keywords: list[str],
+    ) -> dict[str, list[str]]:
         """
         Filter constraints using input_keywords. Return list of available queryables.
         All constraint entries must have the same parameters.
@@ -741,9 +730,9 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # filter constraint entries matching input keyword values
-        filtered_constraints: List[Dict[str, Any]]
+        filtered_constraints: list[dict[str, Any]]
 
-        parsed_keywords: List[str] = []
+        parsed_keywords: list[str] = []
         for keyword in ordered_keywords:
             values = input_keywords.get(keyword)
 
@@ -822,7 +811,7 @@ class ECMWFSearch(PostJsonSearch):
             parsed_keywords.append(keyword)
             constraints = filtered_constraints
 
-        available_values: Dict[str, Any] = {k: set() for k in ordered_keywords}
+        available_values: dict[str, Any] = {k: set() for k in ordered_keywords}
 
         # we aggregate the constraint entries left
         for entry in constraints:
@@ -833,10 +822,10 @@ class ECMWFSearch(PostJsonSearch):
 
     def queryables_by_form(
         self,
-        form: List[Dict[str, Any]],
-        available_values: Dict[str, List[str]],
-        defaults: Dict[str, Any],
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        form: list[dict[str, Any]],
+        available_values: dict[str, list[str]],
+        defaults: dict[str, Any],
+    ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Generate Annotated field definitions from form entries and available values
         Used by Copernicus services like cop_cds, cop_ads, cop_ewds.
@@ -846,9 +835,9 @@ class ECMWFSearch(PostJsonSearch):
         :param defaults: default values for the parameters
         :return: dict of annotated queryables
         """
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        queryables: dict[str, Annotated[Any, FieldInfo]] = {}
 
-        required_list: List[str] = []
+        required_list: list[str] = []
         for element in form:
             name: str = element["name"]
 
@@ -915,10 +904,10 @@ class ECMWFSearch(PostJsonSearch):
 
     def queryables_by_values(
         self,
-        available_values: Dict[str, List[str]],
-        required_keywords: List[str],
-        defaults: Dict[str, Any],
-    ) -> Dict[str, Annotated[Any, FieldInfo]]:
+        available_values: dict[str, list[str]],
+        required_keywords: list[str],
+        defaults: dict[str, Any],
+    ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
         Generate Annotated field definitions from available values.
         Used by ECMWF data providers like dedt_lumi.
@@ -932,7 +921,7 @@ class ECMWFSearch(PostJsonSearch):
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
         required = [ecmwf_format(k) for k in required_keywords]
 
-        queryables: Dict[str, Annotated[Any, FieldInfo]] = {}
+        queryables: dict[str, Annotated[Any, FieldInfo]] = {}
         for name, values in available_values.items():
             # Rename keywords from form with metadata mapping.
             # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
@@ -953,8 +942,8 @@ class ECMWFSearch(PostJsonSearch):
         return queryables
 
     def format_as_provider_keyword(
-        self, product_type: str, properties: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, product_type: str, properties: dict[str, Any]
+    ) -> dict[str, Any]:
         """Return provider equivalent keyword names from EODAG keywords.
 
         :param product_type: product type id
@@ -992,7 +981,7 @@ class ECMWFSearch(PostJsonSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list
@@ -1164,7 +1153,7 @@ class MeteoblueSearch(ECMWFSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[str], int]:
+    ) -> tuple[list[str], int]:
         """Wraps PostJsonSearch.collect_search_urls to force product count to 1
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
@@ -1176,7 +1165,7 @@ class MeteoblueSearch(ECMWFSearch):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Perform the actual search request, and return result in a single element.
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
@@ -1196,7 +1185,7 @@ class MeteoblueSearch(ECMWFSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id
@@ -1235,7 +1224,7 @@ class WekeoECMWFSearch(ECMWFSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list
@@ -1261,7 +1250,7 @@ class WekeoECMWFSearch(ECMWFSearch):
 
         return normalized
 
-    def do_search(self, *args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
+    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -1272,7 +1261,7 @@ class WekeoECMWFSearch(ECMWFSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
         :param product_type: product type id

@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from requests.auth import AuthBase
 
@@ -38,7 +38,7 @@ class HTTPHeaderAuth(Authentication):
     :param config: Authentication plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): HTTPHeaderAuth
-        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``): dictionary containing
+        * :attr:`~eodag.config.PluginConfig.headers` (``dict[str, str]``): dictionary containing
           all keys/value pairs that should be added to the headers
 
     Below an example for the configuration in the providers config file is shown::
@@ -106,7 +106,7 @@ class HTTPHeaderAuth(Authentication):
 class HeaderAuth(AuthBase):
     """HeaderAuth custom authentication class to be used with requests module"""
 
-    def __init__(self, authentication_headers: Dict[str, str]) -> None:
+    def __init__(self, authentication_headers: dict[str, str]) -> None:
         self.auth_headers = authentication_headers
 
     def __call__(self, request: PreparedRequest) -> PreparedRequest:

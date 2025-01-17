@@ -21,18 +21,7 @@ import logging
 import re
 from operator import attrgetter
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import pkg_resources
 
@@ -61,6 +50,7 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig, ProviderConfig
     from eodag.plugins.base import PluginTopic
+    from eodag.types import S3SessionKwargs
 
 
 logger = logging.getLogger("eodag.plugins.manager")
@@ -84,11 +74,11 @@ class PluginManager:
 
     supported_topics = set(PLUGINS_TOPICS_KEYS)
 
-    product_type_to_provider_config_map: Dict[str, List[ProviderConfig]]
+    product_type_to_provider_config_map: dict[str, list[ProviderConfig]]
 
-    skipped_plugins: List[str]
+    skipped_plugins: list[str]
 
-    def __init__(self, providers_config: Dict[str, ProviderConfig]) -> None:
+    def __init__(self, providers_config: dict[str, ProviderConfig]) -> None:
         self.skipped_plugins = []
         self.providers_config = providers_config
         # Load all the plugins. This will make all plugin classes of a particular
@@ -144,14 +134,14 @@ class PluginManager:
         self.rebuild()
 
     def rebuild(
-        self, providers_config: Optional[Dict[str, ProviderConfig]] = None
+        self, providers_config: Optional[dict[str, ProviderConfig]] = None
     ) -> None:
         """(Re)Build plugin manager mapping and cache"""
         if providers_config is not None:
             self.providers_config = providers_config
 
         self.build_product_type_to_provider_config_map()
-        self._built_plugins_cache: Dict[Tuple[str, str, str], Any] = {}
+        self._built_plugins_cache: dict[tuple[str, str, str], Any] = {}
 
     def build_product_type_to_provider_config_map(self) -> None:
         """Build mapping conf between product types and providers"""
@@ -211,7 +201,7 @@ class PluginManager:
                 )
             return plugin
 
-        configs: Optional[List[ProviderConfig]]
+        configs: Optional[list[ProviderConfig]]
         if product_type:
             configs = self.product_type_to_provider_config_map.get(product_type)
             if not configs:
@@ -378,7 +368,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
-    ) -> Optional[Union[AuthBase, Dict[str, str]]]:
+    ) -> Optional[Union[AuthBase, S3SessionKwargs]]:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 
@@ -447,7 +437,7 @@ class PluginManager:
         self,
         provider: str,
         plugin_conf: PluginConfig,
-        topic_class: Type[PluginTopic],
+        topic_class: type[PluginTopic],
     ) -> Union[Api, Search, Download, Authentication, Crunch]:
         """Build the plugin of the given topic with the given plugin configuration and
         registered as the given provider

@@ -17,13 +17,15 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
+
+    from eodag.types import S3SessionKwargs
 
 
 class Authentication(PluginTopic):
@@ -34,11 +36,11 @@ class Authentication(PluginTopic):
 
         * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with search plugin endpoint or
           download link
-        * :attr:`~eodag.config.PluginConfig.matching_conf` (``Dict[str, Any]``): Part of the search or download plugin
+        * :attr:`~eodag.config.PluginConfig.matching_conf` (``dict[str, Any]``): Part of the search or download plugin
           configuration that needs authentication and helps identifying it
     """
 
-    def authenticate(self) -> Union[AuthBase, Dict[str, str]]:
+    def authenticate(self) -> Union[AuthBase, S3SessionKwargs]:
         """Authenticate"""
         raise NotImplementedError
 

@@ -17,7 +17,7 @@
 # limitations under the License
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from eodag.config import PluginConfig
 from eodag.plugins.base import PluginTopic
@@ -32,12 +32,12 @@ class Crunch(PluginTopic):
     :param config: Crunch configuration
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]]) -> None:
+    def __init__(self, config: Optional[dict[str, Any]]) -> None:
         self.config = PluginConfig()
         self.config.__dict__ = config if config is not None else {}
 
     def proceed(
-        self, products: List[EOProduct], **search_params: Any
-    ) -> List[EOProduct]:
+        self, products: list[EOProduct], **search_params: Any
+    ) -> list[EOProduct]:
         """Implementation of how the results must be crunched"""
         raise NotImplementedError

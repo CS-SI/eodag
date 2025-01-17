@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -54,6 +54,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
 
@@ -78,7 +79,7 @@ class S3RestDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): whether order is enabled
           or not if product is `OFFLINE`
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``) HTTP request method, ``GET`` (default) or ``POST``
-        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): order request headers
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): order request headers
         * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
           a typed dictionary containing the key :attr:`~eodag.config.PluginConfig.OrderOnResponse.metadata_mapping`
           which can be used to add new product properties based on the data in response to the order request
@@ -93,7 +94,7 @@ class S3RestDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -270,7 +271,7 @@ class S3RestDownload(Download):
                 os.remove(record_filename)
 
             # total size for progress_callback
-            size_list: List[int] = [
+            size_list: list[int] = [
                 int(node.firstChild.nodeValue)  # type: ignore[attr-defined]
                 for node in xmldoc.getElementsByTagName("Size")
                 if node.firstChild is not None

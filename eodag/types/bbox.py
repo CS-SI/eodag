@@ -15,14 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 from pydantic import BaseModel, ValidationInfo, field_validator
 from shapely.geometry.polygon import Polygon
 
 NumType = Union[float, int]
 BBoxArgs = Union[
-    List[NumType], Tuple[NumType, NumType, NumType, NumType], Dict[str, NumType]
+    list[NumType], tuple[NumType, NumType, NumType, NumType], dict[str, NumType]
 ]
 
 

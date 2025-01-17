@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import time
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import requests
 
@@ -113,10 +113,10 @@ class DataRequestSearch(Search):
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_id` (``str``): mapping for the
             product type id
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_metadata`
-            (``Dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
+            (``dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
             from the provider result
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_properties`
-            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
+            (``dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
             product type metadata
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url` (``str``): url to fetch
             data for a single collection; used if product type metadata is not available from the endpoint given in
@@ -125,7 +125,7 @@ class DataRequestSearch(Search):
             to be added to the :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` to filter for a
             collection
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_product_type_parsable_metadata`
-            (``Dict[str, str]``): mapping for product type metadata returned by the endpoint given in
+            (``dict[str, str]``): mapping for product type metadata returned by the endpoint given in
             :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url`.
 
         * :attr:`~eodag.config.PluginConfig.constraints_file_url` (``str``): url to fetch the constraints for a specific
@@ -133,7 +133,7 @@ class DataRequestSearch(Search):
         * :attr:`~eodag.config.PluginConfig.constraints_entry` (``str``): key in the json result where the constraints
           can be found; if not given, it is assumed that the constraints are on top level of the result, i.e.
           the result is an array of constraints
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Any]``): The search plugins of this kind can
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Any]``): The search plugins of this kind can
           detect when a metadata mapping is "query-able", and get the semantics of how to format the query string
           parameter that enables to make a query on the corresponding metadata. To make a metadata query-able,
           just configure it in the metadata mapping to be a list of 2 items, the first one being the
@@ -207,10 +207,10 @@ class DataRequestSearch(Search):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
                 self.config.pagination.get("next_page_url_key_path", None)
             )
-        self.download_info: Dict[str, Any] = {}
+        self.download_info: dict[str, Any] = {}
         self.data_request_id = None
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
         """Fetch product types is disabled for `DataRequestSearch`
 
         :returns: empty dict
@@ -226,7 +226,7 @@ class DataRequestSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """
         performs the search for a provider where several steps are required to fetch the data
         """
@@ -431,7 +431,7 @@ class DataRequestSearch(Search):
 
     def _get_result_data(
         self, data_request_id: str, items_per_page: int, page: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         page = page - 1 + self.config.pagination.get("start_page", 1)
         url = self.config.result_url.format(
             jobId=data_request_id, items_per_page=items_per_page, page=page
@@ -450,18 +450,18 @@ class DataRequestSearch(Search):
 
     def _convert_result_data(
         self,
-        result_data: Dict[str, Any],
+        result_data: dict[str, Any],
         data_request_id: str,
         product_type: str,
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], int]:
+    ) -> tuple[list[EOProduct], int]:
         """Build EOProducts from provider results"""
         results_entry = self.config.results_entry
         results = result_data[results_entry]
         logger.debug(
             "Adapting %s plugin results to eodag product representation" % len(results)
         )
-        products: List[EOProduct] = []
+        products: list[EOProduct] = []
         for result in results:
             product = EOProduct(
                 self.provider,
@@ -517,8 +517,8 @@ class DataRequestSearch(Search):
         return False
 
     def _apply_additional_filters(
-        self, result: Dict[str, Any], custom_filters: Dict[str, str]
-    ) -> Dict[str, Any]:
+        self, result: dict[str, Any], custom_filters: dict[str, str]
+    ) -> dict[str, Any]:
         filtered_result = []
         results_entry = self.config.results_entry
         results = result[results_entry]

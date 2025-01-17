@@ -57,5 +57,5 @@ class Api(Search, Download):
     :param provider: An EODAG provider name
     :type provider: str
     :param config: An EODAG plugin configuration
-    :type config: Dict[str, Any]
+    :type config: dict[str, Any]
     """

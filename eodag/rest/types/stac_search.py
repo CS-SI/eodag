@@ -19,17 +19,7 @@
 
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Literal, Optional, Union
 
 import geojson
 from pydantic import (
@@ -63,8 +53,8 @@ if TYPE_CHECKING:
 NumType = Union[float, int]
 
 BBox = Union[
-    Tuple[NumType, NumType, NumType, NumType],
-    Tuple[NumType, NumType, NumType, NumType, NumType, NumType],
+    tuple[NumType, NumType, NumType, NumType],
+    tuple[NumType, NumType, NumType, NumType, NumType, NumType],
 ]
 
 Geometry = Union[
@@ -106,8 +96,8 @@ class SearchPostRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
     provider: Optional[str] = None
-    collections: Optional[List[str]] = None
-    ids: Optional[List[str]] = None
+    collections: Optional[list[str]] = None
+    ids: Optional[list[str]] = None
     bbox: Optional[BBox] = None
     intersects: Optional[Geometry] = None
     datetime: Optional[str] = None
@@ -117,21 +107,21 @@ class SearchPostRequest(BaseModel):
     page: Optional[PositiveInt] = Field(  # type: ignore
         default=None, description="Page number, must be a positive integer."
     )
-    query: Optional[Dict[str, Any]] = None
-    filter: Optional[Dict[str, Any]] = None
+    query: Optional[dict[str, Any]] = None
+    filter: Optional[dict[str, Any]] = None
     filter_lang: Optional[str] = Field(
         default=None,
         alias="filter-lang",
         description="The language used for filtering.",
         validate_default=True,
     )
-    sortby: Optional[List[SortBy]] = None
+    sortby: Optional[list[SortBy]] = None
     crunch: Optional[str] = None
 
     @field_serializer("intersects")
     def serialize_intersects(
         self, intersects: Optional[Geometry]
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Serialize intersects from shapely to a proper dict"""
         if intersects:
             return geojson.loads(geojson.dumps(intersects))  # type: ignore
@@ -150,7 +140,7 @@ class SearchPostRequest(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def only_one_spatial(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def only_one_spatial(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Check bbox and intersects are not both supplied."""
         if "intersects" in values and "bbox" in values:
             raise ValueError("intersects and bbox parameters are mutually exclusive")
@@ -170,7 +160,7 @@ class SearchPostRequest(BaseModel):
 
     @field_validator("ids", "collections", mode="before")
     @classmethod
-    def str_to_str_list(cls, v: Union[str, List[str]]) -> List[str]:
+    def str_to_str_list(cls, v: Union[str, list[str]]) -> list[str]:
         """Convert ids and collections strings to list of strings"""
         if isinstance(v, str):
             return [i.strip() for i in v.split(",")]
@@ -178,7 +168,7 @@ class SearchPostRequest(BaseModel):
 
     @field_validator("intersects", mode="before")
     @classmethod
-    def validate_intersects(cls, v: Union[Dict[str, Any], Geometry]) -> Geometry:
+    def validate_intersects(cls, v: Union[dict[str, Any], Geometry]) -> Geometry:
         """Verify format of intersects"""
         if isinstance(v, BaseGeometry):
             return v
@@ -224,7 +214,7 @@ class SearchPostRequest(BaseModel):
             # Single date is interpreted as end date
             values = ["..", v]
 
-        dates: List[str] = []
+        dates: list[str] = []
         for value in values:
             if value == ".." or value == "":
                 dates.append("..")
@@ -267,13 +257,13 @@ class SearchPostRequest(BaseModel):
 
 def sortby2list(
     v: Optional[str],
-) -> Optional[List[SortBy]]:
+) -> Optional[list[SortBy]]:
     """
     Convert sortby filter parameter GET syntax to POST syntax
     """
     if not v:
         return None
-    sortby: List[SortBy] = []
+    sortby: list[SortBy] = []
     for sortby_param in v.split(","):
         sortby_param = sortby_param.strip()
         direction: Direction = "desc" if sortby_param.startswith("-") else "asc"

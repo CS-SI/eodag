@@ -22,7 +22,7 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import requests
 from jsonpath_ng.ext import parse
@@ -61,6 +61,7 @@ if TYPE_CHECKING:
 
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -86,7 +87,7 @@ class UsgsApi(Api):
           file should be extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.order_enabled` (``bool``): if the product has to
           be ordered to download it; default: ``False``
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Union[str, list]]``): how
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Union[str, list]]``): how
           parameters should be mapped between the provider and eodag; If a string is given, this is
           the mapping parameter returned by provider -> eodag parameter. If a list with 2 elements
           is given, the first one is the mapping eodag parameter -> provider query parameters
@@ -99,7 +100,7 @@ class UsgsApi(Api):
         # Same method as in base.py, Search.__init__()
         # Prepare the metadata mapping
         # Do a shallow copy, the structure is flat enough for this to be sufficient
-        metas: Dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
+        metas: dict[str, Any] = DEFAULT_METADATA_MAPPING.copy()
         # Update the defaults with the mapping value. This will add any new key
         # added by the provider mapping that is not in the default metadata.
         metas.update(self.config.metadata_mapping)
@@ -138,7 +139,7 @@ class UsgsApi(Api):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Search for data on USGS catalogues"""
         page = prep.page if prep.page is not None else DEFAULT_PAGE
         items_per_page = (
@@ -164,7 +165,7 @@ class UsgsApi(Api):
         start_date = kwargs.pop("startTimeFromAscendingNode", None)
         end_date = kwargs.pop("completionTimeFromAscendingNode", None)
         geom = kwargs.pop("geometry", None)
-        footprint: Dict[str, str] = {}
+        footprint: dict[str, str] = {}
         if hasattr(geom, "bounds"):
             (
                 footprint["lonmin"],
@@ -175,7 +176,7 @@ class UsgsApi(Api):
         else:
             footprint = geom
 
-        final: List[EOProduct] = []
+        final: list[EOProduct] = []
         if footprint and len(footprint.keys()) == 4:  # a rectangle (or bbox)
             lower_left = {
                 "longitude": footprint["lonmin"],
@@ -295,7 +296,7 @@ class UsgsApi(Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -340,7 +341,7 @@ class UsgsApi(Api):
             product.properties["productId"],
         )
 
-        req_urls: List[str] = []
+        req_urls: list[str] = []
         try:
             if len(download_request_results["data"]["preparingDownloads"]) > 0:
                 req_urls.extend(
@@ -464,13 +465,13 @@ class UsgsApi(Api):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Download all using parent (base plugin) method
         """

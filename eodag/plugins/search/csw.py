@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pyproj
 from owslib.csw import CatalogueServiceWeb
@@ -60,13 +60,13 @@ class CSWSearch(Search):
         * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): The endpoint of the
           provider's search interface
         * :attr:`~eodag.config.PluginConfig.version` (``str``): OGC Catalogue Service version; default: ``2.0.2``
-        * :attr:`~eodag.config.PluginConfig.search_definition` (``Dict[str, Any]``) (**mandatory**):
+        * :attr:`~eodag.config.PluginConfig.search_definition` (``dict[str, Any]``) (**mandatory**):
 
-          * **product_type_tags** (``List[Dict[str, Any]``): dict of product type tags
+          * **product_type_tags** (``list[dict[str, Any]``): dict of product type tags
           * **resource_location_filter** (``str``): regex string
-          * **date_tags** (``Dict[str, Any]``): tags for start and end
+          * **date_tags** (``dict[str, Any]``): tags for start and end
 
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Any]``): The search plugins of this kind can
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Any]``): The search plugins of this kind can
           detect when a metadata mapping is "query-able", and get the semantics of how to format the query string
           parameter that enables to make a query on the corresponding metadata. To make a metadata query-able,
           just configure it in the metadata mapping to be a list of 2 items, the first one being the
@@ -107,7 +107,7 @@ class CSWSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
         if product_type is None:
@@ -117,7 +117,7 @@ class CSWSearch(Search):
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
         else:
             self.__init_catalog()
-        results: List[EOProduct] = []
+        results: list[EOProduct] = []
         if self.catalog:
             provider_product_type = self.config.products[product_type]["productType"]
             for product_type_def in self.config.search_definition["product_type_tags"]:
@@ -229,12 +229,12 @@ class CSWSearch(Search):
 
     def __convert_query_params(
         self,
-        product_type_def: Dict[str, Any],
+        product_type_def: dict[str, Any],
         product_type: str,
-        params: Dict[str, Any],
-    ) -> Union[List[OgcExpression], List[List[OgcExpression]]]:
+        params: dict[str, Any],
+    ) -> Union[list[OgcExpression], list[list[OgcExpression]]]:
         """Translates eodag search to CSW constraints using owslib constraint classes"""
-        constraints: List[OgcExpression] = []
+        constraints: list[OgcExpression] = []
         # How the match should be performed (fuzzy, prefix, postfix or exact).
         # defaults to fuzzy
         pt_tag, matching = (

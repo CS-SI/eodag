@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from eodag.utils.exceptions import NotAvailableError
 from eodag.utils.repr import dict_to_html_table
@@ -45,10 +45,10 @@ class AssetsDict(UserDict):
         self.product = product
         super(AssetsDict, self).__init__(*args, **kwargs)
 
-    def __setitem__(self, key: str, value: Dict[str, Any]) -> None:
+    def __setitem__(self, key: str, value: dict[str, Any]) -> None:
         super().__setitem__(key, Asset(self.product, key, value))
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Builds a representation of AssetsDict to enable its serialization
 
         :returns: The representation of a :class:`~eodag.api.product._assets.AssetsDict`
@@ -56,7 +56,7 @@ class AssetsDict(UserDict):
         """
         return {k: v.as_dict() for k, v in self.data.items()}
 
-    def get_values(self, asset_filter: str = "") -> List[Asset]:
+    def get_values(self, asset_filter: str = "") -> list[Asset]:
         """
         retrieves the assets matching the given filter
 
@@ -138,7 +138,7 @@ class Asset(UserDict):
         self.key = key
         super(Asset, self).__init__(*args, **kwargs)
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Builds a representation of Asset to enable its serialization
 
         :returns: The representation of a :class:`~eodag.api.product._assets.Asset` as a
