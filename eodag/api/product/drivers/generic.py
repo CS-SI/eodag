@@ -18,15 +18,10 @@
 from __future__ import annotations
 
 import logging
-import re
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-import rasterio
-
 from eodag.api.product.drivers.base import DatasetDriver
-from eodag.utils import uri_to_path
-from eodag.utils.exceptions import AddressNotFound, UnsupportedDatasetAddressScheme
+from eodag.utils.exceptions import AddressNotFound
 
 if TYPE_CHECKING:
     from eodag.api.product._product import EOProduct
@@ -41,8 +36,11 @@ EXTRA_ALLOWED_FILE_EXTENSIONS = [".grib", ".grib2"]
 class GenericDriver(DatasetDriver):
     """Generic Driver for products that need to be downloaded"""
 
-    def get_data_address(self, eo_product: EOProduct, band: str) -> str:
+    def _get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Get the address of a product subdataset.
+
+        This method should not be called as ``get_data_address()`` is only expected to be
+        called from ``eodag-cube``.
 
         :param eo_product: The product whom underlying dataset address is to be retrieved
         :type eo_product: :class:`~eodag.api.product._product.EOProduct`
@@ -53,33 +51,14 @@ class GenericDriver(DatasetDriver):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
-        product_location_scheme = eo_product.location.split("://")[0]
-        if product_location_scheme == "file":
+        raise AddressNotFound("eodag-cube required for this feature")
 
-            p = re.compile(rf"{band}", re.IGNORECASE)
-            matching_files = []
-            for f_path in Path(uri_to_path(eo_product.location)).glob("**/*"):
-                f_str = str(f_path.resolve())
-                if f_path.suffix in EXTRA_ALLOWED_FILE_EXTENSIONS:
-                    matching_files.append(f_str)
-                elif p.search(f_str):
-                    try:
-                        # files readable by rasterio
-                        rasterio.drivers.driver_from_extension(f_path)
-                        matching_files.append(f_str)
-                        logger.debug(f"Matching band: {f_str}")
-                    except ValueError:
-                        pass
-
-            if len(matching_files) == 1:
-                return matching_files[0]
-
-            raise AddressNotFound(
-                rf"Please adapt given band parameter ('{band}') to match only file: "
-                rf"{len(matching_files)} files found matching {p}"
-            )
-
-        raise UnsupportedDatasetAddressScheme(
-            "eo product {} is accessible through a location scheme that is not yet "
-            "supported by eodag: {}".format(eo_product, product_location_scheme)
+    try:
+        # import from eodag-cube if installed
+        from eodag_cube.api.product.drivers.generic import (  # pyright: ignore[reportMissingImports]
+            GenericDriver,
         )
+
+        get_data_address = GenericDriver.get_data_address
+    except ImportError:
+        get_data_address = _get_data_address
