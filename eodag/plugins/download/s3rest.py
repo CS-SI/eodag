@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import os.path
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -54,6 +54,7 @@ from eodag.utils.exceptions import (
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
 
@@ -93,7 +94,7 @@ class S3RestDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,

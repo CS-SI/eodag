@@ -366,3 +366,12 @@ class ProviderSortables(TypedDict):
 
     sortables: List[str]
     max_sort_params: Annotated[Optional[int], Gt(0)]
+
+
+class S3SessionKwargs(TypedDict, total=False):
+    """A class representing available keyword arguments to pass to :class:`boto3.session.Session` for authentication"""
+
+    aws_access_key_id: Optional[str]
+    aws_secret_access_key: Optional[str]
+    aws_session_token: Optional[str]
+    profile_name: Optional[str]

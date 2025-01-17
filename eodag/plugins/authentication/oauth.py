@@ -17,12 +17,13 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 from eodag.plugins.authentication.base import Authentication
 
 if TYPE_CHECKING:
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
 
 
 class OAuth(Authentication):
@@ -43,9 +44,12 @@ class OAuth(Authentication):
         self.access_key: Optional[str] = None
         self.secret_key: Optional[str] = None
 
-    def authenticate(self) -> Dict[str, str]:
+    def authenticate(self) -> S3SessionKwargs:
         """Authenticate"""
         self.validate_config_credentials()
         self.access_key = self.config.credentials["aws_access_key_id"]
         self.secret_key = self.config.credentials["aws_secret_access_key"]
-        return {"access_key": self.access_key, "secret_key": self.secret_key}
+        return {
+            "aws_access_key_id": self.access_key,
+            "aws_secret_access_key": self.secret_key,
+        }

@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 
     from eodag.api.product import EOProduct
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
 
 logger = logging.getLogger("eodag.search.base")
 
@@ -60,7 +61,7 @@ class Search(PluginTopic):
     :param config: An EODAG plugin configuration
     """
 
-    auth: Union[AuthBase, Dict[str, str]]
+    auth: Union[AuthBase, S3SessionKwargs]
     next_page_url: Optional[str]
     next_page_query_obj: Optional[Dict[str, Any]]
     total_items_nb: int

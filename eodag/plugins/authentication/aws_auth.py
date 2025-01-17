@@ -17,9 +17,10 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Optional, cast
 
 from eodag.plugins.authentication.base import Authentication
+from eodag.types import S3SessionKwargs
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
@@ -53,12 +54,12 @@ class AwsAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsAuth, self).__init__(provider, config)
-        self.aws_access_key_id = None
-        self.aws_secret_access_key = None
-        self.aws_session_token = None
-        self.profile_name = None
+        self.aws_access_key_id: Optional[str] = None
+        self.aws_secret_access_key: Optional[str] = None
+        self.aws_session_token: Optional[str] = None
+        self.profile_name: Optional[str] = None
 
-    def authenticate(self) -> Dict[str, str]:
+    def authenticate(self) -> S3SessionKwargs:
         """Authenticate
 
         :returns: dict containing AWS/boto3 non-empty credentials
@@ -75,10 +76,12 @@ class AwsAuth(Authentication):
         )
         self.profile_name = credentials.get("aws_profile", self.profile_name)
 
-        auth_keys = [
-            "aws_access_key_id",
-            "aws_secret_access_key",
-            "aws_session_token",
-            "profile_name",
-        ]
-        return {k: getattr(self, k) for k in auth_keys if getattr(self, k)}
+        auth_dict = cast(
+            S3SessionKwargs,
+            {
+                k: getattr(self, k)
+                for k in S3SessionKwargs.__annotations__
+                if getattr(self, k, None) is not None
+            },
+        )
+        return auth_dict

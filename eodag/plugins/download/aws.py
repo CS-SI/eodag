@@ -34,7 +34,6 @@ from typing import (
     Optional,
     Set,
     Tuple,
-    TypedDict,
     Union,
     cast,
 )
@@ -81,6 +80,7 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -249,7 +249,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -523,7 +523,7 @@ class AwsDownload(Download):
     def _do_authentication(
         self,
         bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
     ) -> Tuple[Dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
@@ -648,7 +648,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -839,7 +839,7 @@ class AwsDownload(Download):
         return os.path.commonpath(chunk_paths)
 
     def get_rio_env(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Dict[str, Any]:
         """Get rasterio environment variables needed for data access authentication.
 
@@ -864,7 +864,7 @@ class AwsDownload(Download):
             return {"aws_unsigned": True}
 
     def get_authenticated_objects(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> ResourceCollection:
         """Get boto3 authenticated objects for the given bucket using
         the most adapted auth strategy.
@@ -877,7 +877,7 @@ class AwsDownload(Download):
         :returns: The boto3 authenticated objects
         """
         auth_methods: List[
-            Callable[[str, str, Dict[str, str]], Optional[ResourceCollection]]
+            Callable[[str, str, S3SessionKwargs], Optional[ResourceCollection]]
         ] = [
             self._get_authenticated_objects_unsigned,
             self._get_authenticated_objects_from_auth_profile,
@@ -912,7 +912,7 @@ class AwsDownload(Download):
         )
 
     def _get_authenticated_objects_unsigned(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using no-sign-request"""
 
@@ -927,7 +927,7 @@ class AwsDownload(Download):
         return objects
 
     def _get_authenticated_objects_from_auth_profile(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
 
@@ -950,21 +950,12 @@ class AwsDownload(Download):
             return None
 
     def _get_authenticated_objects_from_auth_keys(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
         from provided credentials"""
 
         if all(k in auth_dict for k in ("aws_access_key_id", "aws_secret_access_key")):
-            S3SessionKwargs = TypedDict(
-                "S3SessionKwargs",
-                {
-                    "aws_access_key_id": str,
-                    "aws_secret_access_key": str,
-                    "aws_session_token": str,
-                },
-                total=False,
-            )
             s3_session_kwargs: S3SessionKwargs = {
                 "aws_access_key_id": auth_dict["aws_access_key_id"],
                 "aws_secret_access_key": auth_dict["aws_secret_access_key"],
@@ -989,7 +980,7 @@ class AwsDownload(Download):
             return None
 
     def _get_authenticated_objects_from_env(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and current environment"""
 
@@ -1326,7 +1317,7 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
