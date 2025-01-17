@@ -48,7 +48,7 @@ import shutil
 import sys
 import textwrap
 from importlib.metadata import metadata
-from typing import TYPE_CHECKING, Any, Mapping, Set
+from typing import TYPE_CHECKING, Any, Mapping
 
 import click
 
@@ -359,7 +359,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     count = kwargs.pop("count")
 
     # Process inputs for crunch
-    cruncher_names: Set[Any] = set(kwargs.pop("cruncher") or [])
+    cruncher_names: set[Any] = set(kwargs.pop("cruncher") or [])
     cruncher_args = kwargs.pop("cruncher_args")
     cruncher_args_dict: dict[str, dict[str, Any]] = {}
     if cruncher_args:

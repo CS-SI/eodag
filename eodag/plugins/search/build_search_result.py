@@ -23,7 +23,7 @@ import logging
 import re
 from collections import OrderedDict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Set, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
@@ -614,7 +614,7 @@ class ECMWFSearch(PostJsonSearch):
             if v and (not isinstance(v, list) or all(v))
         }
 
-        required_keywords: Set[str] = set()
+        required_keywords: set[str] = set()
 
         # calculate available values
         if constraints:

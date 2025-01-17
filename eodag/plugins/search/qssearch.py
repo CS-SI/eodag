@@ -28,7 +28,6 @@ from typing import (
     Callable,
     Optional,
     Sequence,
-    Set,
     TypedDict,
     cast,
     get_args,
@@ -1142,7 +1141,7 @@ class QueryStringSearch(Search):
             not hasattr(prep, "product_type_def_params")
             or not prep.product_type_def_params
         ):
-            collections: Set[str] = set()
+            collections: set[str] = set()
             collection = getattr(self.config, "collection", None)
             if collection is None:
                 try:

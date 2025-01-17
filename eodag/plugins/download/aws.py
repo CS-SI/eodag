@@ -23,17 +23,7 @@ import re
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterator,
-    Match,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Match, Optional, Union, cast
 
 import boto3
 import requests
@@ -536,7 +526,7 @@ class AwsDownload(Download):
         if auth is None:
             auth = {}
         authenticated_objects: dict[str, Any] = {}
-        auth_error_messages: Set[str] = set()
+        auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
             try:
                 bucket_name, prefix = pack
@@ -593,7 +583,7 @@ class AwsDownload(Download):
         asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
-    ) -> Set[Any]:
+    ) -> set[Any]:
         """
         retrieve unique product chunks based on authenticated objects and asset filters
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
@@ -751,7 +741,7 @@ class AwsDownload(Download):
 
     def _stream_download(
         self,
-        unique_product_chunks: Set[Any],
+        unique_product_chunks: set[Any],
         product: EOProduct,
         build_safe: bool,
         progress_callback: ProgressCallback,
@@ -826,7 +816,7 @@ class AwsDownload(Download):
                 )
 
     def _get_commonpath(
-        self, product: EOProduct, product_chunks: Set[Any], build_safe: bool
+        self, product: EOProduct, product_chunks: set[Any], build_safe: bool
     ) -> str:
         chunk_paths = []
         for product_chunk in product_chunks:

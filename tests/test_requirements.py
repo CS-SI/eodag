@@ -22,7 +22,7 @@ import os
 import re
 import sys
 import unittest
-from typing import Any, Iterator, Set
+from typing import Any, Iterator
 
 import importlib_metadata
 from packaging.requirements import Requirement
@@ -59,9 +59,9 @@ def get_imports(filepath: str) -> Iterator[Any]:
             yield node.module.split(".")[0]
 
 
-def get_project_imports(project_path: str) -> Set[str]:
+def get_project_imports(project_path: str) -> set[str]:
     """Get python imports from the project path"""
-    imports: Set[str] = set()
+    imports: set[str] = set()
     for dirpath, dirs, files in os.walk(project_path):
         for filename in files:
             if filename.endswith(".py"):
@@ -83,7 +83,7 @@ def get_setup_requires(setup_cfg_path: str):
     )
 
 
-def get_optional_dependencies(setup_cfg_path: str, extra: str) -> Set[str]:
+def get_optional_dependencies(setup_cfg_path: str, extra: str) -> set[str]:
     """Get extra requirements from the given setup.cfg file path"""
     config = configparser.ConfigParser()
     config.read(setup_cfg_path)
@@ -98,7 +98,7 @@ def get_optional_dependencies(setup_cfg_path: str, extra: str) -> Set[str]:
     return deps
 
 
-def get_resulting_extras(setup_cfg_path: str, extra: str) -> Set[str]:
+def get_resulting_extras(setup_cfg_path: str, extra: str) -> set[str]:
     """Get resulting extras for a single extra from the given setup.cfg file path"""
     config = configparser.ConfigParser()
     config.read(setup_cfg_path)
