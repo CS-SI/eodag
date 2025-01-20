@@ -36,6 +36,21 @@ DriverCriteria = TypedDict(
 DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
+            lambda prod: True
+            if getattr(prod, "product_type") == "S2_MSI_L1C"
+            else False
+        ],
+        "driver": Sentinel2L1C(),
+    },
+    {
+        "criteria": [lambda prod: True],
+        "driver": GenericDriver(),
+    },
+]
+
+LEGACY_DRIVERS: list[DriverCriteria] = [
+    {
+        "criteria": [
             lambda prod: True if len(getattr(prod, "assets", {})) > 0 else False
         ],
         "driver": StacAssets(),
@@ -59,4 +74,4 @@ DRIVERS: list[DriverCriteria] = [
 ]
 
 # exportable content
-__all__ = ["DRIVERS", "DatasetDriver", "NoDriver"]
+__all__ = ["DRIVERS", "DatasetDriver", "GenericDriver", "NoDriver", "Sentinel2L1C"]

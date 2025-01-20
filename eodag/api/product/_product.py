@@ -38,7 +38,7 @@ try:
 except ImportError:
     from eodag.api.product._assets import AssetsDict
 
-from eodag.api.product.drivers import DRIVERS, NoDriver
+from eodag.api.product.drivers import DRIVERS, LEGACY_DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
@@ -498,7 +498,14 @@ class EOProduct:
         try:
             for driver_conf in DRIVERS:
                 if all([criteria(self) for criteria in driver_conf["criteria"]]):
-                    return driver_conf["driver"]
+                    driver = driver_conf["driver"]
+                    break
+            # use legacy driver for deprecated get_data method usage
+            for driver_conf in LEGACY_DRIVERS:
+                if all([criteria(self) for criteria in driver_conf["criteria"]]):
+                    driver.legacy = driver_conf["driver"]
+                    break
+            return driver
         except TypeError:
             logger.info("No driver matching")
             pass

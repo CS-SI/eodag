@@ -26,6 +26,9 @@ if TYPE_CHECKING:
 class DatasetDriver(metaclass=type):
     """Dataset driver"""
 
+    #: legacy driver for deprecated get_data method usage
+    legacy: DatasetDriver
+
     def get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Retrieve the address of the dataset represented by `eo_product`.
 
@@ -35,6 +38,10 @@ class DatasetDriver(metaclass=type):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
+        # legacy driver usage if defined
+        if legacy_driver := getattr(self, "legacy", None):
+            return legacy_driver.get_data_address(eo_product, band)
+
         raise NotImplementedError
 
 
