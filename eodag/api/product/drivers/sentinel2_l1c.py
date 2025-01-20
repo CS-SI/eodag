@@ -52,14 +52,18 @@ class Sentinel2L1C(DatasetDriver):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
+        # legacy driver usage if defined
+        if legacy_driver := getattr(self, "legacy", None):
+            return legacy_driver.get_data_address(eo_product, band)
+
         raise AddressNotFound("eodag-cube required for this feature")
 
     try:
         # import from eodag-cube if installed
-        from eodag_cube.api.product.drivers.sentinel2_l1c import (  # pyright: ignore[reportMissingImports]
-            Sentinel2L1C,
+        from eodag_cube.api.product.drivers.sentinel2_l1c import (  # pyright: ignore[reportMissingImports]; isort: skip
+            Sentinel2L1C as Sentinel2L1C_cube,
         )
 
-        get_data_address = Sentinel2L1C.get_data_address
+        get_data_address = Sentinel2L1C_cube.get_data_address
     except ImportError:
         get_data_address = _get_data_address

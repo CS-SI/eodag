@@ -45,6 +45,10 @@ class StacAssets(DatasetDriver):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
+        # legacy driver usage if defined
+        if legacy_driver := getattr(self, "legacy", None):
+            return legacy_driver.get_data_address(eo_product, band)
+
         p = re.compile(rf"{band}", re.IGNORECASE)
         matching_keys = []
         for s in eo_product.assets.keys():

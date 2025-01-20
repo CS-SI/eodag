@@ -51,14 +51,18 @@ class GenericDriver(DatasetDriver):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
+        # legacy driver usage if defined
+        if legacy_driver := getattr(self, "legacy", None):
+            return legacy_driver.get_data_address(eo_product, band)
+
         raise AddressNotFound("eodag-cube required for this feature")
 
     try:
         # import from eodag-cube if installed
-        from eodag_cube.api.product.drivers.generic import (  # pyright: ignore[reportMissingImports]
-            GenericDriver,
+        from eodag_cube.api.product.drivers.generic import (  # pyright: ignore[reportMissingImports] ; isort: skip
+            GenericDriver as GenericDriver_cube,
         )
 
-        get_data_address = GenericDriver.get_data_address
+        get_data_address = GenericDriver_cube.get_data_address
     except ImportError:
         get_data_address = _get_data_address
