@@ -728,7 +728,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
     def test_plugins_download_http_assets_stream_zip_interrupt(
         self, mock_requests_get, mock_requests_head, mock_progress_callback
     ):
-        """HTTPDownload.download() must download assets to a temporary file"""
+        """HTTPDownload._stream_download_dict() must raise an error if an error is returned by the provider"""
 
         plugin = self.get_download_plugin(self.product)
         self.product.location = self.product.remote_location = "http://somewhere"
