@@ -73,8 +73,20 @@
     "name": "data_format",
     "type": "StringChoiceWidget",
     "details": {
-      "values": ["grib", "netcdf"]
+      "values": ["grib", "netcdf"],
+      "default": ["grib"]
     },
-    "id": 8
+    "id": 8,
+    "required": true
+  },
+  {
+    "name": "download_format",
+    "type": "StringChoiceWidget",
+    "details": {
+      "values": ["unarchived", "zip"],
+      "default": ["unarchived"]
+    },
+    "id": 9,
+    "required": true
   }
 ]

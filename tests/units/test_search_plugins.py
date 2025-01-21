@@ -2375,8 +2375,35 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         default_values.pop("metadata_mapping", None)
         params = deepcopy(default_values)
         params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
+        # set a parameter among the required ones of the form file with a default value in this form but not among the
+        # ones of the constraints file to an empty value to check if its associated queryable has no default value
+        eodag_formatted_data_format = "ecmwf:data_format"
+        provider_data_format = eodag_formatted_data_format.replace("ecmwf:", "")
+        self.assertIn(eodag_formatted_data_format, default_values)
+        self.assertIn(provider_data_format, [param["name"] for param in form])
+        data_format_in_form = [
+            param for param in form if param["name"] == provider_data_format
+        ][0]
+        self.assertTrue(data_format_in_form.get("required", False))
+        self.assertIsNotNone(
+            data_format_in_form.get("details", {}).get("default", None)
+        )
+        for constraint in constraints:
+            self.assertNotIn(provider_data_format, constraint)
+        params[eodag_formatted_data_format] = ""
+
+        # use a parameter among the ones of the form file but not among the ones of the constraints file
+        # and of provider default configuration to check if an error is raised, which is supposed to not happen
+        eodag_formatted_download_format = "ecmwf:download_format"
+        provider_download_format = eodag_formatted_download_format.replace("ecmwf:", "")
+        self.assertNotIn(eodag_formatted_download_format, default_values)
+        self.assertIn(provider_download_format, [param["name"] for param in form])
+        for constraint in constraints:
+            self.assertNotIn(provider_data_format, constraint)
+        params[eodag_formatted_download_format] = "foo"
 
         queryables = self.search_plugin.discover_queryables(**params)
+        # no error was raised, as expected
         self.assertIsNotNone(queryables)
 
         mock_requests_get.assert_has_calls(
@@ -2420,7 +2447,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "CAMS_EU_AIR_QUALITY_RE"
         ].items():
             queryable = queryables.get(property)
-            if queryable is not None:
+            # a special case for eodag_formatted_data_format queryable is required
+            # as its default value has been overwritten by an empty value
+            if queryable is not None and property == eodag_formatted_data_format:
+                self.assertEqual(
+                    PydanticUndefined, queryable.__metadata__[0].get_default()
+                )
+                # queryables with empty default values are required
+                self.assertTrue(queryable.__metadata__[0].is_required())
+            elif queryable is not None:
                 self.assertEqual(default_value, queryable.__metadata__[0].get_default())
                 # queryables with default values are not required
                 self.assertFalse(queryable.__metadata__[0].is_required())
@@ -2453,7 +2488,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # mock not called because cached values are used
         mock_requests_get.assert_not_called()
 
-        self.assertEqual(11, len(queryables))
+        self.assertEqual(12, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:
