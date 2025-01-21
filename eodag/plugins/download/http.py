@@ -772,13 +772,17 @@ class HTTPDownload(Download):
                     )
 
                 else:
+                    # get first chunk to check if it does not contain an error (if it does, that error will be raised)
+                    first_chunks_tuple = next(chunks_tuples)
                     outputs_filename = (
                         sanitize(product.properties["title"])
                         if "title" in product.properties
                         else sanitize(product.properties.get("id", "download"))
                     )
                     return StreamResponse(
-                        content=stream_zip(chunks_tuples),
+                        content=stream_zip(
+                            chain(iter([first_chunks_tuple]), chunks_tuples)
+                        ),
                         media_type="application/zip",
                         headers={
                             "content-disposition": f"attachment; filename={outputs_filename}.zip",
