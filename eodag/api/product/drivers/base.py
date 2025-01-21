@@ -17,10 +17,18 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import re
+from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
+
+
+class AssetPatterns(TypedDict):
+    """Asset patterns definition"""
+
+    pattern: re.Pattern
+    roles: list[str]
 
 
 class DatasetDriver(metaclass=type):
@@ -28,6 +36,8 @@ class DatasetDriver(metaclass=type):
 
     #: legacy driver for deprecated get_data method usage
     legacy: DatasetDriver
+
+    STRIP_SPECIAL_PATTERN = re.compile(r"^[^A-Z0-9]+|[^A-Z0-9]+$", re.IGNORECASE)
 
     def get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Retrieve the address of the dataset represented by `eo_product`.
