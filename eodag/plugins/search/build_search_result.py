@@ -341,9 +341,6 @@ class ECMWFSearch(PostJsonSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # cache fetching method
-        self.fetch_data = functools.lru_cache()(self._fetch_data)
-
         config.metadata_mapping = {
             **keywords_to_mdt(ECMWF_KEYWORDS + COP_DS_KEYWORDS, "ecmwf"),
             **config.metadata_mapping,
@@ -582,7 +579,7 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "discover_queryables", {}).get("form_url", ""),
             **kwargs,
         )
-        form = self.fetch_data(form_url)
+        form: list[dict[str, Any]] = self.fetch_data(form_url)
 
         formated_kwargs = self.format_as_provider_keyword(
             product_type, processed_kwargs
@@ -961,6 +958,16 @@ class ECMWFSearch(PostJsonSearch):
             if v not in [NOT_AVAILABLE, NOT_MAPPED]
         }
         return format_query_params(product_type, self.config, available_properties)
+
+    @functools.lru_cache()
+    def fetch_data(self, url: str) -> Any:
+        """
+        Fetches from a provider elements like constraints or forms by using the cache.
+
+        :param url: url from which the constraints can be fetched
+        :returns: cache containing the json file content fetched from the provider
+        """
+        return self._fetch_data(url)
 
     def _fetch_data(self, url: str) -> Any:
         """
