@@ -22,12 +22,12 @@ from contextlib import contextmanager
 import boto3
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import AddressNotFound, EOProduct, Sentinel2L1C
+from tests.context import AddressNotFound, EOProduct, Sentinel2Driver
 
 
-class TestEOProductDriverSentinel2L1C(EODagTestCase):
+class TestEOProductDriverSentinel2Driver(EODagTestCase):
     def setUp(self):
-        super(TestEOProductDriverSentinel2L1C, self).setUp()
+        super(TestEOProductDriverSentinel2Driver, self).setUp()
         self.product = EOProduct(
             self.provider, self.eoproduct_props, productType=self.product_type
         )
@@ -39,12 +39,12 @@ class TestEOProductDriverSentinel2L1C(EODagTestCase):
 
     def test_driver_set_stac_assets(self):
         """The appropriate driver must have been set"""
-        self.assertIsInstance(self.product.driver, Sentinel2L1C)
+        self.assertIsInstance(self.product.driver, Sentinel2Driver)
 
     def test_driver_get_local_dataset_address_bad_band(self):
         """Driver must raise AddressNotFound if non existent band is requested"""
         with self._filesystem_product() as product:
-            driver = Sentinel2L1C()
+            driver = Sentinel2Driver()
             band = "B02"
             self.assertRaises(AddressNotFound, driver.get_data_address, product, band)
 

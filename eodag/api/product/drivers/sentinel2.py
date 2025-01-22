@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     from eodag.api.product._product import EOProduct
 
 
-class Sentinel2L1C(DatasetDriver):
-    """Driver for Sentinel2 L1C product"""
+class Sentinel2Driver(DatasetDriver):
+    """Driver for Sentinel2 products"""
 
     BAND_FILE_PATTERN_TPL = r"^.+_{band}\.jp2$"
     SPATIAL_RES_PER_BANDS = {

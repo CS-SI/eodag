@@ -20,7 +20,7 @@ import os
 from contextlib import contextmanager
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import AddressNotFound, EOProduct, Sentinel2L1C, StacAssets
+from tests.context import AddressNotFound, EOProduct, Sentinel2Driver, StacAssets
 
 
 class TestEOProductDriverStacAssets(EODagTestCase):
@@ -78,7 +78,7 @@ class TestEOProductDriverStacAssets(EODagTestCase):
 
     def test_driver_set_stac_assets(self):
         """The appropriate driver must have been set"""
-        self.assertIsInstance(self.product.driver, Sentinel2L1C)
+        self.assertIsInstance(self.product.driver, Sentinel2Driver)
         self.assertIsInstance(self.product.driver.legacy, StacAssets)
 
     def test_driver_get_local_dataset_address_bad_band(self):

@@ -22,7 +22,7 @@ from typing import Callable, TypedDict
 
 from eodag.api.product.drivers.base import DatasetDriver, NoDriver
 from eodag.api.product.drivers.generic import GenericDriver
-from eodag.api.product.drivers.sentinel2_l1c import Sentinel2L1C
+from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
 from eodag.api.product.drivers.stac_assets import StacAssets
 
 DriverCriteria = TypedDict(
@@ -37,10 +37,10 @@ DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
             lambda prod: True
-            if getattr(prod, "product_type") == "S2_MSI_L1C"
+            if getattr(prod, "product_type").startswith("S2_MSI_")
             else False
         ],
-        "driver": Sentinel2L1C(),
+        "driver": Sentinel2Driver(),
     },
     {
         "criteria": [lambda prod: True],
@@ -65,7 +65,7 @@ LEGACY_DRIVERS: list[DriverCriteria] = [
             if getattr(prod, "product_type") == "S2_MSI_L1C"
             else False
         ],
-        "driver": Sentinel2L1C(),
+        "driver": Sentinel2Driver(),
     },
     {
         "criteria": [lambda prod: True],
@@ -74,4 +74,4 @@ LEGACY_DRIVERS: list[DriverCriteria] = [
 ]
 
 # exportable content
-__all__ = ["DRIVERS", "DatasetDriver", "GenericDriver", "NoDriver", "Sentinel2L1C"]
+__all__ = ["DRIVERS", "DatasetDriver", "GenericDriver", "NoDriver", "Sentinel2Driver"]
