@@ -18,9 +18,10 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
-from eodag.api.product.drivers.base import DatasetDriver
+from eodag.api.product.drivers.base import AssetPatterns, DatasetDriver
 from eodag.utils.exceptions import AddressNotFound
 
 if TYPE_CHECKING:
@@ -35,6 +36,32 @@ EXTRA_ALLOWED_FILE_EXTENSIONS = [".grib", ".grib2"]
 
 class GenericDriver(DatasetDriver):
     """Generic Driver for products that need to be downloaded"""
+
+    ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
+        # metadata
+        {
+            "pattern": re.compile(
+                r"^(?:.*[/\\])?([^/\\]+)(\.xml|\.xsd|\.safe|\.json)$", re.IGNORECASE
+            ),
+            "roles": ["metadata"],
+        },
+        # thumbnail
+        {
+            "pattern": re.compile(
+                r"^(?:.*[/\\])?(thumbnail)(\.jpg|\.jpeg|\.png)$", re.IGNORECASE
+            ),
+            "roles": ["thumbnail"],
+        },
+        # quicklook
+        {
+            "pattern": re.compile(
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview)(\.jpg|\.jpeg|\.png)$", re.IGNORECASE
+            ),
+            "roles": ["overview"],
+        },
+        # default
+        {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)$"), "roles": ["auxiliary"]},
+    ]
 
     def _get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Get the address of a product subdataset.

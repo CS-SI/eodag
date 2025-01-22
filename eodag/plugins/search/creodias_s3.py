@@ -16,8 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 from types import MethodType
 from typing import Any
+from urllib.parse import urlparse
 
 import boto3
 import botocore
@@ -91,10 +93,12 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                     key, roles = product.driver.guess_asset_key_and_roles(
                         s3_obj["Key"], product
                     )
+                    parsed_url = urlparse(s3_obj["Key"])
+                    title = os.path.basename(parsed_url.path)
 
                     if key and key not in product.assets:
                         product.assets[key] = {
-                            "title": key,
+                            "title": title,
                             "roles": roles,
                             "href": f"s3://{config.s3_bucket}/{s3_obj['Key']}",
                         }
