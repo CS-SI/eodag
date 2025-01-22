@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from eodag.api.product.drivers.base import AssetPatterns, DatasetDriver
 from eodag.utils.exceptions import AddressNotFound
@@ -38,26 +38,28 @@ class Sentinel2L1C(DatasetDriver):
         "TCI": ("TCI",),
     }
     BANDS_DEFAULT_GSD = {
-        "10m": ("B02", "B03", "B04", "B08", "TCI"),
-        "20m": ("B05", "B06", "B07", "B11", "B12", "B8A"),
-        "60m": ("B01", "B09", "B10"),
+        "10M": ("B02", "B03", "B04", "B08", "TCI"),
+        "20M": ("B05", "B06", "B07", "B11", "B12", "B8A"),
+        "60M": ("B01", "B09", "B10"),
     }
 
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
         # masks
         {
-            "pattern": re.compile(r"^.*?(MSK_[^/\\]+)\.jp2$", re.IGNORECASE),
+            "pattern": re.compile(r"^.*?(MSK_[^/\\]+)\.(?:jp2|tiff?)$", re.IGNORECASE),
             "roles": ["data-mask"],
         },
         # visual
         {
-            "pattern": re.compile(r"^.*?(TCI)(_[0-9]+m)?\.jp2$", re.IGNORECASE),
+            "pattern": re.compile(
+                r"^.*?(TCI)(_[0-9]+m)?\.(?:jp2|tiff?)$", re.IGNORECASE
+            ),
             "roles": ["visual"],
         },
         # bands
         {
             "pattern": re.compile(
-                r"^.*?([A-Z]+[0-9]*[A-Z]?)(_[0-9]+m)?\.jp2$", re.IGNORECASE
+                r"^.*?([A-Z]+[0-9]*[A-Z]?)(_[0-9]+m)?\.(?:jp2|tiff?)$", re.IGNORECASE
             ),
             "roles": ["data"],
         },
@@ -68,10 +70,17 @@ class Sentinel2L1C(DatasetDriver):
             ),
             "roles": ["metadata"],
         },
+        # thumbnail
+        {
+            "pattern": re.compile(
+                r"^(?:.*[/\\])?(thumbnail)(\.jpe?g|\.png)$", re.IGNORECASE
+            ),
+            "roles": ["thumbnail"],
+        },
         # quicklook
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+-ql|preview)(\.jpg)$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview)(\.jpe?g|\.png)$", re.IGNORECASE
             ),
             "roles": ["overview"],
         },
@@ -79,9 +88,7 @@ class Sentinel2L1C(DatasetDriver):
         {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)$"), "roles": ["auxiliary"]},
     ]
 
-    STRIP_SPECIAL_PATTERN = DatasetDriver.STRIP_SPECIAL_PATTERN
-
-    def _normalize_key(self, key, eo_product):
+    def _normalize_key(self, key: str, eo_product: EOProduct) -> str:
         upper_key = key.upper()
         # check if key matched any normalized
         for res in self.BANDS_DEFAULT_GSD:
@@ -90,30 +97,7 @@ class Sentinel2L1C(DatasetDriver):
                     if norm_key in upper_key:
                         return norm_key
 
-        # default cleanup
-        norm_key = key.replace(eo_product.properties.get("id", ""), "")
-        norm_key = re.sub(self.STRIP_SPECIAL_PATTERN, "", norm_key)
-
-        return norm_key
-
-    def guess_asset_key_and_roles(
-        self, href: str, eo_product: EOProduct
-    ) -> tuple[Optional[str], Optional[list[str]]]:
-        """Guess the asset key and roles from the given href.
-
-        :param href: The asset href
-        :param eo_product: The product to which the asset belongs
-        :returns: The asset key and roles
-        """
-        for pattern_dict in self.ASSET_KEYS_PATTERNS_ROLES:
-            if matched := pattern_dict["pattern"].match(href):
-                extracted_key, roles = (
-                    "".join([m for m in matched.groups() if m is not None]),
-                    pattern_dict.get("roles"),
-                )
-                normalized_key = self._normalize_key(extracted_key, eo_product)
-                return normalized_key or extracted_key, roles
-        return None, None
+        return super()._normalize_key(key, eo_product)
 
     def _get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Compute the address of a subdataset for a Sentinel2 L1C product.

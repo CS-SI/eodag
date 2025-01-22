@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Optional, TypedDict
 
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
@@ -37,7 +37,35 @@ class DatasetDriver(metaclass=type):
     #: legacy driver for deprecated get_data method usage
     legacy: DatasetDriver
 
+    ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = []
+
     STRIP_SPECIAL_PATTERN = re.compile(r"^[^A-Z0-9]+|[^A-Z0-9]+$", re.IGNORECASE)
+
+    def _normalize_key(self, key, eo_product):
+        # default cleanup
+        norm_key = key.replace(eo_product.properties.get("id", ""), "")
+        norm_key = re.sub(self.STRIP_SPECIAL_PATTERN, "", norm_key)
+
+        return norm_key
+
+    def guess_asset_key_and_roles(
+        self, href: str, eo_product: EOProduct
+    ) -> tuple[Optional[str], Optional[list[str]]]:
+        """Guess the asset key and roles from the given href.
+
+        :param href: The asset href
+        :param eo_product: The product to which the asset belongs
+        :returns: The asset key and roles
+        """
+        for pattern_dict in self.ASSET_KEYS_PATTERNS_ROLES:
+            if matched := pattern_dict["pattern"].match(href):
+                extracted_key, roles = (
+                    "".join([m for m in matched.groups() if m is not None]),
+                    pattern_dict.get("roles"),
+                )
+                normalized_key = self._normalize_key(extracted_key, eo_product)
+                return normalized_key or extracted_key, roles
+        return None, None
 
     def get_data_address(self, eo_product: EOProduct, band: str) -> str:
         """Retrieve the address of the dataset represented by `eo_product`.
