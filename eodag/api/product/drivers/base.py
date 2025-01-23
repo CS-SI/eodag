@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 import re
 from typing import TYPE_CHECKING, Optional, TypedDict
 
@@ -29,6 +30,9 @@ class AssetPatterns(TypedDict):
 
     pattern: re.Pattern
     roles: list[str]
+
+
+logger = logging.getLogger("eodag.driver.base")
 
 
 class DatasetDriver(metaclass=type):
@@ -65,6 +69,7 @@ class DatasetDriver(metaclass=type):
                 )
                 normalized_key = self._normalize_key(extracted_key, eo_product)
                 return normalized_key or extracted_key, roles
+        logger.debug(f"No key & roles could be guessed for {href}")
         return None, None
 
     def get_data_address(self, eo_product: EOProduct, band: str) -> str:

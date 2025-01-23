@@ -29,6 +29,7 @@ from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
+from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
 from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
 from eodag.api.product.drivers.stac_assets import StacAssets
 from eodag.api.product.drivers.base import DatasetDriver

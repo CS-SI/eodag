@@ -55,7 +55,8 @@ class GenericDriver(DatasetDriver):
         # quicklook
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+-ql|preview)(\.jpg|\.jpeg|\.png)$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpg|\.jpeg|\.png)$",
+                re.IGNORECASE,
             ),
             "roles": ["overview"],
         },

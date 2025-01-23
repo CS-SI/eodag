@@ -22,6 +22,7 @@ from typing import Callable, TypedDict
 
 from eodag.api.product.drivers.base import DatasetDriver, NoDriver
 from eodag.api.product.drivers.generic import GenericDriver
+from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
 from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
 from eodag.api.product.drivers.stac_assets import StacAssets
 
@@ -41,6 +42,14 @@ DRIVERS: list[DriverCriteria] = [
             else False
         ],
         "driver": Sentinel2Driver(),
+    },
+    {
+        "criteria": [
+            lambda prod: True
+            if getattr(prod, "product_type").startswith("S1_SAR_")
+            else False
+        ],
+        "driver": Sentinel1Driver(),
     },
     {
         "criteria": [lambda prod: True],
