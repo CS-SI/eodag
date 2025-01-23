@@ -38,7 +38,7 @@ DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
             lambda prod: True
-            if getattr(prod, "product_type").startswith("S2_MSI_")
+            if (prod.product_type or "").startswith("S2_MSI_")
             else False
         ],
         "driver": Sentinel2Driver(),
@@ -46,7 +46,7 @@ DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
             lambda prod: True
-            if getattr(prod, "product_type").startswith("S1_SAR_")
+            if (prod.product_type or "").startswith("S1_SAR_")
             else False
         ],
         "driver": Sentinel1Driver(),
