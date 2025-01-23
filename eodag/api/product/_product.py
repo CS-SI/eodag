@@ -377,7 +377,7 @@ class EOProduct:
         self,
         filename: Optional[str] = None,
         output_dir: Optional[str] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        progress_callback: Optional[ProgressCallback] = None
     ) -> str:
         """Download the quicklook image of a given EOProduct from its provider if it
         exists.
@@ -465,12 +465,16 @@ class EOProduct:
             )
             if not isinstance(auth, AuthBase):
                 auth = None
+            # If the provider certificate is valid but cannot be authenticated due to a python misconfiguration of certifi.
+            # We can download the product anyway as the certificate is valid
+            ssl_verify = getattr(self.downloader.config, "ssl_verify",True)
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,
                 auth=auth,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify
             ) as stream:
                 try:
                     stream.raise_for_status()
