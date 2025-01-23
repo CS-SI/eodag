@@ -80,7 +80,8 @@ class Sentinel2Driver(DatasetDriver):
         # quicklook
         {
             "pattern": re.compile(
-                r"^(?:.*[/\\])?([^/\\]+-ql|preview)(\.jpe?g|\.png)$", re.IGNORECASE
+                r"^(?:.*[/\\])?([^/\\]+-ql|preview|quick-?look)(\.jpe?g|\.png)$",
+                re.IGNORECASE,
             ),
             "roles": ["overview"],
         },
