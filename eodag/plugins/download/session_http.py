@@ -25,7 +25,7 @@ from urllib.parse import parse_qs, urlparse
 import geojson
 import requests
 from lxml import etree
-from requests import HTTPError, RequestException
+from requests import HTTPError, RequestException, Session
 
 from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
@@ -34,14 +34,10 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.plugins.download.base import (
-    DEFAULT_DOWNLOAD_TIMEOUT,
-    DEFAULT_DOWNLOAD_WAIT,
-    DEFAULT_STREAM_REQUESTS_TIMEOUT,
-)
+from eodag.plugins.download.base import DEFAULT_DOWNLOAD_TIMEOUT, DEFAULT_DOWNLOAD_WAIT
 from eodag.plugins.download.http import HTTPDownload
-
 from eodag.utils import (
+    DEFAULT_STREAM_REQUESTS_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
     flatten_top_directories,
@@ -57,34 +53,36 @@ from eodag.utils.exceptions import (
 )
 from eodag.utils.stac_reader import HTTP_REQ_TIMEOUT
 
-from requests import Session
-
 logger = logging.getLogger("plugins.nasa_plugins.plugins.download_plugin")
 
- 
-class SessionWithHeaderRedirection(Session):
 
-    AUTH_HOST = 'urs.earthdata.nasa.gov'
+class SessionWithHeaderRedirection(Session):
+    """:class:`requests.Session` overridden with header redirection."""
+
+    AUTH_HOST = "urs.earthdata.nasa.gov"
 
     # Overrides from the library to keep headers when redirected to or from the NASA auth host.
     def rebuild_auth(self, prepared_request, response):
+        """Rebuild the auth information in the prepared request."""
         headers = prepared_request.headers
         url = prepared_request.url
-        if 'Authorization' in headers:
+        if "Authorization" in headers:
             original_parsed = requests.utils.urlparse(response.request.url)
             redirect_parsed = requests.utils.urlparse(url)
-            
-            if (original_parsed.hostname != redirect_parsed.hostname) and \
-                    redirect_parsed.hostname != self.AUTH_HOST and \
-                    original_parsed.hostname != self.AUTH_HOST:
-                del headers['Authorization']
-        
-            
-class SessionDownloadPlugin(HTTPDownload):
-    """SessionDownloadPlugin plugin. Handles product download over HTTP protocol, while keeping the session."""
-        
-    session : SessionWithHeaderRedirection
-    
+
+            if (
+                (original_parsed.hostname != redirect_parsed.hostname)
+                and redirect_parsed.hostname != self.AUTH_HOST
+                and original_parsed.hostname != self.AUTH_HOST
+            ):
+                del headers["Authorization"]
+
+
+class SessionHTTPDownload(HTTPDownload):
+    """SessionHTTPDownload plugin. Handles product download over HTTP protocol, while keeping the session."""
+
+    session: SessionWithHeaderRedirection
+
     def __init__(self, provider, config):
         super(HTTPDownload, self).__init__(provider, config)
         if not hasattr(self.config, "base_uri"):
@@ -92,7 +90,6 @@ class SessionDownloadPlugin(HTTPDownload):
                 "{} plugin require a base_uri configuration key".format(self.__name__)
             )
         self.session = SessionWithHeaderRedirection()
-
 
     def orderDownload(
         self,
@@ -138,7 +135,7 @@ class SessionDownloadPlugin(HTTPDownload):
         else:
             order_url = product.properties["orderLink"]
             order_kwargs = {}
-        
+
         with self.session.request(
             method=order_method,
             url=order_url,

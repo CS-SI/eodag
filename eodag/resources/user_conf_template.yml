@@ -208,3 +208,30 @@ wekeo:
           password:
     download:
         outputs_prefix:
+earthdata_lars_asdc:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+        outputs_prefix:
+        credentials:
+          username:
+          password:
+    download:
+        outputs_prefix:
+earthdata_obdaac:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+        outputs_prefix:
+        credentials:
+          username:
+          password:
+    download:
+        outputs_prefix:
+earthdata_podaac:
+    priority: # Lower value means lower priority (Default: 0)
+    search:
+        outputs_prefix:
+        credentials:
+          username:
+          password:
+    download:
+        outputs_prefix:
