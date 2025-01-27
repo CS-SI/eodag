@@ -81,10 +81,6 @@ class DatasetDriver(metaclass=type):
         :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
         :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
         """
-        # legacy driver usage if defined
-        if legacy_driver := getattr(self, "legacy", None):
-            return legacy_driver.get_data_address(eo_product, band)
-
         raise NotImplementedError
 
 

@@ -19,25 +19,24 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import TYPE_CHECKING
 
 from eodag.api.product.drivers.base import AssetPatterns, DatasetDriver
-from eodag.utils.exceptions import AddressNotFound
-
-if TYPE_CHECKING:
-    from eodag.api.product._product import EOProduct
 
 logger = logging.getLogger("eodag.driver.generic")
-
-
-# File extensions to accept on top of those known to rasterio/GDAL
-EXTRA_ALLOWED_FILE_EXTENSIONS = [".grib", ".grib2"]
 
 
 class GenericDriver(DatasetDriver):
     """Generic Driver for products that need to be downloaded"""
 
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
+        # data
+        {
+            "pattern": re.compile(
+                r"^(?:.*[/\\])?([^/\\]+)(\.jp2|\.tiff?|\.dat|\.nc|\.grib2?)$",
+                re.IGNORECASE,
+            ),
+            "roles": ["data"],
+        },
         # metadata
         {
             "pattern": re.compile(
@@ -63,34 +62,3 @@ class GenericDriver(DatasetDriver):
         # default
         {"pattern": re.compile(r"^(?:.*[/\\])?([^/\\]+)$"), "roles": ["auxiliary"]},
     ]
-
-    def _get_data_address(self, eo_product: EOProduct, band: str) -> str:
-        """Get the address of a product subdataset.
-
-        This method should not be called as ``get_data_address()`` is only expected to be
-        called from ``eodag-cube``.
-
-        :param eo_product: The product whom underlying dataset address is to be retrieved
-        :type eo_product: :class:`~eodag.api.product._product.EOProduct`
-        :param band: The band to retrieve (e.g: 'B01')
-        :type band: str
-        :returns: An address for the dataset
-        :rtype: str
-        :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
-        :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
-        """
-        # legacy driver usage if defined
-        if legacy_driver := getattr(self, "legacy", None):
-            return legacy_driver.get_data_address(eo_product, band)
-
-        raise AddressNotFound("eodag-cube required for this feature")
-
-    try:
-        # import from eodag-cube if installed
-        from eodag_cube.api.product.drivers.generic import (  # pyright: ignore[reportMissingImports] ; isort: skip
-            GenericDriver as GenericDriver_cube,
-        )
-
-        get_data_address = GenericDriver_cube.get_data_address
-    except ImportError:
-        get_data_address = _get_data_address

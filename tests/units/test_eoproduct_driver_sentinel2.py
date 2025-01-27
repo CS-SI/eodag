@@ -17,10 +17,9 @@
 # limitations under the License.
 
 import os
-from contextlib import contextmanager
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import AddressNotFound, EOProduct, Sentinel2Driver
+from tests.context import EOProduct, NoDriver, Sentinel2Driver
 
 
 class TestEOProductDriverSentinel2Driver(EODagTestCase):
@@ -38,6 +37,16 @@ class TestEOProductDriverSentinel2Driver(EODagTestCase):
     def test_driver_s2_init(self):
         """The appropriate driver must have been set"""
         self.assertIsInstance(self.product.driver, Sentinel2Driver)
+        self.assertTrue(hasattr(self.product.driver, "legacy"))
+        try:
+            # import from eodag-cube if installed
+            from eodag_cube.api.product.drivers.base import (  # pyright: ignore[reportMissingImports]; isort: skip
+                DatasetDriver as DatasetDriver_cube,
+            )
+
+            self.assertIsInstance(self.product.driver.legacy, DatasetDriver_cube)
+        except ImportError:
+            self.assertIsInstance(self.product.driver.legacy, NoDriver)
 
     def test_driver_s2_guess_asset_key_and_roles(self):
         """The driver must guess appropriate asset key and roles"""
@@ -93,21 +102,9 @@ class TestEOProductDriverSentinel2Driver(EODagTestCase):
             ),
             ("ql.jpg", ["overview"]),
         )
-
-    def test_driver_s2_get_local_dataset_address_bad_band(self):
-        """Driver must raise AddressNotFound if non existent band is requested"""
-        with self._filesystem_product() as product:
-            driver = Sentinel2Driver()
-            band = "B02"
-            self.assertRaises(AddressNotFound, driver.get_data_address, product, band)
-
-    @contextmanager
-    def _filesystem_product(self):
-        original = self.product.location
-        try:
-            self.product.location = "file:///{}".format(
-                self.product.properties["title"].strip("/")
-            )
-            yield self.product
-        finally:
-            self.product.location = original
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/foo.bar", self.product
+            ),
+            ("foo.bar", ["auxiliary"]),
+        )

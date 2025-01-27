@@ -17,10 +17,9 @@
 # limitations under the License.
 
 import os
-from contextlib import contextmanager
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import AddressNotFound, EOProduct, GenericDriver
+from tests.context import EOProduct, GenericDriver, NoDriver
 
 
 class TestEOProductDriverGeneric(EODagTestCase):
@@ -35,24 +34,71 @@ class TestEOProductDriverGeneric(EODagTestCase):
             "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911",
         )
 
-    def test_driver_set_stac_assets(self):
+    def test_driver_generic_init(self):
         """The appropriate driver must have been set"""
         self.assertIsInstance(self.product.driver, GenericDriver)
-
-    def test_driver_get_local_dataset_address_bad_band(self):
-        """Driver must raise AddressNotFound if non existent band is requested"""
-        with self._filesystem_product() as product:
-            driver = GenericDriver()
-            band = "B02"
-            self.assertRaises(AddressNotFound, driver.get_data_address, product, band)
-
-    @contextmanager
-    def _filesystem_product(self):
-        original = self.product.location
+        self.assertTrue(hasattr(self.product.driver, "legacy"))
         try:
-            self.product.location = "file:///{}".format(
-                self.product.properties["title"].strip("/")
+            # import from eodag-cube if installed
+            from eodag_cube.api.product.drivers.base import (  # pyright: ignore[reportMissingImports]; isort: skip
+                DatasetDriver as DatasetDriver_cube,
             )
-            yield self.product
-        finally:
-            self.product.location = original
+
+            self.assertIsInstance(self.product.driver.legacy, DatasetDriver_cube)
+        except ImportError:
+            self.assertIsInstance(self.product.driver.legacy, NoDriver)
+
+    def test_driver_generic_guess_asset_key_and_roles(self):
+        """The driver must guess appropriate asset key and roles"""
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles("", self.product),
+            (None, None),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "2018/1/28/0/ew-hv.tif", self.product
+            ),
+            ("ew-hv.tif", ["data"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "2018/1/28/0/ew-hv.jp2", self.product
+            ),
+            ("ew-hv.jp2", ["data"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "2018/1/28/0/ew-hv.nc", self.product
+            ),
+            ("ew-hv.nc", ["data"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "2018/1/28/0/ew-hv.grib2", self.product
+            ),
+            ("ew-hv.grib2", ["data"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "2018/1/28/0/ew-hv.foo", self.product
+            ),
+            ("ew-hv.foo", ["auxiliary"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/rfi-ew-hh.xml", self.product
+            ),
+            ("rfi-ew-hh.xml", ["metadata"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/thumbnail.png", self.product
+            ),
+            ("thumbnail.png", ["thumbnail"]),
+        )
+        self.assertEqual(
+            self.product.driver.guess_asset_key_and_roles(
+                "s3://foo/1/28/0/quick-look.jpg", self.product
+            ),
+            ("quick-look.jpg", ["overview"]),
+        )

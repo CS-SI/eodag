@@ -21,7 +21,6 @@ import re
 from typing import TYPE_CHECKING
 
 from eodag.api.product.drivers.base import AssetPatterns, DatasetDriver
-from eodag.utils.exceptions import AddressNotFound
 
 if TYPE_CHECKING:
     from eodag.api.product._product import EOProduct
@@ -30,13 +29,6 @@ if TYPE_CHECKING:
 class Sentinel2Driver(DatasetDriver):
     """Driver for Sentinel2 products"""
 
-    BAND_FILE_PATTERN_TPL = r"^.+_{band}\.jp2$"
-    SPATIAL_RES_PER_BANDS = {
-        "10m": ("B02", "B03", "B04", "B08"),
-        "20m": ("B05", "B06", "B07", "B11", "B12", "B8A"),
-        "60m": ("B01", "B09", "B10"),
-        "TCI": ("TCI",),
-    }
     BANDS_DEFAULT_GSD = {
         "10M": ("B02", "B03", "B04", "B08", "TCI"),
         "20M": ("B05", "B06", "B07", "B11", "B12", "B8A"),
@@ -99,34 +91,3 @@ class Sentinel2Driver(DatasetDriver):
                         return norm_key
 
         return super()._normalize_key(key, eo_product)
-
-    def _get_data_address(self, eo_product: EOProduct, band: str) -> str:
-        """Compute the address of a subdataset for a Sentinel2 L1C product.
-
-        This method should not be called as ``get_data_address()`` is only expected to be
-        called from ``eodag-cube``.
-
-        :param eo_product: The product whom underlying dataset address is to be retrieved
-        :type eo_product: :class:`~eodag.api.product._product.EOProduct`
-        :param band: The band to retrieve (e.g: 'B01')
-        :type band: str
-        :returns: An address for the dataset
-        :rtype: str
-        :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
-        :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
-        """
-        # legacy driver usage if defined
-        if legacy_driver := getattr(self, "legacy", None):
-            return legacy_driver.get_data_address(eo_product, band)
-
-        raise AddressNotFound("eodag-cube required for this feature")
-
-    try:
-        # import from eodag-cube if installed
-        from eodag_cube.api.product.drivers.sentinel2_l1c import (  # pyright: ignore[reportMissingImports]; isort: skip
-            Sentinel2L1C as Sentinel2L1C_cube,
-        )
-
-        get_data_address = Sentinel2L1C_cube.get_data_address
-    except ImportError:
-        get_data_address = _get_data_address

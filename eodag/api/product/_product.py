@@ -501,9 +501,9 @@ class EOProduct:
                     driver = driver_conf["driver"]
                     break
             # use legacy driver for deprecated get_data method usage
-            for driver_conf in LEGACY_DRIVERS:
-                if all([criteria(self) for criteria in driver_conf["criteria"]]):
-                    driver.legacy = driver_conf["driver"]
+            for lecacy_conf in LEGACY_DRIVERS:
+                if all([criteria(self) for criteria in lecacy_conf["criteria"]]):
+                    driver.legacy = lecacy_conf["driver"]
                     break
             return driver
         except TypeError:

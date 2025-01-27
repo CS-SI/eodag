@@ -31,8 +31,7 @@ from eodag.api.product.drivers import DRIVERS
 from eodag.api.product.drivers.generic import GenericDriver
 from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
 from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
-from eodag.api.product.drivers.stac_assets import StacAssets
-from eodag.api.product.drivers.base import DatasetDriver
+from eodag.api.product.drivers.base import DatasetDriver, NoDriver
 from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,

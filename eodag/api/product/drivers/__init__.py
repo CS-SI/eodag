@@ -24,7 +24,23 @@ from eodag.api.product.drivers.base import DatasetDriver, NoDriver
 from eodag.api.product.drivers.generic import GenericDriver
 from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
 from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
-from eodag.api.product.drivers.stac_assets import StacAssets
+
+try:
+    # import from eodag-cube if installed
+    from eodag_cube.api.product.drivers.generic import (  # pyright: ignore[reportMissingImports]; isort: skip
+        GenericDriver as GenericDriver_cube,
+    )
+    from eodag_cube.api.product.drivers.sentinel2_l1c import (  # pyright: ignore[reportMissingImports]; isort: skip
+        Sentinel2L1C as Sentinel2L1C_cube,
+    )
+    from eodag_cube.api.product.drivers.stac_assets import (  # pyright: ignore[reportMissingImports]; isort: skip
+        StacAssets as StacAssets_cube,
+    )
+except ImportError:
+    GenericDriver_cube = NoDriver
+    Sentinel2L1C_cube = NoDriver
+    StacAssets_cube = NoDriver
+
 
 DriverCriteria = TypedDict(
     "DriverCriteria",
@@ -62,11 +78,11 @@ LEGACY_DRIVERS: list[DriverCriteria] = [
         "criteria": [
             lambda prod: True if len(getattr(prod, "assets", {})) > 0 else False
         ],
-        "driver": StacAssets(),
+        "driver": StacAssets_cube(),
     },
     {
         "criteria": [lambda prod: True if "assets" in prod.properties else False],
-        "driver": StacAssets(),
+        "driver": StacAssets_cube(),
     },
     {
         "criteria": [
@@ -74,11 +90,11 @@ LEGACY_DRIVERS: list[DriverCriteria] = [
             if getattr(prod, "product_type") == "S2_MSI_L1C"
             else False
         ],
-        "driver": Sentinel2Driver(),
+        "driver": Sentinel2L1C_cube(),
     },
     {
         "criteria": [lambda prod: True],
-        "driver": GenericDriver(),
+        "driver": GenericDriver_cube(),
     },
 ]
 
