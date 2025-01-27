@@ -701,7 +701,7 @@ class TestEODagEndToEnd(EndToEndBase):
             ],
         )
         self.assertEqual(
-            "proprietary",
+            "other",
             ext_product_types_conf[provider]["product_types_config"]["sentinel-2-l1c"][
                 "license"
             ],
