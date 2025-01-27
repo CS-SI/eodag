@@ -993,7 +993,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "processingLevel": None,
             "keywords": "ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels",
             "sensorType": "ATMOSPHERIC",
-            "license": "proprietary",
+            "license": "other",
             "title": "ERA5 hourly data on single levels from 1940 to present",
             "missionStartDate": "1940-01-01T00:00:00Z",
             "_id": "ERA5_SL",
@@ -1032,7 +1032,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "processingLevel": None,
             "keywords": "Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4",
             "sensorType": "ATMOSPHERIC",
-            "license": "proprietary",
+            "license": "other",
             "title": "CAMS global reanalysis (EAC4)",
             "missionStartDate": "2003-01-01T00:00:00Z",
             "_id": "CAMS_EAC4",
@@ -2575,7 +2575,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             ],
             "title": "Product A",
             "description": "A nice description",
-            "license": "proprietary",
+            "license": "other",
             "providers": [
                 {"name": "CLS (France)", "roles": ["producer"]},
                 {

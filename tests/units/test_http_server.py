@@ -534,7 +534,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(first_props["datetime"], "2018-02-15T23:53:22.871Z")
         self.assertEqual(first_props["start_datetime"], "2018-02-15T23:53:22.871Z")
         self.assertEqual(first_props["end_datetime"], "2018-02-16T00:12:14.035Z")
-        self.assertEqual(first_props["license"], "proprietary")
+        self.assertEqual(first_props["license"], "other")
         self.assertEqual(first_props["platform"], "S1A")
         self.assertEqual(first_props["instruments"], ["SAR-C SAR"])
         self.assertEqual(first_props["eo:cloud_cover"], 0)
