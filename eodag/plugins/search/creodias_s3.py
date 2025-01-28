@@ -16,8 +16,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 from types import MethodType
 from typing import Any
+from urllib.parse import urlparse
 
 import boto3
 import botocore
@@ -82,32 +84,28 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
                 )
             logger.debug("Listing assets in %s", prefix)
             product.assets = AssetsDict(product)
-            s3_res = auth.s3_client.list_objects(
+            s3_objects = auth.s3_client.list_objects(
                 Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
             )
             # check if product path has assets or is already a file
-            if "Contents" in s3_res:
-                for asset in s3_res["Contents"]:
-                    asset_basename = (
-                        asset["Key"].split("/")[-1]
-                        if "/" in asset["Key"]
-                        else asset["Key"]
+            if "Contents" in s3_objects:
+                for s3_obj in s3_objects["Contents"]:
+                    key, roles = product.driver.guess_asset_key_and_roles(
+                        s3_obj["Key"], product
                     )
+                    parsed_url = urlparse(s3_obj["Key"])
+                    title = os.path.basename(parsed_url.path)
 
-                    if len(asset_basename) > 0 and asset_basename not in product.assets:
-                        role = (
-                            "data"
-                            if asset_basename.split(".")[-1] in DATA_EXTENSIONS
-                            else "metadata"
-                        )
-
-                        product.assets[asset_basename] = {
-                            "title": asset_basename,
-                            "roles": [role],
-                            "href": f"s3://{config.s3_bucket}/{asset['Key']}",
+                    if key and key not in product.assets:
+                        product.assets[key] = {
+                            "title": title,
+                            "roles": roles,
+                            "href": f"s3://{config.s3_bucket}/{s3_obj['Key']}",
                         }
-                        if mime_type := guess_file_type(asset["Key"]):
-                            product.assets[asset_basename]["type"] = mime_type
+                        if mime_type := guess_file_type(s3_obj["Key"]):
+                            product.assets[key]["type"] = mime_type
+                # sort assets
+                product.assets.data = dict(sorted(product.assets.data.items()))
             # update driver
             product.driver = product.get_driver()
 

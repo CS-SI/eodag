@@ -281,12 +281,19 @@ def _build_finished(app, exception):
                         r"\1",
                         file_content,
                     )
+                    # remove long prefix from drivers titles
+                    file_content = re.sub(
+                        r"(\.html\">|\"#\">|<h1>)eodag\.api\.product\.drivers\.[a-z0-9]+\.",
+                        r"\1",
+                        file_content,
+                    )
                     # write
                     file.seek(0)
                     file.write(file_content)
-                print(f"Plugins titles shortened in {file_path}")
+                print(f"Titles shortened in {file_path}")
 
     _shorten_titles(os.path.join(app.outdir, "plugins_reference"))
+    _shorten_titles(os.path.join(app.outdir, "drivers_generated"))
 
 
 def _html_page_context(app, pagename, templatename, context, doctree):

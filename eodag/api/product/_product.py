@@ -38,7 +38,7 @@ try:
 except ImportError:
     from eodag.api.product._assets import AssetsDict
 
-from eodag.api.product.drivers import DRIVERS, NoDriver
+from eodag.api.product.drivers import DRIVERS, LEGACY_DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
@@ -122,6 +122,8 @@ class EOProduct:
     geometry: BaseGeometry
     search_intersection: Optional[BaseGeometry]
     assets: AssetsDict
+    #: Driver enables additional methods to be called on the EOProduct
+    driver: DatasetDriver
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any
@@ -498,11 +500,16 @@ class EOProduct:
         try:
             for driver_conf in DRIVERS:
                 if all([criteria(self) for criteria in driver_conf["criteria"]]):
-                    return driver_conf["driver"]
+                    driver = driver_conf["driver"]
+                    break
+            # use legacy driver for deprecated get_data method usage
+            for lecacy_conf in LEGACY_DRIVERS:
+                if all([criteria(self) for criteria in lecacy_conf["criteria"]]):
+                    driver.legacy = lecacy_conf["driver"]
+                    break
+            return driver
         except TypeError:
-            logger.warning(
-                "Drivers definition seems out-of-date, please update eodag-cube"
-            )
+            logger.info("No driver matching")
             pass
         return NoDriver()
 

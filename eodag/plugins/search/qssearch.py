@@ -1087,8 +1087,15 @@ class QueryStringSearch(Search):
             product.properties = dict(
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
-            # move assets from properties to product's attr
-            product.assets.update(product.properties.pop("assets", {}))
+            # move assets from properties to product's attr, normalize keys & roles
+            for key, asset in product.properties.pop("assets", {}).items():
+                norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
+                    asset.get("href", ""), product
+                )
+                if norm_key:
+                    product.assets[norm_key] = asset
+            # sort assets
+            product.assets.data = dict(sorted(product.assets.data.items()))
             products.append(product)
         return products
 
