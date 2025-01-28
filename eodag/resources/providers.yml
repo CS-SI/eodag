@@ -5910,6 +5910,9 @@
       orbitNumber:
         - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":"{orbitNumber}"}}}}}}'
         - '$.properties."spaceborne:absoluteOrbitID"'
+      relativeOrbitNumber:
+        - '{{"query":{{"spaceborne:orbitID":{{"eq":"{relativeOrbitNumber}"}}}}}}'
+        - '$.properties."spaceborne:orbitID"'
       orbitDirection:
         - '{{"query":{{"spaceborne:orbitDirection":{{"eq":"{orbitDirection}"}}}}}}'
         - '$.properties."spaceborne:orbitDirection"'
