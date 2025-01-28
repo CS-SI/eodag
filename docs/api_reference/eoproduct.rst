@@ -19,6 +19,13 @@ Download
    EOProduct.download
    EOProduct.get_quicklook
 
+Driver
+--------
+
+.. autosummary::
+
+   EOProduct.driver
+
 Conversion
 ----------
 
@@ -36,4 +43,4 @@ Interface
 
 
 .. autoclass:: eodag.api.product._product.EOProduct
-   :members: download, get_quicklook, as_dict, from_geojson, __geo_interface__
+   :members: driver, download, get_quicklook, as_dict, from_geojson, __geo_interface__

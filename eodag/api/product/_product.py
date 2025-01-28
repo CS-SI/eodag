@@ -122,6 +122,8 @@ class EOProduct:
     geometry: BaseGeometry
     search_intersection: Optional[BaseGeometry]
     assets: AssetsDict
+    #: Driver enables additional methods to be called on the EOProduct
+    driver: DatasetDriver
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any

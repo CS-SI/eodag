@@ -132,6 +132,7 @@ Site contents
    add_provider
    add_product_type
    plugins
+   drivers
    params_mapping
    contribute
    changelog

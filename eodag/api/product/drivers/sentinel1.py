@@ -29,8 +29,10 @@ if TYPE_CHECKING:
 class Sentinel1Driver(DatasetDriver):
     """Driver for Sentinel1 products"""
 
+    #: pattern to match data-role keys
     DATA_PATTERN = re.compile(r"[vh]{2}", re.IGNORECASE)
 
+    #: list of patterns to replace in asset keys
     REPLACE_PATTERNS = [
         (re.compile(r"s1a?", re.IGNORECASE), ""),
         (re.compile(r"grd", re.IGNORECASE), ""),
@@ -48,6 +50,7 @@ class Sentinel1Driver(DatasetDriver):
         (re.compile(r"_+\."), "."),
     ]
 
+    #: list of patterns to match asset keys and roles
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
         # data
         {

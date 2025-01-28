@@ -26,8 +26,9 @@ logger = logging.getLogger("eodag.driver.generic")
 
 
 class GenericDriver(DatasetDriver):
-    """Generic Driver for products that need to be downloaded"""
+    """Generic default Driver"""
 
+    #: list of patterns to match asset keys and roles
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
         # data
         {

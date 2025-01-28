@@ -29,12 +29,14 @@ if TYPE_CHECKING:
 class Sentinel2Driver(DatasetDriver):
     """Driver for Sentinel2 products"""
 
+    #: Band keys associated with their default Ground Sampling Distance (GSD)
     BANDS_DEFAULT_GSD = {
         "10M": ("B02", "B03", "B04", "B08", "TCI"),
         "20M": ("B05", "B06", "B07", "B11", "B12", "B8A"),
         "60M": ("B01", "B09", "B10"),
     }
 
+    #: list of patterns to match asset keys and roles
     ASSET_KEYS_PATTERNS_ROLES: list[AssetPatterns] = [
         # masks
         {

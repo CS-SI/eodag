@@ -42,14 +42,16 @@ except ImportError:
     StacAssets_cube = NoDriver
 
 
-DriverCriteria = TypedDict(
-    "DriverCriteria",
-    {
-        "criteria": list[Callable[..., bool]],
-        "driver": DatasetDriver,
-    },
-)
+class DriverCriteria(TypedDict):
+    """Driver criteria definition"""
 
+    #: Function that returns True if the driver is suitable for the given :class:`~eodag.api.product._product.EOProduct`
+    criteria: list[Callable[..., bool]]
+    #: driver to use
+    driver: DatasetDriver
+
+
+#: list of drivers and their criteria
 DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
@@ -73,6 +75,8 @@ DRIVERS: list[DriverCriteria] = [
     },
 ]
 
+
+#: list of legacy drivers and their criteria
 LEGACY_DRIVERS: list[DriverCriteria] = [
     {
         "criteria": [
