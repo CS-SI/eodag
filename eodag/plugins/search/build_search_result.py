@@ -573,13 +573,13 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
             **kwargs,
         )
-        constraints: list[dict[str, Any]] = self.fetch_data(constraints_url)
+        constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
         form_url = format_metadata(
             getattr(self.config, "discover_queryables", {}).get("form_url", ""),
             **kwargs,
         )
-        form: list[dict[str, Any]] = self.fetch_data(form_url)
+        form: list[dict[str, Any]] = self._fetch_data(form_url)
 
         formated_kwargs = self.format_as_provider_keyword(
             product_type, processed_kwargs
@@ -636,7 +636,7 @@ class ECMWFSearch(PostJsonSearch):
                 return self.queryables_from_metadata_mapping(product_type)
             if "{" in values_url:
                 values_url = values_url.format(productType=provider_product_type)
-            data = self.fetch_data(values_url)
+            data = self._fetch_data(values_url)
             available_values = data["constraints"]
             required_keywords = data.get("required", [])
 
@@ -959,16 +959,6 @@ class ECMWFSearch(PostJsonSearch):
         }
         return format_query_params(product_type, self.config, available_properties)
 
-    @functools.lru_cache()
-    def fetch_data(self, url: str) -> Any:
-        """
-        Fetches from a provider elements like constraints or forms by using the cache.
-
-        :param url: url from which the constraints can be fetched
-        :returns: cache containing the json file content fetched from the provider
-        """
-        return self._fetch_data(url)
-
     def _fetch_data(self, url: str) -> Any:
         """
         fetches from a provider elements like constraints or forms.
@@ -985,7 +975,7 @@ class ECMWFSearch(PostJsonSearch):
             else None
         )
         timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
-        return fetch_json(url, auth=auth, timeout=timeout)
+        return functools.lru_cache()(fetch_json)(url, auth=auth, timeout=timeout)
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any

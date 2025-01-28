@@ -2344,9 +2344,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
     @mock.patch(
-        "eodag.plugins.search.build_search_result.ECMWFSearch.fetch_data", autospec=True
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
     )
-    def test_plugins_search_ecmwfsearch_discover_queryables_ok(self, mock_fetch_data):
+    def test_plugins_search_ecmwfsearch_discover_queryables_ok(self, mock__fetch_data):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
@@ -2355,7 +2356,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
         with open(form_path) as f:
             form = json.load(f)
-        mock_fetch_data.side_effect = [constraints, form]
+        mock__fetch_data.side_effect = [constraints, form]
         product_type_config = {"missionStartDate": "2001-01-01T00:00:00Z"}
         setattr(self.search_plugin.config, "product_type_config", product_type_config)
 
@@ -2408,13 +2409,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # no error was raised, as expected
         self.assertIsNotNone(queryables)
 
-        mock_fetch_data.assert_has_calls(
+        mock__fetch_data.assert_has_calls(
             [
                 call(
+                    mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/constraints.json",
                 ),
                 call(
+                    mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/form.json",
                 ),
@@ -2467,8 +2470,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             )
 
         # reset mock
-        mock_fetch_data.reset_mock()
-        mock_fetch_data.side_effect = [constraints, form]
+        mock__fetch_data.reset_mock()
+        mock__fetch_data.side_effect = [constraints, form]
         # with additional param
         params = deepcopy(default_values)
         params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
@@ -2477,13 +2480,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIsNotNone(queryables)
 
         # cached values are not used to make the set of unit tests work then the mock is called again
-        mock_fetch_data.assert_has_calls(
+        mock__fetch_data.assert_has_calls(
             [
                 call(
+                    mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/constraints.json",
                 ),
                 call(
+                    mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/form.json",
                 ),
@@ -2498,16 +2503,17 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             self.assertFalse(queryable.__metadata__[0].is_required())
 
     @mock.patch(
-        "eodag.plugins.search.build_search_result.ECMWFSearch.fetch_data", autospec=True
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
     )
-    def test_plugins_search_ecmwfsearch_discover_queryables_ko(self, mock_fetch_data):
+    def test_plugins_search_ecmwfsearch_discover_queryables_ko(self, mock__fetch_data):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
         form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
         with open(form_path) as f:
             form = json.load(f)
-        mock_fetch_data.side_effect = [constraints, form]
+        mock__fetch_data.side_effect = [constraints, form]
 
         default_values = deepcopy(
             getattr(self.search_plugin.config, "products", {}).get(
