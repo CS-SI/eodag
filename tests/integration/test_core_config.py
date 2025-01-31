@@ -22,7 +22,7 @@ from unittest import TestCase, mock
 from jsonpath_ng.jsonpath import Child, Fields, Root
 
 from tests.context import (
-    HTTP_REQ_TIMEOUT,
+    DEFAULT_SEARCH_TIMEOUT,
     USER_AGENT,
     AuthenticationError,
     EODataAccessGateway,
@@ -454,7 +454,7 @@ class TestCoreProductTypesConfig(TestCase):
             ],
             auth=mock.ANY,
             headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
+            timeout=DEFAULT_SEARCH_TIMEOUT,
             verify=True,
         )
 

@@ -43,6 +43,7 @@ from eodag.utils import deepcopy
 from eodag.utils.exceptions import UnsupportedProductType
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
+    DEFAULT_SEARCH_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     NOT_AVAILABLE,
     TEST_RESOURCES_PATH,
@@ -1767,7 +1768,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             self.search_plugin.config.api_endpoint,
             json=mock.ANY,
             headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
+            timeout=DEFAULT_SEARCH_TIMEOUT,
             auth=self.auth,
             verify=True,
         )
@@ -2386,7 +2387,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                     "cams-europe-air-quality-reanalyses/constraints.json",
                     headers=USER_AGENT,
                     auth=None,
-                    timeout=5,
+                    timeout=DEFAULT_SEARCH_TIMEOUT,
                 ),
                 call().raise_for_status(),
                 call().json(),
@@ -2396,7 +2397,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                     "cams-europe-air-quality-reanalyses/form.json",
                     headers=USER_AGENT,
                     auth=None,
-                    timeout=5,
+                    timeout=DEFAULT_SEARCH_TIMEOUT,
                 ),
                 call().raise_for_status(),
                 call().json(),

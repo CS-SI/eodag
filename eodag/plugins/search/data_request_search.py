@@ -36,6 +36,7 @@ from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MISSION_START_DATE,
     DEFAULT_PAGE,
+    DEFAULT_SEARCH_TIMEOUT,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -308,7 +309,7 @@ class DataRequestSearch(Search):
             request_finished = True
 
         # loop to check search job status
-        search_timeout = int(getattr(self.config, "timeout", HTTP_REQ_TIMEOUT))
+        search_timeout = int(getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT))
         logger.info(
             f"checking status of request job {data_request_id} (timeout={search_timeout}s)"
         )

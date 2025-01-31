@@ -75,6 +75,7 @@ from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
+    DEFAULT_SEARCH_TIMEOUT,
     USER_AGENT,
     get_bucket_name_and_prefix,
     get_geometry_from_various,
