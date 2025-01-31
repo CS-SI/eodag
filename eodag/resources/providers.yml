@@ -5908,10 +5908,10 @@
       keyword: '$.properties."spaceborne:keywords"'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
-        - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":"{orbitNumber}"}}}}}}'
+        - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":{orbitNumber}}}}}}}'
         - '$.properties."spaceborne:absoluteOrbitID"'
       relativeOrbitNumber:
-        - '{{"query":{{"spaceborne:orbitID":{{"eq":"{relativeOrbitNumber}"}}}}}}'
+        - '{{"query":{{"spaceborne:orbitID":{{"eq":{relativeOrbitNumber}}}}}}}'
         - '$.properties."spaceborne:orbitID"'
       orbitDirection:
         - '{{"query":{{"spaceborne:orbitDirection":{{"eq":"{orbitDirection}"}}}}}}'
@@ -5920,7 +5920,7 @@
         - '{{"query":{{"spaceborne:swath":{{"eq":"{swathIdentifier}"}}}}}}'
         - '$.properties."spaceborne:swath"'
       cloudCover:
-        - '{{"query":{{"spaceborne:cloudCover":{{"lte":"{cloudCover}"}}}}}}'
+        - '{{"query":{{"spaceborne:cloudCover":{{"lte":{cloudCover}}}}}}}'
         - '$.properties."spaceborne:cloudCover"'
       sensorMode:
         - '{{"query":{{"spaceborne:sensorMode":{{"eq":"{sensorMode}"}}}}}}'
