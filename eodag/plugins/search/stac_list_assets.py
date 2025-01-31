@@ -79,7 +79,5 @@ class StacListAssets(StacSearch):
             product.register_downloader = MethodType(
                 patched_register_downloader, product
             )
-            if hasattr(self.config, "assets_roles_pattern"):
-                product.assets.assets_roles_pattern = self.config.assets_roles_pattern
 
         return products

@@ -20,14 +20,13 @@ from __future__ import annotations
 import io
 import logging
 import os
-import re
 import zipfile
 from typing import TYPE_CHECKING, List, Optional
+from urllib.parse import urlparse
 
 import boto3
 import botocore
 
-from eodag.api.product import AssetsDict  # type: ignore
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import get_bucket_name_and_prefix, guess_file_type
 from eodag.utils.exceptions import (
@@ -151,12 +150,6 @@ def update_assets_from_s3(
                 )
             logger.debug("Listing assets in %s", prefix)
 
-            # get roles patterns for assets if configured
-            assets_roles_pattern = getattr(product.assets, "assets_roles_pattern", {})
-
-            product.assets = AssetsDict(product)
-            product.assets.assets_roles_pattern = assets_roles_pattern
-
             if prefix.endswith(".zip"):
                 # List prefix zip content
                 assets_urls = [
@@ -175,22 +168,23 @@ def update_assets_from_s3(
                 ]
 
             for asset_url in assets_urls:
-                asset_basename = os.path.basename(asset_url)
+                key, roles = product.driver.guess_asset_key_and_roles(
+                    asset_url, product
+                )
+                parsed_url = urlparse(asset_url)
+                title = os.path.basename(parsed_url.path)
 
-                if len(asset_basename) > 0 and asset_basename not in product.assets:
-
-                    product.assets[asset_basename] = {
-                        "title": asset_basename,
+                if key and key not in product.assets:
+                    product.assets[key] = {
+                        "title": title,
+                        "roles": roles,
                         "href": asset_url,
                     }
-                    if mime_type := guess_file_type(asset_basename):
-                        product.assets[asset_basename]["type"] = mime_type
+                    if mime_type := guess_file_type(asset_url):
+                        product.assets[key]["type"] = mime_type
 
-                    # set role using conf passed through search_plugin.normalize_results
-                    for role, pattern in assets_roles_pattern.items():
-                        if re.match(pattern, asset_url):
-                            product.assets[asset_basename].setdefault("roles", [])
-                            product.assets[asset_basename]["roles"].append(role)
+            # sort assets
+            product.assets.data = dict(sorted(product.assets.data.items()))
 
             # update driver
             product.driver = product.get_driver()
