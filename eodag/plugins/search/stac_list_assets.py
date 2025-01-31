@@ -44,7 +44,9 @@ def patched_register_downloader(self, downloader, authenticator):
     self.register_downloader_only(downloader, authenticator)
     # and also update assets
     try:
-        update_assets_from_s3(self, authenticator, downloader.config.s3_endpoint)
+        update_assets_from_s3(
+            self, authenticator, getattr(downloader.config, "s3_endpoint", None)
+        )
     except BotoCoreError as e:
         raise RequestError.from_error(e, "could not update assets") from e
 

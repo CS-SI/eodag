@@ -4550,7 +4550,7 @@
         - '{$.Footprint#from_ewkt}'
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
-      downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
+      downloadLink: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
       # storageStatus: must be one of ONLINE, STAGING, OFFLINE
       storageStatus: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
       collection:
@@ -4558,8 +4558,6 @@
         - $.null
       quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-        # Additional metadata provided by the providers but that don't appear in the reference spec
-      productIdentifier: '$.S3Path'
   download: !plugin
     type: CreodiasS3Download
     s3_endpoint: 'https://eodata.cloudferro.com'

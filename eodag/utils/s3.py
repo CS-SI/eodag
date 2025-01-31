@@ -133,7 +133,7 @@ def update_assets_from_s3(
     if content_url is None:
         content_url = product.remote_location
 
-    bucket, prefix = get_bucket_name_and_prefix(content_url, 0)
+    bucket, prefix = get_bucket_name_and_prefix(content_url)
 
     if bucket is None or prefix is None:
         logger.debug(f"No s3 prefix could guessed from {content_url}")
@@ -174,8 +174,11 @@ def update_assets_from_s3(
             ]
 
         for asset_url in assets_urls:
-            key, roles = product.driver.guess_asset_key_and_roles(asset_url, product)
-            parsed_url = urlparse(asset_url)
+            out_of_zip_url = asset_url.split("!")[-1]
+            key, roles = product.driver.guess_asset_key_and_roles(
+                out_of_zip_url, product
+            )
+            parsed_url = urlparse(out_of_zip_url)
             title = os.path.basename(parsed_url.path)
 
             if key and key not in product.assets:
@@ -194,7 +197,9 @@ def update_assets_from_s3(
         product.driver = product.get_driver()
 
     except botocore.exceptions.ClientError as e:
-        if str(auth.config.auth_error_code) in str(e):
+        if hasattr(auth.config, "auth_error_code") and str(
+            auth.config.auth_error_code
+        ) in str(e):
             raise AuthenticationError(
                 f"Authentication failed on {s3_endpoint} s3"
             ) from e

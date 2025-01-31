@@ -16,29 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import os
 from types import MethodType
 from typing import Any
-from urllib.parse import urlparse
 
-import boto3
-import botocore
 from botocore.exceptions import BotoCoreError
 
-from eodag.api.product import AssetsDict, EOProduct  # type: ignore
+from eodag.api.product import EOProduct  # type: ignore
 from eodag.api.search_result import RawSearchResult
-from eodag.config import PluginConfig
-from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.search.qssearch import ODataV4Search
-from eodag.utils import guess_file_type
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    MisconfiguredError,
-    NotAvailableError,
-    RequestError,
-)
+from eodag.utils.exceptions import RequestError
+from eodag.utils.s3 import update_assets_from_s3
 
-DATA_EXTENSIONS = ["jp2", "tiff", "nc", "grib"]
 logger = logging.getLogger("eodag.search.creodiass3")
 
 
@@ -56,67 +44,11 @@ def patched_register_downloader(self, downloader, authenticator):
     self.register_downloader_only(downloader, authenticator)
     # and also update assets
     try:
-        _update_assets(self, downloader.config, authenticator)
+        update_assets_from_s3(
+            self, authenticator, getattr(downloader.config, "s3_endpoint", None)
+        )
     except BotoCoreError as e:
         raise RequestError.from_error(e, "could not update assets") from e
-
-
-def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
-    product.assets = AssetsDict(product)
-    prefix = (
-        product.properties.get("productIdentifier", None).replace("/eodata/", "") + "/"
-    )
-    if prefix:
-        try:
-            auth_dict = auth.authenticate()
-            required_creds = ["aws_access_key_id", "aws_secret_access_key"]
-            if not all(x in auth_dict for x in required_creds):
-                raise MisconfiguredError(
-                    f"Incomplete credentials for {product.provider}, missing "
-                    f"{[x for x in required_creds if x not in auth_dict]}"
-                )
-            if not getattr(auth, "s3_client", None):
-                auth.s3_client = boto3.client(
-                    "s3",
-                    endpoint_url=config.s3_endpoint,
-                    aws_access_key_id=auth_dict["aws_access_key_id"],
-                    aws_secret_access_key=auth_dict["aws_secret_access_key"],
-                )
-            logger.debug("Listing assets in %s", prefix)
-            product.assets = AssetsDict(product)
-            s3_objects = auth.s3_client.list_objects(
-                Bucket=config.s3_bucket, Prefix=prefix, MaxKeys=300
-            )
-            # check if product path has assets or is already a file
-            if "Contents" in s3_objects:
-                for s3_obj in s3_objects["Contents"]:
-                    key, roles = product.driver.guess_asset_key_and_roles(
-                        s3_obj["Key"], product
-                    )
-                    parsed_url = urlparse(s3_obj["Key"])
-                    title = os.path.basename(parsed_url.path)
-
-                    if key and key not in product.assets:
-                        product.assets[key] = {
-                            "title": title,
-                            "roles": roles,
-                            "href": f"s3://{config.s3_bucket}/{s3_obj['Key']}",
-                        }
-                        if mime_type := guess_file_type(s3_obj["Key"]):
-                            product.assets[key]["type"] = mime_type
-                # sort assets
-                product.assets.data = dict(sorted(product.assets.data.items()))
-            # update driver
-            product.driver = product.get_driver()
-
-        except botocore.exceptions.ClientError as e:
-            if str(auth.config.auth_error_code) in str(e):
-                raise AuthenticationError(
-                    f"Authentication failed on {config.s3_endpoint} s3"
-                ) from e
-            raise NotAvailableError(
-                f"assets for product {prefix} could not be found"
-            ) from e
 
 
 class CreodiasS3Search(ODataV4Search):
