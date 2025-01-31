@@ -6025,10 +6025,6 @@
       sort_order_mapping:
         ascending: asc
         descending: desc
-    assets_roles_pattern:
-      data: '.*/(?!MSK)[^/]+\.(jp2|tiff|nc|grib)'
-      data-mask: '.*/MSK[^/]+\.(jp2|tiff|nc|grib)'
-      metadata: '.*/[^/]+\.(xml|xsd|safe)$'
     metadata_mapping:
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
