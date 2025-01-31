@@ -1908,6 +1908,51 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         with self.assertRaises(NoMatchingProductType):
             plugin.download(self.product, outputs_prefix=self.output_dir)
 
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_download_aws_get_rio_env(
+        self,
+        mock_get_authenticated_objects: mock.Mock,
+    ):
+        """AwsDownload.get_rio_env() must return rio env dict"""
+
+        self.product.properties["downloadLink"] = "s3://some-bucket/some/prefix"
+
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+
+        # nothing needed
+        rio_env_dict = plugin.get_rio_env(
+            "some-bucket", "some/prefix", auth_plugin.authenticate()
+        )
+        self.assertDictEqual(rio_env_dict, {"aws_unsigned": True})
+
+        # s3_endpoint
+        plugin.config.s3_endpoint = "https://some.endpoint"
+        rio_env_dict = plugin.get_rio_env(
+            "some-bucket", "some/prefix", auth_plugin.authenticate()
+        )
+        self.assertDictEqual(
+            rio_env_dict, {"aws_unsigned": True, "endpoint_url": "some.endpoint"}
+        )
+
+        # session initiated
+        plugin.s3_session = mock.MagicMock()
+        self.assertEqual(plugin.config.requester_pays, True)
+        rio_env_dict = plugin.get_rio_env(
+            "some-bucket", "some/prefix", auth_plugin.authenticate()
+        )
+        self.assertDictEqual(
+            rio_env_dict,
+            {
+                "session": plugin.s3_session,
+                "endpoint_url": "some.endpoint",
+                "requester_pays": True,
+            },
+        )
+
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
     def setUp(self):

@@ -112,7 +112,7 @@ def _update_assets(product: EOProduct, config: PluginConfig, auth: AwsAuth):
         except botocore.exceptions.ClientError as e:
             if str(auth.config.auth_error_code) in str(e):
                 raise AuthenticationError(
-                    f"Authentication failed on {config.base_uri} s3"
+                    f"Authentication failed on {config.s3_endpoint} s3"
                 ) from e
             raise NotAvailableError(
                 f"assets for product {prefix} could not be found"
