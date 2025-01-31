@@ -344,10 +344,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 max_lon = -180
                 max_lat = -90
                 for geom in geoms:
-                    min_lon = min(min_lon, geom.bound[0])
-                    min_lat = min(min_lat, geom.bound[1])
-                    max_lon = max(max_lon, geom.bound[2])
-                    max_lat = max(max_lat, geom.bound[3])
+                    min_lon = min(min_lon, geom.bounds[0])
+                    min_lat = min(min_lat, geom.bounds[1])
+                    max_lon = max(max_lon, geom.bounds[2])
+                    max_lat = max(max_lat, geom.bounds[3])
                 return [min_lon, min_lat, max_lon, max_lat]
             else:
                 return list(input_geom.bounds[0:4])
