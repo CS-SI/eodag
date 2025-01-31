@@ -5995,7 +5995,7 @@
   priority: 0
   roles:
     - host
-  description: French National Space Agency (CNES) Earth Observation portal through s3 Datalake
+  description: French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
   url: https://geodes.cnes.fr
   search: !plugin
     type: StacListAssets
@@ -6044,12 +6044,15 @@
         - '{{"query":{{"spaceborne:satelliteSensor":{{"eq":"{instrument}"}}}}}}'
         - '$.properties."spaceborne:satelliteSensor"'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '{$.properties."accessService:endpointURL"#replace_str(r"^.*\/(\w+)\.zip$",r"\1")}'
+      title: '$.properties.identifier'
       keyword: '$.properties."spaceborne:keywords"'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
         - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":{orbitNumber}}}}}}}'
         - '$.properties."spaceborne:absoluteOrbitID"'
+      relativeOrbitNumber:
+        - '{{"query":{{"spaceborne:orbitID":{{"eq":{relativeOrbitNumber}}}}}}}'
+        - '$.properties."spaceborne:orbitID"'
       orbitDirection:
         - '{{"query":{{"spaceborne:orbitDirection":{{"eq":"{orbitDirection}"}}}}}}'
         - '$.properties."spaceborne:orbitDirection"'
@@ -6074,8 +6077,11 @@
         - '$.properties."spaceborne:polarization"'
       # Custom parameters (not defined in the base document referenced above)
       id:
-        - '{{"query":{{"accessService:endpointURL":{{"contains":"{id}"}}}}}}'
-        - '{$.properties."accessService:endpointURL"#replace_str(r"^.*\/(\w+)\.zip$",r"\1")}'
+        - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
+        - '$.properties.identifier'
+      tileIdentifier:
+        - '{{"query":{{"spaceborne:tile":{{"contains":"{tileIdentifier}"}}}}}}'
+        - '{$.properties."spaceborne:tile"#replace_str(r"^T?(.*)$",r"\1")}'
       geometry:
         - '{{"intersects":{geometry#to_geojson}}}'
         - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
