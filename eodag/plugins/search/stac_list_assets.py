@@ -50,7 +50,7 @@ def patched_register_downloader(self, downloader, authenticator):
 
 
 class StacListAssets(StacSearch):
-    """``CreodiasSStacListAssets3Search`` is an extension of :class:`~eodag.plugins.search.qssearch.StacSearch`.
+    """``StacListAssets`` is an extension of :class:`~eodag.plugins.search.qssearch.StacSearch`.
 
     It executes a Search on given STAC API endpoint and updates assets with content listed by the plugin using
     ``downloadLink`` :class:`~eodag.api.product._product.EOProduct` property.

@@ -65,7 +65,7 @@ def fetch(
     return s3_object["Body"].read()
 
 
-def parse_int(bytes: len) -> int:
+def parse_int(bytes: bytes) -> int:
     """
     Parses 2 or 4 little-endian bits into their corresponding integer value.
 
@@ -135,67 +135,69 @@ def update_assets_from_s3(
 
     bucket, prefix = get_bucket_name_and_prefix(content_url, 0)
 
-    if prefix:
-        try:
-            auth_dict = auth.authenticate()
-
-            if not all(x in auth_dict for x in required_creds):
-                raise MisconfiguredError(
-                    f"Incomplete credentials for {product.provider}, missing "
-                    f"{[x for x in required_creds if x not in auth_dict]}"
-                )
-            if not getattr(auth, "s3_client", None):
-                auth.s3_client = boto3.client(
-                    "s3", endpoint_url=s3_endpoint, **auth_dict
-                )
-            logger.debug("Listing assets in %s", prefix)
-
-            if prefix.endswith(".zip"):
-                # List prefix zip content
-                assets_urls = [
-                    f"zip+s3://{bucket}/{prefix}!{f.filename}"
-                    for f in list_files_in_s3_zipped_object(
-                        bucket, prefix, auth.s3_client
-                    )
-                ]
-            else:
-                # List files in prefix
-                assets_urls = [
-                    f"s3://{bucket}/{obj['Key']}"
-                    for obj in auth.s3_client.list_objects(
-                        Bucket=bucket, Prefix=prefix, MaxKeys=300
-                    )["Contents"]
-                ]
-
-            for asset_url in assets_urls:
-                key, roles = product.driver.guess_asset_key_and_roles(
-                    asset_url, product
-                )
-                parsed_url = urlparse(asset_url)
-                title = os.path.basename(parsed_url.path)
-
-                if key and key not in product.assets:
-                    product.assets[key] = {
-                        "title": title,
-                        "roles": roles,
-                        "href": asset_url,
-                    }
-                    if mime_type := guess_file_type(asset_url):
-                        product.assets[key]["type"] = mime_type
-
-            # sort assets
-            product.assets.data = dict(sorted(product.assets.data.items()))
-
-            # update driver
-            product.driver = product.get_driver()
-
-        except botocore.exceptions.ClientError as e:
-            if str(auth.config.auth_error_code) in str(e):
-                raise AuthenticationError(
-                    f"Authentication failed on {s3_endpoint} s3"
-                ) from e
-            raise NotAvailableError(
-                f"assets for product {prefix} could not be found"
-            ) from e
-    else:
+    if bucket is None or prefix is None:
         logger.debug(f"No s3 prefix could guessed from {content_url}")
+        return None
+
+    try:
+        auth_dict = auth.authenticate()
+
+        if not all(x in auth_dict for x in required_creds):
+            raise MisconfiguredError(
+                f"Incomplete credentials for {product.provider}, missing "
+                f"{[x for x in required_creds if x not in auth_dict]}"
+            )
+        if not getattr(auth, "s3_client", None):
+            auth.s3_client = boto3.client(
+                service_name="s3",
+                endpoint_url=s3_endpoint,
+                aws_access_key_id=auth_dict.get("aws_access_key_id"),
+                aws_secret_access_key=auth_dict.get("aws_secret_access_key"),
+                aws_session_token=auth_dict.get("aws_session_token"),
+            )
+
+        logger.debug("Listing assets in %s", prefix)
+
+        if prefix.endswith(".zip"):
+            # List prefix zip content
+            assets_urls = [
+                f"zip+s3://{bucket}/{prefix}!{f.filename}"
+                for f in list_files_in_s3_zipped_object(bucket, prefix, auth.s3_client)
+            ]
+        else:
+            # List files in prefix
+            assets_urls = [
+                f"s3://{bucket}/{obj['Key']}"
+                for obj in auth.s3_client.list_objects(
+                    Bucket=bucket, Prefix=prefix, MaxKeys=300
+                )["Contents"]
+            ]
+
+        for asset_url in assets_urls:
+            key, roles = product.driver.guess_asset_key_and_roles(asset_url, product)
+            parsed_url = urlparse(asset_url)
+            title = os.path.basename(parsed_url.path)
+
+            if key and key not in product.assets:
+                product.assets[key] = {
+                    "title": title,
+                    "roles": roles,
+                    "href": asset_url,
+                }
+                if mime_type := guess_file_type(asset_url):
+                    product.assets[key]["type"] = mime_type
+
+        # sort assets
+        product.assets.data = dict(sorted(product.assets.data.items()))
+
+        # update driver
+        product.driver = product.get_driver()
+
+    except botocore.exceptions.ClientError as e:
+        if str(auth.config.auth_error_code) in str(e):
+            raise AuthenticationError(
+                f"Authentication failed on {s3_endpoint} s3"
+            ) from e
+        raise NotAvailableError(
+            f"assets for product {prefix} could not be found"
+        ) from e
