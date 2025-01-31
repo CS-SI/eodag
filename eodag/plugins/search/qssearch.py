@@ -74,6 +74,7 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
+    DEFAULT_SEARCH_TIMEOUT,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     REQ_RETRY_BACKOFF_FACTOR,
@@ -1190,7 +1191,7 @@ class QueryStringSearch(Search):
         info_message = prep.info_message
         exception_message = prep.exception_message
         try:
-            timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+            timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
             ssl_verify = getattr(self.config, "ssl_verify", True)
 
             retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
@@ -1753,7 +1754,7 @@ class PostJsonSearch(QueryStringSearch):
             raise ValidationError("Cannot request empty URL")
         info_message = prep.info_message
         exception_message = prep.exception_message
-        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+        timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             # auth if needed

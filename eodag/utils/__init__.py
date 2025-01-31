@@ -115,6 +115,7 @@ eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
 HTTP_REQ_TIMEOUT = 5  # in seconds
+DEFAULT_SEARCH_TIMEOUT = 20  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 REQ_RETRY_TOTAL = 3
