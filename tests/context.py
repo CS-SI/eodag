@@ -54,6 +54,7 @@ from eodag.config import (
 )
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.authentication.header import HeaderAuth
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
@@ -97,6 +98,7 @@ from eodag.utils import (
     get_ssl_context,
 )
 from eodag.utils.requests import fetch_json
+from eodag.utils.s3 import list_files_in_s3_zipped_object, update_assets_from_s3
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,
