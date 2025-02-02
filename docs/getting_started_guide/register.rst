@@ -169,6 +169,12 @@ Go to `https://geodes-portal.cnes.fr <https://geodes-portal.cnes.fr>`_, then log
 clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
 as *apikey* in EODAG provider auth credentials.
 
+``geodes_s3``
+^^^^^^^^^^^^^
+This provider is only available for CNES users. You need to be connected to the CNES network to access the data.
+Get credentials for internal Datalake and use them as ``aws_access_key_id``, ``aws_secret_access_key`` and
+``aws_session_token`` EODAG credentials.
+
 ``hydroweb_next``
 ^^^^^^^^^^^^^^^^^
 Go to `https://hydroweb.next.theia-land.fr <https://hydroweb.next.theia-land.fr>`_, then login or create an account by
