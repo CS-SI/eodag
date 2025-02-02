@@ -224,6 +224,15 @@ class TestUtils(unittest.TestCase):
         )
         self.assertEqual(
             get_bucket_name_and_prefix(
+                "https://s3.us-west-2.amazonaws.com/sentinel-cogs/sentinel-s2-l2a-cogs/44/2022/10/S2B_20221011/B01.tif"
+            ),
+            (
+                "sentinel-cogs",
+                "sentinel-s2-l2a-cogs/44/2022/10/S2B_20221011/B01.tif",
+            ),
+        )
+        self.assertEqual(
+            get_bucket_name_and_prefix(
                 "https://obs.eu-de.otc.t-systems.com/s2-l1c-2021-q4/30/T/2021/11/14/S2A_MSIL1C_20211114T110321_N0301",
                 0,
             ),
