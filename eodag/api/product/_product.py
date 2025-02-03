@@ -467,7 +467,11 @@ class EOProduct:
                 auth = None
             # Read the ssl_verify parameter used on the provider config
             # to ensure the same behavior for get_quicklook as other download functions
-            ssl_verify = getattr(self.downloader.config, "ssl_verify", True)
+            ssl_verify = (
+                getattr(self.downloader.config, "ssl_verify", True)
+                if self.downloader
+                else True
+            )
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,
