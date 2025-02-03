@@ -39,7 +39,8 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `earth_search <https://www.element84.com/earth-search/>`_,
       `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_,
       `ecmwf <https://www.ecmwf.int>`_,
-      `geodes <https://data.eumetsat.int>`_,
+      `geodes <https://geodes.cnes.fr>`_,
+      `geodes_s3 <https://geodes.cnes.fr>`_,
       `eumetsat_ds <https://data.eumetsat.int>`_,
       `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
       `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_,
@@ -49,7 +50,7 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `sara <https://copernicus.nci.org.au>`_,
       `theia <https://theia.cnes.fr/atdistrib/rocket>`_,
       `usgs <https://earthexplorer.usgs.gov>`_,
-      `usgs_satapi_aws <https://geodes.cnes.fr>`_,
+      `usgs_satapi_aws <https://landsatlook.usgs.gov>`_,
       `wekeo_cmems <https://www.wekeo.eu>`_,
       `wekeo_ecmwf <https://www.wekeo.eu>`_,
       `wekeo_main <https://www.wekeo.eu>`_
@@ -132,6 +133,7 @@ Site contents
    add_provider
    add_product_type
    plugins
+   drivers
    params_mapping
    contribute
    changelog

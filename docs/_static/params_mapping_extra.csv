@@ -26,7 +26,7 @@ publishedAfter,,,:green:`queryable metadata`,,,,,,,,,,,,,,,,
 publishedBefore,,,:green:`queryable metadata`,,,,,,,,,,,,,,,,
 qs,metadata only,metadata only,,metadata only,,,metadata only,,,,,,,,,,,,
 quicklook,,,metadata only,,,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
-relativeOrbitNumber,,,:green:`queryable metadata`,,,,,,,,,,,,,,,,
+relativeOrbitNumber,,,:green:`queryable metadata`,,,,,,,,,,:green:`queryable metadata`,,,,,,
 services,,,,,,,,,,,,,,,metadata only,,,,
 size,,,,,,,,,,,,:green:`queryable metadata`,,,,,,,
 storageStatus,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only

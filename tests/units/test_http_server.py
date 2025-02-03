@@ -24,7 +24,7 @@ import socket
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from unittest.mock import Mock, call
 
 import geojson
@@ -43,7 +43,7 @@ from eodag.utils.exceptions import RequestError, TimeOutError, ValidationError
 from tests import mock, temporary_environment
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
-    HTTP_REQ_TIMEOUT,
+    DEFAULT_SEARCH_TIMEOUT,
     OFFLINE_STATUS,
     ONLINE_STATUS,
     TEST_RESOURCES_PATH,
@@ -322,7 +322,7 @@ class RequestTestCase(unittest.TestCase):
         url: str,
         mock_search: Mock,
         expected_search_kwargs: Union[
-            List[Dict[str, Any]], Dict[str, Any], None
+            list[dict[str, Any]], dict[str, Any], None
         ] = None,
         method: str = "GET",
         post_data: Optional[Any] = None,
@@ -368,7 +368,7 @@ class RequestTestCase(unittest.TestCase):
         self,
         url: str,
         expected_search_kwargs: Union[
-            List[Dict[str, Any]], Dict[str, Any], None
+            list[dict[str, Any]], dict[str, Any], None
         ] = None,
         method: str = "GET",
         post_data: Optional[Any] = None,
@@ -534,7 +534,7 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(first_props["datetime"], "2018-02-15T23:53:22.871Z")
         self.assertEqual(first_props["start_datetime"], "2018-02-15T23:53:22.871Z")
         self.assertEqual(first_props["end_datetime"], "2018-02-16T00:12:14.035Z")
-        self.assertEqual(first_props["license"], "proprietary")
+        self.assertEqual(first_props["license"], "other")
         self.assertEqual(first_props["platform"], "S1A")
         self.assertEqual(first_props["instruments"], ["SAR-C SAR"])
         self.assertEqual(first_props["eo:cloud_cover"], 0)
@@ -1296,7 +1296,7 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.assert_called_once_with(
             mock.ANY,
             url="https://planetarycomputer.microsoft.com/api/stac/v1/search/../queryables",
-            timeout=HTTP_REQ_TIMEOUT,
+            timeout=DEFAULT_SEARCH_TIMEOUT,
             headers=USER_AGENT,
             verify=True,
         )
@@ -1393,7 +1393,10 @@ class RequestTestCase(unittest.TestCase):
             self.assertEqual(
                 norm_planetary_computer_queryables_url, responses.calls[0].request.url
             )
-            self.assertIn(("timeout", 5), responses.calls[0].request.req_kwargs.items())
+            self.assertIn(
+                ("timeout", DEFAULT_SEARCH_TIMEOUT),
+                responses.calls[0].request.req_kwargs.items(),
+            )
             self.assertIn(
                 list(USER_AGENT.items())[0], responses.calls[0].request.headers.items()
             )
@@ -1519,7 +1522,7 @@ class RequestTestCase(unittest.TestCase):
         mock_requests_get.assert_called_once_with(
             mock.ANY,
             url=planetary_computer_queryables_url,
-            timeout=HTTP_REQ_TIMEOUT,
+            timeout=DEFAULT_SEARCH_TIMEOUT,
             headers=USER_AGENT,
             verify=True,
         )
@@ -1636,7 +1639,7 @@ class RequestTestCase(unittest.TestCase):
                     "reanalysis-era5-single-levels/constraints.json",
                     headers=USER_AGENT,
                     auth=None,
-                    timeout=5,
+                    timeout=DEFAULT_SEARCH_TIMEOUT,
                 ),
                 call().raise_for_status(),
                 call().json(),
@@ -1646,7 +1649,7 @@ class RequestTestCase(unittest.TestCase):
                     "reanalysis-era5-single-levels/form.json",
                     headers=USER_AGENT,
                     auth=None,
-                    timeout=5,
+                    timeout=DEFAULT_SEARCH_TIMEOUT,
                 ),
                 call().raise_for_status(),
                 call().json(),

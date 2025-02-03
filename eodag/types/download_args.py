@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import Dict, Optional, TypedDict, Union
+from typing import Optional, TypedDict, Union
 
 
 class DownloadConf(TypedDict, total=False):
@@ -35,6 +35,6 @@ class DownloadConf(TypedDict, total=False):
     output_dir: str
     output_extension: Union[str, None]
     extract: bool
-    dl_url_params: Dict[str, str]
+    dl_url_params: dict[str, str]
     delete_archive: bool
     asset: Optional[str]

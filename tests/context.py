@@ -28,7 +28,10 @@ from eodag import EODataAccessGateway, api, config, setup_logging
 from eodag.api.core import DEFAULT_ITEMS_PER_PAGE, DEFAULT_MAX_ITEMS_PER_PAGE
 from eodag.api.product import EOProduct
 from eodag.api.product.drivers import DRIVERS
-from eodag.api.product.drivers.base import DatasetDriver
+from eodag.api.product.drivers.generic import GenericDriver
+from eodag.api.product.drivers.sentinel1 import Sentinel1Driver
+from eodag.api.product.drivers.sentinel2 import Sentinel2Driver
+from eodag.api.product.drivers.base import DatasetDriver, NoDriver
 from eodag.api.product.metadata_mapping import (
     format_metadata,
     OFFLINE_STATUS,
@@ -51,6 +54,7 @@ from eodag.config import (
 )
 from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.authentication.header import HeaderAuth
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
@@ -72,6 +76,7 @@ from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
     DEFAULT_STREAM_REQUESTS_TIMEOUT,
     HTTP_REQ_TIMEOUT,
+    DEFAULT_SEARCH_TIMEOUT,
     USER_AGENT,
     get_bucket_name_and_prefix,
     get_geometry_from_various,
@@ -93,6 +98,7 @@ from eodag.utils import (
     get_ssl_context,
 )
 from eodag.utils.requests import fetch_json
+from eodag.utils.s3 import list_files_in_s3_zipped_object, update_assets_from_s3
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,

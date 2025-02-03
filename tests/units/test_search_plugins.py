@@ -40,9 +40,10 @@ from typing_extensions import get_args
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
-from eodag.utils.exceptions import UnsupportedProductType
+from eodag.utils.exceptions import UnsupportedProductType, ValidationError
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
+    DEFAULT_SEARCH_TIMEOUT,
     HTTP_REQ_TIMEOUT,
     NOT_AVAILABLE,
     TEST_RESOURCES_PATH,
@@ -993,7 +994,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "processingLevel": None,
             "keywords": "ECMWF,Reanalysis,ERA5,CDS,Atmospheric,land,sea,hourly,single,levels",
             "sensorType": "ATMOSPHERIC",
-            "license": "proprietary",
+            "license": "other",
             "title": "ERA5 hourly data on single levels from 1940 to present",
             "missionStartDate": "1940-01-01T00:00:00Z",
             "_id": "ERA5_SL",
@@ -1032,7 +1033,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "processingLevel": None,
             "keywords": "Copernicus,ADS,CAMS,Atmosphere,Atmospheric,EWMCF,EAC4",
             "sensorType": "ATMOSPHERIC",
-            "license": "proprietary",
+            "license": "other",
             "title": "CAMS global reanalysis (EAC4)",
             "missionStartDate": "2003-01-01T00:00:00Z",
             "_id": "CAMS_EAC4",
@@ -1767,7 +1768,7 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
             self.search_plugin.config.api_endpoint,
             json=mock.ANY,
             headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
+            timeout=DEFAULT_SEARCH_TIMEOUT,
             auth=self.auth,
             verify=True,
         )
@@ -2342,8 +2343,11 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
-    @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
-    def test_plugins_search_ecmwfsearch_discover_queryables(self, mock_requests_get):
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_ok(self, mock__fetch_data):
         constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
         with open(constraints_path) as f:
             constraints = json.load(f)
@@ -2352,7 +2356,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
         with open(form_path) as f:
             form = json.load(f)
-        mock_requests_get.return_value.json.side_effect = [constraints, form]
+        mock__fetch_data.side_effect = [constraints, form]
         product_type_config = {"missionStartDate": "2001-01-01T00:00:00Z"}
         setattr(self.search_plugin.config, "product_type_config", product_type_config)
 
@@ -2374,32 +2378,49 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         default_values.pop("metadata_mapping", None)
         params = deepcopy(default_values)
         params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
+        # set a parameter among the required ones of the form file with a default value in this form but not among the
+        # ones of the constraints file to an empty value to check if its associated queryable has no default value
+        eodag_formatted_data_format = "ecmwf:data_format"
+        provider_data_format = eodag_formatted_data_format.replace("ecmwf:", "")
+        self.assertIn(eodag_formatted_data_format, default_values)
+        self.assertIn(provider_data_format, [param["name"] for param in form])
+        data_format_in_form = [
+            param for param in form if param["name"] == provider_data_format
+        ][0]
+        self.assertTrue(data_format_in_form.get("required", False))
+        self.assertIsNotNone(
+            data_format_in_form.get("details", {}).get("default", None)
+        )
+        for constraint in constraints:
+            self.assertNotIn(provider_data_format, constraint)
+        params[eodag_formatted_data_format] = ""
+
+        # use a parameter among the ones of the form file but not among the ones of the constraints file
+        # and of provider default configuration to check if an error is raised, which is supposed to not happen
+        eodag_formatted_download_format = "ecmwf:download_format"
+        provider_download_format = eodag_formatted_download_format.replace("ecmwf:", "")
+        self.assertNotIn(eodag_formatted_download_format, default_values)
+        self.assertIn(provider_download_format, [param["name"] for param in form])
+        for constraint in constraints:
+            self.assertNotIn(provider_data_format, constraint)
+        params[eodag_formatted_download_format] = "foo"
 
         queryables = self.search_plugin.discover_queryables(**params)
+        # no error was raised, as expected
         self.assertIsNotNone(queryables)
 
-        mock_requests_get.assert_has_calls(
+        mock__fetch_data.assert_has_calls(
             [
                 call(
                     mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/constraints.json",
-                    headers=USER_AGENT,
-                    auth=None,
-                    timeout=5,
                 ),
-                call().raise_for_status(),
-                call().json(),
                 call(
                     mock.ANY,
                     "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
                     "cams-europe-air-quality-reanalyses/form.json",
-                    headers=USER_AGENT,
-                    auth=None,
-                    timeout=5,
                 ),
-                call().raise_for_status(),
-                call().json(),
             ]
         )
 
@@ -2419,7 +2440,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "CAMS_EU_AIR_QUALITY_RE"
         ].items():
             queryable = queryables.get(property)
-            if queryable is not None:
+            # a special case for eodag_formatted_data_format queryable is required
+            # as its default value has been overwritten by an empty value
+            if queryable is not None and property == eodag_formatted_data_format:
+                self.assertEqual(
+                    PydanticUndefined, queryable.__metadata__[0].get_default()
+                )
+                # queryables with empty default values are required
+                self.assertTrue(queryable.__metadata__[0].is_required())
+            elif queryable is not None:
                 self.assertEqual(default_value, queryable.__metadata__[0].get_default())
                 # queryables with default values are not required
                 self.assertFalse(queryable.__metadata__[0].is_required())
@@ -2441,7 +2470,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             )
 
         # reset mock
-        mock_requests_get.reset_mock()
+        mock__fetch_data.reset_mock()
+        mock__fetch_data.side_effect = [constraints, form]
         # with additional param
         params = deepcopy(default_values)
         params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
@@ -2449,15 +2479,67 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         queryables = self.search_plugin.discover_queryables(**params)
         self.assertIsNotNone(queryables)
 
-        # mock not called because cached values are used
-        mock_requests_get.assert_not_called()
+        # cached values are not used to make the set of unit tests work then the mock is called again
+        mock__fetch_data.assert_has_calls(
+            [
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/constraints.json",
+                ),
+                call(
+                    mock.ANY,
+                    "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/"
+                    "cams-europe-air-quality-reanalyses/form.json",
+                ),
+            ]
+        )
 
-        self.assertEqual(11, len(queryables))
+        self.assertEqual(12, len(queryables))
         # default properties called in function arguments are added and must be default values of the queryables
         queryable = queryables.get("ecmwf:variable")
         if queryable is not None:
             self.assertEqual("a", queryable.__metadata__[0].get_default())
             self.assertFalse(queryable.__metadata__[0].is_required())
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
+        autospec=True,
+    )
+    def test_plugins_search_ecmwfsearch_discover_queryables_ko(self, mock__fetch_data):
+        constraints_path = os.path.join(TEST_RESOURCES_PATH, "constraints.json")
+        with open(constraints_path) as f:
+            constraints = json.load(f)
+        form_path = os.path.join(TEST_RESOURCES_PATH, "form.json")
+        with open(form_path) as f:
+            form = json.load(f)
+        mock__fetch_data.side_effect = [constraints, form]
+
+        default_values = deepcopy(
+            getattr(self.search_plugin.config, "products", {}).get(
+                "CAMS_EU_AIR_QUALITY_RE", {}
+            )
+        )
+        default_values.pop("metadata_mapping", None)
+        params = deepcopy(default_values)
+        params["productType"] = "CAMS_EU_AIR_QUALITY_RE"
+
+        # use a wrong parameter, e.g. it is not among the ones of the form file, not among
+        # the ones of the constraints file and not among the ones of default provider configuration
+        wrong_queryable = "foo"
+        self.assertNotIn(wrong_queryable, default_values)
+        self.assertNotIn(wrong_queryable, [param["name"] for param in form])
+        for constraint in constraints:
+            self.assertNotIn(wrong_queryable, constraint)
+        params[wrong_queryable] = "bar"
+
+        # Test the function, expecting ValidationError to be raised
+        with self.assertRaises(ValidationError) as context:
+            self.search_plugin.discover_queryables(**params)
+        self.assertEqual(
+            f"{wrong_queryable} is not a queryable parameter for {self.provider}",
+            str(context.exception),
+        )
 
     @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
     def test_plugins_search_ecmwf_search_wekeo_discover_queryables(
@@ -2575,7 +2657,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             ],
             "title": "Product A",
             "description": "A nice description",
-            "license": "proprietary",
+            "license": "other",
             "providers": [
                 {"name": "CLS (France)", "roles": ["producer"]},
                 {
@@ -2981,6 +3063,78 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 "item_20200102_20200103_hdkIFE.KFNEDNF_20210101",
                 result[0].properties["id"],
             )
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_search_by_id_no_dates_in_id(
+        self, mock_requests_get
+    ):
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        search_plugin.config.products = {
+            "PRODUCT_A": {
+                "productType": "PRODUCT_A",
+                "code_mapping": {"param": "platformSerialIdentifier", "index": 1},
+            }
+        }
+
+        with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
+            s3_stub.return_value = self.s3
+            stubber = Stubber(self.s3)
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response1,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-one"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Marker": "native/PRODUCT_A/dataset-number-one/item_20200302_20200303_hdkIFEKFNEDN_20210101.nc",
+                    "Prefix": "native/PRODUCT_A/dataset-number-one",
+                },
+            )
+            stubber.add_response(
+                "list_objects",
+                self.list_objects_response3,
+                {"Bucket": "bucket1", "Prefix": "native/PRODUCT_A/dataset-number-two"},
+            )
+            stubber.add_response(
+                "list_objects",
+                {},
+                {
+                    "Bucket": "bucket1",
+                    "Prefix": "native/PRODUCT_A/dataset-number-two",
+                    "Marker": "native/PRODUCT_A/dataset-number-two/item_846282_niznjvnqkrf.nc",
+                },
+            )
+            stubber.activate()
+            result, num_total = search_plugin.query(
+                productType="PRODUCT_A", id="item_846282_niznjvnqkrf"
+            )
+            mock_requests_get.assert_has_calls(
+                calls=[
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                    ),
+                    call().json(),
+                    call(
+                        "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                    ),
+                    call().json(),
+                ]
+            )
+            self.assertEqual(1, num_total)
+            self.assertEqual("item_846282_niznjvnqkrf", result[0].properties["id"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):

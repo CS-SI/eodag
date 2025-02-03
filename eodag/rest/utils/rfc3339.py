@@ -16,14 +16,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 from eodag.utils.rest import rfc3339_str_to_datetime
 
 
 def str_to_interval(
     interval: Optional[str],
-) -> Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+) -> tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
     """Extract a tuple of datetimes from an interval string.
 
     Interval strings are defined by

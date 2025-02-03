@@ -201,7 +201,7 @@ class TestSearchStacStatic(unittest.TestCase):
         ):
             item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
 
-        self.assertEqual(item[0].properties["license"], "proprietary")
+        self.assertEqual(item[0].properties["license"], "other")
         self.assertEqual(item[0].properties["platform"], "S2ST")
         self.assertEqual(item[0].properties["orbitDirection"], "descending")
         self.assertNotIn("foo", item[0].properties)

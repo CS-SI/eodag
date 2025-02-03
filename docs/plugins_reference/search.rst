@@ -20,6 +20,7 @@ This table lists all the search plugins currently available:
    qssearch.StacSearch
    qssearch.PostJsonSearchWithStacQueryables
    static_stac_search.StaticStacSearch
+   stac_list_assets.StacListAssets
    cop_marine.CopMarineSearch
    creodias_s3.CreodiasS3Search
    build_search_result.ECMWFSearch

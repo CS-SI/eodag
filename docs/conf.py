@@ -23,7 +23,7 @@ import os
 import re
 from datetime import datetime
 from importlib.metadata import metadata
-from typing import Any, Dict, List
+from typing import Any
 
 # -- General configuration ------------------------------------------------
 
@@ -168,7 +168,7 @@ html_css_files = [
     "custom.css",
 ]
 
-html_js_files: List[Any] = []
+html_js_files: list[Any] = []
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -184,7 +184,7 @@ htmlhelp_basename = "eodagdoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
-latex_elements: Dict[str, str] = {
+latex_elements: dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -281,12 +281,19 @@ def _build_finished(app, exception):
                         r"\1",
                         file_content,
                     )
+                    # remove long prefix from drivers titles
+                    file_content = re.sub(
+                        r"(\.html\">|\"#\">|<h1>)eodag\.api\.product\.drivers\.[a-z0-9]+\.",
+                        r"\1",
+                        file_content,
+                    )
                     # write
                     file.seek(0)
                     file.write(file_content)
-                print(f"Plugins titles shortened in {file_path}")
+                print(f"Titles shortened in {file_path}")
 
     _shorten_titles(os.path.join(app.outdir, "plugins_reference"))
+    _shorten_titles(os.path.join(app.outdir, "drivers_generated"))
 
 
 def _html_page_context(app, pagename, templatename, context, doctree):

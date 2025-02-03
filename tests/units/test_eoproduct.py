@@ -184,6 +184,7 @@ class TestEOProduct(EODagTestCase):
             auth=None,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         self.assertEqual(quicklook_file_path, "")
 
@@ -208,6 +209,7 @@ class TestEOProduct(EODagTestCase):
             auth=None,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         self.assertEqual(
             os.path.basename(quicklook_file_path), product.properties["id"]
@@ -226,6 +228,7 @@ class TestEOProduct(EODagTestCase):
             auth=None,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
         )
         self.assertEqual(self.requests_http_get.call_count, 2)
         self.assertEqual(os.path.basename(quicklook_file_path), "the_quicklook.png")

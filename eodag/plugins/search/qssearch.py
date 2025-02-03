@@ -26,12 +26,8 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
     Sequence,
-    Set,
-    Tuple,
     TypedDict,
     cast,
     get_args,
@@ -78,6 +74,7 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
+    DEFAULT_SEARCH_TIMEOUT,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     REQ_RETRY_BACKOFF_FACTOR,
@@ -128,7 +125,7 @@ class QueryStringSearch(Search):
           authentication error; only used if ``need_auth=true``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.dont_quote` (``List[str]``): characters that should not be quoted in the
+        * :attr:`~eodag.config.PluginConfig.dont_quote` (``list[str]``): characters that should not be quoted in the
           url params
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
@@ -136,10 +133,10 @@ class QueryStringSearch(Search):
           total number of retries to allow; default: ``3``
         * :attr:`~eodag.config.PluginConfig.retry_backoff_factor` (``int``): :class:`urllib3.util.Retry`
           ``backoff_factor`` parameter, backoff factor to apply between attempts after the second try; default: ``2``
-        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``List[int]``): :class:`urllib3.util.Retry`
+        * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): :class:`urllib3.util.Retry`
           ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
           ``[401, 429, 500, 502, 503, 504]``
-        * :attr:`~eodag.config.PluginConfig.literal_search_params` (``Dict[str, str]``): A mapping of (search_param =>
+        * :attr:`~eodag.config.PluginConfig.literal_search_params` (``dict[str, str]``): A mapping of (search_param =>
           search_value) pairs giving search parameters to be passed as is in the search url query string. This is useful
           for example in situations where the user wants to add a fixed search query parameter exactly
           as it is done on the provider interface.
@@ -183,13 +180,13 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_id` (``str``): mapping for the
             product type id
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_metadata`
-            (``Dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
+            (``dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
             from the provider result
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_properties`
-            (``Dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
+            (``dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
             product type metadata
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_unparsable_properties`
-            (``Dict[str, str]``): mapping for product type properties which cannot be parsed from the result and are not
+            (``dict[str, str]``): mapping for product type properties which cannot be parsed from the result and are not
             product type metadata
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url` (``str``): url to fetch
             data for a single collection; used if product type metadata is not available from the endpoint given in
@@ -198,13 +195,13 @@ class QueryStringSearch(Search):
             to be added to the :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` to filter for a
             collection
           * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_product_type_parsable_metadata`
-            (``Dict[str, str]``): mapping for product type metadata returned by the endpoint given in
+            (``dict[str, str]``): mapping for product type metadata returned by the endpoint given in
             :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url`.
 
         * :attr:`~eodag.config.PluginConfig.sort` (:class:`~eodag.config.PluginConfig.Sort`): configuration for sorting
           the results. It contains the keys:
 
-          * :attr:`~eodag.config.PluginConfig.Sort.sort_by_default` (``List[Tuple(str, Literal["ASC", "DESC"])]``):
+          * :attr:`~eodag.config.PluginConfig.Sort.sort_by_default` (``list[Tuple(str, Literal["ASC", "DESC"])]``):
             parameter and sort order by which the result will be sorted by default (if the user does not enter a
             ``sort_by`` parameter); if not given the result will use the default sorting of the provider; Attention:
             for some providers sorting might cause a timeout if no filters are used. In that case no default
@@ -220,12 +217,12 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.Sort.sort_param_mapping` (``Dict [str, str]``): mapping for the parameters
             available for sorting
           * :attr:`~eodag.config.PluginConfig.Sort.sort_order_mapping`
-            (``Dict[Literal["ascending", "descending"], str]``): mapping for the sort order
+            (``dict[Literal["ascending", "descending"], str]``): mapping for the sort order
           * :attr:`~eodag.config.PluginConfig.Sort.max_sort_params` (``int``): maximum number of sort parameters
             supported by the provider; used to validate the user input to avoid failed requests or unexpected behaviour
             (not all parameters are used in the request)
 
-        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``Dict[str, Any]``): The search plugins of this kind can
+        * :attr:`~eodag.config.PluginConfig.metadata_mapping` (``dict[str, Any]``): The search plugins of this kind can
           detect when a metadata mapping is "query-able", and get the semantics of how to format the query string
           parameter that enables to make a query on the corresponding metadata. To make a metadata query-able,
           just configure it in the metadata mapping to be a list of 2 items, the first one being the
@@ -258,7 +255,7 @@ class QueryStringSearch(Search):
             metadata is activated; default: ``False``; if false, the other parameters are not used;
           * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.metadata_pattern` (``str``): regex string a parameter in
             the result should match so that is used
-          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``Union [str, Dict[str, Any]]``): format
+          * :attr:`~eodag.config.PluginConfig.DiscoverMetadata.search_param` (``Union [str, dict[str, Any]]``): format
             to add a query param given by the user and not in the metadata mapping to the requests, 'metadata' will be
             replaced by the search param; can be a string or a dict containing
             :attr:`~eodag.config.PluginConfig.free_text_search_operations`
@@ -286,7 +283,7 @@ class QueryStringSearch(Search):
           the result is an array of constraints
     """
 
-    extract_properties: Dict[str, Callable[..., Dict[str, Any]]] = {
+    extract_properties: dict[str, Callable[..., dict[str, Any]]] = {
         "xml": properties_from_xml,
         "json": properties_from_json,
     }
@@ -297,8 +294,8 @@ class QueryStringSearch(Search):
         self.config.__dict__.setdefault("results_entry", "features")
         self.config.__dict__.setdefault("pagination", {})
         self.config.__dict__.setdefault("free_text_search_operations", {})
-        self.search_urls: List[str] = []
-        self.query_params: Dict[str, str] = dict()
+        self.search_urls: list[str] = []
+        self.query_params: dict[str, str] = dict()
         self.query_string = ""
         self.next_page_url = None
         self.next_page_query_obj = None
@@ -443,7 +440,7 @@ class QueryStringSearch(Search):
         self.next_page_query_obj = None
         self.next_page_merge = None
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[Dict[str, Any]]:
+    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf
 
         :returns: configuration dict containing fetched product types information
@@ -460,7 +457,7 @@ class QueryStringSearch(Search):
             # no pagination
             return self.discover_product_types_per_page(**kwargs)
 
-        conf_update_dict: Dict[str, Any] = {
+        conf_update_dict: dict[str, Any] = {
             "providers_config": {},
             "product_types_config": {},
         }
@@ -493,7 +490,7 @@ class QueryStringSearch(Search):
 
     def discover_product_types_per_page(
         self, **kwargs: Any
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Fetch product types list from provider using `discover_product_types` conf
         using paginated ``kwargs["fetch_url"]``
 
@@ -551,7 +548,7 @@ class QueryStringSearch(Search):
             return None
         else:
             try:
-                conf_update_dict: Dict[str, Any] = {
+                conf_update_dict: dict[str, Any] = {
                     "providers_config": {},
                     "product_types_config": {},
                 }
@@ -570,7 +567,7 @@ class QueryStringSearch(Search):
                         result = result[0]
 
                     def conf_update_from_product_type_result(
-                        product_type_result: Dict[str, Any]
+                        product_type_result: dict[str, Any]
                     ) -> None:
                         """Update ``conf_update_dict`` using given product type json response"""
                         # providers_config extraction
@@ -698,7 +695,7 @@ class QueryStringSearch(Search):
 
     def _get_product_type_metadata_from_single_collection_endpoint(
         self, product_type: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         retrieves additional product type information from an endpoint returning data for a single collection
         :param product_type: product type
@@ -726,7 +723,7 @@ class QueryStringSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface
 
         :param prep: Object collecting needed information for search.
@@ -806,14 +803,14 @@ class QueryStringSearch(Search):
         reason="Simply run `self.config.metadata_mapping.update(metadata_mapping)` instead",
         version="2.10.0",
     )
-    def update_metadata_mapping(self, metadata_mapping: Dict[str, Any]) -> None:
+    def update_metadata_mapping(self, metadata_mapping: dict[str, Any]) -> None:
         """Update plugin metadata_mapping with input metadata_mapping configuration"""
         if self.config.metadata_mapping:
             self.config.metadata_mapping.update(metadata_mapping)
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
         query_params = format_query_params(product_type, self.config, kwargs)
@@ -832,7 +829,7 @@ class QueryStringSearch(Search):
         self,
         prep: PreparedSearch = PreparedSearch(page=None, items_per_page=None),
         **kwargs: Any,
-    ) -> Tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
         page = prep.page
         items_per_page = prep.items_per_page
@@ -901,7 +898,7 @@ class QueryStringSearch(Search):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> List[Any]:
+    ) -> list[Any]:
         """Perform the actual search request.
 
         If there is a specified number of items per page, return the results as soon
@@ -918,7 +915,7 @@ class QueryStringSearch(Search):
                     "total_items_nb_key_path"
                 ]
 
-        results: List[Any] = []
+        results: list[Any] = []
         for search_url in prep.search_urls:
             single_search_prep = copy_copy(prep)
             single_search_prep.url = search_url
@@ -1069,14 +1066,14 @@ class QueryStringSearch(Search):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
         normalize_remaining_count = len(results)
         logger.debug(
             "Adapting %s plugin results to eodag product representation"
             % normalize_remaining_count
         )
-        products: List[EOProduct] = []
+        products: list[EOProduct] = []
         for result in results:
             product = EOProduct(
                 self.provider,
@@ -1091,8 +1088,15 @@ class QueryStringSearch(Search):
             product.properties = dict(
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
-            # move assets from properties to product's attr
-            product.assets.update(product.properties.pop("assets", {}))
+            # move assets from properties to product's attr, normalize keys & roles
+            for key, asset in product.properties.pop("assets", {}).items():
+                norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
+                    asset.get("href", ""), product
+                )
+                if norm_key:
+                    product.assets[norm_key] = asset
+            # sort assets
+            product.assets.data = dict(sorted(product.assets.data.items()))
             products.append(product)
         return products
 
@@ -1134,7 +1138,7 @@ class QueryStringSearch(Search):
                 total_results = int(count_results)
         return total_results
 
-    def get_collections(self, prep: PreparedSearch, **kwargs: Any) -> Tuple[str, ...]:
+    def get_collections(self, prep: PreparedSearch, **kwargs: Any) -> tuple[str, ...]:
         """Get the collection to which the product belongs"""
         # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
         # /asset_publisher/Ac0d/content/change-of
@@ -1145,7 +1149,7 @@ class QueryStringSearch(Search):
             not hasattr(prep, "product_type_def_params")
             or not prep.product_type_def_params
         ):
-            collections: Set[str] = set()
+            collections: set[str] = set()
             collection = getattr(self.config, "collection", None)
             if collection is None:
                 try:
@@ -1187,7 +1191,7 @@ class QueryStringSearch(Search):
         info_message = prep.info_message
         exception_message = prep.exception_message
         try:
-            timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+            timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
             ssl_verify = getattr(self.config, "ssl_verify", True)
 
             retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
@@ -1200,7 +1204,7 @@ class QueryStringSearch(Search):
 
             ssl_ctx = get_ssl_context(ssl_verify)
             # auth if needed
-            kwargs: Dict[str, Any] = {}
+            kwargs: dict[str, Any] = {}
             if (
                 getattr(self.config, "need_auth", False)
                 and hasattr(prep, "auth")
@@ -1331,7 +1335,7 @@ class ODataV4Search(QueryStringSearch):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(), **kwargs: Any
-    ) -> List[Any]:
+    ) -> list[Any]:
         """A two step search can be performed if the metadata are not given into the search result"""
 
         if getattr(self.config, "per_product_metadata_query", False):
@@ -1366,7 +1370,7 @@ class ODataV4Search(QueryStringSearch):
         else:
             return super(ODataV4Search, self).do_search(prep, **kwargs)
 
-    def get_metadata_search_url(self, entity: Dict[str, Any]) -> str:
+    def get_metadata_search_url(self, entity: dict[str, Any]) -> str:
         """Build the metadata link for the given entity"""
         return "{}({})/Metadata".format(
             self.config.api_endpoint.rstrip("/"), entity["id"]
@@ -1374,7 +1378,7 @@ class ODataV4Search(QueryStringSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results
 
         If configured, a metadata pre-mapping can be applied to simplify further metadata extraction.
@@ -1431,7 +1435,7 @@ class PostJsonSearch(QueryStringSearch):
     """
 
     def _get_default_end_date_from_start_date(
-        self, start_datetime: str, product_type_conf: Dict[str, Any]
+        self, start_datetime: str, product_type_conf: dict[str, Any]
     ) -> str:
         try:
             start_date = datetime.fromisoformat(start_datetime)
@@ -1449,7 +1453,7 @@ class PostJsonSearch(QueryStringSearch):
         return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
 
     def _check_date_params(
-        self, keywords: Dict[str, Any], product_type: Optional[str]
+        self, keywords: dict[str, Any], product_type: Optional[str]
     ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
         if (
@@ -1510,7 +1514,7 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on an OpenSearch-like interface"""
         product_type = kwargs.get("productType", "")
         count = prep.count
@@ -1641,7 +1645,7 @@ class PostJsonSearch(QueryStringSearch):
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> List[EOProduct]:
+    ) -> list[EOProduct]:
         """Build EOProducts from provider results"""
         normalized = super().normalize_results(results, **kwargs)
         for product in normalized:
@@ -1676,12 +1680,12 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[str], Optional[int]]:
+    ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
         page = prep.page
         items_per_page = prep.items_per_page
         count = prep.count
-        urls: List[str] = []
+        urls: list[str] = []
         total_results = 0 if count else None
 
         if "count_endpoint" not in self.config.pagination:
@@ -1750,7 +1754,7 @@ class PostJsonSearch(QueryStringSearch):
             raise ValidationError("Cannot request empty URL")
         info_message = prep.info_message
         exception_message = prep.exception_message
-        timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
+        timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             # auth if needed
@@ -1842,7 +1846,7 @@ class StacSearch(PostJsonSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
 
@@ -1868,7 +1872,7 @@ class StacSearch(PostJsonSearch):
 
     def discover_queryables(
         self, **kwargs: Any
-    ) -> Optional[Dict[str, Annotated[Any, FieldInfo]]]:
+    ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using `discover_queryables` conf
 
         :param kwargs: additional filters for queryables (`productType` and other search
@@ -1964,7 +1968,7 @@ class StacSearch(PostJsonSearch):
                 return None
 
             # convert json results to pydantic model fields
-            field_definitions: Dict[str, Any] = dict()
+            field_definitions: dict[str, Any] = dict()
             for json_param, json_mtd in json_queryables.items():
                 param = (
                     get_queryable_from_provider(
@@ -1998,6 +2002,6 @@ class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
 
     def build_query_string(
         self, product_type: str, **kwargs: Any
-    ) -> Tuple[Dict[str, Any], str]:
+    ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         return PostJsonSearch.build_query_string(self, product_type, **kwargs)

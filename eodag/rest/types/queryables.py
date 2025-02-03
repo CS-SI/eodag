@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -46,8 +46,8 @@ class QueryablesGetParams(BaseModel):
     model_config = ConfigDict(extra="allow", frozen=True)
 
     @model_serializer(mode="wrap")
-    def _serialize(self, handler: SerializerFunctionWrapHandler) -> Dict[str, Any]:
-        dumped: Dict[str, Any] = handler(self)
+    def _serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        dumped: dict[str, Any] = handler(self)
         return {EODAGSearch.to_eodag(k): v for k, v in dumped.items()}
 
     # use [prop-decorator] mypy error code when mypy==1.12 is released
@@ -77,12 +77,12 @@ class StacQueryableProperty(BaseModel):
 
     description: str
     ref: Optional[str] = Field(default=None, serialization_alias="$ref")
-    type: Optional[Union[str, List[str]]] = None
-    enum: Optional[List[Any]] = None
+    type: Optional[Union[str, list[str]]] = None
+    enum: Optional[list[Any]] = None
     value: Optional[Any] = None
-    min: Optional[Union[int, List[Union[int, None]]]] = None
-    max: Optional[Union[int, List[Union[int, None]]]] = None
-    oneOf: Optional[List[Any]] = None
+    min: Optional[Union[int, list[Union[int, None]]]] = None
+    max: Optional[Union[int, list[Union[int, None]]]] = None
+    oneOf: Optional[list[Any]] = None
     items: Optional[Any] = None
 
     @classmethod
@@ -104,7 +104,7 @@ class StacQueryableProperty(BaseModel):
         _: SerializationInfo,
     ):
         """Remove none value property fields during serialization"""
-        props: Dict[str, Any] = handler(self)
+        props: dict[str, Any] = handler(self)
         return {k: v for k, v in props.items() if v is not None}
 
 
@@ -130,13 +130,13 @@ class StacQueryables(BaseModel):
     description: str = Field(
         default="Queryable names for the EODAG STAC API Item Search filter."
     )
-    default_properties: ClassVar[Dict[str, StacQueryableProperty]] = {
+    default_properties: ClassVar[dict[str, StacQueryableProperty]] = {
         "collection": StacQueryableProperty(
             description="Collection",
             ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/collection",
         )
     }
-    possible_properties: ClassVar[Dict[str, StacQueryableProperty]] = {
+    possible_properties: ClassVar[dict[str, StacQueryableProperty]] = {
         "geometry": StacQueryableProperty(
             description="Geometry",
             ref="https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
@@ -152,8 +152,8 @@ class StacQueryables(BaseModel):
             items={"type": "number"},
         ),
     }
-    properties: Dict[str, Any] = Field()
-    required: Optional[List[str]] = Field(None)
+    properties: dict[str, Any] = Field()
+    required: Optional[list[str]] = Field(None)
     additional_properties: bool = Field(
         default=True, serialization_alias="additionalProperties"
     )

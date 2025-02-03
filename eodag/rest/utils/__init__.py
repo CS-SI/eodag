@@ -23,17 +23,7 @@ import logging
 import os
 from io import BufferedReader
 from shutil import make_archive, rmtree
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    NamedTuple,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, NamedTuple, Optional, Union
 from urllib.parse import unquote_plus, urlencode
 
 import orjson
@@ -63,7 +53,7 @@ class Cruncher(NamedTuple):
     """Type hinted Cruncher namedTuple"""
 
     clazz: Callable[..., Any]
-    config_params: List[str]
+    config_params: list[str]
 
 
 crunchers = {
@@ -90,19 +80,19 @@ def format_pydantic_error(e: pydanticValidationError) -> str:
 
 def is_dict_str_any(var: Any) -> bool:
     """Verify whether the variable is of type dict[str, Any]"""
-    if isinstance(var, Dict):
+    if isinstance(var, dict):
         return all(isinstance(k, str) for k in var.keys())  # type: ignore
     return False
 
 
-def str2list(v: Optional[str]) -> Optional[List[str]]:
+def str2list(v: Optional[str]) -> Optional[list[str]]:
     """Convert string to list base on , delimiter."""
     if v:
         return v.split(",")
     return None
 
 
-def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
+def str2json(k: str, v: Optional[str] = None) -> Optional[dict[str, Any]]:
     """decoding a URL parameter and then parsing it as JSON."""
     if not v:
         return None
@@ -112,25 +102,25 @@ def str2json(k: str, v: Optional[str] = None) -> Optional[Dict[str, Any]]:
         raise ValidationError(f"{k}: Incorrect JSON object") from e
 
 
-def flatten_list(nested_list: Union[Any, List[Any]]) -> List[Any]:
+def flatten_list(nested_list: Union[Any, list[Any]]) -> list[Any]:
     """Flatten a nested list structure into a single list."""
     if not isinstance(nested_list, list):
         return [nested_list]
     else:
-        flattened: List[Any] = []
+        flattened: list[Any] = []
         for element in nested_list:
             flattened.extend(flatten_list(element))
         return flattened
 
 
-def list_to_str_list(input_list: List[Any]) -> List[str]:
+def list_to_str_list(input_list: list[Any]) -> list[str]:
     """Attempt to convert a list of any type to a list of strings."""
     try:
         # Try to convert each element to a string
         return [str(element) for element in input_list]
     except Exception as e:
         # Raise an exception if any element cannot be converted
-        raise TypeError(f"Failed to convert to List[str]: {e}") from e
+        raise TypeError(f"Failed to convert to list[str]: {e}") from e
 
 
 def get_next_link(
@@ -138,7 +128,7 @@ def get_next_link(
     search_request: SearchPostRequest,
     total_results: Optional[int],
     items_per_page: int,
-) -> Optional[Dict[str, Any]]:
+) -> Optional[dict[str, Any]]:
     """Generate next link URL and body"""
     body = search_request.model_dump(exclude_none=True)
     if "bbox" in body:
@@ -159,7 +149,7 @@ def get_next_link(
         params["page"] = str(page + 1)
         url += f"?{urlencode(params)}"
 
-    next: Dict[str, Any] = {
+    next: dict[str, Any] = {
         "rel": "next",
         "href": url,
         "title": "Next page",

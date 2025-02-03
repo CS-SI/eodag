@@ -24,6 +24,12 @@ Notebook
 .. automodule:: eodag.utils.notebook
    :members:
 
+S3
+----
+
+.. automodule:: eodag.utils.s3
+   :members:
+
 Misc
 ----
 

@@ -28,17 +28,7 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Iterator, Optional, TypedDict, Union, cast
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -72,6 +62,7 @@ from eodag.utils import (
     guess_file_type,
     parse_header,
     path_to_uri,
+    rename_with_version,
     sanitize,
     string_to_jsonpath,
     uri_to_path,
@@ -91,6 +82,7 @@ if TYPE_CHECKING:
     from eodag.api.product import Asset, EOProduct  # type: ignore
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -111,7 +103,7 @@ class HTTPDownload(Download):
           extracted; default: ``True``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
           authentication error
-        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``Dict[str, Any]``): parameters to be
+        * :attr:`~eodag.config.PluginConfig.dl_url_params` (``dict[str, Any]``): parameters to be
           added to the query params of the request
         * :attr:`~eodag.config.PluginConfig.archive_depth` (``int``): level in extracted path tree where to find data;
           default: ``1``
@@ -130,7 +122,7 @@ class HTTPDownload(Download):
           the search plugin used for the provider; default: ``False``
         * :attr:`~eodag.config.PluginConfig.order_method` (``str``): HTTP request method for the order request (``GET``
           or ``POST``); default: ``GET``
-        * :attr:`~eodag.config.PluginConfig.order_headers` (``[Dict[str, str]]``): headers to be added to the order
+        * :attr:`~eodag.config.PluginConfig.order_headers` (``[dict[str, str]]``): headers to be added to the order
           request
         * :attr:`~eodag.config.PluginConfig.order_on_response` (:class:`~eodag.config.PluginConfig.OrderOnResponse`):
           a typed dictionary containing the key ``metadata_mapping`` which can be used to add new product properties
@@ -138,7 +130,7 @@ class HTTPDownload(Download):
         * :attr:`~eodag.config.PluginConfig.order_status` (:class:`~eodag.config.PluginConfig.OrderStatus`):
           configuration to handle the order status; contains information which method to use, how the response data is
           interpreted, which status corresponds to success, ordered and error and what should be done on success.
-        * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type specific config; the
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type specific config; the
           keys are the product types, the values are dictionaries which can contain the key
           :attr:`~eodag.config.PluginConfig.extract` to overwrite the provider config for a specific product type
 
@@ -152,7 +144,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[AuthBase] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Send product order request.
 
         It will be executed once before the download retry loop, if the product is OFFLINE
@@ -184,7 +176,7 @@ class HTTPDownload(Download):
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
         OrderKwargs = TypedDict(
-            "OrderKwargs", {"json": Dict[str, Union[Any, List[str]]]}, total=False
+            "OrderKwargs", {"json": dict[str, Union[Any, list[str]]]}, total=False
         )
         order_kwargs: OrderKwargs = {}
         if order_method == "POST":
@@ -236,7 +228,7 @@ class HTTPDownload(Download):
 
     def order_response_process(
         self, response: Response, product: EOProduct
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """Process order response
 
         :param response: The order response
@@ -300,7 +292,7 @@ class HTTPDownload(Download):
         def _request(
             url: str,
             method: str = "GET",
-            headers: Optional[Dict[str, Any]] = None,
+            headers: Optional[dict[str, Any]] = None,
             json: Optional[Any] = None,
             timeout: int = HTTP_REQ_TIMEOUT,
         ) -> Response:
@@ -336,7 +328,7 @@ class HTTPDownload(Download):
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=timeout) from exc
 
-        status_request: Dict[str, Any] = status_config.get("request", {})
+        status_request: dict[str, Any] = status_config.get("request", {})
         status_request_method = str(status_request.get("method", "GET")).upper()
 
         if status_request_method == "POST":
@@ -353,8 +345,8 @@ class HTTPDownload(Download):
 
         # check header for success before full status request
         skip_parsing_status_response = False
-        status_dict: Dict[str, Any] = {}
-        config_on_success: Dict[str, Any] = status_config.get("on_success", {})
+        status_dict: dict[str, Any] = {}
+        config_on_success: dict[str, Any] = status_config.get("on_success", {})
         on_success_mm = config_on_success.get("metadata_mapping", {})
 
         status_response_content_needed = (
@@ -438,13 +430,13 @@ class HTTPDownload(Download):
             product.properties["orderStatus"] = status_dict.get("status")
 
             # handle status error
-            errors: Dict[str, Any] = status_config.get("error", {})
+            errors: dict[str, Any] = status_config.get("error", {})
             if errors and errors.items() <= status_dict.items():
                 raise DownloadError(
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
-        success_status: Dict[str, Any] = status_config.get("success", {}).get("status")
+        success_status: dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
         if (success_status and success_status != status_dict.get("status")) or (
             success_code and success_code != response.status_code
@@ -562,7 +554,7 @@ class HTTPDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -666,6 +658,8 @@ class HTTPDownload(Download):
                 os.path.dirname(path),
                 sanitize(product.properties["title"]),
             )
+            if os.path.isfile(new_fs_path):
+                rename_with_version(new_fs_path)
             if not os.path.isdir(new_fs_path):
                 os.makedirs(new_fs_path)
             shutil.move(path, new_fs_path)
@@ -719,7 +713,7 @@ class HTTPDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -778,13 +772,17 @@ class HTTPDownload(Download):
                     )
 
                 else:
+                    # get first chunk to check if it does not contain an error (if it does, that error will be raised)
+                    first_chunks_tuple = next(chunks_tuples)
                     outputs_filename = (
                         sanitize(product.properties["title"])
                         if "title" in product.properties
                         else sanitize(product.properties.get("id", "download"))
                     )
                     return StreamResponse(
-                        content=stream_zip(chunks_tuples),
+                        content=stream_zip(
+                            chain(iter([first_chunks_tuple]), chunks_tuples)
+                        ),
                         media_type="application/zip",
                         headers={
                             "content-disposition": f"attachment; filename={outputs_filename}.zip",
@@ -888,7 +886,7 @@ class HTTPDownload(Download):
     def order(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> None:
@@ -951,7 +949,7 @@ class HTTPDownload(Download):
             if not query_dict and parts.query:
                 query_dict = geojson.loads(parts.query)
             req_url = parts._replace(query="").geturl()
-            req_kwargs: Dict[str, Any] = {"json": query_dict} if query_dict else {}
+            req_kwargs: dict[str, Any] = {"json": query_dict} if query_dict else {}
         else:
             req_url = url
             req_kwargs = {}
@@ -1019,7 +1017,7 @@ class HTTPDownload(Download):
         product: EOProduct,
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
-        assets_values: List[Asset] = [],
+        assets_values: list[Asset] = [],
         **kwargs: Unpack[DownloadConf],
     ) -> Iterator[Any]:
         if progress_callback is None:
@@ -1289,9 +1287,9 @@ class HTTPDownload(Download):
 
     def _get_asset_sizes(
         self,
-        assets_values: List[Asset],
+        assets_values: list[Asset],
         auth: Optional[AuthBase],
-        params: Optional[Dict[str, str]],
+        params: Optional[dict[str, str]],
         zipped: bool = False,
     ) -> int:
         total_size = 0
@@ -1364,7 +1362,7 @@ class HTTPDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,

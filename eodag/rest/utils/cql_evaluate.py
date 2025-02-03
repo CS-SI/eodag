@@ -16,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from datetime import datetime as dt
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from pygeofilter import ast
 from pygeofilter.backends.evaluator import Evaluator, handle
 from pygeofilter.values import Geometry, Interval
 
-simpleNode = Union[ast.Attribute, str, int, complex, float, List[Any], Tuple[Any, ...]]
+simpleNode = Union[ast.Attribute, str, int, complex, float, list[Any], tuple[Any, ...]]
 
 
 class EodagEvaluator(Evaluator):
@@ -36,7 +36,7 @@ class EodagEvaluator(Evaluator):
         return node
 
     @handle(Geometry)
-    def spatial(self, node: Geometry) -> Dict[str, Any]:
+    def spatial(self, node: Geometry) -> dict[str, Any]:
         """handle geometry"""
         return node.geometry
 
@@ -46,7 +46,7 @@ class EodagEvaluator(Evaluator):
         return node.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     @handle(Interval)
-    def interval(self, _, *interval: Any) -> List[Any]:
+    def interval(self, _, *interval: Any) -> list[Any]:
         """handle datetime interval"""
         return list(interval)
 
@@ -60,7 +60,7 @@ class EodagEvaluator(Evaluator):
     )
     def predicate(
         self, node: ast.Predicate, lhs: Any, rhs: Any
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """
         Handle predicates
         Verify the property is first attribute in each predicate
@@ -114,6 +114,6 @@ class EodagEvaluator(Evaluator):
         return {lhs.name: list(rhs)}
 
     @handle(ast.And)
-    def combination(self, _, lhs: Dict[str, str], rhs: Dict[str, str]):
+    def combination(self, _, lhs: dict[str, str], rhs: dict[str, str]):
         """handle combinations"""
         return {**lhs, **rhs}

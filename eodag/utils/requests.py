@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import requests
 
@@ -75,7 +75,7 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
     """
 
     @staticmethod
-    def _chkpath(method: str, path: str) -> Tuple[int, str]:
+    def _chkpath(method: str, path: str) -> tuple[int, str]:
         """Return an HTTP status for the given filesystem path.
 
         :param method: method of the request

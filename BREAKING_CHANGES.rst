@@ -3,14 +3,14 @@ Breaking changes
 
 Full changelog available in `Release history <changelog.html>`_.
 
-3.0.0b3
-+++++++
+v3.0.0b3
+++++++++
 
 * :meth:`~eodag.api.core.EODataAccessGateway.download` / :class:`~eodag.types.download_args.DownloadConf` parameters
   ``outputs_prefix`` and ``outputs_extension`` renamed to ``output_dir`` and ``output_extension``.
 
-3.0.0b1
-+++++++
+v3.0.0b1
+++++++++
 
 * :meth:`~eodag.api.core.EODataAccessGateway.search` method now returns only a
   :class:`~eodag.api.search_result.SearchResult` instead of a 2 values tuple. It can optionally store the estimated
@@ -45,14 +45,14 @@ Full changelog available in `Release history <changelog.html>`_.
     # install eodag with all available providers supported
     pip install "eodag[all-providers]"
 
-2.0b1
-+++++
+v2.0b1
+++++++
 
 - STAC API compliant REST server
 - Common configuration for STAC providers
 
-1.0
-+++
+v1.0
+++++
 
 - Adds product type search functionality
 - The cli arguments are now fully compliant with opensearch geo(bbox)/time extensions

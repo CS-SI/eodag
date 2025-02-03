@@ -25,7 +25,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory, gettempdir
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 from unittest import mock
 
 import responses
@@ -244,7 +244,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
 
     def _dummy_product(
-        self, provider: str, properties: Dict[str, Any], productType: str
+        self, provider: str, properties: dict[str, Any], productType: str
     ):
         return EOProduct(
             provider,
@@ -257,7 +257,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         mock_requests_session: Callable[[], None],
         local_product_as_archive_path: str,
         provider: str,
-        properties: Dict[str, Any],
+        properties: dict[str, Any],
         productType: str,
     ):
         self._set_download_simulation(
@@ -718,6 +718,38 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 os.path.join(self.output_dir, "dummy_product", "somethingelse")
             )
         )
+
+    @mock.patch(
+        "eodag.plugins.download.http.ProgressCallback.__call__",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
+    @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
+    def test_plugins_download_http_assets_stream_zip_interrupt(
+        self, mock_requests_get, mock_requests_head, mock_progress_callback
+    ):
+        """HTTPDownload._stream_download_dict() must raise an error if an error is returned by the provider"""
+
+        plugin = self.get_download_plugin(self.product)
+        self.product.location = self.product.remote_location = "http://somewhere"
+        self.product.properties["id"] = "someproduct"
+        self.product.assets.clear()
+        self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
+        self.product.assets.update({"any": {"href": "http://somewhere/anything"}})
+
+        # first asset returns error
+        mock_requests_get.return_value = MockResponse(status_code=404)
+        mock_requests_head.return_value.headers = {
+            "content-disposition": "",
+            "Content-length": "10",
+        }
+
+        with self.assertRaises(DownloadError):
+            plugin._stream_download_dict(self.product, output_dir=self.output_dir)
+        # Interrupted download
+        # Product location not changed
+        self.assertEqual(self.product.location, "http://somewhere")
+        self.assertEqual(self.product.remote_location, "http://somewhere")
 
     @mock.patch("eodag.plugins.download.http.requests.head", autospec=True)
     @mock.patch("eodag.plugins.download.http.requests.get", autospec=True)
@@ -1875,6 +1907,51 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
 
         with self.assertRaises(NoMatchingProductType):
             plugin.download(self.product, outputs_prefix=self.output_dir)
+
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_download_aws_get_rio_env(
+        self,
+        mock_get_authenticated_objects: mock.Mock,
+    ):
+        """AwsDownload.get_rio_env() must return rio env dict"""
+
+        self.product.properties["downloadLink"] = "s3://some-bucket/some/prefix"
+
+        plugin = self.get_download_plugin(self.product)
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+
+        # nothing needed
+        rio_env_dict = plugin.get_rio_env(
+            "some-bucket", "some/prefix", auth_plugin.authenticate()
+        )
+        self.assertDictEqual(rio_env_dict, {"aws_unsigned": True})
+
+        # s3_endpoint
+        plugin.config.s3_endpoint = "https://some.endpoint"
+        rio_env_dict = plugin.get_rio_env(
+            "some-bucket", "some/prefix", auth_plugin.authenticate()
+        )
+        self.assertDictEqual(
+            rio_env_dict, {"aws_unsigned": True, "endpoint_url": "some.endpoint"}
+        )
+
+        # session initiated
+        plugin.s3_session = mock.MagicMock()
+        self.assertEqual(plugin.config.requester_pays, True)
+        rio_env_dict = plugin.get_rio_env(
+            "some-bucket", "some/prefix", auth_plugin.authenticate()
+        )
+        self.assertDictEqual(
+            rio_env_dict,
+            {
+                "session": plugin.s3_session,
+                "endpoint_url": "some.endpoint",
+                "requester_pays": True,
+            },
+        )
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):

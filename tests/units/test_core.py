@@ -27,7 +27,6 @@ import unittest
 import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import Mock
 
 from lxml import html
 from pkg_resources import DistributionNotFound, resource_filename
@@ -1420,9 +1419,9 @@ class TestCore(TestCoreBase):
     )
     def test_list_queryables(
         self,
-        mock_stacsearch_discover_queryables: Mock,
-        mock_fetch_product_types_list: Mock,
-        mock_auth_plugin: Mock,
+        mock_stacsearch_discover_queryables: mock.Mock,
+        mock_fetch_product_types_list: mock.Mock,
+        mock_auth_plugin: mock.Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
         mock_stacsearch_discover_queryables.return_value = {}
@@ -1510,7 +1509,9 @@ class TestCore(TestCoreBase):
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
         autospec=True,
     )
-    def test_list_queryables_with_constraints(self, mock_discover_queryables: Mock):
+    def test_list_queryables_with_constraints(
+        self, mock_discover_queryables: mock.Mock
+    ):
         plugin = next(
             self.dag._plugins_manager.get_search_plugins(
                 provider="cop_cds", product_type="ERA5_SL"
@@ -1558,6 +1559,140 @@ class TestCore(TestCoreBase):
             "ecmwf:download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.list_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.list_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.WekeoECMWFSearch.list_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_list_queryables_priority_sorted(
+        self,
+        mock_fetch_product_types_list: mock.Mock,
+        get_auth_plugin: mock.Mock,
+        mock_wekeo_list_queryables: mock.Mock,
+        mock_ecmwf_list_queryables: mock.Mock,
+        mock_dedl_list_queryables: mock.Mock,
+    ):
+        mock_wekeo_list_queryables.return_value = QueryablesDict(
+            additional_properties=False,
+            additional_information="Mocked WEkEO queryables",
+            property1="value_from_wekeo",
+        )
+
+        mock_ecmwf_list_queryables.return_value = QueryablesDict(
+            additional_properties=False,
+            additional_information="Mocked ECMWF queryables for cop_cds",
+            property1="value_cds1",
+            property2="value_cds2",
+        )
+
+        mock_dedl_list_queryables.return_value = QueryablesDict(
+            additional_properties=False,
+            additional_information="Mocked STAC queryables for dedl",
+            property1="value_dedl1",
+            property2="value_dedl2",
+            property3="value_dedl3",
+        )
+
+        self.dag.set_preferred_provider("wekeo_ecmwf")
+
+        queryables = self.dag.list_queryables(productType="ERA5_SL")
+
+        self.assertEqual(queryables["property1"], "value_from_wekeo")
+        self.assertEqual(queryables["property2"], "value_cds2")
+        self.assertEqual(queryables["property3"], "value_dedl3")
+
+        self.dag.set_preferred_provider("cop_cds")
+
+        queryables = self.dag.list_queryables(productType="ERA5_SL")
+
+        self.assertEqual(queryables["property1"], "value_cds1")
+        self.assertEqual(queryables["property2"], "value_cds2")
+        self.assertEqual(queryables["property3"], "value_dedl3")
+
+        self.dag.set_preferred_provider("dedl")
+
+        queryables = self.dag.list_queryables(productType="ERA5_SL")
+
+        self.assertEqual(queryables["property1"], "value_dedl1")
+        self.assertEqual(queryables["property2"], "value_dedl2")
+        self.assertEqual(queryables["property3"], "value_dedl3")
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.StacSearch.list_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.list_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.WekeoECMWFSearch.list_queryables",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    def test_list_queryables_additional(
+        self,
+        mock_fetch_product_types_list: mock.Mock,
+        get_auth_plugin: mock.Mock,
+        mock_wekeo_list_queryables: mock.Mock,
+        mock_ecmwf_list_queryables: mock.Mock,
+        mock_dedl_list_queryables: mock.Mock,
+    ):
+        mock_wekeo_list_queryables.return_value = QueryablesDict(
+            additional_properties=False,
+            additional_information="Mocked WEkEO queryables",
+        )
+
+        mock_ecmwf_list_queryables.return_value = QueryablesDict(
+            additional_properties=False,
+            additional_information="Mocked ECMWF queryables for cop_cds",
+        )
+
+        mock_dedl_list_queryables.return_value = QueryablesDict(
+            additional_properties=False,
+            additional_information="Mocked STAC queryables for dedl",
+        )
+
+        queryables = self.dag.list_queryables(productType="ERA5_SL")
+
+        self.assertEqual(
+            queryables.additional_information,
+            (
+                "cop_cds: Mocked ECMWF queryables for cop_cds"
+                " | wekeo_ecmwf: Mocked WEkEO queryables"
+                " | dedl: Mocked STAC queryables for dedl"
+            ),
+        )
+        self.assertEqual(queryables.additional_properties, False)
+
+        mock_dedl_list_queryables.return_value = QueryablesDict(
+            additional_properties=True,
+            additional_information="Mocked STAC queryables for dedl",
+        )
+        queryables = self.dag.list_queryables(productType="ERA5_SL")
+
+        self.assertEqual(queryables.additional_properties, True)
 
     def test_queryables_repr(self):
         queryables = self.dag.list_queryables(provider="peps", productType="S1_SAR_GRD")

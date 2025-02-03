@@ -22,7 +22,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import requests
 from requests import RequestException
@@ -38,7 +38,7 @@ try:
 except ImportError:
     from eodag.api.product._assets import AssetsDict
 
-from eodag.api.product.drivers import DRIVERS, NoDriver
+from eodag.api.product.drivers import DRIVERS, LEGACY_DRIVERS, NoDriver
 from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
@@ -113,7 +113,7 @@ class EOProduct:
     """
 
     provider: str
-    properties: Dict[str, Any]
+    properties: dict[str, Any]
     product_type: Optional[str]
     location: str
     filename: str
@@ -122,9 +122,11 @@ class EOProduct:
     geometry: BaseGeometry
     search_intersection: Optional[BaseGeometry]
     assets: AssetsDict
+    #: Driver enables additional methods to be called on the EOProduct
+    driver: DatasetDriver
 
     def __init__(
-        self, provider: str, properties: Dict[str, Any], **kwargs: Any
+        self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
         self.provider = provider
         self.product_type = kwargs.get("productType")
@@ -175,7 +177,7 @@ class EOProduct:
         self.downloader: Optional[Union[Api, Download]] = None
         self.downloader_auth: Optional[Authentication] = None
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         """Builds a representation of EOProduct as a dictionary to enable its geojson
         serialization
 
@@ -186,7 +188,7 @@ class EOProduct:
         if self.search_intersection is not None:
             search_intersection = geometry.mapping(self.search_intersection)
 
-        geojson_repr: Dict[str, Any] = {
+        geojson_repr: dict[str, Any] = {
             "type": "Feature",
             "geometry": geometry.mapping(self.geometry),
             "id": self.properties["id"],
@@ -206,7 +208,7 @@ class EOProduct:
         return geojson_repr
 
     @classmethod
-    def from_geojson(cls, feature: Dict[str, Any]) -> EOProduct:
+    def from_geojson(cls, feature: dict[str, Any]) -> EOProduct:
         """Builds an :class:`~eodag.api.product._product.EOProduct` object from its
         representation as geojson
 
@@ -356,7 +358,7 @@ class EOProduct:
 
     def _init_progress_bar(
         self, progress_callback: Optional[ProgressCallback]
-    ) -> Tuple[ProgressCallback, bool]:
+    ) -> tuple[ProgressCallback, bool]:
         # progress bar init
         if progress_callback is None:
             progress_callback = ProgressCallback(position=1)
@@ -463,12 +465,20 @@ class EOProduct:
             )
             if not isinstance(auth, AuthBase):
                 auth = None
+            # Read the ssl_verify parameter used on the provider config
+            # to ensure the same behavior for get_quicklook as other download functions
+            ssl_verify = (
+                getattr(self.downloader.config, "ssl_verify", True)
+                if self.downloader
+                else True
+            )
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,
                 auth=auth,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify,
             ) as stream:
                 try:
                     stream.raise_for_status()
@@ -498,11 +508,16 @@ class EOProduct:
         try:
             for driver_conf in DRIVERS:
                 if all([criteria(self) for criteria in driver_conf["criteria"]]):
-                    return driver_conf["driver"]
+                    driver = driver_conf["driver"]
+                    break
+            # use legacy driver for deprecated get_data method usage
+            for lecacy_conf in LEGACY_DRIVERS:
+                if all([criteria(self) for criteria in lecacy_conf["criteria"]]):
+                    driver.legacy = lecacy_conf["driver"]
+                    break
+            return driver
         except TypeError:
-            logger.warning(
-                "Drivers definition seems out-of-date, please update eodag-cube"
-            )
+            logger.info("No driver matching")
             pass
         return NoDriver()
 

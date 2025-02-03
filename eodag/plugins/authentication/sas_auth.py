@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import requests
 from requests.auth import AuthBase
@@ -42,13 +42,13 @@ class RequestsSASAuth(AuthBase):
         self,
         auth_uri: str,
         signed_url_key: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         ssl_verify: bool = True,
     ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
         self.headers = headers
-        self.signed_urls: Dict[str, str] = {}
+        self.signed_urls: dict[str, str] = {}
         self.ssl_verify = ssl_verify
 
     def __call__(self, request: PreparedRequest) -> PreparedRequest:
@@ -97,7 +97,7 @@ class SASAuth(Authentication):
           get the signed url
         * :attr:`~eodag.config.PluginConfig.signed_url_key` (``str``) (**mandatory**): key to
           get the signed url
-        * :attr:`~eodag.config.PluginConfig.headers` (``Dict[str, str]``) (**mandatory if
+        * :attr:`~eodag.config.PluginConfig.headers` (``dict[str, str]``) (**mandatory if
           apiKey is used**): headers to be added to the requests
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be
           verified in the requests; default: ``True``

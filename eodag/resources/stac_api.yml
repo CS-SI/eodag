@@ -799,7 +799,7 @@ components:
         description: |
           Sentinel-2 is a wide-swath, high-resolution, multi-spectral
           imaging mission...
-        license: proprietary
+        license: other
         keywords:
           - copernicus
           - esa
@@ -1416,7 +1416,7 @@ components:
       description: |-
         License(s) of the data as a SPDX
         [License identifier](https://spdx.org/licenses/). Alternatively, use
-        `proprietary` if the license is not on the SPDX license list or
+        `other` if the license is not on the SPDX license list or
         `various` if multiple licenses apply. In these two cases links to the
         license texts SHOULD be added, see the `license` link relation type.
 

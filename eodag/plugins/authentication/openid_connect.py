@@ -22,7 +22,7 @@ import re
 import string
 from datetime import datetime, timedelta, timezone
 from random import SystemRandom
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import jwt
 import requests
@@ -88,7 +88,7 @@ class OIDCRefreshTokenBase(Authentication):
         self.authorization_endpoint = auth_config["authorization_endpoint"]
         self.algorithms = auth_config["id_token_signing_alg_values_supported"]
 
-    def decode_jwt_token(self, token: str) -> Dict[str, Any]:
+    def decode_jwt_token(self, token: str) -> dict[str, Any]:
         """Decode JWT token."""
         try:
             key = self.jwks_client.get_signing_key_from_jwt(token).key
@@ -144,13 +144,13 @@ class OIDCRefreshTokenBase(Authentication):
 
         return self.access_token
 
-    def _request_new_token(self) -> Dict[str, str]:
+    def _request_new_token(self) -> dict[str, str]:
         """Fetch the access token with a new authentication"""
         raise NotImplementedError(
             "Incomplete OIDC refresh token retrieval mechanism implementation"
         )
 
-    def _request_new_token_error(self, e: requests.RequestException) -> Dict[str, str]:
+    def _request_new_token_error(self, e: requests.RequestException) -> dict[str, str]:
         """Handle RequestException raised by `self._request_new_token()`"""
         if self.access_token:
             # try using already retrieved token if authenticate() fails (OTP use-case)
@@ -186,7 +186,7 @@ class OIDCRefreshTokenBase(Authentication):
                 )
             )
 
-    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+    def _get_token_with_refresh_token(self) -> dict[str, str]:
         """Fetch the access token with the refresh token"""
         raise NotImplementedError(
             "Incomplete OIDC refresh token retrieval mechanism implementation"
@@ -241,21 +241,21 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           authentication_uri_source=config**) The URL of the authentication backend of the OIDC provider
         * :attr:`~eodag.config.PluginConfig.user_consent_form_xpath` (``str``): The xpath to
           the user consent form. The form is searched in the content of the response to the authorization request
-        * :attr:`~eodag.config.PluginConfig.user_consent_form_data` (``Dict[str, str]``): The data that
+        * :attr:`~eodag.config.PluginConfig.user_consent_form_data` (``dict[str, str]``): The data that
           will be passed with the POST request on the form 'action' URL. The data are given as
           key value pairs, the keys representing the data key and the value being either a 'constant'
           string value, or a string of the form 'xpath(<path-to-a-value-to-be-retrieved>)' and representing a
           value to be retrieved in the user consent form. The xpath must resolve directly to a
           string value, not to an HTML element. Example: ``xpath(//input[@name="sessionDataKeyConsent"]/@value)``
-        * :attr:`~eodag.config.PluginConfig.additional_login_form_data` (``Dict[str, str]``): A mapping
+        * :attr:`~eodag.config.PluginConfig.additional_login_form_data` (``dict[str, str]``): A mapping
           giving additional data to be passed to the login POST request. The value follows
           the same rules as with user_consent_form_data
-        * :attr:`~eodag.config.PluginConfig.exchange_url_error_pattern` (``Dict[str, str]``): Key/value
+        * :attr:`~eodag.config.PluginConfig.exchange_url_error_pattern` (``dict[str, str]``): Key/value
           pairs of patterns/messages. If exchange_url contains the given pattern, the associated
           message will be sent in an AuthenticationError
         * :attr:`~eodag.config.PluginConfig.client_secret` (``str``): The OIDC provider's client
           secret of the eodag provider
-        * :attr:`~eodag.config.PluginConfig.token_exchange_params` (``Dict[str, str]``): mandatory
+        * :attr:`~eodag.config.PluginConfig.token_exchange_params` (``dict[str, str]``): mandatory
           keys for the dict: redirect_uri, client_id; A mapping between OIDC url query string
           and token handler query string params (only necessary if they are not the same as for OIDC).
           This is eodag provider dependant
@@ -298,7 +298,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             key=getattr(self.config, "token_qs_key", None),
         )
 
-    def _request_new_token(self) -> Dict[str, str]:
+    def _request_new_token(self) -> dict[str, str]:
         """Fetch the access token with a new authentication"""
         logger.debug("Fetching access token from %s", self.token_endpoint)
         state = self.compute_state()
@@ -326,12 +326,12 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             return self._request_new_token_error(e)
         return token_response.json()
 
-    def _get_token_with_refresh_token(self) -> Dict[str, str]:
+    def _get_token_with_refresh_token(self) -> dict[str, str]:
         """Fetch the access token with the refresh token"""
         logger.debug(
             "Fetching access token with refresh token from %s.", self.token_endpoint
         )
-        token_data: Dict[str, Any] = {
+        token_data: dict[str, Any] = {
             "refresh_token": self.refresh_token,
             "grant_type": "refresh_token",
         }
@@ -435,7 +435,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             verify=ssl_verify,
         )
 
-    def _prepare_token_post_data(self, token_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_token_post_data(self, token_data: dict[str, Any]) -> dict[str, Any]:
         """Prepare the common data to post to the token URI"""
         token_data.update(
             {
@@ -471,7 +471,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 "The state received in the authorized url does not match initially computed state"
             )
         code = qs["code"][0]
-        token_exchange_data: Dict[str, Any] = {
+        token_exchange_data: dict[str, Any] = {
             "code": code,
             "state": state,
             "grant_type": "authorization_code",

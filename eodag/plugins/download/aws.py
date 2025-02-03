@@ -23,21 +23,7 @@ import re
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Match,
-    Optional,
-    Set,
-    Tuple,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
 
 import boto3
 import requests
@@ -81,6 +67,7 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -230,14 +217,14 @@ class AwsDownload(Download):
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the
           path part of the url the bucket can be found; If no bucket_path_level is given, the bucket
           is taken from the first element of the netloc part.
-        * :attr:`~eodag.config.PluginConfig.products` (``Dict[str, Dict[str, Any]``): product type
+        * :attr:`~eodag.config.PluginConfig.products` (``dict[str, dict[str, Any]``): product type
           specific config; the keys are the product types, the values are dictionaries which can contain the keys:
 
           * **default_bucket** (``str``): bucket where the product type can be found
           * **complementary_url_key** (``str``): keys to add additional urls
           * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
             be created; used for Sentinel products; default: False
-          * **fetch_metadata** (``Dict[str, Any]``): config for metadata to be fetched for the SAFE product
+          * **fetch_metadata** (``dict[str, Any]``): config for metadata to be fetched for the SAFE product
 
     """
 
@@ -249,7 +236,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -407,7 +394,7 @@ class AwsDownload(Download):
         product: EOProduct,
         progress_callback: ProgressCallback,
         **kwargs: Unpack[DownloadConf],
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str]]:
         """
         preparation for the download:
         - check if file was already downloaded
@@ -480,7 +467,7 @@ class AwsDownload(Download):
         product: EOProduct,
         asset_filter: Optional[str] = None,
         ignore_assets: Optional[bool] = False,
-    ) -> List[Tuple[str, Optional[str]]]:
+    ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
 
@@ -522,9 +509,9 @@ class AwsDownload(Download):
 
     def _do_authentication(
         self,
-        bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
-    ) -> Tuple[Dict[str, Any], ResourceCollection]:
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+    ) -> tuple[dict[str, Any], ResourceCollection]:
         """
         authenticates with s3 and retrieves the available objects
         raises an error when authentication is not possible
@@ -538,8 +525,8 @@ class AwsDownload(Download):
             )
         if auth is None:
             auth = {}
-        authenticated_objects: Dict[str, Any] = {}
-        auth_error_messages: Set[str] = set()
+        authenticated_objects: dict[str, Any] = {}
+        auth_error_messages: set[str] = set()
         for _, pack in enumerate(bucket_names_and_prefixes):
             try:
                 bucket_name, prefix = pack
@@ -591,12 +578,12 @@ class AwsDownload(Download):
 
     def _get_unique_products(
         self,
-        bucket_names_and_prefixes: List[Tuple[str, Optional[str]]],
-        authenticated_objects: Dict[str, Any],
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+        authenticated_objects: dict[str, Any],
         asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
-    ) -> Set[Any]:
+    ) -> set[Any]:
         """
         retrieve unique product chunks based on authenticated objects and asset filters
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
@@ -606,7 +593,7 @@ class AwsDownload(Download):
         :param product: product that shall be downloaded
         :return: set of product chunks that can be downloaded
         """
-        product_chunks: List[Any] = []
+        product_chunks: list[Any] = []
         for bucket_name, prefix in bucket_names_and_prefixes:
             # unauthenticated items filtered out
             if bucket_name in authenticated_objects.keys():
@@ -637,7 +624,7 @@ class AwsDownload(Download):
 
     def _raise_if_auth_error(self, exception: ClientError) -> None:
         """Raises an error if given exception is an authentication error"""
-        err = cast(Dict[str, str], exception.response["Error"])
+        err = cast(dict[str, str], exception.response["Error"])
         if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
             raise AuthenticationError(
                 f"Please check your credentials for {self.provider}.",
@@ -648,7 +635,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -754,11 +741,11 @@ class AwsDownload(Download):
 
     def _stream_download(
         self,
-        unique_product_chunks: Set[Any],
+        unique_product_chunks: set[Any],
         product: EOProduct,
         build_safe: bool,
         progress_callback: ProgressCallback,
-        assets_values: List[Dict[str, Any]],
+        assets_values: list[dict[str, Any]],
     ) -> Iterator[Any]:
         """Yield product data chunks"""
 
@@ -829,7 +816,7 @@ class AwsDownload(Download):
                 )
 
     def _get_commonpath(
-        self, product: EOProduct, product_chunks: Set[Any], build_safe: bool
+        self, product: EOProduct, product_chunks: set[Any], build_safe: bool
     ) -> str:
         chunk_paths = []
         for product_chunk in product_chunks:
@@ -839,8 +826,8 @@ class AwsDownload(Download):
         return os.path.commonpath(chunk_paths)
 
     def get_rio_env(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
-    ) -> Dict[str, Any]:
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
+    ) -> dict[str, Any]:
         """Get rasterio environment variables needed for data access authentication.
 
         :param bucket_name: Bucket containg objects
@@ -848,23 +835,26 @@ class AwsDownload(Download):
         :param auth_dict: Dictionary containing authentication keys
         :returns: The rasterio environement variables
         """
-        if self.s3_session is not None:
-            if self.requester_pays:
-                return {"session": self.s3_session, "requester_pays": True}
-            else:
-                return {"session": self.s3_session}
+        rio_env_kwargs = {}
+        if endpoint_url := getattr(self.config, "s3_endpoint", None):
+            rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
+        rio_env_kwargs |= auth_dict
 
-        _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
+        if self.s3_session is None:
+            _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
+
         if self.s3_session is not None:
             if self.requester_pays:
-                return {"session": self.s3_session, "requester_pays": True}
-            else:
-                return {"session": self.s3_session}
+                rio_env_kwargs["requester_pays"] = True
+            return {
+                "session": self.s3_session,
+                **rio_env_kwargs,
+            }
         else:
-            return {"aws_unsigned": True}
+            return {"aws_unsigned": True, **rio_env_kwargs}
 
     def get_authenticated_objects(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> ResourceCollection:
         """Get boto3 authenticated objects for the given bucket using
         the most adapted auth strategy.
@@ -876,8 +866,8 @@ class AwsDownload(Download):
         :param auth_dict: Dictionary containing authentication keys
         :returns: The boto3 authenticated objects
         """
-        auth_methods: List[
-            Callable[[str, str, Dict[str, str]], Optional[ResourceCollection]]
+        auth_methods: list[
+            Callable[[str, str, S3SessionKwargs], Optional[ResourceCollection]]
         ] = [
             self._get_authenticated_objects_unsigned,
             self._get_authenticated_objects_from_auth_profile,
@@ -912,7 +902,7 @@ class AwsDownload(Download):
         )
 
     def _get_authenticated_objects_unsigned(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using no-sign-request"""
 
@@ -927,7 +917,7 @@ class AwsDownload(Download):
         return objects
 
     def _get_authenticated_objects_from_auth_profile(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
 
@@ -950,21 +940,12 @@ class AwsDownload(Download):
             return None
 
     def _get_authenticated_objects_from_auth_keys(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
         from provided credentials"""
 
         if all(k in auth_dict for k in ("aws_access_key_id", "aws_secret_access_key")):
-            S3SessionKwargs = TypedDict(
-                "S3SessionKwargs",
-                {
-                    "aws_access_key_id": str,
-                    "aws_secret_access_key": str,
-                    "aws_session_token": str,
-                },
-                total=False,
-            )
             s3_session_kwargs: S3SessionKwargs = {
                 "aws_access_key_id": auth_dict["aws_access_key_id"],
                 "aws_secret_access_key": auth_dict["aws_secret_access_key"],
@@ -989,7 +970,7 @@ class AwsDownload(Download):
             return None
 
     def _get_authenticated_objects_from_env(
-        self, bucket_name: str, prefix: str, auth_dict: Dict[str, str]
+        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
     ) -> Optional[ResourceCollection]:
         """Auth strategy using RequestPayer=requester and current environment"""
 
@@ -1009,7 +990,7 @@ class AwsDownload(Download):
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None
-    ) -> Tuple[str, Optional[str]]:
+    ) -> tuple[str, Optional[str]]:
         """Extract bucket name and prefix from product URL
 
         :param product: The EO product to download
@@ -1140,7 +1121,7 @@ class AwsDownload(Download):
         s1_title_suffix: Optional[str] = None
         # S2 common
         if product.product_type and "S2_MSI" in product.product_type:
-            title_search: Optional[Match[str]] = re.search(
+            title_search: Optional[re.Match[str]] = re.search(
                 r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
                 product.properties["title"],
             )
@@ -1326,13 +1307,13 @@ class AwsDownload(Download):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         download_all using parent (base plugin) method
         """

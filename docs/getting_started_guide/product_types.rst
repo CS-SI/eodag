@@ -21,7 +21,7 @@ The example below shows the catalog entry for the product type *Sentinel 2 Level
      platformSerialIdentifier: S2A,S2B
      processingLevel: L2
      sensorType: OPTICAL
-     license: proprietary
+     license: other
      title: SENTINEL2 Level-2A
      missionStartDate: "2015-06-23T00:00:00Z"
 

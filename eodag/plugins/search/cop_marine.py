@@ -22,7 +22,7 @@ import logging
 import os
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 from urllib.parse import urlsplit
 
 import boto3
@@ -69,8 +69,8 @@ def _get_date_from_yyyymmdd(date_str: str, item_key: str) -> Optional[datetime]:
 
 
 def _get_dates_from_dataset_data(
-    dataset_item: Dict[str, Any]
-) -> Optional[Dict[str, str]]:
+    dataset_item: dict[str, Any]
+) -> Optional[dict[str, str]]:
     dates = {}
     if "start_datetime" in dataset_item["properties"]:
         dates["start"] = dataset_item["properties"]["start_datetime"]
@@ -96,7 +96,7 @@ def _get_s3_client(endpoint_url: str) -> S3Client:
     )
 
 
-def _check_int_values_properties(properties: Dict[str, Any]):
+def _check_int_values_properties(properties: dict[str, Any]):
     # remove int values with a bit length of more than 64 from the properties
     invalid = []
     for prop, prop_value in properties.items():
@@ -134,7 +134,7 @@ class CopMarineSearch(StaticStacSearch):
 
     def _get_product_type_info(
         self, product_type: str
-    ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
         fetch_url = cast(str, self.config.discover_product_types["fetch_url"]).format(
@@ -183,13 +183,23 @@ class CopMarineSearch(StaticStacSearch):
         product_id: str,
         s3_url: str,
         product_type: str,
-        dataset_item: Dict[str, Any],
-        collection_dict: Dict[str, Any],
+        dataset_item: dict[str, Any],
+        collection_dict: dict[str, Any],
     ):
+        # try to find date(s) in product id
+        item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", product_id)
+        if not item_dates:
+            item_dates = re.findall(r"_(\d{4})(0[1-9]|1[0-2])", product_id)
+        use_dataset_dates = not bool(item_dates)
         for obj in collection_objects["Contents"]:
             if product_id in obj["Key"]:
                 return self._create_product(
-                    product_type, obj["Key"], s3_url, dataset_item, collection_dict
+                    product_type,
+                    obj["Key"],
+                    s3_url,
+                    dataset_item,
+                    collection_dict,
+                    use_dataset_dates,
                 )
         return None
 
@@ -198,8 +208,8 @@ class CopMarineSearch(StaticStacSearch):
         product_type: str,
         item_key: str,
         s3_url: str,
-        dataset_item: Dict[str, Any],
-        collection_dict: Dict[str, Any],
+        dataset_item: dict[str, Any],
+        collection_dict: dict[str, Any],
         use_dataset_dates: bool = False,
     ) -> Optional[EOProduct]:
 
@@ -278,7 +288,7 @@ class CopMarineSearch(StaticStacSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> Tuple[List[EOProduct], Optional[int]]:
+    ) -> tuple[list[EOProduct], Optional[int]]:
         """
         Implementation of search for the Copernicus Marine provider
         :param prep: object containing search parameterds
@@ -298,7 +308,7 @@ class CopMarineSearch(StaticStacSearch):
                 "parameter product type is required for search with cop_marine provider"
             )
         collection_dict, datasets_items_list = self._get_product_type_info(product_type)
-        products: List[EOProduct] = []
+        products: list[EOProduct] = []
         start_index = items_per_page * (page - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):

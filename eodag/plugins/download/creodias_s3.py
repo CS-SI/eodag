@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -73,7 +73,7 @@ class CreodiasS3Download(AwsDownload):
         product: EOProduct,
         asset_filter: Optional[str] = None,
         ignore_assets: Optional[bool] = False,
-    ) -> List[Tuple[str, Optional[str]]]:
+    ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
 

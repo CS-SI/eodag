@@ -45,7 +45,7 @@
         "datetime": "2017-12-31T14:10:39.027Z",
         "start_datetime": "2017-12-31T14:10:39.027Z",
         "end_datetime": "2017-12-31T14:10:39.027Z",
-        "license": "proprietary",
+        "license": "other",
         "constellation": "S2ST",
         "platform": "S2B",
         "intruments": [

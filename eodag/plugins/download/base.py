@@ -26,17 +26,7 @@ import tempfile
 import zipfile
 from datetime import datetime, timedelta
 from time import sleep
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -60,6 +50,7 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
     from eodag.config import PluginConfig
+    from eodag.types import S3SessionKwargs
     from eodag.types.download_args import DownloadConf
     from eodag.utils import DownloadedCallback, Unpack
 
@@ -110,7 +101,7 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -140,7 +131,7 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -170,7 +161,7 @@ class Download(PluginTopic):
         product: EOProduct,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
-    ) -> Tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str]]:
         """Check if file has already been downloaded, and prepare product download
 
         :param product: The EO product to download
@@ -439,13 +430,13 @@ class Download(PluginTopic):
     def download_all(
         self,
         products: SearchResult,
-        auth: Optional[Union[AuthBase, Dict[str, str]]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         downloaded_callback: Optional[DownloadedCallback] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Base download_all method.
 
@@ -474,7 +465,7 @@ class Download(PluginTopic):
         # Products are going to be removed one by one from this sequence once
         # downloaded.
         products = products[:]
-        paths: List[str] = []
+        paths: list[str] = []
         # initiate retry loop
         start_time = datetime.now()
         stop_time = start_time + timedelta(minutes=timeout)

@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Annotated, List, Union
+from typing import Annotated, Union
 
 from pydantic import Field
 from pydantic.functional_validators import BeforeValidator
@@ -28,7 +28,7 @@ from typing_extensions import Doc
 from eodag.rest.constants import DEFAULT_MAXSIZE, DEFAULT_TTL
 
 
-def str2liststr(raw: Union[str, List[str]]) -> List[str]:
+def str2liststr(raw: Union[str, list[str]]) -> list[str]:
     """Convert str to list[str]"""
     if isinstance(raw, list):
         return raw
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     stac_api_landing_id: str = "eodag-stac-api"
 
     origin_url_blacklist: Annotated[
-        Union[str, List[str]],
+        Union[str, list[str]],
         BeforeValidator(str2liststr),
         Doc(
             "Hide from clients items assets' alternative URLs starting with URLs from the list"

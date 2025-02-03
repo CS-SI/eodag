@@ -21,7 +21,7 @@ example:
       processingLevel: L2
       keywords: AWFI,CBERS,CBERS-4,L2
       sensorType: OPTICAL
-      license: proprietary
+      license: other
       missionStartDate: "2014-12-07T00:00:00Z"
       title: CBERS-4 AWFI Level-2
 

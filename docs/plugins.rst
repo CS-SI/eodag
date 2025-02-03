@@ -62,6 +62,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``geodes``             | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``geodes_s3``          | |StacListAssets|                   | |AwsAuth|                       | |AwsDownload|    |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``hydroweb_next``      | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``meteoblue``          | |MeteoblueSearch|                  | |HttpQueryStringAuth|           | |HTTPDownload|   |
@@ -112,6 +114,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |WekeoECMWFSearch| replace:: :class:`~eodag.plugins.search.build_search_result.WekeoECMWFSearch`
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
+.. |StacListAssets| replace:: :class:`~eodag.plugins.search.stac_list_assets.StacListAssets`
 
 
 .. _creating_plugins:

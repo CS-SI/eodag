@@ -54,14 +54,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Optional,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -119,6 +115,7 @@ eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}
 
 HTTP_REQ_TIMEOUT = 5  # in seconds
+DEFAULT_SEARCH_TIMEOUT = 20  # in seconds
 DEFAULT_STREAM_REQUESTS_TIMEOUT = 60  # in seconds
 
 REQ_RETRY_TOTAL = 3
@@ -322,7 +319,7 @@ def path_to_uri(path: str) -> str:
     return Path(path).as_uri()
 
 
-def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) -> None:
+def mutate_dict_in_place(func: Callable[[Any], Any], mapping: dict[Any, Any]) -> None:
     """Apply func to values of mapping.
 
     The mapping object's values are modified in-place. The function is recursive,
@@ -340,7 +337,7 @@ def mutate_dict_in_place(func: Callable[[Any], Any], mapping: Dict[Any, Any]) ->
             mapping[key] = func(value)
 
 
-def merge_mappings(mapping1: Dict[Any, Any], mapping2: Dict[Any, Any]) -> None:
+def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
     """Merge two mappings with string keys, values from ``mapping2`` overriding values
     from ``mapping1``.
 
@@ -605,9 +602,49 @@ def rename_subfolder(dirpath: str, name: str) -> None:
     )
 
 
+def rename_with_version(file_path: str, suffix: str = "old") -> str:
+    """
+    Renames a file by appending and incrementing a version number if a conflict exists.
+
+    :param file_path: full path of the file to rename
+    :param suffix: suffix preceding version number in case of name conflict
+    :returns: new file path with the version appended or incremented
+
+    Example:
+
+    >>> import tempfile
+    >>> from pathlib import Path
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     file_path = (Path(tmpdir) / "foo.txt")
+    ...     file_path.touch()
+    ...     (Path(tmpdir) / "foo_old1.txt").touch()
+    ...     expected = str(Path(tmpdir) / "foo_old2.txt")
+    ...     assert expected == rename_with_version(str(file_path))
+
+    """
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"The file '{file_path}' does not exist.")
+
+    dir_path, file_name = os.path.split(file_path)
+    file_base, file_ext = os.path.splitext(file_name)
+
+    new_file_path = file_path
+
+    # loop and iterate on conflicting existing files
+    version = 0
+    while os.path.exists(new_file_path):
+        version += 1
+        new_file_name = f"{file_base}_{suffix}{version}{file_ext}"
+        new_file_path = os.path.join(dir_path, new_file_name)
+
+    # Rename the file
+    os.rename(file_path, new_file_path)
+    return new_file_path
+
+
 def format_dict_items(
-    config_dict: Dict[str, Any], **format_variables: Any
-) -> Dict[Any, Any]:
+    config_dict: dict[str, Any], **format_variables: Any
+) -> dict[Any, Any]:
     r"""Recursively apply :meth:`str.format` to ``**format_variables`` on ``config_dict`` values
 
     >>> format_dict_items(
@@ -624,8 +661,8 @@ def format_dict_items(
 
 
 def jsonpath_parse_dict_items(
-    jsonpath_dict: Dict[str, Any], values_dict: Dict[str, Any]
-) -> Dict[Any, Any]:
+    jsonpath_dict: dict[str, Any], values_dict: dict[str, Any]
+) -> dict[Any, Any]:
     """Recursively parse :class:`jsonpath_ng.JSONPath` elements in dict
 
     >>> import jsonpath_ng.ext as jsonpath
@@ -643,12 +680,12 @@ def jsonpath_parse_dict_items(
 
 
 def update_nested_dict(
-    old_dict: Dict[Any, Any],
-    new_dict: Dict[Any, Any],
+    old_dict: dict[Any, Any],
+    new_dict: dict[Any, Any],
     extend_list_values: bool = False,
     allow_empty_values: bool = False,
     allow_extend_duplicates: bool = True,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     """Update recursively ``old_dict`` items with ``new_dict`` ones
 
     >>> update_nested_dict(
@@ -728,10 +765,10 @@ def update_nested_dict(
 
 
 def items_recursive_apply(
-    input_obj: Union[Dict[Any, Any], List[Any]],
+    input_obj: Union[dict[Any, Any], list[Any]],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> Union[Dict[Any, Any], List[Any]]:
+) -> Union[dict[Any, Any], list[Any]]:
     """Recursive apply method to items contained in input object (dict or list)
 
     >>> items_recursive_apply(
@@ -769,10 +806,10 @@ def items_recursive_apply(
 
 
 def dict_items_recursive_apply(
-    config_dict: Dict[Any, Any],
+    config_dict: dict[Any, Any],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> Dict[Any, Any]:
+) -> dict[Any, Any]:
     """Recursive apply method to dict elements
 
     >>> dict_items_recursive_apply(
@@ -786,7 +823,7 @@ def dict_items_recursive_apply(
     :param apply_method_parameters: Optional parameters passed to the method
     :returns: Updated dict
     """
-    result_dict: Dict[Any, Any] = deepcopy(config_dict)
+    result_dict: dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_apply(
@@ -794,7 +831,7 @@ def dict_items_recursive_apply(
             )
         elif any(isinstance(dict_v, t) for t in (list, tuple)):
             result_dict[dict_k] = list_items_recursive_apply(
-                dict_v, apply_method, **apply_method_parameters
+                list(dict_v), apply_method, **apply_method_parameters
             )
         else:
             result_dict[dict_k] = apply_method(
@@ -805,10 +842,10 @@ def dict_items_recursive_apply(
 
 
 def list_items_recursive_apply(
-    config_list: List[Any],
+    config_list: list[Any],
     apply_method: Callable[..., Any],
     **apply_method_parameters: Any,
-) -> List[Any]:
+) -> list[Any]:
     """Recursive apply method to list elements
 
     >>> list_items_recursive_apply(
@@ -841,8 +878,8 @@ def list_items_recursive_apply(
 
 
 def items_recursive_sort(
-    input_obj: Union[List[Any], Dict[Any, Any]],
-) -> Union[List[Any], Dict[Any, Any]]:
+    input_obj: Union[list[Any], dict[Any, Any]],
+) -> Union[list[Any], dict[Any, Any]]:
     """Recursive sort dict items contained in input object (dict or list)
 
     >>> items_recursive_sort(
@@ -866,7 +903,7 @@ def items_recursive_sort(
         return input_obj
 
 
-def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
+def dict_items_recursive_sort(config_dict: dict[Any, Any]) -> dict[Any, Any]:
     """Recursive sort dict elements
 
     >>> dict_items_recursive_sort(
@@ -877,7 +914,7 @@ def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     :param config_dict: Input nested dictionary
     :returns: Updated dict
     """
-    result_dict: Dict[Any, Any] = deepcopy(config_dict)
+    result_dict: dict[Any, Any] = deepcopy(config_dict)
     for dict_k, dict_v in result_dict.items():
         if isinstance(dict_v, dict):
             result_dict[dict_k] = dict_items_recursive_sort(dict_v)
@@ -889,7 +926,7 @@ def dict_items_recursive_sort(config_dict: Dict[Any, Any]) -> Dict[Any, Any]:
     return dict(sorted(result_dict.items()))
 
 
-def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
+def list_items_recursive_sort(config_list: list[Any]) -> list[Any]:
     """Recursive sort dicts in list elements
 
     >>> list_items_recursive_sort(["b", {2: 0, 0: 1, 1: 2}])
@@ -898,7 +935,7 @@ def list_items_recursive_sort(config_list: List[Any]) -> List[Any]:
     :param config_list: Input list containing nested lists/dicts
     :returns: Updated list
     """
-    result_list: List[Any] = deepcopy(config_list)
+    result_list: list[Any] = deepcopy(config_list)
     for list_idx, list_v in enumerate(result_list):
         if isinstance(list_v, dict):
             result_list[list_idx] = dict_items_recursive_sort(list_v)
@@ -1024,7 +1061,7 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
 
 
 def parse_jsonpath(
-    key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: Dict[str, Any]
+    key: str, jsonpath_obj: Union[str, jsonpath.Child], **values_dict: dict[str, Any]
 ) -> Optional[str]:
     """Parse jsonpah in ``jsonpath_obj`` using ``values_dict``
 
@@ -1044,7 +1081,7 @@ def parse_jsonpath(
         return jsonpath_obj
 
 
-def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]]:
+def nested_pairs2dict(pairs: Union[list[Any], Any]) -> Union[Any, dict[Any, Any]]:
     """Create a dict using nested pairs
 
     >>> nested_pairs2dict([["foo", [["bar", "baz"]]]])
@@ -1066,7 +1103,7 @@ def nested_pairs2dict(pairs: Union[List[Any], Any]) -> Union[Any, Dict[Any, Any]
 
 
 def get_geometry_from_various(
-    locations_config: List[Dict[str, Any]] = [], **query_args: Any
+    locations_config: list[dict[str, Any]] = [], **query_args: Any
 ) -> BaseGeometry:
     """Creates a ``shapely.geometry`` using given query kwargs arguments
 
@@ -1242,7 +1279,7 @@ def _mutable_cached_yaml_load(config_path: str) -> Any:
         return yaml.load(fh, Loader=yaml.SafeLoader)
 
 
-def cached_yaml_load(config_path: str) -> Dict[str, Any]:
+def cached_yaml_load(config_path: str) -> dict[str, Any]:
     """Cached :func:`yaml.load`
 
     :param config_path: path to the yaml configuration file
@@ -1252,12 +1289,12 @@ def cached_yaml_load(config_path: str) -> Dict[str, Any]:
 
 
 @functools.lru_cache()
-def _mutable_cached_yaml_load_all(config_path: str) -> List[Any]:
+def _mutable_cached_yaml_load_all(config_path: str) -> list[Any]:
     with open(config_path, "r") as fh:
         return list(yaml.load_all(fh, Loader=yaml.Loader))
 
 
-def cached_yaml_load_all(config_path: str) -> List[Any]:
+def cached_yaml_load_all(config_path: str) -> list[Any]:
     """Cached :func:`yaml.load_all`
 
     Load all configurations stored in the configuration file as separated yaml documents
@@ -1270,7 +1307,7 @@ def cached_yaml_load_all(config_path: str) -> List[Any]:
 
 def get_bucket_name_and_prefix(
     url: str, bucket_path_level: Optional[int] = None
-) -> Tuple[Optional[str], Optional[str]]:
+) -> tuple[Optional[str], Optional[str]]:
     """Extract bucket name and prefix from URL
 
     :param url: (optional) URL to use as product.location
@@ -1283,7 +1320,9 @@ def get_bucket_name_and_prefix(
     subdomain = netloc.split(".")[0]
     path = path.strip("/")
 
-    if scheme and bucket_path_level is None:
+    if "/" in path and scheme and subdomain == "s3" and bucket_path_level is None:
+        bucket, prefix = path.split("/", 1)
+    elif scheme and bucket_path_level is None:
         bucket = subdomain
         prefix = path
     elif not scheme and bucket_path_level is None:
@@ -1329,10 +1368,10 @@ def deepcopy(sth: Any) -> Any:
     :param sth: Object to copy
     :returns: Copied object
     """
-    _dispatcher: Dict[Type[Any], Callable[..., Any]] = {}
+    _dispatcher: dict[type[Any], Callable[..., Any]] = {}
 
     def _copy_list(
-        input_list: List[Any], dispatch: Dict[Type[Any], Callable[..., Any]]
+        input_list: list[Any], dispatch: dict[type[Any], Callable[..., Any]]
     ):
         ret = input_list.copy()
         for idx, item in enumerate(ret):
@@ -1342,7 +1381,7 @@ def deepcopy(sth: Any) -> Any:
         return ret
 
     def _copy_dict(
-        input_dict: Dict[Any, Any], dispatch: Dict[Type[Any], Callable[..., Any]]
+        input_dict: dict[Any, Any], dispatch: dict[type[Any], Callable[..., Any]]
     ):
         ret = input_dict.copy()
         for key, value in ret.items():
@@ -1431,6 +1470,8 @@ def guess_file_type(file: str) -> Optional[str]:
     :returns: guessed mime type
     """
     mime_type, _ = mimetypes.guess_type(file, False)
+    if mime_type == "text/xml":
+        return "application/xml"
     return mime_type
 
 
@@ -1465,7 +1506,7 @@ def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     return ctx
 
 
-def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
+def sort_dict(input_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Recursively sorts a dict by keys.
 
@@ -1481,7 +1522,7 @@ def sort_dict(input_dict: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def dict_md5sum(input_dict: Dict[str, Any]) -> str:
+def dict_md5sum(input_dict: dict[str, Any]) -> str:
     """
     Hash nested dictionary
 

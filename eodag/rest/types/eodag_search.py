@@ -17,7 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import (
     AliasChoices,
@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
 Geometry = Union[
-    Dict[str, Any],
+    dict[str, Any],
     Point,
     MultiPoint,
     LineString,
@@ -73,8 +73,8 @@ class EODAGSearch(BaseModel):
 
     productType: Optional[str] = Field(None, alias="collections", validate_default=True)
     provider: Optional[str] = Field(None)
-    ids: Optional[List[str]] = Field(None)
-    id: Optional[List[str]] = Field(
+    ids: Optional[list[str]] = Field(None)
+    id: Optional[list[str]] = Field(
         None, alias="ids"
     )  # TODO: remove when updating queryables
     geom: Optional[Geometry] = Field(None, alias="geometry")
@@ -101,7 +101,7 @@ class EODAGSearch(BaseModel):
     orbitNumber: Optional[int] = Field(None, alias="sat:absolute_orbit")
     # TODO: colision in property name. Need to handle "sar:product_type"
     sensorMode: Optional[str] = Field(None, alias="sar:instrument_mode")
-    polarizationChannels: Optional[List[str]] = Field(None, alias="sar:polarizations")
+    polarizationChannels: Optional[list[str]] = Field(None, alias="sar:polarizations")
     dopplerFrequency: Optional[str] = Field(None, alias="sar:frequency_band")
     doi: Optional[str] = Field(None, alias="sci:doi")
     illuminationElevationAngle: Optional[float] = Field(
@@ -110,10 +110,10 @@ class EODAGSearch(BaseModel):
     illuminationAzimuthAngle: Optional[float] = Field(None, alias="view:sun_azimuth")
     page: Optional[int] = Field(1)
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
-    sort_by: Optional[List[Tuple[str, str]]] = Field(None, alias="sortby")
+    sort_by: Optional[list[tuple[str, str]]] = Field(None, alias="sortby")
     raise_errors: bool = False
 
-    _to_eodag_map: Dict[str, str]
+    _to_eodag_map: dict[str, str]
 
     @model_validator(mode="after")
     def remove_timeFromAscendingNode(self) -> Self:  # pylint: disable=invalid-name
@@ -129,7 +129,7 @@ class EODAGSearch(BaseModel):
         if not self.__pydantic_extra__:
             return self
 
-        keys_to_update: Dict[str, str] = {}
+        keys_to_update: dict[str, str] = {}
         for key in self.__pydantic_extra__.keys():
             if key.startswith("unk:"):
                 keys_to_update[key] = key[len("unk:") :]
@@ -145,7 +145,7 @@ class EODAGSearch(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def remove_keys(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def remove_keys(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Remove 'datetime', 'crunch', 'intersects', and 'bbox' keys"""
         for key in ["datetime", "crunch", "intersects", "bbox", "filter_lang"]:
             values.pop(key, None)
@@ -154,8 +154,8 @@ class EODAGSearch(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def parse_collections(
-        cls, values: Dict[str, Any], info: ValidationInfo
-    ) -> Dict[str, Any]:
+        cls, values: dict[str, Any], info: ValidationInfo
+    ) -> dict[str, Any]:
         """convert collections to productType"""
 
         if collections := values.pop("collections", None):
@@ -172,7 +172,7 @@ class EODAGSearch(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse_query(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_query(cls, values: dict[str, Any]) -> dict[str, Any]:
         """
         Convert a STAC query parameter filter with the "eq" operator to a dict.
         """
@@ -190,9 +190,9 @@ class EODAGSearch(BaseModel):
         if not query:
             return values
 
-        query_props: Dict[str, Any] = {}
-        errors: List[InitErrorDetails] = []
-        for property_name, conditions in cast(Dict[str, Any], query).items():
+        query_props: dict[str, Any] = {}
+        errors: list[InitErrorDetails] = []
+        for property_name, conditions in cast(dict[str, Any], query).items():
             # Remove the prefix "properties." if present
             prop = property_name.replace("properties.", "", 1)
 
@@ -205,7 +205,7 @@ class EODAGSearch(BaseModel):
                 continue
 
             # Retrieve the operator and its value
-            operator, value = next(iter(cast(Dict[str, Any], conditions).items()))
+            operator, value = next(iter(cast(dict[str, Any], conditions).items()))
 
             # Validate the operator
             # only eq, in and lte are allowed
@@ -239,7 +239,7 @@ class EODAGSearch(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse_cql(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_cql(cls, values: dict[str, Any]) -> dict[str, Any]:
         """
         Process cql2 filter
         """
@@ -256,7 +256,7 @@ class EODAGSearch(BaseModel):
         if not filter_:
             return values
 
-        errors: List[InitErrorDetails] = []
+        errors: list[InitErrorDetails] = []
         try:
             parsing_result = EodagEvaluator().evaluate(parse_json(filter_))  # type: ignore
         except (ValueError, NotImplementedError) as e:
@@ -271,7 +271,7 @@ class EODAGSearch(BaseModel):
                 title=cls.__name__, line_errors=errors
             )
 
-        cql_args: Dict[str, Any] = cast(Dict[str, Any], parsing_result)
+        cql_args: dict[str, Any] = cast(dict[str, Any], parsing_result)
 
         invalid_keys = {
             "collections": 'Use "collection" instead of "collections"',
@@ -298,7 +298,7 @@ class EODAGSearch(BaseModel):
 
     @field_validator("instrument", mode="before")
     @classmethod
-    def join_instruments(cls, v: Union[str, List[str]]) -> str:
+    def join_instruments(cls, v: Union[str, list[str]]) -> str:
         """convert instruments to instrument"""
         if isinstance(v, list):
             return ",".join(v)
@@ -308,8 +308,8 @@ class EODAGSearch(BaseModel):
     @classmethod
     def parse_sortby(
         cls,
-        sortby_post_params: List[Dict[str, str]],
-    ) -> List[Tuple[str, str]]:
+        sortby_post_params: list[dict[str, str]],
+    ) -> list[tuple[str, str]]:
         """
         Convert STAC POST sortby to EODAG sort_by
         """
@@ -363,7 +363,7 @@ class EODAGSearch(BaseModel):
     def to_stac(
         cls,
         field_name: str,
-        stac_item_properties: Optional[List[str]] = None,
+        stac_item_properties: Optional[list[str]] = None,
         provider: Optional[str] = None,
     ) -> str:
         """Get the alias of a field in a Pydantic model"""

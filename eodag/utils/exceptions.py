@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
-    from typing import Optional, Set
+    from typing import Optional
 
     from typing_extensions import Doc, Self
 
@@ -108,7 +108,7 @@ class RequestError(EodagError):
 class ValidationError(RequestError):
     """Error validating data"""
 
-    def __init__(self, message: str, parameters: Set[str] = set()) -> None:
+    def __init__(self, message: str, parameters: set[str] = set()) -> None:
         self.message = message
         self.parameters = parameters
 

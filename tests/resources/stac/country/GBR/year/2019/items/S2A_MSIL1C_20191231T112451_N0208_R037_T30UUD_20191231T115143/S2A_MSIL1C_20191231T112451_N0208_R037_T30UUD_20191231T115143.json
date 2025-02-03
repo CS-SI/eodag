@@ -73,7 +73,7 @@
         "datetime": "2019-12-31T11:24:51.024Z",
         "start_datetime": "2019-12-31T11:24:51.024Z",
         "end_datetime": "2019-12-31T11:24:51.024Z",
-        "license": "proprietary",
+        "license": "other",
         "constellation": "S2ST",
         "platform": "S2A",
         "intruments": [
