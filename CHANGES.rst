@@ -8,8 +8,7 @@ Core features and fixes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 * Assets keys uniformization using drivers (:pull:`1488`)
-* fix(core): ``ssl_verify`` setting for ``get_quicklook`` (:pull:`1490`) (:pull:`1410`, thanks
-  `@tromain <https://github.com/tromain>`_)
+* ``ssl_verify`` setting for ``get_quicklook`` (:pull:`1490`, thanks `@tromain <https://github.com/tromain>`_)
 * Queryables merged by provider priority (:pull:`1431`)
 
 Providers and product types updates
