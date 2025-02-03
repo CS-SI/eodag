@@ -1470,6 +1470,8 @@ def guess_file_type(file: str) -> Optional[str]:
     :returns: guessed mime type
     """
     mime_type, _ = mimetypes.guess_type(file, False)
+    if mime_type == "text/xml":
+        return "application/xml"
     return mime_type
 
 
