@@ -465,12 +465,20 @@ class EOProduct:
             )
             if not isinstance(auth, AuthBase):
                 auth = None
+            # Read the ssl_verify parameter used on the provider config
+            # to ensure the same behavior for get_quicklook as other download functions
+            ssl_verify = (
+                getattr(self.downloader.config, "ssl_verify", True)
+                if self.downloader
+                else True
+            )
             with requests.get(
                 self.properties["quicklook"],
                 stream=True,
                 auth=auth,
                 headers=USER_AGENT,
                 timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify,
             ) as stream:
                 try:
                     stream.raise_for_status()
