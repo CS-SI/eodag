@@ -170,7 +170,7 @@ def update_assets_from_s3(
                 f"s3://{bucket}/{obj['Key']}"
                 for obj in auth.s3_client.list_objects(
                     Bucket=bucket, Prefix=prefix, MaxKeys=300
-                )["Contents"]
+                ).get("Contents", [])
             ]
 
         for asset_url in assets_urls:
