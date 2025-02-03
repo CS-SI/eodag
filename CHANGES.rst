@@ -25,7 +25,7 @@ Miscellaneous
 * **[docs]** Updated tutorials using ``eodag-cube`` (:pull:`1436`) and minor fixes (:pull:`1498`)(:pull:`1500`)
 * **[style]** Typing update for generics (:pull:`1486`)
 * Various minor fixes and improvements (:pull:`1471`)(:pull:`1472`)(:pull:`1473`)(:pull:`1475`)(:pull:`1477`)
-  (:pull:`1479`)(:pull:`1480`)(:pull:`1483`)(:pull:`1492`)(:pull:`1504`)
+  (:pull:`1479`)(:pull:`1480`)(:pull:`1483`)(:pull:`1492`)(:pull:`1503`)(:pull:`1504`)
 * External product types reference updates (:pull:`1460`)(:pull:`1478`)(:pull:`1484`)(:pull:`1487`)(:pull:`1493`)
   (:pull:`1494`)
 
