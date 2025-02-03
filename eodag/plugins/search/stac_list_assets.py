@@ -17,17 +17,17 @@
 # limitations under the License.
 import logging
 from types import MethodType
-from typing import Any
+from typing import Any, List
 
 from botocore.exceptions import BotoCoreError
 
 from eodag.api.product import EOProduct  # type: ignore
 from eodag.api.search_result import RawSearchResult
-from eodag.plugins.search.qssearch import ODataV4Search
+from eodag.plugins.search.qssearch import StacSearch
 from eodag.utils.exceptions import RequestError
 from eodag.utils.s3 import update_assets_from_s3
 
-logger = logging.getLogger("eodag.search.creodiass3")
+logger = logging.getLogger("eodag.search.stac_list_assets")
 
 
 def patched_register_downloader(self, downloader, authenticator):
@@ -51,28 +51,28 @@ def patched_register_downloader(self, downloader, authenticator):
         raise RequestError.from_error(e, "could not update assets") from e
 
 
-class CreodiasS3Search(ODataV4Search):
-    """
-    ``CreodiasS3Search`` is an extension of :class:`~eodag.plugins.search.qssearch.ODataV4Search`,
-    it executes a Search on creodias and adapts results so that the assets contain links to s3.
-    It has the same configuration parameters as :class:`~eodag.plugins.search.qssearch.ODataV4Search` and
-    one additional parameter:
+class StacListAssets(StacSearch):
+    """``StacListAssets`` is an extension of :class:`~eodag.plugins.search.qssearch.StacSearch`.
+
+    It executes a Search on given STAC API endpoint and updates assets with content listed by the plugin using
+    ``downloadLink`` :class:`~eodag.api.product._product.EOProduct` property.
 
     :param provider: provider name
-    :param config: Search plugin configuration:
+    :param config: It has the same Search plugin configuration as :class:`~eodag.plugins.search.qssearch.StacSearch` and
+                   one additional parameter:
 
-        * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``) (**mandatory**): base url of the s3
+        * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``): s3 endpoint if not hosted on AWS
     """
 
     def __init__(self, provider, config):
-        super(CreodiasS3Search, self).__init__(provider, config)
+        super(StacSearch, self).__init__(provider, config)
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
-    ) -> list[EOProduct]:
+    ) -> List[EOProduct]:
         """Build EOProducts from provider results"""
 
-        products = super(CreodiasS3Search, self).normalize_results(results, **kwargs)
+        products = super(StacSearch, self).normalize_results(results, **kwargs)
 
         for product in products:
             # backup original register_downloader to register_downloader_only

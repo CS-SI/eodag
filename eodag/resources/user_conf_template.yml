@@ -157,6 +157,17 @@ geodes:
     download:
         extract:
         output_dir:
+geodes:
+    priority: # Lower value means lower priority (Default: 0)
+    search: # Search parameters configuration
+    auth:
+        credentials:
+            aws_access_key_id:
+            aws_secret_access_key:
+            aws_session_token:
+    download:
+        extract:
+        output_dir:
 hydroweb_next:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration

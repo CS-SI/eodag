@@ -1320,7 +1320,9 @@ def get_bucket_name_and_prefix(
     subdomain = netloc.split(".")[0]
     path = path.strip("/")
 
-    if scheme and bucket_path_level is None:
+    if "/" in path and scheme and subdomain == "s3" and bucket_path_level is None:
+        bucket, prefix = path.split("/", 1)
+    elif scheme and bucket_path_level is None:
         bucket = subdomain
         prefix = path
     elif not scheme and bucket_path_level is None:
@@ -1468,6 +1470,8 @@ def guess_file_type(file: str) -> Optional[str]:
     :returns: guessed mime type
     """
     mime_type, _ = mimetypes.guess_type(file, False)
+    if mime_type == "text/xml":
+        return "application/xml"
     return mime_type
 
 
