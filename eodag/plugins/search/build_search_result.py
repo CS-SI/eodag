@@ -341,9 +341,6 @@ class ECMWFSearch(PostJsonSearch):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        # cache fetching method
-        self.fetch_data = functools.lru_cache()(self._fetch_data)
-
         config.metadata_mapping = {
             **keywords_to_mdt(ECMWF_KEYWORDS + COP_DS_KEYWORDS, "ecmwf"),
             **config.metadata_mapping,
@@ -576,13 +573,13 @@ class ECMWFSearch(PostJsonSearch):
             getattr(self.config, "discover_queryables", {}).get("constraints_url", ""),
             **kwargs,
         )
-        constraints: list[dict[str, Any]] = self.fetch_data(constraints_url)
+        constraints: list[dict[str, Any]] = self._fetch_data(constraints_url)
 
         form_url = format_metadata(
             getattr(self.config, "discover_queryables", {}).get("form_url", ""),
             **kwargs,
         )
-        form = self.fetch_data(form_url)
+        form: list[dict[str, Any]] = self._fetch_data(form_url)
 
         formated_kwargs = self.format_as_provider_keyword(
             product_type, processed_kwargs
@@ -639,7 +636,7 @@ class ECMWFSearch(PostJsonSearch):
                 return self.queryables_from_metadata_mapping(product_type)
             if "{" in values_url:
                 values_url = values_url.format(productType=provider_product_type)
-            data = self.fetch_data(values_url)
+            data = self._fetch_data(values_url)
             available_values = data["constraints"]
             required_keywords = data.get("required", [])
 
@@ -656,7 +653,9 @@ class ECMWFSearch(PostJsonSearch):
                     "completionTimeFromAscendingNode",
                     "geom",
                 }
-                and keyword.replace("ecmwf:", "") not in available_values
+                and keyword not in [f["name"] for f in form]
+                and keyword.replace("ecmwf:", "")
+                not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
                 raise ValidationError(f"{keyword} is not a queryable parameter")
 
@@ -874,9 +873,6 @@ class ECMWFSearch(PostJsonSearch):
                 if fields and (comment := fields[0].get("comment")):
                     prop["description"] = comment
 
-                if d := details.get("default"):
-                    default = default or (d[0] if fields else d)
-
             if name == "area" and isinstance(default, dict):
                 default = list(default.values())
 
@@ -979,7 +975,7 @@ class ECMWFSearch(PostJsonSearch):
             else None
         )
         timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
-        return fetch_json(url, auth=auth, timeout=timeout)
+        return functools.lru_cache()(fetch_json)(url, auth=auth, timeout=timeout)
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
