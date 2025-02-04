@@ -887,8 +887,7 @@ class ECMWFSearch(PostJsonSearch):
             # sometimes form returns default as array instead of string
             if (
                 default
-                and "type" in prop
-                and prop["type"] == "string"
+                and prop.get("type", "") == "string"
                 and isinstance(default, list)
             ):
                 default = ",".join(default)

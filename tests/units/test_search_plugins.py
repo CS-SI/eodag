@@ -2343,6 +2343,29 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"], "variable": ["a", "b", "c"]},
+        ]
+        input_keywords = {"date": "2025-01-01/2025-02-01", "variable": "a"}
+        form_keywords = ["date", "variable"]
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form_keywords
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+        input_keywords = {"date": ["2025-01-01/2025-02-01"], "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form_keywords
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
