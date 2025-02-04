@@ -2348,8 +2348,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
             {"date": ["2024-01-01/2024-12-01"], "variable": ["a", "b", "c"]},
         ]
-        input_keywords = {"date": "2025-01-01/2025-02-01", "variable": "a"}
         form_keywords = ["date", "variable"]
+
+        # with a date range as a string
+        input_keywords = {"date": "2025-01-01/2025-02-01", "variable": "a"}
         available_values = self.search_plugin.available_values_from_constraints(
             constraints, input_keywords, form_keywords
         )
@@ -2357,6 +2359,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.assertIn("variable", available_values)
         self.assertListEqual(["a", "b"], available_values["variable"])
         self.assertIn("date", available_values)
+
+        # with a date range as the first element of a string list
         input_keywords = {"date": ["2025-01-01/2025-02-01"], "variable": "a"}
         available_values = self.search_plugin.available_values_from_constraints(
             constraints, input_keywords, form_keywords
