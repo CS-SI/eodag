@@ -5313,7 +5313,9 @@
         - id
         - $.properties.identifier
       # The geographic extent of the product
-      geometry: '$.geometry'
+      geometry:
+        - 'geo={geometry#to_rounded_wkt}'
+        - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       # The url of the quicklook
       quicklook: '$.properties.links.previews[?(@.title="Quicklook")].href'
