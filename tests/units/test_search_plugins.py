@@ -2344,6 +2344,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
+        """ECMWFSearch must return available values from constraints"""
         constraints = [
             {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
             {"date": ["2024-01-01/2024-12-01"], "variable": ["a", "b", "c"]},

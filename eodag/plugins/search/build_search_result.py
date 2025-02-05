@@ -885,11 +885,7 @@ class ECMWFSearch(PostJsonSearch):
                 default = strip_quotes(default)
 
             # sometimes form returns default as array instead of string
-            if (
-                default
-                and prop.get("type", "") == "string"
-                and isinstance(default, list)
-            ):
+            if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
             is_required = bool(element.get("required"))
