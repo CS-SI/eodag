@@ -5225,28 +5225,14 @@
     - host
   url: https://data.eumetsat.int
   anchor_sentinel: &sentinel_params
-    orbitDirection:
-      - orbitdir
-      - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection'
-    relativeOrbitNumber:
-      - relorbit
-      - '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
-    timeliness:
-      - timeliness
-      - '$.properties.productInformation.timeliness'
-    cycleNumber:
-      - cycle
-      - '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'
+    orbitDirection: '$.properties.acquisitionInformation[0].acquisitionParameters.orbitDirection'
+    relativeOrbitNumber: '$.properties.acquisitionInformation[0].acquisitionParameters.relativeOrbitNumber'
+    timeliness: '$.properties.productInformation.timeliness'
+    cycleNumber: '$.properties.acquisitionInformation[0].acquisitionParameters.cycleNumber'
   anchor_orbit_zone_tile: &orbit_zone_tile
     orbitNumber:
       - orbit
       - '$.properties.acquisitionInformation[0].acquisitionParameters.orbitNumber'
-    utmZone:
-      - zone
-      - '$.null'
-    tileIdentifier:
-      - t6
-      - '$.null'
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
@@ -5304,17 +5290,10 @@
       productType:
         - type
         - '$.properties.productInformation.productType'
-      platform:
-        - sat
-        - '$.properties.acquisitionInformation[0].platform.platformShortName'
+      platform: '$.properties.acquisitionInformation[0].platform.platformShortName'
       instrument: '$.properties.acquisitionInformation[0].instrument.instrumentShortName'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title:
-        - title
-        - '{$.properties.title#remove_extension}'
-      publicationDate:
-        - publication
-        - '$.null'
+      title: '{$.properties.title#remove_extension}'
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier:
         - pi
@@ -5345,9 +5324,7 @@
       storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
-      size:
-        - size
-        - '$.properties.productInformation.size'
+      size: '$.properties.productInformation.size'
       type: '$.null'
       # set duplicate metadata due to metadata discovery to null
       acquisitionInformation: '$.null'
