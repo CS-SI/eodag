@@ -242,15 +242,17 @@ extlinks = {
     "pull": ("https://github.com/CS-SI/eodag/pull/%s", "#%s"),
 }
 
-# Example configuration for intersphinx: refer to the Python standard library.
+# configuration for intersphinx
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    # python-requests url temporary changed
-    # https://github.com/psf/requests/issues/6140#issuecomment-1135071992
     "python-requests": ("https://requests.readthedocs.io/en/stable/", None),
     "shapely": ("https://shapely.readthedocs.io/en/stable/", None),
     "click": ("https://click.palletsprojects.com/en/stable/", None),
     "urllib3": ("https://urllib3.readthedocs.io/en/stable/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "rasterio": ("https://rasterio.readthedocs.io/en/stable/", None),
+    "rioxarray": ("https://corteva.github.io/rioxarray/stable/", None),
+    "fsspec": ("https://filesystem-spec.readthedocs.io/en/stable/", None),
 }
 
 suppress_warnings = ["misc.copy_overwrite"]

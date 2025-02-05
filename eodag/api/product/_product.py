@@ -89,20 +89,6 @@ class EOProduct:
 
     :param provider: The provider from which the product originates
     :param properties: The metadata of the product
-    :ivar product_type: The product type
-    :vartype product_type: str
-    :ivar location: The path to the product, either remote or local if downloaded
-    :vartype location: str
-    :ivar remote_location: The remote path to the product
-    :vartype remote_location: str
-    :ivar search_kwargs: The search kwargs used by eodag to search for the product
-    :vartype search_kwargs: Any
-    :ivar geometry: The geometry of the product
-    :vartype geometry: :class:`shapely.geometry.base.BaseGeometry`
-    :ivar search_intersection: The intersection between the product's geometry
-                               and the search area.
-    :vartype search_intersection: :class:`shapely.geometry.base.BaseGeometry` or None
-
 
     .. note::
         The geojson spec `enforces <https://github.com/geojson/draft-geojson/pull/6>`_
@@ -112,18 +98,28 @@ class EOProduct:
         mentioned CRS.
     """
 
+    #: The provider from which the product originates
     provider: str
+    #: The metadata of the product
     properties: dict[str, Any]
+    #: The product type
     product_type: Optional[str]
-    location: str
-    filename: str
-    remote_location: str
-    search_kwargs: Any
+    #: The geometry of the product
     geometry: BaseGeometry
+    #: The intersection between the product's geometry and the search area.
     search_intersection: Optional[BaseGeometry]
+    #: The path to the product, either remote or local if downloaded
+    location: str
+    #: The remote path to the product
+    remote_location: str
+    #: Assets of the product
     assets: AssetsDict
     #: Driver enables additional methods to be called on the EOProduct
     driver: DatasetDriver
+    #: Product data filename, stored during download
+    filename: str
+    #: Product search keyword arguments, stored during search
+    search_kwargs: Any
 
     def __init__(
         self, provider: str, properties: dict[str, Any], **kwargs: Any

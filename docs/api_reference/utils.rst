@@ -30,6 +30,16 @@ S3
 .. automodule:: eodag.utils.s3
    :members:
 
+xarray
+------
+
+.. warning::
+
+   These functions will only be available with `eodag-cube <https://github.com/CS-SI/eodag-cube>`__ installed.
+
+.. automodule:: eodag_cube.utils.xarray
+   :members:
+
 Misc
 ----
 

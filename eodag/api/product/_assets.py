@@ -31,12 +31,27 @@ if TYPE_CHECKING:
 
 
 class AssetsDict(UserDict):
-    """A UserDict object listing assets contained in a
-    :class:`~eodag.api.product._product.EOProduct` resulting from a search.
+    """A UserDict object which values are :class:`~eodag.api.product._assets.Asset`
+    contained in a :class:`~eodag.api.product._product.EOProduct` resulting from a
+    search.
 
     :param product: Product resulting from a search
     :param args: (optional) Arguments used to init the dictionary
     :param kwargs: (optional) Additional named-arguments used to init the dictionary
+
+    Example
+    -------
+
+    >>> from eodag.api.product import EOProduct
+    >>> product = EOProduct(
+    ...     provider="foo",
+    ...     properties={"id": "bar", "geometry": "POINT (0 0)"}
+    ... )
+    >>> type(product.assets)
+    <class 'eodag.api.product._assets.AssetsDict'>
+    >>> product.assets.update({"foo": {"href": "http://somewhere/something"}})
+    >>> product.assets
+    {'foo': {'href': 'http://somewhere/something'}}
     """
 
     product: EOProduct
@@ -119,13 +134,27 @@ class AssetsDict(UserDict):
 
 
 class Asset(UserDict):
-    """A UserDict object containg one of the assets of a
-    :class:`~eodag.api.product._product.EOProduct` resulting from a search.
+    """A UserDict object containg one of the
+    :attr:`~eodag.api.product._product.EOProduct.assets` resulting from a search.
 
     :param product: Product resulting from a search
     :param key: asset key
     :param args: (optional) Arguments used to init the dictionary
     :param kwargs: (optional) Additional named-arguments used to init the dictionary
+
+    Example
+    -------
+
+    >>> from eodag.api.product import EOProduct
+    >>> product = EOProduct(
+    ...     provider="foo",
+    ...     properties={"id": "bar", "geometry": "POINT (0 0)"}
+    ... )
+    >>> product.assets.update({"foo": {"href": "http://somewhere/something"}})
+    >>> type(product.assets["foo"])
+    <class 'eodag.api.product._assets.Asset'>
+    >>> product.assets["foo"]
+    {'href': 'http://somewhere/something'}
     """
 
     product: EOProduct
