@@ -592,6 +592,7 @@ class ECMWFSearch(PostJsonSearch):
                 "startTimeFromAscendingNode",
                 "completionTimeFromAscendingNode",
                 "geom",
+                "geometry",
             ):
                 formated_kwargs[key] = kwargs[key]
             else:
@@ -772,7 +773,10 @@ class ECMWFSearch(PostJsonSearch):
                 # we assume that if the first value is an interval, all values are intervals
                 present_values = []
                 if keyword == "date" and "/" in entry[keyword][0]:
-                    if any(is_range_in_range(x, values[0]) for x in entry[keyword]):
+                    input_range = values
+                    if isinstance(values, list):
+                        input_range = values[0]
+                    if any(is_range_in_range(x, input_range) for x in entry[keyword]):
                         present_values = filter_v
                 else:
                     present_values = [
@@ -881,7 +885,7 @@ class ECMWFSearch(PostJsonSearch):
                 default = strip_quotes(default)
 
             # sometimes form returns default as array instead of string
-            if default and prop["type"] == "string" and isinstance(default, list):
+            if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
             is_required = bool(element.get("required"))
