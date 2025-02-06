@@ -1857,6 +1857,179 @@ MTG_FCI_HRFI:
   title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
   missionStartDate: "2024-09-24T00:00:00Z"
 
+  MTG_FCI_ASR_BUFR:
+    abstract: |
+      The All-Sky Radiance (ASR) product is a segmented product that provides 
+      FCI Level 1C data statistics within processing segments referred to as 
+      Field-of-Regard (FoR). The statistics are computed on the L1C radiances
+      (for all FCI channels), brightness temperatures (for the eight IR 
+      channels) and reflectances (for the eight visible and near-infrared 
+      channels) and include the mean value, standard deviation, minimum and 
+      maximum values within the FoR. The ASR product is available in BUFR
+      and netCDF format, every 10 minutes, at a spatial resolution of 16x16 
+      pixels (IR) and 32x32 pixels (VIS).
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,ASR,Radiance,BUFR
+    sensorType: Imager
+    license: other
+    title: All Sky Radiance (BUFR) - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+
+  MTG_FCI_ASR_NETCDF:
+    abstract: |
+      The All-Sky Radiance (ASR) product is a segmented product that provides 
+      FCI Level 1C data statistics within processing segments referred to as 
+      Field-of-Regard (FoR). The statistics are computed on the L1C radiances
+      (for all FCI channels), brightness temperatures (for the eight IR 
+      channels) and reflectances (for the eight visible and near-infrared 
+      channels) and include the mean value, standard deviation, minimum and 
+      maximum values within the FoR. The ASR product is available in BUFR
+      and netCDF format, every 10 minutes, at a spatial resolution of 16x16 
+      pixels (IR) and 32x32 pixels (VIS).
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,ASR,Radiance,netCDF
+    sensorType: Imager
+    license: other
+    title: All Sky Radiance (netCDF) - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+
+  MTG_FCI_AMV_BUFR:
+    abstract: |
+      The Atmospheric Motion Vector (AMV) product is realised by tracking 
+      clouds or water vapour features in consecutive FCI satellite images 
+      based on feature tracking between each pair of consecutive repeat 
+      cycles, leading to two intermediate AMV products for an image triplet.
+      The final product is then derived from these two intermediate products,
+      and includes information on wind speed, direction, height, and quality. 
+      AMVs are extracted from the FCI VIS 0.8, IR 3.8 (night only), IR 10.5, 
+      WV 6.3 and WV 7.3 channels. The AMV product is available in BUFR and 
+      netCDF format, every 30 minutes.
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,AMV,Clouds,BUFR
+    sensorType: Imager
+    license: other
+    title: Atmospheric Motion Vectors (BUFR) - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+    
+  MTG_FCI_AMV_NETCDF:
+    abstract: |
+      The Atmospheric Motion Vector (AMV) product is realised by tracking 
+      clouds or water vapour features in consecutive FCI satellite images 
+      based on feature tracking between each pair of consecutive repeat 
+      cycles, leading to two intermediate AMV products for an image triplet.
+      The final product is then derived from these two intermediate products,
+      and includes information on wind speed, direction, height, and quality. 
+      AMVs are extracted from the FCI VIS 0.8, IR 3.8 (night only), IR 10.5, 
+      WV 6.3 and WV 7.3 channels. The AMV product is available in BUFR and 
+      netCDF format, every 30 minutes.
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,AMV,Clouds,netCDF
+    sensorType: Imager
+    license: other
+    title: Atmospheric Motion Vectors (netCDF) - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+
+  MTG_FCI_CLM:
+    abstract: |
+      The central aim of the cloud mask (CLM) product is to identify cloudy and
+      cloud free FCI Level 1c pixels with high confidence. The product also 
+      provides information on the presence of snow/sea ice, volcanic ash and 
+      dust. This information is crucial both for spatiotemporal analyses of the
+      cloud coverage and for the subsequent retrieval of other meteorological 
+      products that are only valid for cloudy (e.g. cloud properties) or clear 
+      pixels (e.g. clear sky reflectance maps or global instability indices). 
+      The algorithm is based on multispectral threshold techniques applied to 
+      each pixel of the image. CLM is available in netCDF and GRIB format, 
+      every 10 minutes, at a spatial resolution of 2 km at nadir.
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,CLM,Clouds
+    sensorType: Imager
+    license: other
+    title: Cloud Mask - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+    
+  MTG_FCI_GII:
+    abstract: |
+      The Global Instability Index (GII) product provides information about 
+      instability of the atmosphere and thus can identify regions of convective
+      potential. GII is a segmented product that uses an optimal estimation 
+      scheme to fit clear-sky vertical profiles of temperature and humidity, 
+      constrained by NWP forecast products, to FCI observations in the seven 
+      channels WV6.3, WV7.3, IR8.7, IR9.7, IR10.5, IR12.3, and IR13.3. The 
+      retrieved profiles are then used to compute atmospheric instability 
+      indices: Lifted Index, K Index, Layer Precipitable Water, Total 
+      Precipitable Water. The GII product is available in netCDF format, every
+      10 minutes, in 3x3 pixels (IR channels), leading to a spatial resolution 
+      of 6 km at nadir.
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,GII,atmosphere
+    sensorType: Imager
+    license: other
+    title: Global Instability Indices - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+
+  MTG_FCI_OCA:
+    abstract: |
+      The Optimal Cloud Analysis (OCA) product uses an optimal estimation 
+      retrieval scheme to retrieve cloud properties (phase, height and 
+      microphysical properties) from visible, near-infrared and thermal 
+      infrared FCI channels. The optimal estimation framework aims to ensure 
+      that measurements and any prior information may be given appropriate 
+      weight in the solution depending on error characteristics whether 
+      instrumental or from modelling sources. The product can also contain 
+      information on dust and volcanic ash clouds if these are flagged in the 
+      corresponding Cloud Analysis Product. The OCA product is available in 
+      netCDF format, every 10 minutes, at 2km spatial resolution at nadir.
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,OCA,Clouds
+    sensorType: Imager
+    license: other
+    title: Optimal Cloud Analysis - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+
+  MTG_FCI_OLR:
+    abstract: |
+      The Outgoing Longwave Radiation (OLR) product is important for Earth 
+      radiation budget studies as well as for weather and climate model 
+      validation purposes, since variations in OLR reflect the response of the 
+      Earth-atmosphere system to solar diurnal forcing. The product is based on
+      a statistical relationship linking the radiance measured in each FCI 
+      infrared channel to the top-of-atmosphere outgoing longwave flux 
+      integrated over the full infrared spectrum. The computation is done for 
+      each pixel considering the cloud cover characteristics (clear sky, 
+      semi-transparent and opaque cloud cover). The OLR product is available in
+       netCDF format, every 10 minutes, at 2 km spatial resolution at nadir.
+    instrument: FCI
+    platform: MTG
+    platformSerialIdentifier: MTG
+    processingLevel: L2
+    keywords: MTG,L2,FCI,OLR,Radiation,LW
+    sensorType: Imager
+    license: other
+    title: Outgoing LW radiation at TOA - MTG - 0 degree
+    missionStartDate: "2025-01-22T00:00:00Z"
+
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
 S3_SY_SYN:
