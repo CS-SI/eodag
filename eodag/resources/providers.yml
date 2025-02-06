@@ -5641,6 +5641,22 @@
       parentIdentifier: EO:EUM:DAT:0662
     MTG_FCI_HRFI:
       parentIdentifier: EO:EUM:DAT:0665
+    MTG_FCI_ASR_BUFR:
+      parentIdentifier: EO:EUM:DAT:0799
+    MTG_FCI_ASR_NETCDF:
+      parentIdentifier: EO:EUM:DAT:0677
+    MTG_FCI_AMV_BUFR:
+      parentIdentifier: EO:EUM:DAT:0998
+    MTG_FCI_AMV_NETCDF:
+      parentIdentifier: EO:EUM:DAT:0676
+    MTG_FCI_CLM:
+      parentIdentifier: EO:EUM:DAT:0678
+    MTG_FCI_GII:
+      parentIdentifier: EO:EUM:DAT:0683
+    MTG_FCI_OCA:
+      parentIdentifier: EO:EUM:DAT:0684
+    MTG_FCI_OLR:
+      parentIdentifier: EO:EUM:DAT:0685
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
