@@ -187,7 +187,7 @@ class DataRequestSearch(Search):
                 )
                 if other_product_for_mapping:
                     other_product_type_def_params = self.get_product_type_def_params(
-                        other_product_for_mapping,  # **kwargs
+                        other_product_for_mapping,
                     )
                     product_type_metadata_mapping.update(
                         other_product_type_def_params.get("metadata_mapping", {})
@@ -253,7 +253,7 @@ class DataRequestSearch(Search):
 
         # provider product type specific conf
         self.product_type_def_params = self.get_product_type_def_params(
-            product_type, **kwargs
+            product_type, format_variables=kwargs
         )
 
         # update config using provider product type definition metadata_mapping
@@ -263,7 +263,7 @@ class DataRequestSearch(Search):
         )
         if other_product_for_mapping:
             other_product_type_def_params = self.get_product_type_def_params(
-                other_product_for_mapping, **kwargs
+                other_product_for_mapping, format_variables=kwargs
             )
             self.config.metadata_mapping.update(
                 other_product_type_def_params.get("metadata_mapping", {})

@@ -367,8 +367,8 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             )
 
         @staticmethod
-        def convert_to_geojson(string: str) -> str:
-            return geojson.dumps(string)
+        def convert_to_geojson(value: Any) -> str:
+            return geojson.dumps(value)
 
         @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
@@ -496,9 +496,16 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return NOT_AVAILABLE
 
         @staticmethod
-        def convert_replace_str(string: str, args: str) -> str:
+        def convert_replace_str(value: Any, args: str) -> str:
+            if isinstance(value, dict):
+                value = MetadataFormatter.convert_to_geojson(value)
+            elif not isinstance(value, str):
+                raise ValueError(
+                    f"convert_replace_str expects a string or a dict (apply to_geojson). Got {type(value)}"
+                )
+
             old, new = ast.literal_eval(args)
-            return re.sub(old, new, string)
+            return re.sub(old, new, value)
 
         @staticmethod
         def convert_recursive_sub_str(

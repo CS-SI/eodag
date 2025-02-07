@@ -30,11 +30,7 @@ from pydantic.fields import FieldInfo
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
-from eodag.plugins.search.build_search_result import (
-    ECMWF_KEYWORDS,
-    ECMWFSearch,
-    keywords_to_mdt,
-)
+from eodag.plugins.search.build_search_result import ECMWFSearch, ecmwf_mtd
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -94,7 +90,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         # init self.config.metadata_mapping using Search Base plugin
         config.metadata_mapping = {
-            **keywords_to_mdt(ECMWF_KEYWORDS, "ecmwf"),
+            **ecmwf_mtd(),
             **config.metadata_mapping,
         }
         Search.__init__(self, provider, config)

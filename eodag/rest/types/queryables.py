@@ -25,8 +25,9 @@ from pydantic import (
     Field,
     SerializationInfo,
     SerializerFunctionWrapHandler,
-    computed_field,
+    field_validator,
     model_serializer,
+    model_validator,
 )
 
 from eodag.rest.types.eodag_search import EODAGSearch
@@ -35,6 +36,7 @@ from eodag.types import python_field_definition_to_json
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
+    from typing_extensions import Self
 
 
 class QueryablesGetParams(BaseModel):
@@ -42,6 +44,8 @@ class QueryablesGetParams(BaseModel):
 
     collection: Optional[str] = Field(default=None, serialization_alias="productType")
     datetime: Optional[str] = Field(default=None)
+    start_datetime: Optional[str] = Field(default=None)
+    end_datetime: Optional[str] = Field(default=None)
 
     model_config = ConfigDict(extra="allow", frozen=True)
 
@@ -50,21 +54,29 @@ class QueryablesGetParams(BaseModel):
         dumped: dict[str, Any] = handler(self)
         return {EODAGSearch.to_eodag(k): v for k, v in dumped.items()}
 
-    # use [prop-decorator] mypy error code when mypy==1.12 is released
-    @computed_field  # type: ignore[misc]
-    @property
-    def start_datetime(self) -> Optional[str]:
-        """Extract start_datetime property from datetime"""
-        start = str_to_interval(self.datetime)[0]
-        return start.strftime("%Y-%m-%dT%H:%M:%SZ") if start else None
+    @field_validator("datetime", "start_datetime", "end_datetime", mode="before")
+    def validate_datetime(cls, value: Any) -> Optional[str]:
+        """datetime, start_datetime and end_datetime must be a string"""
+        if isinstance(value, list):
+            return value[0]
 
-    # use [prop-decorator] mypy error code when mypy==1.12 is released
-    @computed_field  # type: ignore[misc]
-    @property
-    def end_datetime(self) -> Optional[str]:
-        """Extract end_datetime property from datetime"""
-        end = str_to_interval(self.datetime)[1]
-        return end.strftime("%Y-%m-%dT%H:%M:%SZ") if end else None
+        return value
+
+    @model_validator(mode="after")
+    def compute_datetimes(self: Self) -> Self:
+        """Start datetime must be a string"""
+        if not self.datetime:
+            return self
+
+        start, end = str_to_interval(self.datetime)
+
+        if not self.start_datetime and start:
+            self.start_datetime = start.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        if not self.end_datetime and end:
+            self.end_datetime = end.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        return self
 
 
 class StacQueryableProperty(BaseModel):
