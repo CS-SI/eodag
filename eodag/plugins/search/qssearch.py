@@ -20,7 +20,6 @@ from __future__ import annotations
 import logging
 import re
 from copy import copy as copy_copy
-from datetime import datetime, timedelta
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -48,7 +47,6 @@ import geojson
 import orjson
 import requests
 import yaml
-from dateutil.utils import today
 from jsonpath_ng import JSONPath
 from lxml import etree
 from pydantic import create_model
@@ -73,7 +71,6 @@ from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
 from eodag.types.search_args import SortByList
 from eodag.utils import (
-    DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
@@ -533,7 +530,7 @@ class QueryStringSearch(Search):
 
             prep.info_message = "Fetching product types: {}".format(prep.url)
             prep.exception_message = (
-                "Skipping error while fetching product types for " "{} {} instance:"
+                "Skipping error while fetching product types for {} {} instance:"
             ).format(self.provider, self.__class__.__name__)
 
             # Query using appropriate method
@@ -567,7 +564,7 @@ class QueryStringSearch(Search):
                         result = result[0]
 
                     def conf_update_from_product_type_result(
-                        product_type_result: dict[str, Any]
+                        product_type_result: dict[str, Any],
                     ) -> None:
                         """Update ``conf_update_dict`` using given product type json response"""
                         # providers_config extraction
@@ -751,7 +748,7 @@ class QueryStringSearch(Search):
 
         # provider product type specific conf
         prep.product_type_def_params = (
-            self.get_product_type_def_params(product_type, **kwargs)
+            self.get_product_type_def_params(product_type, format_variables=kwargs)
             if product_type is not None
             else {}
         )
@@ -775,7 +772,7 @@ class QueryStringSearch(Search):
                 }
             )
 
-        qp, qs = self.build_query_string(product_type, **keywords)
+        qp, qs = self.build_query_string(product_type, keywords)
 
         prep.query_params = qp
         prep.query_string = qs
@@ -809,15 +806,15 @@ class QueryStringSearch(Search):
             self.config.metadata_mapping.update(metadata_mapping)
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        query_params = format_query_params(product_type, self.config, kwargs)
+        query_params = format_query_params(product_type, self.config, query_dict)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        def quote_via(x: Any, *_args, **_kwargs) -> str:
+        def quote_via(x: Any, *_args: Any, **_kwargs: Any) -> str:
             return x
 
         return (
@@ -1434,82 +1431,6 @@ class PostJsonSearch(QueryStringSearch):
 
     """
 
-    def _get_default_end_date_from_start_date(
-        self, start_datetime: str, product_type_conf: dict[str, Any]
-    ) -> str:
-        try:
-            start_date = datetime.fromisoformat(start_datetime)
-        except ValueError:
-            start_date = datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%SZ")
-        if "completionTimeFromAscendingNode" in product_type_conf:
-            mapping = product_type_conf["completionTimeFromAscendingNode"]
-            # if date is mapped to year/month/(day), use end_date = start_date  else start_date + 1 day
-            # (default dates are only needed for ecmwf products where selected timespans should not be too large)
-            if isinstance(mapping, list) and "year" in mapping[0]:
-                end_date = start_date
-            else:
-                end_date = start_date + timedelta(days=1)
-            return end_date.isoformat()
-        return self.get_product_type_cfg_value("missionEndDate", today().isoformat())
-
-    def _check_date_params(
-        self, keywords: dict[str, Any], product_type: Optional[str]
-    ) -> None:
-        """checks if start and end date are present in the keywords and adds them if not"""
-        if (
-            "startTimeFromAscendingNode"
-            and "completionTimeFromAscendingNode" in keywords
-        ):
-            return
-
-        product_type_conf = getattr(self.config, "metadata_mapping", {})
-        if (
-            product_type
-            and product_type in self.config.products
-            and "metadata_mapping" in self.config.products[product_type]
-        ):
-            product_type_conf = self.config.products[product_type]["metadata_mapping"]
-        # start time given, end time missing
-        if "startTimeFromAscendingNode" in keywords:
-            keywords[
-                "completionTimeFromAscendingNode"
-            ] = self._get_default_end_date_from_start_date(
-                keywords["startTimeFromAscendingNode"], product_type_conf
-            )
-            return
-
-        if "completionTimeFromAscendingNode" in product_type_conf:
-            mapping = product_type_conf["startTimeFromAscendingNode"]
-            if not isinstance(mapping, list):
-                mapping = product_type_conf["completionTimeFromAscendingNode"]
-            if isinstance(mapping, list):
-                # get time parameters (date, year, month, ...) from metadata mapping
-                input_mapping = mapping[0].replace("{{", "").replace("}}", "")
-                time_params = [
-                    values.split(":")[0].strip() for values in input_mapping.split(",")
-                ]
-                time_params = [
-                    tp.replace('"', "").replace("'", "") for tp in time_params
-                ]
-                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
-                # no default date is required
-                in_keywords = True
-                for tp in time_params:
-                    if tp not in keywords:
-                        in_keywords = False
-                        break
-                if not in_keywords:
-                    keywords[
-                        "startTimeFromAscendingNode"
-                    ] = self.get_product_type_cfg_value(
-                        "missionStartDate", DEFAULT_MISSION_START_DATE
-                    )
-                    keywords[
-                        "completionTimeFromAscendingNode"
-                    ] = self._get_default_end_date_from_start_date(
-                        keywords["startTimeFromAscendingNode"], product_type_conf
-                    )
-
     def query(
         self,
         prep: PreparedSearch = PreparedSearch(),
@@ -1532,7 +1453,7 @@ class PostJsonSearch(QueryStringSearch):
 
             # provider product type specific conf
             prep.product_type_def_params = self.get_product_type_def_params(
-                product_type, **kwargs
+                product_type, format_variables=kwargs
             )
         else:
             keywords = {
@@ -1546,7 +1467,7 @@ class PostJsonSearch(QueryStringSearch):
 
             # provider product type specific conf
             prep.product_type_def_params = self.get_product_type_def_params(
-                product_type, **kwargs
+                product_type, format_variables=kwargs
             )
 
             # Add to the query, the queryable parameters set in the provider product type definition
@@ -1559,10 +1480,8 @@ class PostJsonSearch(QueryStringSearch):
                     and isinstance(self.config.metadata_mapping[k], list)
                 }
             )
-            if getattr(self.config, "dates_required", False):
-                self._check_date_params(keywords, product_type)
 
-            qp, _ = self.build_query_string(product_type, **keywords)
+            qp, _ = self.build_query_string(product_type, keywords)
 
         for query_param, query_value in qp.items():
             if (
@@ -1845,24 +1764,24 @@ class StacSearch(PostJsonSearch):
         self.config.results_entry = results_entry
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
 
         # handle opened time intervals
         if any(
-            k in kwargs
-            for k in ("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
+            q in query_dict
+            for q in ("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
         ):
-            kwargs.setdefault("startTimeFromAscendingNode", "..")
-            kwargs.setdefault("completionTimeFromAscendingNode", "..")
+            query_dict.setdefault("startTimeFromAscendingNode", "..")
+            query_dict.setdefault("completionTimeFromAscendingNode", "..")
 
-        query_params = format_query_params(product_type, self.config, kwargs)
+        query_params = format_query_params(product_type, self.config, query_dict)
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
-        def quote_via(x: Any, *_args, **_kwargs) -> str:
+        def quote_via(x: Any, *_args: Any, **_kwargs: Any) -> str:
             return x
 
         return (
@@ -2001,7 +1920,7 @@ class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
         PostJsonSearch.__init__(self, provider, config)
 
     def build_query_string(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, query_dict: dict[str, Any]
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
-        return PostJsonSearch.build_query_string(self, product_type, **kwargs)
+        return PostJsonSearch.build_query_string(self, product_type, query_dict)
