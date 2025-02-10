@@ -31,7 +31,12 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    PluginImplementationError,
+    TimeOutError,
+)
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
@@ -108,6 +113,7 @@ class OIDCRefreshTokenBase(Authentication):
                     algorithms=self.algorithms,
                 )
         except (jwt.exceptions.InvalidTokenError, jwt.exceptions.DecodeError) as e:
+            logger.debug("token value: %s", token)
             raise AuthenticationError(e)
 
     def _get_access_token(self) -> str:
