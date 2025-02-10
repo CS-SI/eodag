@@ -947,7 +947,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "month": ["02"],
                 "day": ["20", "21"],
                 "time": ["01:00"],
-                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "dataset": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "product_type": "ensemble_mean",
                 "variable": "10m_u_component_of_wind",
                 "download_format": "unarchived",
@@ -972,7 +972,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "month": ["02"],
                 "day": ["01"],
                 "time": ["03:00"],
-                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "dataset": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "product_type": "ensemble_mean",
                 "variable": "10m_u_component_of_wind",
                 "download_format": "unarchived",
@@ -1011,7 +1011,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "month": ["01"],
                 "day": ["01"],
                 "time": ["00:00"],
-                "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
+                "dataset": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
                 "product_type": "ensemble_mean",
                 "variable": "10m_u_component_of_wind",
                 "download_format": "unarchived",
@@ -1048,7 +1048,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             json={
                 "startdate": "2003-01-01T00:00:00.000Z",
                 "enddate": "2003-01-01T00:00:00.000Z",
-                "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
+                "dataset": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "data_format": "grib",
                 "variable": "2m_dewpoint_temperature",
                 "time": "00:00",
@@ -1111,7 +1111,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "ecmwf:product_version": "wgms_fog_2022_09",
         }
         expected_query_params = {
-            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "dataset": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
             "hydrological_year": ["1980_81"],
             "variable": "glacier_mass_change",
             "data_format": "zip",
@@ -1130,7 +1130,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "ecmwf:hydrological_year": ["2020_21"],
         }
         expected_query_params = {
-            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "dataset": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
             "hydrological_year": ["2020_21"],
             "variable": "glacier_mass_change",
             "data_format": "zip",
@@ -1149,7 +1149,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "ecmwf:hydrological_year": ["1990_91", "2020_21"],
         }
         expected_query_params = {
-            "dataset_id": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
+            "dataset": "EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE",
             "hydrological_year": ["1990_91", "2020_21"],
             "variable": "glacier_mass_change",
             "data_format": "zip",
