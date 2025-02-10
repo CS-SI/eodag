@@ -31,12 +31,7 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import (
-    AuthenticationError,
-    MisconfiguredError,
-    PluginImplementationError,
-    TimeOutError,
-)
+from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
