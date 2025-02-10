@@ -129,7 +129,7 @@ CBERS4_PAN10M_L4:
   missionStartDate: "2014-12-07T00:00:00Z"
   title: CBERS-4 PAN10M Level-4
 
-# MARK: Landasat -----------------------------------------------------------------------
+# MARK: Landsat -----------------------------------------------------------------------
 # https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
 L57_REFLECTANCE:
   abstract: |
@@ -4534,6 +4534,216 @@ EEA_DAILY_VI:
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
 
+# MARK: AERIS --------------------------------------------------------------------------
+AERIS_IAGOS:
+  abstract: |
+    The mission of IAGOS is to provide high quality data throughout the tropopshere
+    and lower stratosphere, and scientific expertise to understand the evolution of
+    atmospheric composition, air quality, and climate.
+  instrument: IAGOS-CORE,IAGOS-MOZAIC,IAGOS-CARIBIC
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L2
+  keywords: AERIS, AIRCRAFT, ATMOSPHERIC, IAGOS, L2
+  sensorType: ATMOSPHERIC
+  license: other
+  title: In-service Aircraft for a Global Observing System
+  missionStartDate: "1994-08-01T00:00:00Z"
+
+# MARK: Global Surface Water------------------------------------------------------------------
+GSW_CHANGE:
+  abstract: |
+    The Global Surface Water Occurrence Change Intensity map provides information on where
+    surface water occurrence increased, decreased or remained the same between 1984-1999
+    and 2000-2021. Both the direction of change and its intensity are documented.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Change, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Occurrence Change Intensity 1984-2020
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
+
+GSW_EXTENT:
+  abstract: |
+    The Global Surface Water Maximum Water Extent shows all the locations ever detected as
+    water over a 38-year period (1984-2021)
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Extent, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Maximum Water Extent 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+GSW_OCCURRENCE:
+  abstract: |
+    The Global Surface Water Occurrence shows where surface water occurred between 1984
+    and 2021 and provides information concerning overall water dynamics. This product
+    captures both the intra and inter-annual variability and changes.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Occurrence, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Occurrence 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+GSW_RECURRENCE:
+  abstract: |
+    The Global Surface Water Recurrence provides information concerning the inter-annual
+    behaviour of water surfaces and captures the frequency with which water returns from
+    year to year.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Recurrence, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Recurrence 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+GSW_SEASONALITY:
+  abstract: |
+    The Global Surface Water Seasonality map provides information concerning the intra-annual
+    behaviour of water surfaces for a single year (2021) and shows permanent and seasonal
+    water and the number of months water was present.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Seasonality, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Seasonality 2014-2020
+  missionStartDate: "2014-01-01T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
+
+GSW_TRANSITIONS:
+  abstract: |
+    The Global Surface Water Transitions map provides information on the change in surface
+    water seasonality between the first and last years (between 1984 and 2021) and captures
+    changes between the three classes of not water, seasonal water and permanent water.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Transitions, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Transitions 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+# MARK: Eurostat --------------------------------------------------------------------------
+EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
+  abstract: |
+    This indicator tracks trends in greenhouse gas (GHG) emissions by agriculture, estimated
+    and reported under the United Nations Framework Convention on Climate Change (UNFCCC),
+    the Kyoto Protocol and the Decision 525/2013/EC. The annual data collection covers in
+    principle all Member States of the European Union as well as some other European countries
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Agriculture, Greenhouse gas, CO2, Emission, Air pollutants
+  sensorType:
+  license: proprietary
+  title: Eurostat - Greenhouse gas emissions from agriculture
+  missionStartDate: "2011-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T23:59:59Z"
+
+EUSTAT_POP_AGE_SEX_NUTS2:
+  abstract: |
+    Each year Eurostat collects demographic data at regional level from 37 countries as part
+    of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
+    data collection and aims to gather information on demography and migration. This dataset
+    contains information about the population by sex, age and region of residence (NUTS 2 level).
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Age, Sex, NUTS 2, Unidemo, Demographic
+  sensorType:
+  license: proprietary
+  title: Population on 1 January by age, sex and NUTS 2 region
+  missionStartDate: "1990-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
+  abstract: |
+    Each year Eurostat collects demographic data at regional level from 37 countries as part
+    of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
+    data collection and aims to gather information on demography and migration. This dataset
+    contains information about the population by sex, age and region of residence (NUTS 3 level).
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Age, Sex, NUTS 3, Unidemo, Demographic
+  sensorType:
+  license: proprietary
+  title: Population on 1 January by age, sex and NUTS 3 region
+  missionStartDate: "2014-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
+  abstract: |
+    Each year Eurostat collects demographic data at regional level from 37 countries as part
+    of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
+    data collection and aims to gather information on demography and migration. This dataset
+    contains information about demographic balance and crude rates of a population at regional
+    level (NUTS 3 level).
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Age, Sex, NUTS 3, Unidemo, Demographic
+  sensorType:
+  license: proprietary
+  title: Population change - Demographic balance and crude rates at regional level (NUTS 3)
+  missionStartDate: "2000-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
+  abstract: |
+    This dataset covers the indicator for monitoring progress towards renewable energy targets of
+    the Europe 2020 strategy implemented by Directive 2009/28/EC on the promotion of the use of
+    energy from renewable sources. The annual data collection covers in principle all Member States
+    of the European Union. Time series starts in the year 2004. Due to the change of legal basis,
+    a break in series occurs between 2020 and 2021. The calculation is based on data
+    collected in the framework of Regulation (EC) No 1099/2008 on energy statistics and complemented
+    by specific supplementary data transmitted by national administrations to Eurostat. In some
+    countries the statistical systems are not yet fully developed to meet all requirements of
+    Directive 2009/28/EC, in particular with respect to ambient heat captured from the environment
+    by heat pumps renewable cooling or sustainability of solid and gaseous biofuels. This is indicator
+    is a Sustainable Development Goal (SDG). It has been chosen for the assessment of the progress
+    towards the objectives and targets of the EU Sustainable Development Strategy. The data collection
+    covers the full spectrum of the Member States of the European Union.The share of energy from
+    renewable sources is calculated for four indicators: Transport (RES-T), Heating and Cooling
+    (RES-H&C), Electricity (RES-E), Overall RES share (RES)
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Energy, Renewable, Transport, Heating, Cooling, Electricity
+  sensorType:
+  license: proprietary
+  title: Share of energy from renewable sources
+  missionStartDate: "2004-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
 # MARK: METEOBLUE ----------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
   abstract: |
@@ -5466,8 +5676,8 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
   sensorType:
   license: other
   title: Global Ocean- Real time in-situ observations objective analysis
-  missionStartDate: "2015-01-01T00:00:00Z"
-  missionEndDate: "2024-04-01T00:00:00Z"
+  missionStartDate: "2023-01-15T00:00:00Z"
+  missionEndDate: "2024-12-01T00:00:00Z"
 
 MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
   abstract: |
@@ -5484,7 +5694,7 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
   license: other
   title: Global Ocean- Delayed Mode gridded CORA- In-situ Observations objective analysis in Delayed Mode
   missionStartDate: "1960-01-01T00:00:00Z"
-  missionEndDate: "2023-06-01T00:00:00Z"
+  missionEndDate: "2023-12-01T00:00:00Z"
 
 MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   abstract: |
@@ -5506,7 +5716,7 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   missionStartDate: "1998-01-07T00:00:00Z"
   missionEndDate: "2021-12-29T00:00:00Z"
 
-MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
+MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
   abstract: |
     This product corresponds to a REP L4 time series of monthly global reconstructed surface ocean pCO2, air-sea fluxes of CO2,
     pH, total alkalinity, dissolved inorganic carbon, saturation state with respect to calcite and aragonite, and associated
@@ -5529,7 +5739,7 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
   license: other
   title: Global Ocean Surface Carbon
   missionStartDate: "1985-01-01T00:00:00Z"
-  missionEndDate: "2022-12-01T00:00:00Z"
+  missionEndDate: "2023-12-01T00:00:00Z"
 
 MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   abstract: |
@@ -5837,7 +6047,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
   missionStartDate: "1981-09-01T00:00:00Z"
   missionEndDate: "2022-10-31T00:00:00Z"
 
-MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
+MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
   abstract: |
     Near-Real-Time mono-mission satellite-based integral parameters derived from the directional wave spectra. Using linear
     propagation wave model, only wave observations that can be back-propagated to wave converging regions are considered.
@@ -5859,8 +6069,8 @@ MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
   keywords: CMEMS,Mercator,ocean,global,NRT,wave,L3,WAVE-TAC,SAR,spectral,mono-mission
   sensorType:
   license: other
-  title: GLOBAL OCEAN L3 SPECTRAL PARAMETERS FROM NRT SATELLITE MEASUREMENTS
-  missionStartDate: "2018-05-28T00:00:00Z"
+  title: Global Ocean L 3 Spectral Parameters From Nrt Satellite Measurements
+  missionStartDate: "2018-04-22T00:00:00Z"
 
 MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
   abstract: |
