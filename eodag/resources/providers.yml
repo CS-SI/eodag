@@ -3878,6 +3878,9 @@
         - '{{"enddate": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - $.properties.enddate
       downloadLink: $.properties.location
+      dataset:
+        - dataset_id
+        - $.dataset
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "{dataset}"}}'
   products:
     SATELLITE_CARBON_DIOXIDE:
