@@ -6053,7 +6053,7 @@ MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
   keywords: CMEMS,Mercator,ocean,global,NRT,wave,L3,WAVE-TAC,SAR,spectral,mono-mission
   sensorType:
   license: other
-  title: Global Ocean L 3 Spectral Parameters From Nrt Satellite Measurements
+  title: Global Ocean L3 Spectral Parameters From NRT Satellite Measurements
   missionStartDate: "2018-04-22T00:00:00Z"
 
 MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
