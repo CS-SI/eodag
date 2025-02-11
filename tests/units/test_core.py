@@ -1521,26 +1521,26 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "productType": "ERA5_SL",
-            "ecmwf:product_type": "reanalysis",
-            "ecmwf:dataset": "reanalysis-era5-single-levels",
-            "ecmwf:data_format": "grib",
-            "ecmwf:download_format": "zip",
-            "ecmwf:variable": "10m_u_component_of_wind",
+            "product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "data_format": "grib",
+            "download_format": "zip",
+            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
         res = self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:month": "02"}
+            provider="cop_cds", **{"productType": "ERA5_SL", "month": "02"}
         )
         params = {
             "productType": "ERA5_SL",
-            "ecmwf:product_type": "reanalysis",
-            "ecmwf:dataset": "reanalysis-era5-single-levels",
-            "ecmwf:data_format": "grib",
-            "ecmwf:download_format": "zip",
-            "ecmwf:variable": "10m_u_component_of_wind",
-            "ecmwf:month": "02",
+            "product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "data_format": "grib",
+            "download_format": "zip",
+            "variable": "10m_u_component_of_wind",
+            "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
         self.assertFalse(res.additional_properties)
@@ -1548,15 +1548,15 @@ class TestCore(TestCoreBase):
 
         # unset default values
         self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:data_format": ""}
+            provider="cop_cds", **{"productType": "ERA5_SL", "data_format": ""}
         )
         defaults = {
             "productType": "ERA5_SL",
-            "ecmwf:product_type": "reanalysis",
-            "ecmwf:dataset": "reanalysis-era5-single-levels",
-            "ecmwf:variable": "10m_u_component_of_wind",
-            "ecmwf:data_format": "",
-            "ecmwf:download_format": "zip",
+            "product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "variable": "10m_u_component_of_wind",
+            "data_format": "",
+            "download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 

@@ -97,6 +97,7 @@ IGNORED_ITEM_PROPERTIES = [
     "qs",
     "defaultGeometry",
     "_date",
+    "productType",
 ]
 
 

@@ -142,7 +142,7 @@ class StaticStacSearch(StacSearch):
         product_type = kwargs.get("productType", prep.product_type)
         # provider product type specific conf
         self.product_type_def_params = (
-            self.get_product_type_def_params(product_type, **kwargs)
+            self.get_product_type_def_params(product_type, format_variables=kwargs)
             if product_type is not None
             else {}
         )

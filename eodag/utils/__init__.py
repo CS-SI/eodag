@@ -1048,7 +1048,7 @@ def format_string(key: str, str_to_format: Any, **format_variables: Any) -> Any:
         # defaultdict usage will return "" for missing keys in format_args
         try:
             result = str_to_format.format_map(defaultdict(str, **format_variables))
-        except TypeError as e:
+        except (ValueError, TypeError) as e:
             raise MisconfiguredError(
                 f"Unable to format str={str_to_format} using {str(format_variables)}: {str(e)}"
             )
