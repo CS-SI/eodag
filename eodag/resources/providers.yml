@@ -5609,10 +5609,6 @@
       parentIdentifier: EO:EUM:DAT:0394
     MSG_AMVR02:
       parentIdentifier: EO:EUM:DAT:0405
-    MSG_LST:
-      parentIdentifier: EO:EUM:DAT:0088
-    MSG_LST_DIR:
-      parentIdentifier: EO:EUM:DAT:0394
     MFG_GSA_57:
       parentIdentifier: EO:EUM:DAT:0301
     MFG_GSA_63:

@@ -218,8 +218,6 @@ class TestCore(TestCoreBase):
         "MSG_LSA_LST_CDR": ["eumetsat_ds"],
         "MSG_LSA_LSTDE": ["eumetsat_ds"],
         "MSG_AMVR02": ["eumetsat_ds"],
-        "MSG_LST": ["eumetsat_ds"],
-        "MSG_LST_DIR": ["eumetsat_ds"],
         "MFG_GSA_57": ["eumetsat_ds"],
         "MFG_GSA_63": ["eumetsat_ds"],
         "MSG_MFG_GSA_0": ["eumetsat_ds"],
