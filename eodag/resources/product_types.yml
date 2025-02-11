@@ -5121,9 +5121,9 @@ MSG_GSAL2R02:
   abstract: |
     Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First Generation (MFG) and Meteosat Second Generation (MSG)
     Level 2 land surface albedo. The variables estimated are black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding
-     uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the
-     Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2
-     to Meteosat-10.
+    uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the
+    Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2
+    to Meteosat-10.
   instrument: MVIRI,SEVIRI
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
@@ -5235,8 +5235,8 @@ MSG_LSA_FRM:
 MSG_LSA_LST_CDR:
   abstract: |
     The full archive of MSG/SEVIRI data was reprocessed to provide the user community a consistent, homogeneous and continuous Data Record of
-     the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent
-      NRT product (MLST) which can also complement the time series from 2016 onwards.
+    the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent
+    NRT product (MLST) which can also complement the time series from 2016 onwards.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
