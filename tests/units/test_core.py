@@ -174,6 +174,8 @@ class TestCore(TestCoreBase):
         "GSW_RECURRENCE": ["dedl"],
         "GSW_SEASONALITY": ["dedl"],
         "GSW_TRANSITIONS": ["dedl"],
+        "ISIMIP_CLIMATE_FORCING_ISIMIP3B": ["dedl"],
+        "ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B": ["dedl"],
         "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
         "L8_REFLECTANCE": ["theia"],

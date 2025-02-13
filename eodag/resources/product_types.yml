@@ -4744,6 +4744,57 @@ EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
   missionStartDate: "2004-01-01T00:00:00Z"
   missionEndDate: "2023-12-31T23:59:59Z"
 
+# MARK: ISIMIP -------------------------------------------------------------------------
+ISIMIP_CLIMATE_FORCING_ISIMIP3B:
+  abstract: |
+    The Inter-Sectoral Impact Model Intercomparison Project (ISIMIP) provides a framework for
+    the collation of a consistent set of climate impact data across sectors and scales. It
+    also provides a unique opportunity for considering interactions between climate change
+    impacts across sectors through consistent scenarios.\n\nThe ISIMIP3b part of the third
+    simulation round is dedicated to a quantification of climate-related risks at different
+    levels of global warming and socio-economic change. ISIMIP3b group I simulations are based
+    on historical climate change as simulated in CMIP6 combined with observed historical
+    socio-economic forcing. ISIMIP3b group II simulations are based on climate change according
+    to the CMIP6 future projections combined with socio-economic forcings fixed at 2015 levels.
+    ISIMIP3b group III simulations additionally account for future changes in socio-economic
+    forcing.\n\nThis collection contains bias-adjusted atmospheric climate input data,
+    atmospheric composition input data as well as ocean and lightning input data.
+  instrument:
+  platform: ISIMIP
+  platformSerialIdentifier: ISIMIP
+  processingLevel:
+  keywords: ISIMIP, CLIMATE-FORCING, ISIMIP3b, atmospheric, climate, HRMC
+  sensorType:
+  license: other
+  title: ISIMIP3b climate input data
+  missionStartDate: "1601-01-01T00:00:00Z"
+  missionEndDate: "2500-12-31T23:59:59Z"
+
+ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
+  abstract: |
+    The Inter-Sectoral Impact Model Intercomparison Project (ISIMIP) provides a framework for
+    the collation of a consistent set of climate impact data across sectors and scales. It also
+    provides a unique opportunity for considering interactions between climate change impacts
+    across sectors through consistent scenarios.\n\nThe ISIMIP3b part of the third simulation
+    round is dedicated to a quantification of climate-related risks at different levels of global
+    warming and socio-economic change. ISIMIP3b group I simulations are based on historical climate
+    change as simulated in CMIP6 combined with observed historical socio-economic forcing. ISIMIP3b
+    group II simulations are based on climate change according to the CMIP6 future projections
+    combined with socio-economic forcings fixed at 2015 levels. ISIMIP3b group III simulations
+    additionally account for future changes in socio-economic forcing. This collection contains
+    fishing, lake fraction, land use, land transition, water abstraction and wood harvesting input
+    data as well as information about crops and fertilizers
+  instrument:
+  platform: ISIMIP
+  platformSerialIdentifier: ISIMIP
+  processingLevel:
+  keywords: ISIMIP, SOCIO-ECONOMIC-FORCING, ISIMIP3b, socioeconomic
+  sensorType:
+  license: other
+  title: ISIMIP3b socio-economic input data
+  missionStartDate: "1601-01-01T00:00:00Z"
+  missionEndDate: "2100-12-31T23:59:59Z"
+
 # MARK: METEOBLUE ----------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
   abstract: |

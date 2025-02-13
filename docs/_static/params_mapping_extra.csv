@@ -28,7 +28,7 @@ qs,metadata only,metadata only,,metadata only,,,metadata only,,,,,,,,,,,,
 quicklook,,,metadata only,,,metadata only,,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 relativeOrbitNumber,,,:green:`queryable metadata`,,,,,,,,,,:green:`queryable metadata`,,,,,,
 services,,,,,,,,,,,,,,,metadata only,,,,
-size,,,,,,,,,,,,:green:`queryable metadata`,,,,,,,
+size,,,,,,,,,,,,metadata only,,,,,,,
 storageStatus,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only,metadata only
 thumbnail,,,metadata only,,,metadata only,,metadata only,metadata only,metadata only,,,metadata only,,metadata only,metadata only,metadata only,metadata only,metadata only
 tileIdentifier,,,:green:`queryable metadata`,,,:green:`queryable metadata`,,:green:`queryable metadata`,,,,,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,:green:`queryable metadata`,,:green:`queryable metadata`,
