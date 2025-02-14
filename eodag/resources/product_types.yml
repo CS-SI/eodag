@@ -1495,50 +1495,7 @@ S3_LAN_LI:
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
 
-# MARK: MTG
-MSG_LST:
-  abstract: |
-    The full archive of MSG/SEVIRI data was reprocessed to provide the user
-    community a consistent, homogeneous and continuous Data Record of the
-    15-min Land Surface Temperature (LST) for the period 2004-2015. This Data
-    Record was obtained with the best version of its equivalent NRT product
-    (MLST) which can also complement the time series from 2016 onwards.
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L3
-  keywords: SEVIRI,L3,MSG,Vegetation,Land
-  sensorType: OPTICAL
-  license: other
-  title:  Land Surface Temperature Climate Data Record - MSG
-  missionStartDate: "2021-01-21T00:00:00Z"
-
-MSG_LST_DIR:
-  abstract: |
-    Land Surface Temperature (LST) is the radiative skin temperature over land.
-    LST plays an important role in the physics of land surface as it is
-    involved in the processes of energy and water exchange with the atmosphere.
-    LST is useful for the scientific community, namely for those dealing with
-    meteorological and climate models. Accurate values of LST are also of
-    special interest in a wide range of areas related to land surface
-    processes, including meteorology, hydrology, agrometeorology, climatology
-    and environmental studies. Land Surface Emissivity (EM), a crucial
-    parameter for LST retrieval from space, is independently estimated as a
-    function of (satellite derived) Fraction of Vegetation Cover (FVC) and land
-    cover classification. In the most recent version of the dataset,
-    information on the expected deviation of LST estimates from SEVIRI/MSG with
-    respect to a reference view – here considered to be nadir view – has been
-    added to the original product (LSA-001) as an extra data layer (LSA-004).
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L2
-  keywords: SEVIRI,L2,MSG,Vegetation,Land
-  sensorType: OPTICAL
-  license: other
-  title:   Land Surface Temperature with Directional Effects - MSG
-  missionStartDate: "2005-01-16T00:00:00Z"
-
+# MARK: MFG
 MFG_GSA_57:
   abstract: |
     Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
@@ -1557,6 +1514,7 @@ MFG_GSA_57:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 57 degree
   missionStartDate: "2006-12-07T00:00:00Z"
+  missionEndDate: "2017-03-30T23:59:59Z"
 
 MFG_GSA_63:
   abstract: |
@@ -1576,26 +1534,7 @@ MFG_GSA_63:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
   missionStartDate: "1998-07-10T00:00:00Z"
-
-MSG_MFG_GSA_0:
-  abstract: |
-    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
-    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
-    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
-    albedo (WSA) with the corresponding uncertainties as explained in the
-    Product User Guide (PUM). The data record validation and limitations are
-    provided in the Validation Report (VR). The products are available in
-    netCDF4 format. This release contains products generated with Meteosat-2 to
-    Meteosat-10.
-  instrument: MVIRI,SEVIRI
-  platform: MFG,MSG
-  platformSerialIdentifier: MFG,MSG
-  processingLevel: L2
-  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
-  sensorType: OPTICAL
-  license: other
-  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
-  missionStartDate: "1982-02-10T00:00:00Z"
+  missionEndDate: "2007-04-10T23:59:59Z"
 
 HIRS_FDR_1_MULTI:
   abstract: |
@@ -1621,30 +1560,7 @@ HIRS_FDR_1_MULTI:
   license: other
   title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
   missionStartDate: "1978-10-29T00:00:00Z"
-
-MSG_OCA_CDR:
-  abstract: |
-    The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
-    period from 2004 up to 2019, providing a homogenous cloud properties time
-    series. It is generated at full Meteosat repeat cycle (15 minutes)
-    fequency. Cloud properties retrieved by OCA are cloud top pressure, cloud
-    optical thickness, and cloud effective radius, together with uncertainties.
-    The OCA algorithm has been slightly adapted for climate data record
-    processing. The adaptation mainly consists in the usage of different
-    inputs, because the one used for Near Real Time (NRT) were not available
-    for the reprocessing (cloud mask, clear sky reflectance map) and also not
-    homogenous (reanalysis) over the complete time period. it extends the NRT
-    data record more than 9 years back in time. This is a Thematic Climate Data
-    Record (TCDR).
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L2
-  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
-  sensorType: MSG
-  license: other
-  title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
-  missionStartDate: "2004-01-19T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
 
 S6_RADIO_OCCULTATION:
   abstract: |
@@ -5121,9 +5037,59 @@ METOP_HIRSL1:
   title: HIRS Level 1B - Metop - Global
   missionStartDate: "2009-03-23T00:00:00Z"
 
+# MARK: MSG --------------------------------------------------------------------------
+MSG_MFG_GSA_0:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
+    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
+    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
+    albedo (WSA) with the corresponding uncertainties as explained in the
+    Product User Guide (PUM). The data record validation and limitations are
+    provided in the Validation Report (VR). The products are available in
+    netCDF4 format. This release contains products generated with Meteosat-2 to
+    Meteosat-10.
+  instrument: MVIRI,SEVIRI
+  platform: MFG,MSG
+  platformSerialIdentifier: MFG,MSG
+  processingLevel: L2
+  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
+  sensorType: OPTICAL
+  license: other
+  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
+  missionStartDate: "1982-02-10T00:00:00Z"
+  missionEndDate: "2017-12-31T23:59:59Z"
+
+MSG_OCA_CDR:
+  abstract: |
+    The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
+    period from 2004 up to 2019, providing a homogenous cloud properties time
+    series. It is generated at full Meteosat repeat cycle (15 minutes)
+    fequency. Cloud properties retrieved by OCA are cloud top pressure, cloud
+    optical thickness, and cloud effective radius, together with uncertainties.
+    The OCA algorithm has been slightly adapted for climate data record
+    processing. The adaptation mainly consists in the usage of different
+    inputs, because the one used for Near Real Time (NRT) were not available
+    for the reprocessing (cloud mask, clear sky reflectance map) and also not
+    homogenous (reanalysis) over the complete time period. it extends the NRT
+    data record more than 9 years back in time. This is a Thematic Climate Data
+    Record (TCDR).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
+  sensorType: MSG
+  license: other
+  title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
+  missionStartDate: "2004-01-19T00:00:00Z"
+  missionEndDate: "2019-08-31T23:59:59Z"
+
 MSG_CLM:
   abstract: |
-    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified
+    as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc).
+    Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other
+    cloud products, and the remote sensing of continental and ocean surfaces.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5136,8 +5102,10 @@ MSG_CLM:
 
 MSG_CLM_IODC:
   abstract: |
-    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
-
+    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified
+    as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc).
+    Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other
+    cloud products, and the remote sensing of continental and ocean surfaces.
     From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
   instrument: SEVIRI
   platform: MSG
@@ -5151,7 +5119,11 @@ MSG_CLM_IODC:
 
 MSG_GSAL2R02:
   abstract: |
-    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface albedo. The variables estimated are black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2 to Meteosat-10.
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First Generation (MFG) and Meteosat Second Generation (MSG)
+    Level 2 land surface albedo. The variables estimated are black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding
+    uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the
+    Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2
+    to Meteosat-10.
   instrument: MVIRI,SEVIRI
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
@@ -5164,7 +5136,15 @@ MSG_GSAL2R02:
 
 MSG_HRSEVIRI:
   abstract: |
-    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to their latency: quarter-hourly images if latency is more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
+    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels.
+    Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing,
+    e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation
+    and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed.
+    Both radiometric and geometric quality control information is included. Images are made available with different timeliness according
+    to their latency: quarter-hourly images if latency is more than 3 hours and hourly images if latency is less than 3 hours
+    (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping
+    with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K
+    to 300 K for the night and 250 K to 330 K for the day.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5177,8 +5157,16 @@ MSG_HRSEVIRI:
 
 MSG_HRSEVIRI_IODC:
   abstract: |
-    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to the latency: quarter-hourly images with a latency of more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
-      From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
+    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels.
+    Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing,
+    e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation
+    and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed.
+    Both radiometric and geometric quality control information is included. Images are made available with different timeliness according
+    to the latency: quarter-hourly images with a latency of more than 3 hours and hourly images if latency is less than 3 hours
+    (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping
+    with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K
+    to 300 K for the night and 250 K to 330 K for the day.
+    From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5191,7 +5179,10 @@ MSG_HRSEVIRI_IODC:
 
 MSG_RSS_CLM:
   abstract: |
-    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel
+    is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc).
+    Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products,
+    and the remote sensing of continental and ocean surfaces.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5204,7 +5195,13 @@ MSG_RSS_CLM:
 
 MSG_MSG15_RSS:
   abstract: |
-    Rectified (level 1.5) Meteosat SEVIRI Rapid Scan image data. The baseline scan region is a reduced area of the top 1/3 of a nominal repeat cycle, covering a latitude range from approximately 15 degrees to 70 degrees. The service generates repeat cycles at 5-minute intervals (the same as currently used for weather radars). The dissemination of RSS data is similar to the normal dissemination, with image segments based on 464 lines and compatible with the full disk level 1.5 data scans. Epilogue and prologue (L1.5 Header and L1.5 Trailer) have the same structure. Calibration is as in Full Earth Scan. Image rectification is to 9.5 degreesE. The scans start at 00:00, 00:05, 00:10, 00:15 ... etc. (5 min scan). The differences from the nominal Full Earth scan are that for channels 1 - 11, only segments 6 - 8 are disseminated and for the High Resolution Visible Channel only segments 16 - 24 are disseminated.
+    Rectified (level 1.5) Meteosat SEVIRI Rapid Scan image data. The baseline scan region is a reduced area of the top 1/3 of a nominal
+    repeat cycle, covering a latitude range from approximately 15 degrees to 70 degrees. The service generates repeat cycles at
+    5-minute intervals (the same as currently used for weather radars). The dissemination of RSS data is similar to the normal dissemination,
+    with image segments based on 464 lines and compatible with the full disk level 1.5 data scans. Epilogue and prologue
+    (L1.5 Header and L1.5 Trailer) have the same structure. Calibration is as in Full Earth Scan. Image rectification is to 9.5 degreesE.
+    The scans start at 00:00, 00:05, 00:10, 00:15 ... etc. (5 min scan). The differences from the nominal Full Earth scan are that for
+    channels 1 - 11, only segments 6 - 8 are disseminated and for the High Resolution Visible Channel only segments 16 - 24 are disseminated.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5217,7 +5214,9 @@ MSG_MSG15_RSS:
 
 MSG_LSA_FRM:
   abstract: |
-    Fire risk by merging NWP & remotely sensed (FRP) data. The product includes 24h, 48h, 72h, 96h and 120h forecasts of: risk of fire (5 classes) and the probability of ignitions reaching energy releases over 2000GJ (both covering Southern Europe); Fire Weather Index (FWI) and respective components estimated for the whole MSG disk.
+    Fire risk by merging NWP & remotely sensed (FRP) data. The product includes 24h, 48h, 72h, 96h and 120h forecasts of: risk of fire (5 classes)
+    and the probability of ignitions reaching energy releases over 2000GJ (both covering Southern Europe); Fire Weather Index (FWI)
+    and respective components estimated for the whole MSG disk.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5235,7 +5234,9 @@ MSG_LSA_FRM:
 
 MSG_LSA_LST_CDR:
   abstract: |
-    The full archive of MSG/SEVIRI data was reprocessed to provide the user community a consistent, homogeneous and continuous Data Record of the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent NRT product (MLST) which can also complement the time series from 2016 onwards.
+    The full archive of MSG/SEVIRI data was reprocessed to provide the user community a consistent, homogeneous and continuous Data Record of
+    the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent
+    NRT product (MLST) which can also complement the time series from 2016 onwards.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5245,10 +5246,18 @@ MSG_LSA_LST_CDR:
   license: other
   title: Land Surface Temperature Climate Data Record - MSG
   missionStartDate: "2004-01-21T00:00:00Z"
+  missionEndDate: "2015-12-31T00:00:00Z"
 
 MSG_LSA_LSTDE:
   abstract: |
-    Land Surface Temperature (LST) is the radiative skin temperature over land. LST plays an important role in the physics of land surface as it is involved in the processes of energy and water exchange with the atmosphere. LST is useful for the scientific community, namely for those dealing with meteorological and climate models. Accurate values of LST are also of special interest in a wide range of areas related to land surface processes, including meteorology, hydrology, agrometeorology, climatology and environmental studies. Land Surface Emissivity (EM), a crucial parameter for LST retrieval from space, is independently estimated as a function of (satellite derived) Fraction of Vegetation Cover (FVC) and land cover classification. In the most recent version of the dataset, information on the expected deviation of LST estimates from SEVIRI/MSG with respect to a reference view – here considered to be nadir view – has been added to the original product (LSA-001) as an extra data layer (LSA-004).
+    Land Surface Temperature (LST) is the radiative skin temperature over land. LST plays an important role in the physics of land surface as
+    it is involved in the processes of energy and water exchange with the atmosphere. LST is useful for the scientific community, namely for
+    those dealing with meteorological and climate models. Accurate values of LST are also of special interest in a wide range of areas related
+    to land surface processes, including meteorology, hydrology, agrometeorology, climatology and environmental studies.
+    Land Surface Emissivity (EM), a crucial parameter for LST retrieval from space, is independently estimated as a function of (satellite derived)
+    Fraction of Vegetation Cover (FVC) and land cover classification. In the most recent version of the dataset, information on the expected
+    deviation of LST estimates from SEVIRI/MSG with respect to a reference view - here considered to be nadir view - has been added to the
+    original product (LSA-001) as an extra data layer (LSA-004).
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5261,7 +5270,14 @@ MSG_LSA_LSTDE:
 
 MSG_AMVR02:
   abstract: |
-    This is the second release of the reprocessed Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Atmospheric Motion Vectors (AMV) Thematic Climate Data Record (TCDR). It contains AMV at all heights below the tropopause, derived from images in 2 channels (Water Vapour 6.2, Infrared 10.8) of the instrument MVIRI on board MFG and SEVIRI on board MSG. Vectors are retrieved by tracking the motion of clouds and other atmospheric constituents such as water vapour patterns. The height assignment of the AMVs is calculated using the Cross-Correlation Contribution (CCC) function to determine the height using the pixels that contribute the most to the vectors. The final vector is estimated averaging the speed and height over 4 consecutive images. A quality indicator is derived for each vector to assess the reliability of the retrieval. Products are stored in netCDF4 format and generated from Meteosat-2 to Meteosat-11 satellites, covering the period from September 1981 to August 2019. This is a Thematic Climate Data Record (TCDR).
+    This is the second release of the reprocessed Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Atmospheric Motion Vectors (AMV)
+    Thematic Climate Data Record (TCDR). It contains AMV at all heights below the tropopause, derived from images in 2 channels
+    (Water Vapour 6.2, Infrared 10.8) of the instrument MVIRI on board MFG and SEVIRI on board MSG. Vectors are retrieved by tracking the motion
+    of clouds and other atmospheric constituents such as water vapour patterns. The height assignment of the AMVs is calculated using the
+    Cross-Correlation Contribution (CCC) function to determine the height using the pixels that contribute the most to the vectors. The final vector
+    is estimated averaging the speed and height over 4 consecutive images. A quality indicator is derived for each vector to assess the reliability
+    of the retrieval. Products are stored in netCDF4 format and generated from Meteosat-2 to Meteosat-11 satellites, covering the period from
+    September 1981 to August 2019. This is a Thematic Climate Data Record (TCDR).
   instrument: SEVIRI,MVIRI
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
