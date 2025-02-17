@@ -26,13 +26,18 @@ from typing import (
     Optional,
     TypedDict,
     Union,
+    cast,
     get_args,
     get_origin,
 )
 
+import attr
 from annotated_types import Gt, Lt
 from pydantic import BaseModel, Field, create_model
+from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
 from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
@@ -199,10 +204,16 @@ def json_field_definition_to_python(
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
 
-    if not required or default_value:
+    if default_value:
+        if required:
+            return Annotated[
+                python_type,
+                Field(default=default_value, **field_type_kwargs),
+                "json_schema_required",
+            ]
         return Annotated[python_type, Field(default=default_value, **field_type_kwargs)]
-    else:
-        return Annotated[python_type, Field(..., **field_type_kwargs)]
+
+    return Annotated[python_type, Field(..., **field_type_kwargs)]
 
 
 def python_field_definition_to_json(
@@ -334,7 +345,7 @@ def model_fields_to_annotated(
 
 def annotated_dict_to_model(
     model_name: str, annotated_fields: dict[str, Annotated[Any, FieldInfo]]
-) -> BaseModel:
+) -> type[BaseModel]:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 
     :param model_name: name of the model to be created
@@ -342,15 +353,52 @@ def annotated_dict_to_model(
                              the properties of the model
     :returns: pydantic model
     """
-    fields = {
-        name: (field.__args__[0], field.__metadata__[0])
-        for name, field in annotated_fields.items()
-    }
-    return create_model(
+    fields = {}
+    for name, field in annotated_fields.items():
+        metadata = field.__metadata__[1:]
+        fields[name] = (
+            Annotated[field.__args__[0], *metadata] if metadata else field.__args__[0],
+            field.__metadata__[0],
+        )
+
+    custom_model = create_model(
         model_name,
         **fields,  # type: ignore
         __config__={"arbitrary_types_allowed": True},
     )
+
+    def custom_get_json_schema(
+        cls: type[BaseModel], core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        """
+        Custom get json schema method to handle required fields with default values.
+        This is not supported by Pydantic by default.
+        It requires the field to be marked with the key "json_schema_required" in the metadata dict.
+        Example: Annotated[str, "json_schema_required"]
+        """
+        json_schema = cast(BaseModel, cls.__base__).__get_pydantic_json_schema__(
+            core_schema, handler
+        )
+
+        required = [
+            key
+            for key, field_info in cls.model_fields.items()
+            if "json_schema_required" in field_info.metadata
+        ]
+        json_schema["required"] = json_schema.get("required", []) + required
+
+        return json_schema
+
+    custom_class = attr.make_class(
+        model_name,
+        attrs={},
+        bases=(custom_model,),
+        class_body={
+            "__get_pydantic_json_schema__": classmethod(custom_get_json_schema),
+        },
+    )
+
+    return custom_class
 
 
 class ProviderSortables(TypedDict):
