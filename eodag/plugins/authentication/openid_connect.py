@@ -379,6 +379,12 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
 
         login_document = etree.HTML(authorization_response.text)
         login_forms = login_document.xpath(self.config.login_form_xpath)
+
+        if not login_forms:
+            # we assume user is already logged in
+            # no form found because we got redirected to the redirect_uri
+            return authorization_response
+
         login_form = login_forms[0]
 
         # Get the form data to pass to the login form from config or from the login form
