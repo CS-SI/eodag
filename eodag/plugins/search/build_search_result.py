@@ -39,6 +39,7 @@ from typing_extensions import get_args
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
     OFFLINE_STATUS,
     format_metadata,
     properties_from_json,
@@ -1053,22 +1054,17 @@ class ECMWFSearch(PostJsonSearch):
             return date_str.split("T")[0].replace("-", "")
 
         # build product id
-        id_prefix = (product_type or kwargs.get("dataset") or self.provider).upper()
-        if START in properties and END in properties:
-            product_id = "%s_%s_%s_%s" % (
-                id_prefix,
-                slugify(properties[START]),
-                slugify(properties[END]),
-                query_hash,
-            )
-        elif START in properties:
-            product_id = "%s_%s_%s" % (
-                id_prefix,
-                slugify(properties[START]),
-                query_hash,
-            )
-        else:
-            product_id = f"{id_prefix}_{query_hash}"
+        product_id = (product_type or kwargs.get("dataset") or self.provider).upper()
+
+        start = properties.get(START, NOT_AVAILABLE)
+        end = properties.get(END, NOT_AVAILABLE)
+
+        if start != NOT_AVAILABLE:
+            product_id += f"_{slugify(start)}"
+            if end != NOT_AVAILABLE:
+                product_id += f"_{slugify(end)}"
+
+        product_id += f"_{query_hash}"
 
         properties["id"] = properties["title"] = product_id
 
