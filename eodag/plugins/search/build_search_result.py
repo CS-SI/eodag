@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
@@ -239,39 +239,37 @@ def _update_properties_from_element(
 
     # a bbox element
     elif element["type"] in ["GeographicExtentWidget", "GeographicExtentMapWidget"]:
-        prop.update(
-            {
-                "type": "array",
-                "minItems": 4,
-                "additionalItems": False,
-                "items": [
-                    {
-                        "type": "number",
-                        "maximum": 180,
-                        "minimum": -180,
-                        "description": "West border of the bounding box",
-                    },
-                    {
-                        "type": "number",
-                        "maximum": 90,
-                        "minimum": -90,
-                        "description": "South border of the bounding box",
-                    },
-                    {
-                        "type": "number",
-                        "maximum": 180,
-                        "minimum": -180,
-                        "description": "East border of the bounding box",
-                    },
-                    {
-                        "type": "number",
-                        "maximum": 90,
-                        "minimum": -90,
-                        "description": "North border of the bounding box",
-                    },
-                ],
-            }
-        )
+        prop.update({
+            "type": "array",
+            "minItems": 4,
+            "additionalItems": False,
+            "items": [
+                {
+                    "type": "number",
+                    "maximum": 180,
+                    "minimum": -180,
+                    "description": "West border of the bounding box",
+                },
+                {
+                    "type": "number",
+                    "maximum": 90,
+                    "minimum": -90,
+                    "description": "South border of the bounding box",
+                },
+                {
+                    "type": "number",
+                    "maximum": 180,
+                    "minimum": -180,
+                    "description": "East border of the bounding box",
+                },
+                {
+                    "type": "number",
+                    "maximum": 90,
+                    "minimum": -90,
+                    "description": "North border of the bounding box",
+                },
+            ],
+        })
 
     # DateRangeWidget is a calendar date picker
     if element["type"] == "DateRangeWidget":
@@ -412,9 +410,10 @@ class ECMWFSearch(PostJsonSearch):
             if "/to/" in _dc_qp.get("date", ""):
                 params[START], params[END] = _dc_qp["date"].split("/to/")
             elif "/" in _dc_qp.get("date", ""):
-                (params[START], params[END],) = _dc_qp[
-                    "date"
-                ].split("/")
+                (
+                    params[START],
+                    params[END],
+                ) = _dc_qp["date"].split("/")
             elif _dc_qp.get("date", None):
                 params[START] = params[END] = _dc_qp["date"]
 
@@ -469,59 +468,125 @@ class ECMWFSearch(PostJsonSearch):
     ) -> None:
         """checks if start and end date are present in the keywords and adds them if not"""
 
-        if START and END in keywords:
+        start = keywords.get(START)
+        end = keywords.get(END)
+
+        if start and end:
+            # already formated dates for EODAG
             return
 
-        product_type_conf = getattr(self.config, "metadata_mapping", {})
-        if (
-            product_type
-            and product_type in self.config.products
-            and "metadata_mapping" in self.config.products[product_type]
-        ):
-            product_type_conf = self.config.products[product_type]["metadata_mapping"]
+        # We extract the product type metadata mapping
+        product_type_mm = self.config.products.get(product_type, {}).get(
+            "metadata_mapping"
+        ) or getattr(self.config, "metadata_mapping", {})
 
-        # start time given, end time missing
-        if START in keywords:
-            keywords[END] = (
-                keywords[START]
-                if END in product_type_conf
+        end_mm = product_type_mm.get(END)
+        start_mm = product_type_mm.get(START)
+
+        if start:
+            # start time given in EODAG format, end time missing
+            end = (
+                # if end is present in product type metadata mapping and is not set in
+                # keywords, we use product type definition or today
+                # TODO: is this still needed???
+                # maybe more end = start if not present in keywords => single day search
+                start
+                if end_mm
                 else self.get_product_type_cfg_value(
                     "missionEndDate", today().isoformat()
                 )
             )
             return
+        # TODO: elif end -> from default start to end
 
-        if END in product_type_conf:
-            mapping = product_type_conf[START]
-            if not isinstance(mapping, list):
-                mapping = product_type_conf[END]
-            if isinstance(mapping, list):
-                # get time parameters (date, year, month, ...) from metadata mapping
-                input_mapping = mapping[0].replace("{{", "").replace("}}", "")
-                time_params = [
-                    values.split(":")[0].strip() for values in input_mapping.split(",")
-                ]
-                time_params = [
-                    tp.replace('"', "").replace("'", "") for tp in time_params
-                ]
-                # if startTime is not given but other time params (e.g. year/month/(day)) are given,
-                # no default date is required
-                in_keywords = True
-                for tp in time_params:
-                    if tp not in keywords:
-                        in_keywords = False
-                        break
-                if not in_keywords:
-                    keywords[START] = self.get_product_type_cfg_value(
-                        "missionStartDate", DEFAULT_MISSION_START_DATE
-                    )
-                    keywords[END] = (
-                        keywords[START]
-                        if END in product_type_conf
-                        else self.get_product_type_cfg_value(
-                            "missionEndDate", today().isoformat()
-                        )
-                    )
+        mapping = start_mm if isinstance(start_mm, list) else end_mm
+        if not mapping or not isinstance(mapping, list):
+            # if no mapping, no metadata mapping to extract the time params
+            # or if metadata mapping is not a list, metadata mapping does not contain
+            # transformation for datetime parameters
+            # We cannot try to map it with year/month/day/time...
+            #
+            # We exepct something like the following:
+            #
+            # completionTimeFromAscendingNode:
+            # - |
+            # {{
+            #   "year": {_date#interval_to_datetime_dict}["year"],
+            #   "month": {_date#interval_to_datetime_dict}["month"]
+            # }}
+            # - '{$.completionTimeFromAscendingNode#to_iso_date}'
+            #
+            return
+
+        # get time parameters (date, year, month, ...) from metadata mapping
+        input_mapping = mapping[0].replace("{{", "").replace("}}", "")
+        time_params = [
+            values.split(":")[0].strip("\"' ") for values in input_mapping.split(",")
+        ]
+
+        # TODO: if date param => use it and return
+
+        # we try to transform user provided time parameters to datetime
+        # we know of day / month / year / hday / hmonth / hyear / time
+        # we need to transform them to datetime
+        def update_date(
+            default_date: datetime, year=None, month=None, day=None, time=None
+        ) -> datetime:
+            updated_date = default_date.replace(
+                year=int(year) if year else default_date.year,
+                month=int(month) if month else  default_date.month,
+                day=int(day) if day else default_date.day,
+            )
+            if time is not None:
+                updated_date = datetime.combine(updated_date.date(), time)
+            return updated_date
+
+        def get_min_max(
+            value: Union[str, list[str]],
+        ) -> tuple[Optional[str], Optional[str]]:
+            """Returns the min and max from a list of strings or the same string if a single string is given."""
+            if isinstance(value, list):
+                sorted_values = sorted(value)
+                return sorted_values[0], sorted_values[-1]
+            return value, value
+
+        default_start = self.get_product_type_cfg_value(
+            "missionStartDate", DEFAULT_MISSION_START_DATE
+        )
+
+        default_end = (
+            # TODO: same as before: when is this needed ???
+            # why not just end from start if not present in keywords
+            default_start
+            if not product_type_mm.get(END)
+            else self.get_product_type_cfg_value("missionEndDate", today().isoformat())
+        )
+
+        # TODO: make datetime parsing more robust
+        dt_default_start = datetime.fromisoformat(default_start.rstrip("Z"))
+        dt_default_end = datetime.fromisoformat(default_end.rstrip("Z"))
+
+        # TODO: should we check only time params from metadata mapping ??
+        # My guess is no and we make assumptions for ECMWF datasets
+        # anyway they are always the same
+        year = keywords.get("year") or keywords.get("hyear")
+        month = keywords.get("month") or keywords.get("hmonth")
+        day = keywords.get("day") or keywords.get("hday")
+        time = keywords.get("time")
+
+        start_y, end_y = get_min_max(year)
+        start_m, end_m = get_min_max(month)
+        start_d, end_d = get_min_max(day)
+        start_t, end_t = get_min_max(time)
+
+        # here we need to start from default date and replace by elements when we have them
+        # we need to keep that function performant
+        keywords[START] = update_date(
+            dt_default_start, start_y, start_m, start_d, start_t
+        ).isoformat()
+        keywords[END] = update_date(
+            dt_default_end, end_y, end_m, end_d, end_t
+        ).isoformat()
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
@@ -669,17 +734,15 @@ class ECMWFSearch(PostJsonSearch):
             or f"{ECMWF_PREFIX}year" in queryables
             or f"{ECMWF_PREFIX}hyear" in queryables
         ):
-            queryables.update(
-                {
-                    "start": Queryables.get_with_default(
-                        "start", processed_filters.get(START)
-                    ),
-                    "end": Queryables.get_with_default(
-                        "end",
-                        processed_filters.get(END),
-                    ),
-                }
-            )
+            queryables.update({
+                "start": Queryables.get_with_default(
+                    "start", processed_filters.get(START)
+                ),
+                "end": Queryables.get_with_default(
+                    "end",
+                    processed_filters.get(END),
+                ),
+            })
 
         # area is geom in EODAG.
         if queryables.pop("area", None):
@@ -783,9 +846,9 @@ class ECMWFSearch(PostJsonSearch):
             # raise an error as no constraint entry matched the input keywords
             # raise an error if one value from input is not allowed
             if not filtered_constraints or missing_values:
-                allowed_values = list(
-                    {value for c in constraints for value in c.get(keyword, [])}
-                )
+                allowed_values = list({
+                    value for c in constraints for value in c.get(keyword, [])
+                })
                 # restore ecmwf: prefix before raising error
                 keyword = ECMWF_PREFIX + keyword
 
@@ -945,15 +1008,13 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # Add to the query, the queryable parameters set in the provider product type definition
-        properties.update(
-            {
-                k: v
-                for k, v in product_type_def_params.items()
-                if k not in properties.keys()
-                and k in self.config.metadata_mapping.keys()
-                and isinstance(self.config.metadata_mapping[k], list)
-            }
-        )
+        properties.update({
+            k: v
+            for k, v in product_type_def_params.items()
+            if k not in properties.keys()
+            and k in self.config.metadata_mapping.keys()
+            and isinstance(self.config.metadata_mapping[k], list)
+        })
         qp, _ = self.build_query_string(product_type, properties)
 
         return qp
