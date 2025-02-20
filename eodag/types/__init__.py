@@ -357,7 +357,7 @@ class BaseModelCustomJsonSchema(BaseModel):
         It requires the field to be marked with the key "json_schema_required" in the metadata dict.
         Example: Annotated[str, "json_schema_required"]
         """
-        json_schema = BaseModel.__get_pydantic_json_schema__(core_schema, handler)
+        json_schema = handler.resolve_ref_schema(handler(core_schema))
 
         json_schema["required"] = [
             key
