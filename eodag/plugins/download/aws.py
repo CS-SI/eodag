@@ -195,6 +195,7 @@ AWS_AUTH_ERROR_MESSAGES = [
     "AccessDenied",
     "InvalidAccessKeyId",
     "SignatureDoesNotMatch",
+    "InvalidRequest",
 ]
 
 
