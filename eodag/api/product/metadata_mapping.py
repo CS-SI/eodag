@@ -54,6 +54,7 @@ from eodag.utils import (
     string_to_jsonpath,
     update_nested_dict,
 )
+from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
@@ -1298,11 +1299,39 @@ def format_query_params(
         config.metadata_mapping,
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
+    raise_mtd_discovery_error = (
+        getattr(config, "discover_metadata", {})
+        .get("search_param", {})
+        .get("raise_mtd_discovery_error", False)
+        if isinstance(
+            getattr(config, "discover_metadata", {}).get("search_param", {}), dict
+        )
+        else False
+    )
+    raise_mtd_discovery_error = (
+        config.products.get(product_type, {})
+        .get("discover_metadata", {})
+        .get("search_param", {})
+        .get("raise_mtd_discovery_error", False)
+        if isinstance(
+            config.products.get(product_type, {})
+            .get("discover_metadata", {})
+            .get("search_param", {}),
+            dict,
+        )
+        and config.products.get(product_type, {})
+        .get("discover_metadata", {})
+        .get("search_param", {})
+        .get("raise_mtd_discovery_error", False)
+        else raise_mtd_discovery_error
+    )
 
     query_params: dict[str, Any] = {}
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
-    queryables = _get_queryables(query_dict, config, product_type_metadata_mapping)
+    queryables = _get_queryables(
+        query_dict, config, product_type_metadata_mapping, raise_mtd_discovery_error
+    )
 
     for eodag_search_key, provider_search_key in queryables.items():
         user_input = query_dict[eodag_search_key]
@@ -1438,6 +1467,7 @@ def _get_queryables(
     search_params: dict[str, Any],
     config: PluginConfig,
     metadata_mapping: dict[str, Any],
+    raise_mtd_discovery_error: bool,
 ) -> dict[str, Any]:
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")
@@ -1445,6 +1475,10 @@ def _get_queryables(
     for eodag_search_key, user_input in search_params.items():
         if user_input is not None:
             md_mapping = metadata_mapping.get(eodag_search_key, (None, NOT_MAPPED))
+            # raise an eodag error if the provider prevent from having result with a metadata
+            # which is not supposed to be a queryable without raising an error by itself
+            if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
+                raise ValidationError("Unknown parameters not allowed")
             _, md_value = md_mapping
             # query param from defined metadata_mapping
             if md_mapping is not None and isinstance(md_mapping, list):

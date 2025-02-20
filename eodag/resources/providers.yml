@@ -3396,6 +3396,9 @@
       productType: EO:EEA:DAT:CORINE
       providerProductType: Corine Land Cover 2018
       format: GeoTiff100mt
+      discover_metadata:
+        search_param:
+          raise_mtd_discovery_error: true
       metadata_mapping:
         id: '$.id'
         providerProductType:

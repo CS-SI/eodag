@@ -339,6 +339,62 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         mock__request.assert_called()
         self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
+    def test_plugins_search_querystringsearch_search_peps_ko(self):
+        """A query with an unknown parameter must raise an error if the provider does not allow it"""  # noqa
+        # with raising error parameter in the global config of the provider
+        provider_search_plugin_config = deepcopy(self.peps_search_plugin.config)
+        self.peps_search_plugin.config.discover_metadata = {
+            "search_param": {"raise_mtd_discovery_error": True}
+        }
+
+        with self.assertRaises(ValidationError) as context:
+            self.peps_search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=2,
+                    auth_plugin=self.peps_auth_plugin,
+                ),
+                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
+            )
+        self.assertEqual(
+            f"Unknown parameters not allowed for {self.peps_search_plugin.provider} "
+            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            str(context.exception),
+        )
+
+        # restore the original config
+        self.peps_search_plugin.config = provider_search_plugin_config
+
+        # with raising error parameter in the config of the product type of the provider
+        provider_product_type_config = deepcopy(
+            self.peps_search_plugin.config.products[
+                self.search_criteria_s2_msi_l1c["productType"]
+            ]
+        )
+        self.peps_search_plugin.config.products[
+            self.search_criteria_s2_msi_l1c["productType"]
+        ]["discover_metadata"] = {"search_param": {"raise_mtd_discovery_error": True}}
+
+        with self.assertRaises(ValidationError) as context:
+            self.peps_search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=2,
+                    auth_plugin=self.peps_auth_plugin,
+                ),
+                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
+            )
+        self.assertEqual(
+            f"Unknown parameters not allowed for {self.peps_search_plugin.provider} "
+            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            str(context.exception),
+        )
+
+        # restore the original config
+        self.peps_search_plugin.config.products[
+            self.search_criteria_s2_msi_l1c["productType"]
+        ] = provider_product_type_config
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
@@ -3570,7 +3626,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_build_qs_stacsearch,
         mock_normalize_results,
     ):
-        """A query with a PostJsonSearchWithStacQueryables (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
+        """A query with a PostJsonSearchWithStacQueryables provider (here wekeo_main) must use build_query_string() of PostJsonSearch"""  # noqa
         mock_build_qs_postjsonsearch.return_value = (
             mock_build_qs_stacsearch.return_value
         ) = (
@@ -3596,6 +3652,62 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock__request.assert_called()
         mock_build_qs_postjsonsearch.assert_called()
         mock_build_qs_stacsearch.assert_not_called()
+
+    def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain_ko(self):
+        """A query with an unknown parameter must raise an error if the provider does not allow it"""  # noqa
+        # with raising error parameter in the global config of the provider
+        provider_search_plugin_config = deepcopy(self.wekeomain_search_plugin.config)
+        self.wekeomain_search_plugin.config.discover_metadata = {
+            "search_param": {"raise_mtd_discovery_error": True}
+        }
+
+        with self.assertRaises(ValidationError) as context:
+            self.wekeomain_search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=2,
+                    auth_plugin=self.wekeomain_auth_plugin,
+                ),
+                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
+            )
+        self.assertEqual(
+            f"Unknown parameters not allowed for {self.wekeomain_search_plugin.provider} "
+            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            str(context.exception),
+        )
+
+        # restore the original config
+        self.wekeomain_search_plugin.config = provider_search_plugin_config
+
+        # with raising error parameter in the config of the product type of the provider
+        provider_product_type_config = deepcopy(
+            self.wekeomain_search_plugin.config.products[
+                self.search_criteria_s2_msi_l1c["productType"]
+            ]
+        )
+        self.wekeomain_search_plugin.config.products[
+            self.search_criteria_s2_msi_l1c["productType"]
+        ]["discover_metadata"] = {"search_param": {"raise_mtd_discovery_error": True}}
+
+        with self.assertRaises(ValidationError) as context:
+            self.wekeomain_search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=2,
+                    auth_plugin=self.wekeomain_auth_plugin,
+                ),
+                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
+            )
+        self.assertEqual(
+            f"Unknown parameters not allowed for {self.wekeomain_search_plugin.provider} "
+            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            str(context.exception),
+        )
+
+        # restore the original config
+        self.wekeomain_search_plugin.config.products[
+            self.search_criteria_s2_msi_l1c["productType"]
+        ] = provider_product_type_config
 
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch.discover_queryables",
