@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
@@ -239,37 +239,39 @@ def _update_properties_from_element(
 
     # a bbox element
     elif element["type"] in ["GeographicExtentWidget", "GeographicExtentMapWidget"]:
-        prop.update({
-            "type": "array",
-            "minItems": 4,
-            "additionalItems": False,
-            "items": [
-                {
-                    "type": "number",
-                    "maximum": 180,
-                    "minimum": -180,
-                    "description": "West border of the bounding box",
-                },
-                {
-                    "type": "number",
-                    "maximum": 90,
-                    "minimum": -90,
-                    "description": "South border of the bounding box",
-                },
-                {
-                    "type": "number",
-                    "maximum": 180,
-                    "minimum": -180,
-                    "description": "East border of the bounding box",
-                },
-                {
-                    "type": "number",
-                    "maximum": 90,
-                    "minimum": -90,
-                    "description": "North border of the bounding box",
-                },
-            ],
-        })
+        prop.update(
+            {
+                "type": "array",
+                "minItems": 4,
+                "additionalItems": False,
+                "items": [
+                    {
+                        "type": "number",
+                        "maximum": 180,
+                        "minimum": -180,
+                        "description": "West border of the bounding box",
+                    },
+                    {
+                        "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                        "description": "South border of the bounding box",
+                    },
+                    {
+                        "type": "number",
+                        "maximum": 180,
+                        "minimum": -180,
+                        "description": "East border of the bounding box",
+                    },
+                    {
+                        "type": "number",
+                        "maximum": 90,
+                        "minimum": -90,
+                        "description": "North border of the bounding box",
+                    },
+                ],
+            }
+        )
 
     # DateRangeWidget is a calendar date picker
     if element["type"] == "DateRangeWidget":
@@ -410,10 +412,9 @@ class ECMWFSearch(PostJsonSearch):
             if "/to/" in _dc_qp.get("date", ""):
                 params[START], params[END] = _dc_qp["date"].split("/to/")
             elif "/" in _dc_qp.get("date", ""):
-                (
-                    params[START],
-                    params[END],
-                ) = _dc_qp["date"].split("/")
+                (params[START], params[END],) = _dc_qp[
+                    "date"
+                ].split("/")
             elif _dc_qp.get("date", None):
                 params[START] = params[END] = _dc_qp["date"]
 
@@ -481,7 +482,7 @@ class ECMWFSearch(PostJsonSearch):
         ) or getattr(self.config, "metadata_mapping", {})
 
         end_mm = product_type_mm.get(END)
-        start_mm = product_type_mm.get(START)
+        # start_mm = product_type_mm.get(START)
 
         if start:
             # start time given in EODAG format, end time missing
@@ -499,30 +500,30 @@ class ECMWFSearch(PostJsonSearch):
             return
         # TODO: elif end -> from default start to end
 
-        mapping = start_mm if isinstance(start_mm, list) else end_mm
-        if not mapping or not isinstance(mapping, list):
-            # if no mapping, no metadata mapping to extract the time params
-            # or if metadata mapping is not a list, metadata mapping does not contain
-            # transformation for datetime parameters
-            # We cannot try to map it with year/month/day/time...
-            #
-            # We exepct something like the following:
-            #
-            # completionTimeFromAscendingNode:
-            # - |
-            # {{
-            #   "year": {_date#interval_to_datetime_dict}["year"],
-            #   "month": {_date#interval_to_datetime_dict}["month"]
-            # }}
-            # - '{$.completionTimeFromAscendingNode#to_iso_date}'
-            #
-            return
+        # mapping = start_mm if isinstance(start_mm, list) else end_mm
+        # if not mapping or not isinstance(mapping, list):
+        #     # if no mapping, no metadata mapping to extract the time params
+        #     # or if metadata mapping is not a list, metadata mapping does not contain
+        #     # transformation for datetime parameters
+        #     # We cannot try to map it with year/month/day/time...
+        #     #
+        #     # We exepct something like the following:
+        #     #
+        #     # completionTimeFromAscendingNode:
+        #     # - |
+        #     # {{
+        #     #   "year": {_date#interval_to_datetime_dict}["year"],
+        #     #   "month": {_date#interval_to_datetime_dict}["month"]
+        #     # }}
+        #     # - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        #     #
+        #     return
 
         # get time parameters (date, year, month, ...) from metadata mapping
-        input_mapping = mapping[0].replace("{{", "").replace("}}", "")
-        time_params = [
-            values.split(":")[0].strip("\"' ") for values in input_mapping.split(",")
-        ]
+        # input_mapping = mapping[0].replace("{{", "").replace("}}", "")
+        # time_params = [
+        #     values.split(":")[0].strip("\"' ") for values in input_mapping.split(",")
+        # ]
 
         # TODO: if date param => use it and return
 
@@ -534,7 +535,7 @@ class ECMWFSearch(PostJsonSearch):
         ) -> datetime:
             updated_date = default_date.replace(
                 year=int(year) if year else default_date.year,
-                month=int(month) if month else  default_date.month,
+                month=int(month) if month else default_date.month,
                 day=int(day) if day else default_date.day,
             )
             if time is not None:
@@ -734,15 +735,17 @@ class ECMWFSearch(PostJsonSearch):
             or f"{ECMWF_PREFIX}year" in queryables
             or f"{ECMWF_PREFIX}hyear" in queryables
         ):
-            queryables.update({
-                "start": Queryables.get_with_default(
-                    "start", processed_filters.get(START)
-                ),
-                "end": Queryables.get_with_default(
-                    "end",
-                    processed_filters.get(END),
-                ),
-            })
+            queryables.update(
+                {
+                    "start": Queryables.get_with_default(
+                        "start", processed_filters.get(START)
+                    ),
+                    "end": Queryables.get_with_default(
+                        "end",
+                        processed_filters.get(END),
+                    ),
+                }
+            )
 
         # area is geom in EODAG.
         if queryables.pop("area", None):
@@ -846,9 +849,9 @@ class ECMWFSearch(PostJsonSearch):
             # raise an error as no constraint entry matched the input keywords
             # raise an error if one value from input is not allowed
             if not filtered_constraints or missing_values:
-                allowed_values = list({
-                    value for c in constraints for value in c.get(keyword, [])
-                })
+                allowed_values = list(
+                    {value for c in constraints for value in c.get(keyword, [])}
+                )
                 # restore ecmwf: prefix before raising error
                 keyword = ECMWF_PREFIX + keyword
 
@@ -1008,13 +1011,15 @@ class ECMWFSearch(PostJsonSearch):
         )
 
         # Add to the query, the queryable parameters set in the provider product type definition
-        properties.update({
-            k: v
-            for k, v in product_type_def_params.items()
-            if k not in properties.keys()
-            and k in self.config.metadata_mapping.keys()
-            and isinstance(self.config.metadata_mapping[k], list)
-        })
+        properties.update(
+            {
+                k: v
+                for k, v in product_type_def_params.items()
+                if k not in properties.keys()
+                and k in self.config.metadata_mapping.keys()
+                and isinstance(self.config.metadata_mapping[k], list)
+            }
+        )
         qp, _ = self.build_query_string(product_type, properties)
 
         return qp
