@@ -3401,6 +3401,8 @@
         providerProductType:
           - '{{"product_type": "{providerProductType}"}}'
           - '$.null'
+        startTimeFromAscendingNode: '$.properties.startdate'
+        completionTimeFromAscendingNode: '$.properties.enddate'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
