@@ -255,8 +255,9 @@ class PluginConfig(yaml.YAMLObject):
         auto_discovery: bool
         #: Metadata regex pattern used for discovery in search result properties
         metadata_pattern: str
-        #: Configuration/template that will be used to query for a discovered parameter
-        search_param: str
+        #: Configuration/template that will be used to query for a discovered parameter,
+        #: or indication whether metadata discovery may fail the search request or not
+        search_param: str | dict[str, Any]
         #: Path to the metadata in search result
         metadata_path: str
 

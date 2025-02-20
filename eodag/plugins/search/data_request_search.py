@@ -359,7 +359,14 @@ class DataRequestSearch(Search):
         ssl_verify = getattr(self.config.ssl_verify, "ssl_verify", True)
         try:
             url = self.config.data_request_url
-            request_body = format_query_params(eodag_product_type, self.config, kwargs)
+            try:
+                request_body = format_query_params(
+                    eodag_product_type, self.config, kwargs
+                )
+            except ValidationError:
+                raise ValidationError(
+                    f"Unknown parameters not allowed for {self.provider} with {product_type}"
+                )
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
             )
