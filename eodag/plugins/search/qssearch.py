@@ -813,7 +813,12 @@ class QueryStringSearch(Search):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        query_params = format_query_params(product_type, self.config, kwargs)
+        try:
+            query_params = format_query_params(product_type, self.config, kwargs)
+        except ValidationError:
+            raise ValidationError(
+                f"Unknown parameters not allowed for {self.provider} with {product_type}"
+            )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
@@ -1858,7 +1863,12 @@ class StacSearch(PostJsonSearch):
             kwargs.setdefault("startTimeFromAscendingNode", "..")
             kwargs.setdefault("completionTimeFromAscendingNode", "..")
 
-        query_params = format_query_params(product_type, self.config, kwargs)
+        try:
+            query_params = format_query_params(product_type, self.config, kwargs)
+        except ValidationError:
+            raise ValidationError(
+                f"Unknown parameters not allowed for {self.provider} with {product_type}"
+            )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
