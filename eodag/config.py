@@ -779,6 +779,7 @@ def provider_config_init(
             and provider_config.search.type
             in [
                 "StacSearch",
+                "StacListAssets",
                 "StaticStacSearch",
             ]
         ):
