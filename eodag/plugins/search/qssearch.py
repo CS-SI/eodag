@@ -813,9 +813,13 @@ class QueryStringSearch(Search):
         logger.debug("Building the query string that will be used for search")
         try:
             query_params = format_query_params(product_type, self.config, query_dict)
-        except ValidationError:
+        except ValidationError as context:
+            not_queryable_search_param = Queryables.get_queryable_from_alias(
+                str(context.message).split(":")[-1].strip()
+            )
             raise ValidationError(
-                f"Unknown parameters not allowed for {self.provider} with {product_type}"
+                f"Search parameters which are not queryable are disallowed for {product_type} with "
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
             )
 
         # Build the final query string, in one go without quoting it
@@ -1788,9 +1792,13 @@ class StacSearch(PostJsonSearch):
 
         try:
             query_params = format_query_params(product_type, self.config, query_dict)
-        except ValidationError:
+        except ValidationError as context:
+            not_queryable_search_param = Queryables.get_queryable_from_alias(
+                str(context.message).split(":")[-1].strip()
+            )
             raise ValidationError(
-                f"Unknown parameters not allowed for {self.provider} with {product_type}"
+                f"Search parameters which are not queryable are disallowed for {product_type} with "
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
             )
 
         # Build the final query string, in one go without quoting it

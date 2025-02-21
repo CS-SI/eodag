@@ -1299,6 +1299,11 @@ def format_query_params(
         config.metadata_mapping,
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
+    # Initialize the configuration parameter which indicates if an error must be raised while there is a search
+    # parameter which is not queryable. It is useful when the provider does not return any result if the search
+    # parameter is not a queryable without raising an error by itself.
+    # This parameter is set to False by default and the configuration at product type level has priority over the
+    # one at provider level
     raise_mtd_discovery_error = (
         getattr(config, "discover_metadata", {})
         .get("search_param", {})
@@ -1476,10 +1481,11 @@ def _get_queryables(
     for eodag_search_key, user_input in search_params.items():
         if user_input is not None:
             md_mapping = metadata_mapping.get(eodag_search_key, (None, NOT_MAPPED))
-            # raise an eodag error if the provider prevent from having result with a metadata
-            # which is not supposed to be a queryable without raising an error by itself
+            # raise an error when a query param not allowed by the provider is found
             if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
-                raise ValidationError("Unknown parameters not allowed")
+                raise ValidationError(
+                    f"Search parameters which are not queryable are disallowed: {eodag_search_key}"
+                )
             _, md_value = md_mapping
             # query param from defined metadata_mapping
             if md_mapping is not None and isinstance(md_mapping, list):
