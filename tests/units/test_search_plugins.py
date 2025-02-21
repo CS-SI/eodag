@@ -338,7 +338,8 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertNotIn("cloudCover", mock__request.call_args_list[-1][0][1].url)
 
     def test_plugins_search_querystringsearch_search_peps_ko(self):
-        """A query with an unknown parameter must raise an error if the provider does not allow it"""  # noqa
+        """A query with a parameter which is not queryable must
+        raise an error if the provider does not allow it"""  # noqa
         # with raising error parameter in the global config of the provider
         provider_search_plugin_config = deepcopy(self.peps_search_plugin.config)
         self.peps_search_plugin.config.discover_metadata = {
@@ -355,8 +356,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            f"Unknown parameters not allowed for {self.peps_search_plugin.provider} "
-            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            "Search parameters which are not queryable are disallowed for "
+            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
+            "please remove 'foo' from your search parameters",
             str(context.exception),
         )
 
@@ -383,8 +385,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            f"Unknown parameters not allowed for {self.peps_search_plugin.provider} "
-            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            "Search parameters which are not queryable are disallowed for "
+            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
+            "please remove 'foo' from your search parameters",
             str(context.exception),
         )
 
@@ -3525,7 +3528,8 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_build_qs_stacsearch.assert_not_called()
 
     def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain_ko(self):
-        """A query with an unknown parameter must raise an error if the provider does not allow it"""  # noqa
+        """A query with a parameter which is not queryable must
+        raise an error if the provider does not allow it"""  # noqa
         # with raising error parameter in the global config of the provider
         provider_search_plugin_config = deepcopy(self.wekeomain_search_plugin.config)
         self.wekeomain_search_plugin.config.discover_metadata = {
@@ -3542,8 +3546,9 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            f"Unknown parameters not allowed for {self.wekeomain_search_plugin.provider} "
-            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            "Search parameters which are not queryable are disallowed for "
+            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
+            "please remove 'foo' from your search parameters",
             str(context.exception),
         )
 
@@ -3570,8 +3575,9 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            f"Unknown parameters not allowed for {self.wekeomain_search_plugin.provider} "
-            f"with {self.search_criteria_s2_msi_l1c['productType']}",
+            "Search parameters which are not queryable are disallowed for "
+            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
+            "please remove 'foo' from your search parameters",
             str(context.exception),
         )
 
