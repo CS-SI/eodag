@@ -71,6 +71,7 @@ from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
@@ -533,7 +534,7 @@ class QueryStringSearch(Search):
 
             prep.info_message = "Fetching product types: {}".format(prep.url)
             prep.exception_message = (
-                "Skipping error while fetching product types for " "{} {} instance:"
+                "Skipping error while fetching product types for {} {} instance:"
             ).format(self.provider, self.__class__.__name__)
 
             # Query using appropriate method
@@ -815,9 +816,13 @@ class QueryStringSearch(Search):
         logger.debug("Building the query string that will be used for search")
         try:
             query_params = format_query_params(product_type, self.config, kwargs)
-        except ValidationError:
+        except ValidationError as context:
+            not_queryable_search_param = Queryables.get_queryable_from_alias(
+                str(context.message).split(":")[-1].strip()
+            )
             raise ValidationError(
-                f"Unknown parameters not allowed for {self.provider} with {product_type}"
+                f"Search parameters which are not queryable are disallowed for {product_type} with "
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
             )
 
         # Build the final query string, in one go without quoting it
@@ -1865,9 +1870,13 @@ class StacSearch(PostJsonSearch):
 
         try:
             query_params = format_query_params(product_type, self.config, kwargs)
-        except ValidationError:
+        except ValidationError as context:
+            not_queryable_search_param = Queryables.get_queryable_from_alias(
+                str(context.message).split(":")[-1].strip()
+            )
             raise ValidationError(
-                f"Unknown parameters not allowed for {self.provider} with {product_type}"
+                f"Search parameters which are not queryable are disallowed for {product_type} with "
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
             )
 
         # Build the final query string, in one go without quoting it
