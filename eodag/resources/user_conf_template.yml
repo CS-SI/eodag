@@ -157,7 +157,7 @@ geodes:
     download:
         extract:
         output_dir:
-geodes:
+geodes_s3:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration
     auth:
