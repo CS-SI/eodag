@@ -1312,7 +1312,7 @@ def format_query_params(
         config.products.get(product_type, {})
         .get("discover_metadata", {})
         .get("search_param", {})
-        .get("raise_mtd_discovery_error", False)
+        .get("raise_mtd_discovery_error")
         if isinstance(
             config.products.get(product_type, {})
             .get("discover_metadata", {})
@@ -1322,7 +1322,8 @@ def format_query_params(
         and config.products.get(product_type, {})
         .get("discover_metadata", {})
         .get("search_param", {})
-        .get("raise_mtd_discovery_error", False)
+        .get("raise_mtd_discovery_error")
+        is not None
         else raise_mtd_discovery_error
     )
 
