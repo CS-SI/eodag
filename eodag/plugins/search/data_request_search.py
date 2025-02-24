@@ -370,7 +370,8 @@ class DataRequestSearch(Search):
                 )
                 raise ValidationError(
                     f"Search parameters which are not queryable are disallowed for {product_type} with "
-                    f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
+                    f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
+                    {not_queryable_search_param},
                 )
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
