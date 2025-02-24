@@ -20,6 +20,7 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+from importlib.resources import files as res_files
 from inspect import isclass
 from typing import (
     Annotated,
@@ -41,7 +42,6 @@ import yaml.constructor
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
-from pkg_resources import resource_filename
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
@@ -671,9 +671,9 @@ def load_default_config() -> dict[str, ProviderConfig]:
 
     :returns: The default provider's configuration
     """
-    eodag_providers_cfg_file = os.getenv(
-        "EODAG_PROVIDERS_CFG_FILE"
-    ) or resource_filename("eodag", "resources/providers.yml")
+    eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
+        res_files("eodag") / "resources" / "providers.yml"
+    )
     return load_config(eodag_providers_cfg_file)
 
 
@@ -988,9 +988,7 @@ def load_stac_config() -> dict[str, Any]:
 
     :returns: The stac configuration
     """
-    return load_yml_config(
-        resource_filename("eodag", os.path.join("resources/", "stac.yml"))
-    )
+    return load_yml_config(str(res_files("eodag") / "resources" / "stac.yml"))
 
 
 def load_stac_api_config() -> dict[str, Any]:
@@ -998,9 +996,7 @@ def load_stac_api_config() -> dict[str, Any]:
 
     :returns: The stac API configuration
     """
-    return load_yml_config(
-        resource_filename("eodag", os.path.join("resources/", "stac_api.yml"))
-    )
+    return load_yml_config(str(res_files("eodag") / "resources" / "stac_api.yml"))
 
 
 def load_stac_provider_config() -> dict[str, Any]:
@@ -1009,7 +1005,7 @@ def load_stac_provider_config() -> dict[str, Any]:
     :returns: The stac provider configuration
     """
     return SimpleYamlProxyConfig(
-        resource_filename("eodag", os.path.join("resources/", "stac_provider.yml"))
+        str(res_files("eodag") / "resources" / "stac_provider.yml")
     ).source
 
 

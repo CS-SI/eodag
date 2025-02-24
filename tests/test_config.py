@@ -19,11 +19,11 @@
 import os
 import tempfile
 import unittest
+from importlib.resources import files as res_files
 from io import StringIO
 from tempfile import TemporaryDirectory
 
 import yaml.parser
-from pkg_resources import resource_filename
 
 from tests.context import (
     EXT_PRODUCT_TYPES_CONF_URI,
@@ -510,7 +510,7 @@ class TestStacProviderConfig(unittest.TestCase):
 
     def test_existing_stac_provider_conf(self):
         """Existing / pre-configured STAC providers conf should mix providers.yml and  stac_provider.yml infos."""
-        with open(resource_filename("eodag", "resources/providers.yml"), "r") as fh:
+        with open(str(res_files("eodag") / "resources" / "providers.yml"), "r") as fh:
             providers_configs = {
                 p.name: p for p in yaml.load_all(fh, Loader=yaml.Loader)
             }
