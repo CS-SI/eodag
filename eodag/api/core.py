@@ -23,13 +23,13 @@ import os
 import re
 import shutil
 import tempfile
+from importlib.metadata import version
+from importlib.resources import files as res_files
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import pkg_resources
 import yaml.parser
-from pkg_resources import resource_filename
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import exists_in, open_dir
@@ -119,8 +119,8 @@ class EODataAccessGateway:
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
     ) -> None:
-        product_types_config_path = resource_filename(
-            "eodag", os.path.join("resources/", "product_types.yml")
+        product_types_config_path = str(
+            res_files("eodag") / "resources" / "product_types.yml"
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
         self.product_types_config_md5 = obj_md5sum(self.product_types_config.source)
@@ -161,8 +161,8 @@ class EODataAccessGateway:
                 user_conf_file_path = standard_configuration_path
                 if not os.path.isfile(standard_configuration_path):
                     shutil.copy(
-                        resource_filename(
-                            "eodag", os.path.join("resources", "user_conf_template.yml")
+                        str(
+                            res_files("eodag") / "resources" / "user_conf_template.yml"
                         ),
                         standard_configuration_path,
                     )
@@ -203,9 +203,8 @@ class EODataAccessGateway:
                 locations_conf_path = os.path.join(self.conf_dir, "locations.yml")
                 if not os.path.isfile(locations_conf_path):
                     # copy locations conf file and replace path example
-                    locations_conf_template = resource_filename(
-                        "eodag",
-                        os.path.join("resources", "locations_conf_template.yml"),
+                    locations_conf_template = str(
+                        res_files("eodag") / "resources" / "locations_conf_template.yml"
                     )
                     with (
                         open(locations_conf_template) as infile,
@@ -222,14 +221,14 @@ class EODataAccessGateway:
                             outfile.write(line)
                     # copy sample shapefile dir
                     shutil.copytree(
-                        resource_filename("eodag", os.path.join("resources", "shp")),
+                        str(res_files("eodag") / "resources" / "shp"),
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
 
     def get_version(self) -> str:
         """Get eodag package version"""
-        return pkg_resources.get_distribution("eodag").version
+        return version("eodag")
 
     def build_index(self) -> None:
         """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_

@@ -22,13 +22,13 @@ import re
 import unittest
 from contextlib import contextmanager
 from datetime import datetime
+from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 
 import click
 from click.testing import CliRunner
 from faker import Faker
 from packaging import version
-from pkg_resources import resource_filename
 
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_PRODUCT_TYPE
@@ -811,8 +811,8 @@ class TestEodagCli(unittest.TestCase):
         search_results_path = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result.geojson"
         )
-        default_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        default_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         result = self.runner.invoke(
             eodag,

@@ -25,11 +25,12 @@ import shutil
 import tempfile
 import unittest
 import uuid
+from importlib.resources import files as res_files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from lxml import html
-from pkg_resources import DistributionNotFound, resource_filename
+from pkg_resources import DistributionNotFound
 from pydantic import ValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
@@ -1242,8 +1243,8 @@ class TestCore(TestCoreBase):
 
     def test_prune_providers_list(self):
         """Providers needing auth for search but without credentials must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         try:
             # Default conf: no auth needed for search
@@ -1270,8 +1271,8 @@ class TestCore(TestCoreBase):
     @mock.patch("eodag.plugins.manager.pkg_resources.iter_entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
 
         def skip_qssearch(topic):
@@ -1290,8 +1291,8 @@ class TestCore(TestCoreBase):
 
     def test_prune_providers_list_for_search_without_auth(self):
         """Providers needing auth for search but without auth plugin must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         try:
             # auth needed for search with need_auth but without auth plugin
@@ -1318,8 +1319,8 @@ class TestCore(TestCoreBase):
 
     def test_prune_providers_list_without_api_or_search_plugin(self):
         """Providers without api or search plugin must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
         delattr(dag.providers_config["peps"], "search")
