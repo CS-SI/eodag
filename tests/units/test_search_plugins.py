@@ -359,7 +359,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "Search parameters which are not queryable are disallowed for "
             f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
-            str(context.exception),
+            context.exception.message,
         )
 
         # restore the original config
@@ -388,7 +388,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             "Search parameters which are not queryable are disallowed for "
             f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
-            str(context.exception),
+            context.exception.message,
         )
 
         # restore the original config
@@ -2775,8 +2775,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         with self.assertRaises(ValidationError) as context:
             self.search_plugin.discover_queryables(**params)
         self.assertEqual(
-            f"{wrong_queryable} is not a queryable parameter for {self.provider}",
-            str(context.exception),
+            f"'{wrong_queryable}' is not a queryable parameter for {self.provider}",
+            context.exception.message,
         )
 
     @mock.patch("eodag.utils.requests.requests.sessions.Session.get", autospec=True)
@@ -3549,7 +3549,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
             "Search parameters which are not queryable are disallowed for "
             f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
-            str(context.exception),
+            context.exception.message,
         )
 
         # restore the original config
@@ -3578,7 +3578,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
             "Search parameters which are not queryable are disallowed for "
             f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
-            str(context.exception),
+            context.exception.message,
         )
 
         # restore the original config

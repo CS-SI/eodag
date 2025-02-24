@@ -722,7 +722,7 @@ class ECMWFSearch(PostJsonSearch):
                 "geometry",
             }:
                 raise ValidationError(
-                    f"{key} is not a queryable parameter for {self.provider}"
+                    f"'{key}' is not a queryable parameter for {self.provider}", {key}
                 )
 
             formated_filters[key] = v
@@ -781,7 +781,9 @@ class ECMWFSearch(PostJsonSearch):
                 and keyword.removeprefix(ECMWF_PREFIX)
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
-                raise ValidationError(f"{keyword} is not a queryable parameter")
+                raise ValidationError(
+                    f"'{keyword}' is not a queryable parameter", {keyword}
+                )
 
         # generate queryables
         if form:
@@ -868,7 +870,8 @@ class ECMWFSearch(PostJsonSearch):
             # we only compare list of strings.
             if isinstance(values, dict):
                 raise ValidationError(
-                    f"Parameter value as object is not supported: {keyword}={values}"
+                    f"Parameter value as object is not supported: {keyword}={values}",
+                    {keyword},
                 )
 
             # We convert every single value to a list of string
@@ -934,7 +937,10 @@ class ECMWFSearch(PostJsonSearch):
                 raise ValidationError(
                     f"{keyword}={values} is not available"
                     f"{all_keywords_str}."
-                    f" Allowed values are {', '.join(allowed_values)}."
+                    f" Allowed values are {', '.join(allowed_values)}.",
+                    set(
+                        [keyword] + [k for k in parsed_keywords if k in input_keywords]
+                    ),
                 )
 
             parsed_keywords.append(keyword)
