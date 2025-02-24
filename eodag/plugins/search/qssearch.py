@@ -819,7 +819,8 @@ class QueryStringSearch(Search):
             )
             raise ValidationError(
                 f"Search parameters which are not queryable are disallowed for {product_type} with "
-                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
+                {not_queryable_search_param},
             )
 
         # Build the final query string, in one go without quoting it
@@ -1798,7 +1799,8 @@ class StacSearch(PostJsonSearch):
             )
             raise ValidationError(
                 f"Search parameters which are not queryable are disallowed for {product_type} with "
-                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters"
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
+                {not_queryable_search_param},
             )
 
         # Build the final query string, in one go without quoting it

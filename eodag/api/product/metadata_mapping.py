@@ -1484,7 +1484,8 @@ def _get_queryables(
             # raise an error when a query param not allowed by the provider is found
             if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
                 raise ValidationError(
-                    f"Search parameters which are not queryable are disallowed: {eodag_search_key}"
+                    f"Search parameters which are not queryable are disallowed: {eodag_search_key}",
+                    {eodag_search_key},
                 )
             _, md_value = md_mapping
             # query param from defined metadata_mapping
