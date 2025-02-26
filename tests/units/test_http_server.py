@@ -1667,6 +1667,7 @@ class RequestTestCase(unittest.TestCase):
                 "title",
                 "description",
                 "properties",
+                "required",
                 "additionalProperties",
             ],
         )
