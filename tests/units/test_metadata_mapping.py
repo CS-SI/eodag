@@ -244,10 +244,26 @@ class TestMetadataFormatter(unittest.TestCase):
 
     def test_convert_replace_str(self):
         to_format = r"{fieldname#replace_str(r'(.*) is (.*)',r'\1 was \2...')}"
+
+        # Test with a string
         self.assertEqual(
             format_metadata(to_format, fieldname="this is foo"),
             "this was foo...",
         )
+
+        # Test with a dictionary
+        self.assertEqual(
+            format_metadata(to_format, fieldname={"key": "this is foo"}),
+            '{"key": "this was foo"}...',
+        )
+
+        # Test with a list (should fail)
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname=["this is foo"])
+
+        # Test with an integer (should fail)
+        with self.assertRaises(TypeError):
+            format_metadata(to_format, fieldname=123)
 
     def test_convert_recursive_sub_str(self):
         to_format = r"{fieldname#recursive_sub_str(r'(.*) is (.*)',r'\1 was \2...')}"
@@ -506,14 +522,20 @@ class TestMetadataFormatter(unittest.TestCase):
         self.assertEqual(
             format_metadata(to_format, text="20231019-20231020"),
             str(
-                {"startDate": "2023-10-19T00:00:00Z", "endDate": "2023-10-20T00:00:00Z"}
+                {
+                    "startDate": "2023-10-19T00:00:00Z",
+                    "endDate": "2023-10-20T00:00:00Z",
+                }
             ),
         )
         to_format = "{text#get_dates_from_string(_)}"
         self.assertEqual(
             format_metadata(to_format, text="20231019_20231020"),
             str(
-                {"startDate": "2023-10-19T00:00:00Z", "endDate": "2023-10-20T00:00:00Z"}
+                {
+                    "startDate": "2023-10-19T00:00:00Z",
+                    "endDate": "2023-10-20T00:00:00Z",
+                }
             ),
         )
 
@@ -558,7 +580,10 @@ class TestMetadataFormatter(unittest.TestCase):
                 to_format, product_id="mfwamglocep_2021121102_R20211212_12H.nc"
             ),
             str(
-                {"min_date": "2021-12-11T02:00:00Z", "max_date": "2021-12-12T02:00:00Z"}
+                {
+                    "min_date": "2021-12-11T02:00:00Z",
+                    "max_date": "2021-12-12T02:00:00Z",
+                }
             ),
         )
         self.assertEqual(
@@ -567,7 +592,10 @@ class TestMetadataFormatter(unittest.TestCase):
                 product_id="glo12_rg_1d-m_20220601-20220601_3D-uovo_hcst_R20220615.nc",
             ),
             str(
-                {"min_date": "2022-06-01T00:00:00Z", "max_date": "2022-06-02T00:00:00Z"}
+                {
+                    "min_date": "2022-06-01T00:00:00Z",
+                    "max_date": "2022-06-02T00:00:00Z",
+                }
             ),
         )
 

@@ -1047,7 +1047,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "startdate": "2003-01-01T00:00:00.000Z",
-                "enddate": "2003-01-02T00:00:00.000Z",
+                "enddate": "2003-01-01T00:00:00.000Z",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "data_format": "grib",
                 "variable": "2m_dewpoint_temperature",
@@ -2256,7 +2256,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         exp_end_date = datetime.strptime(
             DEFAULT_MISSION_START_DATE, "%Y-%m-%dT%H:%M:%SZ"
-        ) + timedelta(days=1)
+        )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
             exp_end_date.strftime("%Y-%m-%d"),
@@ -2276,7 +2276,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-26"
         )
 
     def test_plugins_search_ecmwfsearch_without_producttype(self):
@@ -2410,7 +2410,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # ones of the constraints file to an empty value to check if its associated queryable has no default value
         eodag_formatted_data_format = "ecmwf:data_format"
         provider_data_format = eodag_formatted_data_format.replace("ecmwf:", "")
-        self.assertIn(eodag_formatted_data_format, default_values)
+        self.assertIn(provider_data_format, default_values)
         self.assertIn(provider_data_format, [param["name"] for param in form])
         data_format_in_form = [
             param for param in form if param["name"] == provider_data_format

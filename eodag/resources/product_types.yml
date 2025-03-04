@@ -4251,7 +4251,7 @@ GLOFAS_SEASONAL_REFORECAST:
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
-  missionStartDate: "1981-01-01T00:00:00Z"
+  missionStartDate: "1981-01-27T00:00:00Z"
 
 EFAS_FORECAST:
   abstract: |
@@ -4322,7 +4322,7 @@ EFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: other
   title: River discharge and related historical data from the European Flood Awareness System
-  missionStartDate: "1991-01-01T00:00:00Z"
+  missionStartDate: "1991-01-01T06:00:00Z"
 
 EFAS_REFORECAST:
   abstract: |
