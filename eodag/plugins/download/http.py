@@ -136,6 +136,8 @@ class HTTPDownload(Download):
 
     """
 
+    HTTPSession = requests.Session
+
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(HTTPDownload, self).__init__(provider, config)
 
@@ -199,15 +201,16 @@ class HTTPDownload(Download):
 
         headers = {**getattr(self.config, "order_headers", {}), **USER_AGENT}
         try:
-            with requests.request(
-                method=order_method,
-                url=order_url,
-                auth=auth,
-                timeout=timeout,
-                headers=headers,
-                verify=ssl_verify,
-                **order_kwargs,
-            ) as response:
+            with self.HTTPSession() as s:
+                response = s.request(
+                    method=order_method,
+                    url=order_url,
+                    auth=auth,
+                    timeout=timeout,
+                    headers=headers,
+                    verify=ssl_verify,
+                    **order_kwargs,
+                )
                 logger.debug(f"{order_method} {order_url} {headers} {order_kwargs}")
                 try:
                     response.raise_for_status()
@@ -300,31 +303,32 @@ class HTTPDownload(Download):
 
             logger.debug(f"{method} {url} {headers} {json}")
             try:
-                response = requests.request(
-                    method=method,
-                    url=url,
-                    auth=auth,
-                    timeout=timeout,
-                    headers={**(headers or {}), **USER_AGENT},
-                    allow_redirects=False,  # Redirection is manually handled
-                    json=json,
-                )
-                logger.debug(
-                    f"Order download status request responded with {response.status_code}"
-                )
-                response.raise_for_status()  # Raise an exception if status code indicates an error
+                with self.HTTPSession() as s:
+                    response = s.request(
+                        method=method,
+                        url=url,
+                        auth=auth,
+                        timeout=timeout,
+                        headers={**(headers or {}), **USER_AGENT},
+                        allow_redirects=False,  # Redirection is manually handled
+                        json=json,
+                    )
+                    logger.debug(
+                        f"Order download status request responded with {response.status_code}"
+                    )
+                    response.raise_for_status()  # Raise an exception if status code indicates an error
 
-                # Handle redirection (if needed)
-                if (
-                    300 <= response.status_code < 400
-                    and response.status_code != success_code
-                ):
-                    # cf: https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
-                    if response.status_code == 303:
-                        method = "GET"
-                    if new_url := response.headers.get("Location"):
-                        return _request(new_url, method, headers, json, timeout)
-                return response
+                    # Handle redirection (if needed)
+                    if (
+                        300 <= response.status_code < 400
+                        and response.status_code != success_code
+                    ):
+                        # cf: https://www.rfc-editor.org/rfc/rfc9110.html#name-303-see-other
+                        if response.status_code == 303:
+                            method = "GET"
+                        if new_url := response.headers.get("Location"):
+                            return _request(new_url, method, headers, json, timeout)
+                    return response
             except requests.exceptions.Timeout as exc:
                 raise TimeOutError(exc, timeout=timeout) from exc
 
@@ -960,7 +964,7 @@ class HTTPDownload(Download):
         if getattr(self.config, "no_auth_download", False):
             auth = None
 
-        s = requests.Session()
+        s = self.HTTPSession()
         self.stream = s.request(
             req_method,
             req_url,
@@ -1094,15 +1098,16 @@ class HTTPDownload(Download):
                 auth_object = auth
             else:
                 auth_object = None
-            with requests.get(
-                asset["href"],
-                stream=True,
-                auth=auth_object,
-                params=params,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                verify=ssl_verify,
-            ) as stream:
+            with self.HTTPSession() as s:
+                stream = s.get(
+                    asset["href"],
+                    stream=True,
+                    auth=auth_object,
+                    params=params,
+                    headers=USER_AGENT,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
+                )
                 try:
                     stream.raise_for_status()
                 except requests.exceptions.Timeout as exc:
@@ -1301,14 +1306,15 @@ class HTTPDownload(Download):
             if asset["href"] and not asset["href"].startswith("file:"):
                 # HEAD request for size & filename
                 try:
-                    asset_headers = requests.head(
-                        asset["href"],
-                        auth=auth,
-                        params=params,
-                        headers=USER_AGENT,
-                        timeout=timeout,
-                        verify=ssl_verify,
-                    ).headers
+                    with self.HTTPSession() as s:
+                        asset_headers = s.head(
+                            asset["href"],
+                            auth=auth,
+                            params=params,
+                            headers=USER_AGENT,
+                            timeout=timeout,
+                            verify=ssl_verify,
+                        ).headers
                 except RequestException as e:
                     logger.debug(f"HEAD request failed: {str(e)}")
                     asset_headers = CaseInsensitiveDict()
@@ -1336,15 +1342,16 @@ class HTTPDownload(Download):
 
                 if not getattr(asset, "size", 0):
                     # GET request for size
-                    with requests.get(
-                        asset["href"],
-                        stream=True,
-                        auth=auth,
-                        params=params,
-                        headers=USER_AGENT,
-                        timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                        verify=ssl_verify,
-                    ) as stream:
+                    with self.HTTPSession() as s:
+                        stream = s.get(
+                            asset["href"],
+                            stream=True,
+                            auth=auth,
+                            params=params,
+                            headers=USER_AGENT,
+                            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                            verify=ssl_verify,
+                        )
                         # size from GET header / Content-length
                         asset.size = int(stream.headers.get("Content-length", 0))
                         if not getattr(asset, "size", 0):
