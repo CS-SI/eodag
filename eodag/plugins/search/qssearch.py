@@ -71,6 +71,7 @@ from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
@@ -533,7 +534,7 @@ class QueryStringSearch(Search):
 
             prep.info_message = "Fetching product types: {}".format(prep.url)
             prep.exception_message = (
-                "Skipping error while fetching product types for " "{} {} instance:"
+                "Skipping error while fetching product types for {} {} instance:"
             ).format(self.provider, self.__class__.__name__)
 
             # Query using appropriate method
@@ -813,7 +814,17 @@ class QueryStringSearch(Search):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        query_params = format_query_params(product_type, self.config, kwargs)
+        try:
+            query_params = format_query_params(product_type, self.config, kwargs)
+        except ValidationError as context:
+            not_queryable_search_param = Queryables.get_queryable_from_alias(
+                str(context.message).split(":")[-1].strip()
+            )
+            raise ValidationError(
+                f"Search parameters which are not queryable are disallowed for {product_type} with "
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
+                {not_queryable_search_param},
+            )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
@@ -1858,7 +1869,17 @@ class StacSearch(PostJsonSearch):
             kwargs.setdefault("startTimeFromAscendingNode", "..")
             kwargs.setdefault("completionTimeFromAscendingNode", "..")
 
-        query_params = format_query_params(product_type, self.config, kwargs)
+        try:
+            query_params = format_query_params(product_type, self.config, kwargs)
+        except ValidationError as context:
+            not_queryable_search_param = Queryables.get_queryable_from_alias(
+                str(context.message).split(":")[-1].strip()
+            )
+            raise ValidationError(
+                f"Search parameters which are not queryable are disallowed for {product_type} with "
+                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
+                {not_queryable_search_param},
+            )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)

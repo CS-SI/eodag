@@ -597,7 +597,7 @@ class ECMWFSearch(PostJsonSearch):
                 formated_kwargs[key] = kwargs[key]
             else:
                 raise ValidationError(
-                    f"{key} is not a queryable parameter for {self.provider}"
+                    f"'{key}' is not a queryable parameter for {self.provider}", {key}
                 )
 
         # we use non empty kwargs as default to integrate user inputs
@@ -658,7 +658,9 @@ class ECMWFSearch(PostJsonSearch):
                 and keyword.replace("ecmwf:", "")
                 not in set(list(available_values.keys()) + [f["name"] for f in form])
             ):
-                raise ValidationError(f"{keyword} is not a queryable parameter")
+                raise ValidationError(
+                    f"'{keyword}' is not a queryable parameter", {keyword}
+                )
 
         # generate queryables
         if form:
@@ -745,7 +747,8 @@ class ECMWFSearch(PostJsonSearch):
             # we only compare list of strings.
             if isinstance(values, dict):
                 raise ValidationError(
-                    f"Parameter value as object is not supported: {keyword}={values}"
+                    f"Parameter value as object is not supported: {keyword}={values}",
+                    {keyword},
                 )
             filter_v = values if isinstance(values, (list, tuple)) else [values]
 
@@ -810,7 +813,10 @@ class ECMWFSearch(PostJsonSearch):
                 raise ValidationError(
                     f"{keyword}={values} is not available"
                     f"{all_keywords_str}."
-                    f" Allowed values are {', '.join(allowed_values)}."
+                    f" Allowed values are {', '.join(allowed_values)}.",
+                    set(
+                        [keyword] + [k for k in parsed_keywords if k in input_keywords]
+                    ),
                 )
 
             parsed_keywords.append(keyword)
