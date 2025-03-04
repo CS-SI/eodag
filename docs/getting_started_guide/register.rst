@@ -46,12 +46,12 @@ You need credentials for both EOS (search) and AWS (download):
 ^^^^^^^^^^^
 Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
 
-Then log in and go to your user profile on `Atmosphere Data Store <https://ads-beta.atmosphere.copernicus.eu/>`__ and
+Then log in and go to your user profile on `Atmosphere Data Store <https://ads.atmosphere.copernicus.eu/>`__ and
 use your *Personal Access Token* as *apikey* in eodag credentials.
 
 To download data you have to accept the `Licence to use Copernicus Products`. To accept the licence:
 
-* Go to `Datasets <https://ads-beta.atmosphere.copernicus.eu/datasets>`__ while being logged in.
+* Go to `Datasets <https://ads.atmosphere.copernicus.eu/datasets>`__ while being logged in.
 * Open the details of a dataset and go to the download tab.
 * Scroll down and accept the licence in the section `Terms of use`.
 * You can check which licences you have accepted in your user profile.
@@ -59,7 +59,7 @@ To download data you have to accept the `Licence to use Copernicus Products`. To
 ``cop_cds``
 ^^^^^^^^^^^
 Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
-Then log in and go to your user profile on `Climate Data Store <https://cds-beta.climate.copernicus.eu/>`__ and use your
+Then log in and go to your user profile on `Climate Data Store <https://cds.climate.copernicus.eu/>`__ and use your
 *Personal Access Token* as *apikey* in eodag credentials.
 
 To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence
@@ -69,7 +69,7 @@ also have to accept the `Additional licence to use non European contributions`.
 
 To accept a licence:
 
-* Search for the dataset you want to download `here <https://cds-beta.climate.copernicus.eu/datasets>`__ while being
+* Search for the dataset you want to download `here <https://cds.climate.copernicus.eu/datasets>`__ while being
   logged in.
 * Open the dataset details and go to the download tab.
 * Scroll down and accept the licence in the section `Terms of use`.
