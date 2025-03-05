@@ -1404,7 +1404,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             },
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
-        self.product.properties["searchLink"] = "http://somewhere/search-gain"
+        self.product.properties["searchLink"] = "http://somewhere/search-again"
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1421,7 +1421,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             responses.add(
                 responses.GET,
-                "http://somewhere/search-gain",
+                "http://somewhere/search-again",
                 status=200,
                 body=(
                     b"<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
@@ -1439,6 +1439,56 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.assertEqual(len(responses.calls), 2)
 
         run()
+
+    def test_plugins_download_http_order_status_search_again_raises_if_request_failed(
+        self,
+    ):
+        """HTTPDownload._order_status() must raise an error if the search request after success failed"""
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.order_status = {
+            "metadata_mapping": {"status": "$.json.status"},
+            "success": {"status": "great-success"},
+            "on_success": {
+                "need_search": True,
+                "result_type": "xml",
+                "results_entry": "//entry",
+                "metadata_mapping": {
+                    "downloadLink": "foo/text()",
+                },
+            },
+        }
+        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["searchLink"] = "http://somewhere/search-again"
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run(error_code: int):
+            responses.add(
+                responses.GET,
+                "http://somewhere/order-status",
+                status=200,
+                json={"status": "great-success"},
+            )
+            responses.add(
+                responses.GET,
+                "http://somewhere/search-again",
+                status=error_code,
+            )
+            if error_code == 500:
+                with self.assertRaises(DownloadError) as context:
+                    plugin._order_status(self.product, auth=auth)
+            if error_code == 400:
+                with self.assertRaises(ValidationError) as context:
+                    plugin._order_status(self.product, auth=auth)
+            self.assertIn("order status could not be checked", str(context.exception))
+            self.assertEqual(len(responses.calls), 2)
+
+        run(error_code=500)
+        run(error_code=400)
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
