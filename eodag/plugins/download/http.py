@@ -461,7 +461,11 @@ class HTTPDownload(Download):
                     product.properties["title"],
                     e,
                 )
-                return None
+                msg = f'{product.properties["title"]} order status could not be checked'
+                if e.response is not None and e.response.status_code == 400:
+                    raise ValidationError.from_error(e, msg) from e
+                else:
+                    raise DownloadError.from_error(e, msg) from e
 
         result_type = config_on_success.get("result_type", "json")
         result_entry = config_on_success.get("results_entry")
