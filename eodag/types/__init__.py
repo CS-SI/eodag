@@ -375,6 +375,24 @@ def annotated_dict_to_model(
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
 
+    >>> from pydantic import Field
+    >>> annotated_fields = {
+    ...     "field1": Annotated[str, Field(description="A string field"), "json_schema_required"],
+    ...     "field2": Annotated[int, Field(default=42, description="An integer field")],
+    ... }
+    >>> model = annotated_dict_to_model("TestModel", annotated_fields)
+    >>> json_schema = model.model_json_schema()
+    >>> json_schema["required"]
+    ['field1']
+    >>> json_schema["properties"]["field1"]
+    {'description': 'A string field', 'title': 'Field1', 'type': 'string'}
+    >>> json_schema["properties"]["field2"]
+    {'default': 42, 'description': 'An integer field', 'title': 'Field2', 'type': 'integer'}
+    >>> json_schema["title"]
+    'TestModel'
+    >>> json_schema["type"]
+    'object'
+
     :param model_name: name of the model to be created
     :param annotated_fields: dict containing the parameters and annotated values that should become
                              the properties of the model
