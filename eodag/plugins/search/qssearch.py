@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import re
+import socket
 from copy import copy as copy_copy
 from typing import (
     TYPE_CHECKING,
@@ -1256,6 +1257,9 @@ class QueryStringSearch(Search):
                 response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
+        except socket.timeout:
+            err = requests.exceptions.Timeout(request=requests.Request(url=url))
+            raise TimeOutError(err, timeout=timeout)
         except (requests.RequestException, URLError) as err:
             err_msg = err.readlines() if hasattr(err, "readlines") else ""
             if exception_message:
