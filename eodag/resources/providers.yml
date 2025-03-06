@@ -3632,8 +3632,8 @@
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EUM:DAT:SENTINEL-3:SR_1_SRA_BS"}}'
 
     S3_SLSTR_L1RBT:
-      productType: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
-      providerProductType: SL_1_RBT___
+      collection: EO:EUM:DAT:SENTINEL-3:SL_1_RBT___
+      productType: SL_1_RBT___
       metadata_mapping:
         id:
           - '{{"productType": "SL_1_RBT___", "timeliness": {id#split_id_into_s3_params}["timeliness"], "sat": {id#split_id_into_s3_params}["sat"], "dtstart": {id#split_id_into_s3_params}["startDate"], "dtend": {id#split_id_into_s3_params}["endDate"]}}'
