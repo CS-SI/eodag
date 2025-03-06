@@ -429,6 +429,7 @@ class Search(PluginTopic):
                 continue
             if eodag_queryable_field_info.is_required() or (
                 (eodag_queryable_field_info.alias or k) in metadata_mapping
+                or k == "product_type"
             ):
                 queryables[k] = v
         return queryables

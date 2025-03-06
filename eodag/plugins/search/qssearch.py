@@ -1807,6 +1807,11 @@ class StacSearch(PostJsonSearch):
 
         product_type = kwargs.pop("productType", None)
         provider_product_type = (
+            self.config.products.get(product_type, {}).get("productType", product_type)
+            if product_type
+            else None
+        )
+        provider_collection = (
             self.config.products.get(product_type, {}).get("collection", product_type)
             if product_type
             else None
@@ -1838,7 +1843,9 @@ class StacSearch(PostJsonSearch):
                 return None
 
             fetch_url = unparsed_fetch_url.format(
-                collection=provider_product_type, **self.config.__dict__
+                provider_product_type=provider_product_type,
+                collection=provider_collection,
+                **self.config.__dict__,
             )
             auth = (
                 self.auth
@@ -1855,7 +1862,8 @@ class StacSearch(PostJsonSearch):
                     "{} {} instance:".format(self.provider, self.__class__.__name__),
                 ),
             )
-        except (RequestError, KeyError, AttributeError):
+        except (RequestError, KeyError, AttributeError) as e:
+            print(e)
             return None
         else:
             json_queryables = dict()
@@ -1888,6 +1896,7 @@ class StacSearch(PostJsonSearch):
 
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
+            defaults = {}
             if product_type:
                 defaults = self.config.products.get(product_type, {})
             for json_param, json_mtd in json_queryables.items():

@@ -1487,7 +1487,7 @@ class TestCore(TestCoreBase):
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
-            if key == "productType":
+            if key == "product_type":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
@@ -1501,7 +1501,7 @@ class TestCore(TestCoreBase):
         self.assertEqual(len(queryables_peps_s1grd), len(queryables_peps_s1grd_alias))
         self.assertEqual(
             "S1_SG",
-            queryables_peps_s1grd_alias["productType"].__metadata__[0].get_default(),
+            queryables_peps_s1grd_alias["product_type"].__metadata__[0].get_default(),
         )
         products["S1_SAR_GRD"].pop("alias")
 
@@ -1516,7 +1516,7 @@ class TestCore(TestCoreBase):
         self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
         for key, queryable in queryables_peps_s1grd.items():
             # compare obj.__repr__
-            if key == "productType":
+            if key == "product_type":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
@@ -1526,12 +1526,12 @@ class TestCore(TestCoreBase):
 
         # model_validate should validate input parameters using the queryables result
         queryables_validated = queryables_peps_s1grd.get_model().model_validate(
-            {"productType": "S1_SAR_GRD", "snowCover": 50}
+            {"product_type": "S1_SAR_GRD", "snowCover": 50}
         )
         self.assertIn("snowCover", queryables_validated.__dict__)
         with self.assertRaises(ValidationError):
             queryables_peps_s1grd.get_model().model_validate(
-                {"productType": "S1_SAR_GRD", "snowCover": 500}
+                {"product_type": "S1_SAR_GRD", "snowCover": 500}
             )
 
     @mock.patch(
@@ -1731,7 +1731,7 @@ class TestCore(TestCoreBase):
         spans = queryables_repr.xpath("//tbody/tr/td/details/summary/span")
         product_type_present = False
         for i, span in enumerate(spans):
-            if "productType" in span.text:
+            if "product_type" in span.text:
                 product_type_present = True
                 self.assertIn("str", spans[i + 1].text)
         self.assertTrue(product_type_present)
