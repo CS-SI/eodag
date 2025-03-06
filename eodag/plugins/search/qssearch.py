@@ -1805,9 +1805,9 @@ class StacSearch(PostJsonSearch):
             logger.info(f"Cannot fetch queryables with {self.provider}")
             return None
 
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.pop("productType", None)
         provider_product_type = (
-            self.config.products.get(product_type, {}).get("productType", product_type)
+            self.config.products.get(product_type, {}).get("collection", product_type)
             if product_type
             else None
         )
@@ -1838,7 +1838,7 @@ class StacSearch(PostJsonSearch):
                 return None
 
             fetch_url = unparsed_fetch_url.format(
-                provider_product_type=provider_product_type, **self.config.__dict__
+                collection=provider_product_type, **self.config.__dict__
             )
             auth = (
                 self.auth
@@ -1888,6 +1888,8 @@ class StacSearch(PostJsonSearch):
 
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
+            if product_type:
+                defaults = self.config.products.get(product_type, {})
             for json_param, json_mtd in json_queryables.items():
                 param = (
                     get_queryable_from_provider(
@@ -1897,6 +1899,8 @@ class StacSearch(PostJsonSearch):
                 )
 
                 default = kwargs.get(param, None)
+                if not default and defaults:
+                    default = defaults.get(param, None)
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
