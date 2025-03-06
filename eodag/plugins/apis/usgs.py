@@ -128,7 +128,7 @@ class UsgsApi(Api):
                 api.logout()
                 continue
             except USGSError as e:
-                if i == 0:
+                if i == 0 and os.path.isfile(api.TMPFILE):
                     # `.usgs` API file key might be obsolete
                     # Remove it and try again
                     os.remove(api.TMPFILE)
