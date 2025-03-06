@@ -485,21 +485,28 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             USGSError("USGS error"),
             None,
         ]
-        with mock.patch("os.remove", autospec=True) as mock_os_remove:
+        with (
+            mock.patch("os.remove", autospec=True) as mock_os_remove,
+            mock.patch("os.path.isfile", autospec=True) as mock_isfile,
+        ):
             self.api_plugin.authenticate()
             self.assertEqual(mock_api_login.call_count, 2)
             self.assertEqual(mock_api_logout.call_count, 0)
+            mock_isfile.assert_called_once_with(USGS_TMPFILE)
             mock_os_remove.assert_called_once_with(USGS_TMPFILE)
         mock_api_login.reset_mock()
         mock_api_logout.reset_mock()
 
         # with invalid credentials / USGSError
         mock_api_login.side_effect = USGSError()
-        with mock.patch("os.remove", autospec=True) as mock_os_remove:
-            with self.assertRaises(AuthenticationError):
-                self.api_plugin.authenticate()
-                self.assertEqual(mock_api_login.call_count, 2)
-                mock_api_logout.assert_not_called()
+        with (
+            mock.patch("os.remove", autospec=True),
+            mock.patch("os.path.isfile", autospec=True),
+            self.assertRaises(AuthenticationError),
+        ):
+            self.api_plugin.authenticate()
+            self.assertEqual(mock_api_login.call_count, 2)
+            mock_api_logout.assert_not_called()
 
     @mock.patch("usgs.api.login", autospec=True)
     @mock.patch("usgs.api.logout", autospec=True)
@@ -635,7 +642,6 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
 
         @responses.activate
         def run():
-
             product = EOProduct(
                 "peps",
                 dict(
