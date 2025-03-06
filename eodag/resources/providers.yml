@@ -3303,6 +3303,13 @@
     completionTimeFromAscendingNode:
       - '{{"end": "{completionTimeFromAscendingNode}"}}'
       - '$.properties.enddate'
+  anchor_dates_copdem: &cop_dem_dates
+    startTimeFromAscendingNode:
+        - '{{"startdate": "{startTimeFromAscendingNode}"}}'
+        - '$.properties.startdate'
+    completionTimeFromAscendingNode:
+      - '{{"enddate": "{completionTimeFromAscendingNode}"}}'
+      - '$.properties.enddate'
   anchor_s1_sar: &s1_sar_params
     processingLevel:
       - '{{"processingLevel": "{processingLevel}"}}'
@@ -3692,21 +3699,25 @@
       collection: EO:ESA:DAT:COP-DEM
       productType: DGE_30
       metadata_mapping:
+        <<: *cop_dem_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO30_DTED:
       collection: EO:ESA:DAT:COP-DEM
       productType: DTE_30
       metadata_mapping:
+        <<: *cop_dem_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO90_DGED:
       collection: EO:ESA:DAT:COP-DEM
       productType: DGE_90
       metadata_mapping:
+        <<: *cop_dem_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     COP_DEM_GLO90_DTED:
       collection: EO:ESA:DAT:COP-DEM
       productType: DTE_90
       metadata_mapping:
+        <<: *cop_dem_dates
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:ESA:DAT:COP-DEM"}}'
     CLMS_GLO_NDVI_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_NDVI_300M_V1_10DAILY_NETCDF
