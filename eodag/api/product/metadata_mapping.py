@@ -911,6 +911,28 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                     assets_dict[asset_basename] = assets_dict.pop(asset_name)
             return assets_dict
 
+        @staticmethod
+        def convert_geom_to_ecmwf(value: Any) -> str:
+            """Convert a geometry to the ECMWF format.
+
+            ECMWF expects a geometry in the format:
+            {
+                "type": "polygon",
+                "shape": [
+                    [41.870881288,-8.8791360],
+                    ...
+                    [41.870881288,-8.8791360]
+                ]
+            }
+            """
+            geometry = geojson.loads(geojson.dumps(value))  # type: ignore
+
+            formated: dict[str, Any] = {
+                "type": str(geometry["type"]).lower(),  # type: ignore
+                "shape": geometry["coordinates"][0],
+            }
+            return json.dumps(formated)
+
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
     if re.search(r"{[\w-]*:[\w#-]*}", search_param):
         search_param = re.sub(r"{([\w-]*):([\w#-]*)}", r"{\1_COLON_\2}", search_param)

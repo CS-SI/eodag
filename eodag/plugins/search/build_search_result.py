@@ -322,7 +322,7 @@ class ECMWFSearch(PostJsonSearch):
                 "title": "$.id",
                 "storageStatus": OFFLINE_STATUS,
                 "downloadLink": "$.null",
-                "geometry": ["feature", "$.geometry"],
+                "geometry": ['{{"feature": {geometry#geom_to_ecmwf}}}', "$.geometry"],
                 "defaultGeometry": "POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))",
             },
             **config.metadata_mapping,
