@@ -1494,7 +1494,11 @@ def get_queryable_from_provider(
         ind = mapping_values.index(provider_queryable)
         return Queryables.get_queryable_from_alias(list(metadata_mapping.keys())[ind])
     for param, param_conf in metadata_mapping.items():
-        if isinstance(param_conf, list) and re.search(pattern, param_conf[0]):
+        if (
+            isinstance(param_conf, list)
+            and param_conf[0]
+            and re.search(pattern, param_conf[0])
+        ):
             return Queryables.get_queryable_from_alias(param)
     return None
 

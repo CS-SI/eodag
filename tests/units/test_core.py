@@ -379,7 +379,6 @@ class TestCore(TestCoreBase):
             "sara",
             "wekeo_main",
         ],
-        "S2_MSI_L2AP": ["wekeo_main"],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
         "S2_MSI_L2A_MAJA": ["geodes", "geodes_s3", "theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
@@ -2272,7 +2271,6 @@ class TestCoreSearch(TestCoreBase):
         expected = [
             "S2_MSI_L1C",
             "S2_MSI_L2A",
-            "S2_MSI_L2AP",
             "S2_MSI_L2A_COG",
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
@@ -2296,20 +2294,6 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertIn(
             "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
-        )
-        self.assertEqual(
-            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionStartDate"],
-            "2017-05-23T00:00:00Z",
-        )
-        self.assertEqual(
-            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionEndDate"],
-            "2018-03-25T00:00:00Z",
-        )
-        self.assertNotIn(
-            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-04-01")
-        )
-        self.assertIn(
-            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-03-01")
         )
 
     def test_guess_product_type_without_kwargs(self):
