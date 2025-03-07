@@ -842,7 +842,8 @@ class ECMWFSearch(PostJsonSearch):
             if name in ("area_group", "global", "warning", "licences"):
                 continue
             if "type" not in element or element["type"] == "FreeEditionWidget":
-                # FreeEditionWidget used for comments ??
+                # FreeEditionWidget used to select the whole available region
+                # and to provide comments for the dataset
                 continue
 
             # ordering done by id -> set id to high value if not present -> element will be last
