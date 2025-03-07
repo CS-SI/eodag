@@ -185,8 +185,7 @@ class RequestTestCase(unittest.TestCase):
                         "properties": {
                             "snowCover": None,
                             "resolution": None,
-                            "completionTimeFromAscendingNode": "2018-02-16T00:12:14"
-                            ".035Z",
+                            "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
                             "keyword": {},
                             "productType": "OCN",
                             "downloadLink": (
@@ -215,7 +214,7 @@ class RequestTestCase(unittest.TestCase):
                                 "type": "Polygon",
                             },
                             "organisationName": None,
-                            "startTimeFromAscendingNode": "2018-02-15T23:53:22" ".871Z",
+                            "startTimeFromAscendingNode": "2018-02-15T23:53:22.871Z",
                             "platform": None,
                             "sensorType": None,
                             "processingLevel": None,
@@ -247,8 +246,7 @@ class RequestTestCase(unittest.TestCase):
                         "properties": {
                             "snowCover": None,
                             "resolution": None,
-                            "completionTimeFromAscendingNode": "2018-02-17T00:12:14"
-                            ".035Z",
+                            "completionTimeFromAscendingNode": "2018-02-17T00:12:14.035Z",
                             "keyword": {},
                             "productType": "OCN",
                             "downloadLink": (
@@ -277,7 +275,7 @@ class RequestTestCase(unittest.TestCase):
                                 "type": "Polygon",
                             },
                             "organisationName": None,
-                            "startTimeFromAscendingNode": "2018-02-16T23:53:22" ".871Z",
+                            "startTimeFromAscendingNode": "2018-02-16T23:53:22.871Z",
                             "platform": None,
                             "sensorType": None,
                             "processingLevel": None,
@@ -863,7 +861,10 @@ class RequestTestCase(unittest.TestCase):
             },
         }
         mock_search.return_value = SearchResult.from_geojson(
-            {"features": [], "type": "FeatureCollection"}
+            {
+                "features": [],
+                "type": "FeatureCollection",
+            }
         )
         self.app.request(
             method="POST",
@@ -1666,6 +1667,7 @@ class RequestTestCase(unittest.TestCase):
                 "title",
                 "description",
                 "properties",
+                "required",
                 "additionalProperties",
             ],
         )

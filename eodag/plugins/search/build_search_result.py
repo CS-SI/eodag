@@ -618,9 +618,10 @@ class ECMWFSearch(PostJsonSearch):
             # Pre-compute the required keywords (present in all constraint dicts)
             # when form, required keywords are extracted directly from form
             if not form:
-                required_keywords = set(constraints[0].keys())
-                for constraint in constraints[1:]:
-                    required_keywords.intersection_update(constraint.keys())
+                required_keywords = set.intersection(
+                    *(map(lambda d: set(d.keys()), constraints))
+                )
+
         else:
             values_url = getattr(self.config, "available_values_url", "")
             if not values_url:
@@ -841,6 +842,8 @@ class ECMWFSearch(PostJsonSearch):
             if name in ("area_group", "global", "warning", "licences"):
                 continue
             if "type" not in element or element["type"] == "FreeEditionWidget":
+                # FreeEditionWidget used to select the whole available region
+                # and to provide comments for the dataset
                 continue
 
             # ordering done by id -> set id to high value if not present -> element will be last

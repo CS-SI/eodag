@@ -24,6 +24,7 @@ from typing import (
     Any,
     Literal,
     Optional,
+    Type,
     TypedDict,
     Union,
     get_args,
@@ -31,8 +32,11 @@ from typing import (
 )
 
 from annotated_types import Gt, Lt
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
+from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import CoreSchema
 
 from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
@@ -199,10 +203,18 @@ def json_field_definition_to_python(
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
 
-    if not required or default_value:
-        return Annotated[python_type, Field(default=default_value, **field_type_kwargs)]
-    else:
-        return Annotated[python_type, Field(..., **field_type_kwargs)]
+    metadata = [
+        python_type,
+        Field(
+            default_value if not required or default_value is not None else ...,
+            **field_type_kwargs,
+        ),
+    ]
+
+    if required:
+        metadata.append("json_schema_required")
+
+    return Annotated[tuple(metadata)]
 
 
 def python_field_definition_to_json(
@@ -332,25 +344,75 @@ def model_fields_to_annotated(
     return annotated_model_fields
 
 
+class BaseModelCustomJsonSchema(BaseModel):
+    """Base class for generated models with custom json schema."""
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls: Type[BaseModel], core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        """
+        Custom get json schema method to handle required fields with default values.
+        This is not supported by Pydantic by default.
+        It requires the field to be marked with the key "json_schema_required" in the metadata dict.
+        Example: Annotated[str, "json_schema_required"]
+        """
+        json_schema = handler.resolve_ref_schema(handler(core_schema))
+
+        json_schema["required"] = [
+            key
+            for key, field_info in cls.model_fields.items()
+            if "json_schema_required" in field_info.metadata
+        ]
+
+        return json_schema
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 def annotated_dict_to_model(
     model_name: str, annotated_fields: dict[str, Annotated[Any, FieldInfo]]
 ) -> BaseModel:
     """Convert a dictionary of Annotated values to a Pydantic BaseModel.
+
+    >>> from pydantic import Field
+    >>> annotated_fields = {
+    ...     "field1": Annotated[str, Field(description="A string field"), "json_schema_required"],
+    ...     "field2": Annotated[int, Field(default=42, description="An integer field")],
+    ... }
+    >>> model = annotated_dict_to_model("TestModel", annotated_fields)
+    >>> json_schema = model.model_json_schema()
+    >>> json_schema["required"]
+    ['field1']
+    >>> json_schema["properties"]["field1"]
+    {'description': 'A string field', 'title': 'Field1', 'type': 'string'}
+    >>> json_schema["properties"]["field2"]
+    {'default': 42, 'description': 'An integer field', 'title': 'Field2', 'type': 'integer'}
+    >>> json_schema["title"]
+    'TestModel'
+    >>> json_schema["type"]
+    'object'
 
     :param model_name: name of the model to be created
     :param annotated_fields: dict containing the parameters and annotated values that should become
                              the properties of the model
     :returns: pydantic model
     """
-    fields = {
-        name: (field.__args__[0], field.__metadata__[0])
-        for name, field in annotated_fields.items()
-    }
-    return create_model(
+    fields = {}
+    for name, field in annotated_fields.items():
+        base_type, field_info, *metadata = get_args(field)
+        fields[name] = (
+            Annotated[tuple([base_type] + metadata)] if metadata else base_type,
+            field_info,
+        )
+
+    custom_model = create_model(
         model_name,
+        __base__=BaseModelCustomJsonSchema,
         **fields,  # type: ignore
-        __config__={"arbitrary_types_allowed": True},
     )
+
+    return custom_model
 
 
 class ProviderSortables(TypedDict):
