@@ -1863,7 +1863,7 @@ class StacSearch(PostJsonSearch):
                 ),
             )
         except (RequestError, KeyError, AttributeError) as e:
-            print(e)
+            logger.warning("failure in queryables discovery: %s", e)
             return None
         else:
             json_queryables = dict()
