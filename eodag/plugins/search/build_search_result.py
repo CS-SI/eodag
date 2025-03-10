@@ -41,6 +41,7 @@ from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     OFFLINE_STATUS,
+    STAGING_STATUS,
     format_metadata,
     properties_from_json,
 )
@@ -57,7 +58,7 @@ from eodag.utils import (
     get_geometry_from_various,
     is_range_in_range,
 )
-from eodag.utils.exceptions import ValidationError
+from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
@@ -583,6 +584,56 @@ class ECMWFSearch(PostJsonSearch):
             params["geometry"] = get_geometry_from_various(geometry=params["geometry"])
 
         return params
+
+    def _check_id(self, product: EOProduct, id: str) -> None:
+        """Check if the id is the one of an existing job.
+        If the job exists, poll it, otherwise, raise an error.
+
+        :param product: The product to check the id for
+        :param id: The id to check
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        # check if the product has a downloader and its matching config and _order_status() method
+        if (
+            not product.downloader
+            or not hasattr(product.downloader, "config")
+            or not hasattr(product.downloader, "_order_status")
+        ):
+            return None
+        # update "orderStatusLink" and potential "search_link" properties to match the id from the search request
+        order_status_link = product.downloader.config.order_on_response[
+            "metadata_mapping"
+        ]["orderStatusLink"]
+        search_link = product.downloader.config.order_on_response[
+            "metadata_mapping"
+        ].get("searchLink", "")
+        if not isinstance(order_status_link, str) or not isinstance(search_link, str):
+            return None
+        product.properties["orderStatusLink"] = order_status_link.format(orderId=id)
+        formatted_search_link = search_link.format(orderId=id)
+        search_link_dict = (
+            {"searchLink": formatted_search_link} if formatted_search_link else {}
+        )
+        product.properties.update(search_link_dict)
+
+        auth = (
+            product.downloader_auth.authenticate() if product.downloader_auth else None
+        )
+
+        # try to poll the job corresponding to the given id
+        try:
+            _ = product.downloader._order_status(product=product, auth=auth)
+        # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
+        except NotAvailableError:
+            product.properties["storageStatus"] = STAGING_STATUS
+        except Exception as e:
+            if (
+                isinstance(e, DownloadError) or isinstance(e, ValidationError)
+            ) and "order status could not be checked" in e.args[0]:
+                raise ValidationError(
+                    f"Item {id} does not exist with {self.provider}."
+                ) from e
+            raise ValidationError(e.args[0]) from e
 
     def _check_date_params(
         self, keywords: dict[str, Any], product_type: Optional[str]
