@@ -57,7 +57,7 @@ from eodag.config import (
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
-from eodag.plugins.search.build_search_result import MeteoblueSearch
+from eodag.plugins.search.build_search_result import ECMWFSearch, MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, QueryablesDict
@@ -1928,6 +1928,9 @@ class EODataAccessGateway:
                     except StopIteration:
                         auth_plugin = None
                     eo_product.register_downloader(download_plugin, auth_plugin)
+
+                    if "id" in kwargs and isinstance(search_plugin, ECMWFSearch):
+                        search_plugin._check_id(eo_product, kwargs.get("id", ""))
 
             results.extend(res)
             total_results = (
