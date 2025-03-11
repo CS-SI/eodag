@@ -1600,14 +1600,32 @@
           "month": {_date#interval_to_datetime_dict}["month"]
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    matching_url: https://ads.atmosphere.copernicus.eu
+  api: !plugin
+    type: EcmwfGroupApi
+    # search
     ssl_verify: true
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
-    type: HTTPDownload
+    end_date_excluded: false
+    dates_required: true
+    remove_from_query:
+      - dataset
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
+      form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
+    metadata_mapping:
+      productType: $.productType
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      completionTimeFromAscendingNode:
+        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      # The geographic extent of the product
+      geometry:
+        - '{{"area": {geometry#to_nwse_bounds}}}'
+        - $.geometry
+      qs: $.qs
+      orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    # download
     timeout: 30
     ssl_verify: true
     auth_error_code: 401
@@ -1631,8 +1649,8 @@
         need_search: true
         metadata_mapping:
           downloadLink: $.json.asset.value.href
-  search: !plugin
-    type: ECMWFSearch
+    # auth
+    matching_url: https://ads.atmosphere.copernicus.eu
     ssl_verify: true
     end_date_excluded: false
     dates_required: true
