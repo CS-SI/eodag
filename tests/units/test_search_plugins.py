@@ -1737,6 +1737,83 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             "31TCJ",
         )
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_stacsearch_discover_queryables(self, mock_request):
+        provider_queryables = {
+            "type": "object",
+            "title": "Querable",
+            "properties": {
+                "dataset_id": {
+                    "title": "dataset_id",
+                    "type": "string",
+                    "oneOf": [
+                        {
+                            "const": "EO:ESA:DAT:COP-DEM",
+                            "title": "EO:ESA:DAT:COP-DEM",
+                            "group": None,
+                        }
+                    ],
+                },
+                "bbox": {
+                    "title": "Bbox",
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": [
+                        {"type": "number", "maximum": 180, "minimum": -180},
+                        {"type": "number", "maximum": 90, "minimum": -90},
+                        {"type": "number", "maximum": 180, "minimum": -180},
+                        {"type": "number", "maximum": 90, "minimum": -90},
+                    ],
+                },
+                "productIdentifier": {
+                    "title": "Product Identifier",
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$",
+                },
+                "productType": {
+                    "title": "Product Type",
+                    "type": "string",
+                    "oneOf": [
+                        {"const": "DGE_30", "title": "DGE_30", "group": None},
+                        {"const": "DGE_90", "title": "DGE_90", "group": None},
+                        {"const": "DTE_30", "title": "DTE_30", "group": None},
+                        {"const": "DTE_90", "title": "DTE_90", "group": None},
+                    ],
+                },
+                "startdate": {
+                    "title": "Start Date",
+                    "type": "string",
+                    "format": "date-time",
+                    "minimum": "",
+                    "maximum": "",
+                    "default": "",
+                },
+                "enddate": {
+                    "title": "End Date",
+                    "type": "string",
+                    "format": "date-time",
+                    "minimum": "",
+                    "maximum": "",
+                    "default": "",
+                },
+            },
+            "required": ["dataset_id"],
+        }
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.side_effect = [provider_queryables]
+        plugin = self.get_search_plugin(provider="wekeo_main")
+        queryables = plugin.discover_queryables(
+            productType="COP_DEM_GLO90_DGED", provider="wekeo_main"
+        )
+        self.assertIn("productType", queryables)
+        self.assertIn("providerProductType", queryables)
+        self.assertIn("geom", queryables)
+        self.assertIn("start", queryables)
+        self.assertIn("end", queryables)
+
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)

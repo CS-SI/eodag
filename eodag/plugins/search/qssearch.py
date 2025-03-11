@@ -1842,7 +1842,8 @@ class StacSearch(PostJsonSearch):
                 return None
 
             fetch_url = unparsed_fetch_url.format(
-                provider_product_type=provider_product_type, **self.config.__dict__
+                provider_product_type=provider_product_type,
+                **self.config.__dict__,
             )
             auth = (
                 self.auth
@@ -1859,7 +1860,8 @@ class StacSearch(PostJsonSearch):
                     "{} {} instance:".format(self.provider, self.__class__.__name__),
                 ),
             )
-        except (RequestError, KeyError, AttributeError):
+        except (RequestError, KeyError, AttributeError) as e:
+            logger.warning("failure in queryables discovery: %s", e)
             return None
         else:
             json_queryables = dict()
