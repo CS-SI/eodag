@@ -3692,7 +3692,7 @@
       format: GeoTiff100mt
       metadata_mapping:
         id: '$.id'
-        productType:
+        providerProductType:
           - '{{"product_type": "{providerProductType}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
