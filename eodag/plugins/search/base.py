@@ -419,8 +419,8 @@ class Search(PluginTopic):
         )
         # add default value for product type
         if alias:
-            eodag_queryables.pop("product_type")
-            eodag_queryables["product_type"] = Annotated[str, Field(default=alias)]
+            eodag_queryables.pop("productType")
+            eodag_queryables["productType"] = Annotated[str, Field(default=alias)]
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None
@@ -429,7 +429,6 @@ class Search(PluginTopic):
                 continue
             if eodag_queryable_field_info.is_required() or (
                 (eodag_queryable_field_info.alias or k) in metadata_mapping
-                or k == "product_type"
             ):
                 queryables[k] = v
         return queryables

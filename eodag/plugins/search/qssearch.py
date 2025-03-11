@@ -1805,14 +1805,9 @@ class StacSearch(PostJsonSearch):
             logger.info(f"Cannot fetch queryables with {self.provider}")
             return None
 
-        product_type = kwargs.pop("productType", None)
+        product_type = kwargs.get("productType", None)
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)
-            if product_type
-            else None
-        )
-        provider_collection = (
-            self.config.products.get(product_type, {}).get("collection", product_type)
             if product_type
             else None
         )
@@ -1844,7 +1839,6 @@ class StacSearch(PostJsonSearch):
 
             fetch_url = unparsed_fetch_url.format(
                 provider_product_type=provider_product_type,
-                collection=provider_collection,
                 **self.config.__dict__,
             )
             auth = (

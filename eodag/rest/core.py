@@ -593,10 +593,10 @@ async def get_queryables(
         required: list[str] = python_queryables_json.get("required") or []
 
         # productType is either simply removed or replaced by collection later.
-        if "product_type" in properties:
-            properties.pop("product_type")
-        if "product_type" in required:
-            required.remove("product_type")
+        if "productType" in properties:
+            properties.pop("productType")
+        if "productType" in required:
+            required.remove("productType")
 
         stac_properties: dict[str, Any] = {}
 
