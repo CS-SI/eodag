@@ -255,6 +255,10 @@ class HTTPDownload(Download):
         product.properties.update(
             {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
+        # the job id becomes the product id
+        product.properties["id"] = product.properties.get(
+            "orderId", product.properties["id"]
+        )
         if "downloadLink" in product.properties:
             product.remote_location = product.location = product.properties[
                 "downloadLink"
