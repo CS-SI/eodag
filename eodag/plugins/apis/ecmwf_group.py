@@ -110,8 +110,6 @@ class CopEcmwfGroupApi(EcmwfGroupApi, HTTPHeaderAuth):
     Override to use the proper authentication method.
     """
 
-    pass
-
 
 class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
     """WEkEO ECMWF Group API plugin.
@@ -162,5 +160,3 @@ class DedtEcmwfGroupApi(EcmwfGroupApi, OIDCAuthorizationCodeFlowAuth):
     """DEDT ECMWF Group API plugin.
     Override to use the proper authentication method.
     """
-
-    pass
