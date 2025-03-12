@@ -19,13 +19,20 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
+from urllib.parse import quote_plus
+
+import orjson
 
 from eodag.api.product._product import EOProduct
 from eodag.api.product.metadata_mapping import DEFAULT_GEOMETRY, STAGING_STATUS
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.header import HTTPHeaderAuth
+from eodag.plugins.authentication.openid_connect import OIDCAuthorizationCodeFlowAuth
+from eodag.plugins.authentication.token import TokenAuth
 from eodag.plugins.download.http import HTTPDownload
-from eodag.plugins.search.build_search_result import ECMWFSearch
+from eodag.plugins.search.build_search_result import ECMWFSearch, ecmwf_format
+from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 
 if TYPE_CHECKING:
@@ -34,7 +41,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.apis.ecmwf_group")
 
 
-class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, HTTPHeaderAuth):
+class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload):
     """ECMWF Group API plugin"""
 
     def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
@@ -96,3 +103,64 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, HTTPHeaderAuth):
             raise ValidationError(e.args[0]) from e
 
         return [product.properties]
+
+
+class CopEcmwfGroupApi(EcmwfGroupApi, HTTPHeaderAuth):
+    """Copernicus ECMWF Group API plugin.
+    Override to use the proper authentication method.
+    """
+
+    pass
+
+
+class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
+    """WEkEO ECMWF Group API plugin.
+    Override to use the proper authentication method.
+    """
+
+    def normalize_results(
+        self, results: RawSearchResult, **kwargs: Any
+    ) -> list[EOProduct]:
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :param kwargs: Search arguments
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        """
+
+        # formating of orderLink requires access to the productType value.
+        results.data = [
+            {**result, **results.product_type_def_params} for result in results
+        ]
+
+        normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
+
+        if not normalized:
+            return normalized
+
+        query_params_encoded = quote_plus(orjson.dumps(results.query_params))
+        for product in normalized:
+            properties = {**product.properties, **results.query_params}
+            properties["_dc_qs"] = query_params_encoded
+            product.properties = {ecmwf_format(k): v for k, v in properties.items()}
+
+        return normalized
+
+    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        """Should perform the actual search request.
+
+        :param args: arguments to be used in the search
+        :param kwargs: keyword arguments to be used in the search
+        :return: list containing the results from the provider in json format
+        """
+        if "id" in kwargs:
+            return self._check_id(kwargs["id"])
+        return QueryStringSearch.do_search(self, *args, **kwargs)
+
+
+class DedtEcmwfGroupApi(EcmwfGroupApi, OIDCAuthorizationCodeFlowAuth):
+    """DEDT ECMWF Group API plugin.
+    Override to use the proper authentication method.
+    """
+
+    pass

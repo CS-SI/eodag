@@ -44,6 +44,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
 )
+from eodag.plugins.apis.base import Api
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -59,7 +60,6 @@ if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product.drivers.base import DatasetDriver
-    from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
     from eodag.types.download_args import DownloadConf
@@ -251,6 +251,13 @@ class EOProduct:
         """
         self.downloader = downloader
         self.downloader_auth = authenticator
+
+        if (
+            not authenticator
+            and isinstance(downloader, Api)
+            and hasattr(downloader, "authenticate")
+        ):
+            self.downloader_auth = downloader
 
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")
