@@ -1134,11 +1134,16 @@ class ECMWFSearch(PostJsonSearch):
             sorted_unpaginated_qp = dict_items_recursive_sort(unpaginated_query_params)
 
         if result:
-            properties = {k: v for k, v in result.items() if not k.startswith("__")}
-
+            properties = result
             properties.update(result.pop("request_params", None) or {})
 
+            properties = {k: v for k, v in properties.items() if not k.startswith("__")}
+
             properties["geometry"] = properties.get("area") or DEFAULT_GEOMETRY
+
+            start, end = ecmwf_temporal_to_eodag(properties)
+            properties["startTimeFromAscendingNode"] = start
+            properties["completionTimeFromAscendingNode"] = end
 
         else:
             # use all available query_params to parse properties
