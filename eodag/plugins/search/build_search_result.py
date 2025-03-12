@@ -39,6 +39,7 @@ from typing_extensions import get_args
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    DEFAULT_GEOMETRY,
     OFFLINE_STATUS,
     format_metadata,
     properties_from_json,
@@ -1115,14 +1116,10 @@ class ECMWFSearch(PostJsonSearch):
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
             qs = unquote_plus(unquote_plus(_dc_qs))
-            sorted_unpaginated_query_params = geojson.loads(qs)
+            sorted_unpaginated_qp = geojson.loads(qs)
         else:
             # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(results, "query_params_unpaginated"):
-                unpaginated_query_params = results.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
+            if isinstance(self.config.pagination["next_page_query_obj"], str):
                 next_page_query_obj = orjson.loads(
                     self.config.pagination["next_page_query_obj"].format()
                 )
@@ -1134,64 +1131,58 @@ class ECMWFSearch(PostJsonSearch):
             else:
                 unpaginated_query_params = self.query_params
             # query hash, will be used to build a product id
-            sorted_unpaginated_query_params = dict_items_recursive_sort(
-                unpaginated_query_params
+            sorted_unpaginated_qp = dict_items_recursive_sort(unpaginated_query_params)
+
+        if result:
+            properties = {k: v for k, v in result.items() if not k.startswith("__")}
+
+            properties.update(result.pop("request_params", None) or {})
+
+            properties["geometry"] = properties.get("area") or DEFAULT_GEOMETRY
+
+        else:
+            # use all available query_params to parse properties
+            result: dict[str, Any] = {
+                **results.product_type_def_params,
+                **sorted_unpaginated_qp,
+                **{"qs": sorted_unpaginated_qp},
+            }
+
+            # update result with product_type_def_params and search args if not None (and not auth)
+            kwargs.pop("auth", None)
+            result.update(results.product_type_def_params)
+            result = {**result, **{k: v for k, v in kwargs.items() if v is not None}}
+
+            properties = properties_from_json(
+                result,
+                self.config.metadata_mapping,
+                discovery_config=getattr(self.config, "discover_metadata", {}),
             )
 
-        # use all available query_params to parse properties
-        result = dict(
-            result,
-            **sorted_unpaginated_query_params,
-            qs=sorted_unpaginated_query_params,
-        )
+            query_hash = hashlib.sha1(str(result).encode("UTF-8")).hexdigest()
+
+            properties["title"] = properties["id"] = (
+                (product_type or kwargs["dataset"]).upper() + "_ORDERABLE_" + query_hash
+            )
 
         # remove unwanted query params
-        for param in getattr(self.config, "remove_from_query", []):
-            sorted_unpaginated_query_params.pop(param, None)
-
-        qs = geojson.dumps(sorted_unpaginated_query_params)
-
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
-
-        # update result with product_type_def_params and search args if not None (and not auth)
-        kwargs.pop("auth", None)
-        result.update(results.product_type_def_params)
-        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
-
-        # parse properties
-        parsed_properties = properties_from_json(
-            result,
-            self.config.metadata_mapping,
-            discovery_config=getattr(self.config, "discover_metadata", {}),
-        )
-
-        properties = {
-            # use product_type_config as default properties
-            **getattr(self.config, "product_type_config", {}),
-            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
+        excluded_qp = getattr(self.config, "remove_from_query", [])
+        clean_qp = {
+            k: v for k, v in sorted_unpaginated_qp.items() if k not in excluded_qp
         }
-        properties["storageStatus"] = result.get(
-            "storageStatus", properties["storageStatus"]
-        )
-
-        # build product id
-        product_id = (product_type or kwargs.get("dataset") or self.provider).upper()
-        product_id += f"_orderable_{query_hash}"
-
-        properties["id"] = properties["title"] = product_id
+        qs = geojson.dumps(clean_qp)
 
         # used by server mode to generate downloadlink href
+        # TODO: to remove once the legacy server is removed
         properties["_dc_qs"] = quote_plus(qs)
 
         product = EOProduct(
             provider=self.provider,
             productType=product_type,
-            properties=properties,
+            properties={ecmwf_format(k): v for k, v in properties.items()},
         )
 
-        return [
-            product,
-        ]
+        return [product]
 
     def count_hits(
         self, count_url: Optional[str] = None, result_type: Optional[str] = None

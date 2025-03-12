@@ -1634,13 +1634,19 @@
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
         searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
       metadata_mapping:
         status: $.json.status
+        orderStatus: $.json.status
+        order:date: $.json.created
+        creationDate: $.json.created
+        publicationDate: $.json.finished
+        modificationDate: $.json.updated
+        request_params: $.json.metadata.request.ids
       error:
         status: failed
       success:
@@ -1861,7 +1867,7 @@
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
         searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
