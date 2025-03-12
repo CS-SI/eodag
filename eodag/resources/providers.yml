@@ -1851,39 +1851,9 @@
           "time": {startTimeFromAscendingNode#get_ecmwf_time}
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    matching_url: https://cds.climate.copernicus.eu
-    ssl_verify: true
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
-    type: HTTPDownload
-    timeout: 30
-    ssl_verify: true
-    auth_error_code: 401
-    order_enabled: true
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-      error:
-        status: failed
-      success:
-        status: successful
-      on_success:
-        need_search: true
-        metadata_mapping:
-          downloadLink: $.json.asset.value.href
-  search: !plugin
-    type: ECMWFSearch
+  api: !plugin
+    type: EcmwfGroupApi
+    # search
     ssl_verify: true
     end_date_excluded: false
     dates_required: true
@@ -1907,6 +1877,41 @@
         - $.geometry
       qs: $.qs
       orderLink: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    # download
+    timeout: 30
+    ssl_verify: true
+    auth_error_code: 401
+    order_enabled: true
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        orderId: $.json.jobID
+        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
+        searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.status
+        orderStatus: $.json.status
+        order:date: $.json.created
+        creationDate: $.json.created
+        publicationDate: $.json.finished
+        modificationDate: $.json.updated
+        request_params: $.json.metadata.request.ids
+      error:
+        status: failed
+      success:
+        status: successful
+      on_success:
+        need_search: true
+        metadata_mapping:
+          downloadLink: $.json.asset.value.href
+    # auth
+    matching_url: https://cds.climate.copernicus.eu
+    ssl_verify: true
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
   products:
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
     AG_ERA5:
@@ -6001,40 +6006,8 @@
           "hmonth": {_date#interval_to_datetime_dict}["month"]
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    matching_url: https://ewds.climate.copernicus.eu
-    ssl_verify: true
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
-    type: HTTPDownload
-    timeout: 30
-    ssl_verify: true
-    extract: false
-    auth_error_code: 401
-    order_enabled: true
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
-        searchLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-      error:
-        status: failed
-      success:
-        status: successful
-      on_success:
-        need_search: true
-        metadata_mapping:
-          downloadLink: $.json.asset.value.href
-  search: !plugin
-    type: ECMWFSearch
+  api: !plugin
+    type: EcmwfGroupApi
     ssl_verify: true
     end_date_excluded: false
     dates_required: True
@@ -6057,6 +6030,44 @@
         - $.geometry
       qs: $.qs
       orderLink: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    # download
+    type: HTTPDownload
+    timeout: 30
+    ssl_verify: true
+    extract: false
+    auth_error_code: 401
+    order_enabled: true
+    order_method: POST
+    order_on_response:
+      metadata_mapping:
+        orderId: $.json.jobID
+        orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
+        searchLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.status
+        orderStatus: $.json.status
+        order:date: $.json.created
+        creationDate: $.json.created
+        publicationDate: $.json.finished
+        modificationDate: $.json.updated
+        request_params: $.json.metadata.request.ids
+      error:
+        status: failed
+      success:
+        status: successful
+      on_success:
+        need_search: true
+        metadata_mapping:
+          downloadLink: $.json.asset.value.href
+    # auth
+    matching_url: https://ewds.climate.copernicus.eu
+    ssl_verify: true
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
+
   products:
     EFAS_HISTORICAL:
       dataset: efas-historical
