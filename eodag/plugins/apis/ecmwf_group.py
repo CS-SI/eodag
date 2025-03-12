@@ -53,13 +53,13 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, HTTPHeaderAuth):
         """
         # set fake properties to make EOProduct initialization possible
         # among these properties, "title" is set to deal with error while polling
-        fake_properties = {
+        product_base = {
             "id": id,
             "title": id,
             "geometry": DEFAULT_GEOMETRY,
         }
 
-        product = EOProduct(self.provider, fake_properties)
+        product = EOProduct(self.provider, product_base)
         product.downloader = self
 
         # update "orderStatusLink" and potential "search_link" properties to match the id from the search request
@@ -95,4 +95,4 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, HTTPHeaderAuth):
                 ) from e
             raise ValidationError(e.args[0]) from e
 
-        return [{"storageStatus": product.properties["storageStatus"]}]
+        return [product.properties]
