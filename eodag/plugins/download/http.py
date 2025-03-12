@@ -216,7 +216,7 @@ class HTTPDownload(Download):
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
-                    msg = f'{product.properties["title"]} could not be ordered'
+                    msg = f"{product.properties['title']} could not be ordered"
                     if e.response is not None and e.response.status_code == 400:
                         raise ValidationError.from_error(e, msg) from e
                     else:
@@ -394,7 +394,7 @@ class HTTPDownload(Download):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
             except RequestException as e:
-                msg = f'{product.properties["title"]} order status could not be checked'
+                msg = f"{product.properties['title']} order status could not be checked"
                 if e.response is not None and e.response.status_code == 400:
                     raise ValidationError.from_error(e, msg) from e
                 else:
@@ -430,8 +430,9 @@ class HTTPDownload(Download):
                     f"{product.properties['title']} order status: {status_percent}"
                 )
 
+            product.properties.update(status_dict)
+
             status_message = status_dict.get("message")
-            product.properties["orderStatus"] = status_dict.get("status")
 
             # handle status error
             errors: dict[str, Any] = status_config.get("error", {})
@@ -465,7 +466,7 @@ class HTTPDownload(Download):
                     product.properties["title"],
                     e,
                 )
-                msg = f'{product.properties["title"]} order status could not be checked'
+                msg = f"{product.properties['title']} order status could not be checked"
                 if e.response is not None and e.response.status_code == 400:
                     raise ValidationError.from_error(e, msg) from e
                 else:
