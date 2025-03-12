@@ -1601,7 +1601,7 @@
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   api: !plugin
-    type: EcmwfGroupApi
+    type: CopEcmwfGroupApi
     # search
     ssl_verify: true
     end_date_excluded: false
@@ -1852,7 +1852,7 @@
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   api: !plugin
-    type: EcmwfGroupApi
+    type: CopEcmwfGroupApi
     # search
     ssl_verify: true
     end_date_excluded: false
@@ -3539,8 +3539,9 @@
         }}
       - $.properties.startdate
     completionTimeFromAscendingNode: $.properties.enddate
-  search: !plugin
-    type: WekeoECMWFSearch
+  api: !plugin
+    type: WekeoEcmwfGroupApi
+    # search
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
     need_auth: true
@@ -3569,6 +3570,40 @@
         - dataset_id
         - $.dataset
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "{dataset}"}}'
+    # download
+    auth_error_code: 401
+    order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        orderId: '$.json.download_id'
+        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.features[0].status
+        message: $.json.features[0].message
+      error:
+        status: Error
+      success:
+        status: Done
+      ordered:
+        http_code: 202
+      on_success:
+        metadata_mapping:
+          download_id: $.json.features[0]._id
+          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+    products:
+      FIRE_HISTORICAL:
+        output_extension: .grib
+    # auth
+    matching_url: https://[-\w\.]+.wekeo2.eu
+    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
+    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
+    token_type: json
+    token_key: access_token
+    refresh_token_key: refresh_token
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
@@ -3934,42 +3969,7 @@
         geometry:
           - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}'
           - '$.null'
-  auth: !plugin
-    type: TokenAuth
-    matching_url: https://[-\w\.]+.wekeo2.eu
-    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
-    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
-    token_type: json
-    token_key: access_token
-    refresh_token_key: refresh_token
-  download: !plugin
-    type: HTTPDownload
-    auth_error_code: 401
-    order_enabled: true
-    order_method: 'POST'
-    order_on_response:
-      metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.features[0].status
-        message: $.json.features[0].message
-      error:
-        status: Error
-      success:
-        status: Done
-      ordered:
-        http_code: 202
-      on_success:
-        metadata_mapping:
-          download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
-    products:
-      FIRE_HISTORICAL:
-        output_extension: .grib
+
 
 ---
 !provider  # MARK: wekeo_cmems
@@ -4454,8 +4454,8 @@
     - host
   description: Destination Earth Digital Twin Outputs from LUMI through Polytope API
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
-  search: !plugin
-    type: ECMWFSearch
+  api: !plugin
+    type: DedtEcmwfGroupApi
     ssl_verify: true
     dates_required: True
     discover_queryables:
@@ -4469,34 +4469,7 @@
         - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
-  products:
-    DT_EXTREMES:
-      dataset: extremes-dt
-      class: d1
-      expver: "0001"
-      stream: oper
-      type: fc
-      levtype: sfc
-      step: 0
-      param: 31
-      time: "0000"
-    DT_CLIMATE_ADAPTATION:
-      dataset: climate-dt
-      class: d1
-      generation: 1
-      expver: "0001"
-      stream: clte
-      type: fc
-      activity: ScenarioMIP
-      experiment: SSP3-7.0
-      realization: 1
-      model: IFS-NEMO
-      param: 134/165/166
-      resolution: high
-      levtype: sfc
-      time: "0000"
-  download: !plugin
-    type: HTTPDownload
+    # download
     ssl_verify: true
     auth_error_code: 401
     order_enabled: True
@@ -4527,8 +4500,7 @@
     products:
       DT_EXTREMES:
       DT_CLIMATE_ADAPTATION:
-  auth: !plugin
-    type: OIDCAuthorizationCodeFlowAuth
+    # auth
     matching_url: https://[-\w\.]+.dte.destination-earth.eu
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
@@ -4538,6 +4510,32 @@
     token_provision: header
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
+  products:
+    DT_EXTREMES:
+      dataset: extremes-dt
+      class: d1
+      expver: "0001"
+      stream: oper
+      type: fc
+      levtype: sfc
+      step: 0
+      param: 31
+      time: "0000"
+    DT_CLIMATE_ADAPTATION:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: 1
+      model: IFS-NEMO
+      param: 134/165/166
+      resolution: high
+      levtype: sfc
+      time: "0000"
 ---
 
 !provider # MARK: dedl
@@ -6007,7 +6005,7 @@
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   api: !plugin
-    type: EcmwfGroupApi
+    type: CopEcmwfGroupApi
     ssl_verify: true
     end_date_excluded: false
     dates_required: True
