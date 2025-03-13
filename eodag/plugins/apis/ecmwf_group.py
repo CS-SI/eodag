@@ -50,7 +50,7 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload):
             return self._check_id(kwargs["id"])
         return ECMWFSearch.do_search(*args, **kwargs)
 
-    def _check_id(self, id: str) -> list[dict[str, Any]]:
+    def _check_id(self, product_id: str) -> list[dict[str, Any]]:
         """Check if the id is the one of an existing job.
         If the job exists, poll it, otherwise, raise an error.
 
@@ -61,8 +61,8 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload):
         # set fake properties to make EOProduct initialization possible
         # among these properties, "title" is set to deal with error while polling
         product_base = {
-            "id": id,
-            "title": id,
+            "id": product_id,
+            "title": product_id,
             "geometry": DEFAULT_GEOMETRY,
         }
 
@@ -78,7 +78,9 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload):
         ].get("searchLink", "")
         if not isinstance(order_status_link, str) or not isinstance(search_link, str):
             return [{}]
-        product.properties["orderStatusLink"] = order_status_link.format(orderId=id)
+        product.properties["orderStatusLink"] = order_status_link.format(
+            orderId=product_id
+        )
         formatted_search_link = search_link.format(orderId=id)
         search_link_dict = (
             {"searchLink": formatted_search_link} if formatted_search_link else {}
@@ -125,6 +127,9 @@ class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
         :param kwargs: Search arguments
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
+
+        if kwargs.get("id"):
+            return EcmwfGroupApi.normalize_results(self, results, **kwargs)
 
         # formating of orderLink requires access to the productType value.
         results.data = [
