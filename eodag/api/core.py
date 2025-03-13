@@ -1599,6 +1599,7 @@ class EODataAccessGateway:
                 if kwargs.get("raise_errors"):
                     raise
                 logger.warning(e)
+                results.errors.append((plugin.provider, e))
                 continue
 
             # try using crunch to get unique result
@@ -1622,7 +1623,7 @@ class EODataAccessGateway:
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
                 )
-        return SearchResult([], 0)
+        return SearchResult([], 0, results.errors)
 
     def _fetch_external_product_type(self, provider: str, product_type: str):
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
