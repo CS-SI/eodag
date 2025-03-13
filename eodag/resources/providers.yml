@@ -3583,6 +3583,9 @@
         method: GET
       metadata_mapping:
         status: $.json.features[0].status
+        orderStatus: $.json.features[0].status
+        order:date: $.json.features[0].started_at
+        creationDate: $.json.features[0].started_at
         message: $.json.features[0].message
       error:
         status: Error

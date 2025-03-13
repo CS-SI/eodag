@@ -55,6 +55,7 @@ from eodag.config import (
     provider_config_init,
     share_credentials,
 )
+from eodag.plugins.apis.base import Api
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -96,7 +97,6 @@ if TYPE_CHECKING:
     from whoosh.index import Index
 
     from eodag.api.product import EOProduct
-    from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
@@ -1848,6 +1848,10 @@ class EODataAccessGateway:
                     search_plugin.config,
                 ):
                     prep.auth = auth
+                elif isinstance(search_plugin, Api) and callable(
+                    getattr(search_plugin, "authenticate", None)
+                ):
+                    prep.auth = search_plugin.authenticate()
 
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)

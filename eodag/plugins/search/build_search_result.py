@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
-import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
@@ -1118,20 +1117,7 @@ class ECMWFSearch(PostJsonSearch):
             qs = unquote_plus(unquote_plus(_dc_qs))
             sorted_unpaginated_qp = geojson.loads(qs)
         else:
-            # update result with query parameters without pagination (or search-only params)
-            if isinstance(self.config.pagination["next_page_query_obj"], str):
-                next_page_query_obj = orjson.loads(
-                    self.config.pagination["next_page_query_obj"].format()
-                )
-                unpaginated_query_params = {
-                    k: v
-                    for k, v in results.query_params.items()
-                    if (k, v) not in next_page_query_obj.items()
-                }
-            else:
-                unpaginated_query_params = self.query_params
-            # query hash, will be used to build a product id
-            sorted_unpaginated_qp = dict_items_recursive_sort(unpaginated_query_params)
+            sorted_unpaginated_qp = dict_items_recursive_sort(results.query_params)
 
         if result:
             properties = result
