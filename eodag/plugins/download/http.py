@@ -446,8 +446,7 @@ class HTTPDownload(Download):
         if (success_status and success_status != status_dict.get("status")) or (
             success_code and success_code != response.status_code
         ):
-            error = NotAvailableError(status_message)
-            raise error
+            return None
 
         product.properties["storageStatus"] = ONLINE_STATUS
 
