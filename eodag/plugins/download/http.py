@@ -255,8 +255,8 @@ class HTTPDownload(Download):
         product.properties.update(
             {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
-        # the job id becomes the product id
-        product.properties["id"] = product.properties.get(
+        # the job id becomes the product id and title
+        product.properties["title"] = product.properties["id"] = product.properties.get(
             "orderId", product.properties["id"]
         )
         if "downloadLink" in product.properties:
@@ -430,7 +430,9 @@ class HTTPDownload(Download):
                     f"{product.properties['title']} order status: {status_percent}"
                 )
 
-            product.properties.update(status_dict)
+            product.properties.update(
+                {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
+            )
 
             status_message = status_dict.get("message")
 
@@ -440,6 +442,8 @@ class HTTPDownload(Download):
                 raise DownloadError(
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
+
+        product.properties["storageStatus"] = STAGING_STATUS
 
         success_status: dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
