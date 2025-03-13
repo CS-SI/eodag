@@ -119,7 +119,7 @@ class EODataAccessGateway:
         user_conf_file_path: Optional[str] = None,
         locations_conf_path: Optional[str] = None,
     ) -> None:
-        product_types_config_path = str(
+        product_types_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
             res_files("eodag") / "resources" / "product_types.yml"
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
