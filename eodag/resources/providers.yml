@@ -6032,7 +6032,6 @@
       qs: $.qs
       orderLink: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
-    type: HTTPDownload
     timeout: 30
     ssl_verify: true
     extract: false
