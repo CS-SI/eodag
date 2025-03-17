@@ -823,7 +823,7 @@ class EODataAccessGateway:
                     if auth := self._plugins_manager.get_auth(
                         search_plugin.provider,
                         getattr(search_plugin.config, "api_endpoint", None),
-                        search_plugin.config,
+                        search_plugin,
                     ):
                         kwargs["auth"] = auth
                     else:
@@ -1640,7 +1640,7 @@ class EODataAccessGateway:
             if auth := self._plugins_manager.get_auth(
                 plugin.provider,
                 getattr(plugin.config, "api_endpoint", None),
-                plugin.config,
+                plugin,
             ):
                 kwargs["auth"] = auth
 
@@ -1846,13 +1846,9 @@ class EODataAccessGateway:
                 if auth := self._plugins_manager.get_auth(
                     search_plugin.provider,
                     getattr(search_plugin.config, "api_endpoint", None),
-                    search_plugin.config,
+                    search_plugin,
                 ):
                     prep.auth = auth
-                elif isinstance(search_plugin, Api) and callable(
-                    getattr(search_plugin, "authenticate", None)
-                ):
-                    prep.auth = search_plugin.authenticate()
 
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
@@ -1927,7 +1923,7 @@ class EODataAccessGateway:
                             self._plugins_manager.get_auth_plugins(
                                 search_plugin.provider,
                                 matching_url=matching_url,
-                                matching_conf=download_plugin.config,
+                                match_plugin=download_plugin,
                             )
                         )
                     except StopIteration:
