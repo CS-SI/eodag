@@ -1627,7 +1627,6 @@
       orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
     timeout: 30
-    ssl_verify: true
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -1657,7 +1656,6 @@
           downloadLink: $.json.asset.value.href
     # auth
     matching_url: https://ads.atmosphere.copernicus.eu
-    ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
   products:
@@ -1787,7 +1785,7 @@
     - host
   url: https://cds.climate.copernicus.eu
   # anchors to avoid duplications
-  anchor_day_month_year: &nday_month_year
+  anchor_nday_month_year: &nday_month_year
     completionTimeFromAscendingNode:
       - |
         {{
@@ -1860,7 +1858,6 @@
       orderLink: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
     timeout: 30
-    ssl_verify: true
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -1890,7 +1887,6 @@
           downloadLink: $.json.asset.value.href
     # auth
     matching_url: https://cds.climate.copernicus.eu
-    ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
   products:
@@ -3551,7 +3547,6 @@
         - $.dataset
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "{dataset}"}}'
     # download
-    auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
     order_on_response:
@@ -4453,7 +4448,6 @@
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
     # download
-    ssl_verify: true
     auth_error_code: 401
     order_enabled: True
     order_method: POST
@@ -6044,7 +6038,6 @@
       orderLink: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
     timeout: 30
-    ssl_verify: true
     extract: false
     auth_error_code: 401
     order_enabled: true
@@ -6075,7 +6068,6 @@
           downloadLink: $.json.asset.value.href
     # auth
     matching_url: https://ewds.climate.copernicus.eu
-    ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
 

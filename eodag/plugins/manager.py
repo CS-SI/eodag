@@ -282,7 +282,7 @@ class PluginManager:
                 self.get_auth_plugins(
                     associated_plugin.provider,
                     matching_url=matching_url,
-                    matching_conf=associated_plugin.config,
+                    match_plugin=associated_plugin,
                 )
             )
         except StopIteration:
@@ -293,17 +293,21 @@ class PluginManager:
         self,
         provider: str,
         matching_url: Optional[str] = None,
-        matching_conf: Optional[PluginConfig] = None,
+        match_plugin: Optional[PluginTopic] = None,
     ) -> Iterator[Authentication]:
         """Build and return the authentication plugin for the given product_type and
         provider
 
         :param provider: The provider for which to get the authentication plugin
         :param matching_url: url to compare with plugin matching_url pattern
-        :param matching_conf: configuration to compare with plugin matching_conf
+        :param match_plugin: plugin to compare with auth plugin matching_conf;
+                             if match_plugin is api plugin with authentification, this plugin is returned
         :returns: All the Authentication plugins for the given criteria
         """
         auth_conf: Optional[PluginConfig] = None
+        if isinstance(match_plugin, Api) and hasattr(match_plugin, "authenticate"):
+            yield match_plugin
+        matching_conf = match_plugin.config
 
         def _is_auth_plugin_matching(
             auth_conf: PluginConfig,
@@ -367,17 +371,18 @@ class PluginManager:
         self,
         provider: str,
         matching_url: Optional[str] = None,
-        matching_conf: Optional[PluginConfig] = None,
+        match_plugin: Optional[PluginTopic] = None,
     ) -> Optional[Union[AuthBase, S3SessionKwargs]]:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 
         :param provider: The provider for which to get the authentication plugin
         :param matching_url: url to compare with plugin matching_url pattern
-        :param matching_conf: configuration to compare with plugin matching_conf
+        :param match_plugin: plugin to compare with auth plugin matching_conf;
+                             if match_plugin is api plugin with authentification, this plugin is returned
         :returns: All the Authentication plugins for the given criteria
         """
-        for auth_plugin in self.get_auth_plugins(provider, matching_url, matching_conf):
+        for auth_plugin in self.get_auth_plugins(provider, matching_url, match_plugin):
             if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
                 try:
                     auth = auth_plugin.authenticate()
