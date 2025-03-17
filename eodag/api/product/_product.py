@@ -252,13 +252,6 @@ class EOProduct:
         self.downloader = downloader
         self.downloader_auth = authenticator
 
-        if (
-            not authenticator
-            and isinstance(downloader, Api)
-            and hasattr(downloader, "authenticate")
-        ):
-            self.downloader_auth = downloader
-
         # resolve locations and properties if needed with downloader configuration
         location_attrs = ("location", "remote_location")
         for location_attr in location_attrs:

@@ -1627,7 +1627,6 @@
       orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
     timeout: 30
-    ssl_verify: true
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -1657,28 +1656,8 @@
           downloadLink: $.json.asset.value.href
     # auth
     matching_url: https://ads.atmosphere.copernicus.eu
-    ssl_verify: true
-    end_date_excluded: false
-    dates_required: true
-    remove_from_query:
-      - dataset
-    discover_queryables:
-      fetch_url: null
-      product_type_fetch_url: null
-      constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
-      form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
-    metadata_mapping:
-      productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
-      completionTimeFromAscendingNode:
-        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
-      # The geographic extent of the product
-      geometry:
-        - '{{"area": {geometry#to_nwse_bounds}}}'
-        - $.geometry
-      qs: $.qs
-      orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
+    headers:
+      PRIVATE-TOKEN: "{apikey}"
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
@@ -1806,7 +1785,7 @@
     - host
   url: https://cds.climate.copernicus.eu
   # anchors to avoid duplications
-  anchor_day_month_year: &nday_month_year
+  anchor_nday_month_year: &nday_month_year
     completionTimeFromAscendingNode:
       - |
         {{
@@ -1879,7 +1858,6 @@
       orderLink: 'https://cds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
     timeout: 30
-    ssl_verify: true
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -1909,7 +1887,6 @@
           downloadLink: $.json.asset.value.href
     # auth
     matching_url: https://cds.climate.copernicus.eu
-    ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
   products:
@@ -3571,7 +3548,6 @@
         - $.dataset
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "{dataset}"}}'
     # download
-    auth_error_code: 401
     order_enabled: true
     order_method: 'POST'
     order_on_response:
@@ -4473,7 +4449,6 @@
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
     # download
-    ssl_verify: true
     auth_error_code: 401
     order_enabled: True
     order_method: POST
@@ -6033,7 +6008,6 @@
       orderLink: 'https://ewds.climate.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
     # download
     timeout: 30
-    ssl_verify: true
     extract: false
     auth_error_code: 401
     order_enabled: true
@@ -6064,7 +6038,6 @@
           downloadLink: $.json.asset.value.href
     # auth
     matching_url: https://ewds.climate.copernicus.eu
-    ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
 
