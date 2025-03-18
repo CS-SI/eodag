@@ -1729,6 +1729,66 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             os.path.join(self.output_dir, self.product.properties["title"]),
         )
 
+    @mock.patch(
+        "eodag.plugins.download.aws.open_s3_zipped_object",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.aws.AwsDownload.get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_download_aws_in_zip(
+        self,
+        mock_get_authenticated_objects: mock.Mock,
+        mock_open_s3_zipped_object: mock.Mock,
+    ):
+        """AwsDownload.download() must handle files in zip"""
+
+        def _open_zip(*args, **kwargs):
+            return zipfile.ZipFile(
+                os.path.join(
+                    TEST_RESOURCES_PATH,
+                    "products",
+                    "as_archive",
+                    "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.zip",
+                )
+            )
+
+        mock_open_s3_zipped_object.side_effect = _open_zip
+
+        plugin = self.get_download_plugin(self.product)
+        plugin.s3_resource = mock.Mock()
+        self.product.assets.clear()
+        self.product.assets.update(
+            {
+                "file1": {
+                    "href": (
+                        "http://example.com/path/to/foo.zip!"
+                        "GRANULE/L1C_T31TDH_A013204_20180101T105435/IMG_DATA/T31TDH_20180101T105441_B01.jp2"
+                    )
+                },
+                "file2": {
+                    "href": "http://example.com/path/to/foo.zip!GRANULE/L1C_T31TDH_A013204_20180101T105435/MTD_TL.xml"
+                },
+            }
+        )
+        # no SAFE build and flatten_top_dirs
+        plugin.config.products[self.product.product_type]["build_safe"] = False
+        plugin.config.flatten_top_dirs = True
+
+        path = plugin.download(self.product, output_dir=self.output_dir)
+
+        self.assertEqual(mock_open_s3_zipped_object.call_count, 2)
+        mock_open_s3_zipped_object.assert_called_with(
+            "example", "path/to/foo.zip", plugin.s3_resource.meta.client, partial=False
+        )
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(path, "IMG_DATA/T31TDH_20180101T105441_B01.jp2")
+            )
+        )
+        self.assertTrue(os.path.isfile(os.path.join(path, "MTD_TL.xml")))
+
     @mock.patch("eodag.plugins.download.aws.flatten_top_directories", autospec=True)
     @mock.patch(
         "eodag.plugins.download.aws.AwsDownload.check_manifest_file_list", autospec=True

@@ -60,6 +60,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     TimeOutError,
 )
+from eodag.utils.s3 import open_s3_zipped_object
 
 if TYPE_CHECKING:
     from boto3.resources.collection import ResourceCollection
@@ -233,6 +234,7 @@ class AwsDownload(Download):
         super(AwsDownload, self).__init__(provider, config)
         self.requester_pays = getattr(self.config, "requester_pays", False)
         self.s3_session: Optional[boto3.session.Session] = None
+        self.s3_resource: Optional[boto3.resources.base.ServiceResource] = None
 
     def download(
         self,
@@ -326,19 +328,32 @@ class AwsDownload(Download):
             bucket_names_and_prefixes, auth
         )
 
+        # files in zip
+        updated_bucket_names_and_prefixes = self._download_file_in_zip(
+            product, bucket_names_and_prefixes, product_local_path, progress_callback
+        )
+        # prevent nothing-to-download errors if download was performed in zip
+        raise_error = (
+            False
+            if len(updated_bucket_names_and_prefixes) != len(bucket_names_and_prefixes)
+            else True
+        )
+
         # downloadable files
         unique_product_chunks = self._get_unique_products(
-            bucket_names_and_prefixes,
+            updated_bucket_names_and_prefixes,
             authenticated_objects,
             asset_filter,
             ignore_assets,
             product,
+            raise_error=raise_error,
         )
 
         total_size = sum([p.size for p in unique_product_chunks]) or None
 
         # download
-        progress_callback.reset(total=total_size)
+        if len(unique_product_chunks) > 0:
+            progress_callback.reset(total=total_size)
         try:
             for product_chunk in unique_product_chunks:
                 try:
@@ -390,6 +405,52 @@ class AwsDownload(Download):
 
         return product_local_path
 
+    def _download_file_in_zip(
+        self, product, bucket_names_and_prefixes, product_local_path, progress_callback
+    ):
+        """
+        Download file in zip from a prefix like `foo/bar.zip!file.txt`
+        """
+        if self.s3_resource is None:
+            logger.debug("Cannot check files in s3 zip without s3 resource")
+            return bucket_names_and_prefixes
+
+        s3_client = self.s3_resource.meta.client
+
+        downloaded = []
+        for i, pack in enumerate(bucket_names_and_prefixes):
+            bucket_name, prefix = pack
+            if ".zip!" in prefix:
+                splitted_path = prefix.split(".zip!")
+                zip_prefix = f"{splitted_path[0]}.zip"
+                rel_path = splitted_path[-1]
+                dest_file = os.path.join(product_local_path, rel_path)
+                dest_abs_path_dir = os.path.dirname(dest_file)
+                if not os.path.isdir(dest_abs_path_dir):
+                    os.makedirs(dest_abs_path_dir)
+
+                with open_s3_zipped_object(
+                    bucket_name, zip_prefix, s3_client, partial=False
+                ) as zip_file:
+                    # file size
+                    file_info = zip_file.getinfo(rel_path)
+                    progress_callback.reset(total=file_info.file_size)
+                    with zip_file.open(rel_path) as extracted, open(
+                        dest_file, "wb"
+                    ) as output_file:
+                        # Read in 1MB chunks
+                        for zchunk in iter(lambda: extracted.read(1024 * 1024), b""):
+                            output_file.write(zchunk)
+                            progress_callback(len(zchunk))
+
+                downloaded.append(i)
+
+        return [
+            pack
+            for i, pack in enumerate(bucket_names_and_prefixes)
+            if i not in downloaded
+        ]
+
     def _download_preparation(
         self,
         product: EOProduct,
@@ -397,10 +458,12 @@ class AwsDownload(Download):
         **kwargs: Unpack[DownloadConf],
     ) -> tuple[Optional[str], Optional[str]]:
         """
-        preparation for the download:
+        Preparation for the download:
+
         - check if file was already downloaded
         - get file path
         - create directories
+
         :param product: product to be downloaded
         :param progress_callback: progress callback to be used
         :param kwargs: additional arguments
@@ -424,7 +487,8 @@ class AwsDownload(Download):
 
     def _configure_safe_build(self, build_safe: bool, product: EOProduct):
         """
-        updates the product properties with fetch metadata if safe build is enabled
+        Updates the product properties with fetch metadata if safe build is enabled
+
         :param build_safe: if safe build is enabled
         :param product: product to be updated
         """
@@ -514,10 +578,11 @@ class AwsDownload(Download):
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
     ) -> tuple[dict[str, Any], ResourceCollection]:
         """
-        authenticates with s3 and retrieves the available objects
-        raises an error when authentication is not possible
+        Authenticates with s3 and retrieves the available objects
+
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
         :param auth: authentication information
+        :raises AuthenticationError: authentication is not possible
         :return: authenticated objects per bucket, list of available objects
         """
         if not isinstance(auth, (dict, type(None))):
@@ -584,14 +649,17 @@ class AwsDownload(Download):
         asset_filter: Optional[str],
         ignore_assets: bool,
         product: EOProduct,
+        raise_error: bool = True,
     ) -> set[Any]:
         """
-        retrieve unique product chunks based on authenticated objects and asset filters
+        Retrieve unique product chunks based on authenticated objects and asset filters
+
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
         :param authenticated_objects: available objects per bucket
         :param asset_filter: text for which assets should be filtered
         :param ignore_assets: if product instead of individual assets should be used
         :param product: product that shall be downloaded
+        :param raise_error: raise error if there is nothing to download
         :return: set of product chunks that can be downloaded
         """
         product_chunks: list[Any] = []
@@ -613,12 +681,12 @@ class AwsDownload(Download):
                     unique_product_chunks,
                 )
             )
-            if not unique_product_chunks:
+            if not unique_product_chunks and raise_error:
                 raise NotAvailableError(
                     rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
                 )
 
-        if not unique_product_chunks:
+        if not unique_product_chunks and raise_error:
             raise NoMatchingProductType("No product found to download.")
 
         return unique_product_chunks
@@ -701,6 +769,13 @@ class AwsDownload(Download):
         authenticated_objects, s3_objects = self._do_authentication(
             bucket_names_and_prefixes, auth
         )
+
+        # stream not implemented for prefixes like `foo/bar.zip!file.txt`
+        for _, prefix in bucket_names_and_prefixes:
+            if prefix and ".zip!" in prefix:
+                raise NotImplementedError(
+                    "Download streaming is not implemented for files in zip on S3"
+                )
 
         # downloadable files
         unique_product_chunks = self._get_unique_products(
@@ -936,6 +1011,7 @@ class AwsDownload(Download):
                 objects = s3_resource.Bucket(bucket_name).objects
             list(objects.filter(Prefix=prefix).limit(1))
             self.s3_session = s3_session
+            self.s3_resource = s3_resource
             return objects
         else:
             return None
@@ -966,6 +1042,7 @@ class AwsDownload(Download):
                 objects = s3_resource.Bucket(bucket_name).objects
             list(objects.filter(Prefix=prefix).limit(1))
             self.s3_session = s3_session
+            self.s3_resource = s3_resource
             return objects
         else:
             return None
@@ -987,6 +1064,7 @@ class AwsDownload(Download):
             objects = s3_resource.Bucket(bucket_name).objects
         list(objects.filter(Prefix=prefix).limit(1))
         self.s3_session = s3_session
+        self.s3_resource = s3_resource
         return objects
 
     def get_product_bucket_name_and_prefix(

@@ -36,7 +36,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from zipfile import ZipInfo
+    from zipfile import ZipFile, ZipInfo
 
     from mypy_boto3_s3.client import S3Client
 
@@ -78,11 +78,11 @@ def parse_int(bytes: bytes) -> int:
     return val
 
 
-def list_files_in_s3_zipped_object(
-    bucket_name: str, key_name: str, client_s3: S3Client
-) -> List[ZipInfo]:
+def open_s3_zipped_object(
+    bucket_name: str, key_name: str, client_s3: S3Client, partial: bool = True
+) -> ZipFile:
     """
-    List files in s3 zipped object, without downloading it.
+    Open s3 zipped object, without downloading it.
 
     See https://stackoverflow.com/questions/41789176/how-to-count-files-inside-zip-in-aws-s3-without-downloading-it;
     Based on https://stackoverflow.com/questions/51351000/read-zip-files-from-s3-without-downloading-the-entire-file
@@ -90,6 +90,7 @@ def list_files_in_s3_zipped_object(
     :param bucket_name: Bucket name of the object to fetch
     :param key_name: Key name of the object to fetch
     :param client_s3: s3 client used to fetch the object
+    :param partial: fetch partial data if only content info is needed
     :returns: List of files in zip
     """
     response = client_s3.head_object(Bucket=bucket_name, Key=key_name)
@@ -104,11 +105,33 @@ def list_files_in_s3_zipped_object(
 
     # fetch central directory, append EOCD, and open as zipfile
     cd = fetch(bucket_name, key_name, cd_start, cd_size, client_s3)
-    zip = zipfile.ZipFile(io.BytesIO(cd + eocd))
 
-    logger.debug("Found %s files in %s" % (len(zip.filelist), key_name))
+    zip_data = (
+        cd + eocd if partial else fetch(bucket_name, key_name, 0, size, client_s3)
+    )
 
-    return zip.filelist
+    zip = zipfile.ZipFile(io.BytesIO(zip_data))
+
+    return zip
+
+
+def list_files_in_s3_zipped_object(
+    bucket_name: str, key_name: str, client_s3: S3Client
+) -> List[ZipInfo]:
+    """
+    List files in s3 zipped object, without downloading it.
+
+    See https://stackoverflow.com/questions/41789176/how-to-count-files-inside-zip-in-aws-s3-without-downloading-it;
+    Based on https://stackoverflow.com/questions/51351000/read-zip-files-from-s3-without-downloading-the-entire-file
+
+    :param bucket_name: Bucket name of the object to fetch
+    :param key_name: Key name of the object to fetch
+    :param client_s3: s3 client used to fetch the object
+    :returns: List of files in zip
+    """
+    with open_s3_zipped_object(bucket_name, key_name, client_s3) as zip_file:
+        logger.debug("Found %s files in %s" % (len(zip_file.filelist), key_name))
+        return zip_file.filelist
 
 
 def update_assets_from_s3(
