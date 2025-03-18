@@ -1999,12 +1999,12 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         providers_config[0].products["TEST_PRODUCT_1"] = {"productType": "TP1"}
         providers_config[0].products["TEST_PRODUCT_2"] = {"productType": "TP2"}
         with open(
-            os.path.join(TEST_RESOURCES_PATH, "file_providers_override2.yml"), "w"
+            os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
         ) as f:
             f.write(yaml.dump(providers_config[0]))
         # set env variables
         os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
-            TEST_RESOURCES_PATH, "file_providers_override2.yml"
+            self.tmp_home_dir.name, "file_providers_override2.yml"
         )
         os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_product_types_override.yml"
@@ -2015,8 +2015,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         self.assertEqual(2, len(pt))
         self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
         self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
-        # remove temp file and env variables
-        os.remove(os.path.join(TEST_RESOURCES_PATH, "file_providers_override2.yml"))
+        # remove env variables
         os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
         os.environ.pop("EODAG_PRODUCT_TYPES_CFG_FILE", None)
 
