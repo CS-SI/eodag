@@ -29,6 +29,7 @@ from importlib.resources import files as res_files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import yaml
 from lxml import html
 from pkg_resources import DistributionNotFound
 from pydantic import ValidationError
@@ -37,7 +38,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -1989,6 +1990,35 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             )
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+
+    def test_core_product_types_config_envvar(self):
+        """product types should be loaded from file defined in env var"""
+        # setup providers config
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
+        providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
+        providers_config[0].products["TEST_PRODUCT_1"] = {"productType": "TP1"}
+        providers_config[0].products["TEST_PRODUCT_2"] = {"productType": "TP2"}
+        with open(
+            os.path.join(TEST_RESOURCES_PATH, "file_providers_override2.yml"), "w"
+        ) as f:
+            f.write(yaml.dump(providers_config[0]))
+        # set env variables
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_providers_override2.yml"
+        )
+        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_product_types_override.yml"
+        )
+        # check product types
+        dag = EODataAccessGateway()
+        pt = dag.list_product_types(fetch_providers=False)
+        self.assertEqual(2, len(pt))
+        self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
+        self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
+        # remove temp file and env variables
+        os.remove(os.path.join(TEST_RESOURCES_PATH, "file_providers_override2.yml"))
+        os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+        os.environ.pop("EODAG_PRODUCT_TYPES_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
