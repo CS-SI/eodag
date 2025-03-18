@@ -1936,16 +1936,10 @@ class TestCoreConfWithEnvVar(TestCoreBase):
     @classmethod
     def setUpClass(cls):
         super(TestCoreConfWithEnvVar, cls).setUpClass()
-        cls.dag = EODataAccessGateway()
-        # mock os.environ to empty env
-        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
-        cls.mock_os_environ.start()
 
     @classmethod
     def tearDownClass(cls):
         super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        # stop os.environ
-        cls.mock_os_environ.stop()
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed by the EODAG_LOCS_CFG_FILE env var"""
