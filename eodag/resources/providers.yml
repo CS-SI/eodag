@@ -6109,6 +6109,9 @@
     ssl_verify: false
     ignore_assets: true
     archive_depth: 2
+    auth_error_code:
+      - 401
+      - 403
   auth: !plugin
     type: HTTPHeaderAuth
     matching_url: https://geodes-portal.cnes.fr
