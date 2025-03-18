@@ -1,4 +1,5 @@
 import os
+import zipfile
 from unittest import TestCase
 
 import boto3
@@ -11,6 +12,7 @@ from tests.context import (
     MisconfiguredError,
     PluginConfig,
     list_files_in_s3_zipped_object,
+    open_s3_zipped_object,
     update_assets_from_s3,
 )
 
@@ -72,6 +74,14 @@ class TestUtilsS3(TestCase):
                 "MTD_MSIL1C.xml",
             ],
         )
+
+    def test_utils_s3_open_s3_zipped_object(self):
+        """list_files_in_s3_zipped_object must list the files in a zipped object stored in S3"""
+        zip_file = open_s3_zipped_object(
+            "mybucket", "path/to/product.zip", self.s3_client
+        )
+        self.assertIsInstance(zip_file, zipfile.ZipFile)
+        self.assertEqual(len(zip_file.filelist), 6)
 
     def test_utils_s3_update_assets_from_s3_zip(self):
         """update_assets_from_s3 must update the assets of a product from a zipped object stored in S3"""

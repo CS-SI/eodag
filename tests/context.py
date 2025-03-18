@@ -98,7 +98,11 @@ from eodag.utils import (
     get_ssl_context,
 )
 from eodag.utils.requests import fetch_json
-from eodag.utils.s3 import list_files_in_s3_zipped_object, update_assets_from_s3
+from eodag.utils.s3 import (
+    list_files_in_s3_zipped_object,
+    update_assets_from_s3,
+    open_s3_zipped_object,
+)
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,
