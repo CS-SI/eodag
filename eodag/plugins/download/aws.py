@@ -233,6 +233,7 @@ class AwsDownload(Download):
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsDownload, self).__init__(provider, config)
         self.requester_pays = getattr(self.config, "requester_pays", False)
+        self.s3_session: Optional[boto3.session.Session] = None
         self.s3_resource: Optional[boto3.resources.base.ServiceResource] = None
 
     def download(
