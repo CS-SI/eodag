@@ -973,17 +973,21 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        self.stream = s.request(
-            req_method,
-            req_url,
-            stream=True,
-            auth=auth,
-            params=params,
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            verify=ssl_verify,
-            **req_kwargs,
-        )
+        try:
+            self.stream = s.request(
+                req_method,
+                req_url,
+                stream=True,
+                auth=auth,
+                params=params,
+                headers=USER_AGENT,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify,
+                **req_kwargs,
+            )
+        except requests.exceptions.MissingSchema:
+            # location is not a valid url -> product is not available yet
+            raise NotAvailableError
         try:
             self.stream.raise_for_status()
         except requests.exceptions.Timeout as exc:
