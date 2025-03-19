@@ -29,6 +29,7 @@ from importlib.resources import files as res_files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import yaml
 from lxml import html
 from pkg_resources import DistributionNotFound
 from pydantic import ValidationError
@@ -37,7 +38,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -1932,19 +1933,12 @@ class TestCore(TestCoreBase):
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
-    @classmethod
-    def setUpClass(cls):
-        super(TestCoreConfWithEnvVar, cls).setUpClass()
-        cls.dag = EODataAccessGateway()
-        # mock os.environ to empty env
-        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
-        cls.mock_os_environ.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        # stop os.environ
-        cls.mock_os_environ.stop()
+    def tearDown(self):
+        """Teardown run after every test"""
+        if dag := getattr(self, "dag", None):
+            index_dir = os.path.join(dag.conf_dir, ".index")
+            shutil.rmtree(index_dir)
+            del dag
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed by the EODAG_LOCS_CFG_FILE env var"""
@@ -1952,9 +1946,9 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_locations_override.yml"
             )
-            dag = EODataAccessGateway()
+            self.dag = EODataAccessGateway()
             self.assertEqual(
-                dag.locations_config,
+                self.dag.locations_config,
                 [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
             )
         finally:
@@ -1966,11 +1960,13 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_config_override.yml"
             )
-            dag = EODataAccessGateway()
+            self.dag = EODataAccessGateway()
             # usgs priority is set to 5 in the test config overrides
-            self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
+            self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 5))
             # peps outputs prefix is set to /data
-            self.assertEqual(dag.providers_config["peps"].download.output_dir, "/data")
+            self.assertEqual(
+                self.dag.providers_config["peps"].download.output_dir, "/data"
+            )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
 
@@ -1980,15 +1976,45 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_providers_override.yml"
             )
-            dag = EODataAccessGateway()
+            self.dag = EODataAccessGateway()
             # only foo_provider in conf
-            self.assertEqual(dag.available_providers(), ["foo_provider"])
+            self.assertEqual(self.dag.available_providers(), ["foo_provider"])
             self.assertEqual(
-                dag.providers_config["foo_provider"].search.api_endpoint,
+                self.dag.providers_config["foo_provider"].search.api_endpoint,
                 "https://foo.bar/search",
             )
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+
+    def test_core_product_types_config_envvar(self):
+        """product types should be loaded from file defined in env var"""
+        # setup providers config
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
+        providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
+        providers_config[0].products["TEST_PRODUCT_1"] = {"productType": "TP1"}
+        providers_config[0].products["TEST_PRODUCT_2"] = {"productType": "TP2"}
+        with open(
+            os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
+        ) as f:
+            f.write(yaml.dump(providers_config[0]))
+        # set env variables
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+            self.tmp_home_dir.name, "file_providers_override2.yml"
+        )
+        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_product_types_override.yml"
+        )
+        # check product types
+        try:
+            self.dag = EODataAccessGateway()
+            pt = self.dag.list_product_types(fetch_providers=False)
+            self.assertEqual(2, len(pt))
+            self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
+            self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
+        finally:
+            # remove env variables
+            os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+            os.environ.pop("EODAG_PRODUCT_TYPES_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
