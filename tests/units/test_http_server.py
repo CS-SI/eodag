@@ -104,7 +104,11 @@ class RequestTestCase(unittest.TestCase):
     def setUp(self):
         self.app = TestClient(self.eodag_http_server.app)
 
-    def test_route(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test_route(self, mock_auth_session_request):
         result = self._request_valid("/", check_links=False)
 
         # check links (root specfic)
@@ -1640,7 +1644,7 @@ class RequestTestCase(unittest.TestCase):
                     "reanalysis-era5-single-levels/constraints.json",
                     headers=USER_AGENT,
                     auth=None,
-                    timeout=DEFAULT_SEARCH_TIMEOUT,
+                    timeout=30,
                 ),
                 call().raise_for_status(),
                 call().json(),
@@ -1650,7 +1654,7 @@ class RequestTestCase(unittest.TestCase):
                     "reanalysis-era5-single-levels/form.json",
                     headers=USER_AGENT,
                     auth=None,
-                    timeout=DEFAULT_SEARCH_TIMEOUT,
+                    timeout=30,
                 ),
                 call().raise_for_status(),
                 call().json(),

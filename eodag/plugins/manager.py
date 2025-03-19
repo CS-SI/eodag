@@ -307,7 +307,11 @@ class PluginManager:
         auth_conf: Optional[PluginConfig] = None
         if isinstance(match_plugin, Api) and hasattr(match_plugin, "authenticate"):
             yield match_plugin
-        matching_conf = match_plugin.config
+
+        if match_plugin:
+            matching_conf = match_plugin.config
+        else:
+            matching_conf = None
 
         def _is_auth_plugin_matching(
             auth_conf: PluginConfig,

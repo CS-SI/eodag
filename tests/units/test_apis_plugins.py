@@ -265,6 +265,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         del self.api_plugin.config.credentials
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
@@ -276,6 +280,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
         mock_fetch_product_types_list,
+        mock_auth_session_request,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
 
@@ -361,6 +366,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
@@ -370,6 +379,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_fetch_product_types_list,
+        mock_auth_session_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
 
