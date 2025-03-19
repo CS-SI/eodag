@@ -1042,9 +1042,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.product.provider = "cop_ads"
         self.product.product_type = "CAMS_EAC4"
-        self.product.properties[
-            "downloadLink"
-        ] = "https://ads.atmosphere.copernicus.eu/dummy"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
@@ -1111,10 +1108,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
             # expected values
             expected_remote_location = "http://somewhere/download/dummy_request_id"
-            expected_order_status_link = f"{endpoint}/jobs/dummy_request_id"
-            expected_path = os.path.join(
-                output_data_path, self.product.properties["title"]
+            expected_order_status_link = (
+                f"{endpoint}/jobs/dummy_request_id?request=true"
             )
+            expected_path = os.path.join(output_data_path, "dummy_request_id")
             # download
             path = self.product.download(
                 output_dir=output_data_path,
