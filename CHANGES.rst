@@ -1,6 +1,73 @@
 Release history
 ===============
 
+v3.1.0 (2025-03-19)
+-------------------
+
+|:loudspeaker:| Major changes since last stable (`v3.0.1 <changelog.rst#v3-0-1-2024-11-06>`_)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Core features and fixes
+"""""""""""""""""""""""
+
+* [v3.1.0b2] Assets keys uniformization using drivers (:pull:`1488`)
+* [v3.1.0b1] Updated `queryables <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/5_queryables.html>`_
+  mechanism and ecmwf-like plugins (:pull:`1397`)(:pull:`1427`)(:pull:`1462`)
+* **[v3.1.0]** Customizable providers configuration file through ``EODAG_PRODUCT_TYPES_CFG_FILE`` environment
+  variable (:pull:`1559`)
+* [v3.1.0b1] Order and download polling times update (:pull:`1440`)
+
+Providers and product types updates
+"""""""""""""""""""""""""""""""""""
+
+* **[v3.1.0]** Removed ``onda`` provider (:pull:`1564`)
+* [v3.1.0b2] default search timeout to 20s (:pull:`1505`)
+
+Plugins new features and fixes
+""""""""""""""""""""""""""""""
+
+* **[v3.1.0]** :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`: simplified configuration (:pull:`1433`),
+  fixed queryables issues (:pull:`1509`), mapped geometry metadata (:pull:`1555`)
+* [v3.1.0b1] Removed default :class:`~eodag.plugins.download.http.HTTPDownload` zip extension (:pull:`1400`)
+* [v3.1.0b1] Order and poll without downloading (:pull:`1437`)
+
+Remaining changes since `v3.1.0b2 <changelog.rst#v3-1-0b2-2025-02-03>`_
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Core features and fixes
+"""""""""""""""""""""""
+
+* Keep queryables `required` attribute even with default values (:pull:`1521`)
+
+Providers and product types updates
+"""""""""""""""""""""""""""""""""""
+
+* ``geodes``: recognize auth errors during download (:pull:`1562`), typo in ``geodes_s3`` user conf template
+  (:pull:`1536`)
+* ``wekeo_main`` metadata mapping update (:pull:`1549`) and COP-DEM product types update (:pull:`1516`)
+* ``eumetsat_ds``: new MTG product types (:pull:`1513`), metadata mapping fix (:pull:`1502`), remove duplicate product
+  types (:pull:`1514`)
+* Add product types to ``dedl`` provider (:pull:`1515`)
+
+Plugins new features and fixes
+""""""""""""""""""""""""""""""
+
+* :class:`~eodag.plugins.download.aws.AwsDownload`: zip partial download (:pull:`1561`), `InvalidRequest` handle
+  (:pull:`1532`)
+* Already authenticated user fix on openid authentication plugins (:pull:`1524`)
+* Fixes missing file error on ``usgs`` authentication during attempts (:pull:`1550`)
+
+Miscellaneous
+"""""""""""""
+
+* **[build]** remove dependencies max versions (:pull:`1519`), ``usgs`` latest version from git repo (:pull:`1552`)
+* **[docs]** ``eodag-cube`` `Python API documentation
+  <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/9_post_process.html#Data-access-with-eodag-cube>`_
+  (:pull:`1511`), ``usgs`` registration update (:pull:`1551`)
+* Various minor fixes and improvements (:pull:`1502`)(:pull:`1540`)(:pull:`1541`)(:pull:`1547`)(:pull:`1566`)
+* External product types reference updates (:pull:`1510`)(:pull:`1525`)(:pull:`1539`)(:pull:`1548`)(:pull:`1553`)
+  (:pull:`1557`)(:pull:`1565`)
+
 v3.1.0b2 (2025-02-03)
 ---------------------
 
