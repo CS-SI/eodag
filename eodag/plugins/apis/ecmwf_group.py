@@ -81,7 +81,7 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload):
         product.properties["orderStatusLink"] = order_status_link.format(
             orderId=product_id
         )
-        formatted_search_link = search_link.format(orderId=id)
+        formatted_search_link = search_link.format(orderId=product_id)
         search_link_dict = (
             {"searchLink": formatted_search_link} if formatted_search_link else {}
         )

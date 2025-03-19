@@ -1119,6 +1119,10 @@ class ECMWFSearch(PostJsonSearch):
         else:
             sorted_unpaginated_qp = dict_items_recursive_sort(results.query_params)
 
+        # remove unwanted query params
+        for param in getattr(self.config, "remove_from_query", []):
+            sorted_unpaginated_qp.pop(param, None)
+
         if result:
             properties = result
             properties.update(result.pop("request_params", None) or {})
@@ -1156,12 +1160,7 @@ class ECMWFSearch(PostJsonSearch):
                 (product_type or kwargs["dataset"]).upper() + "_ORDERABLE_" + query_hash
             )
 
-        # remove unwanted query params
-        excluded_qp = getattr(self.config, "remove_from_query", [])
-        clean_qp = {
-            k: v for k, v in sorted_unpaginated_qp.items() if k not in excluded_qp
-        }
-        qs = geojson.dumps(clean_qp)
+        qs = geojson.dumps(sorted_unpaginated_qp)
 
         # used by server mode to generate downloadlink href
         # TODO: to remove once the legacy server is removed
