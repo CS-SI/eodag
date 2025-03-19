@@ -189,10 +189,6 @@ which requires the access level
 
 Contact `support@meteoblue.com <mailto:support@meteoblue.com>`_ to apply for a free API key trial.
 
-``onda``
-^^^^^^^^
-Create an account `here: <https://www.onda-dias.eu/cms/>`__
-
 ``peps``
 ^^^^^^^^
 create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag

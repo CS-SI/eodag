@@ -44,7 +44,6 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `eumetsat_ds <https://data.eumetsat.int>`_,
       `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
       `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_,
-      `onda <https://www.onda-dias.eu/cms>`_,
       `peps <https://peps.cnes.fr/rocket/#/home>`_,
       `planetary_computer <https://planetarycomputer.microsoft.com>`_,
       `sara <https://copernicus.nci.org.au>`_,
