@@ -57,8 +57,10 @@ from tests.context import (
     RequestError,
     TimeOutError,
     cached_parse,
+    cached_yaml_load_all,
     get_geometry_from_various,
     load_default_config,
+    merge_configs,
     override_config_from_mapping,
 )
 
@@ -96,77 +98,10 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
 
         # manually add conf as this provider is not supported any more
         providers_config = self.plugins_manager.providers_config
-        mundi_config_yaml = """
-            mundi:
-                search:
-                    type: QueryStringSearch
-                    api_endpoint: 'https://{collection}.browse.catalog.mundiwebservices.com/opensearch'
-                    need_auth: false
-                    result_type: 'xml'
-                    results_entry: '//ns:entry'
-                    literal_search_params:
-                        format: atom
-                        relation: intersects
-                    pagination:
-                        next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
-                        total_items_nb_key_path: '//os:totalResults/text()'
-                        max_items_per_page: 50
-                    discover_metadata:
-                        auto_discovery: true
-                        metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
-                        search_param: '{metadata}={{{metadata}}}'
-                        metadata_path: '*'
-                    metadata_mapping:
-                        productType:
-                            - 'productType'
-                            - 'eo:productType/text()'
-                        processingLevel:
-                            - 'processingLevel'
-                            - 'eo:processingLevel/text()'
-                        title: 'ns:title/text()'
-                        startTimeFromAscendingNode:
-                            - 'timeStart={startTimeFromAscendingNode#to_iso_utc_datetime}'
-                            - 'DIAS:sensingStartDate/text()'
-                        completionTimeFromAscendingNode:
-                            - 'timeEnd={completionTimeFromAscendingNode#to_iso_utc_datetime}'
-                            - 'DIAS:sensingStopDate/text()'
-                        id:
-                            - 'uid={id#remove_extension}'
-                            - 'dc:identifier/text()'
-                        tileIdentifier:
-                            - 'tileIdentifier'
-                            - 'DIAS:tileIdentifier/text()'
-                        geometry:
-                            - 'geometry={geometry#to_rounded_wkt}'
-                            - '{georss:polygon|georss:where#from_georss}'
-                products:
-                    S1_SAR_GRD:
-                        productType: GRD
-                        collection: Sentinel1
-                        metadata_mapping:
-                            cloudCover: 'null/text()'
-                    S1_SAR_SLC:
-                        productType: SLC
-                        collection: Sentinel1
-                        metadata_mapping:
-                            cloudCover: 'null/text()'
-                    S2_MSI_L1C:
-                        productType: IMAGE
-                        processingLevel: L1C
-                        collection: Sentinel2
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
-                        collection: '{collection}'
-                        instrument: '{instrument}'
-                        processingLevel: '{processingLevel}'
-                auth:
-                    type: HTTPHeaderAuth
-                    headers:
-                        Cookie: "seeedtoken={apikey}"
-        """
-
-        mundi_config_dict = yaml.safe_load(mundi_config_yaml)
-        override_config_from_mapping(providers_config, mundi_config_dict)
+        mundi_config = cached_yaml_load_all(
+            Path(TEST_RESOURCES_PATH) / "mundi_conf.yml"
+        )[0]
+        merge_configs(providers_config, {"mundi": mundi_config})
         self.plugins_manager = PluginManager(providers_config)
 
         # One of the providers that has a QueryStringSearch Search plugin and result_type=xml
@@ -1047,7 +982,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search",
             json={
                 "startdate": "2003-01-01T00:00:00.000Z",
-                "enddate": "2003-01-02T00:00:00.000Z",
+                "enddate": "2003-01-01T00:00:00.000Z",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "data_format": "grib",
                 "variable": "2m_dewpoint_temperature",
@@ -1163,6 +1098,15 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginODataV4Search, self).setUp()
+
+        # manually add conf as this provider is not supported any more
+        providers_config = self.plugins_manager.providers_config
+        onda_config = cached_yaml_load_all(Path(TEST_RESOURCES_PATH) / "onda_conf.yml")[
+            0
+        ]
+        merge_configs(providers_config, {"onda": onda_config})
+        self.plugins_manager = PluginManager(providers_config)
+
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
         self.onda_search_plugin = self.get_search_plugin(self.product_type, provider)
@@ -1737,6 +1681,83 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             "31TCJ",
         )
 
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_stacsearch_discover_queryables(self, mock_request):
+        provider_queryables = {
+            "type": "object",
+            "title": "Querable",
+            "properties": {
+                "dataset_id": {
+                    "title": "dataset_id",
+                    "type": "string",
+                    "oneOf": [
+                        {
+                            "const": "EO:ESA:DAT:COP-DEM",
+                            "title": "EO:ESA:DAT:COP-DEM",
+                            "group": None,
+                        }
+                    ],
+                },
+                "bbox": {
+                    "title": "Bbox",
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": [
+                        {"type": "number", "maximum": 180, "minimum": -180},
+                        {"type": "number", "maximum": 90, "minimum": -90},
+                        {"type": "number", "maximum": 180, "minimum": -180},
+                        {"type": "number", "maximum": 90, "minimum": -90},
+                    ],
+                },
+                "productIdentifier": {
+                    "title": "Product Identifier",
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9]+$",
+                },
+                "productType": {
+                    "title": "Product Type",
+                    "type": "string",
+                    "oneOf": [
+                        {"const": "DGE_30", "title": "DGE_30", "group": None},
+                        {"const": "DGE_90", "title": "DGE_90", "group": None},
+                        {"const": "DTE_30", "title": "DTE_30", "group": None},
+                        {"const": "DTE_90", "title": "DTE_90", "group": None},
+                    ],
+                },
+                "startdate": {
+                    "title": "Start Date",
+                    "type": "string",
+                    "format": "date-time",
+                    "minimum": "",
+                    "maximum": "",
+                    "default": "",
+                },
+                "enddate": {
+                    "title": "End Date",
+                    "type": "string",
+                    "format": "date-time",
+                    "minimum": "",
+                    "maximum": "",
+                    "default": "",
+                },
+            },
+            "required": ["dataset_id"],
+        }
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.side_effect = [provider_queryables]
+        plugin = self.get_search_plugin(provider="wekeo_main")
+        queryables = plugin.discover_queryables(
+            productType="COP_DEM_GLO90_DGED", provider="wekeo_main"
+        )
+        self.assertIn("productType", queryables)
+        self.assertIn("providerProductType", queryables)
+        self.assertIn("geom", queryables)
+        self.assertIn("start", queryables)
+        self.assertIn("end", queryables)
+
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
     @mock.patch("eodag.plugins.authentication.qsauth.requests.get", autospec=True)
@@ -2256,7 +2277,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         )
         exp_end_date = datetime.strptime(
             DEFAULT_MISSION_START_DATE, "%Y-%m-%dT%H:%M:%SZ"
-        ) + timedelta(days=1)
+        )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
             exp_end_date.strftime("%Y-%m-%d"),
@@ -2276,7 +2297,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-27"
+            eoproduct.properties["completionTimeFromAscendingNode"], "1985-10-26"
         )
 
     def test_plugins_search_ecmwfsearch_without_producttype(self):
@@ -2343,6 +2364,34 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
 
+    def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
+        """ECMWFSearch must return available values from constraints"""
+        constraints = [
+            {"date": ["2025-01-01/2025-06-01"], "variable": ["a", "b"]},
+            {"date": ["2024-01-01/2024-12-01"], "variable": ["a", "b", "c"]},
+        ]
+        form_keywords = ["date", "variable"]
+
+        # with a date range as a string
+        input_keywords = {"date": "2025-01-01/2025-02-01", "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form_keywords
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+
+        # with a date range as the first element of a string list
+        input_keywords = {"date": ["2025-01-01/2025-02-01"], "variable": "a"}
+        available_values = self.search_plugin.available_values_from_constraints(
+            constraints, input_keywords, form_keywords
+        )
+        available_values = {k: sorted(v) for k, v in available_values.items()}
+        self.assertIn("variable", available_values)
+        self.assertListEqual(["a", "b"], available_values["variable"])
+        self.assertIn("date", available_values)
+
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch._fetch_data",
         autospec=True,
@@ -2382,7 +2431,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # ones of the constraints file to an empty value to check if its associated queryable has no default value
         eodag_formatted_data_format = "ecmwf:data_format"
         provider_data_format = eodag_formatted_data_format.replace("ecmwf:", "")
-        self.assertIn(eodag_formatted_data_format, default_values)
+        self.assertIn(provider_data_format, default_values)
         self.assertIn(provider_data_format, [param["name"] for param in form])
         data_format_in_form = [
             param for param in form if param["name"] == provider_data_format

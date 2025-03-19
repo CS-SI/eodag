@@ -150,7 +150,7 @@ class Search(PluginTopic):
         )
 
     def get_product_type_def_params(
-        self, product_type: str, **kwargs: Any
+        self, product_type: str, format_variables: Optional[dict[str, Any]] = None
     ) -> dict[str, Any]:
         """Get the provider product type definition parameters and specific settings
 
@@ -171,7 +171,8 @@ class Search(PluginTopic):
             return {
                 k: v
                 for k, v in format_dict_items(
-                    self.config.products[GENERIC_PRODUCT_TYPE], **kwargs
+                    self.config.products[GENERIC_PRODUCT_TYPE],
+                    **(format_variables or {}),
                 ).items()
                 if v
             }

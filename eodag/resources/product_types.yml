@@ -129,7 +129,7 @@ CBERS4_PAN10M_L4:
   missionStartDate: "2014-12-07T00:00:00Z"
   title: CBERS-4 PAN10M Level-4
 
-# MARK: Landasat -----------------------------------------------------------------------
+# MARK: Landsat -----------------------------------------------------------------------
 # https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
 L57_REFLECTANCE:
   abstract: |
@@ -1495,50 +1495,7 @@ S3_LAN_LI:
   title: SENTINEL3 SRAL Level-2 LAN LAND ICE
   missionStartDate: "2016-02-16T00:00:00Z"
 
-# MARK: MTG
-MSG_LST:
-  abstract: |
-    The full archive of MSG/SEVIRI data was reprocessed to provide the user
-    community a consistent, homogeneous and continuous Data Record of the
-    15-min Land Surface Temperature (LST) for the period 2004-2015. This Data
-    Record was obtained with the best version of its equivalent NRT product
-    (MLST) which can also complement the time series from 2016 onwards.
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L3
-  keywords: SEVIRI,L3,MSG,Vegetation,Land
-  sensorType: OPTICAL
-  license: other
-  title:  Land Surface Temperature Climate Data Record - MSG
-  missionStartDate: "2021-01-21T00:00:00Z"
-
-MSG_LST_DIR:
-  abstract: |
-    Land Surface Temperature (LST) is the radiative skin temperature over land.
-    LST plays an important role in the physics of land surface as it is
-    involved in the processes of energy and water exchange with the atmosphere.
-    LST is useful for the scientific community, namely for those dealing with
-    meteorological and climate models. Accurate values of LST are also of
-    special interest in a wide range of areas related to land surface
-    processes, including meteorology, hydrology, agrometeorology, climatology
-    and environmental studies. Land Surface Emissivity (EM), a crucial
-    parameter for LST retrieval from space, is independently estimated as a
-    function of (satellite derived) Fraction of Vegetation Cover (FVC) and land
-    cover classification. In the most recent version of the dataset,
-    information on the expected deviation of LST estimates from SEVIRI/MSG with
-    respect to a reference view – here considered to be nadir view – has been
-    added to the original product (LSA-001) as an extra data layer (LSA-004).
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L2
-  keywords: SEVIRI,L2,MSG,Vegetation,Land
-  sensorType: OPTICAL
-  license: other
-  title:   Land Surface Temperature with Directional Effects - MSG
-  missionStartDate: "2005-01-16T00:00:00Z"
-
+# MARK: MFG
 MFG_GSA_57:
   abstract: |
     Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
@@ -1557,6 +1514,7 @@ MFG_GSA_57:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 57 degree
   missionStartDate: "2006-12-07T00:00:00Z"
+  missionEndDate: "2017-03-30T23:59:59Z"
 
 MFG_GSA_63:
   abstract: |
@@ -1576,26 +1534,7 @@ MFG_GSA_63:
   license: other
   title: GSA Level 2 Climate Data Record Release 2 - MFG - 63 degree
   missionStartDate: "1998-07-10T00:00:00Z"
-
-MSG_MFG_GSA_0:
-  abstract: |
-    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
-    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
-    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
-    albedo (WSA) with the corresponding uncertainties as explained in the
-    Product User Guide (PUM). The data record validation and limitations are
-    provided in the Validation Report (VR). The products are available in
-    netCDF4 format. This release contains products generated with Meteosat-2 to
-    Meteosat-10.
-  instrument: MVIRI,SEVIRI
-  platform: MFG,MSG
-  platformSerialIdentifier: MFG,MSG
-  processingLevel: L2
-  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
-  sensorType: OPTICAL
-  license: other
-  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
-  missionStartDate: "1982-02-10T00:00:00Z"
+  missionEndDate: "2007-04-10T23:59:59Z"
 
 HIRS_FDR_1_MULTI:
   abstract: |
@@ -1621,30 +1560,7 @@ HIRS_FDR_1_MULTI:
   license: other
   title:  HIRS Level 1C Fundamental Data Record Release 1 - Multimission - Global
   missionStartDate: "1978-10-29T00:00:00Z"
-
-MSG_OCA_CDR:
-  abstract: |
-    The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
-    period from 2004 up to 2019, providing a homogenous cloud properties time
-    series. It is generated at full Meteosat repeat cycle (15 minutes)
-    fequency. Cloud properties retrieved by OCA are cloud top pressure, cloud
-    optical thickness, and cloud effective radius, together with uncertainties.
-    The OCA algorithm has been slightly adapted for climate data record
-    processing. The adaptation mainly consists in the usage of different
-    inputs, because the one used for Near Real Time (NRT) were not available
-    for the reprocessing (cloud mask, clear sky reflectance map) and also not
-    homogenous (reanalysis) over the complete time period. it extends the NRT
-    data record more than 9 years back in time. This is a Thematic Climate Data
-    Record (TCDR).
-  instrument: SEVIRI
-  platform: MSG
-  platformSerialIdentifier: MSG
-  processingLevel: L2
-  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
-  sensorType: MSG
-  license: other
-  title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
-  missionStartDate: "2004-01-19T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
 
 S6_RADIO_OCCULTATION:
   abstract: |
@@ -1856,6 +1772,179 @@ MTG_FCI_HRFI:
   license: other
   title: FCI Level 1c High Resolution Image Data - MTG - 0 degree
   missionStartDate: "2024-09-24T00:00:00Z"
+
+MTG_FCI_ASR_BUFR:
+  abstract: |
+    The All-Sky Radiance (ASR) product is a segmented product that provides
+    FCI Level 1C data statistics within processing segments referred to as
+    Field-of-Regard (FoR). The statistics are computed on the L1C radiances
+    (for all FCI channels), brightness temperatures (for the eight IR
+    channels) and reflectances (for the eight visible and near-infrared
+    channels) and include the mean value, standard deviation, minimum and
+    maximum values within the FoR. The ASR product is available in BUFR
+    and netCDF format, every 10 minutes, at a spatial resolution of 16x16
+    pixels (IR) and 32x32 pixels (VIS).
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,ASR,Radiance,BUFR
+  sensorType: Imager
+  license: other
+  title: All Sky Radiance (BUFR) - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_ASR_NETCDF:
+  abstract: |
+    The All-Sky Radiance (ASR) product is a segmented product that provides
+    FCI Level 1C data statistics within processing segments referred to as
+    Field-of-Regard (FoR). The statistics are computed on the L1C radiances
+    (for all FCI channels), brightness temperatures (for the eight IR
+    channels) and reflectances (for the eight visible and near-infrared
+    channels) and include the mean value, standard deviation, minimum and
+    maximum values within the FoR. The ASR product is available in BUFR
+    and netCDF format, every 10 minutes, at a spatial resolution of 16x16
+    pixels (IR) and 32x32 pixels (VIS).
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,ASR,Radiance,netCDF
+  sensorType: Imager
+  license: other
+  title: All Sky Radiance (netCDF) - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_AMV_BUFR:
+  abstract: |
+    The Atmospheric Motion Vector (AMV) product is realised by tracking
+    clouds or water vapour features in consecutive FCI satellite images
+    based on feature tracking between each pair of consecutive repeat
+    cycles, leading to two intermediate AMV products for an image triplet.
+    The final product is then derived from these two intermediate products,
+    and includes information on wind speed, direction, height, and quality.
+    AMVs are extracted from the FCI VIS 0.8, IR 3.8 (night only), IR 10.5,
+    WV 6.3 and WV 7.3 channels. The AMV product is available in BUFR and
+    netCDF format, every 30 minutes.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,AMV,Clouds,BUFR
+  sensorType: Imager
+  license: other
+  title: Atmospheric Motion Vectors (BUFR) - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_AMV_NETCDF:
+  abstract: |
+    The Atmospheric Motion Vector (AMV) product is realised by tracking
+    clouds or water vapour features in consecutive FCI satellite images
+    based on feature tracking between each pair of consecutive repeat
+    cycles, leading to two intermediate AMV products for an image triplet.
+    The final product is then derived from these two intermediate products,
+    and includes information on wind speed, direction, height, and quality.
+    AMVs are extracted from the FCI VIS 0.8, IR 3.8 (night only), IR 10.5,
+    WV 6.3 and WV 7.3 channels. The AMV product is available in BUFR and
+    netCDF format, every 30 minutes.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,AMV,Clouds,netCDF
+  sensorType: Imager
+  license: other
+  title: Atmospheric Motion Vectors (netCDF) - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_CLM:
+  abstract: |
+    The central aim of the cloud mask (CLM) product is to identify cloudy and
+    cloud free FCI Level 1c pixels with high confidence. The product also
+    provides information on the presence of snow/sea ice, volcanic ash and
+    dust. This information is crucial both for spatiotemporal analyses of the
+    cloud coverage and for the subsequent retrieval of other meteorological
+    products that are only valid for cloudy (e.g. cloud properties) or clear
+    pixels (e.g. clear sky reflectance maps or global instability indices).
+    The algorithm is based on multispectral threshold techniques applied to
+    each pixel of the image. CLM is available in netCDF and GRIB format,
+    every 10 minutes, at a spatial resolution of 2 km at nadir.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,CLM,Clouds
+  sensorType: Imager
+  license: other
+  title: Cloud Mask - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_GII:
+  abstract: |
+    The Global Instability Index (GII) product provides information about
+    instability of the atmosphere and thus can identify regions of convective
+    potential. GII is a segmented product that uses an optimal estimation
+    scheme to fit clear-sky vertical profiles of temperature and humidity,
+    constrained by NWP forecast products, to FCI observations in the seven
+    channels WV6.3, WV7.3, IR8.7, IR9.7, IR10.5, IR12.3, and IR13.3. The
+    retrieved profiles are then used to compute atmospheric instability
+    indices: Lifted Index, K Index, Layer Precipitable Water, Total
+    Precipitable Water. The GII product is available in netCDF format, every
+    10 minutes, in 3x3 pixels (IR channels), leading to a spatial resolution
+    of 6 km at nadir.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,GII,atmosphere
+  sensorType: Imager
+  license: other
+  title: Global Instability Indices - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_OCA:
+  abstract: |
+    The Optimal Cloud Analysis (OCA) product uses an optimal estimation
+    retrieval scheme to retrieve cloud properties (phase, height and
+    microphysical properties) from visible, near-infrared and thermal
+    infrared FCI channels. The optimal estimation framework aims to ensure
+    that measurements and any prior information may be given appropriate
+    weight in the solution depending on error characteristics whether
+    instrumental or from modelling sources. The product can also contain
+    information on dust and volcanic ash clouds if these are flagged in the
+    corresponding Cloud Analysis Product. The OCA product is available in
+    netCDF format, every 10 minutes, at 2km spatial resolution at nadir.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,OCA,Clouds
+  sensorType: Imager
+  license: other
+  title: Optimal Cloud Analysis - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
+
+MTG_FCI_OLR:
+  abstract: |
+    The Outgoing Longwave Radiation (OLR) product is important for Earth
+    radiation budget studies as well as for weather and climate model
+    validation purposes, since variations in OLR reflect the response of the
+    Earth-atmosphere system to solar diurnal forcing. The product is based on
+    a statistical relationship linking the radiance measured in each FCI
+    infrared channel to the top-of-atmosphere outgoing longwave flux
+    integrated over the full infrared spectrum. The computation is done for
+    each pixel considering the cloud cover characteristics (clear sky,
+    semi-transparent and opaque cloud cover). The OLR product is available in
+      netCDF format, every 10 minutes, at 2 km spatial resolution at nadir.
+  instrument: FCI
+  platform: MTG
+  platformSerialIdentifier: MTG
+  processingLevel: L2
+  keywords: MTG,L2,FCI,OLR,Radiation,LW
+  sensorType: Imager
+  license: other
+  title: Outgoing LW radiation at TOA - MTG - 0 degree
+  missionStartDate: "2025-01-22T00:00:00Z"
 
 # MARK: S3 SYNERGY
 # Synergy data products are generally combinations of OLCI and SLSTR instruments
@@ -4162,7 +4251,7 @@ GLOFAS_SEASONAL_REFORECAST:
   sensorType: ATMOSPHERIC
   license: other
   title: Seasonal reforecasts of river discharge and related data from the Global Flood Awareness System
-  missionStartDate: "1981-01-01T00:00:00Z"
+  missionStartDate: "1981-01-27T00:00:00Z"
 
 EFAS_FORECAST:
   abstract: |
@@ -4233,7 +4322,7 @@ EFAS_HISTORICAL:
   sensorType: ATMOSPHERIC
   license: other
   title: River discharge and related historical data from the European Flood Awareness System
-  missionStartDate: "1991-01-01T00:00:00Z"
+  missionStartDate: "1991-01-01T06:00:00Z"
 
 EFAS_REFORECAST:
   abstract: |
@@ -4617,6 +4706,267 @@ EEA_DAILY_VI:
   license: other
   title: Vegetation Indices, daily, UTM projection
   missionStartDate:
+
+# MARK: AERIS --------------------------------------------------------------------------
+AERIS_IAGOS:
+  abstract: |
+    The mission of IAGOS is to provide high quality data throughout the tropopshere
+    and lower stratosphere, and scientific expertise to understand the evolution of
+    atmospheric composition, air quality, and climate.
+  instrument: IAGOS-CORE,IAGOS-MOZAIC,IAGOS-CARIBIC
+  platform:
+  platformSerialIdentifier:
+  processingLevel: L2
+  keywords: AERIS, AIRCRAFT, ATMOSPHERIC, IAGOS, L2
+  sensorType: ATMOSPHERIC
+  license: other
+  title: In-service Aircraft for a Global Observing System
+  missionStartDate: "1994-08-01T00:00:00Z"
+
+# MARK: Global Surface Water------------------------------------------------------------------
+GSW_CHANGE:
+  abstract: |
+    The Global Surface Water Occurrence Change Intensity map provides information on where
+    surface water occurrence increased, decreased or remained the same between 1984-1999
+    and 2000-2021. Both the direction of change and its intensity are documented.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Change, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Occurrence Change Intensity 1984-2020
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
+
+GSW_EXTENT:
+  abstract: |
+    The Global Surface Water Maximum Water Extent shows all the locations ever detected as
+    water over a 38-year period (1984-2021)
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Extent, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Maximum Water Extent 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+GSW_OCCURRENCE:
+  abstract: |
+    The Global Surface Water Occurrence shows where surface water occurred between 1984
+    and 2021 and provides information concerning overall water dynamics. This product
+    captures both the intra and inter-annual variability and changes.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Occurrence, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Occurrence 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+GSW_RECURRENCE:
+  abstract: |
+    The Global Surface Water Recurrence provides information concerning the inter-annual
+    behaviour of water surfaces and captures the frequency with which water returns from
+    year to year.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Recurrence, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Recurrence 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+GSW_SEASONALITY:
+  abstract: |
+    The Global Surface Water Seasonality map provides information concerning the intra-annual
+    behaviour of water surfaces for a single year (2021) and shows permanent and seasonal
+    water and the number of months water was present.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Seasonality, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Seasonality 2014-2020
+  missionStartDate: "2014-01-01T00:00:00Z"
+  missionEndDate: "2020-12-31T23:59:59Z"
+
+GSW_TRANSITIONS:
+  abstract: |
+    The Global Surface Water Transitions map provides information on the change in surface
+    water seasonality between the first and last years (between 1984 and 2021) and captures
+    changes between the three classes of not water, seasonal water and permanent water.
+  instrument:
+  platform: GSW
+  platformSerialIdentifier: GSW
+  processingLevel:
+  keywords: PEKEL, Global Surface Water, Transitions, Landsat
+  sensorType: HYDROLOGICAL
+  license: proprietary
+  title: Global Surface Water Transitions 1984-2021
+  missionStartDate: "1984-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+# MARK: Eurostat --------------------------------------------------------------------------
+EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
+  abstract: |
+    This indicator tracks trends in greenhouse gas (GHG) emissions by agriculture, estimated
+    and reported under the United Nations Framework Convention on Climate Change (UNFCCC),
+    the Kyoto Protocol and the Decision 525/2013/EC. The annual data collection covers in
+    principle all Member States of the European Union as well as some other European countries
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Agriculture, Greenhouse gas, CO2, Emission, Air pollutants
+  sensorType:
+  license: proprietary
+  title: Eurostat - Greenhouse gas emissions from agriculture
+  missionStartDate: "2011-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T23:59:59Z"
+
+EUSTAT_POP_AGE_SEX_NUTS2:
+  abstract: |
+    Each year Eurostat collects demographic data at regional level from 37 countries as part
+    of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
+    data collection and aims to gather information on demography and migration. This dataset
+    contains information about the population by sex, age and region of residence (NUTS 2 level).
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Age, Sex, NUTS 2, Unidemo, Demographic
+  sensorType:
+  license: proprietary
+  title: Population on 1 January by age, sex and NUTS 2 region
+  missionStartDate: "1990-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
+  abstract: |
+    Each year Eurostat collects demographic data at regional level from 37 countries as part
+    of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
+    data collection and aims to gather information on demography and migration. This dataset
+    contains information about the population by sex, age and region of residence (NUTS 3 level).
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Age, Sex, NUTS 3, Unidemo, Demographic
+  sensorType:
+  license: proprietary
+  title: Population on 1 January by age, sex and NUTS 3 region
+  missionStartDate: "2014-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
+  abstract: |
+    Each year Eurostat collects demographic data at regional level from 37 countries as part
+    of the Unified Demography (Unidemo) project. UNIDEMO is Eurostat's main annual demographic
+    data collection and aims to gather information on demography and migration. This dataset
+    contains information about demographic balance and crude rates of a population at regional
+    level (NUTS 3 level).
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Age, Sex, NUTS 3, Unidemo, Demographic
+  sensorType:
+  license: proprietary
+  title: Population change - Demographic balance and crude rates at regional level (NUTS 3)
+  missionStartDate: "2000-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
+  abstract: |
+    This dataset covers the indicator for monitoring progress towards renewable energy targets of
+    the Europe 2020 strategy implemented by Directive 2009/28/EC on the promotion of the use of
+    energy from renewable sources. The annual data collection covers in principle all Member States
+    of the European Union. Time series starts in the year 2004. Due to the change of legal basis,
+    a break in series occurs between 2020 and 2021. The calculation is based on data
+    collected in the framework of Regulation (EC) No 1099/2008 on energy statistics and complemented
+    by specific supplementary data transmitted by national administrations to Eurostat. In some
+    countries the statistical systems are not yet fully developed to meet all requirements of
+    Directive 2009/28/EC, in particular with respect to ambient heat captured from the environment
+    by heat pumps renewable cooling or sustainability of solid and gaseous biofuels. This is indicator
+    is a Sustainable Development Goal (SDG). It has been chosen for the assessment of the progress
+    towards the objectives and targets of the EU Sustainable Development Strategy. The data collection
+    covers the full spectrum of the Member States of the European Union.The share of energy from
+    renewable sources is calculated for four indicators: Transport (RES-T), Heating and Cooling
+    (RES-H&C), Electricity (RES-E), Overall RES share (RES)
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Energy, Renewable, Transport, Heating, Cooling, Electricity
+  sensorType:
+  license: proprietary
+  title: Share of energy from renewable sources
+  missionStartDate: "2004-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+# MARK: ISIMIP -------------------------------------------------------------------------
+ISIMIP_CLIMATE_FORCING_ISIMIP3B:
+  abstract: |
+    The Inter-Sectoral Impact Model Intercomparison Project (ISIMIP) provides a framework for
+    the collation of a consistent set of climate impact data across sectors and scales. It
+    also provides a unique opportunity for considering interactions between climate change
+    impacts across sectors through consistent scenarios.\n\nThe ISIMIP3b part of the third
+    simulation round is dedicated to a quantification of climate-related risks at different
+    levels of global warming and socio-economic change. ISIMIP3b group I simulations are based
+    on historical climate change as simulated in CMIP6 combined with observed historical
+    socio-economic forcing. ISIMIP3b group II simulations are based on climate change according
+    to the CMIP6 future projections combined with socio-economic forcings fixed at 2015 levels.
+    ISIMIP3b group III simulations additionally account for future changes in socio-economic
+    forcing.\n\nThis collection contains bias-adjusted atmospheric climate input data,
+    atmospheric composition input data as well as ocean and lightning input data.
+  instrument:
+  platform: ISIMIP
+  platformSerialIdentifier: ISIMIP
+  processingLevel:
+  keywords: ISIMIP, CLIMATE-FORCING, ISIMIP3b, atmospheric, climate, HRMC
+  sensorType:
+  license: other
+  title: ISIMIP3b climate input data
+  missionStartDate: "1601-01-01T00:00:00Z"
+  missionEndDate: "2500-12-31T23:59:59Z"
+
+ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
+  abstract: |
+    The Inter-Sectoral Impact Model Intercomparison Project (ISIMIP) provides a framework for
+    the collation of a consistent set of climate impact data across sectors and scales. It also
+    provides a unique opportunity for considering interactions between climate change impacts
+    across sectors through consistent scenarios.\n\nThe ISIMIP3b part of the third simulation
+    round is dedicated to a quantification of climate-related risks at different levels of global
+    warming and socio-economic change. ISIMIP3b group I simulations are based on historical climate
+    change as simulated in CMIP6 combined with observed historical socio-economic forcing. ISIMIP3b
+    group II simulations are based on climate change according to the CMIP6 future projections
+    combined with socio-economic forcings fixed at 2015 levels. ISIMIP3b group III simulations
+    additionally account for future changes in socio-economic forcing. This collection contains
+    fishing, lake fraction, land use, land transition, water abstraction and wood harvesting input
+    data as well as information about crops and fertilizers
+  instrument:
+  platform: ISIMIP
+  platformSerialIdentifier: ISIMIP
+  processingLevel:
+  keywords: ISIMIP, SOCIO-ECONOMIC-FORCING, ISIMIP3b, socioeconomic
+  sensorType:
+  license: other
+  title: ISIMIP3b socio-economic input data
+  missionStartDate: "1601-01-01T00:00:00Z"
+  missionEndDate: "2100-12-31T23:59:59Z"
 
 # MARK: METEOBLUE ----------------------------------------------------------------------
 NEMSGLOBAL_TCDC:
@@ -5121,9 +5471,59 @@ METOP_HIRSL1:
   title: HIRS Level 1B - Metop - Global
   missionStartDate: "2009-03-23T00:00:00Z"
 
+# MARK: MSG --------------------------------------------------------------------------
+MSG_MFG_GSA_0:
+  abstract: |
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First
+    Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface
+    albedo. The variables estimated are black-sky albedo (BSA) and white-sky
+    albedo (WSA) with the corresponding uncertainties as explained in the
+    Product User Guide (PUM). The data record validation and limitations are
+    provided in the Validation Report (VR). The products are available in
+    netCDF4 format. This release contains products generated with Meteosat-2 to
+    Meteosat-10.
+  instrument: MVIRI,SEVIRI
+  platform: MFG,MSG
+  platformSerialIdentifier: MFG,MSG
+  processingLevel: L2
+  keywords: MVIRI,SEVIRI,L2,MFG,MSG,Climate,Thematic,Meteosat,TCDR
+  sensorType: OPTICAL
+  license: other
+  title: GSA Level 2 Climate Data Record Release 2 - MFG and MSG - 0 degree
+  missionStartDate: "1982-02-10T00:00:00Z"
+  missionEndDate: "2017-12-31T23:59:59Z"
+
+MSG_OCA_CDR:
+  abstract: |
+    The OCA Release 1 Climate Data Record (CDR) covers the MSG observation
+    period from 2004 up to 2019, providing a homogenous cloud properties time
+    series. It is generated at full Meteosat repeat cycle (15 minutes)
+    fequency. Cloud properties retrieved by OCA are cloud top pressure, cloud
+    optical thickness, and cloud effective radius, together with uncertainties.
+    The OCA algorithm has been slightly adapted for climate data record
+    processing. The adaptation mainly consists in the usage of different
+    inputs, because the one used for Near Real Time (NRT) were not available
+    for the reprocessing (cloud mask, clear sky reflectance map) and also not
+    homogenous (reanalysis) over the complete time period. it extends the NRT
+    data record more than 9 years back in time. This is a Thematic Climate Data
+    Record (TCDR).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,L2,SEVIRI,Climate,Clouds,Atmosphere,Observation,Thematic,TCDR,OCA
+  sensorType: MSG
+  license: other
+  title:   Optimal Cloud Analysis Climate Data Record Release 1 - MSG - 0 degree
+  missionStartDate: "2004-01-19T00:00:00Z"
+  missionEndDate: "2019-08-31T23:59:59Z"
+
 MSG_CLM:
   abstract: |
-    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified
+    as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc).
+    Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other
+    cloud products, and the remote sensing of continental and ocean surfaces.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5136,8 +5536,10 @@ MSG_CLM:
 
 MSG_CLM_IODC:
   abstract: |
-    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
-
+    The Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified
+    as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc).
+    Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other
+    cloud products, and the remote sensing of continental and ocean surfaces.
     From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
   instrument: SEVIRI
   platform: MSG
@@ -5151,7 +5553,11 @@ MSG_CLM_IODC:
 
 MSG_GSAL2R02:
   abstract: |
-    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Level 2 land surface albedo. The variables estimated are black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2 to Meteosat-10.
+    Release 2 of the Thematic Climate Data Record (TCDR) of the Meteosat First Generation (MFG) and Meteosat Second Generation (MSG)
+    Level 2 land surface albedo. The variables estimated are black-sky albedo (BSA) and white-sky albedo (WSA) with the corresponding
+    uncertainties as explained in the Product User Guide (PUM). The data record validation and limitations are provided in the
+    Validation Report (VR). The products are available in netCDF4 format. This release contains products generated with Meteosat-2
+    to Meteosat-10.
   instrument: MVIRI,SEVIRI
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
@@ -5164,7 +5570,15 @@ MSG_GSAL2R02:
 
 MSG_HRSEVIRI:
   abstract: |
-    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to their latency: quarter-hourly images if latency is more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
+    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels.
+    Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing,
+    e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation
+    and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed.
+    Both radiometric and geometric quality control information is included. Images are made available with different timeliness according
+    to their latency: quarter-hourly images if latency is more than 3 hours and hourly images if latency is less than 3 hours
+    (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping
+    with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K
+    to 300 K for the night and 250 K to 330 K for the day.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5177,8 +5591,16 @@ MSG_HRSEVIRI:
 
 MSG_HRSEVIRI_IODC:
   abstract: |
-    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels. Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing, e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed. Both radiometric and geometric quality control information is included. Images are made available with different timeliness according to the latency: quarter-hourly images with a latency of more than 3 hours and hourly images if latency is less than 3 hours (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K to 300 K for the night and 250 K to 330 K for the day.
-      From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
+    Rectified (level 1.5) Meteosat SEVIRI image data. The data is transmitted as High Rate transmissions in 12 spectral channels.
+    Level 1.5 image data corresponds to the geolocated and radiometrically pre-processed image data, ready for further processing,
+    e.g. the extraction of meteorological products. Any spacecraft specific effects have been removed, and in particular, linearisation
+    and equalisation of the image radiometry has been performed for all SEVIRI channels. The on-board blackbody data has been processed.
+    Both radiometric and geometric quality control information is included. Images are made available with different timeliness according
+    to the latency: quarter-hourly images with a latency of more than 3 hours and hourly images if latency is less than 3 hours
+    (for a total of 87 images per day). To enhance the perception for areas which are on the night side of the Earth a different mapping
+    with increased contrast is applied for IR3.9 product. The greyscale mapping is based on the EBBT which allows to map the ranges 200 K
+    to 300 K for the night and 250 K to 330 K for the day.
+    From 1 June 2022, Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5191,7 +5613,10 @@ MSG_HRSEVIRI_IODC:
 
 MSG_RSS_CLM:
   abstract: |
-    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc). Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products, and the remote sensing of continental and ocean surfaces.
+    The Rapid Scanning Services (RSS) Cloud Mask product describes the scene type (either 'clear' or 'cloudy') on a pixel level. Each pixel
+    is classified as one of the following four types: clear sky over water, clear sky over land, cloud, or not processed (off Earth disc).
+    Applications & Uses: The main use is in support of Nowcasting applications, where it frequently serves as a basis for other cloud products,
+    and the remote sensing of continental and ocean surfaces.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5204,7 +5629,13 @@ MSG_RSS_CLM:
 
 MSG_MSG15_RSS:
   abstract: |
-    Rectified (level 1.5) Meteosat SEVIRI Rapid Scan image data. The baseline scan region is a reduced area of the top 1/3 of a nominal repeat cycle, covering a latitude range from approximately 15 degrees to 70 degrees. The service generates repeat cycles at 5-minute intervals (the same as currently used for weather radars). The dissemination of RSS data is similar to the normal dissemination, with image segments based on 464 lines and compatible with the full disk level 1.5 data scans. Epilogue and prologue (L1.5 Header and L1.5 Trailer) have the same structure. Calibration is as in Full Earth Scan. Image rectification is to 9.5 degreesE. The scans start at 00:00, 00:05, 00:10, 00:15 ... etc. (5 min scan). The differences from the nominal Full Earth scan are that for channels 1 - 11, only segments 6 - 8 are disseminated and for the High Resolution Visible Channel only segments 16 - 24 are disseminated.
+    Rectified (level 1.5) Meteosat SEVIRI Rapid Scan image data. The baseline scan region is a reduced area of the top 1/3 of a nominal
+    repeat cycle, covering a latitude range from approximately 15 degrees to 70 degrees. The service generates repeat cycles at
+    5-minute intervals (the same as currently used for weather radars). The dissemination of RSS data is similar to the normal dissemination,
+    with image segments based on 464 lines and compatible with the full disk level 1.5 data scans. Epilogue and prologue
+    (L1.5 Header and L1.5 Trailer) have the same structure. Calibration is as in Full Earth Scan. Image rectification is to 9.5 degreesE.
+    The scans start at 00:00, 00:05, 00:10, 00:15 ... etc. (5 min scan). The differences from the nominal Full Earth scan are that for
+    channels 1 - 11, only segments 6 - 8 are disseminated and for the High Resolution Visible Channel only segments 16 - 24 are disseminated.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5217,7 +5648,9 @@ MSG_MSG15_RSS:
 
 MSG_LSA_FRM:
   abstract: |
-    Fire risk by merging NWP & remotely sensed (FRP) data. The product includes 24h, 48h, 72h, 96h and 120h forecasts of: risk of fire (5 classes) and the probability of ignitions reaching energy releases over 2000GJ (both covering Southern Europe); Fire Weather Index (FWI) and respective components estimated for the whole MSG disk.
+    Fire risk by merging NWP & remotely sensed (FRP) data. The product includes 24h, 48h, 72h, 96h and 120h forecasts of: risk of fire (5 classes)
+    and the probability of ignitions reaching energy releases over 2000GJ (both covering Southern Europe); Fire Weather Index (FWI)
+    and respective components estimated for the whole MSG disk.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5235,7 +5668,9 @@ MSG_LSA_FRM:
 
 MSG_LSA_LST_CDR:
   abstract: |
-    The full archive of MSG/SEVIRI data was reprocessed to provide the user community a consistent, homogeneous and continuous Data Record of the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent NRT product (MLST) which can also complement the time series from 2016 onwards.
+    The full archive of MSG/SEVIRI data was reprocessed to provide the user community a consistent, homogeneous and continuous Data Record of
+    the 15-min Land Surface Temperature (LST) for the period 2004-2015. This Data Record was obtained with the best version of its equivalent
+    NRT product (MLST) which can also complement the time series from 2016 onwards.
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5245,10 +5680,18 @@ MSG_LSA_LST_CDR:
   license: other
   title: Land Surface Temperature Climate Data Record - MSG
   missionStartDate: "2004-01-21T00:00:00Z"
+  missionEndDate: "2015-12-31T00:00:00Z"
 
 MSG_LSA_LSTDE:
   abstract: |
-    Land Surface Temperature (LST) is the radiative skin temperature over land. LST plays an important role in the physics of land surface as it is involved in the processes of energy and water exchange with the atmosphere. LST is useful for the scientific community, namely for those dealing with meteorological and climate models. Accurate values of LST are also of special interest in a wide range of areas related to land surface processes, including meteorology, hydrology, agrometeorology, climatology and environmental studies. Land Surface Emissivity (EM), a crucial parameter for LST retrieval from space, is independently estimated as a function of (satellite derived) Fraction of Vegetation Cover (FVC) and land cover classification. In the most recent version of the dataset, information on the expected deviation of LST estimates from SEVIRI/MSG with respect to a reference view – here considered to be nadir view – has been added to the original product (LSA-001) as an extra data layer (LSA-004).
+    Land Surface Temperature (LST) is the radiative skin temperature over land. LST plays an important role in the physics of land surface as
+    it is involved in the processes of energy and water exchange with the atmosphere. LST is useful for the scientific community, namely for
+    those dealing with meteorological and climate models. Accurate values of LST are also of special interest in a wide range of areas related
+    to land surface processes, including meteorology, hydrology, agrometeorology, climatology and environmental studies.
+    Land Surface Emissivity (EM), a crucial parameter for LST retrieval from space, is independently estimated as a function of (satellite derived)
+    Fraction of Vegetation Cover (FVC) and land cover classification. In the most recent version of the dataset, information on the expected
+    deviation of LST estimates from SEVIRI/MSG with respect to a reference view - here considered to be nadir view - has been added to the
+    original product (LSA-001) as an extra data layer (LSA-004).
   instrument: SEVIRI
   platform: MSG
   platformSerialIdentifier: MSG
@@ -5261,7 +5704,14 @@ MSG_LSA_LSTDE:
 
 MSG_AMVR02:
   abstract: |
-    This is the second release of the reprocessed Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Atmospheric Motion Vectors (AMV) Thematic Climate Data Record (TCDR). It contains AMV at all heights below the tropopause, derived from images in 2 channels (Water Vapour 6.2, Infrared 10.8) of the instrument MVIRI on board MFG and SEVIRI on board MSG. Vectors are retrieved by tracking the motion of clouds and other atmospheric constituents such as water vapour patterns. The height assignment of the AMVs is calculated using the Cross-Correlation Contribution (CCC) function to determine the height using the pixels that contribute the most to the vectors. The final vector is estimated averaging the speed and height over 4 consecutive images. A quality indicator is derived for each vector to assess the reliability of the retrieval. Products are stored in netCDF4 format and generated from Meteosat-2 to Meteosat-11 satellites, covering the period from September 1981 to August 2019. This is a Thematic Climate Data Record (TCDR).
+    This is the second release of the reprocessed Meteosat First Generation (MFG) and Meteosat Second Generation (MSG) Atmospheric Motion Vectors (AMV)
+    Thematic Climate Data Record (TCDR). It contains AMV at all heights below the tropopause, derived from images in 2 channels
+    (Water Vapour 6.2, Infrared 10.8) of the instrument MVIRI on board MFG and SEVIRI on board MSG. Vectors are retrieved by tracking the motion
+    of clouds and other atmospheric constituents such as water vapour patterns. The height assignment of the AMVs is calculated using the
+    Cross-Correlation Contribution (CCC) function to determine the height using the pixels that contribute the most to the vectors. The final vector
+    is estimated averaging the speed and height over 4 consecutive images. A quality indicator is derived for each vector to assess the reliability
+    of the retrieval. Products are stored in netCDF4 format and generated from Meteosat-2 to Meteosat-11 satellites, covering the period from
+    September 1981 to August 2019. This is a Thematic Climate Data Record (TCDR).
   instrument: SEVIRI,MVIRI
   platform: MSG,MFG
   platformSerialIdentifier: MSG,MFG
@@ -5450,8 +5900,8 @@ MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
   sensorType:
   license: other
   title: Global Ocean- Real time in-situ observations objective analysis
-  missionStartDate: "2015-01-01T00:00:00Z"
-  missionEndDate: "2024-04-01T00:00:00Z"
+  missionStartDate: "2023-01-15T00:00:00Z"
+  missionEndDate: "2024-12-01T00:00:00Z"
 
 MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
   abstract: |
@@ -5468,7 +5918,7 @@ MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
   license: other
   title: Global Ocean- Delayed Mode gridded CORA- In-situ Observations objective analysis in Delayed Mode
   missionStartDate: "1960-01-01T00:00:00Z"
-  missionEndDate: "2023-06-01T00:00:00Z"
+  missionEndDate: "2023-12-01T00:00:00Z"
 
 MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   abstract: |
@@ -5490,7 +5940,7 @@ MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
   missionStartDate: "1998-01-07T00:00:00Z"
   missionEndDate: "2021-12-29T00:00:00Z"
 
-MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
+MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
   abstract: |
     This product corresponds to a REP L4 time series of monthly global reconstructed surface ocean pCO2, air-sea fluxes of CO2,
     pH, total alkalinity, dissolved inorganic carbon, saturation state with respect to calcite and aragonite, and associated
@@ -5513,7 +5963,7 @@ MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008:
   license: other
   title: Global Ocean Surface Carbon
   missionStartDate: "1985-01-01T00:00:00Z"
-  missionEndDate: "2022-12-01T00:00:00Z"
+  missionEndDate: "2023-12-01T00:00:00Z"
 
 MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
   abstract: |
@@ -5821,7 +6271,7 @@ MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
   missionStartDate: "1981-09-01T00:00:00Z"
   missionEndDate: "2022-10-31T00:00:00Z"
 
-MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
+MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
   abstract: |
     Near-Real-Time mono-mission satellite-based integral parameters derived from the directional wave spectra. Using linear
     propagation wave model, only wave observations that can be back-propagated to wave converging regions are considered.
@@ -5843,8 +6293,8 @@ MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002:
   keywords: CMEMS,Mercator,ocean,global,NRT,wave,L3,WAVE-TAC,SAR,spectral,mono-mission
   sensorType:
   license: other
-  title: GLOBAL OCEAN L3 SPECTRAL PARAMETERS FROM NRT SATELLITE MEASUREMENTS
-  missionStartDate: "2018-05-28T00:00:00Z"
+  title: Global Ocean L 3 Spectral Parameters From Nrt Satellite Measurements
+  missionStartDate: "2018-04-22T00:00:00Z"
 
 MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
   abstract: |

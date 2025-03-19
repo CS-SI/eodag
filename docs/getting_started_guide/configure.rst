@@ -149,6 +149,7 @@ Some EODAG core settings can be overriden using environment variables:
   `locations <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#Locations-search>`_
   configuration file
 * ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file
+* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the product types configuration file
 * ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external product types configuration file\
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
 

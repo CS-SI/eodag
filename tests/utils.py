@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+from importlib.resources import files as res_files
 from typing import Any, Literal, Optional
 
 # All tests files should import mock from this place
@@ -25,7 +26,6 @@ from urllib.parse import parse_qs, urlparse
 import fastapi
 import yaml
 from fastapi.datastructures import QueryParams  # noqa
-from pkg_resources import resource_filename
 
 
 def no_blanks(string):
@@ -46,8 +46,8 @@ def write_eodag_conf_with_fake_credentials(config_file):
 
     :param config_file: path to the file where the conf must be written
     """
-    empty_conf_file_path = resource_filename(
-        "eodag", os.path.join("resources", "user_conf_template.yml")
+    empty_conf_file_path = str(
+        res_files("eodag") / "resources" / "user_conf_template.yml"
     )
     with open(os.path.abspath(os.path.realpath(empty_conf_file_path)), "r") as fh:
         was_empty_conf = yaml.safe_load(fh)

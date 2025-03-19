@@ -46,12 +46,12 @@ You need credentials for both EOS (search) and AWS (download):
 ^^^^^^^^^^^
 Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
 
-Then log in and go to your user profile on `Atmosphere Data Store <https://ads-beta.atmosphere.copernicus.eu/>`__ and
-use your *Personal Access Token* as *apikey* in eodag credentials.
+Then log in and go to your user profile on `Atmosphere Data Store <https://ads.atmosphere.copernicus.eu/>`__ and
+use your *Personal Access Token* as ``apikey`` in eodag credentials.
 
 To download data you have to accept the `Licence to use Copernicus Products`. To accept the licence:
 
-* Go to `Datasets <https://ads-beta.atmosphere.copernicus.eu/datasets>`__ while being logged in.
+* Go to `Datasets <https://ads.atmosphere.copernicus.eu/datasets>`__ while being logged in.
 * Open the details of a dataset and go to the download tab.
 * Scroll down and accept the licence in the section `Terms of use`.
 * You can check which licences you have accepted in your user profile.
@@ -59,8 +59,8 @@ To download data you have to accept the `Licence to use Copernicus Products`. To
 ``cop_cds``
 ^^^^^^^^^^^
 Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
-Then log in and go to your user profile on `Climate Data Store <https://cds-beta.climate.copernicus.eu/>`__ and use your
-*Personal Access Token* as *apikey* in eodag credentials.
+Then log in and go to your user profile on `Climate Data Store <https://cds.climate.copernicus.eu/>`__ and use your
+*Personal Access Token* as ``apikey`` in eodag credentials.
 
 To download data, you also have to accept certain terms depending on the dataset. Some datasets have a specific licence
 whereas other licences are valid for a group of datasets.
@@ -69,7 +69,7 @@ also have to accept the `Additional licence to use non European contributions`.
 
 To accept a licence:
 
-* Search for the dataset you want to download `here <https://cds-beta.climate.copernicus.eu/datasets>`__ while being
+* Search for the dataset you want to download `here <https://cds.climate.copernicus.eu/datasets>`__ while being
   logged in.
 * Open the dataset details and go to the download tab.
 * Scroll down and accept the licence in the section `Terms of use`.
@@ -84,7 +84,7 @@ Create an account `here
 ^^^^^^^^^^^^
 Go to the `ECMWF homepage <https://www.ecmwf.int/>`__ and create an account by clicking on *Log in* and then *Register*.
 Then log in and go to your user profile on `CEMS Early Warning Data Store <https://ewds.climate.copernicus.eu>`__ and use your
-*Personal Access Token* as *apikey* in eodag credentials.
+*Personal Access Token* as ``apikey`` in eodag credentials.
 
 To download data, you also have to accept certain terms depending on the dataset. There are two different licences that have to be accepted
 to use the CEMS EWDS datasets. Accepting the `CEMS-FLOODS datasets licence` is necessary to use the `GLOFAS` and `EFAS` datasets,
@@ -104,7 +104,7 @@ No account is required
 
 ``creodias``
 ^^^^^^^^^^^^
-Create an account `here <https://portal.creodias.eu/register.php>`__, then use your `username`, `password` in eodag
+Create an account `here <https://portal.creodias.eu/register.php>`__, then use your ``username``, ``password`` in eodag
 credentials. You will also need `totp` in credentials, a temporary 6-digits OTP (One Time Password, see
 `Creodias documentation
 <https://creodias.docs.cloudferro.com/en/latest/gettingstarted/Two-Factor-Authentication-for-Creodias-Site.html>`__)
@@ -130,7 +130,7 @@ then click `Authenticate`. Finally click on `Register` to create a new account.
 
 ``dedt_lumi``
 ^^^^^^^^^^^^^
-Create an account on `DestinE <https://platform.destine.eu/>`__, then use your `username`, `password` in eodag
+Create an account on `DestinE <https://platform.destine.eu/>`__, then use your ``username``, ``password`` in eodag
 credentials.
 
 ``earth_search_gcs``
@@ -152,7 +152,7 @@ No authentication needed.
 ^^^^^^^^^
 Create an account `here <https://apps.ecmwf.int/registration/>`__.
 
-Then use *email* as *username* and *key* as *password* from `here <https://api.ecmwf.int/v1/key/>`__ in eodag credentials.
+Then use *email* as ``username`` and *key* as ``password`` from `here <https://api.ecmwf.int/v1/key/>`__ in eodag credentials.
 EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you
 might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets/data/tigge/licence/>`__)
 
@@ -160,14 +160,14 @@ might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets
 ^^^^^^^^^^^^^^^
 Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
 
-Then use the consumer key as `username` and the consumer secret as `password` from `here
+Then use the consumer key as ``username`` and the consumer secret as ``password`` from `here
 <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
 
 ``geodes``
 ^^^^^^^^^^
 Go to `https://geodes-portal.cnes.fr <https://geodes-portal.cnes.fr>`_, then login or create an account by
 clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
-as *apikey* in EODAG provider auth credentials.
+as ``apikey`` in EODAG provider auth credentials.
 
 ``geodes_s3``
 ^^^^^^^^^^^^^
@@ -179,7 +179,7 @@ Get credentials for internal Datalake and use them as ``aws_access_key_id``, ``a
 ^^^^^^^^^^^^^^^^^
 Go to `https://hydroweb.next.theia-land.fr <https://hydroweb.next.theia-land.fr>`_, then login or create an account by
 clicking on ``Log in`` in the top-right corner. Once logged-in, create an API key in the user settings page, and used it
-as *apikey* in EODAG provider auth credentials.
+as ``apikey`` in EODAG provider auth credentials.
 
 ``meteoblue``
 ^^^^^^^^^^^^^
@@ -189,13 +189,9 @@ which requires the access level
 
 Contact `support@meteoblue.com <mailto:support@meteoblue.com>`_ to apply for a free API key trial.
 
-``onda``
-^^^^^^^^
-Create an account `here: <https://www.onda-dias.eu/cms/>`__
-
 ``peps``
 ^^^^^^^^
-create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as `username` in eodag
+create an account `here <https://peps.cnes.fr/rocket/#/register>`__, then use your email as ``username`` in eodag
 credentials.
 
 ``planetary_computer``
@@ -208,7 +204,7 @@ with your Microsoft account `here <https://planetarycomputer.developer.azure-api
 
 ``sara``
 ^^^^^^^^
-Create an account `here <https://copernicus.nci.org.au/sara.client/#/register>`__, then use your email as `username` in
+Create an account `here <https://copernicus.nci.org.au/sara.client/#/register>`__, then use your email as ``username`` in
 eodag credentials.
 
 ``theia``
@@ -217,9 +213,11 @@ Create an account `here <https://sso.theia-land.fr/theia/register/register.xhtml
 
 ``usgs``
 ^^^^^^^^
-Create an account  `here <https://ers.cr.usgs.gov/register/>`__ and then
+Create an account  `here <https://ers.cr.usgs.gov/register/>`__, and
 `request an access <https://ers.cr.usgs.gov/profile/access>`_ to the
 `Machine-to-Machine (M2M) API <https://m2m.cr.usgs.gov/>`_.
+Then you will need to `generate an application token <https://ers.cr.usgs.gov/password/appgenerate>`_. Use it as
+``password`` in eodag credentials, associated to your ``username``.
 
 Product requests can be performed once access to the M2M API has been granted to you.
 
@@ -237,7 +235,7 @@ The registration procedure is the same as for `wekeo_main <getting_started_guide
 You need an access token to authenticate and to accept terms and conditions with it:
 
 * Create an account on `WEkEO <https://www.wekeo.eu/register>`__
-* Add your WEkEO credentials (*username*, *password*) to the user configuration file.
+* Add your WEkEO credentials (``username``, ``password``) to the user configuration file.
 * Depending on which data you want to retrieve, you will then need to accept terms and conditions (for once). To do this, follow the
   `tutorial guidelines <https://eodag.readthedocs.io/en/latest/notebooks/tutos/tuto_wekeo.html#Registration>`__
   or run the following commands in your terminal.

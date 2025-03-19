@@ -68,8 +68,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``meteoblue``          | |MeteoblueSearch|                  | |HttpQueryStringAuth|           | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``onda``               | |ODataV4Search|                    | |GenericAuth|                   | |HTTPDownload|   |
-+------------------------+------------------------------------+---------------------------------+------------------+
 | ``peps``               | |QueryStringSearch|                | |GenericAuth|                   | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``planetary_computer`` | |StacSearch|                       | |SASAuth|                       | |HTTPDownload|   |

@@ -18,10 +18,9 @@
 
 import os
 import unittest
+from importlib.resources import files as res_files
 from tempfile import TemporaryDirectory
 from unittest import mock
-
-from pkg_resources import resource_filename
 
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway, MisconfiguredError
@@ -49,8 +48,8 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         )
         cls.expanduser_mock.start()
 
-        default_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        default_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         cls.eodag = EODataAccessGateway(user_conf_file_path=default_conf_file)
 
@@ -87,16 +86,6 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
     def test_eodag_download_missing_credentials_creodias(self, mock_requests):
         search_resuls = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_creodias.geojson"
-        )
-        products = self.eodag.deserialize_and_register(search_resuls)
-        with self.assertRaises(MisconfiguredError):
-            self.eodag.download(products[0])
-        with self.assertRaises(MisconfiguredError):
-            self.eodag.download_all(products)
-
-    def test_eodag_download_missing_credentials_onda(self):
-        search_resuls = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_onda.geojson"
         )
         products = self.eodag.deserialize_and_register(search_resuls)
         with self.assertRaises(MisconfiguredError):

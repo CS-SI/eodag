@@ -1,0 +1,67 @@
+!provider
+  name: mundi
+  search: !plugin
+    type: QueryStringSearch
+    api_endpoint: 'https://{collection}.browse.catalog.mundiwebservices.com/opensearch'
+    need_auth: false
+    result_type: 'xml'
+    results_entry: '//ns:entry'
+    literal_search_params:
+        format: atom
+        relation: intersects
+    pagination:
+        next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&startIndex={skip_base_1}'
+        total_items_nb_key_path: '//os:totalResults/text()'
+        max_items_per_page: 50
+    discover_metadata:
+        auto_discovery: true
+        metadata_pattern: '^(?!collection)[a-zA-Z0-9]+$'
+        search_param: '{metadata}={{{metadata}}}'
+        metadata_path: '*'
+    metadata_mapping:
+        productType:
+            - 'productType'
+            - 'eo:productType/text()'
+        processingLevel:
+            - 'processingLevel'
+            - 'eo:processingLevel/text()'
+        title: 'ns:title/text()'
+        startTimeFromAscendingNode:
+            - 'timeStart={startTimeFromAscendingNode#to_iso_utc_datetime}'
+            - 'DIAS:sensingStartDate/text()'
+        completionTimeFromAscendingNode:
+            - 'timeEnd={completionTimeFromAscendingNode#to_iso_utc_datetime}'
+            - 'DIAS:sensingStopDate/text()'
+        id:
+            - 'uid={id#remove_extension}'
+            - 'dc:identifier/text()'
+        tileIdentifier:
+            - 'tileIdentifier'
+            - 'DIAS:tileIdentifier/text()'
+        geometry:
+            - 'geometry={geometry#to_rounded_wkt}'
+            - '{georss:polygon|georss:where#from_georss}'
+  products:
+    S1_SAR_GRD:
+        productType: GRD
+        collection: Sentinel1
+        metadata_mapping:
+            cloudCover: 'null/text()'
+    S1_SAR_SLC:
+        productType: SLC
+        collection: Sentinel1
+        metadata_mapping:
+            cloudCover: 'null/text()'
+    S2_MSI_L1C:
+        productType: IMAGE
+        processingLevel: L1C
+        collection: Sentinel2
+    GENERIC_PRODUCT_TYPE:
+        productType: '{productType}'
+        collection: '{collection}'
+        instrument: '{instrument}'
+        processingLevel: '{processingLevel}'
+  auth: !plugin
+    type: HTTPHeaderAuth
+    headers:
+        Cookie: "seeedtoken={apikey}"

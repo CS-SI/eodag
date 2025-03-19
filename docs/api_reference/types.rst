@@ -7,3 +7,6 @@ Types
 
 .. automodule:: eodag.types.download_args
    :members:
+
+.. autoclass:: eodag_cube.types.XarrayDict
+   :members:

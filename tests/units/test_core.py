@@ -25,18 +25,20 @@ import shutil
 import tempfile
 import unittest
 import uuid
+from importlib.resources import files as res_files
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import yaml
 from lxml import html
-from pkg_resources import DistributionNotFound, resource_filename
+from pkg_resources import DistributionNotFound
 from pydantic import ValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
-from eodag.utils import GENERIC_PRODUCT_TYPE
+from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
@@ -93,6 +95,7 @@ class TestCoreBase(unittest.TestCase):
 
 class TestCore(TestCoreBase):
     SUPPORTED_PRODUCT_TYPES = {
+        "AERIS_IAGOS": ["dedl"],
         "AG_ERA5": ["cop_cds", "wekeo_ecmwf"],
         "CAMS_GAC_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
         "CAMS_EU_AIR_QUALITY_FORECAST": ["cop_ads", "dedl", "wekeo_ecmwf"],
@@ -153,6 +156,11 @@ class TestCore(TestCoreBase):
         "ERA5_PL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "ERA5_SL_MONTHLY": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE": ["dedl"],
+        "EUSTAT_POP_AGE_GROUP_SEX_NUTS3": ["dedl"],
+        "EUSTAT_POP_AGE_SEX_NUTS2": ["dedl"],
+        "EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3": ["dedl"],
+        "EUSTAT_SHARE_ENERGY_FROM_RENEWABLE": ["dedl"],
         "FIRE_HISTORICAL": ["cop_ewds", "dedl", "wekeo_ecmwf"],
         "FIRE_SEASONAL": ["cop_ewds"],
         "GLACIERS_DIST_RANDOLPH": ["cop_cds", "dedl", "wekeo_ecmwf"],
@@ -162,8 +170,16 @@ class TestCore(TestCoreBase):
         "GLOFAS_SEASONAL": ["cop_ewds", "dedl"],
         "GLOFAS_SEASONAL_REFORECAST": ["cop_ewds", "dedl"],
         "GRIDDED_GLACIERS_MASS_CHANGE": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "GSW_CHANGE": ["dedl"],
+        "GSW_EXTENT": ["dedl"],
+        "GSW_OCCURRENCE": ["dedl"],
+        "GSW_RECURRENCE": ["dedl"],
+        "GSW_SEASONALITY": ["dedl"],
+        "GSW_TRANSITIONS": ["dedl"],
+        "ISIMIP_CLIMATE_FORCING_ISIMIP3B": ["dedl"],
+        "ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B": ["dedl"],
         "L57_REFLECTANCE": ["theia"],
-        "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs", "onda"],
+        "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs"],
         "L8_REFLECTANCE": ["theia"],
         "LANDSAT_C2L1": [
             "dedl",
@@ -184,42 +200,40 @@ class TestCore(TestCoreBase):
         "LANDSAT_TM_C1": ["usgs"],
         "LANDSAT_TM_C2L1": ["usgs"],
         "LANDSAT_TM_C2L2": ["usgs"],
-        "METOP_AMSU_L1": ["eumetsat_ds"],
-        "METOP_ASCSZF1B": ["eumetsat_ds"],
-        "METOP_ASCSZFR02": ["eumetsat_ds"],
-        "METOP_ASCSZO1B": ["eumetsat_ds"],
-        "METOP_ASCSZOR02": ["eumetsat_ds"],
-        "METOP_ASCSZR1B": ["eumetsat_ds"],
-        "METOP_ASCSZRR02": ["eumetsat_ds"],
-        "METOP_AVHRRL1": ["eumetsat_ds"],
-        "METOP_AVHRRGACR02": ["eumetsat_ds"],
-        "METOP_GLB_SST_NC": ["eumetsat_ds"],
-        "METOP_GOMEL1": ["eumetsat_ds"],
-        "METOP_GOMEL1R03": ["eumetsat_ds"],
-        "METOP_HIRSL1": ["eumetsat_ds"],
-        "METOP_IASTHR011": ["eumetsat_ds"],
-        "METOP_IASSND02": ["eumetsat_ds"],
-        "METOP_IASIL1C_ALL": ["eumetsat_ds"],
-        "METOP_LSA_002": ["eumetsat_ds"],
-        "METOP_MHSL1": ["eumetsat_ds"],
-        "METOP_OSI_104": ["eumetsat_ds"],
-        "METOP_OSI_150A": ["eumetsat_ds"],
-        "METOP_OSI_150B": ["eumetsat_ds"],
-        "METOP_SOMO12": ["eumetsat_ds"],
-        "METOP_SOMO25": ["eumetsat_ds"],
-        "MSG_CLM": ["eumetsat_ds"],
-        "MSG_CLM_IODC": ["eumetsat_ds"],
-        "MSG_GSAL2R02": ["eumetsat_ds"],
-        "MSG_HRSEVIRI": ["eumetsat_ds"],
-        "MSG_HRSEVIRI_IODC": ["eumetsat_ds"],
-        "MSG_RSS_CLM": ["eumetsat_ds"],
-        "MSG_MSG15_RSS": ["eumetsat_ds"],
-        "MSG_LSA_FRM": ["eumetsat_ds"],
-        "MSG_LSA_LST_CDR": ["eumetsat_ds"],
-        "MSG_LSA_LSTDE": ["eumetsat_ds"],
-        "MSG_AMVR02": ["eumetsat_ds"],
-        "MSG_LST": ["eumetsat_ds"],
-        "MSG_LST_DIR": ["eumetsat_ds"],
+        "METOP_AMSU_L1": ["dedl", "eumetsat_ds"],
+        "METOP_ASCSZF1B": ["dedl", "eumetsat_ds"],
+        "METOP_ASCSZFR02": ["dedl", "eumetsat_ds"],
+        "METOP_ASCSZO1B": ["dedl", "eumetsat_ds"],
+        "METOP_ASCSZOR02": ["dedl", "eumetsat_ds"],
+        "METOP_ASCSZR1B": ["dedl", "eumetsat_ds"],
+        "METOP_ASCSZRR02": ["dedl", "eumetsat_ds"],
+        "METOP_AVHRRL1": ["dedl", "eumetsat_ds"],
+        "METOP_AVHRRGACR02": ["dedl", "eumetsat_ds"],
+        "METOP_GLB_SST_NC": ["dedl", "eumetsat_ds"],
+        "METOP_GOMEL1": ["dedl", "eumetsat_ds"],
+        "METOP_GOMEL1R03": ["dedl", "eumetsat_ds"],
+        "METOP_HIRSL1": ["dedl", "eumetsat_ds"],
+        "METOP_IASTHR011": ["dedl", "eumetsat_ds"],
+        "METOP_IASSND02": ["dedl", "eumetsat_ds"],
+        "METOP_IASIL1C_ALL": ["dedl", "eumetsat_ds"],
+        "METOP_LSA_002": ["dedl", "eumetsat_ds"],
+        "METOP_MHSL1": ["dedl", "eumetsat_ds"],
+        "METOP_OSI_104": ["dedl", "eumetsat_ds"],
+        "METOP_OSI_150A": ["dedl", "eumetsat_ds"],
+        "METOP_OSI_150B": ["dedl", "eumetsat_ds"],
+        "METOP_SOMO12": ["dedl", "eumetsat_ds"],
+        "METOP_SOMO25": ["dedl", "eumetsat_ds"],
+        "MSG_CLM": ["dedl", "eumetsat_ds"],
+        "MSG_CLM_IODC": ["dedl", "eumetsat_ds"],
+        "MSG_GSAL2R02": ["dedl", "eumetsat_ds"],
+        "MSG_HRSEVIRI": ["dedl", "eumetsat_ds"],
+        "MSG_HRSEVIRI_IODC": ["dedl", "eumetsat_ds"],
+        "MSG_RSS_CLM": ["dedl", "eumetsat_ds"],
+        "MSG_MSG15_RSS": ["dedl", "eumetsat_ds"],
+        "MSG_LSA_FRM": ["dedl", "eumetsat_ds"],
+        "MSG_LSA_LST_CDR": ["dedl", "eumetsat_ds"],
+        "MSG_LSA_LSTDE": ["dedl", "eumetsat_ds"],
+        "MSG_AMVR02": ["dedl", "eumetsat_ds"],
         "MFG_GSA_57": ["eumetsat_ds"],
         "MFG_GSA_63": ["eumetsat_ds"],
         "MSG_MFG_GSA_0": ["eumetsat_ds"],
@@ -234,46 +248,57 @@ class TestCore(TestCoreBase):
         "MTG_LI_LEF": ["eumetsat_ds"],
         "MTG_FCI_FDHSI": ["eumetsat_ds"],
         "MTG_FCI_HRFI": ["eumetsat_ds"],
+        "MTG_FCI_ASR_BUFR": ["eumetsat_ds"],
+        "MTG_FCI_ASR_NETCDF": ["eumetsat_ds"],
+        "MTG_FCI_AMV_BUFR": ["eumetsat_ds"],
+        "MTG_FCI_AMV_NETCDF": ["eumetsat_ds"],
+        "MTG_FCI_CLM": ["eumetsat_ds"],
+        "MTG_FCI_GII": ["eumetsat_ds"],
+        "MTG_FCI_OCA": ["eumetsat_ds"],
+        "MTG_FCI_OLR": ["eumetsat_ds"],
         "MODIS_MCD43A4": ["aws_eos", "planetary_computer"],
-        "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024": ["cop_marine"],
-        "MO_GLOBAL_ANALYSISFORECAST_BGC_001_028": ["cop_marine"],
-        "MO_GLOBAL_ANALYSISFORECAST_WAV_001_027": ["cop_marine"],
-        "MO_GLOBAL_MULTIYEAR_BGC_001_033": ["cop_marine"],
-        "MO_GLOBAL_MULTIYEAR_WAV_001_032": ["cop_marine"],
-        "MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031": ["cop_marine"],
-        "MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048": ["cop_marine"],
-        "MO_INSITU_GLO_PHY_TS_OA_NRT_013_002": ["cop_marine"],
-        "MO_INSITU_GLO_PHY_TS_OA_MY_013_052": ["cop_marine"],
-        "MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010": ["cop_marine"],
-        "MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_REP_015_008": ["cop_marine"],
-        "MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009": ["cop_marine"],
-        "MO_MULTIOBS_GLO_PHY_MYNRT_015_003": ["cop_marine"],
-        "MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013": ["cop_marine"],
-        "MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012": ["cop_marine"],
-        "MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007": ["cop_marine"],
-        "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001": ["cop_marine"],
-        "MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009": ["cop_marine"],
-        "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006": ["cop_marine"],
-        "MO_SEALEVEL_GLO_PHY_L4_NRT_008_046": ["cop_marine"],
-        "MO_SEALEVEL_GLO_PHY_MDT_008_063": ["cop_marine"],
-        "MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010": ["cop_marine"],
-        "MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001": ["cop_marine"],
-        "MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011": ["cop_marine"],
-        "MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024": ["cop_marine"],
-        "MO_WAVE_GLO_WAV_L3_SPC_NRT_OBSERVATIONS_014_002": ["cop_marine"],
-        "MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001": ["cop_marine"],
-        "MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003": ["cop_marine"],
-        "MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003": ["cop_marine"],
-        "MO_WIND_GLO_PHY_L3_NRT_012_002": ["cop_marine"],
-        "MO_WIND_GLO_PHY_L3_MY_012_005": ["cop_marine"],
-        "MO_WIND_GLO_PHY_L4_NRT_012_004": ["cop_marine"],
-        "MO_WIND_GLO_PHY_L4_MY_012_006": ["cop_marine"],
-        "MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107": ["cop_marine"],
-        "MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101": ["cop_marine"],
-        "MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103": ["cop_marine"],
-        "MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102": ["cop_marine"],
-        "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104": ["cop_marine"],
-        "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108": ["cop_marine"],
+        "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024": ["cop_marine", "dedl"],
+        "MO_GLOBAL_ANALYSISFORECAST_BGC_001_028": ["cop_marine", "dedl"],
+        "MO_GLOBAL_ANALYSISFORECAST_WAV_001_027": ["cop_marine", "dedl"],
+        "MO_GLOBAL_MULTIYEAR_BGC_001_033": ["cop_marine", "dedl"],
+        "MO_GLOBAL_MULTIYEAR_WAV_001_032": ["cop_marine", "dedl"],
+        "MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031": ["cop_marine", "dedl"],
+        "MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048": ["cop_marine", "dedl"],
+        "MO_INSITU_GLO_PHY_TS_OA_NRT_013_002": ["cop_marine", "dedl"],
+        "MO_INSITU_GLO_PHY_TS_OA_MY_013_052": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009": [
+            "cop_marine",
+            "dedl",
+        ],
+        "MO_MULTIOBS_GLO_PHY_MYNRT_015_003": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012": ["cop_marine", "dedl"],
+        "MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007": ["cop_marine", "dedl"],
+        "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001": ["cop_marine", "dedl"],
+        "MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009": ["cop_marine", "dedl"],
+        "MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006": ["cop_marine", "dedl"],
+        "MO_SEALEVEL_GLO_PHY_L4_NRT_008_046": ["cop_marine", "dedl"],
+        "MO_SEALEVEL_GLO_PHY_MDT_008_063": ["cop_marine", "dedl"],
+        "MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010": ["cop_marine", "dedl"],
+        "MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001": ["cop_marine", "dedl"],
+        "MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011": ["cop_marine", "dedl"],
+        "MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024": ["cop_marine", "dedl"],
+        "MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002": ["cop_marine", "dedl"],
+        "MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001": ["cop_marine", "dedl"],
+        "MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003": ["cop_marine", "dedl"],
+        "MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003": ["cop_marine", "dedl"],
+        "MO_WIND_GLO_PHY_L3_NRT_012_002": ["cop_marine", "dedl"],
+        "MO_WIND_GLO_PHY_L3_MY_012_005": ["cop_marine", "dedl"],
+        "MO_WIND_GLO_PHY_L4_NRT_012_004": ["cop_marine", "dedl"],
+        "MO_WIND_GLO_PHY_L4_MY_012_006": ["cop_marine", "dedl"],
+        "MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107": ["cop_marine", "dedl"],
+        "MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101": ["cop_marine", "dedl"],
+        "MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103": ["cop_marine", "dedl"],
+        "MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102": ["cop_marine", "dedl"],
+        "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104": ["cop_marine", "dedl"],
+        "MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108": ["cop_marine", "dedl"],
         "NAIP": ["aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
@@ -290,7 +315,7 @@ class TestCore(TestCoreBase):
             "dedl",
             "earth_search",
             "geodes",
-            "onda",
+            "geodes_s3",
             "peps",
             "planetary_computer",
             "sara",
@@ -302,7 +327,7 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "geodes",
-            "onda",
+            "geodes_s3",
             "peps",
             "sara",
             "wekeo_main",
@@ -311,7 +336,6 @@ class TestCore(TestCoreBase):
             "cop_dataspace",
             "creodias",
             "creodias_s3",
-            "onda",
             "wekeo_main",
         ],
         "S1_SAR_SLC": [
@@ -320,7 +344,7 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "geodes",
-            "onda",
+            "geodes_s3",
             "peps",
             "sara",
             "wekeo_main",
@@ -334,7 +358,7 @@ class TestCore(TestCoreBase):
             "earth_search",
             "earth_search_gcs",
             "geodes",
-            "onda",
+            "geodes_s3",
             "peps",
             "sara",
             "usgs",
@@ -346,14 +370,12 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
-            "onda",
             "planetary_computer",
             "sara",
             "wekeo_main",
         ],
-        "S2_MSI_L2AP": ["wekeo_main"],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
-        "S2_MSI_L2A_MAJA": ["geodes", "theia"],
+        "S2_MSI_L2A_MAJA": ["geodes", "geodes_s3", "theia"],
         "S2_MSI_L2B_MAJA_SNOW": ["theia"],
         "S2_MSI_L2B_MAJA_WATER": ["theia"],
         "S2_MSI_L3A_WASP": ["theia"],
@@ -363,7 +385,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -374,7 +395,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -384,7 +404,6 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -393,7 +412,6 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -402,7 +420,6 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -412,7 +429,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -422,7 +438,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -433,7 +448,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -453,7 +467,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
         ],
         "S3_SLSTR_L2LST": [
@@ -461,7 +474,6 @@ class TestCore(TestCoreBase):
             "creodias",
             "creodias_s3",
             "dedl",
-            "onda",
             "sara",
         ],
         "S3_SLSTR_L2WST": [
@@ -470,7 +482,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
         ],
         "S3_SRA": [
@@ -479,7 +490,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -489,7 +499,6 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -499,22 +508,20 @@ class TestCore(TestCoreBase):
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
-        "S3_SY_AOD": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_SYN": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_V10": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_VG1": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
-        "S3_SY_VGP": ["cop_dataspace", "creodias", "creodias_s3", "onda", "sara"],
+        "S3_SY_AOD": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
+        "S3_SY_SYN": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
+        "S3_SY_V10": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
+        "S3_SY_VG1": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
+        "S3_SY_VGP": ["cop_dataspace", "creodias", "creodias_s3", "sara"],
         "S3_WAT": [
             "cop_dataspace",
             "creodias",
             "creodias_s3",
             "dedl",
             "eumetsat_ds",
-            "onda",
             "sara",
             "wekeo_main",
         ],
@@ -537,35 +544,35 @@ class TestCore(TestCoreBase):
         "S3_SLSTR_L2WST_BC003": ["eumetsat_ds"],
         "S5P_L1B_IR_SIR": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L1B_IR_UVN": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD3": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD4": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD5": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD6": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD7": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L1B_RA_BD8": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_AER_AI": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_AER_LH": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_CH4": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_CLOUD": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_CO": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_HCHO": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_NO2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_NP_BD3": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_NP_BD6": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_NP_BD7": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_O3": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
-        "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L1B_RA_BD1": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD2": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD3": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD4": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD5": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD6": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD7": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L1B_RA_BD8": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_AER_AI": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_AER_LH": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_CH4": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_CLOUD": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_CO": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_HCHO": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_NO2": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_NP_BD3": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_NP_BD6": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_NP_BD7": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_O3": ["cop_dataspace", "creodias", "creodias_s3"],
+        "S5P_L2_O3_PR": ["cop_dataspace", "creodias", "creodias_s3"],
         "S5P_L2_O3_TCL": ["cop_dataspace", "creodias", "creodias_s3"],
-        "S5P_L2_SO2": ["cop_dataspace", "creodias", "creodias_s3", "onda"],
+        "S5P_L2_SO2": ["cop_dataspace", "creodias", "creodias_s3"],
         "SATELLITE_CARBON_DIOXIDE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_FIRE_BURNED_AREA": ["cop_cds", "wekeo_ecmwf"],
         "SATELLITE_METHANE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_SEA_ICE_EDGE_TYPE": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SATELLITE_SEA_LEVEL_GLOBAL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "wekeo_ecmwf"],
-        "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "wekeo_ecmwf"],
+        "SATELLITE_SEA_ICE_CONCENTRATION": ["cop_cds", "dedl", "wekeo_ecmwf"],
+        "SATELLITE_SEA_ICE_THICKNESS": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SEASONAL_MONTHLY_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SEASONAL_MONTHLY_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SEASONAL_ORIGINAL_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
@@ -584,7 +591,6 @@ class TestCore(TestCoreBase):
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",
-            "onda",
             "usgs",
             "creodias",
             "usgs_satapi_aws",
@@ -620,9 +626,9 @@ class TestCore(TestCoreBase):
         "ecmwf",
         "eumetsat_ds",
         "geodes",
+        "geodes_s3",
         "hydroweb_next",
         "meteoblue",
-        "onda",
         "planetary_computer",
         "sara",
         "theia",
@@ -1222,8 +1228,8 @@ class TestCore(TestCoreBase):
 
     def test_prune_providers_list(self):
         """Providers needing auth for search but without credentials must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         try:
             # Default conf: no auth needed for search
@@ -1250,8 +1256,8 @@ class TestCore(TestCoreBase):
     @mock.patch("eodag.plugins.manager.pkg_resources.iter_entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
 
         def skip_qssearch(topic):
@@ -1270,8 +1276,8 @@ class TestCore(TestCoreBase):
 
     def test_prune_providers_list_for_search_without_auth(self):
         """Providers needing auth for search but without auth plugin must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         try:
             # auth needed for search with need_auth but without auth plugin
@@ -1298,8 +1304,8 @@ class TestCore(TestCoreBase):
 
     def test_prune_providers_list_without_api_or_search_plugin(self):
         """Providers without api or search plugin must be pruned on init"""
-        empty_conf_file = resource_filename(
-            "eodag", os.path.join("resources", "user_conf_template.yml")
+        empty_conf_file = str(
+            res_files("eodag") / "resources" / "user_conf_template.yml"
         )
         dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
         delattr(dag.providers_config["peps"], "search")
@@ -1521,26 +1527,26 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "productType": "ERA5_SL",
-            "ecmwf:product_type": "reanalysis",
-            "ecmwf:dataset": "reanalysis-era5-single-levels",
-            "ecmwf:data_format": "grib",
-            "ecmwf:download_format": "zip",
-            "ecmwf:variable": "10m_u_component_of_wind",
+            "product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "data_format": "grib",
+            "download_format": "zip",
+            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
         # default values + additional param
         res = self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:month": "02"}
+            provider="cop_cds", **{"productType": "ERA5_SL", "month": "02"}
         )
         params = {
             "productType": "ERA5_SL",
-            "ecmwf:product_type": "reanalysis",
-            "ecmwf:dataset": "reanalysis-era5-single-levels",
-            "ecmwf:data_format": "grib",
-            "ecmwf:download_format": "zip",
-            "ecmwf:variable": "10m_u_component_of_wind",
-            "ecmwf:month": "02",
+            "product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "data_format": "grib",
+            "download_format": "zip",
+            "variable": "10m_u_component_of_wind",
+            "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
         self.assertFalse(res.additional_properties)
@@ -1548,15 +1554,15 @@ class TestCore(TestCoreBase):
 
         # unset default values
         self.dag.list_queryables(
-            provider="cop_cds", **{"productType": "ERA5_SL", "ecmwf:data_format": ""}
+            provider="cop_cds", **{"productType": "ERA5_SL", "data_format": ""}
         )
         defaults = {
             "productType": "ERA5_SL",
-            "ecmwf:product_type": "reanalysis",
-            "ecmwf:dataset": "reanalysis-era5-single-levels",
-            "ecmwf:variable": "10m_u_component_of_wind",
-            "ecmwf:data_format": "",
-            "ecmwf:download_format": "zip",
+            "product_type": "reanalysis",
+            "dataset": "reanalysis-era5-single-levels",
+            "variable": "10m_u_component_of_wind",
+            "data_format": "",
+            "download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
@@ -1813,6 +1819,16 @@ class TestCore(TestCoreBase):
                     "cloudCover",
                 ],
             },
+            "geodes_s3": {
+                "max_sort_params": None,
+                "sortables": [
+                    "id",
+                    "startTimeFromAscendingNode",
+                    "completionTimeFromAscendingNode",
+                    "platformSerialIdentifier",
+                    "cloudCover",
+                ],
+            },
             "hydroweb_next": {
                 "sortables": [
                     "id",
@@ -1824,10 +1840,6 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
             },
             "meteoblue": None,
-            "onda": {
-                "sortables": ["startTimeFromAscendingNode", "uid", "storageStatus"],
-                "max_sort_params": 1,
-            },
             "planetary_computer": {
                 "sortables": [
                     "id",
@@ -1894,19 +1906,12 @@ class TestCore(TestCoreBase):
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
-    @classmethod
-    def setUpClass(cls):
-        super(TestCoreConfWithEnvVar, cls).setUpClass()
-        cls.dag = EODataAccessGateway()
-        # mock os.environ to empty env
-        cls.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
-        cls.mock_os_environ.start()
-
-    @classmethod
-    def tearDownClass(cls):
-        super(TestCoreConfWithEnvVar, cls).tearDownClass()
-        # stop os.environ
-        cls.mock_os_environ.stop()
+    def tearDown(self):
+        """Teardown run after every test"""
+        if dag := getattr(self, "dag", None):
+            index_dir = os.path.join(dag.conf_dir, ".index")
+            shutil.rmtree(index_dir)
+            del dag
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed by the EODAG_LOCS_CFG_FILE env var"""
@@ -1914,9 +1919,9 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_LOCS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_locations_override.yml"
             )
-            dag = EODataAccessGateway()
+            self.dag = EODataAccessGateway()
             self.assertEqual(
-                dag.locations_config,
+                self.dag.locations_config,
                 [dict(attr="dummyattr", name="dummyname", path="dummypath.shp")],
             )
         finally:
@@ -1928,11 +1933,13 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_config_override.yml"
             )
-            dag = EODataAccessGateway()
+            self.dag = EODataAccessGateway()
             # usgs priority is set to 5 in the test config overrides
-            self.assertEqual(dag.get_preferred_provider(), ("usgs", 5))
+            self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 5))
             # peps outputs prefix is set to /data
-            self.assertEqual(dag.providers_config["peps"].download.output_dir, "/data")
+            self.assertEqual(
+                self.dag.providers_config["peps"].download.output_dir, "/data"
+            )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)
 
@@ -1942,15 +1949,45 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
                 TEST_RESOURCES_PATH, "file_providers_override.yml"
             )
-            dag = EODataAccessGateway()
+            self.dag = EODataAccessGateway()
             # only foo_provider in conf
-            self.assertEqual(dag.available_providers(), ["foo_provider"])
+            self.assertEqual(self.dag.available_providers(), ["foo_provider"])
             self.assertEqual(
-                dag.providers_config["foo_provider"].search.api_endpoint,
+                self.dag.providers_config["foo_provider"].search.api_endpoint,
                 "https://foo.bar/search",
             )
         finally:
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+
+    def test_core_product_types_config_envvar(self):
+        """product types should be loaded from file defined in env var"""
+        # setup providers config
+        config_path = os.path.join(TEST_RESOURCES_PATH, "file_providers_override.yml")
+        providers_config: list[ProviderConfig] = cached_yaml_load_all(config_path)
+        providers_config[0].products["TEST_PRODUCT_1"] = {"productType": "TP1"}
+        providers_config[0].products["TEST_PRODUCT_2"] = {"productType": "TP2"}
+        with open(
+            os.path.join(self.tmp_home_dir.name, "file_providers_override2.yml"), "w"
+        ) as f:
+            f.write(yaml.dump(providers_config[0]))
+        # set env variables
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+            self.tmp_home_dir.name, "file_providers_override2.yml"
+        )
+        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_product_types_override.yml"
+        )
+        # check product types
+        try:
+            self.dag = EODataAccessGateway()
+            pt = self.dag.list_product_types(fetch_providers=False)
+            self.assertEqual(2, len(pt))
+            self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
+            self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
+        finally:
+            # remove env variables
+            os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
+            os.environ.pop("EODAG_PRODUCT_TYPES_CFG_FILE", None)
 
 
 class TestCoreInvolvingConfDir(unittest.TestCase):
@@ -2233,7 +2270,6 @@ class TestCoreSearch(TestCoreBase):
         expected = [
             "S2_MSI_L1C",
             "S2_MSI_L2A",
-            "S2_MSI_L2AP",
             "S2_MSI_L2A_COG",
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
@@ -2257,20 +2293,6 @@ class TestCoreSearch(TestCoreBase):
         )
         self.assertIn(
             "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
-        )
-        self.assertEqual(
-            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionStartDate"],
-            "2017-05-23T00:00:00Z",
-        )
-        self.assertEqual(
-            self.dag.product_types_config.source["S2_MSI_L2AP"]["missionEndDate"],
-            "2018-03-25T00:00:00Z",
-        )
-        self.assertNotIn(
-            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-04-01")
-        )
-        self.assertIn(
-            "S2_MSI_L2AP", self.dag.guess_product_type(missionStartDate="2018-03-01")
         )
 
     def test_guess_product_type_without_kwargs(self):

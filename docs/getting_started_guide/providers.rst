@@ -27,7 +27,6 @@ Products from the following providers are made avaiable through ``eodag``:
 * `geodes_s3 <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
 * `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_: Meteoblue forecast
-* `onda <https://www.onda-dias.eu/cms/>`_: Serco DIAS
 * `peps <https://peps.cnes.fr/rocket/#/home>`_: French National Space Agency (CNES) catalog for Sentinel products
 * `planetary_computer <https://planetarycomputer.microsoft.com/>`_: Microsoft Planetary Computer
 * `sara <https://copernicus.nci.org.au>`_: Sentinel Australasia Regional Access
