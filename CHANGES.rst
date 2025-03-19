@@ -60,11 +60,12 @@ Plugins new features and fixes
 Miscellaneous
 """""""""""""
 
-* **[build]** remove dependencies max versions (:pull:`1519`), ``usgs`` latest version from git repo (:pull:`1552`)
+* **[build]** remove dependencies max versions (:pull:`1519`)
 * **[docs]** ``eodag-cube`` `Python API documentation
   <https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/9_post_process.html#Data-access-with-eodag-cube>`_
   (:pull:`1511`), ``usgs`` registration update (:pull:`1551`)
-* Various minor fixes and improvements (:pull:`1502`)(:pull:`1540`)(:pull:`1541`)(:pull:`1547`)(:pull:`1566`)
+* Various minor fixes and improvements (:pull:`1502`)(:pull:`1540`)(:pull:`1541`)(:pull:`1547`)(:pull:`1552`)
+  (:pull:`1566`)(:pull:`1568`)
 * External product types reference updates (:pull:`1510`)(:pull:`1525`)(:pull:`1539`)(:pull:`1548`)(:pull:`1553`)
   (:pull:`1557`)(:pull:`1565`)
 
