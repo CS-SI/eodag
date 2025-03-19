@@ -184,16 +184,6 @@ meteoblue:
             apikey:
     download:
         output_dir:
-onda:
-    priority: # Lower value means lower priority (Default: 0)
-    search: # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-    auth:
-        credentials:
-            username:
-            password:
 peps:
     priority: # Lower value means lower priority (Default: 1)
     search: # Search parameters configuration
