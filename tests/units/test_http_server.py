@@ -968,7 +968,7 @@ class RequestTestCase(unittest.TestCase):
             ("peps", req_err),
             ("creodias", AuthenticationError("Authentication message")),
             (
-                "onda",
+                "cop_dataspace",
                 ValidationError(
                     "Validation message: startTimeFromAscendingNode, modificationDate",
                     {"startTimeFromAscendingNode", "modificationDate"},
@@ -1003,7 +1003,7 @@ class RequestTestCase(unittest.TestCase):
                     "status_code": 500,
                 },
                 {
-                    "provider": "onda",
+                    "provider": "cop_dataspace",
                     "error": "ValidationError",
                     "message": "Validation message: start_datetime, updated",
                     "detail": {"startTimeFromAscendingNode", "modificationDate"},

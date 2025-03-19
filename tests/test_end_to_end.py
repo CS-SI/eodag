@@ -129,13 +129,6 @@ HYDROWBEB_NEXT_SEARCH_ARGS = [
 today = datetime.date.today()
 week_span = datetime.timedelta(days=7)
 day_span = datetime.timedelta(days=1)
-ONDA_SEARCH_ARGS = [
-    "onda",
-    "S2_MSI_L1C",
-    (today - week_span).isoformat(),
-    today.isoformat(),
-    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
-]
 USGS_RECENT_SEARCH_ARGS = [
     "usgs",
     "LANDSAT_C2L1",
@@ -481,11 +474,6 @@ class TestEODagEndToEnd(EndToEndBase):
         )
         self.assertEqual(len(product), 0)
 
-    def test_end_to_end_search_download_onda(self):
-        product = self.execute_search(*ONDA_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
-
     # @unittest.skip("expired aws_eos api key")
     def test_end_to_end_search_download_aws_eos(self):
         product = self.execute_search(*AWSEOS_SEARCH_ARGS)
@@ -600,7 +588,6 @@ class TestEODagEndToEnd(EndToEndBase):
         supported_providers_product_types = [
             ("peps", "S2_MSI_L1C"),
             ("theia", "S2_MSI_L2A_MAJA"),
-            ("onda", "S2_MSI_L1C"),
             ("planetary_computer", "S2_MSI_L2A"),
             ("earth_search", "S2_MSI_L1C"),
         ]
@@ -1020,11 +1007,6 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
 
     def test_end_to_end_wrong_credentials_cop_dataspace(self):
         product = self.execute_search(*COP_DATASPACE_SEARCH_ARGS)
-        with self.assertRaises(AuthenticationError):
-            self.eodag.download(product)
-
-    def test_end_to_end_wrong_credentials_onda(self):
-        product = self.execute_search(*ONDA_SEARCH_ARGS)
         with self.assertRaises(AuthenticationError):
             self.eodag.download(product)
 

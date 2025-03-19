@@ -149,8 +149,8 @@ class TestCoreSearch(unittest.TestCase):
     def test_core_search_errors_odata(
         self, mock_fetch_product_types_list, mock_get, mock_urlopen, mock_authenticate
     ):
-        # ODataV4Search / onda
-        self.dag.set_preferred_provider("onda")
+        # ODataV4Search / creodias
+        self.dag.set_preferred_provider("creodias")
         self.assertRaises(
             RequestError, self.dag.search, productType="foo", raise_errors=True
         )
@@ -243,7 +243,6 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "dedl",
                 "geodes",
-                "onda",
                 "sara",
                 "wekeo_main",
             ],
@@ -280,7 +279,6 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "dedl",
                 "geodes",
-                "onda",
                 "sara",
                 "wekeo_main",
             ],
@@ -316,7 +314,6 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "dedl",
                 "geodes",
-                "onda",
                 "sara",
                 "wekeo_main",
             ],
@@ -340,7 +337,11 @@ class TestCoreSearch(unittest.TestCase):
             "only 1 provider out of 7 must have been requested",
         )
 
-    # onda uses requests.Request then urllib with HTTPAdapter.build_response
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    # creodias uses requests.Request then urllib with HTTPAdapter.build_response
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.adapters.HTTPAdapter.build_response",
         autospec=True,
@@ -352,16 +353,15 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.Request",
         autospec=True,
-        # fail on creodias, then succeeds on onda (count and search)
-        side_effect=[RequestException, mock.DEFAULT, mock.DEFAULT],
     )
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.Session.get",
         autospec=True,
+        # fail on other providers
         side_effect=RequestException,
     )
-    def test_core_search_fallback_find_on_fourth(
-        self, mock_get, mock_request, mock_urlopen, mock_httpadapter
+    def test_core_search_fallback_find_on_second(
+        self, mock_get, mock_request, mock_urlopen, mock_httpadapter, mock_auth_get
     ):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
@@ -374,39 +374,39 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "dedl",
                 "geodes",
-                "onda",
                 "sara",
                 "wekeo_main",
             ],
         )
 
-        # onda comes 3rd by priority
-        onda_resp_search_file = os.path.join(
-            TEST_RESOURCES_PATH, "provider_responses", "onda_search.json"
+        # creodias comes 2nd by priority
+        creodias_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_creodias.json"
         )
-        with open(onda_resp_search_file, encoding="utf-8") as f:
-            onda_resp_search_file_content = json.load(f)
-        onda_resp_search_results_count = len(onda_resp_search_file_content["value"])
+        with open(creodias_resp_search_file, encoding="utf-8") as f:
+            creodias_resp_search_file_content = json.load(f)
+        creodias_resp_search_results_count = len(
+            creodias_resp_search_file_content["value"]
+        )
 
-        # results_count, results content
+        # results content
         mock_httpadapter.return_value.json.side_effect = [
-            2,
-            onda_resp_search_file_content,
+            creodias_resp_search_file_content,
         ]
 
         search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
-        self.assertEqual(len(search_result), onda_resp_search_results_count)
+        self.assertEqual(len(search_result), creodias_resp_search_results_count)
         self.assertEqual(
             mock_get.call_count + mock_request.call_count,
-            4,
-            "there must have been 4 requests (3 providers search and 1 count request)",
+            2,
+            "there must have been 2 requests",
         )
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_fourth_empty_results(self, mock_query):
+    def test_core_search_fallback_find_on_second_empty_results(self, mock_query):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
         available_providers = self.dag.available_providers(product_type)
@@ -418,7 +418,6 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "dedl",
                 "geodes",
-                "onda",
                 "sara",
                 "wekeo_main",
             ],
@@ -426,16 +425,16 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_query.side_effect = [
             ([], 0),
-            ([], 0),
-            ([], 0),
-            ([EOProduct("onda", dict(geometry="POINT (0 0)", id="a"))], 1),
+            ([EOProduct("creodias", dict(geometry="POINT (0 0)", id="a"))], 1),
         ]
 
         search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
         self.assertEqual(
-            mock_query.call_count, 4, "4 provider out of 6 must have been requested"
+            mock_query.call_count,
+            2,
+            f"2 provider out of {len(available_providers)} must have been requested",
         )
 
     @mock.patch(
@@ -454,7 +453,6 @@ class TestCoreSearch(unittest.TestCase):
                 "creodias",
                 "dedl",
                 "geodes",
-                "onda",
                 "sara",
                 "wekeo_main",
             ],
@@ -463,7 +461,7 @@ class TestCoreSearch(unittest.TestCase):
         mock_query.return_value = ([], 0)
 
         search_result = self.dag.search(
-            productType="S1_SAR_SLC", provider="onda", count=True
+            productType="S1_SAR_SLC", provider="creodias", count=True
         )
         self.assertEqual(len(search_result), 0)
         self.assertEqual(search_result.number_matched, 0)

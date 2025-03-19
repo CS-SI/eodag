@@ -19,6 +19,7 @@
 
     isort:skip_file
 """
+# ruff: noqa
 import os
 import sys
 
@@ -96,6 +97,7 @@ from eodag.utils import (
     sanitize,
     parse_header,
     get_ssl_context,
+    cached_yaml_load_all,
 )
 from eodag.utils.requests import fetch_json
 from eodag.utils.s3 import list_files_in_s3_zipped_object, update_assets_from_s3

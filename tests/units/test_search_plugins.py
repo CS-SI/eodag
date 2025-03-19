@@ -57,8 +57,10 @@ from tests.context import (
     RequestError,
     TimeOutError,
     cached_parse,
+    cached_yaml_load_all,
     get_geometry_from_various,
     load_default_config,
+    merge_configs,
     override_config_from_mapping,
 )
 
@@ -1163,6 +1165,15 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
 class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def setUp(self):
         super(TestSearchPluginODataV4Search, self).setUp()
+
+        # manually add conf as this provider is not supported any more
+        providers_config = self.plugins_manager.providers_config
+        onda_config = cached_yaml_load_all(Path(TEST_RESOURCES_PATH) / "onda_conf.yml")[
+            0
+        ]
+        merge_configs(providers_config, {"onda": onda_config})
+        self.plugins_manager = PluginManager(providers_config)
+
         # One of the providers that has a ODataV4Search Search plugin
         provider = "onda"
         self.onda_search_plugin = self.get_search_plugin(self.product_type, provider)
