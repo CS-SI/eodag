@@ -1598,7 +1598,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.build_search_result.WekeoECMWFSearch.list_queryables",
+        "eodag.plugins.apis.ecmwf_group.WekeoEcmwfGroupApi.list_queryables",
         autospec=True,
     )
     @mock.patch(
@@ -1670,7 +1670,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.search.build_search_result.WekeoECMWFSearch.list_queryables",
+        "eodag.plugins.apis.ecmwf_group.WekeoEcmwfGroupApi.list_queryables",
         autospec=True,
     )
     @mock.patch(
@@ -1736,7 +1736,11 @@ class TestCore(TestCoreBase):
                 self.assertIn("str", spans[i + 1].text)
         self.assertTrue(product_type_present)
 
-    def test_available_sortables(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test_available_sortables(self, mock_auth_session_request):
         """available_sortables must return available sortable(s) and its (their)
         maximum number dict for providers which support the sorting feature"""
         self.maxDiff = None
@@ -2335,7 +2339,13 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_no_parameters(self, mock_fetch_product_types_list):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test__prepare_search_no_parameters(
+        self, mock_auth_session_request, mock_fetch_product_types_list
+    ):
         """_prepare_search must create some kwargs even when no parameter has been provided"""
         _, prepared_search = self.dag._prepare_search()
         expected = {
@@ -2348,7 +2358,13 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_dates(self, mock_fetch_product_types_list):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test__prepare_search_dates(
+        self, mock_auth_session_request, mock_fetch_product_types_list
+    ):
         """_prepare_search must handle start & end dates"""
         base = {
             "start": "2020-01-01",
@@ -2363,7 +2379,13 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_geom(self, mock_fetch_product_types_list):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test__prepare_search_geom(
+        self, mock_auth_session_request, mock_fetch_product_types_list
+    ):
         """_prepare_search must handle geom, box and bbox"""
         # The default way to provide a geom is through the 'geom' argument.
         base = {"geom": (0, 50, 2, 52)}
@@ -2392,7 +2414,13 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test__prepare_search_locations(self, mock_fetch_product_types_list):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    def test__prepare_search_locations(
+        self, mock_auth_session_request, mock_fetch_product_types_list
+    ):
         """_prepare_search must handle a location search"""
         # When locations where introduced they could be passed
         # as regular kwargs. The new and recommended way to provide
