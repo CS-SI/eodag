@@ -297,12 +297,14 @@ def get_min_max(
     return value, value
 
 
-def append_time(input_date: date, time: str) -> datetime:
+def append_time(input_date: date, time: Optional[str]) -> datetime:
     """
     Parses a time string in format HHMM and appends it to a date.
 
     if the time string is in format HH:MM we convert it to HHMM
     """
+    if not time:
+        time = "0000"
     time = time.replace(":", "")
     if time == "2400":
         time = "0000"
@@ -364,7 +366,9 @@ def parse_year_month_day(
     return start_date, end_date
 
 
-def ecmwf_temporal_to_eodag(params: dict[str, Any]) -> tuple[str, str]:
+def ecmwf_temporal_to_eodag(
+    params: dict[str, Any]
+) -> tuple[Optional[str], Optional[str]]:
     """Converts ECMWF temporal parameters to eodag temporal parameters
 
     ECMWF temporal parameters:
@@ -395,7 +399,7 @@ def ecmwf_temporal_to_eodag(params: dict[str, Any]) -> tuple[str, str]:
 
         start, end = parse_year_month_day(year, month, day, time)
 
-    if start:
+    if start and end:
         return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
     else:
         return None, None
@@ -1135,7 +1139,7 @@ class ECMWFSearch(PostJsonSearch):
 
         else:
             # use all available query_params to parse properties
-            result: dict[str, Any] = {
+            result_data: dict[str, Any] = {
                 **results.product_type_def_params,
                 **sorted_unpaginated_qp,
                 **{"qs": sorted_unpaginated_qp},
@@ -1143,16 +1147,19 @@ class ECMWFSearch(PostJsonSearch):
 
             # update result with product_type_def_params and search args if not None (and not auth)
             kwargs.pop("auth", None)
-            result.update(results.product_type_def_params)
-            result = {**result, **{k: v for k, v in kwargs.items() if v is not None}}
+            result_data.update(results.product_type_def_params)
+            result_data = {
+                **result_data,
+                **{k: v for k, v in kwargs.items() if v is not None},
+            }
 
             properties = properties_from_json(
-                result,
+                result_data,
                 self.config.metadata_mapping,
                 discovery_config=getattr(self.config, "discover_metadata", {}),
             )
 
-            query_hash = hashlib.sha1(str(result).encode("UTF-8")).hexdigest()
+            query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
             properties["title"] = properties["id"] = (
                 (product_type or kwargs["dataset"]).upper() + "_ORDERABLE_" + query_hash
