@@ -32,6 +32,7 @@ from eodag.config import (
     merge_configs,
 )
 from eodag.plugins.apis.base import Api
+from eodag.plugins.apis.ecmwf_group import EcmwfGroupApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
@@ -253,7 +254,7 @@ class PluginManager:
 
     def get_auth_plugin(
         self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
-    ) -> Optional[Authentication]:
+    ) -> Union[Authentication, EcmwfGroupApi, None]:
         """Build and return the authentication plugin associated to the given
         search/download plugin
 
@@ -294,7 +295,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         match_plugin: Optional[PluginTopic] = None,
-    ) -> Iterator[Authentication]:
+    ) -> Iterator[Union[Authentication, EcmwfGroupApi]]:
         """Build and return the authentication plugin for the given product_type and
         provider
 
@@ -305,7 +306,7 @@ class PluginManager:
         :returns: All the Authentication plugins for the given criteria
         """
         auth_conf: Optional[PluginConfig] = None
-        if isinstance(match_plugin, Api) and hasattr(match_plugin, "authenticate"):
+        if isinstance(match_plugin, EcmwfGroupApi):
             yield match_plugin
 
         if match_plugin:
