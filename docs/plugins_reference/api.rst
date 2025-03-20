@@ -17,6 +17,6 @@ This table lists all the api plugins currently available:
    usgs.UsgsApi
    ecmwf.EcmwfApi
    ecmwf_group.EcmwfGroupApi
-   ecmwf_group.CopEcmwfGroupApie
+   ecmwf_group.CopEcmwfGroupApi
    ecmwf_group.WekeoEcmwfGroupApi
    ecmwf_group.DedtEcmwfGroupApi
