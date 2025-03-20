@@ -1192,10 +1192,16 @@ def get_geometry_from_various(
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data: Any = None, status_code: int = 200) -> None:
+    def __init__(
+        self,
+        json_data: Any = None,
+        status_code: int = 200,
+        headers: dict[str, Any] = None,
+    ) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
+        self.headers = headers
 
     def json(self) -> Any:
         """Return json data"""
