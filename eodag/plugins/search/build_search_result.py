@@ -296,12 +296,14 @@ def get_min_max(
     return value, value
 
 
-def append_time(input_date: date, time: str) -> datetime:
+def append_time(input_date: date, time: Optional[str]) -> datetime:
     """
     Parses a time string in format HHMM and appends it to a date.
 
     if the time string is in format HH:MM we convert it to HHMM
     """
+    if not time:
+        time = "0000"
     time = time.replace(":", "")
     if time == "2400":
         time = "0000"
@@ -363,7 +365,9 @@ def parse_year_month_day(
     return start_date, end_date
 
 
-def ecmwf_temporal_to_eodag(params: dict[str, Any]) -> tuple[str, str]:
+def ecmwf_temporal_to_eodag(
+    params: dict[str, Any]
+) -> tuple[Optional[str], Optional[str]]:
     """Converts ECMWF temporal parameters to eodag temporal parameters
 
     ECMWF temporal parameters:
@@ -394,7 +398,7 @@ def ecmwf_temporal_to_eodag(params: dict[str, Any]) -> tuple[str, str]:
 
         start, end = parse_year_month_day(year, month, day, time)
 
-    if start:
+    if start and end:
         return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
     else:
         return None, None
@@ -621,8 +625,8 @@ class ECMWFSearch(PostJsonSearch):
                 ]
                 # if startTime is not given but other time params (e.g. year/month/(day)) are given,
                 # no default date is required
-                ecwf_temp = ecmwf_temporal_to_eodag(keywords)
-                if ecwf_temp[0] is None:
+                start, end = ecmwf_temporal_to_eodag(keywords)
+                if start is None:
                     keywords[START] = self.get_product_type_cfg_value(
                         "missionStartDate", DEFAULT_MISSION_START_DATE
                     )
@@ -634,8 +638,8 @@ class ECMWFSearch(PostJsonSearch):
                         )
                     )
                 else:
-                    keywords[START] = ecwf_temp[0]
-                    keywords[END] = ecwf_temp[1]
+                    keywords[START] = start
+                    keywords[END] = end
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
