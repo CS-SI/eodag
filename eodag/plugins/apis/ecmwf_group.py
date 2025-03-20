@@ -27,6 +27,7 @@ from eodag.api.product._product import EOProduct
 from eodag.api.product.metadata_mapping import DEFAULT_GEOMETRY, STAGING_STATUS
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.apis.base import Api
+from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.header import HTTPHeaderAuth
 from eodag.plugins.authentication.openid_connect import OIDCAuthorizationCodeFlowAuth
 from eodag.plugins.authentication.token import TokenAuth
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.apis.ecmwf_group")
 
 
-class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload):
+class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, Authentication):
     """ECMWF Group API plugin"""
 
     def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:

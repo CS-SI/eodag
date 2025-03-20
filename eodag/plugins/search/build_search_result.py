@@ -1139,7 +1139,7 @@ class ECMWFSearch(PostJsonSearch):
 
         else:
             # use all available query_params to parse properties
-            result: dict[str, Any] = {
+            result_data: dict[str, Any] = {
                 **results.product_type_def_params,
                 **sorted_unpaginated_qp,
                 **{"qs": sorted_unpaginated_qp},
@@ -1147,16 +1147,19 @@ class ECMWFSearch(PostJsonSearch):
 
             # update result with product_type_def_params and search args if not None (and not auth)
             kwargs.pop("auth", None)
-            result.update(results.product_type_def_params)
-            result = {**result, **{k: v for k, v in kwargs.items() if v is not None}}
+            result_data.update(results.product_type_def_params)
+            result_data = {
+                **result_data,
+                **{k: v for k, v in kwargs.items() if v is not None},
+            }
 
             properties = properties_from_json(
-                result,
+                result_data,
                 self.config.metadata_mapping,
                 discovery_config=getattr(self.config, "discover_metadata", {}),
             )
 
-            query_hash = hashlib.sha1(str(result).encode("UTF-8")).hexdigest()
+            query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
             properties["title"] = properties["id"] = (
                 (product_type or kwargs["dataset"]).upper() + "_ORDERABLE_" + query_hash
