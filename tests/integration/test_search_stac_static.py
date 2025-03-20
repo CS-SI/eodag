@@ -276,9 +276,15 @@ class TestSearchStacStatic(unittest.TestCase):
             self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_by_date(self, mock_fetch_product_types_list):
+    def test_search_stac_static_by_date(
+        self, mock_fetch_product_types_list, mock_auth_session_request
+    ):
         """Use StaticStacSearch plugin to search by date"""
         filtered_sr = self.dag.search(start="2018-01-01", end="2019-01-01", count=True)
         self.assertEqual(len(filtered_sr), self.child_cat_len)
@@ -347,9 +353,15 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(len(filtered_items), 1)
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_by_geom(self, mock_fetch_product_types_list):
+    def test_search_stac_static_by_geom(
+        self, mock_fetch_product_types_list, mock_auth_session_request
+    ):
         """Use StaticStacSearch plugin to search by geometry"""
         search_result = self.dag.search(geom=self.extent_big, count=True)
         self.assertEqual(len(search_result), 3)
@@ -388,18 +400,30 @@ class TestSearchStacStatic(unittest.TestCase):
             self.assertEqual(len(filtered_items), 0)
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_by_property(self, mock_fetch_product_types_list):
+    def test_search_stac_static_by_property(
+        self, mock_fetch_product_types_list, mock_auth_session_request
+    ):
         """Use StaticStacSearch plugin to search by property"""
         search_result = self.dag.search(orbitNumber=110, count=True)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
-    def test_search_stac_static_by_cloudcover(self, mock_fetch_product_types_list):
+    def test_search_stac_static_by_cloudcover(
+        self, mock_fetch_product_types_list, mock_auth_session_request
+    ):
         """Use StaticStacSearch plugin to search by cloud cover"""
         search_result = self.dag.search(cloudCover=10, count=True)
         self.assertEqual(len(search_result), 1)
