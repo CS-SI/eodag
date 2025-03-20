@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
 import geojson
+import orjson
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
 from dateutil.utils import today
@@ -39,6 +40,7 @@ from typing_extensions import get_args
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
+    NOT_AVAILABLE,
     OFFLINE_STATUS,
     format_metadata,
     properties_from_json,
@@ -1253,3 +1255,94 @@ class MeteoblueSearch(ECMWFSearch):
         :return: formatted query params and encode query string
         """
         return QueryStringSearch.build_query_string(self, product_type, query_dict)
+
+    def normalize_results(self, results, **kwargs):
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :param kwargs: Search arguments
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        """
+
+        product_type = kwargs.get("productType")
+
+        result = results[0]
+
+        # datacube query string got from previous search
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            sorted_unpaginated_query_params = geojson.loads(qs)
+        else:
+            next_page_query_obj = orjson.loads(
+                self.config.pagination["next_page_query_obj"].format()
+            )
+            unpaginated_query_params = {
+                k: v
+                for k, v in results.query_params.items()
+                if (k, v) not in next_page_query_obj.items()
+            }
+            # query hash, will be used to build a product id
+            sorted_unpaginated_query_params = dict_items_recursive_sort(
+                unpaginated_query_params
+            )
+
+        # use all available query_params to parse properties
+        result = dict(
+            result,
+            **sorted_unpaginated_query_params,
+            qs=sorted_unpaginated_query_params,
+        )
+
+        qs = geojson.dumps(sorted_unpaginated_query_params)
+
+        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+
+        # update result with product_type_def_params and search args if not None (and not auth)
+        kwargs.pop("auth", None)
+        result.update(results.product_type_def_params)
+        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+
+        # parse properties
+        parsed_properties = properties_from_json(
+            result,
+            self.config.metadata_mapping,
+            discovery_config=getattr(self.config, "discover_metadata", {}),
+        )
+
+        properties = {
+            # use product_type_config as default properties
+            **getattr(self.config, "product_type_config", {}),
+            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
+        }
+
+        def slugify(date_str: str) -> str:
+            return date_str.split("T")[0].replace("-", "")
+
+        # build product id
+        product_id = (product_type or self.provider).upper()
+
+        start = properties.get(START, NOT_AVAILABLE)
+        end = properties.get(END, NOT_AVAILABLE)
+
+        if start != NOT_AVAILABLE:
+            product_id += f"_{slugify(start)}"
+            if end != NOT_AVAILABLE:
+                product_id += f"_{slugify(end)}"
+
+        product_id += f"_{query_hash}"
+
+        properties["id"] = properties["title"] = product_id
+
+        # used by server mode to generate downloadlink href
+        properties["_dc_qs"] = quote_plus(qs)
+
+        product = EOProduct(
+            provider=self.provider,
+            productType=product_type,
+            properties=properties,
+        )
+
+        return [
+            product,
+        ]
