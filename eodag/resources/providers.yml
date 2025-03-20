@@ -5938,6 +5938,7 @@
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
+    ignore_assets: True
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403

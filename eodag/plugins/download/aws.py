@@ -292,10 +292,10 @@ class AwsDownload(Download):
         asset_filter = kwargs.get("asset", None)
         if asset_filter:
             build_safe = False
+            ignore_assets = False
         else:
             build_safe = product_conf.get("build_safe", False)
-
-        ignore_assets = getattr(self.config, "ignore_assets", False)
+            ignore_assets = getattr(self.config, "ignore_assets", False)
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
