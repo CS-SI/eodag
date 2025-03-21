@@ -86,6 +86,10 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
         side_effect=RequestException,
@@ -98,7 +102,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     def test_core_search_errors_stacsearch(
-        self, mock_query, mock_fetch_product_types_list, mock_post
+        self,
+        mock_query,
+        mock_fetch_product_types_list,
+        mock_post,
+        mock_auth_session_request,
     ):
         mock_query.return_value = ([], 0)
         # StacSearch / earth_search
@@ -107,6 +115,10 @@ class TestCoreSearch(unittest.TestCase):
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
@@ -120,7 +132,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     def test_core_search_errors_postjson(
-        self, mock_request, mock_fetch_product_types_list, mock_post
+        self,
+        mock_request,
+        mock_fetch_product_types_list,
+        mock_post,
+        mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # PostJsonSearch / aws_eos
@@ -160,6 +176,10 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.apis.usgs.api.scene_search", autospec=True, side_effect=USGSError
     )
     @mock.patch("eodag.plugins.apis.usgs.api.login", autospec=True)
@@ -167,7 +187,11 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_core_search_errors_usgs(
-        self, mock_fetch_product_types_list, mock_login, mock_scene_search
+        self,
+        mock_fetch_product_types_list,
+        mock_login,
+        mock_scene_search,
+        mock_auth_session_request,
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
@@ -180,6 +204,10 @@ class TestCoreSearch(unittest.TestCase):
             RequestError, next, self.dag.search_iter_page(productType="foo")
         )
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
         autospec=True,
@@ -197,7 +225,12 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_core_search_errors_buildpost(
-        self, mock_fetch_product_types_list, mock_authenticate, mock_post, mock_request
+        self,
+        mock_fetch_product_types_list,
+        mock_authenticate,
+        mock_post,
+        mock_request,
+        mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # MeteoblueSearch / meteoblue

@@ -55,6 +55,7 @@ from eodag.config import (
     provider_config_init,
     share_credentials,
 )
+from eodag.plugins.apis.base import Api
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -96,7 +97,6 @@ if TYPE_CHECKING:
     from whoosh.index import Index
 
     from eodag.api.product import EOProduct
-    from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
@@ -823,7 +823,7 @@ class EODataAccessGateway:
                     if auth := self._plugins_manager.get_auth(
                         search_plugin.provider,
                         getattr(search_plugin.config, "api_endpoint", None),
-                        search_plugin.config,
+                        search_plugin,
                     ):
                         kwargs["auth"] = auth
                     else:
@@ -1599,6 +1599,7 @@ class EODataAccessGateway:
                 if kwargs.get("raise_errors"):
                     raise
                 logger.warning(e)
+                results.errors.append((plugin.provider, e))
                 continue
 
             # try using crunch to get unique result
@@ -1622,7 +1623,7 @@ class EODataAccessGateway:
                     "Several products found for this id (%s). You may try searching using more selective criteria.",
                     results,
                 )
-        return SearchResult([], 0)
+        return SearchResult([], 0, results.errors)
 
     def _fetch_external_product_type(self, provider: str, product_type: str):
         plugins = self._plugins_manager.get_search_plugins(provider=provider)
@@ -1639,7 +1640,7 @@ class EODataAccessGateway:
             if auth := self._plugins_manager.get_auth(
                 plugin.provider,
                 getattr(plugin.config, "api_endpoint", None),
-                plugin.config,
+                plugin,
             ):
                 kwargs["auth"] = auth
 
@@ -1845,7 +1846,7 @@ class EODataAccessGateway:
                 if auth := self._plugins_manager.get_auth(
                     search_plugin.provider,
                     getattr(search_plugin.config, "api_endpoint", None),
-                    search_plugin.config,
+                    search_plugin,
                 ):
                     prep.auth = auth
 
@@ -1922,7 +1923,7 @@ class EODataAccessGateway:
                             self._plugins_manager.get_auth_plugins(
                                 search_plugin.provider,
                                 matching_url=matching_url,
-                                matching_conf=download_plugin.config,
+                                match_plugin=download_plugin,
                             )
                         )
                     except StopIteration:

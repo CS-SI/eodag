@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
@@ -39,6 +39,7 @@ from typing_extensions import get_args
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
     format_metadata,
@@ -284,6 +285,124 @@ def _update_properties_from_element(
 def ecmwf_format(v: str) -> str:
     """Add ECMWF prefix to value v if v is a ECMWF keyword."""
     return ECMWF_PREFIX + v if v in ALLOWED_KEYWORDS else v
+
+
+def get_min_max(
+    value: Optional[Union[str, list[str]]] = None,
+) -> tuple[Optional[str], Optional[str]]:
+    """Returns the min and max from a list of strings or the same string if a single string is given."""
+    if isinstance(value, list):
+        sorted_values = sorted(value)
+        return sorted_values[0], sorted_values[-1]
+    return value, value
+
+
+def append_time(input_date: date, time: Optional[str]) -> datetime:
+    """
+    Parses a time string in format HHMM and appends it to a date.
+
+    if the time string is in format HH:MM we convert it to HHMM
+    """
+    if not time:
+        time = "0000"
+    time = time.replace(":", "")
+    if time == "2400":
+        time = "0000"
+    dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
+    dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def parse_date(
+    date_str: str, time: Optional[Union[str, list[str]]]
+) -> tuple[datetime, datetime]:
+    """Parses a date string in format YYYY-MM-DD or YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD/to/YYYY-MM-DD."""
+    if "to" in date_str:
+        start_date_str, end_date_str = date_str.split("/to/")
+    elif "/" in date_str:
+        dates = date_str.split("/")
+        start_date_str = dates[0]
+        end_date_str = dates[-1]
+    else:
+        start_date_str = end_date_str = date_str
+
+    start_date = datetime.fromisoformat(start_date_str.rstrip("Z"))
+    end_date = datetime.fromisoformat(end_date_str.rstrip("Z"))
+
+    if time:
+        start_t, end_t = get_min_max(time)
+        start_date = append_time(start_date.date(), start_t)
+        end_date = append_time(end_date.date(), end_t)
+
+    return start_date, end_date
+
+
+def parse_year_month_day(
+    year: Union[str, list[str]],
+    month: Optional[Union[str, list[str]]] = None,
+    day: Optional[Union[str, list[str]]] = None,
+    time: Optional[Union[str, list[str]]] = None,
+) -> tuple[datetime, datetime]:
+    """Extracts and returns the year, month, day, and time from the parameters."""
+
+    def build_date(year, month=None, day=None, time=None) -> datetime:
+        """Datetime from default_date with updated year, month, day and time."""
+        updated_date = datetime(int(year), 1, 1).replace(
+            month=int(month) if month is not None else 1,
+            day=int(day) if day is not None else 1,
+        )
+        if time is not None:
+            updated_date = append_time(updated_date.date(), time)
+        return updated_date
+
+    start_y, end_y = get_min_max(year)
+    start_m, end_m = get_min_max(month)
+    start_d, end_d = get_min_max(day)
+    start_t, end_t = get_min_max(time)
+
+    start_date = build_date(start_y, start_m, start_d, start_t)
+    end_date = build_date(end_y, end_m, end_d, end_t)
+
+    return start_date, end_date
+
+
+def ecmwf_temporal_to_eodag(
+    params: dict[str, Any]
+) -> tuple[Optional[str], Optional[str]]:
+    """Converts ECMWF temporal parameters to eodag temporal parameters
+
+    ECMWF temporal parameters:
+    - year or hyear: Union[str, list[str]]
+    - month or hmonth: Union[str, list[str]]
+    - day or hday: Union[str, list[str]]
+    - time: string in format 0200, 0800, 1400, 2000, etc.
+    - date: string in format YYYY-MM-DD or YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD/to/YYYY-MM-DD
+
+    The result is a tuple of two strings:
+    - start: string in format YYYY-MM-DDTHH:MM:SSZ
+    - end: string in format YYYY-MM-DDTHH:MM:SSZ
+
+    Args:
+        params (dict): ECMWF temporal parameters
+
+    """
+    start = end = None
+
+    if date := params.get("date"):
+        start, end = parse_date(date, params.get("time"))
+
+    elif year := params.get("year") or params.get("hyear"):
+        year = params.get("year") or params.get("hyear")
+        month = params.get("month") or params.get("hmonth")
+        day = params.get("day") or params.get("hday")
+        time = params.get("time")
+
+        start, end = parse_year_month_day(year, month, day, time)
+
+    if start and end:
+        return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        return None, None
 
 
 class ECMWFSearch(PostJsonSearch):
@@ -998,92 +1117,67 @@ class ECMWFSearch(PostJsonSearch):
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
             qs = unquote_plus(unquote_plus(_dc_qs))
-            sorted_unpaginated_query_params = geojson.loads(qs)
+            sorted_unpaginated_qp = geojson.loads(qs)
         else:
-            # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(results, "query_params_unpaginated"):
-                unpaginated_query_params = results.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
-                next_page_query_obj = orjson.loads(
-                    self.config.pagination["next_page_query_obj"].format()
-                )
-                unpaginated_query_params = {
-                    k: v
-                    for k, v in results.query_params.items()
-                    if (k, v) not in next_page_query_obj.items()
-                }
-            else:
-                unpaginated_query_params = self.query_params
-            # query hash, will be used to build a product id
-            sorted_unpaginated_query_params = dict_items_recursive_sort(
-                unpaginated_query_params
-            )
-
-        # use all available query_params to parse properties
-        result = dict(
-            result,
-            **sorted_unpaginated_query_params,
-            qs=sorted_unpaginated_query_params,
-        )
+            sorted_unpaginated_qp = dict_items_recursive_sort(results.query_params)
 
         # remove unwanted query params
         for param in getattr(self.config, "remove_from_query", []):
-            sorted_unpaginated_query_params.pop(param, None)
+            sorted_unpaginated_qp.pop(param, None)
 
-        qs = geojson.dumps(sorted_unpaginated_query_params)
+        if result:
+            properties = result
+            properties.update(result.pop("request_params", None) or {})
 
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+            properties = {k: v for k, v in properties.items() if not k.startswith("__")}
 
-        # update result with product_type_def_params and search args if not None (and not auth)
-        kwargs.pop("auth", None)
-        result.update(results.product_type_def_params)
-        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+            properties["geometry"] = properties.get("area") or DEFAULT_GEOMETRY
 
-        # parse properties
-        parsed_properties = properties_from_json(
-            result,
-            self.config.metadata_mapping,
-            discovery_config=getattr(self.config, "discover_metadata", {}),
-        )
+            start, end = ecmwf_temporal_to_eodag(properties)
+            properties["startTimeFromAscendingNode"] = start
+            properties["completionTimeFromAscendingNode"] = end
 
-        properties = {
-            # use product_type_config as default properties
-            **getattr(self.config, "product_type_config", {}),
-            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
-        }
+        else:
+            # use all available query_params to parse properties
+            result_data: dict[str, Any] = {
+                **results.product_type_def_params,
+                **sorted_unpaginated_qp,
+                **{"qs": sorted_unpaginated_qp},
+            }
 
-        def slugify(date_str: str) -> str:
-            return date_str.split("T")[0].replace("-", "")
+            # update result with product_type_def_params and search args if not None (and not auth)
+            kwargs.pop("auth", None)
+            result_data.update(results.product_type_def_params)
+            result_data = {
+                **result_data,
+                **{k: v for k, v in kwargs.items() if v is not None},
+            }
 
-        # build product id
-        product_id = (product_type or kwargs.get("dataset") or self.provider).upper()
+            properties = properties_from_json(
+                result_data,
+                self.config.metadata_mapping,
+                discovery_config=getattr(self.config, "discover_metadata", {}),
+            )
 
-        start = properties.get(START, NOT_AVAILABLE)
-        end = properties.get(END, NOT_AVAILABLE)
+            query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
-        if start != NOT_AVAILABLE:
-            product_id += f"_{slugify(start)}"
-            if end != NOT_AVAILABLE:
-                product_id += f"_{slugify(end)}"
+            properties["title"] = properties["id"] = (
+                (product_type or kwargs["dataset"]).upper() + "_ORDERABLE_" + query_hash
+            )
 
-        product_id += f"_{query_hash}"
-
-        properties["id"] = properties["title"] = product_id
+        qs = geojson.dumps(sorted_unpaginated_qp)
 
         # used by server mode to generate downloadlink href
+        # TODO: to remove once the legacy server is removed
         properties["_dc_qs"] = quote_plus(qs)
 
         product = EOProduct(
             provider=self.provider,
             productType=product_type,
-            properties=properties,
+            properties={ecmwf_format(k): v for k, v in properties.items()},
         )
 
-        return [
-            product,
-        ]
+        return [product]
 
     def count_hits(
         self, count_url: Optional[str] = None, result_type: Optional[str] = None
@@ -1165,35 +1259,7 @@ class MeteoblueSearch(ECMWFSearch):
         """
         return QueryStringSearch.build_query_string(self, product_type, query_dict)
 
-
-class WekeoECMWFSearch(ECMWFSearch):
-    """
-    WekeoECMWFSearch search plugin.
-
-    This plugin, which inherits from :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`,
-    performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
-    object. In contrast to ECMWFSearch or MeteoblueSearch, the products are only build with information
-    returned by the provider.
-
-    The available configuration parameters are inherited from parent classes, with some a particularity
-    for pagination for this plugin.
-
-    :param provider: An eodag providers configuration dictionary
-    :param config: Search plugin configuration:
-
-        * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
-          (**mandatory**): The configuration of how the pagination is done on the provider. For
-          this plugin it has the node:
-
-          * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
-            additional parameters needed to perform search. These parameters won't be included in
-            the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
-            will be passed to a :meth:`str.format` method before being loaded as json.
-    """
-
-    def normalize_results(
-        self, results: RawSearchResult, **kwargs: Any
-    ) -> list[EOProduct]:
+    def normalize_results(self, results, **kwargs):
         """Build :class:`~eodag.api.product._product.EOProduct` from provider result
 
         :param results: Raw provider result as single dict in list
@@ -1201,29 +1267,85 @@ class WekeoECMWFSearch(ECMWFSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        # formating of orderLink requires access to the productType value.
-        results.data = [
-            {**result, **results.product_type_def_params} for result in results
+        product_type = kwargs.get("productType")
+
+        result = results[0]
+
+        # datacube query string got from previous search
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            sorted_unpaginated_query_params = geojson.loads(qs)
+        else:
+            next_page_query_obj = orjson.loads(
+                self.config.pagination["next_page_query_obj"].format()
+            )
+            unpaginated_query_params = {
+                k: v
+                for k, v in results.query_params.items()
+                if (k, v) not in next_page_query_obj.items()
+            }
+            # query hash, will be used to build a product id
+            sorted_unpaginated_query_params = dict_items_recursive_sort(
+                unpaginated_query_params
+            )
+
+        # use all available query_params to parse properties
+        result = dict(
+            result,
+            **sorted_unpaginated_query_params,
+            qs=sorted_unpaginated_query_params,
+        )
+
+        qs = geojson.dumps(sorted_unpaginated_query_params)
+
+        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+
+        # update result with product_type_def_params and search args if not None (and not auth)
+        kwargs.pop("auth", None)
+        result.update(results.product_type_def_params)
+        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+
+        # parse properties
+        parsed_properties = properties_from_json(
+            result,
+            self.config.metadata_mapping,
+            discovery_config=getattr(self.config, "discover_metadata", {}),
+        )
+
+        properties = {
+            # use product_type_config as default properties
+            **getattr(self.config, "product_type_config", {}),
+            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
+        }
+
+        def slugify(date_str: str) -> str:
+            return date_str.split("T")[0].replace("-", "")
+
+        # build product id
+        product_id = (product_type or self.provider).upper()
+
+        start = properties.get(START, NOT_AVAILABLE)
+        end = properties.get(END, NOT_AVAILABLE)
+
+        if start != NOT_AVAILABLE:
+            product_id += f"_{slugify(start)}"
+            if end != NOT_AVAILABLE:
+                product_id += f"_{slugify(end)}"
+
+        product_id += f"_{query_hash}"
+
+        properties["id"] = properties["title"] = product_id
+
+        # used by server mode to generate downloadlink href
+        properties["_dc_qs"] = quote_plus(qs)
+
+        product = EOProduct(
+            provider=self.provider,
+            productType=product_type,
+            properties=properties,
+        )
+
+        return [
+            product,
         ]
-
-        normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
-
-        if not normalized:
-            return normalized
-
-        query_params_encoded = quote_plus(orjson.dumps(results.query_params))
-        for product in normalized:
-            properties = {**product.properties, **results.query_params}
-            properties["_dc_qs"] = query_params_encoded
-            product.properties = {ecmwf_format(k): v for k, v in properties.items()}
-
-        return normalized
-
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
-        """Should perform the actual search request.
-
-        :param args: arguments to be used in the search
-        :param kwargs: keyword arguments to be used in the search
-        :return: list containing the results from the provider in json format
-        """
-        return QueryStringSearch.do_search(self, *args, **kwargs)
