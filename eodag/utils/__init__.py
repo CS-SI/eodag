@@ -1196,7 +1196,7 @@ class MockResponse:
         self,
         json_data: Any = None,
         status_code: int = 200,
-        headers: dict[str, Any] = None,
+        headers: Optional[dict[str, Any]] = None,
     ) -> None:
         self.json_data = json_data
         self.status_code = status_code
