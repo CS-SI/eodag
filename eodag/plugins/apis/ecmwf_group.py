@@ -101,7 +101,7 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, Authentication):
                 isinstance(e, DownloadError) or isinstance(e, ValidationError)
             ) and "order status could not be checked" in e.args[0]:
                 raise ValidationError(
-                    f"Item {id} does not exist with {self.provider}."
+                    f"Item {product_id} does not exist with {self.provider}."
                 ) from e
             raise ValidationError(e.args[0]) from e
 
