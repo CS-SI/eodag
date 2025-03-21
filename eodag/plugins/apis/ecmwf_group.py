@@ -47,7 +47,9 @@ class EcmwfGroupApi(Api, ECMWFSearch, HTTPDownload, Authentication):
 
     def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         """Should perform the actual search request."""
-        if "id" in kwargs:
+        if "id" in kwargs and "ORDERABLE" not in kwargs["id"]:
+            # id is order id (from provider, not artificially created by eodag)
+            # -> create product from metadata of status request
             return self._check_id(kwargs["id"])
         return ECMWFSearch.do_search(*args, **kwargs)
 
@@ -157,7 +159,8 @@ class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
-        if "id" in kwargs:
+        if "id" in kwargs and "-" not in kwargs["id"]:
+            # id is order id (only letters and numbers) -> create product from metadata of status request
             return self._check_id(kwargs["id"])
         return QueryStringSearch.do_search(self, *args, **kwargs)
 
