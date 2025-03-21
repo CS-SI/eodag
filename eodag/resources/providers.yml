@@ -4456,9 +4456,9 @@
     order_on_response:
       metadata_mapping:
         orderId: '{$.headers.Location#slice_str(-36,,1)}'
-        # _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
-        # combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
-        orderStatusLink: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{orderId}"
+        _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
+        combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
+        orderStatusLink: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
     order_status:
       request:
         method: GET
