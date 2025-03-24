@@ -201,11 +201,6 @@ class DedtEcmwfGroupApi(EcmwfGroupApi, OIDCAuthorizationCodeFlowAuth):
 
         base_order_status_link = "/".join(order_status_link.split("/")[:-1])
         product.properties["orderStatusLink"] = f"{base_order_status_link}/{product_id}"
-        formatted_search_link = search_link.format(orderId=product_id)
-        search_link_dict = (
-            {"searchLink": formatted_search_link} if formatted_search_link else {}
-        )
-        product.properties.update(search_link_dict)
 
         auth = product.downloader.authenticate() if product.downloader else None
 

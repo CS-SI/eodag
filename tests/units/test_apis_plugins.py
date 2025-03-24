@@ -29,6 +29,7 @@ from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
 from eodag.plugins.authentication.header import HeaderAuth
+from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse, deepcopy
 from tests.context import (
     DEFAULT_DOWNLOAD_WAIT,
@@ -849,3 +850,44 @@ class TestApisPluginEcmwfGroupApi(BaseApisPluginTest):
         for k, v in status_response["metadata"]["request"]["ids"].items():
             self.assertIn(k, req_params)
             self.assertEqual(v, req_params[k])
+
+
+class TestApisPluginDedtEcmwfGroupApi(BaseApisPluginTest):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate"
+    )
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_plugins_apis_cop_ecwmf_group_search_by_id(
+        self, mock_request, mock_auth, mock_auth_config_request
+    ):
+        """search by id should return properties based on status response"""
+        api_plugin = self.get_search_plugin(provider="dedt_lumi")
+        product_id = "123456"
+        auth = CodeAuthorizedAuth(token="123", where="header")
+        mock_auth.return_value = auth
+        status_response = {
+            "contentLength": 3136349,
+            "contentType": "application/x-grib",
+            "location": "https://download-polytope.lumi.apps.dte.destination-earth.eu/default/d20e465e.grib",
+        }
+        mock_res_status = MockResponse(
+            json_data=status_response, status_code=200, headers={}
+        )
+        mock_request.return_value = mock_res_status
+        result = api_plugin.do_search(id=product_id)
+        mock_request.assert_called_with(
+            method="GET",
+            url="https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/123456",
+            headers=USER_AGENT,
+            auth=auth,
+            timeout=5,
+            allow_redirects=False,
+            json=None,
+        )
+        self.assertEqual(1, len(result))
+        self.assertEqual("123456", result[0]["id"])
+        self.assertEqual("123456", result[0]["title"])
