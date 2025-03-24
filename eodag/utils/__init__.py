@@ -138,7 +138,7 @@ DEFAULT_ITEMS_PER_PAGE = 20
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 # default product-types start date
-DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
 
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
