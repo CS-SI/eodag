@@ -1554,10 +1554,10 @@
     auth_endpoint: https://api.ecmwf.int/v1
     metadata_mapping:
       productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/to/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
@@ -1645,10 +1645,10 @@
       form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
       productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
@@ -4433,10 +4433,10 @@
       product_type_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
     metadata_mapping:
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
-        - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
