@@ -131,7 +131,8 @@ class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        if kwargs.get("id"):
+        if kwargs.get("id") and "-" not in kwargs["id"]:
+            # id is order id (only letters and numbers) -> use parent normalize results
             return EcmwfGroupApi.normalize_results(self, results, **kwargs)
 
         # formating of orderLink requires access to the productType value.
