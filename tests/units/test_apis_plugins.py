@@ -88,8 +88,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self.provider = "ecmwf"
         self.api_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
-            "startTimeFromAscendingNode": "2022-01-01",
-            "completionTimeFromAscendingNode": "2022-01-02",
+            "startTimeFromAscendingNode": "2022-01-01T00:00:00.000Z",
+            "completionTimeFromAscendingNode": "2022-01-02T00:00:00.000Z",
         }
         self.product_type = "TIGGE_CF_SFC"
         self.product_type_params = {
@@ -130,10 +130,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+            eoproduct.properties["startTimeFromAscendingNode"],
+            "2020-01-01T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-01-02T00:00:00.000Z",
         )
 
         # missing start & stop
@@ -145,9 +147,15 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             eoproduct.properties["startTimeFromAscendingNode"],
             DEFAULT_MISSION_START_DATE,
         )
+        current_time = (
+            datetime.now(timezone.utc)
+            .replace(microsecond=0)
+            .isoformat()
+            .replace("+00:00", ".000Z")
+        )
         self.assertIn(
             eoproduct.properties["completionTimeFromAscendingNode"],
-            datetime.now(timezone.utc).isoformat(),
+            current_time,
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -161,10 +169,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
+            eoproduct.properties["startTimeFromAscendingNode"],
+            "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2015-10-21T00:00:00.000Z",
         )
 
     def test_plugins_apis_ecmwf_query_without_producttype(self):
