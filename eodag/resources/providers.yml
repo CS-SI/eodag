@@ -1640,7 +1640,6 @@
         method: GET
       metadata_mapping:
         status: $.json.status
-        orderStatus: $.json.status
         order:date: $.json.created
         creationDate: $.json.created
         publicationDate: $.json.finished
@@ -1871,7 +1870,6 @@
         method: GET
       metadata_mapping:
         status: $.json.status
-        orderStatus: $.json.status
         order:date: $.json.created
         creationDate: $.json.created
         publicationDate: $.json.finished
@@ -3559,7 +3557,6 @@
         method: GET
       metadata_mapping:
         status: $.json.features[0].status
-        orderStatus: $.json.features[0].status
         order:date: $.json.features[0].started_at
         creationDate: $.json.features[0].started_at
         message: $.json.features[0].message
@@ -6023,7 +6020,6 @@
         method: GET
       metadata_mapping:
         status: $.json.status
-        orderStatus: $.json.status
         order:date: $.json.created
         creationDate: $.json.created
         publicationDate: $.json.finished

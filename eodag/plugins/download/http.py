@@ -434,6 +434,8 @@ class HTTPDownload(Download):
                 {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
             )
 
+            product.properties["orderStatus"] = status_dict.get("status")
+
             status_message = status_dict.get("message")
 
             # handle status error
