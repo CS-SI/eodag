@@ -3503,7 +3503,7 @@ SATELLITE_CARBON_DIOXIDE:
   sensorType: ATMOSPHERIC
   license: other
   title: Carbon dioxide data from 2002 to present derived from satellite observations
-  missionStartDate: "2003-01-10T00:00:00Z"
+  missionStartDate: "2002-10-01T00:00:00Z"
   missionEndDate: "2022-12-31T23:59:59"
 
 SATELLITE_FIRE_BURNED_AREA:
@@ -3575,7 +3575,7 @@ SATELLITE_METHANE:
   sensorType: ATMOSPHERIC
   license: other
   title: Methane data from 2003 to present derived from satellite observations
-  missionStartDate: "2003-01-06T00:00:00Z"
+  missionStartDate: "2002-10-01T00:00:00Z"
 
 SATELLITE_SEA_ICE_EDGE_TYPE:
   abstract: |

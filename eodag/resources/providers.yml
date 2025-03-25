@@ -1969,8 +1969,8 @@
       dataset: satellite-carbon-dioxide
       processing_level: level_2
       variable: xco2
-      sensor_and_algorithm: merged_emma
-      version: '4_5'
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
@@ -1986,8 +1986,8 @@
       dataset: satellite-methane
       processing_level: level_2
       variable: xch4
-      sensor_and_algorithm: merged_emma
-      version: '4_5'
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
@@ -3543,9 +3543,9 @@
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
       processing_level: level_2
-      version: '4_5'
+      version: '4_0'
       variable: xco2
-      sensor_and_algorithm: merged_emma
+      sensor_and_algorithm: sciamachy_wfmd
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
