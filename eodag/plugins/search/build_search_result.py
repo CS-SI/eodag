@@ -23,6 +23,7 @@ import logging
 import re
 from collections import OrderedDict
 from datetime import date, datetime, timedelta, timezone
+from types import MethodType
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
@@ -42,6 +43,7 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
+    STAGING_STATUS,
     format_metadata,
     properties_from_json,
 )
@@ -58,7 +60,7 @@ from eodag.utils import (
     get_geometry_from_various,
     is_range_in_range,
 )
-from eodag.utils.exceptions import ValidationError
+from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
@@ -1173,9 +1175,14 @@ class ECMWFSearch(PostJsonSearch):
 
         product = EOProduct(
             provider=self.provider,
-            productType=product_type,
             properties={ecmwf_format(k): v for k, v in properties.items()},
+            **kwargs,
         )
+
+        # backup original register_downloader to register_downloader_only
+        product.register_downloader_only = product.register_downloader
+        # patched register_downloader that will also update properties
+        product.register_downloader = MethodType(patched_register_downloader, product)
 
         return [product]
 
@@ -1189,6 +1196,69 @@ class ECMWFSearch(PostJsonSearch):
         :return: always 1
         """
         return 1
+
+
+def _check_id(product: EOProduct) -> EOProduct:
+    """Check if the id is the one of an existing job.
+
+    If the job exists, poll it, otherwise, raise an error.
+
+    :param product: The product to check the id for
+    :raises: :class:`~eodag.utils.exceptions.ValidationError`
+    """
+    if not (product_id := product.search_kwargs.get("id")):
+        return product
+
+    # update "orderStatusLink" and potential "search_link" properties to match the id from the search request
+    order_status_link = product.downloader.config.order_on_response["metadata_mapping"][
+        "orderStatusLink"
+    ]
+    search_link = product.downloader.config.order_on_response["metadata_mapping"].get(
+        "searchLink", ""
+    )
+    if not isinstance(order_status_link, str) or not isinstance(search_link, str):
+        return [{}]
+    product.properties["orderStatusLink"] = order_status_link.format(orderId=product_id)
+    formatted_search_link = search_link.format(orderId=product_id)
+    search_link_dict = (
+        {"searchLink": formatted_search_link} if formatted_search_link else {}
+    )
+    product.properties.update(search_link_dict)
+
+    auth = product.downloader_auth.authenticate() if product.downloader_auth else None
+
+    # try to poll the job corresponding to the given id
+    try:
+        product.downloader._order_status(product=product, auth=auth)  # type: ignore
+    # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
+    except NotAvailableError:
+        product.properties["storageStatus"] = STAGING_STATUS
+    except Exception as e:
+        if (
+            isinstance(e, DownloadError) or isinstance(e, ValidationError)
+        ) and "order status could not be checked" in e.args[0]:
+            raise ValidationError(
+                f"Item {product_id} does not exist with {product.provider}."
+            ) from e
+        raise ValidationError(e.args[0]) from e
+
+    return product
+
+
+def patched_register_downloader(self, downloader, authenticator):
+    """Register product donwloader and update properties if searched by id.
+
+    :param self: product to which information should be added
+    :param downloader: The download method that it can use
+                    :class:`~eodag.plugins.download.base.Download` or
+                    :class:`~eodag.plugins.api.base.Api`
+    :param authenticator: The authentication method needed to perform the download
+                        :class:`~eodag.plugins.authentication.base.Authentication`
+    """
+    # register downloader
+    self.register_downloader_only(downloader, authenticator)
+    # and also update properties
+    _check_id(self)
 
 
 class MeteoblueSearch(ECMWFSearch):
