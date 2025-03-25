@@ -55,7 +55,6 @@ from eodag.config import (
     provider_config_init,
     share_credentials,
 )
-from eodag.plugins.apis.base import Api
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -97,6 +96,7 @@ if TYPE_CHECKING:
     from whoosh.index import Index
 
     from eodag.api.product import EOProduct
+    from eodag.plugins.apis.base import Api
     from eodag.plugins.crunch.base import Crunch
     from eodag.plugins.search.base import Search
     from eodag.types import ProviderSortables
@@ -823,7 +823,7 @@ class EODataAccessGateway:
                     if auth := self._plugins_manager.get_auth(
                         search_plugin.provider,
                         getattr(search_plugin.config, "api_endpoint", None),
-                        search_plugin,
+                        search_plugin.config,
                     ):
                         kwargs["auth"] = auth
                     else:
@@ -1640,7 +1640,7 @@ class EODataAccessGateway:
             if auth := self._plugins_manager.get_auth(
                 plugin.provider,
                 getattr(plugin.config, "api_endpoint", None),
-                plugin,
+                plugin.config,
             ):
                 kwargs["auth"] = auth
 
@@ -1846,7 +1846,7 @@ class EODataAccessGateway:
                 if auth := self._plugins_manager.get_auth(
                     search_plugin.provider,
                     getattr(search_plugin.config, "api_endpoint", None),
-                    search_plugin,
+                    search_plugin.config,
                 ):
                     prep.auth = auth
 
@@ -1923,7 +1923,7 @@ class EODataAccessGateway:
                             self._plugins_manager.get_auth_plugins(
                                 search_plugin.provider,
                                 matching_url=matching_url,
-                                match_plugin=download_plugin,
+                                matching_conf=download_plugin.config,
                             )
                         )
                     except StopIteration:
