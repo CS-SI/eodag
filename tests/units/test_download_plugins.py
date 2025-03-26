@@ -99,8 +99,13 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def get_download_plugin(self, product: EOProduct):
         return self.plugins_manager.get_download_plugin(product)
 
-    def get_auth_plugin(self, associated_plugin, product):
-        return self.plugins_manager.get_auth_plugin(associated_plugin, product)
+    def get_auth_plugin(self, associated_plugin, product, not_none=True):
+        plugin = self.plugins_manager.get_auth_plugin(associated_plugin, product)
+        if not_none:
+            assert (
+                plugin is not None
+            ), f"Cannot get auth plugin for {associated_plugin} and {product}"
+        return plugin
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
@@ -2127,8 +2132,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.properties["storageStatus"] = ONLINE_STATUS
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(plugin, self.product)
-        self.product.register_downloader(plugin, auth)
+        self.product.register_downloader(plugin, None)
 
         @responses.activate(registry=responses.registries.OrderedRegistry)
         def run():
@@ -2201,8 +2205,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = "somewhere"
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(plugin, self.product)
-        self.product.register_downloader(plugin, auth)
+        self.product.register_downloader(plugin, None)
 
         # no retry
         @responses.activate(registry=responses.registries.OrderedRegistry)
