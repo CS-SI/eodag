@@ -1602,7 +1602,6 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://ads.atmosphere.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -1610,58 +1609,6 @@
     type: HTTPDownload
     timeout: 30
     ssl_verify: true
-    auth_error_code: 401
-    order_enabled: true
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}
-        searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-        order:date: $.json.created
-        creationDate: $.json.created
-        publicationDate: $.json.finished
-        modificationDate: $.json.updated
-        request_params: $.json.metadata.request.ids
-      error:
-        status: failed
-      success:
-        status: successful
-      on_success:
-        need_search: true
-        metadata_mapping:
-          downloadLink: $.json.asset.value.href
-  search: !plugin
-    type: ECMWFSearch
-    ssl_verify: true
-    end_date_excluded: false
-    dates_required: true
-    remove_from_query:
-      - dataset
-    discover_queryables:
-      fetch_url: null
-      product_type_fetch_url: null
-      constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
-      form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
-    metadata_mapping:
-      productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
-      completionTimeFromAscendingNode:
-        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
-      # The geographic extent of the product
-      geometry:
-        - '{{"area": {geometry#to_nwse_bounds}}}'
-        - $.geometry
-      qs: $.qs
-      orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
-    # download
-    timeout: 30
     auth_error_code: 401
     order_enabled: true
     order_method: POST
@@ -1688,10 +1635,31 @@
         need_search: true
         metadata_mapping:
           downloadLink: $.json.asset.value.href
-    # auth
-    matching_url: https://ads.atmosphere.copernicus.eu
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
+  search: !plugin
+    type: ECMWFSearch
+    ssl_verify: true
+    timeout: 30
+    end_date_excluded: false
+    dates_required: true
+    remove_from_query:
+      - dataset
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+      constraints_url: "https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json"
+      form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
+    metadata_mapping:
+      productType: $.productType
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      completionTimeFromAscendingNode:
+        - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+      # The geographic extent of the product
+      geometry:
+        - '{{"area": {geometry#to_nwse_bounds}}}'
+        - $.geometry
+      qs: $.qs
+      orderLink: 'https://ads.atmosphere.copernicus.eu/api/retrieve/v1/processes/{dataset}/execution?{{"inputs": {qs#to_geojson}}}'
   products:
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
