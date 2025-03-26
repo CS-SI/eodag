@@ -1875,15 +1875,15 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             "providerProductType": "Corine Land Cover 2018",
         }
         self.search_plugin._create_data_request(
-            "EO:CLMS:DAT:CORINE",
-            "CLMS_CORINE",
-            productType="EO:CLMS:DAT:CORINE",
+            "EO:EEA:DAT:CORINE",
+            "EEA_CORINE",
+            productType="EO:EEA:DAT:CORINE",
             **keywords,
         )
         mock_requests_post.assert_called_with(
             self.search_plugin.config.data_request_url,
             json={
-                "datasetId": "EO:CLMS:DAT:CORINE",
+                "datasetId": "EO:EEA:DAT:CORINE",
                 "stringChoiceValues": [
                     {"name": "format", "value": "GeoTiff100mt"},
                     {"name": "product_type", "value": "Corine Land Cover 2018"},
