@@ -3377,8 +3377,8 @@
       metadata_mapping:
         <<: *id_from_date
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
-    CLMS_CORINE:
-      productType: EO:CLMS:DAT:CORINE
+    EEA_CORINE:
+      productType: EO:EEA:DAT:CORINE
       providerProductType: Corine Land Cover 2018
       format: GeoTiff100mt
       metadata_mapping:
@@ -3387,7 +3387,7 @@
           - '{{"product_type": "{providerProductType}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CORINE"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
       providerProductType: FCOVER300
@@ -4908,8 +4908,8 @@
     MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
       productType: EO.MO.DAT.WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002
     # CLMS
-    CLMS_CORINE:
-      productType: EO.CLMS.DAT.CORINE
+    EEA_CORINE:
+      productType: EO.EEA.DAT.CORINE
     CLMS_GLO_DMP_333M:
       productType: EO.CLMS.DAT.GLO.DMP300_V1
     CLMS_GLO_FAPAR_333M:
