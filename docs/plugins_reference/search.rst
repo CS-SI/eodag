@@ -25,6 +25,5 @@ This table lists all the search plugins currently available:
    creodias_s3.CreodiasS3Search
    build_search_result.ECMWFSearch
    build_search_result.MeteoblueSearch
-   build_search_result.WekeoECMWFSearch
    data_request_search.DataRequestSearch
    csw.CSWSearch
