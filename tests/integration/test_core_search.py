@@ -22,23 +22,18 @@ import unittest
 
 from requests.exceptions import RequestException
 
+from eodag.utils import MockResponse
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
+    USER_AGENT,
     EODataAccessGateway,
     EOProduct,
+    HeaderAuth,
     NoMatchingProductType,
     RequestError,
     USGSError,
 )
 from tests.utils import mock
-
-
-class MockResponse:
-    def __init__(self, json_data):
-        self.json_data = json_data
-
-    def json(self):
-        return self.json_data
 
 
 class TestCoreSearch(unittest.TestCase):
@@ -649,3 +644,113 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"], "a-username"
         )
+
+    @mock.patch("eodag.plugins.authentication.header.HTTPHeaderAuth.authenticate")
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_core_search_ecwmfsearch_by_id(self, mock_request, mock_auth):
+        """search by id should return properties based on status response"""
+
+        product_id = "123456"
+        auth = HeaderAuth({"h1": "azer"})
+        mock_auth.return_value = auth
+        status_response = {
+            "processID": "reanalysis-era5-single-levels",
+            "type": "process",
+            "jobID": "123456",
+            "status": "successful",
+            "created": "2025-03-18T15:08:57.095337",
+            "started": "2025-03-18T15:09:02.073302",
+            "finished": "2025-03-18T15:09:02.866406",
+            "updated": "2025-03-18T15:09:02.866406",
+            "links": [
+                {
+                    "href": "https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456",
+                    "rel": "self",
+                    "type": "application/json",
+                },
+                {
+                    "href": "https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456/results",
+                    "rel": "results",
+                },
+            ],
+            "metadata": {
+                "request": {
+                    "ids": {
+                        "day": ["01"],
+                        "time": ["09:00"],
+                        "year": ["1940"],
+                        "month": ["01"],
+                        "dataset": "reanalysis-era5-single-levels",
+                        "variable": "10m_u_component_of_wind",
+                        "data_format": "grib",
+                        "product_type": "reanalysis",
+                        "download_format": "zip",
+                    },
+                    "labels": {
+                        "dataset": "reanalysis-era5-single-levels",
+                        "Product type": ["Reanalysis"],
+                        "Variable": ["10m u-component of wind"],
+                        "Year": ["1940"],
+                        "Month": ["January"],
+                        "Day": ["01"],
+                        "Time": ["09:00"],
+                        "Geographical area": ["Whole available region"],
+                        "Data format": ["GRIB"],
+                        "Download format": ["Zip"],
+                    },
+                },
+                "origin": "api",
+            },
+        }
+        mock_res_status = MockResponse(
+            json_data=status_response, status_code=200, headers={}
+        )
+        results_response = {
+            "asset": {
+                "value": {
+                    "type": "application/zip",
+                    "href": "https://test.zip",
+                    "file:checksum": "789654",
+                    "file:size": 1919376,
+                    "file:local_path": "s3://test.zip",
+                }
+            }
+        }
+        mock_res_results = MockResponse(
+            json_data=results_response, status_code=200, headers={}
+        )
+        mock_request.side_effect = [mock_res_status, mock_res_results]
+        result = self.dag.search(provider="cop_cds", id=product_id)
+        mock_request.assert_has_calls(
+            [
+                mock.call(
+                    method="GET",
+                    url="https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456?request=true",
+                    headers=USER_AGENT,
+                    auth=auth,
+                    timeout=30,
+                    allow_redirects=False,
+                    json=None,
+                ),
+                mock.call(
+                    method="GET",
+                    url="https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456/results",
+                    headers=USER_AGENT,
+                    auth=auth,
+                    timeout=30,
+                    allow_redirects=False,
+                    json=None,
+                ),
+            ]
+        )
+        self.assertEqual(1, len(result))
+        self.assertEqual("123456", result[0].properties["id"])
+        self.assertEqual(
+            "REANALYSIS-ERA5-SINGLE-LEVELS_123456", result[0].properties["title"]
+        )
+        self.assertEqual("successful", result[0].properties["orderStatus"])
+        self.assertIn("request_params", result[0].properties)
+        req_params = result[0].properties["request_params"]
+        for k, v in status_response["metadata"]["request"]["ids"].items():
+            self.assertIn(k, req_params)
+            self.assertEqual(v, req_params[k])
