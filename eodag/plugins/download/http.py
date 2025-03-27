@@ -255,10 +255,16 @@ class HTTPDownload(Download):
         product.properties.update(
             {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
-        # the job id becomes the product id and title
-        product.properties["title"] = product.properties["id"] = product.properties.get(
-            "orderId", product.properties["id"]
-        )
+        # the job id becomes the product id for EcmwfSearch products
+        if "ORDERABLE" in product.properties.get("id", ""):
+            product.properties["id"] = product.properties.get(
+                "orderId", product.properties["id"]
+            )
+            product.properties["title"] = (
+                (product.product_type or product.provider).upper()
+                + "_"
+                + product.properties["id"]
+            )
         if "downloadLink" in product.properties:
             product.remote_location = product.location = product.properties[
                 "downloadLink"
@@ -394,7 +400,10 @@ class HTTPDownload(Download):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
             except RequestException as e:
-                msg = f"{product.properties['title']} order status could not be checked"
+                msg = (
+                    f"{product.properties.get('title') or product.properties.get('id') or product} "
+                    "order status could not be checked"
+                )
                 if e.response is not None and e.response.status_code == 400:
                     raise ValidationError.from_error(e, msg) from e
                 else:
@@ -989,7 +998,7 @@ class HTTPDownload(Download):
             )
         except requests.exceptions.MissingSchema:
             # location is not a valid url -> product is not available yet
-            raise NotAvailableError
+            raise NotAvailableError("Product is not available yet")
         try:
             self.stream.raise_for_status()
         except requests.exceptions.Timeout as exc:

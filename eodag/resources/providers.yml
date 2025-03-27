@@ -3522,9 +3522,8 @@
         }}
       - $.properties.startdate
     completionTimeFromAscendingNode: $.properties.enddate
-  api: !plugin
-    type: WekeoEcmwfGroupApi
-    # search
+  search: !plugin
+    type: WekeoECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
     need_auth: true
@@ -3553,42 +3552,6 @@
         - dataset_id
         - $.dataset
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "{dataset}"}}'
-    # download
-    order_enabled: true
-    order_method: 'POST'
-    order_on_response:
-      metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.features[0].status
-        order:date: $.json.features[0].started_at
-        creationDate: $.json.features[0].started_at
-        message: $.json.features[0].message
-        orderId: $.json.features[0]._id
-      error:
-        status: Error
-      success:
-        status: Done
-      ordered:
-        http_code: 202
-      on_success:
-        metadata_mapping:
-          download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
-    products:
-      FIRE_HISTORICAL:
-        output_extension: .grib
-    # auth
-    matching_url: https://[-\w\.]+.wekeo2.eu
-    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
-    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
-    token_type: json
-    token_key: access_token
-    refresh_token_key: refresh_token
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
@@ -3954,7 +3917,45 @@
         geometry:
           - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}'
           - '$.null'
-
+  auth: !plugin
+    type: TokenAuth
+    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
+    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
+    token_type: json
+    token_key: access_token
+    refresh_token_key: refresh_token
+  download: !plugin
+    type: HTTPDownload
+    auth_error_code: 401
+    order_enabled: true
+    order_method: 'POST'
+    order_on_response:
+      metadata_mapping:
+        orderId: '$.json.download_id'
+        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+    order_status:
+      request:
+        method: GET
+      metadata_mapping:
+        status: $.json.features[0].status
+        order:date: $.json.features[0].started_at
+        creationDate: $.json.features[0].started_at
+        message: $.json.features[0].message
+        orderId: $.json.features[0]._id
+        ecmwf:dataset: $.json.features[0].dataset_id
+      error:
+        status: Error
+      success:
+        status: Done
+      ordered:
+        http_code: 202
+      on_success:
+        metadata_mapping:
+          download_id: $.json.features[0]._id
+          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+    products:
+      FIRE_HISTORICAL:
+        output_extension: .grib
 
 ---
 !provider  # MARK: wekeo_cmems

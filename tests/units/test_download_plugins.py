@@ -1058,6 +1058,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["orderLink"] = (
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
+        self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
         self.product.properties["storageStatus"] = "OFFLINE"
         self.product.location = self.product.remote_location = (
             NOT_AVAILABLE + '?{"foo": "bar"}'
@@ -1116,7 +1117,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             expected_order_status_link = (
                 f"{endpoint}/jobs/dummy_request_id?request=true"
             )
-            expected_path = os.path.join(output_data_path, "dummy_request_id")
+            expected_path = os.path.join(output_data_path, "CAMS_EAC4_dummy_request_id")
             # download
             path = self.product.download(
                 output_dir=output_data_path,
