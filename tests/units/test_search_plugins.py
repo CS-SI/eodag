@@ -2658,7 +2658,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
     ):
         # One of the providers that has discover_queryables() configured with QueryStringSearch
         search_plugin = self.get_search_plugin(provider="wekeo_ecmwf")
-        self.assertEqual("WekeoEcmwfGroupApi", search_plugin.__class__.__name__)
+        self.assertEqual("WekeoECMWFSearch", search_plugin.__class__.__name__)
         self.assertEqual(
             "ECMWFSearch",
             search_plugin.discover_queryables.__func__.__qualname__.split(".")[0],
