@@ -1164,7 +1164,9 @@ class ECMWFSearch(PostJsonSearch):
             query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
             properties["title"] = properties["id"] = (
-                (product_type or kwargs["dataset"]).upper() + "_ORDERABLE_" + query_hash
+                (product_type or kwargs.get("dataset", self.provider)).upper()
+                + "_ORDERABLE_"
+                + query_hash
             )
 
         qs = geojson.dumps(sorted_unpaginated_qp)
@@ -1241,6 +1243,16 @@ def _check_id(product: EOProduct) -> EOProduct:
                 f"Item {product_id} does not exist with {product.provider}."
             ) from e
         raise ValidationError(e.args[0]) from e
+
+    # update product id
+    product.properties["id"] = product_id
+    # update product type if needed
+    if product.product_type is None:
+        product.product_type = product.properties.get("ecmwf:dataset")
+    # update product title
+    product.properties["title"] = (
+        (product.product_type or product.provider).upper() + "_" + product_id
+    )
 
     return product
 

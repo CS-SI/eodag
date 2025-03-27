@@ -1626,6 +1626,7 @@
         creationDate: $.json.created
         publicationDate: $.json.finished
         modificationDate: $.json.updated
+        ecmwf:dataset: $.json.processID
         request_params: $.json.metadata.request.ids
       error:
         status: failed
@@ -1858,6 +1859,7 @@
         creationDate: $.json.created
         publicationDate: $.json.finished
         modificationDate: $.json.updated
+        ecmwf:dataset: $.json.processID
         request_params: $.json.metadata.request.ids
       error:
         status: failed
