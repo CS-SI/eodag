@@ -1575,7 +1575,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.apis.ecmwf_group.WekeoEcmwfGroupApi.list_queryables",
+        "eodag.plugins.search.build_search_result.WekeoECMWFSearch.list_queryables",
         autospec=True,
     )
     @mock.patch(
@@ -1647,7 +1647,7 @@ class TestCore(TestCoreBase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.plugins.apis.ecmwf_group.WekeoEcmwfGroupApi.list_queryables",
+        "eodag.plugins.search.build_search_result.WekeoECMWFSearch.list_queryables",
         autospec=True,
     )
     @mock.patch(

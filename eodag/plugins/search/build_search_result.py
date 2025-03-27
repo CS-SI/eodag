@@ -36,7 +36,7 @@ from pydantic import Field
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
 from shapely.geometry.base import BaseGeometry
-from typing_extensions import get_args
+from typing_extensions import get_args  # noqa: F401
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
@@ -50,7 +50,7 @@ from eodag.api.product.metadata_mapping import (
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
-from eodag.types import json_field_definition_to_python
+from eodag.types import json_field_definition_to_python  # noqa: F401
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
@@ -1033,7 +1033,7 @@ class ECMWFSearch(PostJsonSearch):
         """
         # Rename keywords from form with metadata mapping.
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-        required = [ecmwf_format(k) for k in required_keywords]
+        required = [ecmwf_format(k) for k in required_keywords]  # noqa: F841
 
         queryables: dict[str, Annotated[Any, FieldInfo]] = {}
         for name, values in available_values.items():
@@ -1431,3 +1431,85 @@ class MeteoblueSearch(ECMWFSearch):
         return [
             product,
         ]
+
+
+class WekeoECMWFSearch(ECMWFSearch):
+    """
+    WekeoECMWFSearch search plugin.
+
+    This plugin, which inherits from :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`,
+    performs a POST request and uses its result to build a single :class:`~eodag.api.search_result.SearchResult`
+    object. In contrast to ECMWFSearch or MeteoblueSearch, the products are only build with information
+    returned by the provider.
+
+    The available configuration parameters are inherited from parent classes, with some a particularity
+    for pagination for this plugin.
+
+    :param provider: An eodag providers configuration dictionary
+    :param config: Search plugin configuration:
+
+        * :attr:`~eodag.config.PluginConfig.pagination` (:class:`~eodag.config.PluginConfig.Pagination`)
+          (**mandatory**): The configuration of how the pagination is done on the provider. For
+          this plugin it has the node:
+
+          * :attr:`~eodag.config.PluginConfig.Pagination.next_page_query_obj` (``str``): The
+            additional parameters needed to perform search. These parameters won't be included in
+            the result. This must be a json dict formatted like ``{{"foo":"bar"}}`` because it
+            will be passed to a :meth:`str.format` method before being loaded as json.
+    """
+
+    def normalize_results(
+        self, results: RawSearchResult, **kwargs: Any
+    ) -> list[EOProduct]:
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :param kwargs: Search arguments
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        """
+
+        if kwargs.get("id") and "-" not in kwargs["id"]:
+            # id is order id (only letters and numbers) -> use parent normalize results
+            return super().normalize_results(results, **kwargs)
+
+        # formating of orderLink requires access to the productType value.
+        results.data = [
+            {**result, **results.product_type_def_params} for result in results
+        ]
+
+        normalized = QueryStringSearch.normalize_results(self, results, **kwargs)
+
+        if not normalized:
+            return normalized
+
+        query_params_encoded = quote_plus(orjson.dumps(results.query_params))
+        for product in normalized:
+            properties = {**product.properties, **results.query_params}
+            properties["_dc_qs"] = query_params_encoded
+            product.properties = {ecmwf_format(k): v for k, v in properties.items()}
+
+            # update product and title the same way as in parent class
+            splitted_id = product.properties.get("title", "").split("-")
+            dataset = "_".join(splitted_id[:-1])
+            query_hash = splitted_id[-1]
+            product.properties["title"] = product.properties["id"] = (
+                (product.product_type or dataset or self.provider).upper()
+                + "_ORDERABLE_"
+                + query_hash
+            )
+
+        return normalized
+
+    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+        """Should perform the actual search request.
+
+        :param args: arguments to be used in the search
+        :param kwargs: keyword arguments to be used in the search
+        :return: list containing the results from the provider in json format
+        """
+        if kwargs.get("id") and "-" not in kwargs["id"]:
+            # id is order id (only letters and numbers) -> use parent normalize results.
+            # No real search. We fake it all, then check order status using given id
+            return [{}]
+        else:
+            return QueryStringSearch.do_search(self, *args, **kwargs)

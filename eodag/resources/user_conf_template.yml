@@ -30,16 +30,20 @@ aws_eos:
         output_dir:
 cop_ads:
     priority: # Lower value means lower priority (Default: 0)
-    api:
-        extract:
+    search:
+    download:
         output_dir:
+        extract:
+    auth:
         credentials:
             apikey:
 cop_cds:
     priority: # Lower value means lower priority (Default: 0)
-    api:
-        extract:
+    search:
+    download:
         output_dir:
+        extract:
+    auth:
         credentials:
             apikey:
 cop_dataspace:
@@ -251,8 +255,10 @@ wekeo_cmems:
             password:
 wekeo_ecmwf:
     priority: # Lower value means lower priority (Default: 0)
-    api:
+    search:
+    download:
         output_dir:
+    auth:
         credentials:
             username:
             password:
