@@ -56,11 +56,11 @@ class SearchResult(UserList):
         self,
         products: list[EOProduct],
         number_matched: Optional[int] = None,
-        errors: list[tuple[str, Exception]] = [],
+        errors: Optional[list[tuple[str, Exception]]] = None,
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
-        self.errors = errors
+        self.errors = errors if errors is not None else []
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
