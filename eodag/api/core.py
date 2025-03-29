@@ -2274,31 +2274,31 @@ class EODataAccessGateway:
         """
         # only fetch providers if product type is not found
         available_product_types: list[str] = [
-            pt["ID"]
+            pt["_id"]
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
         product_type: Optional[str] = kwargs.get("productType")
         pt_alias: Optional[str] = product_type
 
         if product_type:
+            try:
+                _product_type = self.get_product_type_from_alias(product_type)
+            except NoMatchingProductType:
+                _product_type = product_type
+            kwargs["productType"] = product_type = _product_type
+
             if product_type not in available_product_types:
                 if fetch_providers:
                     # fetch providers and try again
                     available_product_types = [
-                        pt["ID"]
+                        pt["_id"]
                         for pt in self.list_product_types(
                             provider=provider, fetch_providers=True
                         )
                     ]
                 raise UnsupportedProductType(f"{product_type} is not available.")
-            try:
-                kwargs["productType"] = product_type = self.get_product_type_from_alias(
-                    product_type
-                )
-            except NoMatchingProductType as e:
-                raise UnsupportedProductType(f"{product_type} is not available.") from e
 
-        if not provider and not product_type:
+        if not product_type:
             return QueryablesDict(
                 additional_properties=True,
                 **model_fields_to_annotated(CommonQueryables.model_fields),
@@ -2311,13 +2311,9 @@ class EODataAccessGateway:
         for plugin in self._plugins_manager.get_search_plugins(product_type, provider):
             # attach product type config
             product_type_configs: dict[str, Any] = {}
-            if product_type:
-                self._attach_product_type_config(plugin, product_type)
-                product_type_configs[product_type] = plugin.config.product_type_config
-            else:
-                for pt in available_product_types:
-                    self._attach_product_type_config(plugin, pt)
-                    product_type_configs[pt] = plugin.config.product_type_config
+
+            self._attach_product_type_config(plugin, product_type)
+            product_type_configs[product_type] = plugin.config.product_type_config
 
             # authenticate if required
             if getattr(plugin.config, "need_auth", False) and (
