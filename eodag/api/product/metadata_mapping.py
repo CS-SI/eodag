@@ -49,6 +49,7 @@ from eodag.utils import (
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
+    sanitize,
     string_to_jsonpath,
     update_nested_dict,
 )
@@ -176,6 +177,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``split_corine_id``: get the product type by splitting the product id
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
+        - ``sanitize``: sanitize string
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -822,6 +824,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 str(MetadataFormatter.convert_to_datetime_dict(date, "str")["hour"])
                 + ":00"
             ]
+
+        @staticmethod
+        def convert_sanitize(text: str) -> str:
+            """Sanitize string"""
+            return sanitize(text)
 
         @staticmethod
         def convert_get_dates_from_string(text: str, split_param="-"):

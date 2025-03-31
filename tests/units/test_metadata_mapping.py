@@ -677,3 +677,13 @@ class TestMetadataMappingFunctions(unittest.TestCase):
             "variable", provider_queryables, metadata_mapping
         )
         self.assertEqual("variable", provider_key)
+
+    def test_convert_sanitize(self):
+        to_format = "{path#sanitize}"
+        self.assertEqual(
+            format_metadata(
+                to_format,
+                path="replaçe,  pônctuation:;sïgns!?byunderscorekeeping-hyphen.dot_and_underscore",
+            ),
+            "replace_ponctuation_signs_byunderscorekeeping-hyphen.dot_and_underscore",
+        )
