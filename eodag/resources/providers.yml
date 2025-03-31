@@ -2940,6 +2940,7 @@
     need_auth: true
     auth_error_code: 401
     ssl_verify: true
+    asset_key_from_href: false
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -4530,6 +4531,7 @@
     api_endpoint: https://hda.data.destination-earth.eu/stac/search
     need_auth: true
     timeout: 60
+    asset_key_from_href: false
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       quicklook: '{thumbnail}'
@@ -5074,6 +5076,7 @@
     dont_quote:
       - '='
       - '&'
+    asset_key_from_href: false
     pagination:
       next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
       start_page: 0
@@ -5518,6 +5521,7 @@
     api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.json'
     need_auth: false
     ssl_verify: true
+    asset_key_from_href: false
     timeout: 20
     results_entry: links
     discover_product_types:
@@ -5686,6 +5690,7 @@
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
     ssl_verify: false
+    asset_key_from_href: false
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -5826,6 +5831,7 @@
     s3_endpoint: https://s3.datalake.cnes.fr
     need_auth: true
     ssl_verify: false
+    asset_key_from_href: false
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
