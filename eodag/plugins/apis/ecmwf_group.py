@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlencode
 
 import orjson
 
@@ -131,7 +131,7 @@ class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        if kwargs.get("id") and "-" not in kwargs["id"]:
+        if kwargs.get("id") and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> use parent normalize results
             return EcmwfGroupApi.normalize_results(self, results, **kwargs)
 
@@ -155,6 +155,8 @@ class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
 
         for product in normalized:
             properties = {**product.properties, **results.query_params}
+            properties["id"] = f'{properties["id"]}_ORDERABLE'
+            properties["title"] = properties["id"]
             properties["_dc_qs"] = quote_plus(orjson.dumps(filtered_query_params))
             product.properties = {ecmwf_format(k): v for k, v in properties.items()}
 
@@ -167,10 +169,36 @@ class WekeoEcmwfGroupApi(EcmwfGroupApi, TokenAuth):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
-        if "id" in kwargs and "-" not in kwargs["id"]:
+        if "id" in kwargs and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> create product from metadata of status request
             return self._check_id(kwargs["id"])
+
         return QueryStringSearch.do_search(self, *args, **kwargs)
+
+    def build_query_string(self, product_type, query_dict):
+        """Build the query string that is used for search
+        :param product_type: product type for the search request
+        :param query_dict: dict of query parameters
+        :return tuple containing query dict and encoded query params
+        """
+        if "dataset_id" not in query_dict:  # not formatted yet
+            return super().build_query_string(product_type, query_dict)
+        else:  # already formatted
+
+            logger.debug("Building the query string that will be used for search")
+            query_dict.pop("productType", None)
+            query_dict.pop("dataset", None)
+
+            # Build the final query string, in one go without quoting it
+            # (some providers do not operate well with urlencoded and quoted query strings)
+
+            def quote_via(x: Any, *_args: Any, **_kwargs: Any) -> str:
+                return x
+
+            return (
+                query_dict,
+                urlencode(query_dict, doseq=True, quote_via=quote_via),
+            )
 
 
 class DedtEcmwfGroupApi(EcmwfGroupApi, OIDCAuthorizationCodeFlowAuth):
