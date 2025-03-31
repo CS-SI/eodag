@@ -368,22 +368,25 @@ def parse_year_month_day(
 def ecmwf_temporal_to_eodag(
     params: dict[str, Any]
 ) -> tuple[Optional[str], Optional[str]]:
-    """Converts ECMWF temporal parameters to eodag temporal parameters
+    """
+    Converts ECMWF temporal parameters to EODAG temporal parameters.
 
     ECMWF temporal parameters:
-    - year or hyear: Union[str, list[str]]
-    - month or hmonth: Union[str, list[str]]
-    - day or hday: Union[str, list[str]]
-    - time: string in format 0200, 0800, 1400, 2000, etc.
-    - date: string in format YYYY-MM-DD or YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD/to/YYYY-MM-DD
+        - **year** or **hyear**: Union[str, list[str]] — Year(s) as a string or list of strings.
+        - **month** or **hmonth**: Union[str, list[str]] — Month(s) as a string or list of strings.
+        - **day** or **hday**: Union[str, list[str]] — Day(s) as a string or list of strings.
+        - **time**: str — A string representing the time in the format `HHMM` (e.g., `0200`, `0800`, `1400`).
+        - **date**: str — A string in one of the formats:
+            - `YYYY-MM-DD`
+            - `YYYY-MM-DD/YYYY-MM-DD`
+            - `YYYY-MM-DD/to/YYYY-MM-DD`
 
-    The result is a tuple of two strings:
-    - start: string in format YYYY-MM-DDTHH:MM:SSZ
-    - end: string in format YYYY-MM-DDTHH:MM:SSZ
-
-    Args:
-        params (dict): ECMWF temporal parameters
-
+    :param params: Dictionary containing ECMWF temporal parameters.
+    :type params: dict
+    :return: A tuple with:
+        - **start**: A string in the format `YYYY-MM-DDTHH:MM:SSZ`.
+        - **end**: A string in the format `YYYY-MM-DDTHH:MM:SSZ`.
+    :rtype: tuple[str, str]
     """
     start = end = None
 
