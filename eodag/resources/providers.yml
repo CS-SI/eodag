@@ -5126,7 +5126,7 @@
       platform: '$.properties.acquisitionInformation[0].platform.platformShortName'
       instrument: '$.properties.acquisitionInformation[0].instrument.instrumentShortName'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '{$.properties.title#remove_extension}'
+      title: '{$.properties.title#sanitize}'
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier:
         - pi
