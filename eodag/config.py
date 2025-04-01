@@ -443,6 +443,9 @@ class PluginConfig(yaml.YAMLObject):
     literal_search_params: dict[str, str]
     #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Characters that should not be quoted in the url params
     dont_quote: list[str]
+    #: :class:`~eodag.plugins.search.qssearch.QueryStringSearch` Guess assets keys using their ``href``.
+    #: Use their original key if ``False``
+    asset_key_from_href: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict describing free text search request build
     free_text_search_operations: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Set to ``True`` if the metadata is not given in the search

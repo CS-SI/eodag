@@ -123,6 +123,8 @@ class QueryStringSearch(Search):
           authentication error; only used if ``need_auth=true``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.asset_key_from_href` (``bool``): guess assets keys using their ``href``. Use
+          their original key if ``False``; default: ``True``
         * :attr:`~eodag.config.PluginConfig.dont_quote` (``list[str]``): characters that should not be quoted in the
           url params
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
@@ -1072,6 +1074,7 @@ class QueryStringSearch(Search):
             % normalize_remaining_count
         )
         products: list[EOProduct] = []
+        asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         for result in results:
             product = EOProduct(
                 self.provider,
@@ -1089,7 +1092,8 @@ class QueryStringSearch(Search):
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
                 norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
-                    asset.get("href", ""), product
+                    asset.get("href", "") if asset_key_from_href else key,
+                    product,
                 )
                 if norm_key:
                     product.assets[norm_key] = asset
