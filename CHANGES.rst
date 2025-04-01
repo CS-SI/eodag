@@ -1,6 +1,32 @@
 Release history
 ===============
 
+v3.2.0 (2025-04-01)
+-------------------
+
+Core features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* Fixes download of assets having keys with special characters (:pull:`1585`)
+
+Providers and product types updates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``geodes`` API update (:pull:`1581`)
+* Sanitize ``eumetsat_ds`` products title (:pull:`1582`)
+* Updated default values for some ECMWF collections (:pull:`1575`)
+
+Plugins new features and fixes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Do not guess assets keys from their URL when inappropriate (:pull:`1584`)
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+* Various minor fixes and improvements (:pull:`1570`)(:pull:`1571`)
+* External product types reference updates (:pull:`1567`)
+
 v3.1.0 (2025-03-19)
 -------------------
 

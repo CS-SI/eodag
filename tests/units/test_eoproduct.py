@@ -547,3 +547,20 @@ class TestEOProduct(EODagTestCase):
         # asset
         asset_repr = html.fromstring(product.assets._repr_html_())
         self.assertIn("Asset", asset_repr.xpath("//thead/tr/td")[0].text)
+
+    def test_eoproduct_assets_get_values(self):
+        """eoproduct.assets.get_values must return the expected values"""
+        product = self._dummy_product()
+        product.assets.update(
+            {
+                "foo": {"href": "foo.href"},
+                "fooo": {"href": "fooo.href"},
+                "foo?o,o": {"href": "foooo.href"},
+            }
+        )
+        self.assertEqual(len(product.assets.get_values()), 3)
+        self.assertEqual(len(product.assets.get_values("foo.*")), 3)
+        self.assertEqual(len(product.assets.get_values("foo")), 1)
+        self.assertEqual(product.assets.get_values("foo")[0]["href"], "foo.href")
+        self.assertEqual(len(product.assets.get_values("foo?o,o")), 1)
+        self.assertEqual(product.assets.get_values("foo?o,o")[0]["href"], "foooo.href")

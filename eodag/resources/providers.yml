@@ -1969,8 +1969,8 @@
       dataset: satellite-carbon-dioxide
       processing_level: level_2
       variable: xco2
-      sensor_and_algorithm: merged_emma
-      version: '4_5'
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
@@ -1986,8 +1986,8 @@
       dataset: satellite-methane
       processing_level: level_2
       variable: xch4
-      sensor_and_algorithm: merged_emma
-      version: '4_5'
+      sensor_and_algorithm: sciamachy_wfmd
+      version: '4_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
@@ -2936,6 +2936,7 @@
     need_auth: true
     auth_error_code: 401
     ssl_verify: true
+    asset_key_from_href: false
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -3543,9 +3544,9 @@
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
       processing_level: level_2
-      version: '4_5'
+      version: '4_0'
       variable: xco2
-      sensor_and_algorithm: merged_emma
+      sensor_and_algorithm: sciamachy_wfmd
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
@@ -4527,6 +4528,7 @@
     api_endpoint: https://hda.data.destination-earth.eu/stac/search
     need_auth: true
     timeout: 60
+    asset_key_from_href: false
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       quicklook: '{thumbnail}'
@@ -5071,6 +5073,7 @@
     dont_quote:
       - '='
       - '&'
+    asset_key_from_href: false
     pagination:
       next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
       start_page: 0
@@ -5123,7 +5126,7 @@
       platform: '$.properties.acquisitionInformation[0].platform.platformShortName'
       instrument: '$.properties.acquisitionInformation[0].instrument.instrumentShortName'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '{$.properties.title#remove_extension}'
+      title: '{$.properties.title#sanitize}'
       # OpenSearch Parameters for Product Search (Table 5)
       parentIdentifier:
         - pi
@@ -5515,6 +5518,7 @@
     api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.json'
     need_auth: false
     ssl_verify: true
+    asset_key_from_href: false
     timeout: 20
     results_entry: links
     discover_product_types:
@@ -5683,6 +5687,7 @@
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
     ssl_verify: false
+    asset_key_from_href: false
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -5700,73 +5705,48 @@
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
       sort_param_mapping:
-        id: spaceborne:s2TakeId
-        startTimeFromAscendingNode: temporal:startDate
-        completionTimeFromAscendingNode: temporal:endDate
-        platformSerialIdentifier: spaceborne:satellitePlatform
-        cloudCover: spaceborne:cloudCover
+        id: identifier
+        startTimeFromAscendingNode: start_datetime
+        completionTimeFromAscendingNode: end_datetime
+        platformSerialIdentifier: platform
+        cloudCover: eo:cloud_cover
       sort_order_mapping:
         ascending: asc
-        descending: desc
+        descending: dsc
     metadata_mapping:
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - '{{"query":{{"dataType":{{"eq":"{productType}"}}}}}}'
-        - '$.properties."dataType"'
-      processingLevel:
-        - '{{"query":{{"spaceborne:productLevel":{{"eq":"{processingLevel}"}}}}}}'
-        - '$.properties."spaceborne:productLevel"'
-      platformSerialIdentifier:
-        - '{{"query":{{"spaceborne:satellitePlatform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
-        - '$.properties."spaceborne:satellitePlatform"'
+        - '{{"query":{{"dataset":{{"eq":"{productType}"}}}}}}'
+        - '$.properties.dataset'
       instrument:
-        - '{{"query":{{"spaceborne:satelliteSensor":{{"eq":"{instrument}"}}}}}}'
-        - '$.properties."spaceborne:satelliteSensor"'
+        - '{{"query":{{"instrument":{{"eq":"{instrument}"}}}}}}'
+        - '$.properties.instrument'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
-      keyword: '$.properties."spaceborne:keywords"'
+      keyword: '$.properties.keywords'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
-        - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":{orbitNumber}}}}}}}'
-        - '$.properties."spaceborne:absoluteOrbitID"'
+        - '{{"query":{{"sat:absolute_orbit":{{"eq":{orbitNumber}}}}}}}'
+        - '$.properties."sat:absolute_orbit"'
       relativeOrbitNumber:
-        - '{{"query":{{"spaceborne:orbitID":{{"eq":{relativeOrbitNumber}}}}}}}'
-        - '$.properties."spaceborne:orbitID"'
-      orbitDirection:
-        - '{{"query":{{"spaceborne:orbitDirection":{{"eq":"{orbitDirection}"}}}}}}'
-        - '$.properties."spaceborne:orbitDirection"'
-      swathIdentifier:
-        - '{{"query":{{"spaceborne:swath":{{"eq":"{swathIdentifier}"}}}}}}'
-        - '$.properties."spaceborne:swath"'
+        - '{{"query":{{"sat:relative_orbit":{{"eq":{relativeOrbitNumber}}}}}}}'
+        - '$.properties."sat:relative_orbit"'
       cloudCover:
-        - '{{"query":{{"spaceborne:cloudCover":{{"lte":{cloudCover}}}}}}}'
-        - '$.properties."spaceborne:cloudCover"'
-      sensorMode:
-        - '{{"query":{{"spaceborne:sensorMode":{{"eq":"{sensorMode}"}}}}}}'
-        - '$.properties."spaceborne:sensorMode"'
-      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      startTimeFromAscendingNode:
-        - '{{"query":{{"temporal:endDate":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
-        - '$.properties."temporal:startDate"'
-      completionTimeFromAscendingNode:
-        - '{{"query":{{"temporal:startDate":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
-        - '$.properties."temporal:endDate"'
-      polarizationChannels:
-        - '{{"query":{{"spaceborne:polarization":{{"eq":"{polarizationChannels}"}}}}}}'
-        - '$.properties."spaceborne:polarization"'
+      - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
+      - '$.properties."eo:cloud_cover"'
+      swathIdentifier:
+        - '{{"query":{{"swath":{{"eq":"{swathIdentifier}"}}}}}}'
+        - '$.properties.swath'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
         - '$.properties.identifier'
       tileIdentifier:
-        - '{{"query":{{"spaceborne:tile":{{"contains":"{tileIdentifier}"}}}}}}'
-        - '{$.properties."spaceborne:tile"#replace_str(r"^T?(.*)$",r"\1")}'
-      geometry:
-        - '{{"intersects":{geometry#to_geojson}}}'
-        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+        - '{{"query":{{"grid:code":{{"contains":"{tileIdentifier}"}}}}}}'
+        - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
       providerProductType:
-        - '{{"query":{{"spaceborne:productType":{{"eq":"{providerProductType}"}}}}}}'
+        - '{{"query":{{"product:type":{{"eq":"{providerProductType}"}}}}}}'
         - '$.null'
       downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
@@ -5823,6 +5803,7 @@
     s3_endpoint: https://s3.datalake.cnes.fr
     need_auth: true
     ssl_verify: false
+    asset_key_from_href: false
     discover_queryables:
       fetch_url: null
       product_type_fetch_url: null
@@ -5840,75 +5821,50 @@
       sort_by_default:
         - !!python/tuple [startTimeFromAscendingNode, ASC]
       sort_param_mapping:
-        id: spaceborne:s2TakeId
-        startTimeFromAscendingNode: temporal:startDate
-        completionTimeFromAscendingNode: temporal:endDate
-        platformSerialIdentifier: spaceborne:satellitePlatform
-        cloudCover: spaceborne:cloudCover
+        id: identifier
+        startTimeFromAscendingNode: start_datetime
+        completionTimeFromAscendingNode: end_datetime
+        platformSerialIdentifier: platform
+        cloudCover: eo:cloud_cover
       sort_order_mapping:
         ascending: asc
-        descending: desc
+        descending: dsc
     metadata_mapping:
       uid: '$.id'
       # OpenSearch Parameters for Collection Search (Table 3)
       productType:
-        - '{{"query":{{"dataType":{{"eq":"{productType}"}}}}}}'
-        - '$.properties."dataType"'
-      processingLevel:
-        - '{{"query":{{"spaceborne:productLevel":{{"eq":"{processingLevel}"}}}}}}'
-        - '$.properties."spaceborne:productLevel"'
-      platformSerialIdentifier:
-        - '{{"query":{{"spaceborne:satellitePlatform":{{"eq":"{platformSerialIdentifier}"}}}}}}'
-        - '$.properties."spaceborne:satellitePlatform"'
+        - '{{"query":{{"dataset":{{"eq":"{productType}"}}}}}}'
+        - '$.properties.dataset'
       instrument:
-        - '{{"query":{{"spaceborne:satelliteSensor":{{"eq":"{instrument}"}}}}}}'
-        - '$.properties."spaceborne:satelliteSensor"'
+        - '{{"query":{{"instrument":{{"eq":"{instrument}"}}}}}}'
+        - '$.properties.instrument'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
-      keyword: '$.properties."spaceborne:keywords"'
+      keyword: '$.properties.keywords'
       # OpenSearch Parameters for Product Search (Table 5)
       orbitNumber:
-        - '{{"query":{{"spaceborne:absoluteOrbitID":{{"eq":{orbitNumber}}}}}}}'
-        - '$.properties."spaceborne:absoluteOrbitID"'
+        - '{{"query":{{"sat:absolute_orbit":{{"eq":{orbitNumber}}}}}}}'
+        - '$.properties."sat:absolute_orbit"'
       relativeOrbitNumber:
-        - '{{"query":{{"spaceborne:orbitID":{{"eq":{relativeOrbitNumber}}}}}}}'
-        - '$.properties."spaceborne:orbitID"'
-      orbitDirection:
-        - '{{"query":{{"spaceborne:orbitDirection":{{"eq":"{orbitDirection}"}}}}}}'
-        - '$.properties."spaceborne:orbitDirection"'
-      swathIdentifier:
-        - '{{"query":{{"spaceborne:swath":{{"eq":"{swathIdentifier}"}}}}}}'
-        - '$.properties."spaceborne:swath"'
+        - '{{"query":{{"sat:relative_orbit":{{"eq":{relativeOrbitNumber}}}}}}}'
+        - '$.properties."sat:relative_orbit"'
       cloudCover:
-        - '{{"query":{{"spaceborne:cloudCover":{{"lte":{cloudCover}}}}}}}'
-        - '$.properties."spaceborne:cloudCover"'
-      sensorMode:
-        - '{{"query":{{"spaceborne:sensorMode":{{"eq":"{sensorMode}"}}}}}}'
-        - '$.properties."spaceborne:sensorMode"'
-      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      startTimeFromAscendingNode:
-        - '{{"query":{{"temporal:endDate":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
-        - '$.properties."temporal:startDate"'
-      completionTimeFromAscendingNode:
-        - '{{"query":{{"temporal:startDate":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
-        - '$.properties."temporal:endDate"'
-      polarizationChannels:
-        - '{{"query":{{"spaceborne:polarization":{{"eq":"{polarizationChannels}"}}}}}}'
-        - '$.properties."spaceborne:polarization"'
+      - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
+      - '$.properties."eo:cloud_cover"'
+      swathIdentifier:
+        - '{{"query":{{"swath":{{"eq":"{swathIdentifier}"}}}}}}'
+        - '$.properties.swath'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - '{{"query":{{"identifier":{{"eq":"{id}"}}}}}}'
         - '$.properties.identifier'
       tileIdentifier:
-        - '{{"query":{{"spaceborne:tile":{{"contains":"{tileIdentifier}"}}}}}}'
-        - '{$.properties."spaceborne:tile"#replace_str(r"^T?(.*)$",r"\1")}'
-      geometry:
-        - '{{"intersects":{geometry#to_geojson}}}'
-        - '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+        - '{{"query":{{"grid:code":{{"contains":"{tileIdentifier}"}}}}}}'
+        - '{$.properties."grid:code"#replace_str(r"^T?(.*)$",r"\1")}'
       providerProductType:
-        - '{{"query":{{"spaceborne:productType":{{"eq":"{providerProductType}"}}}}}}'
+        - '{{"query":{{"product:type":{{"eq":"{providerProductType}"}}}}}}'
         - '$.null'
-      downloadLink: '$.properties["accessService:endpointURL"]'
+      downloadLink: '$.properties.endpoint_url'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       # storageStatus set to ONLINE for consistency between providers
@@ -5938,6 +5894,7 @@
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
+    ignore_assets: True
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403

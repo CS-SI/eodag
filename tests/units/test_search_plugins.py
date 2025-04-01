@@ -54,6 +54,7 @@ from tests.context import (
     NotAvailableError,
     PluginManager,
     PreparedSearch,
+    QueryStringSearch,
     RequestError,
     TimeOutError,
     cached_parse,
@@ -1568,6 +1569,49 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             products[0].geometry, self.search_criteria_s2_msi_l1c["geometry"]
         )
         self.assertEqual(products[1].geometry.bounds, (-180.0, -90.0, 180.0, 90.0))
+
+    @mock.patch(
+        "eodag.api.product.drivers.base.DatasetDriver.guess_asset_key_and_roles",
+        autospec=True,
+    )
+    @mock.patch.dict(QueryStringSearch.extract_properties, {"json": mock.MagicMock()})
+    def test_plugins_search_stacsearch_normalize_asset_key_from_href(
+        self, mock_guess_asset_key_and_roles
+    ):
+        """normalize_results must guess asset key from href if asset_key_from_href is set to True"""
+
+        mock_properties_from_json = QueryStringSearch.extract_properties["json"]
+        mock_properties_from_json.return_value = {
+            "geometry": "POINT (0 0)",
+            "assets": {
+                "foo": {
+                    "href": "https://example.com/foo",
+                    "roles": ["bar"],
+                },
+            },
+        }
+        mock_guess_asset_key_and_roles.return_value = ("normalized_key", ["some_role"])
+
+        # guess asset key from href
+        search_plugin = self.get_search_plugin(self.product_type, "earth_search")
+        self.assertFalse(hasattr(search_plugin.config, "asset_key_from_href"))
+        products = search_plugin.normalize_results([{}])
+        mock_guess_asset_key_and_roles.assert_called_once_with(
+            products[0].driver, "https://example.com/foo", products[0]
+        )
+        self.assertEqual(len(products[0].assets), 1)
+        self.assertEqual(products[0].assets["normalized_key"]["roles"], ["some_role"])
+
+        mock_guess_asset_key_and_roles.reset_mock()
+        # guess asset key from origin key
+        search_plugin = self.get_search_plugin(self.product_type, "geodes")
+        self.assertEqual(search_plugin.config.asset_key_from_href, False)
+        products = search_plugin.normalize_results([{}])
+        mock_guess_asset_key_and_roles.assert_called_once_with(
+            products[0].driver, "foo", products[0]
+        )
+        self.assertEqual(len(products[0].assets), 1)
+        self.assertEqual(products[0].assets["normalized_key"]["roles"], ["some_role"])
 
     @mock.patch("eodag.plugins.search.qssearch.requests.post", autospec=True)
     def test_plugins_search_stacsearch_opened_time_intervals(self, mock_requests_post):
