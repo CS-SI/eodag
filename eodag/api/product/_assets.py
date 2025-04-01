@@ -71,22 +71,29 @@ class AssetsDict(UserDict):
         """
         return {k: v.as_dict() for k, v in self.data.items()}
 
-    def get_values(self, asset_filter: str = "") -> list[Asset]:
+    def get_values(self, asset_filter: str = "", regex=True) -> list[Asset]:
         """
         retrieves the assets matching the given filter
 
         :param asset_filter: regex filter with which the assets should be matched
+        :param regex: Uses regex to match the asset key or simply compare strings
         :return: list of assets
         """
         if asset_filter:
-            filter_regex = re.compile(asset_filter)
-            assets_keys = list(self.keys())
-            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+            if regex:
+                filter_regex = re.compile(asset_filter)
+                assets_keys = list(self.keys())
+                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+            else:
+                assets_keys = [a for a in self.keys() if a == asset_filter]
             filtered_assets = {}
             if len(assets_keys) > 0:
                 filtered_assets = {a_key: self.get(a_key) for a_key in assets_keys}
             assets_values = [a for a in filtered_assets.values() if a and "href" in a]
-            if not assets_values:
+            if not assets_values and regex:
+                # retry without regex
+                return self.get_values(asset_filter, regex=False)
+            elif not assets_values:
                 raise NotAvailableError(
                     rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {self.product}"
                 )
