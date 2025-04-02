@@ -44,7 +44,6 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     NOT_MAPPED,
 )
-from eodag.plugins.apis.base import Api
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -60,6 +59,7 @@ if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.api.product.drivers.base import DatasetDriver
+    from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
     from eodag.types.download_args import DownloadConf
