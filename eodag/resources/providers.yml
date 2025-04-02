@@ -4440,8 +4440,8 @@
     - host
   description: Destination Earth Digital Twin Outputs from LUMI through Polytope API
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
-  api: !plugin
-    type: DedtEcmwfGroupApi
+  search: !plugin
+    type: ECMWFSearch
     ssl_verify: true
     dates_required: True
     discover_queryables:
@@ -4455,7 +4455,35 @@
         - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
-    # download
+  products:
+    DT_EXTREMES:
+      dataset: extremes-dt
+      class: d1
+      expver: "0001"
+      stream: oper
+      type: fc
+      levtype: sfc
+      step: 0
+      param: 31
+      time: "0000"
+    DT_CLIMATE_ADAPTATION:
+      dataset: climate-dt
+      class: d1
+      generation: 1
+      expver: "0001"
+      stream: clte
+      type: fc
+      activity: ScenarioMIP
+      experiment: SSP3-7.0
+      realization: 1
+      model: IFS-NEMO
+      param: 134/165/166
+      resolution: high
+      levtype: sfc
+      time: "0000"
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
     auth_error_code: 401
     order_enabled: True
     order_method: POST
@@ -4485,8 +4513,8 @@
     products:
       DT_EXTREMES:
       DT_CLIMATE_ADAPTATION:
-    # auth
-    matching_url: https://[-\w\.]+.dte.destination-earth.eu
+  auth: !plugin
+    type: OIDCAuthorizationCodeFlowAuth
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
     client_id: polytope-api-public
@@ -4495,32 +4523,6 @@
     token_provision: header
     login_form_xpath: //form[@id='kc-form-login']
     authentication_uri_source: login-form
-  products:
-    DT_EXTREMES:
-      dataset: extremes-dt
-      class: d1
-      expver: "0001"
-      stream: oper
-      type: fc
-      levtype: sfc
-      step: 0
-      param: 31
-      time: "0000"
-    DT_CLIMATE_ADAPTATION:
-      dataset: climate-dt
-      class: d1
-      generation: 1
-      expver: "0001"
-      stream: clte
-      type: fc
-      activity: ScenarioMIP
-      experiment: SSP3-7.0
-      realization: 1
-      model: IFS-NEMO
-      param: 134/165/166
-      resolution: high
-      levtype: sfc
-      time: "0000"
 ---
 
 !provider # MARK: dedl

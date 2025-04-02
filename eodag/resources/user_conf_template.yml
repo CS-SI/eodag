@@ -100,8 +100,10 @@ dedl:
             password:
 dedt_lumi:
     priority: # Lower value means lower priority (Default: 0)
-    api:
+    search:
+    download:
         output_dir:
+    auth:
         credentials:
             username:
             password:
