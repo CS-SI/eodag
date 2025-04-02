@@ -3377,7 +3377,7 @@
       metadata_mapping:
         <<: *id_from_date
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
-    EEA_CORINE:
+    CLMS_CORINE:
       productType: EO:EEA:DAT:CORINE
       providerProductType: Corine Land Cover 2018
       format: GeoTiff100mt
@@ -4908,7 +4908,7 @@
     MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
       productType: EO.MO.DAT.WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002
     # CLMS
-    EEA_CORINE:
+    CLMS_CORINE:
       productType: EO.EEA.DAT.CORINE
     CLMS_GLO_DMP_333M:
       productType: EO.CLMS.DAT.GLO.DMP300_V1

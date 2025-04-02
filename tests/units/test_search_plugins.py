@@ -1876,7 +1876,7 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
         }
         self.search_plugin._create_data_request(
             "EO:EEA:DAT:CORINE",
-            "EEA_CORINE",
+            "CLMS_CORINE",
             productType="EO:EEA:DAT:CORINE",
             **keywords,
         )

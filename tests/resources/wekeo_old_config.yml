@@ -162,7 +162,7 @@ wekeo_old:
         startTimeFromAscendingNode: '$.productInfo.productStartDate'
         completionTimeFromAscendingNode: '$.productInfo.productEndDate'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-    EEA_CORINE:
+    CLMS_CORINE:
       productType: EO:EEA:DAT:CORINE
       providerProductType: "Corine Land Cover 2018"
       format: "GeoTiff100mt"

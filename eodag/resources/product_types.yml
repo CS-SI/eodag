@@ -4499,7 +4499,7 @@ COP_DEM_GLO90_DTED:
   missionStartDate: "2010-06-21T00:00:00Z"
 
 # MARK: Copernicus Land Monitoring Service
-EEA_CORINE:
+CLMS_CORINE:
   abstract: |
     The CORINE Land Cover (CLC) inventory was initiated in 1985 (reference year 1990). Updates have been produced in
     2000, 2006, 2012, and 2018. It consists of an inventory of land cover in 44 classes. CLC uses a Minimum Mapping
