@@ -1651,10 +1651,10 @@
       form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
       productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
