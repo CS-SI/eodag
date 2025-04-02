@@ -45,6 +45,7 @@ from eodag.api.product.metadata_mapping import (
     OFFLINE_STATUS,
     STAGING_STATUS,
     format_metadata,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
@@ -1211,21 +1212,22 @@ def _check_id(product: EOProduct) -> EOProduct:
     if not (product_id := product.search_kwargs.get("id")):
         return product
 
-    # update "orderStatusLink" and potential "search_link" properties to match the id from the search request
-    order_status_link = product.downloader.config.order_on_response["metadata_mapping"][
-        "orderStatusLink"
-    ]
-    search_link = product.downloader.config.order_on_response["metadata_mapping"].get(
-        "searchLink", ""
+    on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
+        "metadata_mapping", {}
     )
-    if not isinstance(order_status_link, str) or not isinstance(search_link, str):
-        return [{}]
-    product.properties["orderStatusLink"] = order_status_link.format(orderId=product_id)
-    formatted_search_link = search_link.format(orderId=product_id)
-    search_link_dict = (
-        {"searchLink": formatted_search_link} if formatted_search_link else {}
+    if not on_response_mm:
+        return product
+
+    logger.debug(f"Update product properties using given orderId {product_id}")
+    on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
+        on_response_mm,
     )
-    product.properties.update(search_link_dict)
+    properties_update = properties_from_json(
+        {}, {**on_response_mm_jsonpath, **{"orderId": (None, product_id)}}
+    )
+    product.properties.update(
+        {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
+    )
 
     auth = product.downloader_auth.authenticate() if product.downloader_auth else None
 
@@ -1253,6 +1255,9 @@ def _check_id(product: EOProduct) -> EOProduct:
     product.properties["title"] = (
         (product.product_type or product.provider).upper() + "_" + product_id
     )
+    # use NOT_AVAILABLE as fallback product_type to avoid using guess_product_type
+    if product.product_type is None:
+        product.product_type = NOT_AVAILABLE
 
     return product
 

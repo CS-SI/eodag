@@ -26,6 +26,7 @@ from eodag.utils import MockResponse
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     USER_AGENT,
+    CodeAuthorizedAuth,
     EODataAccessGateway,
     EOProduct,
     HeaderAuth,
@@ -754,3 +755,41 @@ class TestCoreSearch(unittest.TestCase):
         for k, v in status_response["metadata"]["request"]["ids"].items():
             self.assertIn(k, req_params)
             self.assertEqual(v, req_params[k])
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate"
+    )
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_core_search_dedtlumi_search_by_id(
+        self, mock_request, mock_auth, mock_auth_config_request
+    ):
+        """search by id should return properties based on status response"""
+        product_id = "123-456"
+        auth = CodeAuthorizedAuth(token="123", where="header")
+        mock_auth.return_value = auth
+        status_response = {
+            "contentLength": 3136349,
+            "contentType": "application/x-grib",
+            "location": "https://download-polytope.lumi.apps.dte.destination-earth.eu/default/d20e465e.grib",
+        }
+        mock_res_status = MockResponse(
+            json_data=status_response, status_code=200, headers={}
+        )
+        mock_request.return_value = mock_res_status
+        result = self.dag.search(provider="dedt_lumi", id=product_id)
+        mock_request.assert_called_with(
+            method="GET",
+            url="https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/123-456",
+            headers=USER_AGENT,
+            auth=auth,
+            timeout=5,
+            allow_redirects=False,
+            json=None,
+        )
+        self.assertEqual(1, len(result))
+        self.assertEqual("123-456", result[0].properties["id"])
+        self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])
