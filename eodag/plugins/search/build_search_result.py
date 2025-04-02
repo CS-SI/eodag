@@ -382,11 +382,9 @@ def ecmwf_temporal_to_eodag(
             - `YYYY-MM-DD/to/YYYY-MM-DD`
 
     :param params: Dictionary containing ECMWF temporal parameters.
-    :type params: dict
     :return: A tuple with:
         - **start**: A string in the format `YYYY-MM-DDTHH:MM:SSZ`.
         - **end**: A string in the format `YYYY-MM-DDTHH:MM:SSZ`.
-    :rtype: tuple[str, str]
     """
     start = end = None
 
