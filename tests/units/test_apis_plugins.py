@@ -18,12 +18,13 @@
 import ast
 import os
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from unittest import mock
 
 import geojson
 import responses
+from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
@@ -147,15 +148,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             eoproduct.properties["startTimeFromAscendingNode"],
             DEFAULT_MISSION_START_DATE,
         )
-        current_time = (
+        # less than 10 seconds should have passed since the product was created
+        self.assertLess(
             datetime.now(timezone.utc)
-            .replace(microsecond=0)
-            .isoformat()
-            .replace("+00:00", ".000Z")
-        )
-        self.assertIn(
-            eoproduct.properties["completionTimeFromAscendingNode"],
-            current_time,
+            - isoparse(eoproduct.properties["completionTimeFromAscendingNode"]),
+            timedelta(seconds=10),
+            "stop date should have been created from datetime.now",
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
