@@ -1487,10 +1487,16 @@ class WekeoECMWFSearch(ECMWFSearch):
         if not normalized:
             return normalized
 
-        query_params_encoded = quote_plus(orjson.dumps(results.query_params))
+        # remove unwanted query params
+        excluded_query_params = getattr(self.config, "remove_from_query", [])
+        filtered_query_params = {
+            k: v
+            for k, v in results.query_params.items()
+            if k not in excluded_query_params
+        }
         for product in normalized:
             properties = {**product.properties, **results.query_params}
-            properties["_dc_qs"] = query_params_encoded
+            properties["_dc_qs"] = quote_plus(orjson.dumps(filtered_query_params))
             product.properties = {ecmwf_format(k): v for k, v in properties.items()}
 
             # update product and title the same way as in parent class
