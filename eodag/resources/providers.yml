@@ -1638,6 +1638,7 @@
           downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
@@ -1871,6 +1872,7 @@
           downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
@@ -3525,6 +3527,7 @@
   search: !plugin
     type: WekeoECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
+    need_auth: true
     timeout: 60
     need_auth: true
     auth_error_code: 401
@@ -4442,6 +4445,7 @@
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
     dates_required: True
     discover_queryables:
@@ -6030,6 +6034,7 @@
           downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
     end_date_excluded: false
     dates_required: True

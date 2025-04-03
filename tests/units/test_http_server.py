@@ -1643,7 +1643,7 @@ class RequestTestCase(unittest.TestCase):
                     "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
                     "reanalysis-era5-single-levels/constraints.json",
                     headers=USER_AGENT,
-                    auth=None,
+                    auth=mock.ANY,
                     timeout=30,
                 ),
                 call().raise_for_status(),
@@ -1653,7 +1653,7 @@ class RequestTestCase(unittest.TestCase):
                     "https://cds.climate.copernicus.eu/api/catalogue/v1/collections/"
                     "reanalysis-era5-single-levels/form.json",
                     headers=USER_AGENT,
-                    auth=None,
+                    auth=mock.ANY,
                     timeout=30,
                 ),
                 call().raise_for_status(),
