@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
@@ -286,6 +286,125 @@ def ecmwf_format(v: str) -> str:
     return ECMWF_PREFIX + v if v in ALLOWED_KEYWORDS else v
 
 
+def get_min_max(
+    value: Optional[Union[str, list[str]]] = None,
+) -> tuple[Optional[str], Optional[str]]:
+    """Returns the min and max from a list of strings or the same string if a single string is given."""
+    if isinstance(value, list):
+        sorted_values = sorted(value)
+        return sorted_values[0], sorted_values[-1]
+    return value, value
+
+
+def append_time(input_date: date, time: Optional[str]) -> datetime:
+    """
+    Parses a time string in format HHMM and appends it to a date.
+
+    if the time string is in format HH:MM we convert it to HHMM
+    """
+    if not time:
+        time = "0000"
+    time = time.replace(":", "")
+    if time == "2400":
+        time = "0000"
+    dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
+    dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def parse_date(
+    date_str: str, time: Optional[Union[str, list[str]]]
+) -> tuple[datetime, datetime]:
+    """Parses a date string in format YYYY-MM-DD or YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD/to/YYYY-MM-DD."""
+    if "to" in date_str:
+        start_date_str, end_date_str = date_str.split("/to/")
+    elif "/" in date_str:
+        dates = date_str.split("/")
+        start_date_str = dates[0]
+        end_date_str = dates[-1]
+    else:
+        start_date_str = end_date_str = date_str
+
+    start_date = datetime.fromisoformat(start_date_str.rstrip("Z"))
+    end_date = datetime.fromisoformat(end_date_str.rstrip("Z"))
+
+    if time:
+        start_t, end_t = get_min_max(time)
+        start_date = append_time(start_date.date(), start_t)
+        end_date = append_time(end_date.date(), end_t)
+
+    return start_date, end_date
+
+
+def parse_year_month_day(
+    year: Union[str, list[str]],
+    month: Optional[Union[str, list[str]]] = None,
+    day: Optional[Union[str, list[str]]] = None,
+    time: Optional[Union[str, list[str]]] = None,
+) -> tuple[datetime, datetime]:
+    """Extracts and returns the year, month, day, and time from the parameters."""
+
+    def build_date(year, month=None, day=None, time=None) -> datetime:
+        """Datetime from default_date with updated year, month, day and time."""
+        updated_date = datetime(int(year), 1, 1).replace(
+            month=int(month) if month is not None else 1,
+            day=int(day) if day is not None else 1,
+        )
+        if time is not None:
+            updated_date = append_time(updated_date.date(), time)
+        return updated_date
+
+    start_y, end_y = get_min_max(year)
+    start_m, end_m = get_min_max(month)
+    start_d, end_d = get_min_max(day)
+    start_t, end_t = get_min_max(time)
+
+    start_date = build_date(start_y, start_m, start_d, start_t)
+    end_date = build_date(end_y, end_m, end_d, end_t)
+
+    return start_date, end_date
+
+
+def ecmwf_temporal_to_eodag(
+    params: dict[str, Any]
+) -> tuple[Optional[str], Optional[str]]:
+    """
+    Converts ECMWF temporal parameters to EODAG temporal parameters.
+
+    ECMWF temporal parameters:
+        - **year** or **hyear**: Union[str, list[str]] — Year(s) as a string or list of strings.
+        - **month** or **hmonth**: Union[str, list[str]] — Month(s) as a string or list of strings.
+        - **day** or **hday**: Union[str, list[str]] — Day(s) as a string or list of strings.
+        - **time**: str — A string representing the time in the format `HHMM` (e.g., `0200`, `0800`, `1400`).
+        - **date**: str — A string in one of the formats:
+            - `YYYY-MM-DD`
+            - `YYYY-MM-DD/YYYY-MM-DD`
+            - `YYYY-MM-DD/to/YYYY-MM-DD`
+
+    :param params: Dictionary containing ECMWF temporal parameters.
+    :return: A tuple with:
+        - **start**: A string in the format `YYYY-MM-DDTHH:MM:SSZ`.
+        - **end**: A string in the format `YYYY-MM-DDTHH:MM:SSZ`.
+    """
+    start = end = None
+
+    if date := params.get("date"):
+        start, end = parse_date(date, params.get("time"))
+
+    elif year := params.get("year") or params.get("hyear"):
+        year = params.get("year") or params.get("hyear")
+        month = params.get("month") or params.get("hmonth")
+        day = params.get("day") or params.get("hday")
+        time = params.get("time")
+
+        start, end = parse_year_month_day(year, month, day, time)
+
+    if start and end:
+        return start.strftime("%Y-%m-%dT%H:%M:%SZ"), end.strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        return None, None
+
+
 class ECMWFSearch(PostJsonSearch):
     """ECMWF search plugin.
 
@@ -507,12 +626,8 @@ class ECMWFSearch(PostJsonSearch):
                 ]
                 # if startTime is not given but other time params (e.g. year/month/(day)) are given,
                 # no default date is required
-                in_keywords = True
-                for tp in time_params:
-                    if tp not in keywords:
-                        in_keywords = False
-                        break
-                if not in_keywords:
+                start, end = ecmwf_temporal_to_eodag(keywords)
+                if start is None:
                     keywords[START] = self.get_product_type_cfg_value(
                         "missionStartDate", DEFAULT_MISSION_START_DATE
                     )
@@ -523,6 +638,9 @@ class ECMWFSearch(PostJsonSearch):
                             "missionEndDate", today().isoformat()
                         )
                     )
+                else:
+                    keywords[START] = start
+                    keywords[END] = end
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
