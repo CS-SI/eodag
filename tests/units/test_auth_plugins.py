@@ -17,7 +17,7 @@
 # limitations under the License.
 
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest import mock
 
 import responses
@@ -111,6 +111,16 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "auth_uri": "http://foo.bar",
                         "token_type": "json",
                         "token_key": "token_is_here",
+                    },
+                },
+                "provider_json_token_with_expiration": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "token_type": "json",
+                        "token_key": "token_is_here",
+                        "token_expiration_key": "token_expiration",
                     },
                 },
                 "provider_text_token_req_data": {
@@ -250,7 +260,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
     )
     def test_plugins_auth_tokenauth_json_token_authenticate(self, mock_requests_post):
         """TokenAuth.authenticate must return a RequestsTokenAuth object using json token"""
-        auth_plugin = self.get_auth_plugin("provider_json_token_simple_url")
+        auth_plugin = self.get_auth_plugin("provider_json_token_with_expiration")
 
         auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
 
@@ -259,6 +269,7 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         mock_requests_post.return_value.json.return_value = {
             "not_token": "this_is_not_test_token",
             "token_is_here": "this_is_test_token",
+            "token_expiration": 1000,
         }
 
         # check if returned auth object is an instance of requests.AuthBase
@@ -269,6 +280,71 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
         req = mock.Mock(headers={})
         auth(req)
         assert req.headers["Authorization"] == "Bearer this_is_test_token"
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_json_token_with_expiration_time(
+        self, mock_requests_post
+    ):
+        """TokenAuth.authenticate must return a RequestsTokenAuth object using json token
+        If there is an existing, valid token this token msut be used
+        """
+        auth_plugin = self.get_auth_plugin("provider_json_token_with_expiration")
+        auth_plugin.__init__(
+            auth_plugin.provider, auth_plugin.config
+        )  # ensure that variables are reset
+
+        auth_plugin.config.credentials = {"foo": "bar", "baz": "qux"}
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.json.return_value = {
+            "not_token": "this_is_not_test_token",
+            "token_is_here": "this_is_test_token",
+            "token_expiration": 1000,
+        }
+
+        # check if returned auth object is an instance of requests.AuthBase
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+        self.assertEqual("this_is_test_token", auth_plugin.token)
+        # token request should be sent
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            method="POST",
+            url=auth_plugin.config.auth_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+            data=auth_plugin.config.credentials,
+            verify=True,
+            auth=None,
+        )
+        mock_requests_post.reset_mock()
+        # second call should use existing token
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+        mock_requests_post.assert_not_called()
+        # reset expiration -> token should be fetched again
+        auth_plugin.token_expiration = datetime.now()
+        mock_requests_post.return_value.json.return_value = {
+            "not_token": "this_is_not_test_token",
+            "token_is_here": "this_is_a_new_token",
+            "token_expiration": 1000,
+        }
+        auth = auth_plugin.authenticate()
+        self.assertTrue(isinstance(auth, AuthBase))
+        self.assertEqual("this_is_a_new_token", auth_plugin.token)
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            method="POST",
+            url=auth_plugin.config.auth_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+            data=auth_plugin.config.credentials,
+            verify=True,
+            auth=None,
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.token.requests.Session.request", autospec=True
