@@ -615,6 +615,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token.TokenAuth`
     #: type of the token
     token_type: str
+    #: :class:`~eodag.plugins.authentication.token.TokenAuth`
+    #: key to get the expiration time of the token
+    token_expiration_key: str
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: The full :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth` plugin configuration
     #: used to retrieve subject token
