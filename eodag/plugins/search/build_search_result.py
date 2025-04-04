@@ -23,6 +23,7 @@ import logging
 import re
 from collections import OrderedDict
 from datetime import date, datetime, timedelta, timezone
+from types import MethodType
 from typing import TYPE_CHECKING, Annotated, Any, Optional, Union
 from urllib.parse import quote_plus, unquote_plus
 
@@ -35,19 +36,22 @@ from pydantic import Field
 from pydantic.fields import FieldInfo
 from requests.auth import AuthBase
 from shapely.geometry.base import BaseGeometry
-from typing_extensions import get_args
+from typing_extensions import get_args  # noqa: F401
 
 from eodag.api.product import EOProduct
 from eodag.api.product.metadata_mapping import (
+    DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     OFFLINE_STATUS,
+    STAGING_STATUS,
     format_metadata,
+    mtd_cfg_as_conversion_and_querypath,
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
-from eodag.types import json_field_definition_to_python
+from eodag.types import json_field_definition_to_python  # noqa: F401
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.utils import (
     DEFAULT_MISSION_START_DATE,
@@ -57,7 +61,7 @@ from eodag.utils import (
     get_geometry_from_various,
     is_range_in_range,
 )
-from eodag.utils.exceptions import ValidationError
+from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
 if TYPE_CHECKING:
@@ -1030,7 +1034,7 @@ class ECMWFSearch(PostJsonSearch):
         """
         # Rename keywords from form with metadata mapping.
         # Needed to map constraints like "xxxx" to eodag parameter "ecmwf:xxxx"
-        required = [ecmwf_format(k) for k in required_keywords]
+        required = [ecmwf_format(k) for k in required_keywords]  # noqa: F841
 
         queryables: dict[str, Annotated[Any, FieldInfo]] = {}
         for name, values in available_values.items():
@@ -1116,92 +1120,74 @@ class ECMWFSearch(PostJsonSearch):
         _dc_qs = kwargs.pop("_dc_qs", None)
         if _dc_qs is not None:
             qs = unquote_plus(unquote_plus(_dc_qs))
-            sorted_unpaginated_query_params = geojson.loads(qs)
+            sorted_unpaginated_qp = geojson.loads(qs)
         else:
-            # update result with query parameters without pagination (or search-only params)
-            if isinstance(
-                self.config.pagination["next_page_query_obj"], str
-            ) and hasattr(results, "query_params_unpaginated"):
-                unpaginated_query_params = results.query_params_unpaginated
-            elif isinstance(self.config.pagination["next_page_query_obj"], str):
-                next_page_query_obj = orjson.loads(
-                    self.config.pagination["next_page_query_obj"].format()
-                )
-                unpaginated_query_params = {
-                    k: v
-                    for k, v in results.query_params.items()
-                    if (k, v) not in next_page_query_obj.items()
-                }
-            else:
-                unpaginated_query_params = self.query_params
-            # query hash, will be used to build a product id
-            sorted_unpaginated_query_params = dict_items_recursive_sort(
-                unpaginated_query_params
-            )
-
-        # use all available query_params to parse properties
-        result = dict(
-            result,
-            **sorted_unpaginated_query_params,
-            qs=sorted_unpaginated_query_params,
-        )
+            sorted_unpaginated_qp = dict_items_recursive_sort(results.query_params)
 
         # remove unwanted query params
         for param in getattr(self.config, "remove_from_query", []):
-            sorted_unpaginated_query_params.pop(param, None)
+            sorted_unpaginated_qp.pop(param, None)
 
-        qs = geojson.dumps(sorted_unpaginated_query_params)
+        if result:
+            properties = result
+            properties.update(result.pop("request_params", None) or {})
 
-        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+            properties = {k: v for k, v in properties.items() if not k.startswith("__")}
 
-        # update result with product_type_def_params and search args if not None (and not auth)
-        kwargs.pop("auth", None)
-        result.update(results.product_type_def_params)
-        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+            properties["geometry"] = properties.get("area") or DEFAULT_GEOMETRY
 
-        # parse properties
-        parsed_properties = properties_from_json(
-            result,
-            self.config.metadata_mapping,
-            discovery_config=getattr(self.config, "discover_metadata", {}),
-        )
+            start, end = ecmwf_temporal_to_eodag(properties)
+            properties["startTimeFromAscendingNode"] = start
+            properties["completionTimeFromAscendingNode"] = end
 
-        properties = {
-            # use product_type_config as default properties
-            **getattr(self.config, "product_type_config", {}),
-            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
-        }
+        else:
+            # use all available query_params to parse properties
+            result_data: dict[str, Any] = {
+                **results.product_type_def_params,
+                **sorted_unpaginated_qp,
+                **{"qs": sorted_unpaginated_qp},
+            }
 
-        def slugify(date_str: str) -> str:
-            return date_str.split("T")[0].replace("-", "")
+            # update result with product_type_def_params and search args if not None (and not auth)
+            kwargs.pop("auth", None)
+            result_data.update(results.product_type_def_params)
+            result_data = {
+                **result_data,
+                **{k: v for k, v in kwargs.items() if v is not None},
+            }
 
-        # build product id
-        product_id = (product_type or kwargs.get("dataset") or self.provider).upper()
+            properties = properties_from_json(
+                result_data,
+                self.config.metadata_mapping,
+                discovery_config=getattr(self.config, "discover_metadata", {}),
+            )
 
-        start = properties.get(START, NOT_AVAILABLE)
-        end = properties.get(END, NOT_AVAILABLE)
+            query_hash = hashlib.sha1(str(result_data).encode("UTF-8")).hexdigest()
 
-        if start != NOT_AVAILABLE:
-            product_id += f"_{slugify(start)}"
-            if end != NOT_AVAILABLE:
-                product_id += f"_{slugify(end)}"
+            properties["title"] = properties["id"] = (
+                (product_type or kwargs.get("dataset", self.provider)).upper()
+                + "_ORDERABLE_"
+                + query_hash
+            )
 
-        product_id += f"_{query_hash}"
-
-        properties["id"] = properties["title"] = product_id
+        qs = geojson.dumps(sorted_unpaginated_qp)
 
         # used by server mode to generate downloadlink href
+        # TODO: to remove once the legacy server is removed
         properties["_dc_qs"] = quote_plus(qs)
 
         product = EOProduct(
             provider=self.provider,
-            productType=product_type,
-            properties=properties,
+            properties={ecmwf_format(k): v for k, v in properties.items()},
+            **kwargs,
         )
 
-        return [
-            product,
-        ]
+        # backup original register_downloader to register_downloader_only
+        product.register_downloader_only = product.register_downloader
+        # patched register_downloader that will also update properties
+        product.register_downloader = MethodType(patched_register_downloader, product)
+
+        return [product]
 
     def count_hits(
         self, count_url: Optional[str] = None, result_type: Optional[str] = None
@@ -1213,6 +1199,83 @@ class ECMWFSearch(PostJsonSearch):
         :return: always 1
         """
         return 1
+
+
+def _check_id(product: EOProduct) -> EOProduct:
+    """Check if the id is the one of an existing job.
+
+    If the job exists, poll it, otherwise, raise an error.
+
+    :param product: The product to check the id for
+    :raises: :class:`~eodag.utils.exceptions.ValidationError`
+    """
+    if not (product_id := product.search_kwargs.get("id")):
+        return product
+
+    on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
+        "metadata_mapping", {}
+    )
+    if not on_response_mm:
+        return product
+
+    logger.debug(f"Update product properties using given orderId {product_id}")
+    on_response_mm_jsonpath = mtd_cfg_as_conversion_and_querypath(
+        on_response_mm,
+    )
+    properties_update = properties_from_json(
+        {}, {**on_response_mm_jsonpath, **{"orderId": (None, product_id)}}
+    )
+    product.properties.update(
+        {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
+    )
+
+    auth = product.downloader_auth.authenticate() if product.downloader_auth else None
+
+    # try to poll the job corresponding to the given id
+    try:
+        product.downloader._order_status(product=product, auth=auth)  # type: ignore
+    # when a NotAvailableError is catched, it means the product is not ready and still needs to be polled
+    except NotAvailableError:
+        product.properties["storageStatus"] = STAGING_STATUS
+    except Exception as e:
+        if (
+            isinstance(e, DownloadError) or isinstance(e, ValidationError)
+        ) and "order status could not be checked" in e.args[0]:
+            raise ValidationError(
+                f"Item {product_id} does not exist with {product.provider}."
+            ) from e
+        raise ValidationError(e.args[0]) from e
+
+    # update product id
+    product.properties["id"] = product_id
+    # update product type if needed
+    if product.product_type is None:
+        product.product_type = product.properties.get("ecmwf:dataset")
+    # update product title
+    product.properties["title"] = (
+        (product.product_type or product.provider).upper() + "_" + product_id
+    )
+    # use NOT_AVAILABLE as fallback product_type to avoid using guess_product_type
+    if product.product_type is None:
+        product.product_type = NOT_AVAILABLE
+
+    return product
+
+
+def patched_register_downloader(self, downloader, authenticator):
+    """Register product donwloader and update properties if searched by id.
+
+    :param self: product to which information should be added
+    :param downloader: The download method that it can use
+                    :class:`~eodag.plugins.download.base.Download` or
+                    :class:`~eodag.plugins.api.base.Api`
+    :param authenticator: The authentication method needed to perform the download
+                        :class:`~eodag.plugins.authentication.base.Authentication`
+    """
+    # register downloader
+    self.register_downloader_only(downloader, authenticator)
+    # and also update properties
+    _check_id(self)
 
 
 class MeteoblueSearch(ECMWFSearch):
@@ -1283,6 +1346,97 @@ class MeteoblueSearch(ECMWFSearch):
         """
         return QueryStringSearch.build_query_string(self, product_type, query_dict)
 
+    def normalize_results(self, results, **kwargs):
+        """Build :class:`~eodag.api.product._product.EOProduct` from provider result
+
+        :param results: Raw provider result as single dict in list
+        :param kwargs: Search arguments
+        :returns: list of single :class:`~eodag.api.product._product.EOProduct`
+        """
+
+        product_type = kwargs.get("productType")
+
+        result = results[0]
+
+        # datacube query string got from previous search
+        _dc_qs = kwargs.pop("_dc_qs", None)
+        if _dc_qs is not None:
+            qs = unquote_plus(unquote_plus(_dc_qs))
+            sorted_unpaginated_query_params = geojson.loads(qs)
+        else:
+            next_page_query_obj = orjson.loads(
+                self.config.pagination["next_page_query_obj"].format()
+            )
+            unpaginated_query_params = {
+                k: v
+                for k, v in results.query_params.items()
+                if (k, v) not in next_page_query_obj.items()
+            }
+            # query hash, will be used to build a product id
+            sorted_unpaginated_query_params = dict_items_recursive_sort(
+                unpaginated_query_params
+            )
+
+        # use all available query_params to parse properties
+        result = dict(
+            result,
+            **sorted_unpaginated_query_params,
+            qs=sorted_unpaginated_query_params,
+        )
+
+        qs = geojson.dumps(sorted_unpaginated_query_params)
+
+        query_hash = hashlib.sha1(str(qs).encode("UTF-8")).hexdigest()
+
+        # update result with product_type_def_params and search args if not None (and not auth)
+        kwargs.pop("auth", None)
+        result.update(results.product_type_def_params)
+        result = dict(result, **{k: v for k, v in kwargs.items() if v is not None})
+
+        # parse properties
+        parsed_properties = properties_from_json(
+            result,
+            self.config.metadata_mapping,
+            discovery_config=getattr(self.config, "discover_metadata", {}),
+        )
+
+        properties = {
+            # use product_type_config as default properties
+            **getattr(self.config, "product_type_config", {}),
+            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
+        }
+
+        def slugify(date_str: str) -> str:
+            return date_str.split("T")[0].replace("-", "")
+
+        # build product id
+        product_id = (product_type or self.provider).upper()
+
+        start = properties.get(START, NOT_AVAILABLE)
+        end = properties.get(END, NOT_AVAILABLE)
+
+        if start != NOT_AVAILABLE:
+            product_id += f"_{slugify(start)}"
+            if end != NOT_AVAILABLE:
+                product_id += f"_{slugify(end)}"
+
+        product_id += f"_{query_hash}"
+
+        properties["id"] = properties["title"] = product_id
+
+        # used by server mode to generate downloadlink href
+        properties["_dc_qs"] = quote_plus(qs)
+
+        product = EOProduct(
+            provider=self.provider,
+            productType=product_type,
+            properties=properties,
+        )
+
+        return [
+            product,
+        ]
+
 
 class WekeoECMWFSearch(ECMWFSearch):
     """
@@ -1319,6 +1473,10 @@ class WekeoECMWFSearch(ECMWFSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
+        if kwargs.get("id") and "-" not in kwargs["id"]:
+            # id is order id (only letters and numbers) -> use parent normalize results
+            return super().normalize_results(results, **kwargs)
+
         # formating of orderLink requires access to the productType value.
         results.data = [
             {**result, **results.product_type_def_params} for result in results
@@ -1335,6 +1493,16 @@ class WekeoECMWFSearch(ECMWFSearch):
             properties["_dc_qs"] = query_params_encoded
             product.properties = {ecmwf_format(k): v for k, v in properties.items()}
 
+            # update product and title the same way as in parent class
+            splitted_id = product.properties.get("title", "").split("-")
+            dataset = "_".join(splitted_id[:-1])
+            query_hash = splitted_id[-1]
+            product.properties["title"] = product.properties["id"] = (
+                (product.product_type or dataset or self.provider).upper()
+                + "_ORDERABLE_"
+                + query_hash
+            )
+
         return normalized
 
     def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
@@ -1344,4 +1512,9 @@ class WekeoECMWFSearch(ECMWFSearch):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
-        return QueryStringSearch.do_search(self, *args, **kwargs)
+        if kwargs.get("id") and "-" not in kwargs["id"]:
+            # id is order id (only letters and numbers) -> use parent normalize results.
+            # No real search. We fake it all, then check order status using given id
+            return [{}]
+        else:
+            return QueryStringSearch.do_search(self, *args, **kwargs)
