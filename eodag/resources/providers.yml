@@ -5735,6 +5735,13 @@
       cloudCover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
       - '$.properties."eo:cloud_cover"'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - '{{"query":{{"end_datetime":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      completionTimeFromAscendingNode:
+        - '{{"query":{{"start_datetime":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
       swathIdentifier:
         - '{{"query":{{"swath":{{"eq":"{swathIdentifier}"}}}}}}'
         - '$.properties.swath'
@@ -5851,6 +5858,13 @@
       cloudCover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
       - '$.properties."eo:cloud_cover"'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - '{{"query":{{"end_datetime":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      completionTimeFromAscendingNode:
+        - '{{"query":{{"start_datetime":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
       swathIdentifier:
         - '{{"query":{{"swath":{{"eq":"{swathIdentifier}"}}}}}}'
         - '$.properties.swath'
