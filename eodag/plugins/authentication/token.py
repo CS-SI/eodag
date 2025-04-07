@@ -202,14 +202,34 @@ class TokenAuth(Authentication):
         # append headers to req if some are specified in config
         req_kwargs: dict[str, Any] = {"headers": dict(headers, **USER_AGENT)}
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        method = getattr(self.config, "request_method", "POST")
+
+        def set_request_data(call_refresh: bool) -> None:
+            """Set the request data contents for POST requests"""
+            if method != "POST":
+                return
+
+            # append req_data to credentials if specified in config
+            data = dict(getattr(self.config, "req_data", {}), **self.config.credentials)
+
+            # when refreshing the token, we pass only the client_id/secret if present,
+            # not other parameters (username/password, scope, ...)
+            if call_refresh:
+                data = {
+                    k: v for k, v in data.items() if k in ["client_id", "client_secret"]
+                }
+                # and we add the old refresh token value to the request
+                data["refresh_token"] = self.refresh_token
+
+            req_kwargs["data"] = data
 
         if self.refresh_token:
             logger.debug("fetching access token with refresh token")
             session.mount(self.config.refresh_uri, HTTPAdapter(max_retries=retries))
+            set_request_data(call_refresh=True)
             try:
                 response = session.post(
                     self.config.refresh_uri,
-                    data={"refresh_token": self.refresh_token},
                     timeout=HTTP_REQ_TIMEOUT,
                     verify=ssl_verify,
                     **req_kwargs,
@@ -222,14 +242,8 @@ class TokenAuth(Authentication):
         logger.debug("fetching access token from %s", self.config.auth_uri)
         # append headers to req if some are specified in config
         session.mount(self.config.auth_uri, HTTPAdapter(max_retries=retries))
-        method = getattr(self.config, "request_method", "POST")
 
-        # send credentials also as data in POST requests
-        if method == "POST":
-            # append req_data to credentials if specified in config
-            req_kwargs["data"] = dict(
-                getattr(self.config, "req_data", {}), **self.config.credentials
-            )
+        set_request_data(call_refresh=False)
 
         # credentials as auth tuple if possible
         req_kwargs["auth"] = (
