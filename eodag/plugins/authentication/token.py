@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -72,6 +73,8 @@ class TokenAuth(Authentication):
           key to get the access token in the response to the token request
         * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): key to get the refresh
           token in the response to the token request
+        * :attr:`~eodag.config.PluginConfig.token_expiration_key` (``str``): key to get expiration time of
+          the token (given in s)
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
           should be verified in the requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
@@ -91,6 +94,7 @@ class TokenAuth(Authentication):
         super(TokenAuth, self).__init__(provider, config)
         self.token = ""
         self.refresh_token = ""
+        self.token_expiration = datetime.now()
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -131,7 +135,11 @@ class TokenAuth(Authentication):
     def authenticate(self) -> AuthBase:
         """Authenticate"""
         self.validate_config_credentials()
-
+        if self.token and self.token_expiration > datetime.now():
+            logger.debug("using existing access token")
+            return RequestsTokenAuth(
+                self.token, "header", headers=getattr(self.config, "headers", {})
+            )
         s = requests.Session()
         try:
             # First get the token
@@ -168,6 +176,12 @@ class TokenAuth(Authentication):
             self.token = token
             if getattr(self.config, "refresh_token_key", None):
                 self.refresh_token = response.json()[self.config.refresh_token_key]
+            if getattr(self.config, "token_expiration_key", None):
+                expiration_time = response.json()[self.config.token_expiration_key]
+                self.token_expiration = datetime.now() + timedelta(
+                    seconds=expiration_time
+                )
+
             if not hasattr(self.config, "headers"):
                 raise MisconfiguredError(f"Missing headers configuration for {self}")
             # Return auth class set with obtained token
@@ -179,6 +193,7 @@ class TokenAuth(Authentication):
         self,
         session: requests.Session,
     ) -> requests.Response:
+
         retry_total = getattr(self.config, "retry_total", REQ_RETRY_TOTAL)
         retry_backoff_factor = getattr(
             self.config, "retry_backoff_factor", REQ_RETRY_BACKOFF_FACTOR

@@ -3442,6 +3442,7 @@
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
+    token_expiration_key: expires_in
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
@@ -3913,6 +3914,7 @@
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
+    token_expiration_key: expires_in
   download: !plugin
     type: HTTPDownload
     auth_error_code: 401
@@ -5503,6 +5505,7 @@
       grant_type: client_credentials
     token_type: json
     token_key: access_token
+    token_expiration_key: expires_in
     ssl_verify: true
 
 ---
