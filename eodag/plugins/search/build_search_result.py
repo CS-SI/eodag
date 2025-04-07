@@ -458,6 +458,16 @@ class ECMWFSearch(PostJsonSearch):
         self.config.__dict__.setdefault("api_endpoint", "")
         self.config.pagination.setdefault("next_page_query_obj", "{{}}")
 
+        # defaut conf for accepting custom query params
+        self.config.__dict__.setdefault(
+            "discover_metadata",
+            {
+                "auto_discovery": True,
+                "search_param": "{metadata}",
+                "metadata_pattern": "^[a-zA-Z0-9][a-zA-Z0-9_]*$",
+            },
+        )
+
     def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         """Should perform the actual search request.
 
@@ -620,14 +630,6 @@ class ECMWFSearch(PostJsonSearch):
             if not isinstance(mapping, list):
                 mapping = product_type_conf[END]
             if isinstance(mapping, list):
-                # get time parameters (date, year, month, ...) from metadata mapping
-                input_mapping = mapping[0].replace("{{", "").replace("}}", "")
-                time_params = [
-                    values.split(":")[0].strip() for values in input_mapping.split(",")
-                ]
-                time_params = [
-                    tp.replace('"', "").replace("'", "") for tp in time_params
-                ]
                 # if startTime is not given but other time params (e.g. year/month/(day)) are given,
                 # no default date is required
                 start, end = ecmwf_temporal_to_eodag(keywords)
@@ -642,9 +644,6 @@ class ECMWFSearch(PostJsonSearch):
                             "missionEndDate", today().isoformat()
                         )
                     )
-                else:
-                    keywords[START] = start
-                    keywords[END] = end
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
@@ -1473,7 +1472,7 @@ class WekeoECMWFSearch(ECMWFSearch):
         :returns: list of single :class:`~eodag.api.product._product.EOProduct`
         """
 
-        if kwargs.get("id") and "-" not in kwargs["id"]:
+        if kwargs.get("id") and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> use parent normalize results
             return super().normalize_results(results, **kwargs)
 
@@ -1518,7 +1517,7 @@ class WekeoECMWFSearch(ECMWFSearch):
         :param kwargs: keyword arguments to be used in the search
         :return: list containing the results from the provider in json format
         """
-        if kwargs.get("id") and "-" not in kwargs["id"]:
+        if "id" in kwargs and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> use parent normalize results.
             # No real search. We fake it all, then check order status using given id
             return [{}]

@@ -3550,6 +3550,9 @@
       completionTimeFromAscendingNode:
         - '{{"enddate": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - $.properties.enddate
+      productType:
+        - dataset_id
+        - $.dataset
       downloadLink: $.properties.location
       dataset:
         - dataset_id
