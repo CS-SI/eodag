@@ -233,6 +233,8 @@ class TokenAuth(Authentication):
                 data = {
                     k: v for k, v in data.items() if k in ["client_id", "client_secret"]
                 }
+                # the grant type is always refresh_token
+                data["grant_type"] = "refresh_token"
                 # and we add the old refresh token value to the request
                 data["refresh_token"] = self.refresh_token
 
