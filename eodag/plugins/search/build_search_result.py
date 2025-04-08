@@ -319,7 +319,7 @@ def append_time(input_date: date, time: Optional[str]) -> datetime:
 def parse_date(
     date_str: str, time: Optional[Union[str, list[str]]]
 ) -> tuple[datetime, datetime]:
-    """Parses a date string in format YYYY-MM-DD or YYYY-MM-DD/YYYY-MM-DD or YYYY-MM-DD/to/YYYY-MM-DD."""
+    """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
     if "to" in date_str:
         start_date_str, end_date_str = date_str.split("/to/")
     elif "/" in date_str:
@@ -328,6 +328,14 @@ def parse_date(
         end_date_str = dates[-1]
     else:
         start_date_str = end_date_str = date_str
+
+    # Update YYYYMMDD formatted dates
+    if re.match(r"^\d{8}$", start_date_str):
+        start_date_str = (
+            f"{start_date_str[:4]}-{start_date_str[4:6]}-{start_date_str[6:]}"
+        )
+    if re.match(r"^\d{8}$", end_date_str):
+        end_date_str = f"{end_date_str[:4]}-{end_date_str[4:6]}-{end_date_str[6:]}"
 
     start_date = datetime.fromisoformat(start_date_str.rstrip("Z"))
     end_date = datetime.fromisoformat(end_date_str.rstrip("Z"))

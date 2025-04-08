@@ -4460,6 +4460,9 @@
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
         - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      productType:
+        - dataset
+        - $.dataset
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
