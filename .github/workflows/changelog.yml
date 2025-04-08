@@ -1,0 +1,63 @@
+name: Update changelog
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [develop]
+
+jobs:
+  update-changelog:
+    name: Update changelog
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repo
+      uses: actions/checkout@v4
+      with:
+        # Get history and tags for SCM versioning to work
+        fetch-depth: 0
+    - name: Install the latest version of uv with cache enabled
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: ""
+    - name: Install python-semantic-release in venv
+      run: |
+        uv venv
+        source .venv/bin/activate
+        uv pip install python-semantic-release
+    - name: Get expected new version and update changelog
+      run: |
+        source .venv/bin/activate
+        EXPECTED_VERSION=$(semantic-release --noop version)
+        TODAY=$(date +"%Y-%m-%d")
+        TITLE="$EXPECTED_VERSION ($TODAY)"
+        TITLE_LENGTH=${#TITLE}
+
+        semantic-release changelog
+
+        sed -i "/^Unreleased$/{
+        s/.*/$TITLE/
+        n
+        s/^=*$/$(printf '%*s' "$TITLE_LENGTH" '' | tr ' ' '=')/
+        }" CHANGES.rst
+
+        echo "EXPECTED_VERSION=$EXPECTED_VERSION" >> $GITHUB_ENV
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        branch: new-release
+        delete-branch: true
+        draft: true
+        title: 'build: bump version'
+        body: |
+          `${{ env.EXPECTED_VERSION }}` release.
+          Please also update version in:
+          - [ ] [pyproject.toml](https://github.com/CS-SI/eodag/edit/new-release/pyproject.toml#L6)
+          - [ ] [README.rst](https://github.com/CS-SI/eodag/edit/new-release/README.rst#L190)
+          - [ ] [charts/eodag-server/Chart.yml#appVersion](https://github.com/CS-SI/eodag/edit/new-release/charts/eodag-server/Chart.yaml#L2)
+          - [ ] [charts/eodag-server/Chart.yml#version](https://github.com/CS-SI/eodag/edit/new-release/charts/eodag-server/Chart.yaml#L18)
+          - [ ] [docs/stac_rest.rst](https://github.com/CS-SI/eodag/edit/new-release/docs/stac_rest.rst#L118)
+        labels: |
+          automated pr
