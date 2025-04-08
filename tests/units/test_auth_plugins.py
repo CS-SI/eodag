@@ -123,6 +123,18 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
                         "token_expiration_key": "token_expiration",
                     },
                 },
+                "provider_json_token_with_refresh": {
+                    "products": {"foo_product": {}},
+                    "auth": {
+                        "type": "TokenAuth",
+                        "auth_uri": "http://foo.bar",
+                        "refresh_uri": "http://baz.qux",
+                        "token_type": "json",
+                        "token_key": "token_is_here",
+                        "refresh_token_key": "refresh_token_is_here",
+                        "token_expiration_key": "token_expiration",
+                    },
+                },
                 "provider_text_token_req_data": {
                     "products": {"foo_product": {}},
                     "auth": {
@@ -344,6 +356,93 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             data=auth_plugin.config.credentials,
             verify=True,
             auth=None,
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
+    )
+    def test_plugins_auth_tokenauth_json_token_with_refresh(self, mock_requests_post):
+        """
+        TokenAuth.authenticate must return a RequestsTokenAuth object using json token.
+        This token can be refreshed.
+        """
+        auth_plugin = self.get_auth_plugin("provider_json_token_with_refresh")
+
+        auth_plugin.config.credentials = {
+            "foo": "bar",
+            "baz": "qux",
+            "client_id": "id",
+            "client_secret": "secret",
+        }
+
+        # mock token post request response
+        mock_requests_post.return_value = mock.Mock()
+        mock_requests_post.return_value.json.return_value = {
+            "not_token": "this_is_not_test_token",
+            "token_is_here": "this_is_test_token",
+            "refresh_token_is_here": "first_refresh_token",
+            "token_expiration": 1000,
+        }
+
+        # check if returned auth object is an instance of requests.AuthBase
+        auth = auth_plugin.authenticate()
+        assert isinstance(auth, AuthBase)
+
+        # check if token is integrated to the request
+        req = mock.Mock(headers={})
+        auth(req)
+        assert req.headers["Authorization"] == "Bearer this_is_test_token"
+
+        # token request should be sent
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            method="POST",
+            url=auth_plugin.config.auth_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+            data=auth_plugin.config.credentials,
+            verify=True,
+            auth=None,
+        )
+
+        mock_requests_post.reset_mock()
+        # second call should use existing token
+        auth = auth_plugin.authenticate()
+        assert isinstance(auth, AuthBase)
+        mock_requests_post.assert_not_called()
+
+        # reset expiration -> token should be fetched again
+        # The refresh token mechanism will be used.
+        auth_plugin.token_expiration = datetime.now()
+        mock_requests_post.return_value.json.return_value = {
+            "not_token": "this_is_not_test_token",
+            "token_is_here": "this_is_a_refreshed_token",
+            "refresh_token_is_here": "second_refresh_token",  # used to refresh again the token (not used in this test)
+            "token_expiration": 1000,
+        }
+        auth = auth_plugin.authenticate()
+
+        assert isinstance(auth, AuthBase)
+        req = mock.Mock(headers={})
+        auth(req)
+        assert req.headers["Authorization"] == "Bearer this_is_a_refreshed_token"
+
+        mock_requests_post.assert_called_once_with(
+            mock.ANY,
+            method="POST",
+            url=auth_plugin.config.refresh_uri,
+            timeout=HTTP_REQ_TIMEOUT,
+            headers=USER_AGENT,
+            # only client_id and secret are passed + the refresh token from the first call
+            # and the grant type
+            data={
+                "grant_type": "refresh_token",  # hardcoded
+                "client_id": "id",
+                "client_secret": "secret",
+                "refresh_token": "first_refresh_token",
+            },
+            verify=True,
+            json=None,
         )
 
     @mock.patch(
