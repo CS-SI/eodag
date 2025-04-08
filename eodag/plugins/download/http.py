@@ -649,6 +649,8 @@ class HTTPDownload(Download):
             if fs_path is not None:
                 ext = Path(product.filename).suffix
                 path = Path(fs_path).with_suffix(ext)
+                if "ORDERABLE" in path.stem and product.properties.get("title"):
+                    path = path.with_stem(sanitize(product.properties["title"]))
 
                 with open(path, "wb") as fhandle:
                     for chunk in chunk_iterator:
