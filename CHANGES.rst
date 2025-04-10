@@ -4,6 +4,12 @@ Release history
 
 .. _changelog-unreleased:
 
+3.3.0 (2025-04-10)
+==================
+
+
+.. _changelog-unreleased:
+
 v3.3.0 (2025-04-10)
 ===================
 
