@@ -77,6 +77,7 @@ class TokenAuth(Authentication):
           the token (given in s)
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
           should be verified in the requests; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.request_method` (``str``): HTTP method to use; default: ``POST``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
           returned in case of an authentication error
         * :attr:`~eodag.config.PluginConfig.req_data` (``dict[str, Any]``): if the credentials
