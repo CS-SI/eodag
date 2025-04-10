@@ -16,9 +16,9 @@ Bug Fixes
 
 * **plugins**: Check expiration time in token auth (`#1590`_, `15dbcb1`_)
 
-* **providers**: Geodes datetime search (`#1592`_, `87ade04`_)
+* **providers**: ``geodes`` datetime search (`#1592`_, `87ade04`_)
 
-* **providers**: Rename EO:CLMS:DAT:CORINE to EO:EEA:DAT:CORINE (`#1576`_, `2d3f6da`_)
+* **providers**: Rename ``EO:CLMS:DAT:CORINE`` to ``EO:EEA:DAT:CORINE`` (`#1576`_, `2d3f6da`_)
 
 Continuous Integration
 ----------------------
@@ -28,7 +28,7 @@ Continuous Integration
 Features
 --------
 
-* **plugins**: Ecmwfsearch search-by-id (`#1580`_, `f296c52`_)
+* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
 
 Testing
 -------
