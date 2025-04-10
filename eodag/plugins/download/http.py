@@ -216,7 +216,7 @@ class HTTPDownload(Download):
                     product.properties["storageStatus"] = STAGING_STATUS
                 except RequestException as e:
                     self._check_auth_exception(e)
-                    msg = f'{product.properties["title"]} could not be ordered'
+                    msg = f"{product.properties['title']} could not be ordered"
                     if e.response is not None and e.response.status_code == 400:
                         raise ValidationError.from_error(e, msg) from e
                     else:
@@ -255,6 +255,16 @@ class HTTPDownload(Download):
         product.properties.update(
             {k: v for k, v in properties_update.items() if v != NOT_AVAILABLE}
         )
+        # the job id becomes the product id for EcmwfSearch products
+        if "ORDERABLE" in product.properties.get("id", ""):
+            product.properties["id"] = product.properties.get(
+                "orderId", product.properties["id"]
+            )
+            product.properties["title"] = (
+                (product.product_type or product.provider).upper()
+                + "_"
+                + product.properties["id"]
+            )
         if "downloadLink" in product.properties:
             product.remote_location = product.location = product.properties[
                 "downloadLink"
@@ -390,7 +400,10 @@ class HTTPDownload(Download):
                     # success and no need to get status response content
                     skip_parsing_status_response = True
             except RequestException as e:
-                msg = f'{product.properties["title"]} order status could not be checked'
+                msg = (
+                    f"{product.properties.get('title') or product.properties.get('id') or product} "
+                    "order status could not be checked"
+                )
                 if e.response is not None and e.response.status_code == 400:
                     raise ValidationError.from_error(e, msg) from e
                 else:
@@ -426,8 +439,13 @@ class HTTPDownload(Download):
                     f"{product.properties['title']} order status: {status_percent}"
                 )
 
-            status_message = status_dict.get("message")
+            product.properties.update(
+                {k: v for k, v in status_dict.items() if v != NOT_AVAILABLE}
+            )
+
             product.properties["orderStatus"] = status_dict.get("status")
+
+            status_message = status_dict.get("message")
 
             # handle status error
             errors: dict[str, Any] = status_config.get("error", {})
@@ -436,13 +454,14 @@ class HTTPDownload(Download):
                     f"Provider {product.provider} returned: {status_dict.get('error_message', status_message)}"
                 )
 
+        product.properties["storageStatus"] = STAGING_STATUS
+
         success_status: dict[str, Any] = status_config.get("success", {}).get("status")
         # if not success
         if (success_status and success_status != status_dict.get("status")) or (
             success_code and success_code != response.status_code
         ):
-            error = NotAvailableError(status_message)
-            raise error
+            return None
 
         product.properties["storageStatus"] = ONLINE_STATUS
 
@@ -461,7 +480,11 @@ class HTTPDownload(Download):
                     product.properties["title"],
                     e,
                 )
-                return None
+                msg = f"{product.properties['title']} order status could not be checked"
+                if e.response is not None and e.response.status_code == 400:
+                    raise ValidationError.from_error(e, msg) from e
+                else:
+                    raise DownloadError.from_error(e, msg) from e
 
         result_type = config_on_success.get("result_type", "json")
         result_entry = config_on_success.get("results_entry")
@@ -626,6 +649,8 @@ class HTTPDownload(Download):
             if fs_path is not None:
                 ext = Path(product.filename).suffix
                 path = Path(fs_path).with_suffix(ext)
+                if "ORDERABLE" in path.stem and product.properties.get("title"):
+                    path = path.with_stem(sanitize(product.properties["title"]))
 
                 with open(path, "wb") as fhandle:
                     for chunk in chunk_iterator:
@@ -961,17 +986,21 @@ class HTTPDownload(Download):
             auth = None
 
         s = requests.Session()
-        self.stream = s.request(
-            req_method,
-            req_url,
-            stream=True,
-            auth=auth,
-            params=params,
-            headers=USER_AGENT,
-            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-            verify=ssl_verify,
-            **req_kwargs,
-        )
+        try:
+            self.stream = s.request(
+                req_method,
+                req_url,
+                stream=True,
+                auth=auth,
+                params=params,
+                headers=USER_AGENT,
+                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                verify=ssl_verify,
+                **req_kwargs,
+            )
+        except requests.exceptions.MissingSchema:
+            # location is not a valid url -> product is not available yet
+            raise NotAvailableError("Product is not available yet")
         try:
             self.stream.raise_for_status()
         except requests.exceptions.Timeout as exc:

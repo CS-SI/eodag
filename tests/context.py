@@ -57,6 +57,7 @@ from eodag.plugins.apis.ecmwf import EcmwfApi
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.plugins.authentication.header import HeaderAuth
+from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -71,6 +72,7 @@ from eodag.plugins.download.http import HTTPDownload
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
+from eodag.plugins.search.build_search_result import ecmwf_temporal_to_eodag
 from eodag.plugins.search.qssearch import QueryStringSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, Queryables

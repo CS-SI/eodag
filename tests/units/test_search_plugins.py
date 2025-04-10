@@ -59,6 +59,7 @@ from tests.context import (
     TimeOutError,
     cached_parse,
     cached_yaml_load_all,
+    ecmwf_temporal_to_eodag,
     get_geometry_from_various,
     load_default_config,
     merge_configs,
@@ -2425,6 +2426,33 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
                 )
             except Exception:
                 assert eoproduct.properties[param] == self.custom_query_params[param]
+
+    def test_plugins_search_ecmwf_temporal_to_eodag(self):
+        """ecmwf_temporal_to_eodag must parse all expected dates formats"""
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(
+                dict(day="15", month="02", year="2022", time="0600")
+            ),
+            ("2022-02-15T06:00:00Z", "2022-02-15T06:00:00Z"),
+        )
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(dict(hday="15", hmonth="02", hyear="2022")),
+            ("2022-02-15T00:00:00Z", "2022-02-15T00:00:00Z"),
+        )
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(dict(date="2022-02-15")),
+            ("2022-02-15T00:00:00Z", "2022-02-15T00:00:00Z"),
+        )
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(
+                dict(date="2022-02-15T00:00:00Z/2022-02-16T00:00:00Z")
+            ),
+            ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
+        )
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(dict(date="20220215/to/20220216")),
+            ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
+        )
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""
