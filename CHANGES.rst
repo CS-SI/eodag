@@ -10,10 +10,6 @@ Release history
 Bug Fixes
 ---------
 
-* Update external product types reference (`#1599`_, `548fded`_)
-
-* Update external product types reference (`#1603`_, `6af7ce4`_)
-
 * **core**: Ensure datetime format compliance with STAC specification (`#1573`_, `7e10e3a`_)
 
 * **plugins**: Add datetime for ecmwf search (`#1572`_, `b785e7c`_)
