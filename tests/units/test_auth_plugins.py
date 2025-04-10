@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pickle
 import unittest
 from datetime import datetime, timedelta
 from unittest import mock
@@ -404,6 +405,9 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             verify=True,
             auth=None,
         )
+
+        # Serialize then deserialize the auth plugin, check that it still works the same
+        auth_plugin = pickle.loads(pickle.dumps(auth_plugin))
 
         mock_requests_post.reset_mock()
         # second call should use existing token
