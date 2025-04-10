@@ -30,12 +30,6 @@ Features
 
 * **plugins**: Ecmwfsearch search-by-id (`#1580`_, `f296c52`_)
 
-Co-authored-by: Augustin Nesson <augustin.nesson@csgroup.eu>
-
-Co-authored-by: Aubin Lambaré <aubin.lambare@cs-soprasteria.com>
-
-Co-authored-by: jlahovnik <julia.lahovnik@csgroup.eu>
-
 Testing
 -------
 
