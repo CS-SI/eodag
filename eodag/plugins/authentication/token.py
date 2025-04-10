@@ -94,10 +94,22 @@ class TokenAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(TokenAuth, self).__init__(provider, config)
-        self.auth_lock = Lock()
         self.token = ""
         self.refresh_token = ""
         self.token_expiration = datetime.now()
+        self.auth_lock = Lock()
+
+    def __getstate__(self):
+        """Exclude attributes that can't be pickled from serialization."""
+        state = dict(self.__dict__)
+        del state["auth_lock"]
+        return state
+
+    def __setstate__(self, state):
+        """Exclude attributes that can't be pickled from deserialization."""
+        self.__dict__.update(state)
+        # Init them manually
+        self.auth_lock = Lock()
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
