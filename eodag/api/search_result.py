@@ -193,8 +193,8 @@ class SearchResult(UserList):
                 <details><summary style='color: grey; font-family: monospace;'>
                     {i}&ensp;
                     {type(p).__name__}(id=<span style='color: black;'>{
-                        p.properties['id']
-                    }</span>, provider={p.provider})
+                    p.properties["id"]
+                }</span>, provider={p.provider})
                 </summary>
                 {p._repr_html_()}
                 </details>
@@ -214,13 +214,12 @@ class SearchResult(UserList):
         return super().extend(other)
 
 
-class RawSearchResult(UserList):
+class RawSearchResult(UserList[dict[str, Any]]):
     """An object representing a collection of raw/unparsed search results obtained from a provider.
 
     :param results: A list of raw/unparsed search results
     """
 
-    data: list[Any]
     query_params: dict[str, Any]
     product_type_def_params: dict[str, Any]
 

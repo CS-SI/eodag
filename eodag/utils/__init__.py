@@ -138,7 +138,7 @@ DEFAULT_ITEMS_PER_PAGE = 20
 DEFAULT_MAX_ITEMS_PER_PAGE = 50
 
 # default product-types start date
-DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00Z"
+DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
 
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
@@ -1192,10 +1192,16 @@ def get_geometry_from_various(
 class MockResponse:
     """Fake requests response"""
 
-    def __init__(self, json_data: Any = None, status_code: int = 200) -> None:
+    def __init__(
+        self,
+        json_data: Any = None,
+        status_code: int = 200,
+        headers: Optional[dict[str, Any]] = None,
+    ) -> None:
         self.json_data = json_data
         self.status_code = status_code
         self.content = json_data
+        self.headers = headers
 
     def json(self) -> Any:
         """Return json data"""

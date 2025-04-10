@@ -99,8 +99,13 @@ class BaseDownloadPluginTest(unittest.TestCase):
     def get_download_plugin(self, product: EOProduct):
         return self.plugins_manager.get_download_plugin(product)
 
-    def get_auth_plugin(self, associated_plugin, product):
-        return self.plugins_manager.get_auth_plugin(associated_plugin, product)
+    def get_auth_plugin(self, associated_plugin, product, not_none=True):
+        plugin = self.plugins_manager.get_auth_plugin(associated_plugin, product)
+        if not_none:
+            assert (
+                plugin is not None
+            ), f"Cannot get auth plugin for {associated_plugin} and {product}"
+        return plugin
 
 
 class TestDownloadPluginBase(BaseDownloadPluginTest):
@@ -1042,9 +1047,6 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         self.product.provider = "cop_ads"
         self.product.product_type = "CAMS_EAC4"
-        self.product.properties[
-            "downloadLink"
-        ] = "https://ads.atmosphere.copernicus.eu/dummy"
         product_dataset = "cams-global-reanalysis-eac4"
 
         plugin = self.get_download_plugin(self.product)
@@ -1056,6 +1058,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["orderLink"] = (
             f"{endpoint}/processes/{product_dataset}/execution" + '?{"foo": "bar"}'
         )
+        self.product.properties["id"] = "CAMS_EAC4_ORDERABLE_12345"
         self.product.properties["storageStatus"] = "OFFLINE"
         self.product.location = self.product.remote_location = (
             NOT_AVAILABLE + '?{"foo": "bar"}'
@@ -1111,10 +1114,10 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
             # expected values
             expected_remote_location = "http://somewhere/download/dummy_request_id"
-            expected_order_status_link = f"{endpoint}/jobs/dummy_request_id"
-            expected_path = os.path.join(
-                output_data_path, self.product.properties["title"]
+            expected_order_status_link = (
+                f"{endpoint}/jobs/dummy_request_id?request=true"
             )
+            expected_path = os.path.join(output_data_path, "CAMS_EAC4_dummy_request_id")
             # download
             path = self.product.download(
                 output_dir=output_data_path,
@@ -1404,7 +1407,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             },
         }
         self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
-        self.product.properties["searchLink"] = "http://somewhere/search-gain"
+        self.product.properties["searchLink"] = "http://somewhere/search-again"
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
@@ -1421,7 +1424,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             )
             responses.add(
                 responses.GET,
-                "http://somewhere/search-gain",
+                "http://somewhere/search-again",
                 status=200,
                 body=(
                     b"<?xml version='1.0' encoding='UTF-8' standalone='yes'?>"
@@ -1439,6 +1442,56 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             self.assertEqual(len(responses.calls), 2)
 
         run()
+
+    def test_plugins_download_http_order_status_search_again_raises_if_request_failed(
+        self,
+    ):
+        """HTTPDownload._order_status() must raise an error if the search request after success failed"""
+        plugin = self.get_download_plugin(self.product)
+        plugin.config.order_status = {
+            "metadata_mapping": {"status": "$.json.status"},
+            "success": {"status": "great-success"},
+            "on_success": {
+                "need_search": True,
+                "result_type": "xml",
+                "results_entry": "//entry",
+                "metadata_mapping": {
+                    "downloadLink": "foo/text()",
+                },
+            },
+        }
+        self.product.properties["orderStatusLink"] = "http://somewhere/order-status"
+        self.product.properties["searchLink"] = "http://somewhere/search-again"
+        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+
+        auth_plugin = self.get_auth_plugin(plugin, self.product)
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth = auth_plugin.authenticate()
+
+        @responses.activate(registry=responses.registries.OrderedRegistry)
+        def run(error_code: int):
+            responses.add(
+                responses.GET,
+                "http://somewhere/order-status",
+                status=200,
+                json={"status": "great-success"},
+            )
+            responses.add(
+                responses.GET,
+                "http://somewhere/search-again",
+                status=error_code,
+            )
+            if error_code == 500:
+                with self.assertRaises(DownloadError) as context:
+                    plugin._order_status(self.product, auth=auth)
+            if error_code == 400:
+                with self.assertRaises(ValidationError) as context:
+                    plugin._order_status(self.product, auth=auth)
+            self.assertIn("order status could not be checked", str(context.exception))
+            self.assertEqual(len(responses.calls), 2)
+
+        run(error_code=500)
+        run(error_code=400)
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
@@ -2080,8 +2133,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.properties["storageStatus"] = ONLINE_STATUS
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(plugin, self.product)
-        self.product.register_downloader(plugin, auth)
+        self.product.register_downloader(plugin, None)
 
         @responses.activate(registry=responses.registries.OrderedRegistry)
         def run():
@@ -2154,8 +2206,7 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
         self.product.location = self.product.remote_location = "somewhere"
 
         plugin = self.get_download_plugin(self.product)
-        auth = self.get_auth_plugin(plugin, self.product)
-        self.product.register_downloader(plugin, auth)
+        self.product.register_downloader(plugin, None)
 
         # no retry
         @responses.activate(registry=responses.registries.OrderedRegistry)

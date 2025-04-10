@@ -22,23 +22,19 @@ import unittest
 
 from requests.exceptions import RequestException
 
+from eodag.utils import MockResponse
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
+    USER_AGENT,
+    CodeAuthorizedAuth,
     EODataAccessGateway,
     EOProduct,
+    HeaderAuth,
     NoMatchingProductType,
     RequestError,
     USGSError,
 )
 from tests.utils import mock
-
-
-class MockResponse:
-    def __init__(self, json_data):
-        self.json_data = json_data
-
-    def json(self):
-        return self.json_data
 
 
 class TestCoreSearch(unittest.TestCase):
@@ -86,6 +82,10 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
         side_effect=RequestException,
@@ -98,7 +98,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     def test_core_search_errors_stacsearch(
-        self, mock_query, mock_fetch_product_types_list, mock_post
+        self,
+        mock_query,
+        mock_fetch_product_types_list,
+        mock_post,
+        mock_auth_session_request,
     ):
         mock_query.return_value = ([], 0)
         # StacSearch / earth_search
@@ -107,6 +111,10 @@ class TestCoreSearch(unittest.TestCase):
         # search iterator
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
     @mock.patch(
         "eodag.plugins.search.qssearch.requests.post",
         autospec=True,
@@ -120,7 +128,11 @@ class TestCoreSearch(unittest.TestCase):
         autospec=True,
     )
     def test_core_search_errors_postjson(
-        self, mock_request, mock_fetch_product_types_list, mock_post
+        self,
+        mock_request,
+        mock_fetch_product_types_list,
+        mock_post,
+        mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # PostJsonSearch / aws_eos
@@ -160,6 +172,10 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.apis.usgs.api.scene_search", autospec=True, side_effect=USGSError
     )
     @mock.patch("eodag.plugins.apis.usgs.api.login", autospec=True)
@@ -167,7 +183,11 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_core_search_errors_usgs(
-        self, mock_fetch_product_types_list, mock_login, mock_scene_search
+        self,
+        mock_fetch_product_types_list,
+        mock_login,
+        mock_scene_search,
+        mock_auth_session_request,
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
@@ -180,6 +200,10 @@ class TestCoreSearch(unittest.TestCase):
             RequestError, next, self.dag.search_iter_page(productType="foo")
         )
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request",
         autospec=True,
@@ -197,7 +221,12 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_core_search_errors_buildpost(
-        self, mock_fetch_product_types_list, mock_authenticate, mock_post, mock_request
+        self,
+        mock_fetch_product_types_list,
+        mock_authenticate,
+        mock_post,
+        mock_request,
+        mock_auth_session_request,
     ):
         mock_request.return_value = MockResponse({"results": []})
         # MeteoblueSearch / meteoblue
@@ -616,3 +645,151 @@ class TestCoreSearch(unittest.TestCase):
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"], "a-username"
         )
+
+    @mock.patch("eodag.plugins.authentication.header.HTTPHeaderAuth.authenticate")
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_core_search_ecwmfsearch_by_id(self, mock_request, mock_auth):
+        """search by id should return properties based on status response"""
+
+        product_id = "123456"
+        auth = HeaderAuth({"h1": "azer"})
+        mock_auth.return_value = auth
+        status_response = {
+            "processID": "reanalysis-era5-single-levels",
+            "type": "process",
+            "jobID": "123456",
+            "status": "successful",
+            "created": "2025-03-18T15:08:57.095337",
+            "started": "2025-03-18T15:09:02.073302",
+            "finished": "2025-03-18T15:09:02.866406",
+            "updated": "2025-03-18T15:09:02.866406",
+            "links": [
+                {
+                    "href": "https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456",
+                    "rel": "self",
+                    "type": "application/json",
+                },
+                {
+                    "href": "https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456/results",
+                    "rel": "results",
+                },
+            ],
+            "metadata": {
+                "request": {
+                    "ids": {
+                        "day": ["01"],
+                        "time": ["09:00"],
+                        "year": ["1940"],
+                        "month": ["01"],
+                        "dataset": "reanalysis-era5-single-levels",
+                        "variable": "10m_u_component_of_wind",
+                        "data_format": "grib",
+                        "product_type": "reanalysis",
+                        "download_format": "zip",
+                    },
+                    "labels": {
+                        "dataset": "reanalysis-era5-single-levels",
+                        "Product type": ["Reanalysis"],
+                        "Variable": ["10m u-component of wind"],
+                        "Year": ["1940"],
+                        "Month": ["January"],
+                        "Day": ["01"],
+                        "Time": ["09:00"],
+                        "Geographical area": ["Whole available region"],
+                        "Data format": ["GRIB"],
+                        "Download format": ["Zip"],
+                    },
+                },
+                "origin": "api",
+            },
+        }
+        mock_res_status = MockResponse(
+            json_data=status_response, status_code=200, headers={}
+        )
+        results_response = {
+            "asset": {
+                "value": {
+                    "type": "application/zip",
+                    "href": "https://test.zip",
+                    "file:checksum": "789654",
+                    "file:size": 1919376,
+                    "file:local_path": "s3://test.zip",
+                }
+            }
+        }
+        mock_res_results = MockResponse(
+            json_data=results_response, status_code=200, headers={}
+        )
+        mock_request.side_effect = [mock_res_status, mock_res_results]
+        result = self.dag.search(provider="cop_cds", id=product_id)
+        mock_request.assert_has_calls(
+            [
+                mock.call(
+                    method="GET",
+                    url="https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456?request=true",
+                    headers=USER_AGENT,
+                    auth=auth,
+                    timeout=30,
+                    allow_redirects=False,
+                    json=None,
+                ),
+                mock.call(
+                    method="GET",
+                    url="https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456/results",
+                    headers=USER_AGENT,
+                    auth=auth,
+                    timeout=30,
+                    allow_redirects=False,
+                    json=None,
+                ),
+            ]
+        )
+        self.assertEqual(1, len(result))
+        self.assertEqual("123456", result[0].properties["id"])
+        self.assertEqual(
+            "REANALYSIS-ERA5-SINGLE-LEVELS_123456", result[0].properties["title"]
+        )
+        self.assertEqual("successful", result[0].properties["orderStatus"])
+        self.assertIn("request_params", result[0].properties)
+        req_params = result[0].properties["request_params"]
+        for k, v in status_response["metadata"]["request"]["ids"].items():
+            self.assertIn(k, req_params)
+            self.assertEqual(v, req_params[k])
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate"
+    )
+    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    def test_core_search_dedtlumi_search_by_id(
+        self, mock_request, mock_auth, mock_auth_config_request
+    ):
+        """search by id should return properties based on status response"""
+        product_id = "123-456"
+        auth = CodeAuthorizedAuth(token="123", where="header")
+        mock_auth.return_value = auth
+        status_response = {
+            "contentLength": 3136349,
+            "contentType": "application/x-grib",
+            "location": "https://download-polytope.lumi.apps.dte.destination-earth.eu/default/d20e465e.grib",
+        }
+        mock_res_status = MockResponse(
+            json_data=status_response, status_code=200, headers={}
+        )
+        mock_request.return_value = mock_res_status
+        result = self.dag.search(provider="dedt_lumi", id=product_id)
+        mock_request.assert_called_with(
+            method="GET",
+            url="https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/123-456",
+            headers=USER_AGENT,
+            auth=auth,
+            timeout=5,
+            allow_redirects=False,
+            json=None,
+        )
+        self.assertEqual(1, len(result))
+        self.assertEqual("123-456", result[0].properties["id"])
+        self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])

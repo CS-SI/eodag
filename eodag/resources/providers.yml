@@ -1554,10 +1554,10 @@
     auth_endpoint: https://api.ecmwf.int/v1
     metadata_mapping:
       productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/to/{completionTimeFromAscendingNode#to_iso_date(-1,)}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - 'area={geometry#to_nwse_bounds_str(/)}'
@@ -1602,7 +1602,6 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://ads.atmosphere.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -1616,13 +1615,19 @@
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
         searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
       metadata_mapping:
         status: $.json.status
+        order:date: $.json.created
+        creationDate: $.json.created
+        publicationDate: $.json.finished
+        modificationDate: $.json.updated
+        ecmwf:dataset: $.json.processID
+        request_params: $.json.metadata.request.ids
       error:
         status: failed
       success:
@@ -1633,7 +1638,9 @@
           downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
+    timeout: 30
     end_date_excluded: false
     dates_required: true
     remove_from_query:
@@ -1645,10 +1652,10 @@
       form_url: https://ads.atmosphere.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
       productType: $.productType
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - 'date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
       # The geographic extent of the product
       geometry:
         - '{{"area": {geometry#to_nwse_bounds}}}'
@@ -1782,7 +1789,7 @@
     - host
   url: https://cds.climate.copernicus.eu
   # anchors to avoid duplications
-  anchor_day_month_year: &nday_month_year
+  anchor_nday_month_year: &nday_month_year
     completionTimeFromAscendingNode:
       - |
         {{
@@ -1829,7 +1836,6 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://cds.climate.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -1837,19 +1843,25 @@
     type: HTTPDownload
     timeout: 30
     ssl_verify: true
-    auth_error_code: 401
     order_enabled: true
+    auth_error_code: 401
     order_method: POST
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
         searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
       metadata_mapping:
         status: $.json.status
+        order:date: $.json.created
+        creationDate: $.json.created
+        publicationDate: $.json.finished
+        modificationDate: $.json.updated
+        ecmwf:dataset: $.json.processID
+        request_params: $.json.metadata.request.ids
       error:
         status: failed
       success:
@@ -1860,7 +1872,9 @@
           downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
+    timeout: 30
     end_date_excluded: false
     dates_required: true
     remove_from_query:
@@ -3379,7 +3393,7 @@
         <<: *id_from_date
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_NDVI_1KM_V2_10DAILY_NETCDF"}}'
     CLMS_CORINE:
-      productType: EO:CLMS:DAT:CORINE
+      productType: EO:EEA:DAT:CORINE
       providerProductType: Corine Land Cover 2018
       format: GeoTiff100mt
       metadata_mapping:
@@ -3388,7 +3402,7 @@
           - '{{"product_type": "{providerProductType}"}}'
           - '$.null'
         defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CORINE"}}'
+        orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:EEA:DAT:CORINE"}}'
     CLMS_GLO_FCOVER_333M:
       productType: EO:CLMS:DAT:CLMS_GLOBAL_FCOVER_300M_V1_10DAILY_NETCDF
       providerProductType: FCOVER300
@@ -3442,6 +3456,7 @@
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
+    token_expiration_key: expires_in
   download: !plugin
     type: HTTPDownload
     base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
@@ -3513,6 +3528,7 @@
   search: !plugin
     type: WekeoECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
+    need_auth: true
     timeout: 60
     need_auth: true
     auth_error_code: 401
@@ -3535,6 +3551,9 @@
       completionTimeFromAscendingNode:
         - '{{"enddate": "{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
         - $.properties.enddate
+      productType:
+        - dataset_id
+        - $.dataset
       downloadLink: $.properties.location
       dataset:
         - dataset_id
@@ -3907,12 +3926,12 @@
           - '$.null'
   auth: !plugin
     type: TokenAuth
-    matching_url: https://[-\w\.]+.wekeo2.eu
     auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
     refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
     token_type: json
     token_key: access_token
     refresh_token_key: refresh_token
+    token_expiration_key: expires_in
   download: !plugin
     type: HTTPDownload
     auth_error_code: 401
@@ -3927,7 +3946,11 @@
         method: GET
       metadata_mapping:
         status: $.json.features[0].status
+        order:date: $.json.features[0].started_at
+        creationDate: $.json.features[0].started_at
         message: $.json.features[0].message
+        orderId: $.json.features[0]._id
+        ecmwf:dataset: $.json.features[0].dataset_id
       error:
         status: Error
       success:
@@ -4427,6 +4450,7 @@
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
     dates_required: True
     discover_queryables:
@@ -4434,10 +4458,13 @@
       product_type_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
     metadata_mapping:
-      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_date}'
+      startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
-        - '{$.completionTimeFromAscendingNode#to_iso_date}'
+        - '{$.completionTimeFromAscendingNode#to_iso_utc_datetime}'
+      productType:
+        - dataset
+        - $.dataset
       qs: $.qs
       orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
@@ -4500,7 +4527,6 @@
       DT_CLIMATE_ADAPTATION:
   auth: !plugin
     type: OIDCAuthorizationCodeFlowAuth
-    matching_url: https://[-\w\.]+.dte.destination-earth.eu
     oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
     redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
     client_id: polytope-api-public
@@ -4911,7 +4937,7 @@
       productType: EO.MO.DAT.WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002
     # CLMS
     CLMS_CORINE:
-      productType: EO.CLMS.DAT.CORINE
+      productType: EO.EEA.DAT.CORINE
     CLMS_GLO_DMP_333M:
       productType: EO.CLMS.DAT.GLO.DMP300_V1
     CLMS_GLO_FAPAR_333M:
@@ -5503,6 +5529,7 @@
       grant_type: client_credentials
     token_type: json
     token_key: access_token
+    token_expiration_key: expires_in
     ssl_verify: true
 
 ---
@@ -5735,6 +5762,13 @@
       cloudCover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
       - '$.properties."eo:cloud_cover"'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - '{{"query":{{"end_datetime":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      completionTimeFromAscendingNode:
+        - '{{"query":{{"start_datetime":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
       swathIdentifier:
         - '{{"query":{{"swath":{{"eq":"{swathIdentifier}"}}}}}}'
         - '$.properties.swath'
@@ -5851,6 +5885,13 @@
       cloudCover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":{cloudCover}}}}}}}'
       - '$.properties."eo:cloud_cover"'
+      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
+      startTimeFromAscendingNode:
+        - '{{"query":{{"end_datetime":{{"gte":"{startTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.start_datetime'
+      completionTimeFromAscendingNode:
+        - '{{"query":{{"start_datetime":{{"lte":"{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}}}}}'
+        - '$.properties.end_datetime'
       swathIdentifier:
         - '{{"query":{{"swath":{{"eq":"{swathIdentifier}"}}}}}}'
         - '$.properties.swath'
@@ -5965,7 +6006,6 @@
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
   auth: !plugin
     type: HTTPHeaderAuth
-    matching_url: https://ewds.climate.copernicus.eu
     ssl_verify: true
     headers:
       PRIVATE-TOKEN: "{apikey}"
@@ -5980,13 +6020,19 @@
     order_on_response:
       metadata_mapping:
         orderId: $.json.jobID
-        orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}
+        orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
         searchLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
     order_status:
       request:
         method: GET
       metadata_mapping:
         status: $.json.status
+        order:date: $.json.created
+        creationDate: $.json.created
+        publicationDate: $.json.finished
+        modificationDate: $.json.updated
+        ecmwf:dataset: $.json.processID
+        request_params: $.json.metadata.request.ids
       error:
         status: failed
       success:
@@ -5997,6 +6043,7 @@
           downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
+    need_auth: true
     ssl_verify: true
     end_date_excluded: false
     dates_required: True

@@ -18,12 +18,13 @@
 import ast
 import os
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from tempfile import TemporaryDirectory
 from unittest import mock
 
 import geojson
 import responses
+from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
 from shapely.geometry import shape
 
@@ -88,8 +89,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self.provider = "ecmwf"
         self.api_plugin = self.get_search_plugin(provider=self.provider)
         self.query_dates = {
-            "startTimeFromAscendingNode": "2022-01-01",
-            "completionTimeFromAscendingNode": "2022-01-02",
+            "startTimeFromAscendingNode": "2022-01-01T00:00:00.000Z",
+            "completionTimeFromAscendingNode": "2022-01-02T00:00:00.000Z",
         }
         self.product_type = "TIGGE_CF_SFC"
         self.product_type_params = {
@@ -130,10 +131,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "2020-01-01"
+            eoproduct.properties["startTimeFromAscendingNode"],
+            "2020-01-01T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2020-01-02"
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-01-02T00:00:00.000Z",
         )
 
         # missing start & stop
@@ -145,9 +148,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             eoproduct.properties["startTimeFromAscendingNode"],
             DEFAULT_MISSION_START_DATE,
         )
-        self.assertIn(
-            eoproduct.properties["completionTimeFromAscendingNode"],
-            datetime.now(timezone.utc).isoformat(),
+        # less than 10 seconds should have passed since the product was created
+        self.assertLess(
+            datetime.now(timezone.utc)
+            - isoparse(eoproduct.properties["completionTimeFromAscendingNode"]),
+            timedelta(seconds=10),
+            "stop date should have been created from datetime.now",
         )
 
         # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
@@ -161,10 +167,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
         eoproduct = results[0]
         self.assertEqual(
-            eoproduct.properties["startTimeFromAscendingNode"], "1985-10-26"
+            eoproduct.properties["startTimeFromAscendingNode"],
+            "1985-10-26T00:00:00.000Z",
         )
         self.assertEqual(
-            eoproduct.properties["completionTimeFromAscendingNode"], "2015-10-21"
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2015-10-21T00:00:00.000Z",
         )
 
     def test_plugins_apis_ecmwf_query_without_producttype(self):
@@ -257,6 +265,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         del self.api_plugin.config.credentials
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
@@ -268,6 +280,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
         mock_fetch_product_types_list,
+        mock_auth_session_request,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
 
@@ -353,6 +366,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_ecmwfdataserver_retrieve.assert_not_called()
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
@@ -362,6 +379,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_fetch_product_types_list,
+        mock_auth_session_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
 
