@@ -2,6 +2,61 @@
 Release history
 ===============
 
+.. _changelog-unreleased:
+
+v3.3.0 (2025-04-10)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Ensure datetime format compliance with STAC specification (`#1573`_, `7e10e3a`_)
+
+* **plugins**: Add datetime for ecmwf search (`#1572`_, `b785e7c`_)
+
+* **plugins**: Check expiration time in token auth (`#1590`_, `15dbcb1`_)
+
+* **providers**: ``geodes`` datetime search (`#1592`_, `87ade04`_)
+
+* **providers**: Rename ``EO:CLMS:DAT:CORINE`` to ``EO:EEA:DAT:CORINE`` (`#1576`_, `2d3f6da`_)
+
+Continuous Integration
+----------------------
+
+* Automatic changelog update (`#1601`_, `0625802`_)
+
+Features
+--------
+
+* **plugins**: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch` search-by-id (`#1580`_, `f296c52`_)
+
+Testing
+-------
+
+* Fixed test for ecmwf dates (`#1588`_, `b6ca196`_)
+
+.. _#1572: https://github.com/CS-SI/eodag/pull/1572
+.. _#1573: https://github.com/CS-SI/eodag/pull/1573
+.. _#1576: https://github.com/CS-SI/eodag/pull/1576
+.. _#1580: https://github.com/CS-SI/eodag/pull/1580
+.. _#1588: https://github.com/CS-SI/eodag/pull/1588
+.. _#1590: https://github.com/CS-SI/eodag/pull/1590
+.. _#1592: https://github.com/CS-SI/eodag/pull/1592
+.. _#1599: https://github.com/CS-SI/eodag/pull/1599
+.. _#1601: https://github.com/CS-SI/eodag/pull/1601
+.. _#1603: https://github.com/CS-SI/eodag/pull/1603
+.. _0625802: https://github.com/CS-SI/eodag/commit/0625802e62f5be02560f6b015c65d0643e7cb720
+.. _15dbcb1: https://github.com/CS-SI/eodag/commit/15dbcb17b14becdce57087fdba5b60adeb4a7551
+.. _2d3f6da: https://github.com/CS-SI/eodag/commit/2d3f6dac273cb70f55dfa9eb3c898266a4c93552
+.. _548fded: https://github.com/CS-SI/eodag/commit/548fdedc7a30d488302a685c4c8361ba29c2068f
+.. _6af7ce4: https://github.com/CS-SI/eodag/commit/6af7ce499d00c32af3754ce30ebcb8fc392638a9
+.. _7e10e3a: https://github.com/CS-SI/eodag/commit/7e10e3aeb27220fd023f1cb00198ed2304ea3486
+.. _87ade04: https://github.com/CS-SI/eodag/commit/87ade04922356eb78cf1798a8fb81bcea8057595
+.. _b6ca196: https://github.com/CS-SI/eodag/commit/b6ca1968d60d6123e818f1eec06fc1fa386e465a
+.. _b785e7c: https://github.com/CS-SI/eodag/commit/b785e7c15c8dc60efbe0f38ac4d6487d8917b1aa
+.. _f296c52: https://github.com/CS-SI/eodag/commit/f296c526a803607e23c477a9da679b5f27e142dc
+
+
 v3.2.0 (2025-04-01)
 ===================
 
