@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -93,6 +94,7 @@ class TokenAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(TokenAuth, self).__init__(provider, config)
+        self.auth_lock = Lock()
         self.token = ""
         self.refresh_token = ""
         self.token_expiration = datetime.now()
@@ -135,60 +137,66 @@ class TokenAuth(Authentication):
 
     def authenticate(self) -> AuthBase:
         """Authenticate"""
-        self.validate_config_credentials()
-        if self.token and self.token_expiration > datetime.now():
-            logger.debug("using existing access token")
-            return RequestsTokenAuth(
-                self.token, "header", headers=getattr(self.config, "headers", {})
-            )
-        s = requests.Session()
-        try:
-            # First get the token
-            response = self._token_request(session=s)
-            response.raise_for_status()
-        except requests.exceptions.Timeout as exc:
-            raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
-        except RequestException as e:
-            response_text = getattr(e.response, "text", "").strip()
-            # check if error is identified as auth_error in provider conf
-            auth_errors = getattr(self.config, "auth_error_code", [None])
-            if not isinstance(auth_errors, list):
-                auth_errors = [auth_errors]
-            if (
-                e.response is not None
-                and getattr(e.response, "status_code", None)
-                and e.response.status_code in auth_errors
-            ):
-                raise AuthenticationError(
-                    f"Please check your credentials for {self.provider}.",
-                    f"HTTP Error {e.response.status_code} returned.",
-                    response_text,
-                ) from e
-            # other error
-            else:
-                raise AuthenticationError(
-                    "Could no get authentication token", str(e), response_text
-                ) from e
-        else:
-            if getattr(self.config, "token_type", "text") == "json":
-                token = response.json()[self.config.token_key]
-            else:
-                token = response.text
-            self.token = token
-            if getattr(self.config, "refresh_token_key", None):
-                self.refresh_token = response.json()[self.config.refresh_token_key]
-            if getattr(self.config, "token_expiration_key", None):
-                expiration_time = response.json()[self.config.token_expiration_key]
-                self.token_expiration = datetime.now() + timedelta(
-                    seconds=expiration_time
-                )
 
-            if not hasattr(self.config, "headers"):
-                raise MisconfiguredError(f"Missing headers configuration for {self}")
-            # Return auth class set with obtained token
-            return RequestsTokenAuth(
-                token, "header", headers=getattr(self.config, "headers", {})
-            )
+        # Use a thread lock to avoid several threads requesting the token at the same time
+        with self.auth_lock:
+
+            self.validate_config_credentials()
+            if self.token and self.token_expiration > datetime.now():
+                logger.debug("using existing access token")
+                return RequestsTokenAuth(
+                    self.token, "header", headers=getattr(self.config, "headers", {})
+                )
+            s = requests.Session()
+            try:
+                # First get the token
+                response = self._token_request(session=s)
+                response.raise_for_status()
+            except requests.exceptions.Timeout as exc:
+                raise TimeOutError(exc, timeout=HTTP_REQ_TIMEOUT) from exc
+            except RequestException as e:
+                response_text = getattr(e.response, "text", "").strip()
+                # check if error is identified as auth_error in provider conf
+                auth_errors = getattr(self.config, "auth_error_code", [None])
+                if not isinstance(auth_errors, list):
+                    auth_errors = [auth_errors]
+                if (
+                    e.response is not None
+                    and getattr(e.response, "status_code", None)
+                    and e.response.status_code in auth_errors
+                ):
+                    raise AuthenticationError(
+                        f"Please check your credentials for {self.provider}.",
+                        f"HTTP Error {e.response.status_code} returned.",
+                        response_text,
+                    ) from e
+                # other error
+                else:
+                    raise AuthenticationError(
+                        "Could no get authentication token", str(e), response_text
+                    ) from e
+            else:
+                if getattr(self.config, "token_type", "text") == "json":
+                    token = response.json()[self.config.token_key]
+                else:
+                    token = response.text
+                self.token = token
+                if getattr(self.config, "refresh_token_key", None):
+                    self.refresh_token = response.json()[self.config.refresh_token_key]
+                if getattr(self.config, "token_expiration_key", None):
+                    expiration_time = response.json()[self.config.token_expiration_key]
+                    self.token_expiration = datetime.now() + timedelta(
+                        seconds=expiration_time
+                    )
+
+                if not hasattr(self.config, "headers"):
+                    raise MisconfiguredError(
+                        f"Missing headers configuration for {self}"
+                    )
+                # Return auth class set with obtained token
+                return RequestsTokenAuth(
+                    token, "header", headers=getattr(self.config, "headers", {})
+                )
 
     def _token_request(
         self,
