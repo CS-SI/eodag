@@ -445,18 +445,6 @@ class EOProduct:
                     }
                 )
 
-        # progress bar init
-        if progress_callback is None:
-            progress_callback = ProgressCallback()
-            # one shot progress callback to close after download
-            close_progress_callback = True
-        else:
-            close_progress_callback = False
-            # update units as bar may have been previously used for extraction
-            progress_callback.unit = "B"
-            progress_callback.unit_scale = True
-        progress_callback.desc = "quicklooks/%s" % self.properties.get("id", "")
-
         if self.properties.get("quicklook", None) is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
@@ -484,6 +472,18 @@ class EOProduct:
         )
 
         if not os.path.isfile(quicklook_file):
+
+            # progress bar init
+            if progress_callback is None:
+                progress_callback = ProgressCallback()
+                # one shot progress callback to close after download
+                close_progress_callback = True
+            else:
+                close_progress_callback = False
+                # update units as bar may have been previously used for extraction
+                progress_callback.unit = "B"
+                progress_callback.unit_scale = True
+            progress_callback.desc = "quicklooks/%s" % self.properties.get("id", "")
             # VERY SPECIAL CASE (introduced by the onda provider): first check if
             # it is a HTTP URL. If not, we assume it is a base64 string, in which case
             # we just decode the content, write it into the quicklook_file and return it.
