@@ -313,15 +313,11 @@ class EOProduct:
                 "EO product is unable to download itself due to lacking of a "
                 "download plugin"
             )
-        try:
-            auth = (
-                self.downloader_auth.authenticate()
-                if self.downloader_auth is not None
-                else self.downloader_auth
-            )
-        except Exception as e:
-            auth = None
-            logger.info(f"Error {e} try without authentification")
+        auth = (
+            self.downloader_auth.authenticate()
+            if self.downloader_auth is not None
+            else self.downloader_auth
+        )
 
         progress_callback, close_progress_callback = self._init_progress_bar(
             progress_callback
@@ -470,22 +466,37 @@ class EOProduct:
                 if self.downloader
                 else True
             )
-            with requests.get(
-                self.properties["quicklook"],
-                stream=True,
-                auth=auth,
-                headers=USER_AGENT,
-                timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                verify=ssl_verify,
-            ) as stream:
-                try:
+            try:
+                with requests.get(
+                    self.properties["quicklook"],
+                    stream=True,
+                    auth=auth,
+                    headers=USER_AGENT,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
+                ) as stream:
                     stream.raise_for_status()
-                except RequestException as e:
-                    import traceback as tb
+                    stream_size = int(stream.headers.get("content-length", 0))
+                    progress_callback.reset(stream_size)
+                    with open(quicklook_file, "wb") as fhandle:
+                        for chunk in stream.iter_content(chunk_size=64 * 1024):
+                            if chunk:
+                                fhandle.write(chunk)
+                                progress_callback(len(chunk))
+                    logger.info("Download recorded in %s", quicklook_file)
+            except RequestException:
+                import traceback as tb
 
-                    logger.error("Error while getting resource :\n%s", tb.format_exc())
-                    return str(e)
-                else:
+                logger.error("Error while getting resource :\n%s", tb.format_exc())
+                with requests.get(
+                    self.properties["quicklook"],
+                    stream=True,
+                    auth=None,
+                    headers=USER_AGENT,
+                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+                    verify=ssl_verify,
+                ) as stream:
+                    stream.raise_for_status()
                     stream_size = int(stream.headers.get("content-length", 0))
                     progress_callback.reset(stream_size)
                     with open(quicklook_file, "wb") as fhandle:
