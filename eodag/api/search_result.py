@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from eodag.plugins.crunch.base import Crunch
 
 
-class SearchResult(UserList):
+class SearchResult(UserList[EOProduct]):
     """An object representing a collection of :class:`~eodag.api.product._product.EOProduct` resulting from a search.
 
     :param products: A list of products resulting from a search
@@ -46,8 +46,6 @@ class SearchResult(UserList):
     :ivar number_matched: Estimated total number of matching results
     """
 
-    data: list[EOProduct]
-
     errors: Annotated[
         list[tuple[str, Exception]], Doc("Tuple of provider name, exception")
     ]
@@ -56,11 +54,11 @@ class SearchResult(UserList):
         self,
         products: list[EOProduct],
         number_matched: Optional[int] = None,
-        errors: list[tuple[str, Exception]] = [],
+        errors: Optional[list[tuple[str, Exception]]] = None,
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
-        self.errors = errors
+        self.errors = errors if errors is not None else []
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -193,8 +191,8 @@ class SearchResult(UserList):
                 <details><summary style='color: grey; font-family: monospace;'>
                     {i}&ensp;
                     {type(p).__name__}(id=<span style='color: black;'>{
-                    p.properties["id"]
-                }</span>, provider={p.provider})
+                        p.properties["id"]
+                    }</span>, provider={p.provider})
                 </summary>
                 {p._repr_html_()}
                 </details>
