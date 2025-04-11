@@ -367,6 +367,47 @@ class EOProduct:
         progress_callback.refresh()
         return (progress_callback, close_progress_callback)
 
+    def download_quicklook(
+        self,
+        quicklook_file: str,
+        progress_callback: ProgressCallback,
+        ssl_verify: bool,
+        auth_value: Authentication,
+    ):
+
+        """Download the quicklook image from the EOProduct's quicklook URL.
+
+        This method performs an HTTP GET request to retrieve the quicklook image and saves it
+        locally at the specified path. It optionally verifies SSL certificates, uses HTTP
+        authentication, and can display a download progress if a callback is provided.
+
+        :param quicklook_file: The full path (including filename) where the quicklook will be saved.
+        :param progress_callback: (optional) A callable that accepts the current and total download sizes
+                                to display or log the download progress. It must support `reset(total)`
+                                and be callable with downloaded chunk sizes.
+        :param ssl_verify: (optional) Whether to verify SSL certificates. Defaults to True.
+        :param auth_value: (optional) Authentication credentials (e.g., tuple or object) used for the
+                        HTTP request if the resource requires authentication.
+        :raises HTTPError: If the HTTP request to the quicklook URL fails.
+        """
+        with requests.get(
+            self.properties["quicklook"],
+            stream=True,
+            auth=auth_value,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=ssl_verify,
+        ) as stream:
+            stream.raise_for_status()
+            stream_size = int(stream.headers.get("content-length", 0))
+            progress_callback.reset(stream_size)
+            with open(quicklook_file, "wb") as fhandle:
+                for chunk in stream.iter_content(chunk_size=64 * 1024):
+                    if chunk:
+                        fhandle.write(chunk)
+                        progress_callback(len(chunk))
+            logger.info("Download recorded in %s", quicklook_file)
+
     def get_quicklook(
         self,
         filename: Optional[str] = None,
@@ -375,6 +416,9 @@ class EOProduct:
     ) -> str:
         """Download the quicklook image of a given EOProduct from its provider if it
         exists.
+
+        This method retrieves the quicklook URL from the EOProduct metadata and delegates
+        the download to the internal `download_quicklook` method.
 
         :param filename: (optional) The name to give to the downloaded quicklook. If not
                          given, it defaults to the product's ID (without file extension).
@@ -467,44 +511,17 @@ class EOProduct:
                 else True
             )
             try:
-                with requests.get(
-                    self.properties["quicklook"],
-                    stream=True,
-                    auth=auth,
-                    headers=USER_AGENT,
-                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                    verify=ssl_verify,
-                ) as stream:
-                    stream.raise_for_status()
-                    stream_size = int(stream.headers.get("content-length", 0))
-                    progress_callback.reset(stream_size)
-                    with open(quicklook_file, "wb") as fhandle:
-                        for chunk in stream.iter_content(chunk_size=64 * 1024):
-                            if chunk:
-                                fhandle.write(chunk)
-                                progress_callback(len(chunk))
-                    logger.info("Download recorded in %s", quicklook_file)
-            except RequestException:
-                import traceback as tb
+                self.download_quicklook(
+                    quicklook_file, progress_callback, ssl_verify, auth
+                )
+            except RequestException as e:
 
-                logger.error("Error while getting resource :\n%s", tb.format_exc())
-                with requests.get(
-                    self.properties["quicklook"],
-                    stream=True,
-                    auth=None,
-                    headers=USER_AGENT,
-                    timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
-                    verify=ssl_verify,
-                ) as stream:
-                    stream.raise_for_status()
-                    stream_size = int(stream.headers.get("content-length", 0))
-                    progress_callback.reset(stream_size)
-                    with open(quicklook_file, "wb") as fhandle:
-                        for chunk in stream.iter_content(chunk_size=64 * 1024):
-                            if chunk:
-                                fhandle.write(chunk)
-                                progress_callback(len(chunk))
-                    logger.info("Download recorded in %s", quicklook_file)
+                logger.warning(
+                    f"Error while getting resource with authentification. {e} \nTrying without authenfictaion..."
+                )
+                self.download_quicklook(
+                    quicklook_file, progress_callback, ssl_verify, None
+                )
 
             # close progress bar if needed
             if close_progress_callback:
