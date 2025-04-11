@@ -313,17 +313,19 @@ class EOProduct:
                 "EO product is unable to download itself due to lacking of a "
                 "download plugin"
             )
-
-        auth = (
-            self.downloader_auth.authenticate()
-            if self.downloader_auth is not None
-            else self.downloader_auth
-        )
+        try:
+            auth = (
+                self.downloader_auth.authenticate()
+                if self.downloader_auth is not None
+                else self.downloader_auth
+            )
+        except Exception as e:
+            auth = None
+            logger.info(f"Error {e} try without authentification")
 
         progress_callback, close_progress_callback = self._init_progress_bar(
             progress_callback
         )
-
         fs_path = self.downloader.download(
             self,
             auth=auth,
