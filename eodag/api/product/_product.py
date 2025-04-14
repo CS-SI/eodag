@@ -371,8 +371,8 @@ class EOProduct:
         self,
         quicklook_file: str,
         progress_callback: ProgressCallback,
-        ssl_verify: bool,
-        auth_value: Authentication,
+        ssl_verify: Optional[bool] = None,
+        auth_value: Optional[AuthBase] = None,
     ):
 
         """Download the quicklook image from the EOProduct's quicklook URL.
@@ -382,7 +382,7 @@ class EOProduct:
         authentication, and can display a download progress if a callback is provided.
 
         :param quicklook_file: The full path (including filename) where the quicklook will be saved.
-        :param progress_callback: (optional) A callable that accepts the current and total download sizes
+        :param progress_callback: A callable that accepts the current and total download sizes
                                 to display or log the download progress. It must support `reset(total)`
                                 and be callable with downloaded chunk sizes.
         :param ssl_verify: (optional) Whether to verify SSL certificates. Defaults to True.
@@ -400,7 +400,8 @@ class EOProduct:
         ) as stream:
             stream.raise_for_status()
             stream_size = int(stream.headers.get("content-length", 0))
-            progress_callback.reset(stream_size)
+            if progress_callback is not None:
+                progress_callback.reset(stream_size)
             with open(quicklook_file, "wb") as fhandle:
                 for chunk in stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
@@ -519,9 +520,16 @@ class EOProduct:
                 logger.warning(
                     f"Error while getting resource with authentification. {e} \nTrying without authenfictaion..."
                 )
-                self.download_quicklook(
-                    quicklook_file, progress_callback, ssl_verify, None
-                )
+                try:
+                    self.download_quicklook(
+                        quicklook_file, progress_callback, ssl_verify, None
+                    )
+                except RequestException as e_no_auth:
+                    logger.error(
+                        f"Failed to get resource with authentification: {e} \n \
+                        Failed to get resource even without authentication. {e_no_auth}"
+                    )
+                    return str(e)
 
             # close progress bar if needed
             if close_progress_callback:
