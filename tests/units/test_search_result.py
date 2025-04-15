@@ -88,3 +88,11 @@ class TestSearchResult(unittest.TestCase):
         """SearchResult html repr must be correctly formatted"""
         sr_repr = html.fromstring(self.search_result._repr_html_())
         self.assertIn("SearchResult", sr_repr.xpath("//thead/tr/td")[0].text)
+
+    def test_search_result_errors(self):
+        """SearchResult instances must store search errors"""
+        self.assertEqual(self.search_result.errors, [])
+        self.search_result.errors.append(["foo", Exception("1st exception")])
+        self.search_result.errors.append(["bar", Exception("2nd exception")])
+        self.assertEqual(len(self.search_result.errors), 2)
+        self.assertEqual(SearchResult([]).errors, [])
