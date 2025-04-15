@@ -618,6 +618,7 @@
       illuminationElevationAngle: '$.properties.illuminationElevationAngle'
       polarizationMode: '$.properties.polarizationMode'
       polarizationChannels: '$.properties.polarisationChannels'
+      polarization: '$.properties.polarisationChannels'
       antennaLookDirection: '$.properties.antennaLookDirection'
       minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
       maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
@@ -814,6 +815,13 @@
       polarizationMode:
         - 'polarisation'
         - '$.properties.polarisation'
+      polarizationChannels:
+        - 'polarisation'
+        - '$.properties.polarisation'
+      polarization:
+        - 'polarisation'
+        - '$.properties.polarisation'
+
 
       # Custom parameters (not defined in the base document referenced above)
       id:
@@ -1004,6 +1012,12 @@
         - null
         - '$.ContentDate.End'
       polarizationChannels:
+        - null
+        - '$.Attributes.polarisationChannels'
+      polarization:
+        - null
+        - '$.Attributes.polarisationChannels'
+      polarizationMode:
         - null
         - '$.Attributes.polarisationChannels'
       # Custom parameters (not defined in the base document referenced above)
@@ -2226,6 +2240,12 @@
       polarizationMode:
         - 'polarisation'
         - '$.properties.polarisation'
+      polarization:
+        - 'polarisation'
+        - '$.properties.polarisation'
+      polarizationChannels:
+        - 'polarisation'
+        - '$.properties.polarisation'
       # Custom parameters (not defined in the base document referenced above)
       id:
         - 'productIdentifier={id#remove_extension}'
@@ -2520,6 +2540,7 @@
       - '='
       - '&'
       - ':'
+      - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
@@ -2557,7 +2578,7 @@
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'orbitDirection' and att/OData.CSC.StringAttribute/Value eq '{orbitDirection}')"
             - "Attributes/OData.CSC.DoubleAttribute/any(att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute/Value le {cloudCover})"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'operationalMode' and att/OData.CSC.StringAttribute/Value eq '{sensorMode}')"
-            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels}')"
+            - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'polarisationChannels' and att/OData.CSC.StringAttribute/Value eq '{polarizationChannels#replace_str(' ', '%26')}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'tileId' and att/OData.CSC.StringAttribute/Value eq '{tileIdentifier}')"
             - "ModificationDate gt {modifiedAfter#to_iso_utc_datetime}"
             - "ModificationDate lt {modifiedBefore#to_iso_utc_datetime}"
@@ -2651,6 +2672,12 @@
         - null
         - '$.ContentDate.End'
       polarizationChannels:
+        - null
+        - '$.Attributes.polarisationChannels'
+      polarizationMode:
+        - null
+        - '$.Attributes.polarisationChannels'
+      polarization:
         - null
         - '$.Attributes.polarisationChannels'
       # Custom parameters (not defined in the base document referenced above)
@@ -4203,6 +4230,12 @@
         - null
         - '$.ContentDate.End'
       polarizationChannels:
+        - null
+        - '$.Attributes.polarisationChannels'
+      polarizationMode:
+        - null
+        - '$.Attributes.polarisationChannels'
+      polarizationPolarization:
         - null
         - '$.Attributes.polarisationChannels'
       # Custom parameters (not defined in the base document referenced above)
