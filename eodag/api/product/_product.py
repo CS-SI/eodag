@@ -372,7 +372,7 @@ class EOProduct:
         quicklook_file: str,
         progress_callback: ProgressCallback,
         ssl_verify: Optional[bool] = None,
-        auth_value: Optional[AuthBase] = None,
+        auth: Optional[AuthBase] = None,
     ):
 
         """Download the quicklook image from the EOProduct's quicklook URL.
@@ -386,22 +386,21 @@ class EOProduct:
                                 to display or log the download progress. It must support `reset(total)`
                                 and be callable with downloaded chunk sizes.
         :param ssl_verify: (optional) Whether to verify SSL certificates. Defaults to True.
-        :param auth_value: (optional) Authentication credentials (e.g., tuple or object) used for the
+        :param auth: (optional) Authentication credentials (e.g., tuple or object) used for the
                         HTTP request if the resource requires authentication.
         :raises HTTPError: If the HTTP request to the quicklook URL fails.
         """
         with requests.get(
             self.properties["quicklook"],
             stream=True,
-            auth=auth_value,
+            auth=auth,
             headers=USER_AGENT,
             timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
             verify=ssl_verify,
         ) as stream:
             stream.raise_for_status()
             stream_size = int(stream.headers.get("content-length", 0))
-            if progress_callback is not None:
-                progress_callback.reset(stream_size)
+            progress_callback.reset(stream_size)
             with open(quicklook_file, "wb") as fhandle:
                 for chunk in stream.iter_content(chunk_size=64 * 1024):
                     if chunk:
@@ -518,7 +517,7 @@ class EOProduct:
             except RequestException as e:
 
                 logger.warning(
-                    f"Error while getting resource with authentification. {e} \nTrying without authenfictaion..."
+                    f"Error while getting resource with authentification. {e} \nTrying without authentification..."
                 )
                 try:
                     self.download_quicklook(
@@ -527,7 +526,7 @@ class EOProduct:
                 except RequestException as e_no_auth:
                     logger.error(
                         f"Failed to get resource with authentification: {e} \n \
-                        Failed to get resource even without authentication. {e_no_auth}"
+                        Failed to get resource even without authentification. {e_no_auth}"
                     )
                     return str(e)
 
