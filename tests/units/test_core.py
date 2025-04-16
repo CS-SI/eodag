@@ -1421,7 +1421,9 @@ class TestCore(TestCoreBase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     @mock.patch(
-        "eodag.plugins.search.qssearch.StacSearch.discover_queryables", autospec=True
+        "eodag.plugins.search.qssearch.StacSearch.discover_queryables",
+        autospec=True,
+        return_value={},
     )
     def test_list_queryables(
         self,
@@ -1430,7 +1432,6 @@ class TestCore(TestCoreBase):
         mock_auth_plugin: mock.Mock,
     ) -> None:
         """list_queryables must return queryables list adapted to provider and product-type"""
-        mock_stacsearch_discover_queryables.return_value = {}
 
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
@@ -1438,6 +1439,7 @@ class TestCore(TestCoreBase):
         with self.assertRaises(UnsupportedProductType):
             self.dag.list_queryables(productType="not_supported_product_type")
 
+        # No provider & no product type
         queryables_none_none = self.dag.list_queryables()
         expected_result = model_fields_to_annotated(CommonQueryables.model_fields)
         self.assertEqual(len(queryables_none_none), len(expected_result))
@@ -1446,29 +1448,32 @@ class TestCore(TestCoreBase):
             self.assertEqual(str(expected_result[key]), str(queryable))
         self.assertTrue(queryables_none_none.additional_properties)
 
+        # Only provider
+        # when only a provider is specified, return the union of the queryables for all product types
         queryables_peps_none = self.dag.list_queryables(provider="peps")
         expected_longer_result = model_fields_to_annotated(Queryables.model_fields)
         self.assertGreater(len(queryables_peps_none), len(queryables_none_none))
         self.assertLess(len(queryables_peps_none), len(expected_longer_result))
         for key, queryable in queryables_peps_none.items():
             # compare obj.__repr__
-            self.assertEqual(
-                expected_longer_result[key].__args__[0], queryable.__args__[0]
-            )
+            self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_none.additional_properties)
 
+        # provider & product type
         queryables_peps_s1grd = self.dag.list_queryables(
             provider="peps", productType="S1_SAR_GRD"
         )
         self.assertGreater(len(queryables_peps_s1grd), len(queryables_none_none))
         self.assertLess(len(queryables_peps_s1grd), len(expected_longer_result))
         for key, queryable in queryables_peps_s1grd.items():
-            # compare obj.__repr__
             if key == "productType":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
+                # compare obj.__repr__
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
         self.assertTrue(queryables_peps_s1grd.additional_properties)
+
+        # provider & product type alias
         # result should be the same if alias is used
         products = self.dag.product_types_config
         products["S1_SAR_GRD"]["alias"] = "S1_SG"
@@ -1482,6 +1487,7 @@ class TestCore(TestCoreBase):
         )
         products["S1_SAR_GRD"].pop("alias")
 
+        # Only product type
         # when a product type is specified but not the provider, the union of the queryables of all providers
         # having the product type in its config is returned
         queryables_none_s1grd = self.dag.list_queryables(productType="S1_SAR_GRD")
@@ -1492,10 +1498,10 @@ class TestCore(TestCoreBase):
         # check that peps gets the highest priority
         self.assertEqual(self.dag.get_preferred_provider()[0], "peps")
         for key, queryable in queryables_peps_s1grd.items():
-            # compare obj.__repr__
             if key == "productType":
                 self.assertEqual("S1_SAR_GRD", queryable.__metadata__[0].get_default())
             else:
+                # compare obj.__repr__
                 self.assertEqual(str(expected_longer_result[key]), str(queryable))
             # queryables for provider peps are in queryables for all providers
             self.assertEqual(str(queryable), str(queryables_none_s1grd[key]))
