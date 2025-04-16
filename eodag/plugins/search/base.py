@@ -337,7 +337,9 @@ class Search(PluginTopic):
         try:
             filters["productType"] = product_type
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
-        except NotImplementedError:
+        except NotImplementedError as e:
+            if str(e):
+                logger.debug(str(e))
             queryables = self.queryables_from_metadata_mapping(product_type, alias)
 
         return QueryablesDict(**queryables)

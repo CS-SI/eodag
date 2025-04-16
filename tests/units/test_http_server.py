@@ -1362,12 +1362,13 @@ class RequestTestCase(unittest.TestCase):
             wekeo_main_constraints = {"constraints": constraints}
 
             planetary_computer_queryables_url = (
-                "https://planetarycomputer.microsoft.com/api/stac/v1/search/../collections/"
+                "https://planetarycomputer.microsoft.com/api/stac/v1/collections/"
                 "sentinel-1-grd/queryables"
             )
-            norm_planetary_computer_queryables_url = os.path.normpath(
-                planetary_computer_queryables_url
-            ).replace("https:/", "https://")
+            dedl_queryables_url = (
+                "https://hda.data.destination-earth.eu/stac/collections/"
+                "EO.ESA.DAT.SENTINEL-1.L1_GRD/queryables"
+            )
             wekeo_main_constraints_url = (
                 "https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/queryable/"
                 "EO:ESA:DAT:SENTINEL-1"
@@ -1385,6 +1386,12 @@ class RequestTestCase(unittest.TestCase):
                 status=200,
                 json=wekeo_main_constraints,
             )
+            responses.add(
+                responses.GET,
+                dedl_queryables_url,
+                status=200,
+                json=provider_queryables,
+            )
 
             # no provider is specified with the product type (3 providers get a queryables or constraints file
             # among available providers for S1_SAR_GRD for the moment): queryables intersection returned
@@ -1396,7 +1403,7 @@ class RequestTestCase(unittest.TestCase):
 
             # check the mock call on planetary_computer
             self.assertEqual(
-                norm_planetary_computer_queryables_url, responses.calls[0].request.url
+                planetary_computer_queryables_url, responses.calls[0].request.url
             )
             self.assertIn(
                 ("timeout", DEFAULT_SEARCH_TIMEOUT),
