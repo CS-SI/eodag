@@ -178,6 +178,7 @@ class TestEOProduct(EODagTestCase):
         product.register_downloader(mock_downloader, None)
 
         quicklook_file_path = product.get_quicklook()
+        self.assertEqual(self.requests_http_get.call_count, 2)
         self.requests_http_get.assert_called_with(
             "https://fake.url.to/quicklook",
             stream=True,
@@ -206,6 +207,7 @@ class TestEOProduct(EODagTestCase):
         product.register_downloader(mock_downloader, None)
 
         quicklook_file_path = product.get_quicklook()
+        self.assertEqual(self.requests_http_get.call_count, 2)
         self.requests_http_get.assert_called_with(
             "https://fake.url.to/quicklook",
             stream=True,

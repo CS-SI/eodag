@@ -517,7 +517,7 @@ class EOProduct:
             except RequestException as e:
 
                 logger.warning(
-                    f"Error while getting resource with authentification. {e} \nTrying without authentification..."
+                    f"Error while getting resource with authentication. {e} \nTrying without authentication..."
                 )
                 try:
                     self.download_quicklook(
@@ -525,8 +525,8 @@ class EOProduct:
                     )
                 except RequestException as e_no_auth:
                     logger.error(
-                        f"Failed to get resource with authentification: {e} \n \
-                        Failed to get resource even without authentification. {e_no_auth}"
+                        f"Failed to get resource with authentication: {e} \n \
+                        Failed to get resource even without authentication. {e_no_auth}"
                     )
                     return str(e)
 
