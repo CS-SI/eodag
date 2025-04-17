@@ -367,7 +367,7 @@ class EOProduct:
         progress_callback.refresh()
         return (progress_callback, close_progress_callback)
 
-    def download_quicklook(
+    def _download_quicklook(
         self,
         quicklook_file: str,
         progress_callback: ProgressCallback,
@@ -511,16 +511,16 @@ class EOProduct:
                 else True
             )
             try:
-                self.download_quicklook(
+                self._download_quicklook(
                     quicklook_file, progress_callback, ssl_verify, auth
                 )
             except RequestException as e:
 
-                logger.warning(
+                logger.debug(
                     f"Error while getting resource with authentication. {e} \nTrying without authentication..."
                 )
                 try:
-                    self.download_quicklook(
+                    self._download_quicklook(
                         quicklook_file, progress_callback, ssl_verify, None
                     )
                 except RequestException as e_no_auth:
