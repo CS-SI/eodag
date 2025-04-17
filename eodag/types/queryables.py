@@ -146,6 +146,9 @@ class Queryables(CommonQueryables):
     maximumIncidenceAngle: Annotated[float, Field(None)]
     dopplerFrequency: Annotated[float, Field(None)]
     incidenceAngleVariation: Annotated[float, Field(None)]
+    # Custom parameters (not defined in the base document referenced above)
+    id: Annotated[str, Field(None)]
+    tileIdentifier: Annotated[str, Field(None, pattern=r"[0-9]{2}[A-Z]{3}")]
 
 
 class QueryablesDict(UserDict[str, Any]):

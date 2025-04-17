@@ -31,6 +31,7 @@ from eodag.utils.exceptions import (
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
+    PluginImplementationError,
     RequestError,
     TimeOutError,
     UnsupportedProductType,
@@ -42,6 +43,7 @@ EODAG_DEFAULT_STATUS_CODES = {
     AuthenticationError: status.HTTP_500_INTERNAL_SERVER_ERROR,
     DownloadError: status.HTTP_500_INTERNAL_SERVER_ERROR,
     MisconfiguredError: status.HTTP_500_INTERNAL_SERVER_ERROR,
+    PluginImplementationError: status.HTTP_500_INTERNAL_SERVER_ERROR,
     NotAvailableError: status.HTTP_404_NOT_FOUND,
     NoMatchingProductType: status.HTTP_404_NOT_FOUND,
     TimeOutError: status.HTTP_504_GATEWAY_TIMEOUT,
@@ -80,7 +82,11 @@ class ResponseSearchError(Exception):
                 type(exception), getattr(exception, "status_code", 500)
             )
 
-            if type(exception) in (MisconfiguredError, AuthenticationError):
+            if type(exception) in (
+                MisconfiguredError,
+                AuthenticationError,
+                PluginImplementationError,
+            ):
                 logger.error("%s: %s", type(exception).__name__, str(exception))
                 error_dict[
                     "message"
@@ -132,10 +138,19 @@ async def eodag_errors_handler(request: Request, exc: Exception) -> ORJSONRespon
 
     detail = f"{type(exc).__name__}: {str(exc)}"
 
-    if type(exc) in (MisconfiguredError, AuthenticationError, TimeOutError):
+    if type(exc) in (
+        MisconfiguredError,
+        AuthenticationError,
+        TimeOutError,
+        PluginImplementationError,
+    ):
         logger.error("%s: %s", type(exc).__name__, str(exc))
 
-    if type(exc) in (MisconfiguredError, AuthenticationError):
+    if type(exc) in (
+        MisconfiguredError,
+        AuthenticationError,
+        PluginImplementationError,
+    ):
         detail = "Internal server error: please contact the administrator"
 
     if type(exc) is ValidationError:
