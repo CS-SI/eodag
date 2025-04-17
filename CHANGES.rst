@@ -2,7 +2,31 @@
 Release history
 ===============
 
-.. _changelog-unreleased:
+
+v3.3.1 (2025-04-17)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Missing queryables from metadata-mapping (`#1614`_, `9789c0c`_)
+
+* **core**: Provider queryables metadata (`#1613`_, `f1b066a`_)
+
+* **core**: Reset errors between SearchResult instances (`#1607`_, `48b0779`_)
+
+* **plugins**: Send client_id/client_secret with refresh_token in TokenAuth (`#1597`_, `9b626a9`_, thanks
+  `@jgaucher-cs <https://github.com/jgaucher-cs>`_)
+
+.. _#1597: https://github.com/CS-SI/eodag/pull/1597
+.. _#1607: https://github.com/CS-SI/eodag/pull/1607
+.. _#1613: https://github.com/CS-SI/eodag/pull/1613
+.. _#1614: https://github.com/CS-SI/eodag/pull/1614
+.. _48b0779: https://github.com/CS-SI/eodag/commit/48b07797b3a17c26e33f6f8ee2f51488a0829162
+.. _9789c0c: https://github.com/CS-SI/eodag/commit/9789c0c4a52aa180422e1f0a0c2b8d86c373a0ee
+.. _9b626a9: https://github.com/CS-SI/eodag/commit/9b626a91c7563d505632c830a98d18993ec95199
+.. _f1b066a: https://github.com/CS-SI/eodag/commit/f1b066a8feffef3d1c20147776128793177fcfeb
+
 
 v3.3.0 (2025-04-10)
 ===================
