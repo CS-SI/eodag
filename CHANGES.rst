@@ -2,17 +2,12 @@
 Release history
 ===============
 
-.. _changelog-unreleased:
 
 3.3.1 (2025-04-17)
 ==================
 
 Bug Fixes
 ---------
-
-* Update external product types reference (`#1610`_, `651f94f`_)
-
-* Update external product types reference (`#1620`_, `0c9b55f`_)
 
 * **core**: Missing queryables from metadata-mapping (`#1614`_, `9789c0c`_)
 
@@ -24,19 +19,13 @@ Bug Fixes
 
 .. _#1597: https://github.com/CS-SI/eodag/pull/1597
 .. _#1607: https://github.com/CS-SI/eodag/pull/1607
-.. _#1610: https://github.com/CS-SI/eodag/pull/1610
 .. _#1613: https://github.com/CS-SI/eodag/pull/1613
 .. _#1614: https://github.com/CS-SI/eodag/pull/1614
-.. _#1620: https://github.com/CS-SI/eodag/pull/1620
-.. _0c9b55f: https://github.com/CS-SI/eodag/commit/0c9b55fb1685f51e72a8c35d60b6e6c02ddd5365
 .. _48b0779: https://github.com/CS-SI/eodag/commit/48b07797b3a17c26e33f6f8ee2f51488a0829162
-.. _651f94f: https://github.com/CS-SI/eodag/commit/651f94f25be528d0d202a52414eb9aac0efcb957
 .. _9789c0c: https://github.com/CS-SI/eodag/commit/9789c0c4a52aa180422e1f0a0c2b8d86c373a0ee
 .. _9b626a9: https://github.com/CS-SI/eodag/commit/9b626a91c7563d505632c830a98d18993ec95199
 .. _f1b066a: https://github.com/CS-SI/eodag/commit/f1b066a8feffef3d1c20147776128793177fcfeb
 
-
-.. _changelog-unreleased:
 
 v3.3.0 (2025-04-10)
 ===================
