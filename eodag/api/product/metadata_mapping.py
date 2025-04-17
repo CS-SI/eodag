@@ -1507,6 +1507,11 @@ def get_queryable_from_provider(
             and re.search(pattern, param_conf[0])
         ):
             return Queryables.get_queryable_from_alias(param)
+    if "start_datetime" == provider_queryable:
+        return Queryables.get_queryable_from_alias("startTimeFromAscendingNode")
+
+    if "end_datetime" == provider_queryable:
+        return Queryables.get_queryable_from_alias("completionTimeFromAscendingNode")
     return None
 
 
