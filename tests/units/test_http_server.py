@@ -48,6 +48,7 @@ from tests.context import (
     ONLINE_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
+    PluginImplementationError,
     SearchResult,
 )
 
@@ -566,6 +567,7 @@ class RequestTestCase(unittest.TestCase):
             response_content = json.loads(response.content.decode("utf-8"))
 
             self.assertIn("description", response_content)
+            self.assertIn("Internal server error", response_content["description"])
             self.assertIn("AuthenticationError", str(cm_logs.output))
             self.assertIn("you are not authorized", str(cm_logs.output))
 
@@ -577,7 +579,7 @@ class RequestTestCase(unittest.TestCase):
         side_effect=TimeOutError("too long"),
     )
     def test_timeout_error(self, mock_search: Mock):
-        """A request to eodag server raising a Authentication error must return a 500 HTTP error code"""
+        """A request to eodag server raising a timeout error must return a 504 HTTP error code"""
         with self.assertLogs(level="ERROR") as cm_logs:
             response = self.app.get(
                 f"search?collections={self.tested_product_type}", follow_redirects=True
@@ -585,10 +587,32 @@ class RequestTestCase(unittest.TestCase):
             response_content = json.loads(response.content.decode("utf-8"))
 
             self.assertIn("description", response_content)
+            self.assertIn("TimeOutError", response_content["description"])
+            self.assertIn("too long", response_content["description"])
             self.assertIn("TimeOutError", str(cm_logs.output))
             self.assertIn("too long", str(cm_logs.output))
 
         self.assertEqual(504, response.status_code)
+
+    @mock.patch(
+        "eodag.rest.core.eodag_api.search",
+        autospec=True,
+        side_effect=PluginImplementationError("some error"),
+    )
+    def test_plugin_implementation_error(self, mock_search: Mock):
+        """A request to eodag server raising a plugin implementation error must return a 500 HTTP error code"""
+        with self.assertLogs(level="ERROR") as cm_logs:
+            response = self.app.get(
+                f"search?collections={self.tested_product_type}", follow_redirects=True
+            )
+            response_content = json.loads(response.content.decode("utf-8"))
+
+            self.assertIn("description", response_content)
+            self.assertIn("Internal server error", response_content["description"])
+            self.assertIn("PluginImplementationError", str(cm_logs.output))
+            self.assertIn("some error", str(cm_logs.output))
+
+        self.assertEqual(500, response.status_code)
 
     def test_filter(self):
         """latestIntersect filter should only keep the latest products once search area is fully covered"""
