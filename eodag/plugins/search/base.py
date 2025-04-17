@@ -337,7 +337,9 @@ class Search(PluginTopic):
         try:
             filters["productType"] = product_type
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
-        except NotImplementedError:
+        except NotImplementedError as e:
+            if str(e):
+                logger.debug(str(e))
             queryables = self.queryables_from_metadata_mapping(product_type, alias)
 
         return QueryablesDict(**queryables)
@@ -381,12 +383,12 @@ class Search(PluginTopic):
             for pt in available_product_types:
                 self.config.product_type_config = product_type_configs[pt]
                 pt_queryables = self._get_product_type_queryables(pt, None, filters)
-                # only use key and type because values and defaults will vary between product types
-                pt_queryables_neutral = {
-                    k: Annotated[v.__args__[0], Field(default=None)]
-                    for k, v in pt_queryables.items()
-                }
-                all_queryables.update(pt_queryables_neutral)
+                all_queryables.update(pt_queryables)
+            # reset defaults because they may vary between product types
+            for k, v in all_queryables.items():
+                v.__metadata__[0].default = getattr(
+                    Queryables.model_fields.get(k, Field(None)), "default", None
+                )
             return QueryablesDict(
                 additional_properties=True,
                 additional_information=additional_info,

@@ -1810,8 +1810,7 @@ class StacSearch(PostJsonSearch):
             not self.config.discover_queryables["fetch_url"]
             and not self.config.discover_queryables["product_type_fetch_url"]
         ):
-            logger.info(f"Cannot fetch queryables with {self.provider}")
-            return None
+            raise NotImplementedError()
 
         product_type = kwargs.get("productType", None)
         provider_product_type = (
@@ -1823,18 +1822,16 @@ class StacSearch(PostJsonSearch):
             provider_product_type
             and not self.config.discover_queryables["product_type_fetch_url"]
         ):
-            logger.info(
+            raise NotImplementedError(
                 f"Cannot fetch queryables for a specific product type with {self.provider}"
             )
-            return None
         if (
             not provider_product_type
             and not self.config.discover_queryables["fetch_url"]
         ):
-            logger.info(
-                f"Cannot fetch global queryables with {self.provider}. A product type must be specified"
+            raise ValidationError(
+                f"Cannot fetch global queryables for {self.provider}. A product type must be specified"
             )
-            return None
 
         try:
             unparsed_fetch_url = (
@@ -1843,7 +1840,9 @@ class StacSearch(PostJsonSearch):
                 else self.config.discover_queryables["fetch_url"]
             )
             if unparsed_fetch_url is None:
-                return None
+                raise PluginImplementationError(
+                    f"Cannot fetch queryables for {self.provider}: missing url"
+                )
 
             fetch_url = unparsed_fetch_url.format(
                 provider_product_type=provider_product_type,
@@ -1864,9 +1863,12 @@ class StacSearch(PostJsonSearch):
                     "{} {} instance:".format(self.provider, self.__class__.__name__),
                 ),
             )
-        except (RequestError, KeyError, AttributeError) as e:
-            logger.warning("failure in queryables discovery: %s", e)
-            return None
+        except (KeyError, AttributeError) as e:
+            raise PluginImplementationError(
+                "failure in queryables discovery: %s", e
+            ) from e
+        except RequestError as e:
+            raise RequestError("failure in queryables discovery: %s", e) from e
         else:
             json_queryables = dict()
             try:
@@ -1875,17 +1877,16 @@ class StacSearch(PostJsonSearch):
                 # extract results from response json
                 results_entry = self.config.discover_queryables["results_entry"]
                 if not isinstance(results_entry, JSONPath):
-                    logger.warning(
+                    raise MisconfiguredError(
                         f"Could not parse {self.provider} discover_queryables.results_entry"
                         f" as JSONPath: {results_entry}"
                     )
-                    return None
                 json_queryables = [
                     match.value for match in results_entry.find(resp_as_json)
                 ][0]
 
             except KeyError as e:
-                logger.warning(
+                raise MisconfiguredError(
                     "Incomplete %s discover_queryables configuration: %s",
                     self.provider,
                     e,
