@@ -15,7 +15,8 @@ Bug Fixes
 
 * **core**: Reset errors between SearchResult instances (`#1607`_, `48b0779`_)
 
-* **plugins**: Send client_id/client_secret with refresh_token in TokenAuth (`#1597`_, `9b626a9`_)
+* **plugins**: Send client_id/client_secret with refresh_token in TokenAuth (`#1597`_, `9b626a9`_, thanks
+  `@jgaucher-cs <https://github.com/jgaucher-cs>`_)
 
 .. _#1597: https://github.com/CS-SI/eodag/pull/1597
 .. _#1607: https://github.com/CS-SI/eodag/pull/1607
