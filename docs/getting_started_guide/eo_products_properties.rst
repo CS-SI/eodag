@@ -12,7 +12,7 @@ All of the parameters are string based. If a parameter requires an specific form
 * **tileIdentifier**: Tile identifier.
 * **productType**: A string identifying the entry type (e.g., ER02_SAR_IM__0P, MER_RR__1P, SM_SLC__1S, GES_DISC_AIRH3STD_V005).
 * **doi**: Digital Object Identifier identifying the product.
-* **platform**: A string with the platform short name (e.g., Sentinel-1).
+* **platform**: A string with the platform short name (e.g., SENTINEL1).
 * **platformSerialIdentifier**: A string with the platform serial identifier (e.g., ``S1A``, ``L8``).
 * **instrument**: A string identifying the instrument (e.g., MERIS, AATSR, ASAR, HRVIR, SAR).
 * **sensorType**: A string identifying the sensor type. Suggested values include: OPTICAL, RADAR, ALTIMETRIC, ATMOSPHERIC, LIMB.
