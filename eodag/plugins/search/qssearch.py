@@ -1905,10 +1905,6 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param
                 )
-                if param == "bbox":
-                    continue
-                if json_param == "datetime" and "end" in field_definitions:
-                    continue
                 default = json_mtd.get("default", None)
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
