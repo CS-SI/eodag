@@ -3,17 +3,20 @@
 EO Products Properties
 ======================
 
-EODAG exposes metadata for queryables based on [OGC OpenSearch Extension for Earth Observation](https://docs.ogc.org/is/13-026r9/13-026r9.html) for all providers that support it.
-All of the parameters are string based. If a parameter requires an specific format it will be defined on the list below.
-
+EODAG maps each provider's specific metadata parameters to a common model using
+`OGC OpenSearch Extension for Earth Observation <http://docs.opengeospatial.org/is/13-026r9/13-026r9.html>`_.
+Extra parameters that have no equivalent in this model are mapped as they are.
+For more information on parameters mapping, please see `Contributing / Parameters mapping <../params_mapping.rst>`_.
+Here is a list of these common mapped properties:
 ----------------------------
 
+* **id**: Unique identifier for the resource, harmonized across providers.
 * **uid**: Unique identifier for the resource, using provider specific formatting.
-* **tileIdentifier**: Tile identifier.
-* **productType**: A string identifying the entry type (e.g., ER02_SAR_IM__0P, MER_RR__1P, SM_SLC__1S, GES_DISC_AIRH3STD_V005).
+* **tileIdentifier**: Tile identifier from Sentinel 2 MGRS tiling grid (``31TCJ``, ``17FQE``, ...)
+* **productType**: A string identifying the entry type (e.g., ``CBERS4_MUX_L2``, ``LANDSAT_C2L2_SR``, etc).
 * **doi**: Digital Object Identifier identifying the product.
-* **platform**: A string with the platform short name (e.g., SENTINEL1).
-* **platformSerialIdentifier**: A string with the platform serial identifier (e.g., ``S1A``, ``L8``).
+* **platform**: A string with the platform short name (e.g., Sentinel-1).
+* **platformSerialIdentifier**: A string with the platform serial identifier.
 * **instrument**: A string identifying the instrument (e.g., MERIS, AATSR, ASAR, HRVIR, SAR).
 * **sensorType**: A string identifying the sensor type. Suggested values include: OPTICAL, RADAR, ALTIMETRIC, ATMOSPHERIC, LIMB.
 * **compositeType**: Type of composite product expressed as the time period that the composite product covers (e.g., P10D for a 10-day composite).
@@ -21,7 +24,7 @@ All of the parameters are string based. If a parameter requires an specific form
 * **orbitType**: A string identifying the platform orbit type (e.g., LEO, GEO).
 * **spectralRange**: A string identifying the sensor spectral range (e.g., INFRARED, NEAR-INFRARED, UV, VISIBLE).
 * **wavelengths**: A number, set, or interval requesting the sensor wavelengths in nanometers.
-* **hasSecurityConstraints**: A string indicating if the resource has any security constraints. Possible values: TRUE, FALSE.
+* **hasSecurityConstraints**: A string indicating if the resource has any security constraints.
 * **dissemination**: Information about the dissemination level of the resource.
 * **title**: A name given to the resource.
 * **topicCategory**: Main theme(s) of the dataset.
@@ -39,10 +42,9 @@ All of the parameters are string based. If a parameter requires an specific form
 * **language**: Language of the resource content.
 * **specification**: Reference to the specification to which the resource conforms.
 * **parentIdentifier**: A string identifying the parent of the entry in a hierarchy of resources.
-* **productionStatus**: A string identifying the status of the entry (e.g., ARCHIVED, ACQUIRED, CANCELLED).
-* **acquisitionType**: Used to distinguish at a high level the appropriateness of the acquisition for general use. Values: NOMINAL, CALIBRATION, OTHER.
+* **acquisitionType**: Used to distinguish at a high level the appropriateness of the acquisition for general use.
 * **orbitNumber**: A number, set, or interval requesting the acquisition orbit.
-* **orbitDirection**: A string identifying the acquisition orbit direction. Possible values: ASCENDING, DESCENDING.
+* **orbitDirection**: A string identifying the acquisition orbit direction.
 * **track**: A string identifying the orbit track.
 * **frame**: A string identifying the orbit frame.
 * **swathIdentifier**: Swath identifier (e.g., Envisat ASAR has 7 distinct swaths (I1, I2, I3...I7) that correspond to precise incidence angles for the sensor).
@@ -69,8 +71,8 @@ All of the parameters are string based. If a parameter requires an specific form
 * **illuminationAzimuthAngle**: Illumination azimuth angle during acquisition.
 * **illuminationZenithAngle**: Illumination zenith angle during acquisition.
 * **illuminationElevationAngle**: Illumination elevation angle during acquisition.
-* **polarizationMode**: Mode of polarizationChannel.
-* **polarizationChannels**: Channels used for polarization, space-separated (i.e. VV, VV VH, etc).
+* **polarizationMode**: Mode of polarization.
+* **polarizationChannels**: Channels used for polarization, space-separated (i.e. ``VV``, ``VV VH``, etc).
 * **antennaLookDirection**: Direction in which the antenna was looking during acquisition.
 * **minimumIncidenceAngle**: Minimum incidence angle during acquisition.
 * **maximumIncidenceAngle**: Maximum incidence angle during acquisition.
