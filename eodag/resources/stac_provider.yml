@@ -125,11 +125,9 @@ search:
     acquisitionSubType:
       - '{{"query":{{"acquisitionSubType":{{"eq":"{acquisitionSubType}"}}}}}}'
       - '$.properties.acquisitionSubType'
-    startTimeFromAscendingNode:
-      - '{{"start_datetime":["{start_datetime}"]}}'
-      - '$.properties.start_datetime'
+    startTimeFromAscendingNode: '$.properties.datetime'
     completionTimeFromAscendingNode:
-      - '{{"end_datetime":["{end_datetime}"]}}'
+      - '{{"datetime":"{startTimeFromAscendingNode#to_iso_utc_datetime}/{completionTimeFromAscendingNode#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
     illuminationAzimuthAngle:
       - '{{"query":{{"view:sun_azimuth":{{"eq":"{illuminationAzimuthAngle}"}}}}}}'
