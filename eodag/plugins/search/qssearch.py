@@ -1901,8 +1901,7 @@ class StacSearch(PostJsonSearch):
                 "start_datetime": "start",
                 "end_datetime": "end",
                 "datetime": None,
-                "geometry": "geom",
-                "bbox": None,
+                "bbox": "geom",
             }
             for json_param, json_mtd in json_queryables.items():
                 param = STAC_TO_EODAG_QUERYABLES.get(
@@ -1922,6 +1921,9 @@ class StacSearch(PostJsonSearch):
                 field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields
+            geom_queryable = python_queryables.pop("geometry", None)
+            if geom_queryable:
+                python_queryables["geom"] = geom_queryable
 
         return model_fields_to_annotated(python_queryables)
 
