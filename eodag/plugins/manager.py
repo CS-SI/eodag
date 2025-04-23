@@ -20,10 +20,9 @@ from __future__ import annotations
 import logging
 import re
 from operator import attrgetter
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
-import pkg_resources
+import importlib_metadata
 
 from eodag.config import (
     AUTH_TOPIC_KEYS,
@@ -91,12 +90,12 @@ class PluginManager:
             # have it discovered as long as they declare an entry point of the type
             # 'eodag.plugins.search' for example in its setup script. See the setup
             # script of eodag for an example of how to do this.
-            for entry_point in pkg_resources.iter_entry_points(
-                "eodag.plugins.{}".format(topic)
+            for entry_point in importlib_metadata.entry_points(
+                group="eodag.plugins.{}".format(topic)
             ):
                 try:
                     entry_point.load()
-                except pkg_resources.DistributionNotFound:
+                except ModuleNotFoundError:
                     logger.debug(
                         "%s plugin skipped, eodag[%s] or eodag[all] needed",
                         entry_point.name,
@@ -112,18 +111,12 @@ class PluginManager:
                         "Check that the plugin module (%s) is importable",
                         entry_point.module_name,
                     )
-                if (
-                    entry_point.dist
-                    and entry_point.dist.key != "eodag"
-                    and entry_point.dist.location is not None
-                ):
+                if entry_point.dist and entry_point.dist.name != "eodag":
                     # use plugin providers if any
+                    name = entry_point.dist.name
+                    dist = entry_point.dist
                     plugin_providers_config_path = [
-                        str(x)
-                        for x in Path(
-                            entry_point.dist.location,
-                            pkg_resources.to_filename(entry_point.dist.key),
-                        ).rglob("providers.yml")
+                        str(x) for x in dist.locate_file(name).rglob("providers.yml")
                     ]
                     if plugin_providers_config_path:
                         plugin_providers_config = load_config(
