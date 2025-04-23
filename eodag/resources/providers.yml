@@ -618,7 +618,6 @@
       illuminationElevationAngle: '$.properties.illuminationElevationAngle'
       polarizationMode: '$.properties.polarizationMode'
       polarizationChannels: '$.properties.polarisationChannels'
-      polarization: '$.properties.polarisationChannels'
       antennaLookDirection: '$.properties.antennaLookDirection'
       minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
       maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
@@ -818,9 +817,6 @@
       polarizationChannels:
         - 'polarisation'
         - '$.properties.polarisation'
-      polarization:
-        - 'polarisation'
-        - '$.properties.polarisation'
 
 
       # Custom parameters (not defined in the base document referenced above)
@@ -1012,9 +1008,6 @@
         - null
         - '$.ContentDate.End'
       polarizationChannels:
-        - null
-        - '$.Attributes.polarisationChannels'
-      polarization:
         - null
         - '$.Attributes.polarisationChannels'
       polarizationMode:
@@ -2240,9 +2233,6 @@
       polarizationMode:
         - 'polarisation'
         - '$.properties.polarisation'
-      polarization:
-        - 'polarisation'
-        - '$.properties.polarisation'
       polarizationChannels:
         - 'polarisation'
         - '$.properties.polarisation'
@@ -2675,9 +2665,6 @@
         - null
         - '$.Attributes.polarisationChannels'
       polarizationMode:
-        - null
-        - '$.Attributes.polarisationChannels'
-      polarization:
         - null
         - '$.Attributes.polarisationChannels'
       # Custom parameters (not defined in the base document referenced above)
@@ -4233,9 +4220,6 @@
         - null
         - '$.Attributes.polarisationChannels'
       polarizationMode:
-        - null
-        - '$.Attributes.polarisationChannels'
-      polarizationPolarization:
         - null
         - '$.Attributes.polarisationChannels'
       # Custom parameters (not defined in the base document referenced above)
