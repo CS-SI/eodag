@@ -3276,6 +3276,59 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual("item_846282_niznjvnqkrf", result[0].properties["id"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_query_with_not_intersected_geom(
+        self, mock_requests_get
+    ):
+        """A query with a geometry that does not intersect the dataset geometries must return no result"""
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        geometry = get_geometry_from_various(geometry=[10, 20, 30, 40])
+
+        # check that "geometry" does not intersect the dataset geometries
+        self.assertFalse(
+            get_geometry_from_various(
+                geometry=self.dataset1_data["geometry"]
+            ).intersects(geometry)
+        )
+        self.assertFalse(
+            get_geometry_from_various(
+                geometry=self.dataset2_data["geometry"]
+            ).intersects(geometry)
+        )
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+
+        result, num_total = search_plugin.query(
+            productType="PRODUCT_A",
+            geometry=geometry,
+        )
+
+        mock_requests_get.assert_has_calls(
+            calls=[
+                call(
+                    "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                ),
+                call().json(),
+                call(
+                    "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                ),
+                call().json(),
+                call(
+                    "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                ),
+                call().json(),
+            ]
+        )
+
+        # check that no result has been found
+        self.assertListEqual(result, [])
+        self.assertEqual(num_total, 0)
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):
         exc = requests.RequestException()
         exc.errno = 404
