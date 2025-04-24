@@ -974,7 +974,7 @@
         - null
         - '$.Attributes.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Name'
+      title: '{$.Name#remove_extension}'
       resolution:
         - null
         - '$.Attributes.spatialResolution'
@@ -2604,7 +2604,7 @@
         - null
         - '$.Attributes.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Name'
+      title: '{$.Name#remove_extension}'
       resolution:
         - null
         - '$.Attributes.spatialResolution'
@@ -4173,7 +4173,7 @@
         - null
         - '$.Attributes.processingLevel'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.Name'
+      title: '{$.Name#remove_extension}'
       resolution:
         - null
         - '$.Attributes.spatialResolution'
