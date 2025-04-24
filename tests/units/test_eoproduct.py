@@ -178,6 +178,7 @@ class TestEOProduct(EODagTestCase):
         product.register_downloader(mock_downloader, None)
 
         quicklook_file_path = product.get_quicklook()
+        self.assertEqual(self.requests_http_get.call_count, 2)
         self.requests_http_get.assert_called_with(
             "https://fake.url.to/quicklook",
             stream=True,
@@ -187,6 +188,35 @@ class TestEOProduct(EODagTestCase):
             verify=True,
         )
         self.assertEqual(quicklook_file_path, "")
+
+    def test_eoproduct_get_quicklook_ok_without_auth(self):
+        """EOProduct.get_quicklook must retrieve the quicklook without authentication."""  # noqa
+        product = self._dummy_product()
+        product.properties["quicklook"] = "https://fake.url.to/quicklook"
+
+        self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
+            requests.HTTPError,
+            None,
+        )
+        mock_downloader = mock.MagicMock(
+            spec_set=Download(provider=self.provider, config=None)
+        )
+        mock_downloader.config = config.PluginConfig.from_mapping(
+            {"output_dir": tempfile.gettempdir()}
+        )
+        product.register_downloader(mock_downloader, None)
+
+        quicklook_file_path = product.get_quicklook()
+        self.assertEqual(self.requests_http_get.call_count, 2)
+        self.requests_http_get.assert_called_with(
+            "https://fake.url.to/quicklook",
+            stream=True,
+            auth=None,
+            headers=USER_AGENT,
+            timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
+            verify=True,
+        )
+        os.remove(quicklook_file_path)
 
     def test_eoproduct_get_quicklook_ok(self):
         """EOProduct.get_quicklook must return the path to the successfully downloaded quicklook"""  # noqa

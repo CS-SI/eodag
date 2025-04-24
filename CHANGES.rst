@@ -3,6 +3,40 @@ Release history
 ===============
 
 
+v3.3.2 (2025-04-24)
+===================
+
+Bug Fixes
+---------
+
+* **providers**: Creodias and cop_dataspace products title mapping (`#1635`_, `850cb50`_)
+
+Continuous Integration
+----------------------
+
+* Fixed changelog generation (`#1630`_, `3bd7a5c`_)
+
+* Token usage for coverage report publishing (`#1633`_, `6a7e0d4`_)
+
+* Update changelog generation (`#1627`_, `20e0ef7`_)
+
+Refactoring
+-----------
+
+* **core**: Authentication for get_quicklook (`#1608`_, `40915e0`_)
+
+.. _#1608: https://github.com/CS-SI/eodag/pull/1608
+.. _#1627: https://github.com/CS-SI/eodag/pull/1627
+.. _#1630: https://github.com/CS-SI/eodag/pull/1630
+.. _#1633: https://github.com/CS-SI/eodag/pull/1633
+.. _#1635: https://github.com/CS-SI/eodag/pull/1635
+.. _20e0ef7: https://github.com/CS-SI/eodag/commit/20e0ef7d066b278ad2f068e1f65998c5549fdaf0
+.. _3bd7a5c: https://github.com/CS-SI/eodag/commit/3bd7a5c486f28c104964d7ca11c222a5a4d9132f
+.. _40915e0: https://github.com/CS-SI/eodag/commit/40915e031b4b5db2eda508fb71e5058d2a256bff
+.. _6a7e0d4: https://github.com/CS-SI/eodag/commit/6a7e0d43883d862b06269dee4bff940b5112e018
+.. _850cb50: https://github.com/CS-SI/eodag/commit/850cb5010058887277e19e59b2b7b3311fddd2a4
+
+
 v3.3.1 (2025-04-17)
 ===================
 
