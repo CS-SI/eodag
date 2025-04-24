@@ -105,6 +105,8 @@ jobs:
         coverage-summary-title: "Code Coverage (Ubuntu)"
         # Make the code coverage report togglable
         togglable-report: true
+        # Github token to use to publish the check
+        token: ${{ secrets.EODAG_GH_TOKEN }}
 
     - name: Produce the coverage report for Windows
       uses: insightsengineering/coverage-action@v2
@@ -135,6 +137,8 @@ jobs:
         coverage-summary-title: "Code Coverage (Windows)"
         # Make the code coverage report togglable
         togglable-report: true
+        # Github token to use to publish the check
+        token: ${{ secrets.EODAG_GH_TOKEN }}
 
   build-docs:
     name: Build the docs
