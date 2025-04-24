@@ -3347,6 +3347,25 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
 
+    def test_plugins_search_postjsonsearch_discover_queryables(self):
+        """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        kwargs = {"productType": "PRODUCT_A", "provider": self.provider}
+
+        queryables = search_plugin.discover_queryables(**kwargs)
+
+        self.assertIsNotNone(queryables)
+        # check that the queryables are the ones expected (they are always the same ones)
+        self.assertListEqual(
+            list(queryables.keys()), ["productType", "id", "start", "end", "geom"]
+        )
+        # check that each queryable does not have a default value except the one set in the kwargs
+        for key, queryable in queryables.items():
+            if key in kwargs:
+                self.assertIsNotNone(queryable.__metadata__[0].get_default())
+            else:
+                self.assertIsNone(queryable.__metadata__[0].get_default())
+
 
 class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
     def setUp(self):
