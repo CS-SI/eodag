@@ -3276,6 +3276,59 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
             self.assertEqual("item_846282_niznjvnqkrf", result[0].properties["id"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
+    def test_plugins_search_cop_marine_query_with_not_intersected_geom(
+        self, mock_requests_get
+    ):
+        """A query with a geometry that does not intersect the dataset geometries must return no result"""
+        mock_requests_get.return_value.json.side_effect = [
+            self.product_data,
+            self.dataset1_data,
+            self.dataset2_data,
+        ]
+
+        geometry = get_geometry_from_various(geometry=[10, 20, 30, 40])
+
+        # check that "geometry" does not intersect the dataset geometries
+        self.assertFalse(
+            get_geometry_from_various(
+                geometry=self.dataset1_data["geometry"]
+            ).intersects(geometry)
+        )
+        self.assertFalse(
+            get_geometry_from_various(
+                geometry=self.dataset2_data["geometry"]
+            ).intersects(geometry)
+        )
+
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+
+        result, num_total = search_plugin.query(
+            productType="PRODUCT_A",
+            geometry=geometry,
+        )
+
+        mock_requests_get.assert_has_calls(
+            calls=[
+                call(
+                    "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/product.stac.json"
+                ),
+                call().json(),
+                call(
+                    "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-one/dataset.stac.json"
+                ),
+                call().json(),
+                call(
+                    "https://stac.marine.copernicus.eu/metadata/PRODUCT_A/dataset-number-two/dataset.stac.json"
+                ),
+                call().json(),
+            ]
+        )
+
+        # check that no result has been found
+        self.assertListEqual(result, [])
+        self.assertEqual(num_total, 0)
+
+    @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_with_errors(self, mock_requests_get):
         exc = requests.RequestException()
         exc.errno = 404
@@ -3293,6 +3346,25 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 productType="PRODUCT_A",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",
             )
+
+    def test_plugins_search_postjsonsearch_discover_queryables(self):
+        """Queryables discovery with a CopMarineSearch must return static queryables with an adaptative default value"""  # noqa
+        search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        kwargs = {"productType": "PRODUCT_A", "provider": self.provider}
+
+        queryables = search_plugin.discover_queryables(**kwargs)
+
+        self.assertIsNotNone(queryables)
+        # check that the queryables are the ones expected (they are always the same ones)
+        self.assertListEqual(
+            list(queryables.keys()), ["productType", "id", "start", "end", "geom"]
+        )
+        # check that each queryable does not have a default value except the one set in the kwargs
+        for key, queryable in queryables.items():
+            if key in kwargs:
+                self.assertIsNotNone(queryable.__metadata__[0].get_default())
+            else:
+                self.assertIsNone(queryable.__metadata__[0].get_default())
 
 
 class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
