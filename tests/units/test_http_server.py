@@ -1285,6 +1285,7 @@ class RequestTestCase(unittest.TestCase):
             "gsd",
             "title",
             "s3:gsd",
+            "datetime",
             "geometry",
             "platform",
             "processing:level",
@@ -1511,6 +1512,7 @@ class RequestTestCase(unittest.TestCase):
         stac_common_queryables.remove("collection")
         provider_stac_queryables_from_queryables_file = [
             "id",
+            "datetime",
             "geometry",
             "platform",
             "processing:level",

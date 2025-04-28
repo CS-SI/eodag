@@ -1900,7 +1900,6 @@ class StacSearch(PostJsonSearch):
             STAC_TO_EODAG_QUERYABLES = {
                 "start_datetime": "start",
                 "end_datetime": "end",
-                "datetime": None,
                 "bbox": "geom",
             }
             for json_param, json_mtd in json_queryables.items():
@@ -1911,7 +1910,7 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param,
                 )
-                if param is None:
+                if json_param == "datetime" and "end" in field_definitions:
                     continue
 
                 default = kwargs.get(param, json_mtd.get("default"))
