@@ -70,6 +70,7 @@ from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
@@ -80,6 +81,7 @@ from eodag.utils import (
     REQ_RETRY_TOTAL,
     USER_AGENT,
     _deprecated,
+    copy_deepcopy,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -1900,6 +1902,7 @@ class StacSearch(PostJsonSearch):
             STAC_TO_EODAG_QUERYABLES = {
                 "start_datetime": "start",
                 "end_datetime": "end",
+                "datetime": None,
                 "bbox": "geom",
             }
             for json_param, json_mtd in json_queryables.items():
@@ -1910,7 +1913,7 @@ class StacSearch(PostJsonSearch):
                     )
                     or json_param,
                 )
-                if json_param == "datetime" and "end" in field_definitions:
+                if param is None:
                     continue
 
                 default = kwargs.get(param, json_mtd.get("default"))
@@ -1924,7 +1927,17 @@ class StacSearch(PostJsonSearch):
             if geom_queryable:
                 python_queryables["geom"] = geom_queryable
 
-        return model_fields_to_annotated(python_queryables)
+            queryables_dict = model_fields_to_annotated(python_queryables)
+
+            # append "datetime" as "start" & "end" if needed
+            if "datetime" in json_queryables:
+                eodag_queryables = copy_deepcopy(
+                    model_fields_to_annotated(Queryables.model_fields)
+                )
+                queryables_dict.setdefault("start", eodag_queryables["start"])
+                queryables_dict.setdefault("end", eodag_queryables["end"])
+
+            return queryables_dict
 
 
 class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):
