@@ -6191,3 +6191,5 @@
       release_version: 5
       metadata_mapping:
         <<: *day_month_year
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
