@@ -18,10 +18,11 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Annotated, Any, Optional
 from unittest import mock
 
 import geojson
+from pydantic.fields import FieldInfo
 
 from eodag.api.product.metadata_mapping import get_metadata_path_value
 from eodag.api.search_result import SearchResult
@@ -30,6 +31,7 @@ from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import StacSearch
+from eodag.types.queryables import Queryables
 from eodag.utils import HTTP_REQ_TIMEOUT, MockResponse
 from eodag.utils.stac_reader import fetch_stac_collections, fetch_stac_items
 
@@ -122,6 +124,34 @@ class StaticStacSearch(StacSearch):
             )
 
         return conf_update_dict
+
+    def discover_queryables(
+        self, **kwargs: Any
+    ) -> dict[str, Annotated[Any, FieldInfo]]:
+        """Set static available queryables for :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
+        search plugin
+
+        :param kwargs: additional filters for queryables (`productType` and other search
+                       arguments)
+        :returns: queryable parameters dict
+        """
+        return {
+            "productType": Queryables.get_with_default(
+                "productType", kwargs.get("productType")
+            ),
+            "id": Queryables.get_with_default("id", kwargs.get("id")),
+            "start": Queryables.get_with_default(
+                "start", kwargs.get("start") or kwargs.get("startTimeFromAscendingNode")
+            ),
+            "end": Queryables.get_with_default(
+                "end",
+                kwargs.get("end") or kwargs.get("completionTimeFromAscendingNode"),
+            ),
+            "geom": Queryables.get_with_default(
+                "geom",
+                kwargs.get("geom") or kwargs.get("geometry") or kwargs.get("area"),
+            ),
+        }
 
     def query(
         self,

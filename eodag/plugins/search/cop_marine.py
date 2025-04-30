@@ -37,7 +37,7 @@ from eodag.api.product import AssetsDict
 from eodag.config import PluginConfig
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.static_stac_search import StaticStacSearch
-from eodag.utils import get_bucket_name_and_prefix
+from eodag.utils import get_bucket_name_and_prefix, get_geometry_from_various
 from eodag.utils.exceptions import RequestError, UnsupportedProductType, ValidationError
 
 if TYPE_CHECKING:
@@ -215,10 +215,14 @@ class CopMarineSearch(StaticStacSearch):
 
         item_id = os.path.splitext(item_key.split("/")[-1])[0]
         download_url = s3_url + "/" + item_key
+        geometry = (
+            get_geometry_from_various(**dataset_item)
+            or self.config.metadata_mapping["defaultGeometry"]
+        )
         properties = {
             "id": item_id,
             "title": item_id,
-            "geometry": self.config.metadata_mapping["defaultGeometry"],
+            "geometry": geometry,
             "downloadLink": download_url,
             "dataset": dataset_item["id"],
         }
@@ -308,10 +312,16 @@ class CopMarineSearch(StaticStacSearch):
                 "parameter product type is required for search with cop_marine provider"
             )
         collection_dict, datasets_items_list = self._get_product_type_info(product_type)
+        geometry = kwargs.pop("geometry", None)
         products: list[EOProduct] = []
         start_index = items_per_page * (page - 1) + 1
         num_total = 0
         for i, dataset_item in enumerate(datasets_items_list):
+            # Filter by geometry
+            if "id" not in kwargs and geometry:
+                dataset_geom = get_geometry_from_various(**dataset_item)
+                if dataset_geom and not dataset_geom.intersects(geometry):
+                    continue
             try:
                 logger.debug("searching data for dataset %s", dataset_item["id"])
 

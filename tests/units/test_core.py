@@ -31,7 +31,6 @@ from tempfile import TemporaryDirectory
 
 import yaml
 from lxml import html
-from pkg_resources import DistributionNotFound
 from pydantic import ValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
@@ -1253,18 +1252,18 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
 
-    @mock.patch("eodag.plugins.manager.pkg_resources.iter_entry_points", autospec=True)
+    @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
         empty_conf_file = str(
             res_files("eodag") / "resources" / "user_conf_template.yml"
         )
 
-        def skip_qssearch(topic):
+        def skip_qssearch(group):
             ep = mock.MagicMock()
-            if topic == "eodag.plugins.search":
+            if group == "eodag.plugins.search":
                 ep.name = "QueryStringSearch"
-                ep.load = mock.MagicMock(side_effect=DistributionNotFound())
+                ep.load = mock.MagicMock(side_effect=ModuleNotFoundError())
             return [ep]
 
         mock_iter_ep.side_effect = skip_qssearch

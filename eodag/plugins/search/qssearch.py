@@ -70,6 +70,7 @@ from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
+from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
     DEFAULT_SEARCH_TIMEOUT,
@@ -80,6 +81,7 @@ from eodag.utils import (
     REQ_RETRY_TOTAL,
     USER_AGENT,
     _deprecated,
+    copy_deepcopy,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -1896,30 +1898,47 @@ class StacSearch(PostJsonSearch):
                     "No queryable found for %s on %s", product_type, self.provider
                 )
                 return None
-
             # convert json results to pydantic model fields
             field_definitions: dict[str, Any] = dict()
+            STAC_TO_EODAG_QUERYABLES = {
+                "start_datetime": "start",
+                "end_datetime": "end",
+                "datetime": None,
+                "bbox": "geom",
+            }
             for json_param, json_mtd in json_queryables.items():
-                param = (
+                param = STAC_TO_EODAG_QUERYABLES.get(
+                    json_param,
                     get_queryable_from_provider(
                         json_param, self.get_metadata_mapping(product_type)
                     )
-                    or json_param
+                    or json_param,
                 )
+                if param is None:
+                    continue
 
-                default = kwargs.get(param, None)
+                default = kwargs.get(param, json_mtd.get("default"))
                 annotated_def = json_field_definition_to_python(
                     json_mtd, default_value=default
                 )
                 field_definitions[param] = get_args(annotated_def)
 
             python_queryables = create_model("m", **field_definitions).model_fields
-            # replace geometry by geom
             geom_queryable = python_queryables.pop("geometry", None)
             if geom_queryable:
                 python_queryables["geom"] = geom_queryable
 
-        return model_fields_to_annotated(python_queryables)
+            queryables_dict = model_fields_to_annotated(python_queryables)
+
+            # append "datetime" as "start" & "end" if needed
+            if "datetime" in json_queryables:
+                eodag_queryables = copy_deepcopy(
+                    model_fields_to_annotated(Queryables.model_fields)
+                )
+                queryables_dict.setdefault("start", eodag_queryables["start"])
+                queryables_dict.setdefault("end", eodag_queryables["end"])
+
+            return queryables_dict
 
 
 class PostJsonSearchWithStacQueryables(StacSearch, PostJsonSearch):

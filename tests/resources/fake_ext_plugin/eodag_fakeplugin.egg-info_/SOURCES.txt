@@ -1,0 +1,7 @@
+pyproject.toml
+eodag_fakeplugin/__init__.py
+eodag_fakeplugin.egg-info/PKG-INFO
+eodag_fakeplugin.egg-info/SOURCES.txt
+eodag_fakeplugin.egg-info/dependency_links.txt
+eodag_fakeplugin.egg-info/entry_points.txt
+eodag_fakeplugin.egg-info/top_level.txt

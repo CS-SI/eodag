@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eodag_fakeplugin"
+version = "1.0"
+
+[project.entry-points."eodag.plugins.api"]
+FakePluginAPI = "eodag_fakeplugin:FakePluginAPI"
+
+[tool.setuptools]
+packages = ["eodag_fakeplugin"]
+
+[tool.setuptools.package-data]
+eodag_fakeplugin = ["providers.yml"]
