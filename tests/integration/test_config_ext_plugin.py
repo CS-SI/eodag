@@ -15,11 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib
 import os
+import shutil
+import sys
 import unittest
 from tempfile import TemporaryDirectory
 
-import pkg_resources
+from pytest import MonkeyPatch
 
 from tests import TEST_RESOURCES_PATH
 from tests.context import EODataAccessGateway
@@ -29,6 +32,12 @@ from tests.utils import mock
 class TestExternalPluginConfig(unittest.TestCase):
     def setUp(self):
         super(TestExternalPluginConfig, self).setUp()
+
+        # clean sys path
+        self._saved_sys_path = sys.path[:]
+        sys.path[:] = [p for p in sys.path if "fake_ext_plugin" not in p]
+        importlib.invalidate_caches()
+
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -43,38 +52,31 @@ class TestExternalPluginConfig(unittest.TestCase):
 
         self.dag.providers_config.pop("fakeplugin_provider", None)
 
-        # remove entry point manually, see https://github.com/pypa/setuptools/issues/1759
-        distpath = pkg_resources.working_set.by_key.pop("eodag-fakeplugin").location
-        pkg_resources.working_set.entry_keys.pop(distpath)
-        pkg_resources.working_set.entries.remove(distpath)
-
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
+        # reset sys.path
+        sys.path[:] = self._saved_sys_path
+        importlib.invalidate_caches()
 
     def test_update_providers_from_ext_plugin(self):
         """Load fake external plugin and check if it updates providers config"""
 
         default_providers_count = len(self.dag.providers_config)
 
-        fakeplugin_location = os.path.join(TEST_RESOURCES_PATH, "fake_ext_plugin")
-
-        # Create the fake entry point definition
-        ep = pkg_resources.EntryPoint.parse(
-            "FakePluginAPI = eodag_fakeplugin:FakePluginAPI"
+        src = os.path.join(TEST_RESOURCES_PATH, "fake_ext_plugin")
+        fakeplugin_location = os.path.join(self.tmp_home_dir.name, "fake_ext_plugin")
+        shutil.copytree(src, fakeplugin_location)
+        shutil.move(
+            os.path.join(fakeplugin_location, "eodag_fakeplugin.egg-info_"),
+            os.path.join(fakeplugin_location, "eodag_fakeplugin.egg-info"),
         )
-        # Create a fake distribution to insert into the global working_set
-        d = pkg_resources.Distribution(
-            location=fakeplugin_location,
-            project_name="eodag_fakeplugin",
-            version="0.1",
-        )
-        ep.dist = d
-        # Add the mapping to the fake EntryPoint
-        d._ep_map = {"eodag.plugins.api": {"FakePluginAPI": ep}}
-        # Add the fake distribution to the global working_set
-        pkg_resources.working_set.add(d, fakeplugin_location)
 
-        # New EODataAccessGateway instance, check if new conf has been loaded
-        self.dag = EODataAccessGateway()
-        self.assertEqual(len(self.dag.providers_config), default_providers_count + 1)
+        with MonkeyPatch.context() as monkeypatch:
+            monkeypatch.syspath_prepend(fakeplugin_location)
+
+            # New EODataAccessGateway instance, check if new conf has been loaded
+            self.dag = EODataAccessGateway()
+            self.assertEqual(
+                len(self.dag.providers_config), default_providers_count + 1
+            )

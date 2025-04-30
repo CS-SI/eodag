@@ -1,0 +1,1 @@
+eodag_fakeplugin
