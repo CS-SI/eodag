@@ -11,7 +11,7 @@ Bug Fixes
 
 * **plugins**: Stac providers datetime queryables handling (`#1625`_, `9417fd9`_)
 
-* **providers**: Cop_ewds metadata mapping (`#1629`_, `30b5554`_)
+* **providers**: cop_ewds metadata mapping (`#1629`_, `30b5554`_)
 
 Features
 --------
