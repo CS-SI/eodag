@@ -11,3 +11,6 @@ FakePluginAPI = "eodag_fakeplugin:FakePluginAPI"
 
 [tool.setuptools]
 packages = ["eodag_fakeplugin"]
+
+[tool.setuptools.package-data]
+eodag_fakeplugin = ["providers.yml"]
