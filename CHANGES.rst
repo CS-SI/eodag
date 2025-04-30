@@ -11,8 +11,6 @@ Bug Fixes
 
 * **plugins**: Stac providers datetime queryables handling (`#1625`_, `9417fd9`_)
 
-Co-authored-by: Sylvain Brunato <sylvain.brunato@c-s.fr>
-
 * **providers**: Cop_ewds metadata mapping (`#1629`_, `30b5554`_)
 
 Features
@@ -23,7 +21,7 @@ Features
 Refactoring
 -----------
 
-* **core**: Use importlib.metadata instead of the deprecated pkg_resources (`#1631`_, `3675690`_)
+* **core**: Use importlib.metadata instead of the deprecated pkg_resources (`#1631`_, `3675690`_, thanks `@avalentino <https://github.com/avalentino>`_)
 
 .. _#1625: https://github.com/CS-SI/eodag/pull/1625
 .. _#1629: https://github.com/CS-SI/eodag/pull/1629
