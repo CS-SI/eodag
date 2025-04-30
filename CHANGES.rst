@@ -3,6 +3,36 @@ Release history
 ===============
 
 
+v3.4.0 (2025-04-30)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: Stac providers datetime queryables handling (`#1625`_, `9417fd9`_)
+
+* **providers**: cop_ewds metadata mapping (`#1629`_, `30b5554`_)
+
+Features
+--------
+
+* **plugins**: Add queryables to cop_marine (`#1638`_, `bcc793e`_)
+
+Refactoring
+-----------
+
+* **core**: Use importlib.metadata instead of the deprecated pkg_resources (`#1631`_, `3675690`_, thanks `@avalentino <https://github.com/avalentino>`_)
+
+.. _#1625: https://github.com/CS-SI/eodag/pull/1625
+.. _#1629: https://github.com/CS-SI/eodag/pull/1629
+.. _#1631: https://github.com/CS-SI/eodag/pull/1631
+.. _#1638: https://github.com/CS-SI/eodag/pull/1638
+.. _30b5554: https://github.com/CS-SI/eodag/commit/30b5554d96c58a0aca53849bd38db80902823bdf
+.. _3675690: https://github.com/CS-SI/eodag/commit/3675690e04813de6b9402f0028277c091d0e51b0
+.. _9417fd9: https://github.com/CS-SI/eodag/commit/9417fd90049ccfb8ee30f6eef7e497da2c1bea60
+.. _bcc793e: https://github.com/CS-SI/eodag/commit/bcc793e83ae6c7fec3e282046e4516510e9015fb
+
+
 v3.3.2 (2025-04-24)
 ===================
 
