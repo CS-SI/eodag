@@ -6056,6 +6056,7 @@
       constraints_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/constraints.json
       form_url: https://ewds.climate.copernicus.eu/api/catalogue/v1/collections/{dataset}/form.json
     metadata_mapping:
+      productType: $.productType
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - date={startTimeFromAscendingNode#to_iso_date}/{completionTimeFromAscendingNode#to_iso_date}
@@ -6190,3 +6191,5 @@
       release_version: 5
       metadata_mapping:
         <<: *day_month_year
+    GENERIC_PRODUCT_TYPE:
+      dataset: '{productType}'
