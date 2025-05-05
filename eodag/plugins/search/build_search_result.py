@@ -470,7 +470,7 @@ class ECMWFSearch(PostJsonSearch):
         self.config.__dict__.setdefault(
             "discover_metadata",
             {
-                "auto_discovery": True,
+                "auto_discovery": False,
                 "search_param": "{metadata}",
                 "metadata_pattern": "^[a-zA-Z0-9][a-zA-Z0-9_]*$",
             },
