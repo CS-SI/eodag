@@ -389,8 +389,13 @@ class Search(PluginTopic):
                 v.__metadata__[0].default = getattr(
                     Queryables.model_fields.get(k, Field(None)), "default", None
                 )
+            discover_metadata = getattr(self.config, "discover_metadata", {})
+            auto_discovery = discover_metadata.get("auto_discovery", False)
+            if not auto_discovery:
+                pt_queryables.additional_properties = False
+
             return QueryablesDict(
-                additional_properties=True,
+                additional_properties=pt_queryables.additional_properties,
                 additional_information=additional_info,
                 **all_queryables,
             )
