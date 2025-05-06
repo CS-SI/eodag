@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v3.4.1 (2025-05-06)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: Missing datetime properties in ECMWFSearch result (`#1648`_, `9ac8d6a`_)
+
+.. _#1648: https://github.com/CS-SI/eodag/pull/1648
+.. _9ac8d6a: https://github.com/CS-SI/eodag/commit/9ac8d6a3f06ad1112c6dd3aeccb2f63eaa49c3c0
+
+
 v3.4.0 (2025-04-30)
 ===================
 
