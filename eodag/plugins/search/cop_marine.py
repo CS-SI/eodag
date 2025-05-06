@@ -285,6 +285,9 @@ class CopMarineSearch(StaticStacSearch):
             }
         }
         product = EOProduct(self.provider, properties, productType=product_type)
+        product_type_config = getattr(self.config, "product_type_config", {})
+        if "alias" in product_type_config:
+            product.properties["alias"] = product_type_config["alias"]
         product.assets = AssetsDict(product, assets)
         return product
 

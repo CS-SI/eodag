@@ -1179,6 +1179,9 @@ class ECMWFSearch(PostJsonSearch):
                 + "_ORDERABLE_"
                 + query_hash
             )
+            product_type_config = getattr(self.config, "product_type_config", {})
+            if "alias" in product_type_config:
+                properties["alias"] = product_type_config["alias"]
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
