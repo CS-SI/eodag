@@ -2357,6 +2357,42 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "1985-10-26T00:00:00.000Z",
         )
 
+    def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
+        """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
+
+        results, _ = self.search_plugin.query(
+            prep=PreparedSearch(),
+            productType="ERA5_SL",
+            **{
+                "ecmwf:year": "2020",
+                "ecmwf:month": ["02"],
+                "ecmwf:day": ["20", "21"],
+                "ecmwf:time": ["01:00"],
+            },
+        )
+        eoproduct = results[0]
+
+        self.assertEqual(
+            eoproduct.properties["startTimeFromAscendingNode"],
+            "2020-02-20T01:00:00.000Z",
+        )
+        self.assertEqual(
+            eoproduct.properties["completionTimeFromAscendingNode"],
+            "2020-02-21T01:00:00.000Z",
+        )
+        self.assertEqual(
+            eoproduct.properties["ecmwf:year"],
+            "2020",
+        )
+        self.assertEqual(
+            eoproduct.properties["ecmwf:month"],
+            ["02"],
+        )
+        self.assertEqual(
+            eoproduct.properties["ecmwf:day"],
+            ["20", "21"],
+        )
+
     def test_plugins_search_ecmwfsearch_without_producttype(self):
         """
         ECMWFSearch.query must build a EOProduct from input parameters without product type.
