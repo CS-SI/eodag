@@ -652,6 +652,9 @@ class ECMWFSearch(PostJsonSearch):
                             "missionEndDate", today().isoformat()
                         )
                     )
+                else:
+                    keywords[START] = start
+                    keywords[END] = end
 
     def _get_product_type_queryables(
         self, product_type: Optional[str], alias: Optional[str], filters: dict[str, Any]
