@@ -122,12 +122,13 @@ def fetch_stac_items(
     # URI opener used by PySTAC internally, instantiated here
     # to retrieve the timeout.
     _text_opener = _TextOpener(timeout, ssl_verify)
-    pystac.StacIO.read_text = _text_opener  # type: ignore[assignment]
+    stac_io = pystac.StacIO.default()
+    stac_io.read_text = _text_opener  # type: ignore[assignment]
 
-    stac_obj = pystac.read_file(stac_path)
+    stac_obj = pystac.read_file(stac_path, stac_io=stac_io)
     # Single STAC item
     if isinstance(stac_obj, pystac.Item):
-        return [stac_obj.to_dict()]
+        return [stac_obj.to_dict(transform_hrefs=False)]
     # STAC catalog
     elif isinstance(stac_obj, pystac.Catalog):
         return _fetch_stac_items_from_catalog(
@@ -152,7 +153,9 @@ def _fetch_stac_items_from_catalog(
     if extensions:
         extensions = extensions if isinstance(extensions, list) else [extensions]
         if "single-file-stac" in extensions:
-            items = [feature for feature in cat.to_dict()["features"]]
+            items = [
+                feature for feature in cat.to_dict(transform_hrefs=False)["features"]
+            ]
             return items
 
     # Making the links absolutes allow for both relative and absolute links to be handled.
@@ -201,9 +204,10 @@ def fetch_stac_collections(
 
     # URI opener used by PySTAC internally, instantiated here to retrieve the timeout.
     _text_opener = _TextOpener(timeout, ssl_verify)
-    pystac.StacIO.read_text = _text_opener  # type: ignore[assignment]
+    stac_io = pystac.StacIO.default()
+    stac_io.read_text = _text_opener  # type: ignore[assignment]
 
-    stac_obj = pystac.read_file(stac_path)
+    stac_obj = pystac.read_file(stac_path, stac_io=stac_io)
     if isinstance(stac_obj, pystac.Catalog):
         return _fetch_stac_collections_from_catalog(
             stac_obj, collection, max_connections, _text_opener

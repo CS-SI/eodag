@@ -46,7 +46,7 @@ logger = logging.getLogger("eodag.search.static_stac_search")
 class StaticStacSearch(StacSearch):
     """Static STAC Catalog search plugin
 
-    This plugin first loads all STAC items found in the catalog, and converts them to
+    This plugin first loads all STAC items found in the catalog (or item), and converts them to
     EOProducts using :class:`~eodag.plugins.search.qssearch.StacSearch`.
     Then it uses crunchers to only keep products matching query parameters.
 
@@ -56,7 +56,7 @@ class StaticStacSearch(StacSearch):
     :param provider: provider name
     :param config: Search plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): path to the catalog;
+        * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): path to the catalog or item;
           in contrast to the api_endpoint for other plugin types this can be a url or local system path.
         * :attr:`~eodag.config.PluginConfig.max_connections` (``int``): Maximum number of concurrent
           connections for HTTP requests; default: ``100``
