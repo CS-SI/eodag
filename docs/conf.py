@@ -61,7 +61,7 @@ nbsphinx_prolog = """
    You can run this notebook in a live session with |Binder|.
 
 .. |Binder| image:: https://static.mybinder.org/badge.svg
-   :target: https://mybinder.org/v2/gh/CS-SI/eodag/master?urlpath=lab/tree/docs/api_user_guide/{{ docname }}
+   :target: https://mybinder.org/v2/gh/CS-SI/eodag/master?urlpath=lab/tree/docs/{{ docname }}
 """
 
 # sphinx-copybutton configurations
