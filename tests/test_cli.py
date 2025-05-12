@@ -92,7 +92,8 @@ class TestEodagCli(unittest.TestCase):
         """Calling eodag without arguments should print help message"""
         result = self.runner.invoke(eodag)
         self.assertIn("Usage: eodag [OPTIONS] COMMAND [ARGS]...", result.output)
-        self.assertEqual(result.exit_code, 0)
+        # Exit status 2 with no_args_is_help starting click >= 8.2.0
+        self.assertIn(result.exit_code, (0, 2))
 
     def test_eodag_with_only_verbose_opt(self):
         """Calling eodag only with -v option should print error message"""
