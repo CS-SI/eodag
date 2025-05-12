@@ -3,6 +3,36 @@ Release history
 ===============
 
 
+v3.4.1 (2025-05-12)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: Missing datetime properties in ECMWFSearch result (`#1648`_, `9ac8d6a`_)
+
+* **plugins**: Staticstacsearch text opener (`#1643`_, `71a51f1`_)
+
+Documentation
+-------------
+
+* Fixed binder tutos links (`#1651`_, `5ec4421`_)
+
+Testing
+-------
+
+* Update click>=8.2.0 exit status code (`#1650`_, `51a5f36`_)
+
+.. _#1643: https://github.com/CS-SI/eodag/pull/1643
+.. _#1648: https://github.com/CS-SI/eodag/pull/1648
+.. _#1650: https://github.com/CS-SI/eodag/pull/1650
+.. _#1651: https://github.com/CS-SI/eodag/pull/1651
+.. _51a5f36: https://github.com/CS-SI/eodag/commit/51a5f3667b2cc0b706a7278494ee4e8bf1260210
+.. _5ec4421: https://github.com/CS-SI/eodag/commit/5ec4421cf3c653e35005e4489a09cb2f22e44a9f
+.. _71a51f1: https://github.com/CS-SI/eodag/commit/71a51f16ea370f542af3142fee25ec90c2a75ae3
+.. _9ac8d6a: https://github.com/CS-SI/eodag/commit/9ac8d6a3f06ad1112c6dd3aeccb2f63eaa49c3c0
+
+
 v3.4.0 (2025-04-30)
 ===================
 
