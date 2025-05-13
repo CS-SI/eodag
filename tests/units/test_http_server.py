@@ -1190,6 +1190,41 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
+        "eodag.rest.core.eodag_api.download",
+        autospec=True,
+    )
+    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
+    def test_download_item_not_available_yet(
+        self,
+        mock_search: Mock,
+        mock_download: Mock,
+        mock_auth: Mock,
+    ):
+        """Download through eodag server catalog when ORDERABLE is in url"""
+        tmp_dl_dir = TemporaryDirectory()
+        expected_file = f"{tmp_dl_dir.name}.tar"
+        Path(expected_file).touch()
+        mock_download.return_value = expected_file
+
+        tested_product_type = "ERA5_PL"
+
+        mock_search.return_value = self.mock_search_result()
+        self.app.request(
+            "GET",
+            f"collections/{tested_product_type}/items/foo_ORDERABLE/download?provider=cop_cds",
+            json=None,
+            follow_redirects=True,
+            headers={},
+        )
+        mock_search.assert_called_once_with(
+            id=None, productType="ERA5_PL", provider="cop_cds"
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.download.base.Download._stream_download_dict",
         autospec=True,
     )
