@@ -1194,13 +1194,13 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
-    def test_download_item_not_available_yet(
+    def test_download_item_orderable(
         self,
         mock_search: Mock,
         mock_download: Mock,
         mock_auth: Mock,
     ):
-        """Download through eodag server catalog when ORDERABLE is in url"""
+        """Request orderable item through eodag server catalog should call search with id=''"""
         tmp_dl_dir = TemporaryDirectory()
         expected_file = f"{tmp_dl_dir.name}.tar"
         Path(expected_file).touch()
@@ -1217,7 +1217,7 @@ class RequestTestCase(unittest.TestCase):
             headers={},
         )
         mock_search.assert_called_once_with(
-            id=None, productType="ERA5_PL", provider="cop_cds"
+            id="", productType="ERA5_PL", provider="cop_cds"
         )
 
     @mock.patch(
