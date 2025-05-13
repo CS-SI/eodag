@@ -143,6 +143,7 @@ class TestCore(TestCoreBase):
         "COP_DEM_GLO90_DTED": ["creodias", "creodias_s3", "dedl", "wekeo_main"],
         "DT_EXTREMES": ["dedl", "dedt_lumi"],
         "DT_CLIMATE_ADAPTATION": ["dedl", "dedt_lumi"],
+        "DWD_HYDROMET_EXTREMES": ["dedl"],
         "EEA_DAILY_VI": ["dedl", "wekeo_main"],
         "EFAS_FORECAST": ["cop_ewds", "dedl"],
         "EFAS_HISTORICAL": ["cop_ewds", "dedl"],
@@ -587,6 +588,7 @@ class TestCore(TestCoreBase):
         "VENUS_L1C": ["theia"],
         "VENUS_L2A_MAJA": ["theia"],
         "VENUS_L3A_MAJA": ["theia"],
+        "VITO_URBAN_HEAT": ["dedl"],
         GENERIC_PRODUCT_TYPE: [
             "theia",
             "peps",
