@@ -1176,6 +1176,7 @@ class ECMWFSearch(PostJsonSearch):
                 + "_ORDERABLE_"
                 + query_hash
             )
+            # use product_type_config as default properties
             product_type_config = getattr(self.config, "product_type_config", {})
             properties = dict(product_type_config, **properties)
 
@@ -1441,6 +1442,7 @@ class MeteoblueSearch(ECMWFSearch):
             productType=product_type,
             properties=properties,
         )
+        # use product_type_config as default properties
         product_type_config = getattr(self.config, "product_type_config", {})
         product.properties = dict(product_type_config, **product.properties)
 
