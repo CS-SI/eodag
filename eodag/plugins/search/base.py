@@ -370,8 +370,8 @@ class Search(PluginTopic):
             else ""
         )
         discover_metadata = getattr(self.config, "discover_metadata", {})
-
         auto_discovery = discover_metadata.get("auto_discovery", False)
+
         if product_type or getattr(self.config, "discover_queryables", {}).get(
             "fetch_url", ""
         ):
@@ -393,10 +393,8 @@ class Search(PluginTopic):
                 v.__metadata__[0].default = getattr(
                     Queryables.model_fields.get(k, Field(None)), "default", None
                 )
-            pt_queryables.additional_properties = auto_discovery
-
             return QueryablesDict(
-                additional_properties=pt_queryables.additional_properties,
+                additional_properties=auto_discovery,
                 additional_information=additional_info,
                 **all_queryables,
             )
