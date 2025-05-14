@@ -247,8 +247,6 @@ def download_stac_item(
     :returns: a stream of the downloaded data (zip file)
     """
     product_type = collection_id
-    if "ORDERABLE" in item_id:
-        item_id = ""
 
     search_results = eodag_api.search(
         id=item_id, productType=product_type, provider=provider, **kwargs
