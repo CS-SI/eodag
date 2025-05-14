@@ -1,0 +1,47 @@
+name: Publish to PyPI
+
+on:
+  # reusable workflow
+  workflow_call:
+  # manually triggerable
+  workflow_dispatch:
+
+jobs:
+  # job will be executed when 'Pre-deploy' workflow succeeds, or manually
+  build-n-publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          # Get history and tags for SCM versioning to work
+          fetch-depth: 0
+      - name: Install the latest version of uv with cache enabled
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: ""
+      - name: Check that the current version isn't already on PyPi
+        run: |
+          if [ "$(./get_pypi_latest_version.sh)" != "$(git describe --tags)" ]
+          then
+            echo "Current version is not on PyPI, proceed with bulding"
+          else
+            echo "Current version is the latest version uploaded to PyPI"
+            exit 1
+          fi
+
+      - name: Check long description is OK for PyPI with tox
+        run: uvx --with tox-uv --with sphinx tox -e pypi
+
+      - name: Build a binary wheel and a source tarball
+        run: uvx --from build pyproject-build --sdist --wheel
+
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
