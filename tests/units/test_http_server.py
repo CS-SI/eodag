@@ -26,6 +26,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional, Union
 from unittest.mock import Mock, call
+from urllib.parse import quote_plus
 
 import geojson
 import httpx
@@ -48,6 +49,7 @@ from tests.context import (
     ONLINE_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
+    NotAvailableError,
     PluginImplementationError,
     SearchResult,
 )
@@ -1190,34 +1192,29 @@ class RequestTestCase(unittest.TestCase):
         autospec=True,
     )
     @mock.patch(
-        "eodag.rest.core.eodag_api.download",
+        "eodag.rest.core._order_and_update",
         autospec=True,
+        side_effect=NotAvailableError(),
     )
-    @mock.patch("eodag.rest.core.eodag_api.search", autospec=True)
     def test_download_item_orderable(
         self,
-        mock_search: Mock,
-        mock_download: Mock,
+        mock_order_and_update: Mock,
         mock_auth: Mock,
     ):
-        """Request orderable item through eodag server catalog should call search with id=''"""
-        tmp_dl_dir = TemporaryDirectory()
-        expected_file = f"{tmp_dl_dir.name}.tar"
-        Path(expected_file).touch()
-        mock_download.return_value = expected_file
+        """Download orderable item through eodag server should order the item"""
 
-        tested_product_type = "ERA5_PL"
-
-        mock_search.return_value = self.mock_search_result()
+        qs = '{"foo": "bar"}'
         self.app.request(
             "GET",
-            f"collections/{tested_product_type}/items/foo_ORDERABLE/download?provider=cop_cds",
+            f"collections/foo/items/FOO_ORDERABLE_13245/download?provider=cop_cds&_dc_qs={quote_plus(qs)}",
             json=None,
             follow_redirects=True,
             headers={},
         )
-        mock_search.assert_called_once_with(
-            id="", productType="ERA5_PL", provider="cop_cds"
+
+        mock_order_and_update.assert_called_once()
+        self.assertEqual(
+            mock_order_and_update.call_args[0][0].properties["qs"]["foo"], "bar"
         )
 
     @mock.patch(
