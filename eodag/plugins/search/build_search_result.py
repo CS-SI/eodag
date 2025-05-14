@@ -1177,8 +1177,7 @@ class ECMWFSearch(PostJsonSearch):
                 + query_hash
             )
             product_type_config = getattr(self.config, "product_type_config", {})
-            if "alias" in product_type_config:
-                properties["alias"] = product_type_config["alias"]
+            properties = dict(product_type_config, **properties)
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
@@ -1442,6 +1441,8 @@ class MeteoblueSearch(ECMWFSearch):
             productType=product_type,
             properties=properties,
         )
+        product_type_config = getattr(self.config, "product_type_config", {})
+        product.properties = dict(product_type_config, **product.properties)
 
         return [
             product,
