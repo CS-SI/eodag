@@ -1521,6 +1521,30 @@ class TestCore(TestCoreBase):
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
         autospec=True,
     )
+    def test_additional_properties_in_list_queryables(
+        self, mock_discover_queryables: mock.Mock
+    ):
+
+        cop_marine_queryables = self.dag.list_queryables(provider="cop_marine")
+        self.assertFalse(cop_marine_queryables.additional_properties)
+
+        item_cop_marine_queryables = self.dag.list_queryables(
+            productType="MO_INSITU_GLO_PHY_TS_OA_NRT_013_002", provider="cop_marine"
+        )
+        self.assertFalse(item_cop_marine_queryables.additional_properties)
+
+        peps_queryables = self.dag.list_queryables(provider="peps")
+        self.assertTrue(peps_queryables.additional_properties)
+
+        item_peps_queryables = self.dag.list_queryables(
+            productType="S2_MSI_L1C", provider="peps"
+        )
+        self.assertTrue(item_peps_queryables.additional_properties)
+
+    @mock.patch(
+        "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
+        autospec=True,
+    )
     def test_list_queryables_with_constraints(
         self, mock_discover_queryables: mock.Mock
     ):
