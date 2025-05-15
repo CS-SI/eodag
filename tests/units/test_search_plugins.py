@@ -1825,6 +1825,8 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
 
         # custom query for meteoblue
         custom_query = {"queries": {"foo": "bar"}}
+        product_type_config = {"platform": "NEMSGLOBAL", "alias": "THE.ALIAS"}
+        setattr(self.search_plugin.config, "product_type_config", product_type_config)
         products, estimate = self.search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.auth_plugin, auth=self.auth),
             **custom_query,
@@ -1864,6 +1866,8 @@ class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
                 }
             ),
         )
+        self.assertEqual(products[0].properties["platform"], "NEMSGLOBAL")
+        self.assertEqual(products[0].properties["alias"], "THE.ALIAS")
 
 
 class MockResponse:
@@ -2343,9 +2347,10 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             "productType": self.product_type,
             "missionStartDate": "1985-10-26",
             "missionEndDate": "2015-10-21",
+            "alias": "THE.ALIAS",
         }
         results, _ = self.search_plugin.query(
-            productType=self.product_type,
+            productType="THE.ALIAS",
         )
         eoproduct = results[0]
         self.assertEqual(
@@ -2356,6 +2361,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             eoproduct.properties["completionTimeFromAscendingNode"],
             "1985-10-26T00:00:00.000Z",
         )
+        self.assertEqual("THE.ALIAS", eoproduct.properties["alias"])
 
     def test_plugins_search_ecmwfsearch_with_year_month_day_filter(self):
         """ECMWFSearch.query must use have datetime in response if year, month, day used in filters"""
@@ -3036,6 +3042,8 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         ]
 
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
+        product_type_config = {"platform": "P1"}
+        setattr(search_plugin.config, "product_type_config", product_type_config)
 
         with mock.patch("eodag.plugins.search.cop_marine._get_s3_client") as s3_stub:
             s3_stub.return_value = self.s3
@@ -3093,6 +3101,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
                 "2020-01-03T00:00:00Z",
                 products_dataset2[0].properties["completionTimeFromAscendingNode"],
             )
+            self.assertEqual("P1", products_dataset2[0].properties["platform"])
 
     @mock.patch("eodag.plugins.search.cop_marine.requests.get")
     def test_plugins_search_cop_marine_query_no_dates_in_id(self, mock_requests_get):

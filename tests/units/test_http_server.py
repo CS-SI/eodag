@@ -26,6 +26,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional, Union
 from unittest.mock import Mock, call
+from urllib.parse import quote_plus
 
 import geojson
 import httpx
@@ -48,6 +49,7 @@ from tests.context import (
     ONLINE_STATUS,
     TEST_RESOURCES_PATH,
     AuthenticationError,
+    NotAvailableError,
     PluginImplementationError,
     SearchResult,
 )
@@ -1184,6 +1186,36 @@ class RequestTestCase(unittest.TestCase):
         assert not os.path.exists(
             expected_file
         ), f"File {expected_file} should have been deleted"
+
+    @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.rest.core._order_and_update",
+        autospec=True,
+        side_effect=NotAvailableError(),
+    )
+    def test_download_item_orderable(
+        self,
+        mock_order_and_update: Mock,
+        mock_auth: Mock,
+    ):
+        """Download orderable item through eodag server should order the item"""
+
+        qs = '{"foo": "bar"}'
+        self.app.request(
+            "GET",
+            f"collections/foo/items/FOO_ORDERABLE_13245/download?provider=cop_cds&_dc_qs={quote_plus(qs)}",
+            json=None,
+            follow_redirects=True,
+            headers={},
+        )
+
+        mock_order_and_update.assert_called_once()
+        self.assertEqual(
+            mock_order_and_update.call_args[0][0].properties["qs"]["foo"], "bar"
+        )
 
     @mock.patch(
         "eodag.plugins.authentication.base.Authentication.authenticate",

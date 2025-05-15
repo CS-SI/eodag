@@ -470,7 +470,7 @@ class ECMWFSearch(PostJsonSearch):
         self.config.__dict__.setdefault(
             "discover_metadata",
             {
-                "auto_discovery": True,
+                "auto_discovery": False,
                 "search_param": "{metadata}",
                 "metadata_pattern": "^[a-zA-Z0-9][a-zA-Z0-9_]*$",
             },
@@ -1179,6 +1179,9 @@ class ECMWFSearch(PostJsonSearch):
                 + "_ORDERABLE_"
                 + query_hash
             )
+            # use product_type_config as default properties
+            product_type_config = getattr(self.config, "product_type_config", {})
+            properties = dict(product_type_config, **properties)
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
@@ -1220,6 +1223,9 @@ def _check_id(product: EOProduct) -> EOProduct:
     :raises: :class:`~eodag.utils.exceptions.ValidationError`
     """
     if not (product_id := product.search_kwargs.get("id")):
+        return product
+
+    if "ORDERABLE" in product_id:
         return product
 
     on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
@@ -1442,6 +1448,9 @@ class MeteoblueSearch(ECMWFSearch):
             productType=product_type,
             properties=properties,
         )
+        # use product_type_config as default properties
+        product_type_config = getattr(self.config, "product_type_config", {})
+        product.properties = dict(product_type_config, **product.properties)
 
         return [
             product,

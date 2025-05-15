@@ -3,6 +3,37 @@ Release history
 ===============
 
 
+v3.4.2 (2025-05-15)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Remove quotes around arrays in query param (`#1657`_, `b717e45`_)
+
+* **plugins**: Adapt queryables additional_properties to providers config (`#1646`_, `cc6ecc9`_)
+
+* **plugins**: Add alias to properties in cop_marine and EcmwfSearch plugins (`#1649`_, `ae93d5a`_)
+
+* **plugins**: Ecmwfsearch orderable products search (`#1656`_, `a399a5b`_)
+
+Continuous Integration
+----------------------
+
+* Automatic deployment (`#1655`_, `4fbdf8b`_)
+
+.. _#1646: https://github.com/CS-SI/eodag/pull/1646
+.. _#1649: https://github.com/CS-SI/eodag/pull/1649
+.. _#1655: https://github.com/CS-SI/eodag/pull/1655
+.. _#1656: https://github.com/CS-SI/eodag/pull/1656
+.. _#1657: https://github.com/CS-SI/eodag/pull/1657
+.. _4fbdf8b: https://github.com/CS-SI/eodag/commit/4fbdf8ba4d2cece05bede65e18438ecdc8029a69
+.. _a399a5b: https://github.com/CS-SI/eodag/commit/a399a5b1d5457cdfcab355f8e2b4c440982ba65f
+.. _ae93d5a: https://github.com/CS-SI/eodag/commit/ae93d5a6c58476dad2461d9dde663aa31356dff9
+.. _b717e45: https://github.com/CS-SI/eodag/commit/b717e456fb23e59e9dfb6a99b5e30b697be73232
+.. _cc6ecc9: https://github.com/CS-SI/eodag/commit/cc6ecc9979bfee420ff75cd919c3f90ae73689bb
+
+
 v3.4.1 (2025-05-12)
 ===================
 
