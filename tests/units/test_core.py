@@ -1524,7 +1524,9 @@ class TestCore(TestCoreBase):
     def test_additional_properties_in_list_queryables(
         self, mock_discover_queryables: mock.Mock
     ):
-
+        """additional_properties in queryables must be adapted to provider's configuration"""
+        # discover_metadata.auto_discovery == False
+        self.assertFalse(self.dag.providers_config["cop_marine"].search.discover_metadata["auto_discovery"])
         cop_marine_queryables = self.dag.list_queryables(provider="cop_marine")
         self.assertFalse(cop_marine_queryables.additional_properties)
 
@@ -1533,6 +1535,8 @@ class TestCore(TestCoreBase):
         )
         self.assertFalse(item_cop_marine_queryables.additional_properties)
 
+        # discover_metadata.auto_discovery == True
+        self.assertTrue(self.dag.providers_config["peps"].search.discover_metadata["auto_discovery"])
         peps_queryables = self.dag.list_queryables(provider="peps")
         self.assertTrue(peps_queryables.additional_properties)
 
@@ -1540,6 +1544,10 @@ class TestCore(TestCoreBase):
             productType="S2_MSI_L1C", provider="peps"
         )
         self.assertTrue(item_peps_queryables.additional_properties)
+
+        # additional_properties set to False for EcmwfSearch plugin
+        cop_cds_queryables = self.dag.list_queryables(provider="cop_cds")
+        self.assertFalse(cop_cds_queryables.additional_properties)
 
     @mock.patch(
         "eodag.plugins.search.build_search_result.ECMWFSearch.discover_queryables",
