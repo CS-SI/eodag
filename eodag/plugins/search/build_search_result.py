@@ -1222,6 +1222,9 @@ def _check_id(product: EOProduct) -> EOProduct:
     if not (product_id := product.search_kwargs.get("id")):
         return product
 
+    if "ORDERABLE" in product_id:
+        return product
+
     on_response_mm = getattr(product.downloader.config, "order_on_response", {}).get(
         "metadata_mapping", {}
     )
