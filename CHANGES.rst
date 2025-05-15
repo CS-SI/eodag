@@ -17,8 +17,6 @@ Bug Fixes
 
 * **plugins**: Ecmwfsearch orderable products search (`#1656`_, `a399a5b`_)
 
-Co-authored-by: Sylvain Brunato <sylvain.brunato@c-s.fr>
-
 Continuous Integration
 ----------------------
 
