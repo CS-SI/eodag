@@ -49,6 +49,7 @@ from eodag.utils import (
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
+    remove_str_array_quotes,
     sanitize,
     string_to_jsonpath,
     update_nested_dict,
@@ -1284,23 +1285,6 @@ def mtd_cfg_as_conversion_and_querypath(
     return dest_dict
 
 
-def _remove_array_quotes(input_str: str) -> str:
-    """Remove quotes around arrays to avoid json parsing errors
-    >>> _remove_array_quotes('"a":"["a", "b"]"')
-    '"a":["a", "b"]'
-    >>> _remove_array_quotes('{"a":"["a", "b"]", "b": ["c", "d"]}')
-    '{"a":["a", "b"], "b": ["c", "d"]}'
-    """
-    output_str = ""
-    for i in range(0, len(input_str)):
-        if i < len(input_str) - 1 and input_str[i] == '"' and input_str[i + 1] == "[":
-            continue
-        if input_str[i] == '"' and input_str[i - 1] == "]":
-            continue
-        output_str += input_str[i]
-    return output_str
-
-
 def format_query_params(
     product_type: str, config: PluginConfig, query_dict: dict[str, Any]
 ) -> dict[str, Any]:
@@ -1335,7 +1319,9 @@ def format_query_params(
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
                     # remove quotes around arrays
-                    formatted_query_param = _remove_array_quotes(formatted_query_param)
+                    formatted_query_param = remove_str_array_quotes(
+                        formatted_query_param
+                    )
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
