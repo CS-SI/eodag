@@ -1545,6 +1545,10 @@ def dict_md5sum(input_dict: dict[str, Any]) -> str:
 
 def remove_str_array_quotes(input_str: str) -> str:
     """Remove quotes around arrays to avoid json parsing errors
+
+    :param input_str: string to format
+    :returns: string without quotes surrounding array brackets
+
     >>> remove_str_array_quotes('"a":"["a", "b"]"')
     '"a":["a", "b"]'
     >>> remove_str_array_quotes('{"a":"["a", "b"]", "b": ["c", "d"]}')
