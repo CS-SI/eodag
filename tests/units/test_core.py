@@ -1525,8 +1525,12 @@ class TestCore(TestCoreBase):
         self, mock_discover_queryables: mock.Mock
     ):
         """additional_properties in queryables must be adapted to provider's configuration"""
-        # discover_metadata.auto_discovery == False
-        self.assertFalse(self.dag.providers_config["cop_marine"].search.discover_metadata["auto_discovery"])
+        # Check if discover_metadata.auto_discovery is False
+        self.assertFalse(
+            self.dag.providers_config["cop_marine"].search.discover_metadata[
+                "auto_discovery"
+            ]
+        )
         cop_marine_queryables = self.dag.list_queryables(provider="cop_marine")
         self.assertFalse(cop_marine_queryables.additional_properties)
 
@@ -1535,8 +1539,10 @@ class TestCore(TestCoreBase):
         )
         self.assertFalse(item_cop_marine_queryables.additional_properties)
 
-        # discover_metadata.auto_discovery == True
-        self.assertTrue(self.dag.providers_config["peps"].search.discover_metadata["auto_discovery"])
+        # Check if discover_metadata.auto_discovery is True
+        self.assertTrue(
+            self.dag.providers_config["peps"].search.discover_metadata["auto_discovery"]
+        )
         peps_queryables = self.dag.list_queryables(provider="peps")
         self.assertTrue(peps_queryables.additional_properties)
 
