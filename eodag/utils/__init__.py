@@ -1541,3 +1541,24 @@ def dict_md5sum(input_dict: dict[str, Any]) -> str:
     >>> assert(dict_md5sum({"a": 4, "b": {"b": 3, "c": 1, "a": 2}}) == hd)
     """
     return obj_md5sum(sort_dict(input_dict))
+
+
+def remove_str_array_quotes(input_str: str) -> str:
+    """Remove quotes around arrays to avoid json parsing errors
+
+    :param input_str: string to format
+    :returns: string without quotes surrounding array brackets
+
+    >>> remove_str_array_quotes('"a":"["a", "b"]"')
+    '"a":["a", "b"]'
+    >>> remove_str_array_quotes('{"a":"["a", "b"]", "b": ["c", "d"]}')
+    '{"a":["a", "b"], "b": ["c", "d"]}'
+    """
+    output_str = ""
+    for i in range(0, len(input_str)):
+        if i < len(input_str) - 1 and input_str[i] == '"' and input_str[i + 1] == "[":
+            continue
+        if input_str[i] == '"' and input_str[i - 1] == "]":
+            continue
+        output_str += input_str[i]
+    return output_str

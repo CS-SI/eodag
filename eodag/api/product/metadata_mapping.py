@@ -49,6 +49,7 @@ from eodag.utils import (
     get_timestamp,
     items_recursive_apply,
     nested_pairs2dict,
+    remove_str_array_quotes,
     sanitize,
     string_to_jsonpath,
     update_nested_dict,
@@ -1317,6 +1318,10 @@ def format_query_params(
                     # retrieve values from hashes where keys are given in the param
                     if "}[" in formatted_query_param:
                         formatted_query_param = _resolve_hashes(formatted_query_param)
+                    # remove quotes around arrays
+                    formatted_query_param = remove_str_array_quotes(
+                        formatted_query_param
+                    )
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
