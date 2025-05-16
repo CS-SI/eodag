@@ -4917,6 +4917,81 @@ EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
   missionStartDate: "2004-01-01T00:00:00Z"
   missionEndDate: "2023-12-31T23:59:59Z"
 
+EUSTAT_AVAILABLE_BEDS_HOSPITALS_NUTS2:
+  alias: STAT.EUSTAT.DAT.AVAILABLE_BEDS_HOSPITALS_NUTS2
+  abstract: |
+    Non-expenditure healthcare data provide information on institutions providing healthcare in countries, on resources used and on output produced in the framework of healthcare provision. \nData on healthcare form a major element of public health information as they describe the capacities available for different types of healthcare provision as well as potential 'bottlenecks' observed. The quantity and quality of healthcare services provided and the work sharing established between the different institutions are a subject of ongoing debate in all countries. Sustainability - continuously providing the necessary monetary and personal resources needed - and meeting the challenges of ageing societies are the primary perspectives used when analysing and using the data. \nThe resource-related data refer to both human and technical resources, i.e. they relate to: \n- Health care staff: 'manpower' active in the health care sector (doctors, dentists, nurses, etc.);\n- Heath workforce migration: migration movements of doctors and nurses;\n- Healthcare facilities: technical capacity dimensions (hospital beds, beds in nursing and residential care facilities, etc.).\nThe output-related data ('activities') refer to contacts between patients and the healthcare system, and to the treatment thereby received. Data are available for hospital discharges of in-patients and day cases, average length of stay of in-patients, consultations with medical professionals, and medical procedures performed in hospitals.\nAnnual national and regional data are provided in absolute numbers, percentages, and in population-standardised rates (per 100 000 inhabitants).\nWherever applicable, the definitions and classifications of the System of Health Accounts (SHA) are followed, e.g. International Classification for Health Accounts - Providers of health care (ICHA-HP). For hospital discharges, the International Shortlist for Hospital Morbidity Tabulation (ISHMT) is used. Surgical procedures are classified according to a shortlist mapped to ICD-9-CM.\nThese healthcare data are largely based on administrative data sources in the countries. Therefore, they reflect the country-specific way of organising healthcare and may not always be completely comparable.
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Health care, Hospital, Bed, Health
+  sensorType:
+  license: proprietary
+  title: Available beds in hospitals by NUTS 2 region
+  missionStartDate: "2013-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T23:59:59Z"
+
+EUSTAT_BATHING_SITES_WATER_QUALITY:
+  alias: STAT.EUSTAT.DAT.BATHING_SITES_WATER_QUALITY
+  abstract: |
+    The indicator measures the number and proportion of coastal and inland bathing sites with excellent water quality. The indicator assessment is based on microbiological parameters (intestinal enterococci and Escherichia coli). The new Bathing Water Directive requires Member States to identify and assess the quality of all inland and marine bathing waters and to classify these waters as ‘poor’, ‘sufficient’, ‘good’ or ‘excellent’.
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Bath, Water, Water quality
+  sensorType:
+  license: proprietary
+  title: Bathing sites with excellent water quality by location
+  missionStartDate: "2011-01-01T00:00:00Z"
+  missionEndDate: "2023-12-31T23:59:59Z"
+
+EUSTAT_POP_DENSITY_NUTS3:
+  alias: STAT.EUSTAT.DAT.POP_DENSITY_NUTS3
+  abstract: |
+    Eurostat’s annual data collections on population. Member States send population data to Eurostat data as on of 31 December for the reference year under Regulation 1260/2013 on European demographic statistics. The data are conventionally published by Eurostat as population on 1 January of the following year (reference year + 1). \nThe aim is to collect annual mandatory and voluntary demographic data from the national statistical institutes. Mandatory data are those defined by the legislation listed under ‘6.1. Institutional mandate — legal acts and other agreements’. \nThe completeness of the demographic data collected on a voluntary basis depends on the availability and completeness of information provided by the national statistical institutes.\nFor more information on mandatory/voluntary data collection, see 6.1. Institutional mandate — legal acts and other agreements. \nThe following statistics are available. \nPopulation on 1 January by sex and by:\n- single age and educational attainment / marital status / broad group of citizenship / broad group of country of birth;\n  - five-year age group and citizenship / country of birth;\n  - citizenship and broad group of country of birth / country of birth and broad group of citizenship;\n  - broad age group and NUTS 3 (under regional data population folder);\n  - single age and NUTS 2 (under regional data population folder);\n  - five-year age group and NUTS 2 / NUTS 3 (under regional data population folder).\nPopulation structure statistics: median age of population, proportion of population by various age groups, old age dependency ratio.
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, Population, Density, NUTS 3
+  sensorType:
+  license: proprietary
+  title: Population density by NUTS 3 region
+  missionStartDate: "1990-01-01T00:00:00Z"
+  missionEndDate: "2021-12-31T23:59:59Z"
+
+EUSTAT_SOIL_SEALING_INDEX:
+  alias: STAT.EUSTAT.DAT.SOIL_SEALING_INDEX
+  abstract: |
+    The indicator estimates the increase in sealed soil surfaces with impervious materials due to urban development and construction (e.g. buildings, constructions and laying of completely or partially impermeable artificial material, such as asphalt, metal, glass, plastic or concrete). This provides an indication of the rate of soil sealing, when areas change land use towards artificial and urban land use. The indicator builds on data from the imperviousness High Resolution Layer (a product of the Copernicus Land Monitoring Service). The indicator is presented in the following units: Index 2006=100 % of total surface total sealed surface in km2.
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, soil, soil sealing, SDG, EU Sustainable Development Goals
+  sensorType:
+  license: proprietary
+  title: Soil sealing index
+  missionStartDate: "2006-01-01T00:00:00Z"
+  missionEndDate: "2018-12-31T23:59:59Z"
+
+EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS:
+  alias: STAT.EUSTAT.DAT.SURFACE_TERRESTRIAL_PROTECTED_AREAS
+  abstract: |
+    The indicator measures the surface of terrestrial protected areas. The indicator comprises nationally designated protected areas and Natura 2000 sites. A nationally designated area is an area protected by national legislation. The Natura 2000 network comprises both marine and terrestrial protected areas designated under the EU Habitats and Birds Directives with the goal to maintain or restore a favourable conservation status for habitat types and species of EU interest.
+  instrument:
+  platform: Eurostat
+  platformSerialIdentifier: Eurostat
+  processingLevel:
+  keywords: Eurostat, CO2, terrestrial, protected areas
+  sensorType:
+  license: proprietary
+  title: Surface of the terrestrial protected areas
+  missionStartDate: "2013-01-01T00:00:00Z"
+  missionEndDate: "2022-12-31T23:59:59Z"
+
 # MARK: ISIMIP -------------------------------------------------------------------------
 ISIMIP_CLIMATE_FORCING_ISIMIP3B:
   abstract: |
