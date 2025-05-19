@@ -31,7 +31,12 @@ from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
 from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
-from eodag.utils.exceptions import AuthenticationError, MisconfiguredError, TimeOutError
+from eodag.utils.exceptions import (
+    AuthenticationError,
+    MisconfiguredError,
+    RequestError,
+    TimeOutError,
+)
 
 if TYPE_CHECKING:
     from requests import PreparedRequest, Response
@@ -304,12 +309,17 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         state = self.compute_state()
         authentication_response = self.authenticate_user(state)
         exchange_url = authentication_response.url
+
         for err_pattern, err_message in getattr(
             self.config, "exchange_url_error_pattern", {}
         ).items():
             if err_pattern in exchange_url:
                 raise AuthenticationError(err_message)
+
         if not exchange_url.startswith(self.config.redirect_uri):
+            if "Invalid username or password" in authentication_response.text:
+                raise AuthenticationError("Invalid username or password")
+
             raise AuthenticationError(
                 f"Could not authenticate user with provider {self.provider}.",
                 "Please verify your credentials",
@@ -369,13 +379,21 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             "redirect_uri": self.config.redirect_uri,
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        authorization_response = self.session.get(
-            self.authorization_endpoint,
-            params=params,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=ssl_verify,
-        )
+        try:
+            authorization_response = self.session.get(
+                self.authorization_endpoint,
+                params=params,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
+            )
+
+        except requests.exceptions.Timeout as exc:
+            raise TimeoutError(exc, "The authentication request timed out.") from exc
+        except requests.RequestException as exc:
+            raise RequestError.from_error(
+                exc, "An error occurred while authenticating the user."
+            ) from exc
 
         login_document = etree.HTML(authorization_response.text)
         login_forms = login_document.xpath(self.config.login_form_xpath)
@@ -413,13 +431,22 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             auth_uri = getattr(self.config, "authentication_uri", None)
             if not auth_uri:
                 raise MisconfiguredError("authentication_uri is missing")
-        return self.session.post(
-            auth_uri,
-            data=login_data,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=ssl_verify,
-        )
+        try:
+
+            return self.session.post(
+                auth_uri,
+                data=login_data,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
+            )
+
+        except requests.exceptions.Timeout as exc:
+            raise TimeoutError(exc, "The authentication request timed out.") from exc
+        except requests.RequestException as exc:
+            raise RequestError.from_error(
+                exc, "An error occurred while authenticating the user."
+            ) from exc
 
     def grant_user_consent(self, authentication_response: Response) -> Response:
         """Grant user consent"""
@@ -433,13 +460,20 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             for key, value in self.config.user_consent_form_data.items()
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        return self.session.post(
-            self.authorization_endpoint,
-            data=user_consent_data,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=ssl_verify,
-        )
+        try:
+            return self.session.post(
+                self.authorization_endpoint,
+                data=user_consent_data,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
+            )
+        except requests.exceptions.Timeout as exc:
+            raise TimeoutError(exc, "The authentication request timed out.") from exc
+        except requests.RequestException as exc:
+            raise RequestError.from_error(
+                exc, "An error occurred while authenticating the user."
+            ) from exc
 
     def _prepare_token_post_data(self, token_data: dict[str, Any]) -> dict[str, Any]:
         """Prepare the common data to post to the token URI"""
@@ -487,14 +521,21 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             self.config.token_exchange_post_data_method: token_exchange_data
         }
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        r = self.session.post(
-            self.token_endpoint,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=ssl_verify,
-            **post_request_kwargs,
-        )
-        return r
+        try:
+            r = self.session.post(
+                self.token_endpoint,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=ssl_verify,
+                **post_request_kwargs,
+            )
+            return r
+        except requests.exceptions.Timeout as exc:
+            raise TimeoutError(exc, "The authentication request timed out.") from exc
+        except requests.RequestException as exc:
+            raise RequestError.from_error(
+                exc, "An error occurred while authenticating the user."
+            ) from exc
 
     def _constant_or_xpath_extracted(
         self, value: str, form_element: Any
