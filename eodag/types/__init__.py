@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import (
     Annotated,
     Any,
@@ -149,6 +150,32 @@ def python_type_to_json(
         return None
 
 
+def resolve_type(schema: dict):
+    """
+    Resolves a Python type based on a JSON Schema definition.
+
+    This function takes a dictionary representing a JSON Schema snippet and
+    maps its "type" and optional "format" to the corresponding Python type.
+    It's typically used to convert schema definitions for dynamic typing,
+    including in contexts such as processing `anyOf` unions.
+
+    Currently, only "string" types are supported, with optional "format"
+    handling for "date" and "date-time".
+
+    :param schema: A dictionary representing a JSON Schema snippet.
+    :return: The corresponding Python type, or None if the schema is not supported.
+    """
+    type = schema.get("type")
+    fmt = schema.get("format")
+
+    if type == "string":
+        if fmt == "date":
+            return datetime.date
+        elif fmt == "date-time":
+            return datetime.datetime
+        return str
+
+
 def json_field_definition_to_python(
     json_field_definition: dict[str, Any],
     default_value: Optional[Any] = None,
@@ -183,6 +210,8 @@ def json_field_definition_to_python(
     )
 
     enum = json_field_definition.get("enum")
+    const = json_field_definition.get("const")
+    anyOf = json_field_definition.get("anyOf")
 
     if python_type in (list, set):
         items = json_field_definition.get("items", None)
@@ -194,11 +223,20 @@ def json_field_definition_to_python(
                 )
             ]
         elif isinstance(items, dict):
-            enum = items.get("enum")
+            if "enum" in items:
+                enum = items.get("enum")
+            elif "const" in items:
+                const = items.get("const")
 
     if enum:
         literal = Literal[tuple(sorted(enum))]  # type: ignore
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
+    elif const:
+        literal = Literal[const]
+        python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
+    elif anyOf:
+        union_types = [resolve_type(sub) for sub in anyOf]
+        python_type = Union[tuple(union_types)]
 
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
