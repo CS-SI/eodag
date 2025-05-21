@@ -236,7 +236,7 @@ def json_field_definition_to_python(
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
     elif anyOf:
         union_types = [resolve_type(sub) for sub in anyOf]
-        python_type = Union[tuple(union_types)]
+        python_type = Union[tuple(union_types)]  # type: ignore
 
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
