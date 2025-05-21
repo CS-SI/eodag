@@ -117,13 +117,20 @@ class OIDCRefreshTokenBase(Authentication):
 
     def _get_access_token(self) -> str:
         now = datetime.now(timezone.utc)
-        if self.access_token and now < self.access_token_expiration:
+        expiration_margin = getattr(
+            self.config, "token_expiration_margin", timedelta(seconds=60)
+        )
+
+        if self.access_token and self.access_token_expiration - now > expiration_margin:
             logger.debug(
                 f"Existing access_token is still valid until {self.access_token_expiration.isoformat()}."
             )
             return self.access_token
 
-        elif self.refresh_token and now < self.refresh_token_expiration:
+        elif (
+            self.refresh_token
+            and self.refresh_token_expiration - now > expiration_margin
+        ):
             response = self._get_token_with_refresh_token()
             logger.debug(
                 "access_token expired, fetching new access_token using refresh_token"
