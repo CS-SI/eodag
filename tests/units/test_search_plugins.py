@@ -21,8 +21,9 @@ import os
 import re
 import ssl
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from typing import Literal, Union, get_origin
 from unittest import mock
 from unittest.mock import call
 
@@ -35,6 +36,7 @@ import yaml
 from botocore.stub import Stubber
 from pydantic_core import PydanticUndefined
 from requests import RequestException
+from shapely.geometry.base import BaseGeometry
 from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
@@ -1802,6 +1804,124 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertIn("geom", queryables)
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)
+
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
+    )
+    def test_plugins_search_dedl_discover_queryables(self, mock_request):
+        provider_queryables = {
+            "$schema": "https://json-schema.org/draft/2019-09/schema",
+            "type": "object",
+            "title": "Queryables for EODAG STAC API",
+            "description": "Queryable names for the EODAG STAC API Item Search filter. ",
+            "properties": {
+                "ecmwf:variable": {
+                    "default": "10m_u_component_of_wind",
+                    "items": {
+                        "enum": [
+                            "10m_u_component_of_wind",
+                            "10m_v_component_of_wind",
+                            "2m_dewpoint_temperature",
+                            "2m_temperature",
+                        ],
+                        "type": "string",
+                    },
+                    "title": "variable",
+                    "type": "array",
+                },
+                "ecmwf:pressure_level": {
+                    "items": {},
+                    "title": "pressure_level",
+                    "type": "array",
+                },
+                "ecmwf:time": {
+                    "default": "00:00",
+                    "description": "Model base time as HH:MM (UTC)",
+                    "items": {"const": "00:00", "type": "string"},
+                    "title": "time",
+                    "type": "array",
+                },
+                "start_datetime": {
+                    "anyOf": [
+                        {"format": "date-time", "type": "string"},
+                        {"format": "date", "type": "string"},
+                    ],
+                    "default": "2015-01-01T00:00:00Z",
+                    "title": "start_datetime",
+                },
+                "end_datetime": {
+                    "anyOf": [
+                        {"format": "date-time", "type": "string"},
+                        {"format": "date", "type": "string"},
+                    ],
+                    "default": "2015-01-01T00:00:00Z",
+                    "title": "end_datetime",
+                },
+                "geometry": {
+                    "description": "Geometry",
+                    "ref": "https://schemas.stacspec.org/v1.0.0/item-spec/json-schema/item.json#/geometry",
+                },
+                "bbox": {
+                    "description": "BBox",
+                    "type": "array",
+                    "oneOf": [
+                        {"minItems": 4, "maxItems": 4},
+                        {"minItems": 6, "maxItems": 6},
+                    ],
+                    "items": {"type": "number"},
+                },
+            },
+            "required": [
+                "ecmwf:variable",
+                "ecmwf:time",
+                "start_datetime",
+                "geometry",
+                "bbox",
+            ],
+            "additionalProperties": False,
+        }
+        mock_request.return_value = mock.Mock()
+        mock_request.return_value.json.side_effect = [provider_queryables]
+        plugin = self.get_search_plugin(provider="dedl")
+        queryables_dedl = plugin.discover_queryables(
+            productType="CAMS_GAC_FORECAST", provider="dedl"
+        )
+
+        # Check that "ecmwf:time" has type Annotated[list[Literal['00:00']], ...]
+        self.assertIn("ecmwf:time", queryables_dedl)
+        annotated_type = queryables_dedl["ecmwf:time"]
+        args = get_args(annotated_type)
+        base_type = args[0]
+        self.assertEqual(get_origin(base_type), list)
+        literal_args = get_args(base_type)
+        self.assertEqual(literal_args, (Literal["00:00"],))
+
+        # Check that "start" has type typing.Annotated[typing.Union[datetime.datetime, datetime.date], ...]
+        self.assertIn("start", queryables_dedl)
+        annotated_type = queryables_dedl["start"]
+        args = get_args(annotated_type)
+        base_type = args[0]
+        self.assertEqual(get_origin(base_type), Union)
+        union_args = get_args(base_type)
+        self.assertIn(datetime, union_args)
+        self.assertIn(date, union_args)
+
+        # Check that "geom" has type Annotated[Union[str, dict[str, float], BaseGeometry], ...]
+        self.assertIn("geom", queryables_dedl)
+        annotated_type = queryables_dedl["geom"]
+        args = get_args(annotated_type)
+        base_type = args[0]
+        self.assertEqual(get_origin(base_type), Union)
+        union_args = get_args(base_type)
+        self.assertIn(str, union_args)
+        self.assertTrue(any(get_origin(arg) is dict for arg in union_args))
+        self.assertTrue(
+            any(
+                issubclass(arg, BaseGeometry)
+                for arg in union_args
+                if isinstance(arg, type)
+            )
+        )
 
 
 class TestSearchPluginMeteoblueSearch(BaseSearchPluginTest):
