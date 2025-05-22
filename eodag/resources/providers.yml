@@ -4937,7 +4937,7 @@
       productType: EO.MO.DAT.WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002
     # CLMS
     CLMS_CORINE:
-      productType: EO.EEA.DAT.CORINE
+      productType: EO.CLMS.DAT.CORINE
     CLMS_GLO_DMP_333M:
       productType: EO.CLMS.DAT.GLO.DMP300_V1
     CLMS_GLO_FAPAR_333M:
