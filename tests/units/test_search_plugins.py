@@ -1809,6 +1809,19 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_dedl_discover_queryables(self, mock_request):
+        """
+        Test the discovery and parsing of queryables from the DEDL provider.
+
+        This test verifies that:
+        - The "ecmwf:time" field is correctly interpreted as an annotated list with a
+        single literal value "00:00".
+        - The "start" field is interpreted as an annotated union of datetime and date types.
+        - The "geom" field is interpreted as an annotated union that includes a string,
+        a dictionary with string keys and float values, and subclasses of BaseGeometry.
+
+        The test mocks the _request method of the plugin to simulate a response with
+        predefined queryables, then verifies the correctness of the resulting type annotations.
+        """
         provider_queryables = {
             "$schema": "https://json-schema.org/draft/2019-09/schema",
             "type": "object",
