@@ -23,13 +23,14 @@ from unittest import mock
 
 import responses
 from pystac.utils import now_in_utc
-from requests import Request
+from requests import Request, Response, Timeout
 from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
+from eodag.utils.exceptions import RequestError
 from tests.context import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
@@ -1517,7 +1518,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
         autospec=True,
-        return_value=mock.Mock(url="http://foo.bar"),
+        return_value=mock.Mock(url="http://foo.bar", text=""),
     )
     def test_plugins_auth_codeflowauth_request_new_token_no_redirect(
         self,
@@ -1646,6 +1647,30 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate_user",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_request_new_token_invalid_authentication(
+        self, mock_authenticate_user
+    ):
+        """OIDCAuthorizationCodeFlowAuth.request_new_token must raise an authentication error if the username
+        or password is invalid"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        auth_plugin.config.redirect_uri = "https://correct.redirect.uri"
+
+        mock_response = MockResponse(json_data={"some": "data"})
+
+        mock_response.url = "https://malicious-site.com/fake-auth"
+        mock_response.text = "Invalid username or password"
+
+        mock_authenticate_user.return_value = mock_response
+
+        with self.assertRaises(AuthenticationError):
+            auth_plugin._request_new_token()
+
+    @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth._request_new_token",
         autospec=True,
     )
@@ -1704,7 +1729,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_request_new_token,
     ):
         """OIDCAuthorizationCodeFlowAuth.get_token_with_refresh_token must call `request_new_token()` if the POST
-        request raise and exception other than time out"""
+        request raise an exception other than time out"""
         auth_plugin = self.get_auth_plugin("provider_ok")
         auth_plugin.token_info = {"refresh_token": "old-refresh-token"}
         mock_requests_post.return_value = MockResponse({"err": "message"}, 500)
@@ -1743,6 +1768,36 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
         )
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        side_effect=[RequestException("network error"), Timeout("timeout error")],
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_grant_user_consent_error(
+        self, mock_requests_post
+    ):
+        """OIDCAuthorizationCodeFlowAuth.grant_user_consent must raise a time out or request error if the POST
+        request detects a timeout or request exception"""
+        auth_plugin = self.get_auth_plugin("provider_user_consent")
+        authentication_response = Response()
+
+        authentication_response._content = b"""
+            <html>
+                <head></head>
+                <body>
+                    <form id="form-user-consent" method="post">
+                        <input name="input_name" value="additional value" />
+                    </form>
+                </body>
+            </html>
+        """
+
+        with self.assertRaises(RequestError):
+            auth_plugin.grant_user_consent(authentication_response)
+
+        with self.assertRaises(TimeoutError):
+            auth_plugin.grant_user_consent(authentication_response)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.Session.get",
@@ -1914,6 +1969,55 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         # authenticate_user returns the authentication response
         self.assertEqual(mock_requests_post.return_value, auth_response)
 
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.Session.get",
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_authenticate_user_errors(
+        self, mock_requests_get, mock_requests_post
+    ):
+        """OIDCAuthorizationCodeFlowAuth.authenticate_user must raise a time out or request error if the POST and GET
+        requests detect a timeout or request exception"""
+        auth_plugin = self.get_auth_plugin("provider_ok")
+
+        state = "onvNjZbMkkjIpbnS"
+        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+
+        mock_requests_get.side_effect = RequestException("network error")
+        with self.assertRaises(RequestError):
+            auth_plugin.authenticate_user(state)
+
+        mock_requests_get.side_effect = Timeout("timeout error")
+        with self.assertRaises(TimeoutError):
+            auth_plugin.authenticate_user(state)
+
+        mock_requests_get.return_value = mock.Mock()
+        mock_requests_get.return_value.text = """
+            <html>
+                <head></head>
+                <body>
+                    <form id="form-login" method="post" action="/do_login">
+                        <input name="username" type="text" />
+                        <input name="password" type="password" />
+                        <input name="login" type="submit" value="Sign In" />
+                    </form>
+                </body>
+            </html>
+        """
+        mock_requests_get.side_effect = None
+
+        mock_requests_post.side_effect = RequestException("network error")
+        with self.assertRaises(RequestError):
+            auth_plugin.authenticate_user(state)
+
+        mock_requests_post.side_effect = Timeout("timeout error")
+        with self.assertRaises(TimeoutError):
+            auth_plugin.authenticate_user(state)
+
     def test_plugins_auth_codeflowauth_exchange_code_for_token_state_mismatch(
         self,
     ):
@@ -2065,3 +2169,24 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             },
             verify=True,
         )
+
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.Session.post",
+        side_effect=[RequestException("network error"), Timeout("timeout error")],
+        autospec=True,
+    )
+    def test_plugins_auth_codeflowauth_exchange_code_for_token_error(
+        self, mock_requests_post
+    ):
+        """OIDCAuthorizationCodeFlowAuth.exchange_code_for_token must raise a time out or request error if the POST
+        request detects a timeout or request exception"""
+        auth_plugin = self.get_auth_plugin("provider_user_consent")
+
+        authorized_url = "https://foo.eu?state=onvNjZbMkkjIpbnS&code=2ce1c24c"
+        state = "onvNjZbMkkjIpbnS"
+
+        with self.assertRaises(RequestError):
+            auth_plugin.exchange_code_for_token(authorized_url, state)
+
+        with self.assertRaises(TimeoutError):
+            auth_plugin.exchange_code_for_token(authorized_url, state)
