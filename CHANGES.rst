@@ -3,6 +3,18 @@ Release history
 ===============
 
 
+v3.4.3 (2025-05-22)
+===================
+
+Bug Fixes
+---------
+
+* Dedl mapping for CORINE collection (`#1661`_, `4c61b54`_)
+
+.. _#1661: https://github.com/CS-SI/eodag/pull/1661
+.. _4c61b54: https://github.com/CS-SI/eodag/commit/4c61b540ee46a8ae70932d64e9d373653763eb16
+
+
 v3.4.2 (2025-05-15)
 ===================
 
