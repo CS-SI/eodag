@@ -370,6 +370,7 @@ async def all_collections(
     instrument: Optional[str] = None,
     constellation: Optional[str] = None,
     datetime: Optional[str] = None,
+    bbox: Optional[str] = None,
 ) -> dict[str, Any]:
     """Build STAC collections
 
@@ -395,6 +396,7 @@ async def all_collections(
             instrument=instrument,
             constellation=constellation,
             datetime=datetime,
+            bbox=bbox,
         )
 
         # # parse f-strings

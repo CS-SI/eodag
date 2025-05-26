@@ -34,6 +34,7 @@ from urllib.parse import (
 
 import geojson
 from jsonpath_ng.jsonpath import Child
+from shapely.geometry import Polygon
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
@@ -41,6 +42,7 @@ from eodag.api.product.metadata_mapping import (
     get_metadata_path,
 )
 from eodag.rest.config import Settings
+from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.rest.utils.rfc3339 import str_to_interval
 from eodag.utils import (
     deepcopy,
@@ -818,6 +820,7 @@ class StacCollection(StacCommon):
         instrument: Optional[str] = None,
         constellation: Optional[str] = None,
         datetime: Optional[str] = None,
+        bbox: Optional[str] = None,
     ) -> list[dict[str, Any]]:
         """Build STAC collections list
 
@@ -852,13 +855,26 @@ class StacCollection(StacCommon):
         else:
             product_types = all_pt
 
+        if bbox:
+            bbox = [float(x) for x in bbox.split(",")]
+            SearchPostRequest.validate_bbox(bbox)
+            bbox = Polygon.from_bounds(*bbox)
+
         # list product types with all metadata using guessed ids
         collection_list: list[dict[str, Any]] = []
         for product_type in product_types:
             stac_collection = self.__generate_stac_collection(
                 collection_model, product_type
             )
-            collection_list.append(stac_collection)
+            # Apply bbox filter
+            if bbox:
+                _bbox = Polygon.from_bounds(
+                    *stac_collection["extent"]["spatial"]["bbox"][0]
+                )
+                if bbox.intersects(_bbox):
+                    collection_list.append(stac_collection)
+            else:
+                collection_list.append(stac_collection)
 
         return collection_list
 
