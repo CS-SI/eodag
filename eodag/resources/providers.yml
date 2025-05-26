@@ -3468,6 +3468,7 @@
       metadata_mapping:
         orderId: '$.json.download_id'
         orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
     order_status:
       request:
         method: GET
