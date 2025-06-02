@@ -360,7 +360,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             )
         self.assertEqual(
             "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.peps_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
             context.exception.message,
         )
@@ -388,7 +388,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             )
         self.assertEqual(
             "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.peps_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
             context.exception.message,
         )
@@ -3676,7 +3676,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
             )
         self.assertEqual(
             "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.wekeomain_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
             context.exception.message,
         )
@@ -3704,7 +3704,7 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
             )
         self.assertEqual(
             "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.wekeomain_search_plugin.provider}: "
             "please remove 'foo' from your search parameters",
             context.exception.message,
         )
