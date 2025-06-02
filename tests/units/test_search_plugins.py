@@ -21,6 +21,7 @@ import os
 import re
 import ssl
 import unittest
+from copy import deepcopy as copy_deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal, Union, get_origin
@@ -342,11 +343,39 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_search_peps_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
-        # with raising error parameter in the global config of the provider
-        provider_search_plugin_config = deepcopy(self.peps_search_plugin.config)
-        self.peps_search_plugin.config.discover_metadata = {
-            "search_param": {"raise_mtd_discovery_error": True}
-        }
+        # with raised error parameter set to True in the global config of the provider
+        provider_search_plugin_config = copy_deepcopy(self.peps_search_plugin.config)
+        self.peps_search_plugin.config.discover_metadata[
+            "raise_mtd_discovery_error"
+        ] = True
+
+        with self.assertRaises(ValidationError) as context:
+            self.peps_search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=2,
+                    auth_plugin=self.peps_auth_plugin,
+                ),
+                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
+            )
+        self.assertEqual(
+            "Search parameters which are not queryable are disallowed for "
+            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
+            "please remove 'foo' from your search parameters",
+            context.exception.message,
+        )
+
+        # with raised error parameter set to True in the config of the product type of the provider
+
+        # first, update this parameter to False in the global config
+        # to show that it is going to be taken over by this new config
+        self.peps_search_plugin.config.discover_metadata[
+            "raise_mtd_discovery_error"
+        ] = False
+
+        self.peps_search_plugin.config.products[
+            self.search_criteria_s2_msi_l1c["productType"]
+        ]["discover_metadata"] = {"raise_mtd_discovery_error": True}
 
         with self.assertRaises(ValidationError) as context:
             self.peps_search_plugin.query(
@@ -366,37 +395,6 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
 
         # restore the original config
         self.peps_search_plugin.config = provider_search_plugin_config
-
-        # with raising error parameter in the config of the product type of the provider
-        provider_product_type_config = deepcopy(
-            self.peps_search_plugin.config.products[
-                self.search_criteria_s2_msi_l1c["productType"]
-            ]
-        )
-        self.peps_search_plugin.config.products[
-            self.search_criteria_s2_msi_l1c["productType"]
-        ]["discover_metadata"] = {"search_param": {"raise_mtd_discovery_error": True}}
-
-        with self.assertRaises(ValidationError) as context:
-            self.peps_search_plugin.query(
-                prep=PreparedSearch(
-                    page=1,
-                    items_per_page=2,
-                    auth_plugin=self.peps_auth_plugin,
-                ),
-                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
-            )
-        self.assertEqual(
-            "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.peps_search_plugin.provider}: "
-            "please remove 'foo' from your search parameters",
-            context.exception.message,
-        )
-
-        # restore the original config
-        self.peps_search_plugin.config.products[
-            self.search_criteria_s2_msi_l1c["productType"]
-        ] = provider_product_type_config
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
@@ -3659,11 +3657,41 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearchwithstacqueryables_search_wekeomain_ko(self):
         """A query with a parameter which is not queryable must
         raise an error if the provider does not allow it"""  # noqa
-        # with raising error parameter in the global config of the provider
-        provider_search_plugin_config = deepcopy(self.wekeomain_search_plugin.config)
+        # with raised error parameter set to True in the global config of the provider
+        provider_search_plugin_config = copy_deepcopy(
+            self.wekeomain_search_plugin.config
+        )
         self.wekeomain_search_plugin.config.discover_metadata = {
-            "search_param": {"raise_mtd_discovery_error": True}
+            "raise_mtd_discovery_error": True
         }
+
+        with self.assertRaises(ValidationError) as context:
+            self.wekeomain_search_plugin.query(
+                prep=PreparedSearch(
+                    page=1,
+                    items_per_page=2,
+                    auth_plugin=self.wekeomain_auth_plugin,
+                ),
+                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
+            )
+        self.assertEqual(
+            "Search parameters which are not queryable are disallowed for "
+            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
+            "please remove 'foo' from your search parameters",
+            context.exception.message,
+        )
+
+        # with raised error parameter set to True in the config of the product type of the provider
+
+        # first, update this parameter to False in the global config
+        # to show that it is going to be taken over by this new config
+        self.wekeomain_search_plugin.config.discover_metadata[
+            "raise_mtd_discovery_error"
+        ] = False
+
+        self.wekeomain_search_plugin.config.products[
+            self.search_criteria_s2_msi_l1c["productType"]
+        ]["discover_metadata"] = {"raise_mtd_discovery_error": True}
 
         with self.assertRaises(ValidationError) as context:
             self.wekeomain_search_plugin.query(
@@ -3683,37 +3711,6 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
 
         # restore the original config
         self.wekeomain_search_plugin.config = provider_search_plugin_config
-
-        # with raising error parameter in the config of the product type of the provider
-        provider_product_type_config = deepcopy(
-            self.wekeomain_search_plugin.config.products[
-                self.search_criteria_s2_msi_l1c["productType"]
-            ]
-        )
-        self.wekeomain_search_plugin.config.products[
-            self.search_criteria_s2_msi_l1c["productType"]
-        ]["discover_metadata"] = {"search_param": {"raise_mtd_discovery_error": True}}
-
-        with self.assertRaises(ValidationError) as context:
-            self.wekeomain_search_plugin.query(
-                prep=PreparedSearch(
-                    page=1,
-                    items_per_page=2,
-                    auth_plugin=self.wekeomain_auth_plugin,
-                ),
-                **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
-            )
-        self.assertEqual(
-            "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} with {self.wekeomain_search_plugin.provider}: "
-            "please remove 'foo' from your search parameters",
-            context.exception.message,
-        )
-
-        # restore the original config
-        self.wekeomain_search_plugin.config.products[
-            self.search_criteria_s2_msi_l1c["productType"]
-        ] = provider_product_type_config
 
     @mock.patch(
         "eodag.plugins.search.qssearch.PostJsonSearch.discover_queryables",

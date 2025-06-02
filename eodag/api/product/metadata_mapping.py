@@ -1299,37 +1299,23 @@ def format_query_params(
         config.metadata_mapping,
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
+
     # Initialize the configuration parameter which indicates if an error must be raised while there is a search
     # parameter which is not queryable. It is useful when the provider does not return any result if the search
     # parameter is not a queryable without raising an error by itself.
     # This parameter is set to False by default and the configuration at product type level has priority over the
     # one at provider level
     raise_mtd_discovery_error = (
-        getattr(config, "discover_metadata", {})
-        .get("search_param", {})
-        .get("raise_mtd_discovery_error", False)
-        if isinstance(
-            getattr(config, "discover_metadata", {}).get("search_param", {}), dict
-        )
-        else False
-    )
-    raise_mtd_discovery_error = (
         config.products.get(product_type, {})
         .get("discover_metadata", {})
-        .get("search_param", {})
         .get("raise_mtd_discovery_error")
-        if isinstance(
-            config.products.get(product_type, {})
-            .get("discover_metadata", {})
-            .get("search_param", {}),
-            dict,
+    )
+    raise_mtd_discovery_error = (
+        raise_mtd_discovery_error
+        if raise_mtd_discovery_error is not None
+        else getattr(config, "discover_metadata", {}).get(
+            "raise_mtd_discovery_error", False
         )
-        and config.products.get(product_type, {})
-        .get("discover_metadata", {})
-        .get("search_param", {})
-        .get("raise_mtd_discovery_error")
-        is not None
-        else raise_mtd_discovery_error
     )
 
     query_params: dict[str, Any] = {}
