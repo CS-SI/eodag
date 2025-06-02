@@ -364,15 +364,15 @@ class DataRequestSearch(Search):
                 request_body = format_query_params(
                     eodag_product_type, self.config, kwargs
                 )
-            except ValidationError as context:
+            except ValidationError as err:
                 not_queryable_search_param = Queryables.get_queryable_from_alias(
-                    str(context.message).split(":")[-1].strip()
+                    str(err.message).split(":")[-1].strip()
                 )
                 raise ValidationError(
                     f"Search parameters which are not queryable are disallowed for {product_type} on "
                     f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
                     {not_queryable_search_param},
-                )
+                ) from err
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
             )
