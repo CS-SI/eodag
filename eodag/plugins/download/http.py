@@ -77,6 +77,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from jsonpath_ng import JSONPath
     from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
@@ -538,7 +539,9 @@ class HTTPDownload(Download):
                     else {}
                 )
                 if result_entry:
-                    entry_jsonpath = string_to_jsonpath(result_entry, force=True)
+                    entry_jsonpath: JSONPath = string_to_jsonpath(
+                        result_entry, force=True
+                    )
                     json_response = entry_jsonpath.find(json_response)
                     raise NotImplementedError(
                         'result_entry in config.on_success is not yet supported for result_type "json"'
