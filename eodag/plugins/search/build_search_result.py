@@ -403,8 +403,7 @@ def ecmwf_temporal_to_eodag(
     if date := params.get("date"):
         start, end = parse_date(date, params.get("time"))
 
-    elif year := params.get("year") or params.get("hyear"):
-        year = params.get("year") or params.get("hyear")
+    elif year := (params.get("year") or params.get("hyear")):
         month = params.get("month") or params.get("hmonth")
         day = params.get("day") or params.get("hday")
         time = params.get("time")
