@@ -1686,7 +1686,7 @@ class EODataAccessGateway:
                        * other criteria compatible with the provider
         :returns: Search plugins list and the prepared kwargs to make a query.
         """
-        product_type = kwargs.get("productType")
+        product_type: Optional[str] = kwargs.get("productType")
         if product_type is None:
             try:
                 guesses = self.guess_product_type(**kwargs)
@@ -1750,7 +1750,7 @@ class EODataAccessGateway:
             product_type
             not in self._plugins_manager.product_type_to_provider_config_map.keys()
         ):
-            if provider:
+            if provider and product_type:
                 # Try to get specific product type from external provider
                 logger.debug(f"Fetching {provider} to find {product_type} product type")
                 self._fetch_external_product_type(provider, product_type)
@@ -1795,7 +1795,8 @@ class EODataAccessGateway:
         # Add product_types_config to plugin config. This dict contains product
         # type metadata that will also be stored in each product's properties.
         for search_plugin in search_plugins:
-            self._attach_product_type_config(search_plugin, product_type)
+            if product_type is not None:
+                self._attach_product_type_config(search_plugin, product_type)
 
         return search_plugins, kwargs
 
