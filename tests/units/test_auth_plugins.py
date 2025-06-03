@@ -1729,7 +1729,7 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
         mock_request_new_token,
     ):
         """OIDCAuthorizationCodeFlowAuth.get_token_with_refresh_token must call `request_new_token()` if the POST
-        request raise an exception other than time out"""
+        request raises an exception other than time out"""
         auth_plugin = self.get_auth_plugin("provider_ok")
         auth_plugin.token_info = {"refresh_token": "old-refresh-token"}
         mock_requests_post.return_value = MockResponse({"err": "message"}, 500)

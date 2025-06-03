@@ -387,7 +387,6 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 timeout=HTTP_REQ_TIMEOUT,
                 verify=ssl_verify,
             )
-
         except requests.exceptions.Timeout as exc:
             raise TimeoutError(exc, "The authentication request timed out.") from exc
         except requests.RequestException as exc:
@@ -432,7 +431,6 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             if not auth_uri:
                 raise MisconfiguredError("authentication_uri is missing")
         try:
-
             return self.session.post(
                 auth_uri,
                 data=login_data,
@@ -440,7 +438,6 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
                 timeout=HTTP_REQ_TIMEOUT,
                 verify=ssl_verify,
             )
-
         except requests.exceptions.Timeout as exc:
             raise TimeoutError(exc, "The authentication request timed out.") from exc
         except requests.RequestException as exc:
