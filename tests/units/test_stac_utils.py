@@ -123,7 +123,7 @@ class TestStacUtils(unittest.TestCase):
     def test_str2list(self):
         """str2list convert a str variable to a list variable"""
         self.assertIsNone(self.rest_utils.str2list(None))
-        self.assertEqual(self.rest_utils.str2list(""), None)
+        self.assertIsNone(self.rest_utils.str2list(""))
         self.assertEqual(self.rest_utils.str2list("value"), ["value"])
         self.assertEqual(
             self.rest_utils.str2list("value1,value2,value3"),
@@ -239,12 +239,12 @@ class TestStacUtils(unittest.TestCase):
         self.assertEqual(dtend, end)
 
         dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"../{end}"})
-        self.assertEqual(dtstart, None)
+        self.assertIsNone(dtstart)
         self.assertEqual(dtend, end)
 
         dtstart, dtend = self.rest_utils.get_datetime({"datetime": f"{start}/.."})
         self.assertEqual(dtstart, start)
-        self.assertEqual(dtend, None)
+        self.assertIsNone(dtend)
 
         dtstart, dtend = self.rest_utils.get_datetime({"datetime": start})
         self.assertEqual(dtstart, start)

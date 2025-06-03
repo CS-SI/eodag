@@ -851,7 +851,7 @@ def override_config_from_env(config: dict[str, Any]) -> None:
         iter_parts = iter(parts)
         env_type = get_type_hints(PluginConfig).get(next(iter_parts, ""), str)
         child_env_type = (
-            get_type_hints(env_type).get(next(iter_parts, ""), None)
+            get_type_hints(env_type).get(next(iter_parts, ""))
             if isclass(env_type)
             else None
         )
@@ -961,7 +961,7 @@ def merge_configs(config: dict[str, Any], other_config: dict[str, Any]) -> None:
     other_config = dict(config, **other_config)
 
     for provider, new_conf in other_config.items():
-        old_conf = config.get(provider, None)
+        old_conf = config.get(provider)
 
         if old_conf:
             # update non-objects values

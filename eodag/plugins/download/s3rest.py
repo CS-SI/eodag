@@ -142,7 +142,7 @@ class S3RestDownload(Download):
             **kwargs: Unpack[DownloadConf],
         ):
             # check order status
-            if product.properties.get("orderStatusLink", None):
+            if product.properties.get("orderStatusLink"):
                 self.http_download_plugin._order_status(product=product, auth=auth)
 
             # get bucket urls

@@ -69,7 +69,7 @@ class FilterDate(Crunch):
             return []
 
         # filter start date
-        filter_start_str = self.config.__dict__.get("start", None)
+        filter_start_str = self.config.__dict__.get("start")
         if filter_start_str:
             filter_start = dateutil.parser.parse(filter_start_str)
             if not filter_start.tzinfo:
@@ -78,7 +78,7 @@ class FilterDate(Crunch):
             filter_start = None
 
         # filter end date
-        filter_end_str = self.config.__dict__.get("end", None)
+        filter_end_str = self.config.__dict__.get("end")
         if filter_end_str:
             filter_end = dateutil.parser.parse(filter_end_str)
             if not filter_end.tzinfo:
@@ -93,9 +93,7 @@ class FilterDate(Crunch):
         for product in products:
 
             # product start date
-            product_start_str = product.properties.get(
-                "startTimeFromAscendingNode", None
-            )
+            product_start_str = product.properties.get("startTimeFromAscendingNode")
             if product_start_str:
                 product_start = dateutil.parser.parse(product_start_str)
                 if not product_start.tzinfo:
@@ -104,9 +102,7 @@ class FilterDate(Crunch):
                 product_start = None
 
             # product end date
-            product_end_str = product.properties.get(
-                "completionTimeFromAscendingNode", None
-            )
+            product_end_str = product.properties.get("completionTimeFromAscendingNode")
             if product_end_str:
                 product_end = dateutil.parser.parse(product_end_str)
                 if not product_end.tzinfo:

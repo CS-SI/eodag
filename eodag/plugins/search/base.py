@@ -224,7 +224,7 @@ class Search(PluginTopic):
         # it will complete the query string or body once metadata mapping will be done
         sort_by_arg_tmp = kwargs.pop("sort_by", None)
         sort_by_arg = sort_by_arg_tmp or getattr(self.config, "sort", {}).get(
-            "sort_by_default", None
+            "sort_by_default"
         )
         if not sort_by_arg_tmp and sort_by_arg:
             logger.info(
@@ -255,7 +255,7 @@ class Search(PluginTopic):
         for eodag_sort_by_tuple in sort_by_arg:
             eodag_sort_param = eodag_sort_by_tuple[0]
             provider_sort_param = self.config.sort["sort_param_mapping"].get(
-                eodag_sort_param, None
+                eodag_sort_param
             )
             if not provider_sort_param:
                 joined_eodag_params_to_map = ", ".join(
@@ -303,7 +303,7 @@ class Search(PluginTopic):
             # TODO: move this code block to the top of this method when search args model validation is embeded
             # check if the limit number of sorting parameter(s) is respected with this sorting parameter
             if (
-                self.config.sort.get("max_sort_params", None)
+                self.config.sort.get("max_sort_params")
                 and len(provider_sort_by_tuples_used)
                 > self.config.sort["max_sort_params"]
             ):

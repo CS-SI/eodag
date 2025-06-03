@@ -64,7 +64,7 @@ class FilterProperty(Crunch):
             return products
 
         property_key = next(iter(self.config.__dict__))
-        property_value = self.config.__dict__.get(property_key, None)
+        property_value = self.config.__dict__.get(property_key)
 
         logger.debug(
             "Start filtering for products matching operator.%s(product.properties['%s'], %s)",

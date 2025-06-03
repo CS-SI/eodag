@@ -172,12 +172,12 @@ def json_field_definition_to_python(
     :param required: if the field is required
     :returns: the python field definition
     """
-    python_type = json_type_to_python(json_field_definition.get("type", None))
+    python_type = json_type_to_python(json_field_definition.get("type"))
 
     field_type_kwargs = dict(
-        title=json_field_definition.get("title", None),
-        description=json_field_definition.get("description", None),
-        pattern=json_field_definition.get("pattern", None),
+        title=json_field_definition.get("title"),
+        description=json_field_definition.get("description"),
+        pattern=json_field_definition.get("pattern"),
         le=json_field_definition.get("maximum"),
         ge=json_field_definition.get("minimum"),
     )
@@ -185,7 +185,7 @@ def json_field_definition_to_python(
     enum = json_field_definition.get("enum")
 
     if python_type in (list, set):
-        items = json_field_definition.get("items", None)
+        items = json_field_definition.get("items")
         if isinstance(items, list):
             python_type = tuple[  # type: ignore
                 tuple(

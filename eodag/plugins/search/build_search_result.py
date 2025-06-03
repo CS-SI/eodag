@@ -499,7 +499,7 @@ class ECMWFSearch(PostJsonSearch):
         """
         product_type = prep.product_type
         if not product_type:
-            product_type = kwargs.get("productType", None)
+            product_type = kwargs.get("productType")
         kwargs = self._preprocess_search_params(kwargs, product_type)
         result, num_items = super().query(prep, **kwargs)
         if prep.count and not num_items:
@@ -547,7 +547,7 @@ class ECMWFSearch(PostJsonSearch):
         :param params: Search parameters to be preprocessed.
         :param product_type: (optional) product type id
         """
-        _dc_qs = params.get("_dc_qs", None)
+        _dc_qs = params.get("_dc_qs")
         if _dc_qs is not None:
             # if available, update search params using datacube query-string
             _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))
@@ -557,7 +557,7 @@ class ECMWFSearch(PostJsonSearch):
                 (params[START], params[END],) = _dc_qp[
                     "date"
                 ].split("/")
-            elif _dc_qp.get("date", None):
+            elif _dc_qp.get("date"):
                 params[START] = params[END] = _dc_qp["date"]
 
             if "/" in _dc_qp.get("area", ""):

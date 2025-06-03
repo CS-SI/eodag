@@ -123,16 +123,14 @@ class EcmwfApi(Api, ECMWFSearch):
         # start date
         if "startTimeFromAscendingNode" not in kwargs:
             kwargs["startTimeFromAscendingNode"] = (
-                getattr(self.config, "product_type_config", {}).get(
-                    "missionStartDate", None
-                )
+                getattr(self.config, "product_type_config", {}).get("missionStartDate")
                 or DEFAULT_MISSION_START_DATE
             )
         # end date
         if "completionTimeFromAscendingNode" not in kwargs:
             kwargs["completionTimeFromAscendingNode"] = getattr(
                 self.config, "product_type_config", {}
-            ).get("missionEndDate", None) or datetime.now(timezone.utc).isoformat(
+            ).get("missionEndDate") or datetime.now(timezone.utc).isoformat(
                 timespec="seconds"
             )
 
@@ -149,8 +147,8 @@ class EcmwfApi(Api, ECMWFSearch):
         :raises: :class:`~eodag.utils.exceptions.AuthenticationError`
         """
         # Get credentials from eodag or using ecmwf conf
-        email = getattr(self.config, "credentials", {}).get("username", None)
-        key = getattr(self.config, "credentials", {}).get("password", None)
+        email = getattr(self.config, "credentials", {}).get("username")
+        key = getattr(self.config, "credentials", {}).get("password")
         url = getattr(self.config, "auth_endpoint", None)
         if not all([email, key, url]):
             key, url, email = get_apikey_values()
@@ -295,5 +293,5 @@ class EcmwfApi(Api, ECMWFSearch):
                        arguments)
         :returns: fetched queryable parameters dict
         """
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType")
         return self.queryables_from_metadata_mapping(product_type)

@@ -116,7 +116,7 @@ class SASAuth(Authentication):
         headers = deepcopy(USER_AGENT)
 
         # update headers with subscription key if exists
-        apikey = getattr(self.config, "credentials", {}).get("apikey", None)
+        apikey = getattr(self.config, "credentials", {}).get("apikey")
         ssl_verify = getattr(self.config, "ssl_verify", True)
         if apikey:
             headers_update = format_dict_items(self.config.headers, apikey=apikey)

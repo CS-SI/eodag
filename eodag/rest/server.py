@@ -195,8 +195,8 @@ async def forward_middleware(
 ) -> Response:
     """Middleware that handles forward headers and sets request.state.url*"""
 
-    forwarded_host = request.headers.get("x-forwarded-host", None)
-    forwarded_proto = request.headers.get("x-forwarded-proto", None)
+    forwarded_host = request.headers.get("x-forwarded-host")
+    forwarded_proto = request.headers.get("x-forwarded-proto")
 
     if "forwarded" in request.headers:
         header_forwarded = parse_header(request.headers["forwarded"])
@@ -220,7 +220,7 @@ async def catalogs_root(request: Request) -> ORJSONResponse:
     response = await get_stac_catalogs(
         request=request,
         url=request.state.url,
-        provider=request.query_params.get("provider", None),
+        provider=request.query_params.get("provider"),
     )
 
     return ORJSONResponse(response)

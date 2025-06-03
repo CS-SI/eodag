@@ -24,7 +24,7 @@ class TestStacSearch(unittest.TestCase):
 
     def test_sortby2list(self):
         # Test with no input
-        self.assertEqual(stac_search.sortby2list(None), None)
+        self.assertIsNone(stac_search.sortby2list(None))
 
         # Test with valid input
         sortby_list = stac_search.sortby2list("test,+test2,-test3")

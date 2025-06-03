@@ -206,7 +206,7 @@ class DataRequestSearch(Search):
             and "next_page_url_key_path" in self.config.pagination
         ):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
-                self.config.pagination.get("next_page_url_key_path", None)
+                self.config.pagination.get("next_page_url_key_path")
             )
         self.download_info: dict[str, Any] = {}
         self.data_request_id = None
@@ -234,7 +234,7 @@ class DataRequestSearch(Search):
         if kwargs.get("sort_by"):
             raise ValidationError(f"{self.provider} does not support sorting feature")
 
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType")
 
         if product_type is None:
             raise ValidationError("Required productType is missing")
@@ -288,11 +288,11 @@ class DataRequestSearch(Search):
 
         # update dates if needed
         if getattr(self.config, "dates_required", True) and "id" not in keywords:
-            if not keywords.get("startTimeFromAscendingNode", None):
+            if not keywords.get("startTimeFromAscendingNode"):
                 keywords["startTimeFromAscendingNode"] = getattr(
                     self.config, "product_type_config", {}
                 ).get("missionStartDate", DEFAULT_MISSION_START_DATE)
-            if not keywords.get("completionTimeFromAscendingNode", None):
+            if not keywords.get("completionTimeFromAscendingNode"):
                 keywords["completionTimeFromAscendingNode"] = getattr(
                     self.config, "product_type_config", {}
                 ).get("missionEndDate", datetime.now(timezone.utc).isoformat())

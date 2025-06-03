@@ -658,7 +658,7 @@ class EODataAccessGateway:
             discovery_conf = getattr(
                 provider_search_config, "discover_product_types", {}
             )
-            if discovery_conf.get("fetch_url", None):
+            if discovery_conf.get("fetch_url"):
                 providers_discovery_configs_fetchable[
                     provider_to_fetch
                 ] = discovery_conf
@@ -744,7 +744,7 @@ class EODataAccessGateway:
                     user_discovery_conf == default_discovery_conf
                     or user_discovery_conf == default_discovery_conf_parsed
                 ) and (
-                    not default_discovery_conf.get("fetch_url", None)
+                    not default_discovery_conf.get("fetch_url")
                     or "ext_product_types_conf" not in locals()
                     or "ext_product_types_conf" in locals()
                     and (
@@ -856,7 +856,7 @@ class EODataAccessGateway:
                         continue
                     if not getattr(
                         search_plugin_config, "discover_product_types", {}
-                    ).get("fetch_url", None):
+                    ).get("fetch_url"):
                         # conf has been updated and provider product types are no more discoverable
                         continue
                     provider_products_config = (
@@ -980,7 +980,7 @@ class EODataAccessGateway:
         product_types = [
             k
             for k, v in self.product_types_config.items()
-            if v.get("alias", None) == alias_or_id
+            if v.get("alias") == alias_or_id
         ]
 
         if len(product_types) > 1:
@@ -1310,8 +1310,8 @@ class EODataAccessGateway:
         # since it might be modified if the next_page_url mechanism is used by the
         # plugin. (same thing for next_page_query_obj, next_page_query_obj with POST reqs)
         pagination_config = getattr(search_plugin.config, "pagination", {})
-        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl", None)
-        prev_next_page_query_obj = pagination_config.get("next_page_query_obj", None)
+        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl")
+        prev_next_page_query_obj = pagination_config.get("next_page_query_obj")
         # Page has to be set to a value even if use_next is True, this is required
         # internally by the search plugin (see collect_search_urls)
         kwargs.update(
@@ -1549,7 +1549,7 @@ class EODataAccessGateway:
         :param kwargs: Search criteria to help finding the right product
         :returns: A search result with one EO product or None at all
         """
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType")
         if product_type is not None:
             try:
                 product_type = self.get_product_type_from_alias(product_type)
@@ -1686,7 +1686,7 @@ class EODataAccessGateway:
                        * other criteria compatible with the provider
         :returns: Search plugins list and the prepared kwargs to make a query.
         """
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType")
         if product_type is None:
             try:
                 guesses = self.guess_product_type(**kwargs)
@@ -1706,7 +1706,7 @@ class EODataAccessGateway:
                 # By now, only use the best bet
                 product_type = guesses[0]
             except NoMatchingProductType:
-                queried_id = kwargs.get("id", None)
+                queried_id = kwargs.get("id")
                 if queried_id is None:
                     logger.info(
                         "No product type could be guessed with provided arguments"

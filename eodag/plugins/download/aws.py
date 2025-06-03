@@ -289,7 +289,7 @@ class AwsDownload(Download):
         )
 
         # do not try to build SAFE if asset filter is used
-        asset_filter = kwargs.get("asset", None)
+        asset_filter = kwargs.get("asset")
         if asset_filter:
             build_safe = False
             ignore_assets = False
@@ -736,7 +736,7 @@ class AwsDownload(Download):
             product.product_type, {}
         )
         # do not try to build SAFE if asset filter is used
-        asset_filter = kwargs.get("asset", None)
+        asset_filter = kwargs.get("asset")
         if asset_filter:
             build_safe = False
         else:
@@ -800,7 +800,7 @@ class AwsDownload(Download):
             # update headers
             filename = os.path.basename(list(unique_product_chunks)[0].key)
             headers = {"content-disposition": f"attachment; filename={filename}"}
-            if assets_values and assets_values[0].get("type", None):
+            if assets_values and assets_values[0].get("type"):
                 headers["content-type"] = assets_values[0]["type"]
 
             return StreamResponse(
