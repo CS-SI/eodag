@@ -36,7 +36,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticUndefined
 
 from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
@@ -54,7 +54,7 @@ JSON_TYPES_MAPPING: dict[str, type] = {
 }
 
 
-def json_type_to_python(json_type: Union[str, list[str]]) -> type:
+def json_type_to_python(json_type: Union[str, list[str], None]) -> type:
     """Get python type from json type https://spec.openapis.org/oas/v3.1.0#data-types
 
     >>> json_type_to_python("number")
@@ -172,20 +172,20 @@ def json_field_definition_to_python(
     :param required: if the field is required
     :returns: the python field definition
     """
-    python_type = json_type_to_python(json_field_definition.get("type", None))
+    python_type = json_type_to_python(json_field_definition.get("type"))
 
     field_type_kwargs = dict(
-        title=json_field_definition.get("title", None),
-        description=json_field_definition.get("description", None),
-        pattern=json_field_definition.get("pattern", None),
-        le=json_field_definition.get("maximum"),
-        ge=json_field_definition.get("minimum"),
+        title=json_field_definition.get("title", PydanticUndefined),
+        description=json_field_definition.get("description", PydanticUndefined),
+        pattern=json_field_definition.get("pattern", PydanticUndefined),
+        le=json_field_definition.get("maximum", PydanticUndefined),
+        ge=json_field_definition.get("minimum", PydanticUndefined),
     )
 
     enum = json_field_definition.get("enum")
 
     if python_type in (list, set):
-        items = json_field_definition.get("items", None)
+        items = json_field_definition.get("items")
         if isinstance(items, list):
             python_type = tuple[  # type: ignore
                 tuple(
@@ -203,12 +203,15 @@ def json_field_definition_to_python(
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
 
+    field_default: Any
+    if required and default_value is None:
+        field_default = ...
+    else:
+        field_default = default_value
+
     metadata = [
         python_type,
-        Field(
-            default_value if not required or default_value is not None else ...,
-            **field_type_kwargs,
-        ),
+        Field(field_default, **field_type_kwargs),
     ]
 
     if required:

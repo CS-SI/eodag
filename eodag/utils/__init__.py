@@ -375,7 +375,7 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
             # the key from mapping1 is not the lowercase version of a key in mapping2.
             # Otherwise, create the key in mapping1. This is the meaning of
             # `m1_keys_lowercase.get(key, key)`
-            current_value = mapping1.get(m1_keys_lowercase.get(key, key), None)
+            current_value = mapping1.get(m1_keys_lowercase.get(key, key))
             if current_value is not None:
                 current_value_type = type(current_value)
                 new_value_type = type(value)

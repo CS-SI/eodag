@@ -77,6 +77,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from jsonpath_ng import JSONPath
     from requests import Response
 
     from eodag.api.product import Asset, EOProduct  # type: ignore
@@ -538,7 +539,9 @@ class HTTPDownload(Download):
                     else {}
                 )
                 if result_entry:
-                    entry_jsonpath = string_to_jsonpath(result_entry, force=True)
+                    entry_jsonpath: JSONPath = string_to_jsonpath(
+                        result_entry, force=True
+                    )
                     json_response = entry_jsonpath.find(json_response)
                     raise NotImplementedError(
                         'result_entry in config.on_success is not yet supported for result_type "json"'
@@ -611,7 +614,7 @@ class HTTPDownload(Download):
         # download assets if exist instead of remote_location
         if len(product.assets) > 0 and (
             not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset", None) is not None
+            or kwargs.get("asset") is not None
         ):
             try:
                 fs_path = self._download_assets(
@@ -622,11 +625,11 @@ class HTTPDownload(Download):
                     progress_callback,
                     **kwargs,
                 )
-                if kwargs.get("asset", None) is None:
+                if kwargs.get("asset") is None:
                     product.location = path_to_uri(fs_path)
                 return fs_path
             except NotAvailableError as e:
-                if kwargs.get("asset", None) is not None:
+                if kwargs.get("asset") is not None:
                     raise NotAvailableError(e).with_traceback(e.__traceback__)
                 else:
                     pass
@@ -718,7 +721,7 @@ class HTTPDownload(Download):
 
     def _check_product_filename(self, product: EOProduct) -> str:
         filename = None
-        asset_content_disposition = self.stream.headers.get("content-disposition", None)
+        asset_content_disposition = self.stream.headers.get("content-disposition")
         if asset_content_disposition:
             filename = cast(
                 Optional[str],
@@ -769,7 +772,7 @@ class HTTPDownload(Download):
             or kwargs.get("asset") is not None
         ):
             try:
-                assets_values = product.assets.get_values(kwargs.get("asset", None))
+                assets_values = product.assets.get_values(kwargs.get("asset"))
                 chunks_tuples = self._stream_download_assets(
                     product,
                     auth,
@@ -786,7 +789,7 @@ class HTTPDownload(Download):
                     assets_values[0].headers[
                         "content-disposition"
                     ] = f"attachment; filename={assets_values[0].filename}"
-                    if assets_values[0].get("type", None):
+                    if assets_values[0].get("type"):
                         assets_values[0].headers["content-type"] = assets_values[0][
                             "type"
                         ]
@@ -814,7 +817,7 @@ class HTTPDownload(Download):
                         },
                     )
             except NotAvailableError as e:
-                if kwargs.get("asset", None) is not None:
+                if kwargs.get("asset") is not None:
                     raise NotAvailableError(e).with_traceback(e.__traceback__)
                 else:
                     pass
@@ -903,7 +906,7 @@ class HTTPDownload(Download):
             self._order(product=product, auth=auth)
 
         if (
-            product.properties.get("orderStatusLink", None)
+            product.properties.get("orderStatusLink")
             and product.properties.get("storageStatus") != ONLINE_STATUS
         ):
             self._order_status(product=product, auth=auth)
@@ -1151,7 +1154,7 @@ class HTTPDownload(Download):
                     if not getattr(asset, "filename", None):
                         # try getting filename in GET header if was not found in HEAD result
                         asset_content_disposition = stream.headers.get(
-                            "content-disposition", None
+                            "content-disposition"
                         )
                         if asset_content_disposition:
                             asset.filename = cast(
@@ -1203,7 +1206,7 @@ class HTTPDownload(Download):
         if not assets_urls:
             raise NotAvailableError("No assets available for %s" % product)
 
-        assets_values = product.assets.get_values(kwargs.get("asset", None))
+        assets_values = product.assets.get_values(kwargs.get("asset"))
 
         chunks_tuples = self._stream_download_assets(
             product, auth, progress_callback, assets_values=assets_values, **kwargs
@@ -1289,7 +1292,7 @@ class HTTPDownload(Download):
         if flatten_top_dirs:
             flatten_top_directories(fs_dir_path)
 
-        if kwargs.get("asset", None) is None:
+        if kwargs.get("asset") is None:
             # save hash/record file
             with open(record_filename, "w") as fh:
                 fh.write(product.remote_location)

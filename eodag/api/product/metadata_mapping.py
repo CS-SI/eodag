@@ -424,7 +424,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return Polygon(polygon_args)
             elif len(georss) == 1 and "multisurface" in georss[0].tag.lower():
                 # Multipolygon
-                from_proj = getattr(georss[0], "attrib", {}).get("srsName", None)
+                from_proj = getattr(georss[0], "attrib", {}).get("srsName")
                 if from_proj:
                     from_proj = pyproj.CRS(from_proj)
                     to_proj = pyproj.CRS(DEFAULT_PROJ)
@@ -1030,8 +1030,8 @@ def properties_from_json(
     if not discovery_config:
         discovery_config = {}
 
-    discovery_pattern = discovery_config.get("metadata_pattern", None)
-    discovery_path = discovery_config.get("metadata_path", None)
+    discovery_pattern = discovery_config.get("metadata_pattern")
+    discovery_path = discovery_config.get("metadata_path")
     if discovery_pattern and discovery_path:
         discovery_jsonpath = string_to_jsonpath(discovery_path)
         discovered_properties = (
@@ -1215,8 +1215,8 @@ def properties_from_xml(
     # adds missing discovered properties
     if not discovery_config:
         discovery_config = {}
-    discovery_pattern = discovery_config.get("metadata_pattern", None)
-    discovery_path = discovery_config.get("metadata_path", None)
+    discovery_pattern = discovery_config.get("metadata_pattern")
+    discovery_path = discovery_config.get("metadata_path")
     if discovery_pattern and discovery_path:
         discovered_properties = root.xpath(
             discovery_path,
@@ -1524,7 +1524,7 @@ def get_provider_queryable_path(
     :param metadata_mapping: metadata-mapping configuration
     :returns: EODAG configured queryable path or None
     """
-    parameter_conf = metadata_mapping.get(queryable, None)
+    parameter_conf = metadata_mapping.get(queryable)
     if isinstance(parameter_conf, list):
         return parameter_conf[0]
     else:

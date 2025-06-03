@@ -2569,9 +2569,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             param for param in form if param["name"] == provider_data_format
         ][0]
         self.assertTrue(data_format_in_form.get("required", False))
-        self.assertIsNotNone(
-            data_format_in_form.get("details", {}).get("default", None)
-        )
+        self.assertIsNotNone(data_format_in_form.get("details", {}).get("default"))
         for constraint in constraints:
             self.assertNotIn(provider_data_format, constraint)
         params[eodag_formatted_data_format] = ""

@@ -315,31 +315,27 @@ class QueryStringSearch(Search):
             and "next_page_url_key_path" in self.config.pagination
         ):
             self.config.pagination["next_page_url_key_path"] = string_to_jsonpath(
-                self.config.pagination.get("next_page_url_key_path", None)
+                self.config.pagination.get("next_page_url_key_path")
             )
         if (
             self.config.result_type == "json"
             and "next_page_query_obj_key_path" in self.config.pagination
         ):
             self.config.pagination["next_page_query_obj_key_path"] = string_to_jsonpath(
-                self.config.pagination.get("next_page_query_obj_key_path", None)
+                self.config.pagination.get("next_page_query_obj_key_path")
             )
         if (
             self.config.result_type == "json"
             and "next_page_merge_key_path" in self.config.pagination
         ):
             self.config.pagination["next_page_merge_key_path"] = string_to_jsonpath(
-                self.config.pagination.get("next_page_merge_key_path", None)
+                self.config.pagination.get("next_page_merge_key_path")
             )
 
         # parse jsonpath on init: product types discovery
         if (
-            getattr(self.config, "discover_product_types", {}).get(
-                "results_entry", None
-            )
-            and getattr(self.config, "discover_product_types", {}).get(
-                "result_type", None
-            )
+            getattr(self.config, "discover_product_types", {}).get("results_entry")
+            and getattr(self.config, "discover_product_types", {}).get("result_type")
             == "json"
         ):
             self.config.discover_product_types["results_entry"] = string_to_jsonpath(
@@ -380,8 +376,8 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: queryables discovery
         if (
-            getattr(self.config, "discover_queryables", {}).get("results_entry", None)
-            and getattr(self.config, "discover_queryables", {}).get("result_type", None)
+            getattr(self.config, "discover_queryables", {}).get("results_entry")
+            and getattr(self.config, "discover_queryables", {}).get("result_type")
             == "json"
         ):
             self.config.discover_queryables["results_entry"] = string_to_jsonpath(
@@ -731,7 +727,7 @@ class QueryStringSearch(Search):
         :param prep: Object collecting needed information for search.
         """
         count = prep.count
-        product_type = kwargs.get("productType", prep.product_type)
+        product_type = cast(str, kwargs.get("productType", prep.product_type))
         if product_type == GENERIC_PRODUCT_TYPE:
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
@@ -930,13 +926,13 @@ class QueryStringSearch(Search):
             )
             response = self._request(single_search_prep)
             next_page_url_key_path = self.config.pagination.get(
-                "next_page_url_key_path", None
+                "next_page_url_key_path"
             )
             next_page_query_obj_key_path = self.config.pagination.get(
-                "next_page_query_obj_key_path", None
+                "next_page_query_obj_key_path"
             )
             next_page_merge_key_path = self.config.pagination.get(
-                "next_page_merge_key_path", None
+                "next_page_merge_key_path"
             )
             if self.config.result_type == "xml":
                 root_node = etree.fromstring(response.content)
@@ -1174,9 +1170,7 @@ class QueryStringSearch(Search):
 
         collection = getattr(self.config, "collection", None)
         if collection is None:
-            collection = (
-                prep.product_type_def_params.get("collection", None) or product_type
-            )
+            collection = prep.product_type_def_params.get("collection") or product_type
 
         if collection is None:
             return ()
@@ -1332,9 +1326,9 @@ class ODataV4Search(QueryStringSearch):
 
         # parse jsonpath on init
         metadata_pre_mapping = getattr(self.config, "metadata_pre_mapping", {})
-        metadata_path = metadata_pre_mapping.get("metadata_path", None)
-        metadata_path_id = metadata_pre_mapping.get("metadata_path_id", None)
-        metadata_path_value = metadata_pre_mapping.get("metadata_path_value", None)
+        metadata_path = metadata_pre_mapping.get("metadata_path")
+        metadata_path_id = metadata_pre_mapping.get("metadata_path_id")
+        metadata_path_value = metadata_pre_mapping.get("metadata_path_value")
         if metadata_path and metadata_path_id and metadata_path_value:
             self.config.metadata_pre_mapping["metadata_path"] = string_to_jsonpath(
                 metadata_path
@@ -1392,9 +1386,9 @@ class ODataV4Search(QueryStringSearch):
         For example, going from '$.Metadata[?(@.id="foo")].value' to '$.Metadata.foo.value'
         """
         metadata_pre_mapping = getattr(self.config, "metadata_pre_mapping", {})
-        metadata_path = metadata_pre_mapping.get("metadata_path", None)
-        metadata_path_id = metadata_pre_mapping.get("metadata_path_id", None)
-        metadata_path_value = metadata_pre_mapping.get("metadata_path_value", None)
+        metadata_path = metadata_pre_mapping.get("metadata_path")
+        metadata_path_id = metadata_pre_mapping.get("metadata_path_id")
+        metadata_path_value = metadata_pre_mapping.get("metadata_path_value")
 
         if metadata_path and metadata_path_id and metadata_path_value:
             # metadata_path already parsed on init
@@ -1516,10 +1510,10 @@ class PostJsonSearch(QueryStringSearch):
                 ]["results_entry"]
                 self.config.collection = self.config.products[product_type][
                     "specific_qssearch"
-                ].get("collection", None)
+                ].get("collection")
                 self.config.merge_responses = self.config.products[product_type][
                     "specific_qssearch"
-                ].get("merge_responses", None)
+                ].get("merge_responses")
 
                 def count_hits(self, *x, **y):
                     return 1
@@ -1814,7 +1808,7 @@ class StacSearch(PostJsonSearch):
         ):
             raise NotImplementedError()
 
-        product_type = kwargs.get("productType", None)
+        product_type = kwargs.get("productType")
         provider_product_type = (
             self.config.products.get(product_type, {}).get("productType", product_type)
             if product_type
