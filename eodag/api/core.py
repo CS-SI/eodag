@@ -29,7 +29,7 @@ from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import exists_in, open_dir

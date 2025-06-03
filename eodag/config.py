@@ -66,8 +66,7 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
-AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
-PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
+PLUGINS_TOPICS_KEYS = ("api", "search", "download")
 
 
 class SimpleYamlProxyConfig:
@@ -761,38 +760,34 @@ def share_credentials(
     :param providers_configs: eodag providers configurations
     """
     auth_confs_with_creds = [
-        getattr(p, k)
+        getattr(p, "auth")
         for p in providers_config.values()
-        for k in AUTH_TOPIC_KEYS
-        if hasattr(p, k) and credentials_in_auth(getattr(p, k))
+        if hasattr(p, "auth") and credentials_in_auth(getattr(p, "auth"))
     ]
     for provider, provider_config in providers_config.items():
         if auth_confs_with_creds:
-            for auth_topic_key in AUTH_TOPIC_KEYS:
-                provider_config_auth = getattr(provider_config, auth_topic_key, None)
+            provider_configs_auth = getattr(provider_config, "auth", None)
+            for provider_config_auth in provider_configs_auth:
                 if provider_config_auth and not credentials_in_auth(
                     provider_config_auth
                 ):
                     # no credentials set for this provider
-                    provider_matching_conf = getattr(
-                        provider_config_auth, "matching_conf", {}
-                    )
-                    provider_matching_url = getattr(
-                        provider_config_auth, "matching_url", None
-                    )
+                    provider_matching_conf = getattr(provider_config_auth, "match", {})
+                    provider_matching_url = provider_matching_conf.get("url", None)
                     for conf_with_creds in auth_confs_with_creds:
                         # copy credentials between plugins if `matching_conf` or `matching_url` are matching
+
                         if (
                             provider_matching_conf
                             and sort_dict(provider_matching_conf)
-                            == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
+                            == sort_dict(getattr(conf_with_creds, "match", {}))
                         ) or (
                             provider_matching_url
                             and provider_matching_url
-                            == getattr(conf_with_creds, "matching_url", None)
+                            == getattr(conf_with_creds, "match", {}).get("url", None)
                         ):
                             getattr(
-                                providers_config[provider], auth_topic_key
+                                providers_config[provider], "auth"
                             ).credentials = conf_with_creds.credentials
 
 

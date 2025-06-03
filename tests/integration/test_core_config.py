@@ -497,13 +497,13 @@ class TestCoreProductTypesConfig(TestCase):
 
         # warning if another AuthenticationError
         with mock.patch(
-            "eodag.plugins.manager.PluginManager.get_auth_plugins",
-        ) as mock_get_auth_plugins:
+            "eodag.plugins.manager.PluginManager.get_auth_or_download_plugins",
+        ) as mock_get_auth_or_download_plugins:
             mock_auth_plugin = mock.MagicMock()
             mock_auth_plugin.authenticate = mock.MagicMock(
                 side_effect=AuthenticationError("cannot auth for test")
             )
-            mock_get_auth_plugins.return_value = iter([mock_auth_plugin])
+            mock_get_auth_or_download_plugins.return_value = iter([mock_auth_plugin])
 
             with self.assertLogs(level="DEBUG") as cm:
                 ext_product_types_conf = self.dag.discover_product_types(

@@ -24,12 +24,8 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
 import importlib_metadata
 
-from eodag.config import (
-    AUTH_TOPIC_KEYS,
-    PLUGINS_TOPICS_KEYS,
-    load_config,
-    merge_configs,
-)
+from eodag.api.product.metadata_mapping import ONLINE_STATUS
+from eodag.config import PLUGINS_TOPICS_KEYS, load_config, merge_configs
 from eodag.plugins.apis.base import Api
 from eodag.plugins.authentication.base import Authentication
 from eodag.plugins.base import EODAGPluginMount
@@ -53,6 +49,54 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger("eodag.plugins.manager")
+
+
+def _is_plugin_matching(
+    plugin_conf: PluginConfig,
+    matching_url: Optional[str],
+    matching_conf: Optional[PluginConfig],
+) -> bool:
+    """
+    checks if the given plugin config is matching the matching config or url
+    :param plugin_conf: config of the plugin to be checked
+    :param matching_url: (optional) url compared to the plugin matching_url
+    :param matching_config: (optional) config compared to the plugin matching_conf
+    :returns: True if the plugin matches the config or the url
+    """
+    plugin_matching_conf = getattr(plugin_conf, "match", {})
+    plugin_matching_url = plugin_matching_conf.pop("url", None)
+    if matching_url:
+        if plugin_matching_url and re.match(rf"{plugin_matching_url}", matching_url):
+            # url matches
+            return True
+    if matching_conf:
+        if (
+            plugin_matching_conf
+            and matching_conf.__dict__.items() >= plugin_matching_conf.items()
+        ):
+            # conf matches
+            return True
+    # no match
+    return False
+
+
+def _get_matching_url_for_product(eo_product: EOProduct) -> str:
+    """
+    returns the url used to find the download and auth plugin for a product
+    (currently there is only one matching_url per product, where per asset
+    downloaders are implmented, this will change)
+    :param eo_product: product for with the matching url shall be found
+    :returns: url used to find download/auth plugin
+    """
+    if len(eo_product.assets) > 0:
+        matching_url = next(iter(eo_product.assets.values()))["href"]
+    elif eo_product.properties.get("storageStatus") != ONLINE_STATUS:
+        matching_url = eo_product.properties.get(
+            "orderLink"
+        ) or eo_product.properties.get("downloadLink")
+    else:
+        matching_url = eo_product.properties.get("downloadLink")
+    return matching_url
 
 
 class PluginManager:
@@ -228,16 +272,17 @@ class PluginManager:
         :returns: The download plugin capable of downloading the product
         """
         plugin_conf = self.providers_config[product.provider]
-        if download := getattr(plugin_conf, "download", None):
-            plugin_conf.download.priority = plugin_conf.priority
-            plugin = cast(
-                Download,
-                self._build_plugin(product.provider, download, Download),
-            )
-        elif api := getattr(plugin_conf, "api", None):
+        matching_url = _get_matching_url_for_product(product)
+        if api := getattr(plugin_conf, "api", None):
             plugin_conf.api.products = plugin_conf.products
             plugin_conf.api.priority = plugin_conf.priority
             plugin = cast(Api, self._build_plugin(product.provider, api, Api))
+        elif getattr(plugin_conf, "download", None):
+            plugin = next(
+                self.get_auth_or_download_plugins(
+                    "download", product.provider, matching_url=matching_url
+                )
+            )
         else:
             raise MisconfiguredError(
                 f"No download plugin configured for provider {plugin_conf.name}."
@@ -260,19 +305,15 @@ class PluginManager:
         :returns: The Authentication plugin
         """
         # matching url from product to download
-        if product is not None and len(product.assets) > 0:
-            matching_url = next(iter(product.assets.values()))["href"]
-        elif product is not None:
-            matching_url = product.properties.get(
-                "downloadLink"
-            ) or product.properties.get("orderLink")
-        else:
+        matching_url = _get_matching_url_for_product(product)
+        if not matching_url:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)
 
         try:
             auth_plugin = next(
-                self.get_auth_plugins(
+                self.get_auth_or_download_plugins(
+                    "auth",
                     associated_plugin.provider,
                     matching_url=matching_url,
                     matching_conf=associated_plugin.config,
@@ -282,44 +323,22 @@ class PluginManager:
             auth_plugin = None
         return auth_plugin
 
-    def get_auth_plugins(
+    def get_auth_or_download_plugins(
         self,
+        plugin_type: str,
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
     ) -> Iterator[Authentication]:
-        """Build and return the authentication plugin for the given product_type and
-        provider
+        """Build and return the authentication plugin for the given provider and
+        matching conf or url
 
-        :param provider: The provider for which to get the authentication plugin
+        :param plugin_type: type of plugin to be found (auth or download)
+        :param provider: The provider for which to get the plugin
         :param matching_url: url to compare with plugin matching_url pattern
         :param matching_conf: configuration to compare with plugin matching_conf
-        :returns: All the Authentication plugins for the given criteria
+        :returns: All the Authentication or Download plugins for the given criteria
         """
-        auth_conf: Optional[PluginConfig] = None
-
-        def _is_auth_plugin_matching(
-            auth_conf: PluginConfig,
-            matching_url: Optional[str],
-            matching_conf: Optional[PluginConfig],
-        ) -> bool:
-            plugin_matching_conf = getattr(auth_conf, "matching_conf", {})
-            if matching_conf:
-                if (
-                    plugin_matching_conf
-                    and matching_conf.__dict__.items() >= plugin_matching_conf.items()
-                ):
-                    # conf matches
-                    return True
-            plugin_matching_url = getattr(auth_conf, "matching_url", None)
-            if matching_url:
-                if plugin_matching_url and re.match(
-                    rf"{plugin_matching_url}", matching_url
-                ):
-                    # url matches
-                    return True
-            # no match
-            return False
 
         # providers configs with given provider at first
         sorted_providers_config = deepcopy(self.providers_config)
@@ -329,28 +348,27 @@ class PluginManager:
         }
 
         for plugin_provider, provider_conf in sorted_providers_config.items():
-            for key in AUTH_TOPIC_KEYS:
-                auth_conf = getattr(provider_conf, key, None)
-                if auth_conf is None:
-                    continue
+            plugin_confs = getattr(provider_conf, plugin_type, None)
+            for plugin_conf in plugin_confs:
                 # plugin without configured match criteria: only works for given provider
                 unconfigured_match = (
                     True
                     if (
-                        not getattr(auth_conf, "matching_conf", {})
-                        and not getattr(auth_conf, "matching_url", None)
+                        not getattr(plugin_conf, "match", {})
                         and provider == plugin_provider
                     )
                     else False
                 )
 
-                if unconfigured_match or _is_auth_plugin_matching(
-                    auth_conf, matching_url, matching_conf
+                if unconfigured_match or _is_plugin_matching(
+                    plugin_conf, matching_url, matching_conf
                 ):
-                    auth_conf.priority = provider_conf.priority
+                    plugin_conf.priority = provider_conf.priority
                     plugin = cast(
                         Authentication,
-                        self._build_plugin(plugin_provider, auth_conf, Authentication),
+                        self._build_plugin(
+                            plugin_provider, plugin_conf, Authentication
+                        ),
                     )
                     yield plugin
                 else:
@@ -370,7 +388,9 @@ class PluginManager:
         :param matching_conf: configuration to compare with plugin matching_conf
         :returns: All the Authentication plugins for the given criteria
         """
-        for auth_plugin in self.get_auth_plugins(provider, matching_url, matching_conf):
+        for auth_plugin in self.get_auth_or_download_plugins(
+            "auth", provider, matching_url, matching_conf
+        ):
             if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
                 try:
                     auth = auth_plugin.authenticate()

@@ -250,22 +250,9 @@ class EOProduct:
                                 the download and authentication plugins.
         """
         download_plugin = plugins_manager.get_download_plugin(self)
-        if len(self.assets) > 0:
-            matching_url = next(iter(self.assets.values()))["href"]
-        elif self.properties.get("storageStatus") != ONLINE_STATUS:
-            matching_url = self.properties.get("orderLink") or self.properties.get(
-                "downloadLink"
-            )
-        else:
-            matching_url = self.properties.get("downloadLink")
-
         try:
-            auth_plugin = next(
-                plugins_manager.get_auth_plugins(
-                    self.provider,
-                    matching_url=matching_url,
-                    matching_conf=download_plugin.config,
-                )
+            auth_plugin = plugins_manager.get_auth_plugin(
+                download_plugin, self
             )
         except StopIteration:
             auth_plugin = None
