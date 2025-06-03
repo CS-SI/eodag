@@ -54,7 +54,7 @@ JSON_TYPES_MAPPING: dict[str, type] = {
 }
 
 
-def json_type_to_python(json_type: Union[str, list[str]]) -> type:
+def json_type_to_python(json_type: Union[str, list[str], None]) -> type:
     """Get python type from json type https://spec.openapis.org/oas/v3.1.0#data-types
 
     >>> json_type_to_python("number")
