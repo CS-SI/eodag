@@ -36,7 +36,7 @@ from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic.annotated_handlers import GetJsonSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticUndefined
 
 from eodag.utils import copy_deepcopy
 from eodag.utils.exceptions import ValidationError
@@ -175,11 +175,11 @@ def json_field_definition_to_python(
     python_type = json_type_to_python(json_field_definition.get("type"))
 
     field_type_kwargs = dict(
-        title=json_field_definition.get("title"),
-        description=json_field_definition.get("description"),
-        pattern=json_field_definition.get("pattern"),
-        le=json_field_definition.get("maximum"),
-        ge=json_field_definition.get("minimum"),
+        title=json_field_definition.get("title", PydanticUndefined),
+        description=json_field_definition.get("description", PydanticUndefined),
+        pattern=json_field_definition.get("pattern", PydanticUndefined),
+        le=json_field_definition.get("maximum", PydanticUndefined),
+        ge=json_field_definition.get("minimum", PydanticUndefined),
     )
 
     enum = json_field_definition.get("enum")
@@ -203,12 +203,15 @@ def json_field_definition_to_python(
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
 
+    field_default: Any
+    if required and default_value is None:
+        field_default = ...
+    else:
+        field_default = default_value
+
     metadata = [
         python_type,
-        Field(
-            default_value if not required or default_value is not None else ...,
-            **field_type_kwargs,
-        ),
+        Field(field_default, **field_type_kwargs),
     ]
 
     if required:
