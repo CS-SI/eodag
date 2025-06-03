@@ -29,16 +29,13 @@ from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import exists_in, open_dir
 from whoosh.qparser import QueryParser
 
-from eodag.api.product.metadata_mapping import (
-    ONLINE_STATUS,
-    mtd_cfg_as_conversion_and_querypath,
-)
+from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -1910,22 +1907,10 @@ class EODataAccessGateway:
                     download_plugin = self._plugins_manager.get_download_plugin(
                         eo_product
                     )
-                    if len(eo_product.assets) > 0:
-                        matching_url = next(iter(eo_product.assets.values()))["href"]
-                    elif eo_product.properties.get("storageStatus") != ONLINE_STATUS:
-                        matching_url = eo_product.properties.get(
-                            "orderLink"
-                        ) or eo_product.properties.get("downloadLink")
-                    else:
-                        matching_url = eo_product.properties.get("downloadLink")
 
                     try:
-                        auth_plugin = next(
-                            self._plugins_manager.get_auth_plugins(
-                                search_plugin.provider,
-                                matching_url=matching_url,
-                                matching_conf=download_plugin.config,
-                            )
+                        auth_plugin = self._plugins_manager.get_auth_plugin(
+                            download_plugin, eo_product
                         )
                     except StopIteration:
                         auth_plugin = None
