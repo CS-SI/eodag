@@ -55,7 +55,7 @@ class BaseAuthPluginTest(unittest.TestCase):
             self.get_auth_plugin(provider).config.__dict__.pop("credentials", None)
 
     def get_auth_plugin(self, provider):
-        return next(self.plugins_manager.get_auth_plugins(provider))
+        return next(self.plugins_manager.get_auth_or_download_plugins("auth", provider))
 
 
 class TestAuthPluginTokenAuth(BaseAuthPluginTest):
