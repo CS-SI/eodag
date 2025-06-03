@@ -272,6 +272,17 @@ class TestConfigFunctions(unittest.TestCase):
             else:
                 self.assertEqual(value.priority, 0)
 
+    def test_load_config_providers_whitelist(self):
+        """Config must be loaded with only the selected whitelist of providers"""
+        try:
+            os.environ["EODAG_PROVIDERS_WHITELIST"] = "creodias"
+            conf = config.load_default_config()
+
+            self.assertIsInstance(conf, dict)
+            self.assertEqual({"creodias"}, set(conf.keys()))
+        finally:
+            os.environ.pop("EODAG_PROVIDERS_WHITELIST", None)
+
     def test_override_config_from_str(self):
         """Default configuration must be overridden from a yaml conf str"""
         default_config = config.load_default_config()
