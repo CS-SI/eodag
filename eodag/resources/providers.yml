@@ -490,51 +490,57 @@
           - '{{"search":{{"awsPathL2A":"{awsPathL2A}" }} }}'
           - '$.awsPathL2A'
 
-  download: !plugin
-    type: AwsDownload
-    requester_pays: True
-    ssl_verify: true
-    products:
-      CBERS4_MUX_L2:
-        default_bucket: 'cbers-pds'
-        complementary_url_key:
-          - metaDownloadLink
-      CBERS4_AWFI_L2:
-        complementary_url_key:
-          - metaDownloadLink
-      CBERS4_PAN5M_L2:
-        complementary_url_key:
-          - metaDownloadLink
-      CBERS4_PAN10M_L2:
-        complementary_url_key:
-          - metaDownloadLink
-      S1_SAR_GRD:
-        default_bucket: 'sentinel-s1-l1c'
-        build_safe: true
-      S2_MSI_L1C:
-        default_bucket: 'sentinel-s2-l1c'
-        build_safe: true
-        complementary_url_key:
-          - productPath
-      S2_MSI_L2A:
-        default_bucket: 'sentinel-s2-l2a'
-        build_safe: true
-        fetch_metadata:
-          fetch_url: '{productInfo}'
-          fetch_format: json
-          update_metadata:
-            title: '$.name'
-            id: '{title}'
-            productPath: '$.path'
-        complementary_url_key:
-          - productPath
-  download_auth: !plugin
-    type: AwsAuth
-    matching_url: s3://
-  search_auth: !plugin
-    type: HttpQueryStringAuth
-    matching_url: https://gate.eos.com
-    ssl_verify: true
+  download:
+    - !plugin
+      type: AwsDownload
+      requester_pays: True
+      ssl_verify: true
+      match:
+        href: 's3://'
+      products:
+        CBERS4_MUX_L2:
+          default_bucket: 'cbers-pds'
+          complementary_url_key:
+            - metaDownloadLink
+        CBERS4_AWFI_L2:
+          complementary_url_key:
+            - metaDownloadLink
+        CBERS4_PAN5M_L2:
+          complementary_url_key:
+            - metaDownloadLink
+        CBERS4_PAN10M_L2:
+          complementary_url_key:
+            - metaDownloadLink
+        S1_SAR_GRD:
+          default_bucket: 'sentinel-s1-l1c'
+          build_safe: true
+        S2_MSI_L1C:
+          default_bucket: 'sentinel-s2-l1c'
+          build_safe: true
+          complementary_url_key:
+            - productPath
+        S2_MSI_L2A:
+          default_bucket: 'sentinel-s2-l2a'
+          build_safe: true
+          fetch_metadata:
+            fetch_url: '{productInfo}'
+            fetch_format: json
+            update_metadata:
+              title: '$.name'
+              id: '{title}'
+              productPath: '$.path'
+          complementary_url_key:
+            - productPath
+  auth:
+    - !plugin
+      type: AwsAuth
+      match:
+        href: s3://
+    - !plugin
+      type: HttpQueryStringAuth
+      match:
+        href: https://gate.eos.com
+      ssl_verify: true
 
 ---
 !provider # MARK: theia
@@ -701,20 +707,25 @@
       productType: '{productType}'
       collection: '{collection}'
       processingLevel: '{processingLevel}'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    archive_depth: 2
-    order_enabled: true
-    auth_error_code: 403
-    ssl_verify: true
-    dl_url_params:
-      issuerId: theia
-  auth: !plugin
-    type: TokenAuth
-    matching_url: https://theia.cnes.fr
-    auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
-    ssl_verify: true
+  download:
+    - !plugin
+      type: HTTPDownload
+      extract: true
+      archive_depth: 2
+      order_enabled: true
+      auth_error_code: 403
+      ssl_verify: true
+      dl_url_params:
+        issuerId: theia
+      match:
+        href: https://theia.cnes.fr
+  auth:
+    - !plugin
+      type: TokenAuth
+      match:
+        href: https://theia.cnes.fr
+      auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
+      ssl_verify: true
 
 ---
 !provider # MARK: peps
@@ -860,18 +871,23 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    archive_depth: 2
-    order_enabled: true
-    auth_error_code: 401
-    ssl_verify: true
-    dl_url_params:
-      issuerId: peps
-  auth: !plugin
-    type: GenericAuth
-    matching_url: https://peps.cnes.fr
+  download:
+    - !plugin
+      type: HTTPDownload
+      extract: true
+      archive_depth: 2
+      order_enabled: true
+      auth_error_code: 401
+      ssl_verify: true
+      dl_url_params:
+        issuerId: peps
+      match:
+        href: https://peps.cnes.fr
+  auth:
+    - !plugin
+      type: GenericAuth
+      match:
+        href: https://peps.cnes.fr
 ---
 !provider # MARK: creodias
   name: creodias
@@ -1029,23 +1045,28 @@
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    order_enabled: false
-    archive_depth: 2
-    ssl_verify: true
-  auth: !plugin
-    type: KeycloakOIDCPasswordAuth
-    matching_url: https://[-\w]+.creodias.eu
-    oidc_config_url: https://identity.cloudferro.com/auth/realms/Creodias-new/.well-known/openid-configuration
-    client_id: 'CLOUDFERRO_PUBLIC'
-    client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
-    token_provision: qs
-    token_qs_key: 'token'
-    auth_error_code: 401
-    ssl_verify: true
-    allowed_audiences: ["CLOUDFERRO_PUBLIC"]
+  download:
+    - !plugin
+      type: HTTPDownload
+      extract: true
+      order_enabled: false
+      archive_depth: 2
+      ssl_verify: true
+      match:
+        href: https://[-\w]+.creodias.eu
+  auth:
+    - !plugin
+      type: KeycloakOIDCPasswordAuth
+      match:
+        href: https://[-\w]+.creodias.eu
+      oidc_config_url: https://identity.cloudferro.com/auth/realms/Creodias-new/.well-known/openid-configuration
+      client_id: 'CLOUDFERRO_PUBLIC'
+      client_secret: 'dc0aca03-2dc6-4798-a5de-fc5aeb6c8ee1'
+      token_provision: qs
+      token_qs_key: 'token'
+      auth_error_code: 401
+      ssl_verify: true
+      allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
       # S1
     S1_SAR_RAW:
@@ -1303,13 +1324,18 @@
       productType: landsat-c2l2alb-ta
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: AwsDownload
-    requester_pays: True
-    ssl_verify: true
-  auth: !plugin
-    type: AwsAuth
-    matching_url: s3://
+  download:
+    - !plugin
+      type: AwsDownload
+      requester_pays: True
+      ssl_verify: true
+      match:
+        href: s3://
+  auth:
+    - !plugin
+      type: AwsAuth
+      match:
+        href: s3://
 
 ---
 !provider # MARK: earth_search
@@ -1402,20 +1428,25 @@
       productType: cop-dem-glo-90
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: AwsDownload
-    requester_pays: True
-    ssl_verify: true
-    products:
-      S2_MSI_L1C:
-        default_bucket: 'sentinel-s2-l1c'
-        build_safe: true
-        complementary_url_key:
-          - productPath
-          - tilePath
-  auth: !plugin
-    type: AwsAuth
-    matching_url: s3://
+  download:
+    - !plugin
+      type: AwsDownload
+      requester_pays: True
+      ssl_verify: true
+      match:
+        href: s3://
+      products:
+        S2_MSI_L1C:
+          default_bucket: 'sentinel-s2-l1c'
+          build_safe: true
+          complementary_url_key:
+            - productPath
+            - tilePath
+  auth:
+    - !plugin
+      type: AwsAuth
+      match:
+        href: s3://
 
 ---
 !provider # MARK: earth_search_cog
@@ -1467,9 +1498,12 @@
       productType: sentinel-2-l2a
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: HTTPDownload
-    ssl_verify: true
+  download:
+    - !plugin
+      type: HTTPDownload
+      ssl_verify: true
+      match:
+        href: https://
 ---
 !provider # MARK: earth_search_gcs
   name: earth_search_gcs
@@ -1528,19 +1562,24 @@
         downloadLink: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: AwsDownload
-    s3_endpoint: https://storage.googleapis.com
-    ignore_assets: True
-    ssl_verify: true
-    products:
-      S2_MSI_L1C:
-        default_bucket: 'gcp-public-data-sentinel-2'
-  auth: !plugin
-    type: AwsAuth
-    matching_url: s3://
-    matching_conf:
+  download:
+    - !plugin
+      type: AwsDownload
       s3_endpoint: https://storage.googleapis.com
+      ignore_assets: True
+      ssl_verify: true
+      match:
+        url: s3://
+        s3_endpoint: https://storage.googleapis.com
+      products:
+        S2_MSI_L1C:
+          default_bucket: 'gcp-public-data-sentinel-2'
+  auth:
+    - !plugin
+      type: AwsAuth
+      match:
+        url: s3://
+        s3_endpoint: https://storage.googleapis.com
 ---
 !provider # MARK: ecmwf
   name: ecmwf
@@ -1600,42 +1639,44 @@
           "month": {_date#interval_to_datetime_dict}["month"]
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    ssl_verify: true
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
-    type: HTTPDownload
-    timeout: 30
-    ssl_verify: true
-    auth_error_code: 401
-    order_enabled: true
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-        order:date: $.json.created
-        creationDate: $.json.created
-        publicationDate: $.json.finished
-        modificationDate: $.json.updated
-        ecmwf:dataset: $.json.processID
-        request_params: $.json.metadata.request.ids
-      error:
-        status: failed
-      success:
-        status: successful
-      on_success:
-        need_search: true
+  auth:
+    - !plugin
+      type: HTTPHeaderAuth
+      ssl_verify: true
+      headers:
+        PRIVATE-TOKEN: "{apikey}"
+  download:
+    - !plugin
+      type: HTTPDownload
+      timeout: 30
+      ssl_verify: true
+      auth_error_code: 401
+      order_enabled: true
+      order_method: POST
+      order_on_response:
         metadata_mapping:
-          downloadLink: $.json.asset.value.href
+          orderId: $.json.jobID
+          orderStatusLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
+          searchLink: https://ads.atmosphere.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.status
+          order:date: $.json.created
+          creationDate: $.json.created
+          publicationDate: $.json.finished
+          modificationDate: $.json.updated
+          ecmwf:dataset: $.json.processID
+          request_params: $.json.metadata.request.ids
+        error:
+          status: failed
+        success:
+          status: successful
+        on_success:
+          need_search: true
+          metadata_mapping:
+            downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -1834,42 +1875,44 @@
           "time": {startTimeFromAscendingNode#get_ecmwf_time}
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    ssl_verify: true
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
-    type: HTTPDownload
-    timeout: 30
-    ssl_verify: true
-    order_enabled: true
-    auth_error_code: 401
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-        order:date: $.json.created
-        creationDate: $.json.created
-        publicationDate: $.json.finished
-        modificationDate: $.json.updated
-        ecmwf:dataset: $.json.processID
-        request_params: $.json.metadata.request.ids
-      error:
-        status: failed
-      success:
-        status: successful
-      on_success:
-        need_search: true
+  auth:
+    - !plugin
+      type: HTTPHeaderAuth
+      ssl_verify: true
+      headers:
+        PRIVATE-TOKEN: "{apikey}"
+  download:
+    - !plugin
+      type: HTTPDownload
+      timeout: 30
+      ssl_verify: true
+      order_enabled: true
+      auth_error_code: 401
+      order_method: POST
+      order_on_response:
         metadata_mapping:
-          downloadLink: $.json.asset.value.href
+          orderId: $.json.jobID
+          orderStatusLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
+          searchLink: https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.status
+          order:date: $.json.created
+          creationDate: $.json.created
+          publicationDate: $.json.finished
+          modificationDate: $.json.updated
+          ecmwf:dataset: $.json.processID
+          request_params: $.json.metadata.request.ids
+        error:
+          status: failed
+        success:
+          status: successful
+        on_success:
+          need_search: true
+          metadata_mapping:
+            downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true
@@ -2390,17 +2433,22 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    archive_depth: 2
-    order_enabled: true
-    auth_error_code: 403
-    ssl_verify: true
-  auth: !plugin
-    type: GenericAuth
-    matching_url: https://copernicus.nci.org.au
-    method: basic
+  download:
+    - !plugin
+      type: HTTPDownload
+      extract: true
+      archive_depth: 2
+      order_enabled: true
+      auth_error_code: 403
+      ssl_verify: true
+      match:
+        href: https://copernicus.nci.org.au
+  auth:
+    - !plugin
+      type: GenericAuth
+      match:
+        href: https://copernicus.nci.org.au
+      method: basic
 ---
 !provider # MARK: meteoblue
   name: meteoblue
@@ -2470,35 +2518,40 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
-  download: !plugin
-    type: HTTPDownload
-    ssl_verify: true
-    method: POST
-    extract: False
-    order_enabled: true
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: '$.json.id'
-        orderStatusLink: 'http://my.meteoblue.com/queue/status/{orderId}'
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        percent: $.json.percentCompleted
-        status: $.json.status
-      error:
-        status: error
-      on_success:
+  download:
+    - !plugin
+      type: HTTPDownload
+      ssl_verify: true
+      match:
+        href: https?://[a-z]+.meteoblue.com
+      method: POST
+      extract: False
+      order_enabled: true
+      order_method: POST
+      order_on_response:
         metadata_mapping:
           orderId: '$.json.id'
-          downloadLink: 'http://queueresults.meteoblue.com/{orderId}'
-          downloadMethod: '{$.null#replace_str("Not Available","GET")}'
-  auth: !plugin
-    type: HttpQueryStringAuth
-    matching_url: https?://[a-z]+.meteoblue.com
-    auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
-    ssl_verify: true
+          orderStatusLink: 'http://my.meteoblue.com/queue/status/{orderId}'
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          percent: $.json.percentCompleted
+          status: $.json.status
+        error:
+          status: error
+        on_success:
+          metadata_mapping:
+            orderId: '$.json.id'
+            downloadLink: 'http://queueresults.meteoblue.com/{orderId}'
+            downloadMethod: '{$.null#replace_str("Not Available","GET")}'
+  auth:
+    - !plugin
+      type: HttpQueryStringAuth
+      match:
+        href: https?://[a-z]+.meteoblue.com
+      auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
+      ssl_verify: true
 ---
 !provider # MARK: cop_dataspace
   name: cop_dataspace
@@ -2676,23 +2729,28 @@
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       productIdentifier: '$.S3Path'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    order_enabled: false
-    archive_depth: 2
-    ssl_verify: true
-  auth: !plugin
-    type: KeycloakOIDCPasswordAuth
-    matching_url: https://catalogue.dataspace.copernicus.eu
-    oidc_config_url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/.well-known/openid-configuration
-    client_id: 'cdse-public'
-    client_secret: null
-    token_provision: qs
-    token_qs_key: 'token'
-    auth_error_code: 401
-    ssl_verify: true
-    allowed_audiences: ["CLOUDFERRO_PUBLIC"]
+  download:
+    - !plugin
+      type: HTTPDownload
+      extract: true
+      order_enabled: false
+      archive_depth: 2
+      ssl_verify: true
+      match:
+        href: https://catalogue.dataspace.copernicus.eu
+  auth:
+    - !plugin
+      type: KeycloakOIDCPasswordAuth
+      match:
+        href: https://catalogue.dataspace.copernicus.eu
+      oidc_config_url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/.well-known/openid-configuration
+      client_id: 'cdse-public'
+      client_secret: null
+      token_provision: qs
+      token_qs_key: 'token'
+      auth_error_code: 401
+      ssl_verify: true
+      allowed_audiences: ["CLOUDFERRO_PUBLIC"]
   products:
     # S2
     S2_MSI_L1C:
@@ -2924,18 +2982,23 @@
       productType: naip
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: HTTPDownload
-    auth_error_code: 403
-    ssl_verify: true
-  auth: !plugin
-    type: SASAuth
-    matching_url: https://[-\w\.]+.blob.core.windows.net
-    auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
-    signed_url_key: href
-    ssl_verify: true
-    headers:
-      Ocp-Apim-Subscription-Key: "{apikey}"
+  download:
+    - !plugin
+      type: HTTPDownload
+      auth_error_code: 403
+      ssl_verify: true
+      match:
+        href: https://[-\w\.]+.blob.core.windows.net
+  auth:
+    - !plugin
+      type: SASAuth
+      match:
+        href: https://[-\w\.]+.blob.core.windows.net
+      auth_uri: 'https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}'
+      signed_url_key: href
+      ssl_verify: true
+      headers:
+        Ocp-Apim-Subscription-Key: "{apikey}"
 ---
 !provider # MARK: hydroweb_next
   name: hydroweb_next
@@ -2975,15 +3038,20 @@
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: HTTPDownload
-    auth_error_code: 401
-    ssl_verify: true
-  auth: !plugin
-    type: HTTPHeaderAuth
-    matching_url: https://hydroweb.next.theia-land.fr
-    headers:
-      X-API-Key: "{apikey}"
+  download:
+    - !plugin
+      type: HTTPDownload
+      auth_error_code: 401
+      ssl_verify: true
+      match:
+        href: https://hydroweb.next.theia-land.fr
+  auth:
+    - !plugin
+      type: HTTPHeaderAuth
+      match:
+        href: https://hydroweb.next.theia-land.fr
+      headers:
+        X-API-Key: "{apikey}"
 
 ---
 !provider  # MARK: wekeo_main
@@ -3452,43 +3520,48 @@
           - '{{"productGroupId": "{productGroupId}"}}'
           - '$.null'
         orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "dataset_id": "EO:CLMS:DAT:CLMS_GLOBAL_LAI_300M_V1_10DAILY_NETCDF"}}'
-  auth: !plugin
-    type: TokenAuth
-    matching_url: https://[-\w\.]+.wekeo2.eu
-    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
-    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
-    token_type: json
-    token_key: access_token
-    refresh_token_key: refresh_token
-    token_expiration_key: expires_in
-  download: !plugin
-    type: HTTPDownload
-    base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
-    flatten_top_dirs: true
-    auth_error_code: 401
-    order_enabled: true
-    order_method: 'POST'
-    order_on_response:
-      metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-        downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.features[0].status
-        message: $.json.features[0].message
-      error:
-        status: Error
-      success:
-        status: Done
-      ordered:
-        http_code: 202
-      on_success:
+  auth:
+    - !plugin
+      type: TokenAuth
+      match:
+        href: https://[-\w\.]+.wekeo2.eu
+      auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
+      refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
+      token_type: json
+      token_key: access_token
+      refresh_token_key: refresh_token
+      token_expiration_key: expires_in
+  download:
+    - !plugin
+      type: HTTPDownload
+      base_uri: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess
+      match:
+        href: https://[-\w\.]+.wekeo2.eu
+      flatten_top_dirs: true
+      auth_error_code: 401
+      order_enabled: true
+      order_method: 'POST'
+      order_on_response:
         metadata_mapping:
-          download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          orderId: '$.json.download_id'
+          orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+          downloadLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{orderId}'
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.features[0].status
+          message: $.json.features[0].message
+        error:
+          status: Error
+        success:
+          status: Done
+        ordered:
+          http_code: 202
+        on_success:
+          metadata_mapping:
+            download_id: $.json.features[0]._id
+            downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
 
 ---
 !provider  # MARK: wekeo_ecmwf
@@ -3929,46 +4002,48 @@
         geometry:
           - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}'
           - '$.null'
-  auth: !plugin
-    type: TokenAuth
-    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
-    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
-    token_type: json
-    token_key: access_token
-    refresh_token_key: refresh_token
-    token_expiration_key: expires_in
-  download: !plugin
-    type: HTTPDownload
-    auth_error_code: 401
-    order_enabled: true
-    order_method: 'POST'
-    order_on_response:
-      metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.features[0].status
-        order:date: $.json.features[0].started_at
-        creationDate: $.json.features[0].started_at
-        message: $.json.features[0].message
-        orderId: $.json.features[0]._id
-        ecmwf:dataset: $.json.features[0].dataset_id
-      error:
-        status: Error
-      success:
-        status: Done
-      ordered:
-        http_code: 202
-      on_success:
+  auth:
+   - !plugin
+      type: TokenAuth
+      auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
+      refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
+      token_type: json
+      token_key: access_token
+      refresh_token_key: refresh_token
+      token_expiration_key: expires_in
+  download:
+    - !plugin
+      type: HTTPDownload
+      auth_error_code: 401
+      order_enabled: true
+      order_method: 'POST'
+      order_on_response:
         metadata_mapping:
-          download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
-    products:
-      FIRE_HISTORICAL:
-        output_extension: .grib
+          orderId: '$.json.download_id'
+          orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.features[0].status
+          order:date: $.json.features[0].started_at
+          creationDate: $.json.features[0].started_at
+          message: $.json.features[0].message
+          orderId: $.json.features[0]._id
+          ecmwf:dataset: $.json.features[0].dataset_id
+        error:
+          status: Error
+        success:
+          status: Done
+        ordered:
+          http_code: 202
+        on_success:
+          metadata_mapping:
+            download_id: $.json.features[0]._id
+            downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+      products:
+        FIRE_HISTORICAL:
+          output_extension: .grib
 
 ---
 !provider  # MARK: wekeo_cmems
@@ -4041,39 +4116,44 @@
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  auth: !plugin
-    type: TokenAuth
-    matching_url: https://[-\w\.]+.wekeo2.eu
-    auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
-    refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
-    token_type: json
-    token_key: access_token
-    refresh_token_key: refresh_token
-  download: !plugin
-    type: HTTPDownload
-    auth_error_code: 401
-    order_enabled: true
-    order_method: 'POST'
-    order_on_response:
-      metadata_mapping:
-        orderId: '$.json.download_id'
-        orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.features[0].status
-        message: $.json.features[0].message
-      error:
-        status: Error
-      success:
-        status: Done
-      ordered:
-        http_code: 202
-      on_success:
+  auth:
+    - !plugin
+      type: TokenAuth
+      match:
+        href: https://[-\w\.]+.wekeo2.eu
+      auth_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/gettoken'
+      refresh_uri: 'https://gateway.prod.wekeo2.eu/hda-broker/refreshtoken'
+      token_type: json
+      token_key: access_token
+      refresh_token_key: refresh_token
+  download:
+    - !plugin
+      type: HTTPDownload
+      match:
+        href: https://[-\w\.]+.wekeo2.eu
+      auth_error_code: 401
+      order_enabled: true
+      order_method: 'POST'
+      order_on_response:
         metadata_mapping:
-          download_id: $.json.features[0]._id
-          downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
+          orderId: '$.json.download_id'
+          orderStatusLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/downloads?download_id={orderId}'
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.features[0].status
+          message: $.json.features[0].message
+        error:
+          status: Error
+        success:
+          status: Done
+        ordered:
+          http_code: 202
+        on_success:
+          metadata_mapping:
+            download_id: $.json.features[0]._id
+            downloadLink: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download/{download_id}
 
 ---
 !provider # MARK: creodias_s3
@@ -4231,16 +4311,20 @@
         - $.null
       quicklook: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
       thumbnail: '$.Assets[?(@.Type="QUICKLOOK")].DownloadLink'
-  download: !plugin
-    type: CreodiasS3Download
-    s3_endpoint: 'https://eodata.cloudferro.com'
-    s3_bucket: 'eodata'
-    ssl_verify: true
-  auth: !plugin
-    type: AwsAuth
-    auth_error_code: 403
-    matching_conf:
+  download:
+    - !plugin
+      type: CreodiasS3Download
       s3_endpoint: 'https://eodata.cloudferro.com'
+      s3_bucket: 'eodata'
+      ssl_verify: true
+      match:
+        s3_endpoint: 'https://eodata.cloudferro.com'
+  auth:
+    - !plugin
+      type: AwsAuth
+      auth_error_code: 403
+      match:
+        s3_endpoint: 'https://eodata.cloudferro.com'
   products:
       # S1
     S1_SAR_RAW:
@@ -4498,48 +4582,50 @@
       resolution: high
       levtype: sfc
       time: "0000"
-  download: !plugin
-    type: HTTPDownload
-    ssl_verify: true
-    auth_error_code: 401
-    order_enabled: True
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: '{$.headers.Location#slice_str(-36,,1)}'
-        _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
-        combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
-        orderStatusLink: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
-    order_status:
-      request:
-        method: GET
-        headers:
-      metadata_mapping:
-        status: $.json.status
-        message: $.json.message
-        error_message: $.null
-      success:
-        http_code: 303
-      error:
-        status: failed
-      on_success:
-        result_type: json
+  download:
+    - !plugin
+      type: HTTPDownload
+      ssl_verify: true
+      auth_error_code: 401
+      order_enabled: True
+      order_method: POST
+      order_on_response:
         metadata_mapping:
-          downloadLink: $.headers.Location
-    no_auth_download: True
-    products:
-      DT_EXTREMES:
-      DT_CLIMATE_ADAPTATION:
-  auth: !plugin
-    type: OIDCAuthorizationCodeFlowAuth
-    oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
-    redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
-    client_id: polytope-api-public
-    user_consent_needed: false
-    token_exchange_post_data_method: data
-    token_provision: header
-    login_form_xpath: //form[@id='kc-form-login']
-    authentication_uri_source: login-form
+          orderId: '{$.headers.Location#slice_str(-36,,1)}'
+          _previousOrderId: '{$.json.orderId#replace_str("Not Available","")}'
+          combinedOrderId: '{orderId#replace_str("Not Available","")}{_previousOrderId}'
+          orderStatusLink: "https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{combinedOrderId#replace_str(r'^$','Not Available')}"
+      order_status:
+        request:
+          method: GET
+          headers:
+        metadata_mapping:
+          status: $.json.status
+          message: $.json.message
+          error_message: $.null
+        success:
+          http_code: 303
+        error:
+          status: failed
+        on_success:
+          result_type: json
+          metadata_mapping:
+            downloadLink: $.headers.Location
+      no_auth_download: True
+      products:
+        DT_EXTREMES:
+        DT_CLIMATE_ADAPTATION:
+  auth:
+    - !plugin
+      type: OIDCAuthorizationCodeFlowAuth
+      oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
+      redirect_uri: https://polytope.lumi.apps.dte.destination-earth.eu/
+      client_id: polytope-api-public
+      user_consent_needed: false
+      token_exchange_post_data_method: data
+      token_provision: header
+      login_form_xpath: //form[@id='kc-form-login']
+      authentication_uri_source: login-form
 ---
 
 !provider # MARK: dedl
@@ -4591,49 +4677,54 @@
         platformSerialIdentifier: platform
         resolution: gsd
         cloudCover: eo:cloud_cover
-  download: !plugin
-    type: HTTPDownload
-    auth_error_code: 403
-    timeout: 20
-    ssl_verify: true
-    extract: true
-    archive_depth: 2
-    order_enabled: True
-    order_method: GET
-    order_on_response:
-      metadata_mapping:
-        orderStatusLink: $.json.location
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-        message: $.json.description
-      success:
-        http_code: 200
-      on_success:
+  download:
+    - !plugin
+      type: HTTPDownload
+      match:
+        href: https://[-\w\.]+.data.destination-earth.eu
+      auth_error_code: 403
+      timeout: 20
+      ssl_verify: true
+      extract: true
+      archive_depth: 2
+      order_enabled: True
+      order_method: GET
+      order_on_response:
         metadata_mapping:
-          downloadLink: '{orderStatusLink}'
-  auth: !plugin
-    type: OIDCTokenExchangeAuth
-    matching_url: https://[-\w\.]+.data.destination-earth.eu
-    subject:
-      oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
-      redirect_uri: https://hda.data.destination-earth.eu/stac
-      client_id: dedl-hda
-      user_consent_needed: false
-      exchange_url_error_pattern:
-        TERMS_AND_CONDITIONS: Terms and conditions are not accepted
-      token_exchange_post_data_method: data
+          orderStatusLink: $.json.location
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.status
+          message: $.json.description
+        success:
+          http_code: 200
+        on_success:
+          metadata_mapping:
+            downloadLink: '{orderStatusLink}'
+  auth:
+    - !plugin
+      type: OIDCTokenExchangeAuth
+      match:
+        href: https://[-\w\.]+.data.destination-earth.eu
+      subject:
+        oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
+        redirect_uri: https://hda.data.destination-earth.eu/stac
+        client_id: dedl-hda
+        user_consent_needed: false
+        exchange_url_error_pattern:
+          TERMS_AND_CONDITIONS: Terms and conditions are not accepted
+        token_exchange_post_data_method: data
+        token_key: access_token
+        token_provision: header
+        login_form_xpath: //form[@id='kc-form-login']
+        authentication_uri_source: login-form
+      subject_issuer: desp-oidc
+      token_uri: https://identity.data.destination-earth.eu/auth/realms/dedl/protocol/openid-connect/token
+      client_id: hda-public
+      audience: hda-public
       token_key: access_token
-      token_provision: header
-      login_form_xpath: //form[@id='kc-form-login']
-      authentication_uri_source: login-form
-    subject_issuer: desp-oidc
-    token_uri: https://identity.data.destination-earth.eu/auth/realms/dedl/protocol/openid-connect/token
-    client_id: hda-public
-    audience: hda-public
-    token_key: access_token
   products:
     # Sentinel 1
     S1_SAR_GRD:
@@ -5520,22 +5611,27 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       parentIdentifier: '{parentIdentifier}'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    ignore_assets: True
-    ssl_verify: true
-  auth: !plugin
-    type: TokenAuth
-    matching_url: https://api.eumetsat.int
-    auth_uri: 'https://api.eumetsat.int/token'
-    auth_error_code: 401
-    req_data:
-      grant_type: client_credentials
-    token_type: json
-    token_key: access_token
-    token_expiration_key: expires_in
-    ssl_verify: true
+  download:
+    - !plugin
+      type: HTTPDownload
+      extract: true
+      ignore_assets: True
+      ssl_verify: true
+      match:
+        href: https://api.eumetsat.int
+  auth:
+    - !plugin
+      type: TokenAuth
+      match:
+        href: https://api.eumetsat.int
+      auth_uri: 'https://api.eumetsat.int/token'
+      auth_error_code: 401
+      req_data:
+        grant_type: client_credentials
+      token_type: json
+      token_key: access_token
+      token_expiration_key: expires_in
+      ssl_verify: true
 
 ---
 !provider # MARK: cop_marine
@@ -5696,15 +5792,20 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       collection: '{collection}'
-  download: !plugin
-    type: AwsDownload
-    s3_endpoint: https://s3.waw3-1.cloudferro.com
-    bucket_path_level: 0
-  auth: !plugin
-    type: AwsAuth
-    matching_url: s3://
-    matching_conf:
+  download:
+    - !plugin
+      type: AwsDownload
       s3_endpoint: https://s3.waw3-1.cloudferro.com
+      bucket_path_level: 0
+      match:
+        href: s3://
+        s3_endpoint: https://s3.waw3-1.cloudferro.com
+  auth:
+    - !plugin
+      type: AwsAuth
+      match:
+        href: s3://
+        s3_endpoint: https://s3.waw3-1.cloudferro.com
 
 ---
 !provider  # MARK: geodes
@@ -5814,19 +5915,24 @@
       productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: HTTPDownload
-    ssl_verify: false
-    ignore_assets: true
-    archive_depth: 2
-    auth_error_code:
-      - 401
-      - 403
-  auth: !plugin
-    type: HTTPHeaderAuth
-    matching_url: https://geodes-portal.cnes.fr
-    headers:
-      X-API-Key: "{apikey}"
+  download:
+    - !plugin
+      type: HTTPDownload
+      match:
+        href: https://geodes-portal.cnes.fr
+      ssl_verify: false
+      ignore_assets: true
+      archive_depth: 2
+      auth_error_code:
+        - 401
+        - 403
+  auth:
+    - !plugin
+      type: HTTPHeaderAuth
+      match:
+        href: https://geodes-portal.cnes.fr
+      headers:
+        X-API-Key: "{apikey}"
 
 ---
 !provider  # MARK: geodes_s3
@@ -5937,15 +6043,19 @@
       productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: AwsDownload
-    s3_endpoint: https://s3.datalake.cnes.fr
-    ignore_assets: True
-  auth: !plugin
-    type: AwsAuth
-    auth_error_code: 403
-    matching_conf:
+  download:
+    - !plugin
+      type: AwsDownload
       s3_endpoint: https://s3.datalake.cnes.fr
+      ignore_assets: True
+      match:
+        s3_endpoint: https://s3.datalake.cnes.fr
+  auth:
+    - !plugin
+      type: AwsAuth
+      auth_error_code: 403
+      match:
+        s3_endpoint: https://s3.datalake.cnes.fr
 
 ---
 !provider # MARK: cop_ewds
@@ -6009,43 +6119,45 @@
           "hmonth": {_date#interval_to_datetime_dict}["month"]
         }}
       - '{$.completionTimeFromAscendingNode#to_iso_date}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    ssl_verify: true
-    headers:
-      PRIVATE-TOKEN: "{apikey}"
-  download: !plugin
-    type: HTTPDownload
-    timeout: 30
-    ssl_verify: true
-    extract: false
-    auth_error_code: 401
-    order_enabled: true
-    order_method: POST
-    order_on_response:
-      metadata_mapping:
-        orderId: $.json.jobID
-        orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
-        searchLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
-    order_status:
-      request:
-        method: GET
-      metadata_mapping:
-        status: $.json.status
-        order:date: $.json.created
-        creationDate: $.json.created
-        publicationDate: $.json.finished
-        modificationDate: $.json.updated
-        ecmwf:dataset: $.json.processID
-        request_params: $.json.metadata.request.ids
-      error:
-        status: failed
-      success:
-        status: successful
-      on_success:
-        need_search: true
+  auth:
+    - !plugin
+      type: HTTPHeaderAuth
+      ssl_verify: true
+      headers:
+        PRIVATE-TOKEN: "{apikey}"
+  download:
+    - !plugin
+      type: HTTPDownload
+      timeout: 30
+      ssl_verify: true
+      extract: false
+      auth_error_code: 401
+      order_enabled: true
+      order_method: POST
+      order_on_response:
         metadata_mapping:
-          downloadLink: $.json.asset.value.href
+          orderId: $.json.jobID
+          orderStatusLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}?request=true
+          searchLink: https://ewds.climate.copernicus.eu/api/retrieve/v1/jobs/{orderId}/results
+      order_status:
+        request:
+          method: GET
+        metadata_mapping:
+          status: $.json.status
+          order:date: $.json.created
+          creationDate: $.json.created
+          publicationDate: $.json.finished
+          modificationDate: $.json.updated
+          ecmwf:dataset: $.json.processID
+          request_params: $.json.metadata.request.ids
+        error:
+          status: failed
+        success:
+          status: successful
+        on_success:
+          need_search: true
+          metadata_mapping:
+            downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
     need_auth: true

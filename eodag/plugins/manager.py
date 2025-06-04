@@ -64,7 +64,7 @@ def _is_plugin_matching(
     :returns: True if the plugin matches the config or the url
     """
     plugin_matching_conf = getattr(plugin_conf, "match", {})
-    plugin_matching_url = plugin_matching_conf.pop("url", None)
+    plugin_matching_url = plugin_matching_conf.pop("href", None)
     if matching_url:
         if plugin_matching_url and re.match(rf"{plugin_matching_url}", matching_url):
             # url matches
@@ -351,6 +351,7 @@ class PluginManager:
             plugin_confs = getattr(provider_conf, plugin_type, None)
             for plugin_conf in plugin_confs:
                 # plugin without configured match criteria: only works for given provider
+                # we assume that if there are no match criteria given, there is only one plugin
                 unconfigured_match = (
                     True
                     if (
@@ -364,12 +365,18 @@ class PluginManager:
                     plugin_conf, matching_url, matching_conf
                 ):
                     plugin_conf.priority = provider_conf.priority
-                    plugin = cast(
-                        Authentication,
-                        self._build_plugin(
-                            plugin_provider, plugin_conf, Authentication
-                        ),
-                    )
+                    if plugin_type == "auth":
+                        plugin = cast(
+                            Authentication,
+                            self._build_plugin(
+                                plugin_provider, plugin_conf, Authentication
+                            ),
+                        )
+                    else:
+                        plugin = cast(
+                            Download,
+                            self._build_plugin(plugin_provider, plugin_conf, Download),
+                        )
                     yield plugin
                 else:
                     continue

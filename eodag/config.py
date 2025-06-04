@@ -129,10 +129,8 @@ class ProviderConfig(yaml.YAMLObject):
     api: PluginConfig
     search: PluginConfig
     products: dict[str, Any]
-    download: PluginConfig
-    auth: PluginConfig
-    search_auth: PluginConfig
-    download_auth: PluginConfig
+    download: list[PluginConfig]
+    auth: list[PluginConfig]
     product_types_fetched: bool  # set in core.update_product_types_list
 
     yaml_loader = yaml.Loader
@@ -195,11 +193,19 @@ class ProviderConfig(yaml.YAMLObject):
         for key in PLUGINS_TOPICS_KEYS:
             current_value: Optional[PluginConfig] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
-            if current_value is not None:
+            if isinstance(current_value, list):
+                current_value = mapping_value
+            elif current_value is not None:
                 current_value.update(mapping_value)
             elif mapping_value:
                 try:
-                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                    if isinstance(mapping_value, list):
+                        list_configs = []
+                        for value in mapping_value:
+                            list_configs.append(PluginConfig.from_mapping(value))
+                        setattr(self, key, list_configs)
+                    else:
+                        setattr(self, key, PluginConfig.from_mapping(mapping_value))
                 except ValidationError as e:
                     logger.warning(
                         (
@@ -211,7 +217,6 @@ class ProviderConfig(yaml.YAMLObject):
                         str(e),
                         ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
                     )
-
 
 class PluginConfig(yaml.YAMLObject):
     """Representation of a plugin config.
@@ -773,7 +778,7 @@ def share_credentials(
                 ):
                     # no credentials set for this provider
                     provider_matching_conf = getattr(provider_config_auth, "match", {})
-                    provider_matching_url = provider_matching_conf.get("url", None)
+                    provider_matching_url = provider_matching_conf.get("href", None)
                     for conf_with_creds in auth_confs_with_creds:
                         # copy credentials between plugins if `matching_conf` or `matching_url` are matching
 
@@ -784,7 +789,7 @@ def share_credentials(
                         ) or (
                             provider_matching_url
                             and provider_matching_url
-                            == getattr(conf_with_creds, "match", {}).get("url", None)
+                            == getattr(conf_with_creds, "match", {}).get("href", None)
                         ):
                             getattr(
                                 providers_config[provider], "auth"
@@ -802,13 +807,19 @@ def provider_config_init(
     """
     # For the provider, set the default output_dir of its download plugin
     # as tempdir in a portable way
-    for download_topic_key in ("download", "api"):
-        if download_topic_key in vars(provider_config):
-            download_conf = getattr(provider_config, download_topic_key)
+    if "download" in vars(provider_config):
+        download_confs = getattr(provider_config, "download")
+        for download_conf in download_confs:
             if not getattr(download_conf, "output_dir", None):
                 download_conf.output_dir = tempfile.gettempdir()
             if not getattr(download_conf, "delete_archive", None):
                 download_conf.delete_archive = True
+    elif "api" in vars(provider_config):
+        download_conf = getattr(provider_config, "api")
+        if not getattr(download_conf, "output_dir", None):
+            download_conf.output_dir = tempfile.gettempdir()
+        if not getattr(download_conf, "delete_archive", None):
+            download_conf.delete_archive = True
 
     try:
         if (

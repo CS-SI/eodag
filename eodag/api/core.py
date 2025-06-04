@@ -553,7 +553,7 @@ class EODataAccessGateway:
                         provider,
                     )
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
-                if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
+                if not hasattr(conf, "auth"):
                     # credentials needed but no auth plugin was found
                     self._pruned_providers_config[provider] = self.providers_config.pop(
                         provider
@@ -564,13 +564,8 @@ class EODataAccessGateway:
                         provider,
                     )
                     continue
-                credentials_exist = (
-                    hasattr(conf, "search_auth")
-                    and credentials_in_auth(conf.search_auth)
-                ) or (
-                    not hasattr(conf, "search_auth")
-                    and hasattr(conf, "auth")
-                    and credentials_in_auth(conf.auth)
+                credentials_exist = hasattr(conf, "auth") and credentials_in_auth(
+                    conf.auth
                 )
                 if not credentials_exist:
                     # credentials needed but not found
