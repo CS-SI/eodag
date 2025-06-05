@@ -855,6 +855,7 @@ class StacCollection(StacCommon):
         else:
             product_types = all_pt
 
+        _bbox_poly = None
         if bbox:
             _bbox = [float(x) for x in bbox.split(",")]
             SearchPostRequest.validate_bbox(_bbox)
