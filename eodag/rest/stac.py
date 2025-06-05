@@ -858,7 +858,7 @@ class StacCollection(StacCommon):
         _bbox_poly = None
         if bbox:
             _bbox = [float(x) for x in bbox.split(",")]
-            SearchPostRequest.validate_bbox(_bbox)
+            SearchPostRequest.validate_bbox(_bbox)  # type: ignore
             _bbox_poly = Polygon.from_bounds(*_bbox)
 
         # list product types with all metadata using guessed ids
