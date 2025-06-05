@@ -43,6 +43,7 @@ from tests.context import (
     get_bucket_name_and_prefix,
     get_ssl_context,
     get_timestamp,
+    is_env_var_true,
     merge_mappings,
     path_to_uri,
     setup_logging,
@@ -84,6 +85,23 @@ class TestUtils(unittest.TestCase):
 
         # Non UTC datetime are also supported
         self.assertEqual(get_timestamp("2021-04-21T00:00:00+02:00"), 1618956000)
+
+    def test_is_env_var_true(self):
+        test_cases = {
+            "true": True,
+            "True": True,
+            "yes": True,
+            "on": True,
+            "1": True,
+            "false": False,
+            "False": False,
+            "0": False,
+            "no": False,
+            "": False,
+        }
+        for value, expected in test_cases.items():
+            with mock.patch.dict(os.environ, {"TEST_ENV_VAR": value}):
+                self.assertEqual(is_env_var_true("TEST_ENV_VAR"), expected)
 
     def test_uri_to_path(self):
         if sys.platform == "win32":

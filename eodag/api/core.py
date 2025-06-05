@@ -79,6 +79,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
+from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
     EodagError,
@@ -175,11 +176,42 @@ class EODataAccessGateway:
         share_credentials(self.providers_config)
 
         # init updated providers conf
+        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        available_product_types = self.product_types_config.source.keys()
+
         for provider in self.providers_config.keys():
             provider_config_init(
                 self.providers_config[provider],
                 load_stac_provider_config(),
             )
+
+            provider_products = self.providers_config[provider].products
+            products_to_remove: list[str] = []
+            for product_id in provider_products:
+                if product_id == GENERIC_PRODUCT_TYPE:
+                    continue
+
+                if product_id not in available_product_types:
+                    if strict_mode:
+                        products_to_remove.append(product_id)
+                        continue
+
+                    empty_product = {
+                        "title": product_id,
+                        "abstract": "No product type configuration found",
+                    }
+                    self.product_types_config.source[
+                        product_id
+                    ] = empty_product  # will update available_product_types
+                    logger.debug(
+                        "permissive mode, adding empty product type %s", product_id
+                    )
+
+            for id in products_to_remove:
+                logger.debug(
+                    "strict mode, ignoring product type %s (provider %s)", id, provider
+                )
+                del self.providers_config[provider].products[id]
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -583,7 +615,9 @@ class EODataAccessGateway:
         :returns: The list of the product types that can be accessed using eodag.
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-        if fetch_providers:
+
+        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        if fetch_providers and not strict_mode:
             # First, update product types list if possible
             self.fetch_product_types_list(provider=provider)
 
@@ -608,11 +642,14 @@ class EODataAccessGateway:
             for product_type_id in p.products:  # type: ignore
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
+
                 config = self.product_types_config[product_type_id]
                 config["_id"] = product_type_id
+
                 if "alias" in config:
                     product_type_id = config["alias"]
                 product_type = {"ID": product_type_id, **config}
+
                 if product_type not in product_types:
                     product_types.append(product_type)
 
