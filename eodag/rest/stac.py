@@ -856,9 +856,9 @@ class StacCollection(StacCommon):
             product_types = all_pt
 
         if bbox:
-            bbox = [float(x) for x in bbox.split(",")]
-            SearchPostRequest.validate_bbox(bbox)
-            bbox = Polygon.from_bounds(*bbox)
+            _bbox = [float(x) for x in bbox.split(",")]
+            SearchPostRequest.validate_bbox(_bbox)
+            _bbox_poly = Polygon.from_bounds(*_bbox)
 
         # list product types with all metadata using guessed ids
         collection_list: list[dict[str, Any]] = []
@@ -867,11 +867,11 @@ class StacCollection(StacCommon):
                 collection_model, product_type
             )
             # Apply bbox filter
-            if bbox:
-                _bbox = Polygon.from_bounds(
+            if _bbox_poly:
+                _other_bbox_poly = Polygon.from_bounds(
                     *stac_collection["extent"]["spatial"]["bbox"][0]
                 )
-                if bbox.intersects(_bbox):
+                if _bbox_poly.intersects(_other_bbox_poly):
                     collection_list.append(stac_collection)
             else:
                 collection_list.append(stac_collection)
