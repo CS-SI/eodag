@@ -416,7 +416,7 @@ async def all_collections(
         return collections
 
     hashed_collections = hash(
-        f"{provider}:{q}:{platform}:{instrument}:{constellation}:{datetime}"
+        f"{provider}:{q}:{platform}:{instrument}:{constellation}:{datetime}:{bbox}"
     )
     cache_key = f"{CACHE_KEY_COLLECTIONS}:{hashed_collections}"
     return await cached(_fetch, cache_key, request)
