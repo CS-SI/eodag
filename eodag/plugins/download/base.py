@@ -604,12 +604,12 @@ class Download(PluginTopic):
                             download = order_download(*args, **kwargs)
                         except NotAvailableError as e:
                             not_available_info = str(e)
-
-                        if (
-                            product.properties.get("storageStatus", ONLINE_STATUS)
-                            == ONLINE_STATUS
-                        ):
-                            return download
+                        else:
+                            if (
+                                product.properties.get("storageStatus", ONLINE_STATUS)
+                                == ONLINE_STATUS
+                            ) or timeout < 0:
+                                return download
 
                         if not getattr(self.config, "order_enabled", False):
                             raise NotAvailableError(
