@@ -664,6 +664,9 @@ class HTTPDownload(Download):
 
                 if is_empty:
                     raise DownloadError(f"product {product.properties['id']} is empty")
+                else:
+                    # make sure storage status is online
+                    product.properties["storageStatus"] = ONLINE_STATUS
 
                 return path
             else:
