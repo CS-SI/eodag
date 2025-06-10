@@ -2022,6 +2022,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_product_types_override.yml"
         )
+
         # check product types
         try:
             self.dag = EODataAccessGateway()
@@ -3644,3 +3645,42 @@ class TestCoreProviderGroup(TestCoreBase):
         )
 
         self.assertCountEqual(group_plugins, [*plugin1, *plugin2])
+
+
+class TestCoreStrictMode(TestCoreBase):
+    def setUp(self):
+        super().setUp()
+        # Ensure a clean environment for each test
+        self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        self.mock_os_environ.start()
+        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_product_types_modes.yml"
+        )
+
+    def tearDown(self):
+        self.mock_os_environ.stop()
+        super().tearDown()
+
+    def test_list_product_types_strict_mode(self):
+        """list_product_types must only return product types from the main config in strict mode"""
+        os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
+        dag = EODataAccessGateway()
+
+        # In strict mode, S1_SAR_GRD should not be listed
+        product_types = dag.list_product_types(fetch_providers=False)
+        ids = [pt["ID"] for pt in product_types]
+        self.assertNotIn("S1_SAR_GRD", ids)
+
+        os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
+
+    def test_list_product_types_permissive_mode(self):
+        """list_product_types must include provider-only product types in permissive mode"""
+        if "EODAG_STRICT_PRODUCT_TYPES" in os.environ:
+            del os.environ["EODAG_STRICT_PRODUCT_TYPES"]
+
+        dag = EODataAccessGateway()
+
+        # In permissive mode, S1_SAR_GRD should be listed
+        product_types = dag.list_product_types(fetch_providers=False)
+        ids = [pt["ID"] for pt in product_types]
+        self.assertIn("S1_SAR_GRD", ids)
