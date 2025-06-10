@@ -66,7 +66,7 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
-PLUGINS_TOPICS_KEYS = ("api", "search", "download")
+PLUGINS_TOPICS_KEYS = ("api", "search", "download", "auth")
 
 
 class SimpleYamlProxyConfig:
@@ -194,7 +194,11 @@ class ProviderConfig(yaml.YAMLObject):
             current_value: Optional[PluginConfig] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if isinstance(current_value, list):
-                current_value = mapping_value
+                if isinstance(mapping_value, list):
+                    current_value = mapping_value
+                else:
+                    for cv in current_value:
+                        cv.update(mapping_value)
             elif current_value is not None:
                 current_value.update(mapping_value)
             elif mapping_value:
@@ -427,6 +431,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
     #: list of integer HTTP status codes that we should force a retry on
     retry_status_forcelist: list[int]
+    #: :class:`~eodag.plugins.base.PluginTopic` Dictionary used to find the matching plugin
+    match: dict[str, str]
 
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
@@ -548,6 +554,12 @@ class PluginConfig(yaml.YAMLObject):
     # auth -------------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication credentials dictionary
     credentials: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    # List containing information for what the authentification is used (search, download or both)
+    required_for: list[str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    # List containing credentials that are required for the plugin
+    required_credentials: list[str]
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication URL
     auth_uri: str
     #: :class:`~eodag.plugins.authentication.base.Authentication`
@@ -752,9 +764,14 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     :param auth_conf: Authentication plugin configuration
     :returns: True if credentials are set, else False
     """
-    return any(
-        c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
-    )
+    credentials = getattr(auth_conf, "credentials", {})
+    if required_creds := getattr(auth_conf, "required_credentials", None):
+        for cred in required_creds:
+            if cred not in credentials or not credentials[cred]:
+                return False
+        return True
+    else:
+        return any(c is not None for c in credentials.values())
 
 
 def share_credentials(
@@ -764,14 +781,18 @@ def share_credentials(
 
     :param providers_configs: eodag providers configurations
     """
-    auth_confs_with_creds = [
-        getattr(p, "auth")
-        for p in providers_config.values()
-        if hasattr(p, "auth") and credentials_in_auth(getattr(p, "auth"))
-    ]
+    auth_confs_with_creds = []
+    for provider_config in providers_config.values():
+        auth_configs = getattr(provider_config, "auth", {})
+        auth_confs_with_creds.extend(
+            [p for p in auth_configs if credentials_in_auth(p)]
+        )
+
     for provider, provider_config in providers_config.items():
         if auth_confs_with_creds:
             provider_configs_auth = getattr(provider_config, "auth", None)
+            if not provider_configs_auth:
+                continue
             for provider_config_auth in provider_configs_auth:
                 if provider_config_auth and not credentials_in_auth(
                     provider_config_auth
@@ -791,9 +812,9 @@ def share_credentials(
                             and provider_matching_url
                             == getattr(conf_with_creds, "match", {}).get("href", None)
                         ):
-                            getattr(
-                                providers_config[provider], "auth"
-                            ).credentials = conf_with_creds.credentials
+                            provider_config_auth.credentials = (
+                                conf_with_creds.credentials
+                            )
 
 
 def provider_config_init(

@@ -119,10 +119,8 @@ class QueryStringSearch(Search):
           provider search result that gives access to the result entries
         * :attr:`~eodag.config.PluginConfig.api_endpoint` (``str``) (**mandatory**): The endpoint of the provider's
           search interface
-        * :attr:`~eodag.config.PluginConfig.need_auth` (``bool``): if authentication is needed for the search request;
-          default: ``False``
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is returned in case of an
-          authentication error; only used if ``need_auth=true``
+          authentication error;
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
           requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.asset_key_from_href` (``bool``): guess assets keys using their ``href``. Use
@@ -1206,11 +1204,7 @@ class QueryStringSearch(Search):
             ssl_ctx = get_ssl_context(ssl_verify)
             # auth if needed
             kwargs: dict[str, Any] = {}
-            if (
-                getattr(self.config, "need_auth", False)
-                and hasattr(prep, "auth")
-                and callable(prep.auth)
-            ):
+            if hasattr(prep, "auth") and callable(prep.auth):
                 kwargs["auth"] = prep.auth
             # requests auto quote url params, without any option to prevent it
             # use urllib instead of requests if req must be sent unquoted
@@ -1688,11 +1682,7 @@ class PostJsonSearch(QueryStringSearch):
                 "RequestsKwargs", {"auth": AuthBase}, total=False
             )
             kwargs: RequestsKwargs = {}
-            if (
-                getattr(self.config, "need_auth", False)
-                and hasattr(prep, "auth")
-                and callable(prep.auth)
-            ):
+            if hasattr(prep, "auth") and callable(prep.auth):
                 kwargs["auth"] = prep.auth
 
             # perform the request using the next page arguments if they are defined

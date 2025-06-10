@@ -85,7 +85,6 @@
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}'
-    need_auth: true
     auth_error_code:
       - 402
       - 403
@@ -536,11 +535,21 @@
       type: AwsAuth
       match:
         href: s3://
+      required_credentials:
+        - aws_access_key_id
+        - aws_secret_access_key
+        - aws_profile
+      required_for:
+        - download
     - !plugin
       type: HttpQueryStringAuth
       match:
         href: https://gate.eos.com
       ssl_verify: true
+      required_credentials:
+        - api_key
+      required_for:
+        - search
 
 ---
 !provider # MARK: theia
@@ -553,7 +562,6 @@
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
-    need_auth: false
     ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
@@ -726,6 +734,8 @@
         href: https://theia.cnes.fr
       auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
       ssl_verify: true
+      required_for:
+        - download
 
 ---
 !provider # MARK: peps
@@ -740,7 +750,6 @@
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
-    need_auth: false
     ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
@@ -888,6 +897,8 @@
       type: GenericAuth
       match:
         href: https://peps.cnes.fr
+      required_for:
+        - download
 ---
 !provider # MARK: creodias
   name: creodias
@@ -899,7 +910,6 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
-    need_auth: false
     timeout: 120
     ssl_verify: true
     dont_quote:
@@ -1057,6 +1067,8 @@
   auth:
     - !plugin
       type: KeycloakOIDCPasswordAuth
+      required_for:
+        - download
       match:
         href: https://[-\w]+.creodias.eu
       oidc_config_url: https://identity.cloudferro.com/auth/realms/Creodias-new/.well-known/openid-configuration
@@ -1282,7 +1294,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://landsatlook.usgs.gov/stac-server/search
-    need_auth: false
     ssl_verify: true
     discover_queryables:
       fetch_url: null
@@ -1334,6 +1345,8 @@
   auth:
     - !plugin
       type: AwsAuth
+      required_for:
+        - download
       match:
         href: s3://
 
@@ -1348,7 +1361,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v1/search
-    need_auth: false
     ssl_verify: true
     discover_product_types:
       results_entry: '$.collections[?id!="sentinel-s2-l2a-cogs"]'
@@ -1445,6 +1457,8 @@
   auth:
     - !plugin
       type: AwsAuth
+      required_for:
+        - download
       match:
         href: s3://
 
@@ -1459,7 +1473,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v1/search
-    need_auth: false
     ssl_verify: true
     discover_product_types:
       fetch_url: null
@@ -1515,7 +1528,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://earth-search.aws.element84.com/v0/search
-    need_auth: false
     ssl_verify: true
     discover_product_types:
       fetch_url: null
@@ -1577,6 +1589,8 @@
   auth:
     - !plugin
       type: AwsAuth
+      required_for:
+        - download
       match:
         url: s3://
         s3_endpoint: https://storage.googleapis.com
@@ -1643,6 +1657,9 @@
     - !plugin
       type: HTTPHeaderAuth
       ssl_verify: true
+      required_for:
+        - download
+        - search
       headers:
         PRIVATE-TOKEN: "{apikey}"
   download:
@@ -1679,7 +1696,6 @@
             downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
-    need_auth: true
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
@@ -1881,6 +1897,9 @@
       ssl_verify: true
       headers:
         PRIVATE-TOKEN: "{apikey}"
+      required_for:
+        - download
+        - search
   download:
     - !plugin
       type: HTTPDownload
@@ -1915,7 +1934,6 @@
             downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
-    need_auth: true
     ssl_verify: true
     timeout: 30
     end_date_excluded: false
@@ -2175,7 +2193,6 @@
     # The endpoint is based off of the collection. There is a generic endpoint,
     # but can be very slow if not enough metdata is provided.
     api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{collection}/search.json'
-    need_auth: false
     ssl_verify: true
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
@@ -2449,6 +2466,8 @@
       match:
         href: https://copernicus.nci.org.au
       method: basic
+      required_for:
+        - download
 ---
 !provider # MARK: meteoblue
   name: meteoblue
@@ -2460,7 +2479,6 @@
   search: !plugin
     type: MeteoblueSearch
     api_endpoint: 'https://my.meteoblue.com/dataset/query'
-    need_auth: true
     ssl_verify: true
     pagination:
       next_page_query_obj: '{{"checkOnly":true}}'
@@ -2552,6 +2570,9 @@
         href: https?://[a-z]+.meteoblue.com
       auth_uri: 'http://my.meteoblue.com/dataset/meta?dataset=NEMSAUTO'
       ssl_verify: true
+      required_for:
+        - download
+        - search
 ---
 !provider # MARK: cop_dataspace
   name: cop_dataspace
@@ -2563,7 +2584,6 @@
   search: !plugin
     type: ODataV4Search
     api_endpoint: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products'
-    need_auth: false
     timeout: 120
     ssl_verify: true
     dont_quote:
@@ -2741,6 +2761,8 @@
   auth:
     - !plugin
       type: KeycloakOIDCPasswordAuth
+      required_for:
+        - download
       match:
         href: https://catalogue.dataspace.copernicus.eu
       oidc_config_url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/.well-known/openid-configuration
@@ -2950,7 +2972,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://planetarycomputer.microsoft.com/api/stac/v1/search
-    need_auth: false
     ssl_verify: true
     pagination:
       max_items_per_page: 1000
@@ -2999,6 +3020,8 @@
       ssl_verify: true
       headers:
         Ocp-Apim-Subscription-Key: "{apikey}"
+      required_for:
+        - download
 ---
 !provider # MARK: hydroweb_next
   name: hydroweb_next
@@ -3010,7 +3033,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://hydroweb.next.theia-land.fr/api/v1/rs-catalog/stac/search
-    need_auth: true
     auth_error_code: 401
     ssl_verify: true
     asset_key_from_href: false
@@ -3048,6 +3070,9 @@
   auth:
     - !plugin
       type: HTTPHeaderAuth
+      required_for:
+        - download
+        - search
       match:
         href: https://hydroweb.next.theia-land.fr
       headers:
@@ -3104,7 +3129,6 @@
     type: PostJsonSearchWithStacQueryables
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
     timeout: 60
-    need_auth: true
     auth_error_code: 401
     results_entry: 'features'
     pagination:
@@ -3531,6 +3555,9 @@
       token_key: access_token
       refresh_token_key: refresh_token
       token_expiration_key: expires_in
+      required_for:
+        - download
+        - search
   download:
     - !plugin
       type: HTTPDownload
@@ -3606,9 +3633,7 @@
   search: !plugin
     type: WekeoECMWFSearch
     api_endpoint: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search
-    need_auth: true
     timeout: 60
-    need_auth: true
     auth_error_code: 401
     dates_required: true
     results_entry: 'features'
@@ -4011,6 +4036,9 @@
       token_key: access_token
       refresh_token_key: refresh_token
       token_expiration_key: expires_in
+      required_for:
+        - download
+        - search
   download:
     - !plugin
       type: HTTPDownload
@@ -4057,7 +4085,6 @@
   search: !plugin
     type: PostJsonSearch
     api_endpoint: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/search'
-    need_auth: true
     timeout: 60
     auth_error_code: 401
     results_entry: 'features'
@@ -4126,6 +4153,9 @@
       token_type: json
       token_key: access_token
       refresh_token_key: refresh_token
+      required_for:
+        - download
+        - search
   download:
     - !plugin
       type: HTTPDownload
@@ -4167,7 +4197,6 @@
     type: CreodiasS3Search
     api_endpoint: 'https://datahub.creodias.eu/odata/v1/Products'
     s3_endpoint: 'https://eodata.cloudferro.com'
-    need_auth: true
     timeout: 120
     ssl_verify: true
     dont_quote:
@@ -4325,6 +4354,9 @@
       auth_error_code: 403
       match:
         s3_endpoint: 'https://eodata.cloudferro.com'
+      required_for:
+        - download
+        - search
   products:
       # S1
     S1_SAR_RAW:
@@ -4539,7 +4571,6 @@
   url: https://polytope.lumi.apps.dte.destination-earth.eu/openapi
   search: !plugin
     type: ECMWFSearch
-    need_auth: true
     ssl_verify: true
     dates_required: True
     discover_queryables:
@@ -4626,6 +4657,9 @@
       token_provision: header
       login_form_xpath: //form[@id='kc-form-login']
       authentication_uri_source: login-form
+      required_for:
+        - download
+        - search
 ---
 
 !provider # MARK: dedl
@@ -4643,7 +4677,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://hda.data.destination-earth.eu/stac/search
-    need_auth: true
     timeout: 60
     asset_key_from_href: false
     metadata_mapping:
@@ -4708,6 +4741,9 @@
       type: OIDCTokenExchangeAuth
       match:
         href: https://[-\w\.]+.data.destination-earth.eu
+      required_for:
+        - download
+        - search
       subject:
         oidc_config_url: https://auth.destine.eu/realms/desp/.well-known/openid-configuration
         redirect_uri: https://hda.data.destination-earth.eu/stac
@@ -5190,7 +5226,6 @@
   search: !plugin
     type: QueryStringSearch
     api_endpoint: 'https://api.eumetsat.int/data/search-products/1.0.0/os'
-    need_auth: false
     ssl_verify: true
     dont_quote:
       - '='
@@ -5632,6 +5667,8 @@
       token_key: access_token
       token_expiration_key: expires_in
       ssl_verify: true
+      required_for:
+        - download
 
 ---
 !provider # MARK: cop_marine
@@ -5644,7 +5681,6 @@
   search: !plugin
     type: CopMarineSearch
     api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.json'
-    need_auth: false
     ssl_verify: true
     asset_key_from_href: false
     timeout: 20
@@ -5806,6 +5842,8 @@
       match:
         href: s3://
         s3_endpoint: https://s3.waw3-1.cloudferro.com
+      required_for:
+        - download
 
 ---
 !provider  # MARK: geodes
@@ -5818,7 +5856,6 @@
   search: !plugin
     type: StacSearch
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
-    need_auth: false
     ssl_verify: false
     asset_key_from_href: false
     discover_queryables:
@@ -5933,6 +5970,8 @@
         href: https://geodes-portal.cnes.fr
       headers:
         X-API-Key: "{apikey}"
+      required_for:
+        - download
 
 ---
 !provider  # MARK: geodes_s3
@@ -5946,7 +5985,6 @@
     type: StacListAssets
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     s3_endpoint: https://s3.datalake.cnes.fr
-    need_auth: true
     ssl_verify: false
     asset_key_from_href: false
     discover_queryables:
@@ -6056,6 +6094,9 @@
       auth_error_code: 403
       match:
         s3_endpoint: https://s3.datalake.cnes.fr
+      required_for:
+        - download
+        - search
 
 ---
 !provider # MARK: cop_ewds
@@ -6125,6 +6166,9 @@
       ssl_verify: true
       headers:
         PRIVATE-TOKEN: "{apikey}"
+      required_for:
+        - download
+        - search
   download:
     - !plugin
       type: HTTPDownload
@@ -6160,7 +6204,6 @@
             downloadLink: $.json.asset.value.href
   search: !plugin
     type: ECMWFSearch
-    need_auth: true
     ssl_verify: true
     end_date_excluded: false
     dates_required: True

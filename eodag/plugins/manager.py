@@ -63,7 +63,7 @@ def _is_plugin_matching(
     :param matching_config: (optional) config compared to the plugin matching_conf
     :returns: True if the plugin matches the config or the url
     """
-    plugin_matching_conf = getattr(plugin_conf, "match", {})
+    plugin_matching_conf = deepcopy(getattr(plugin_conf, "match", {}))
     plugin_matching_url = plugin_matching_conf.pop("href", None)
     if matching_url:
         if plugin_matching_url and re.match(rf"{plugin_matching_url}", matching_url):
@@ -346,9 +346,10 @@ class PluginManager:
             provider: sorted_providers_config.pop(provider),
             **sorted_providers_config,
         }
-
         for plugin_provider, provider_conf in sorted_providers_config.items():
             plugin_confs = getattr(provider_conf, plugin_type, None)
+            if not plugin_confs:
+                continue
             for plugin_conf in plugin_confs:
                 # plugin without configured match criteria: only works for given provider
                 # we assume that if there are no match criteria given, there is only one plugin
@@ -384,6 +385,7 @@ class PluginManager:
     def get_auth(
         self,
         provider: str,
+        required_for: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
     ) -> Optional[Union[AuthBase, S3SessionKwargs]]:
@@ -391,6 +393,8 @@ class PluginManager:
         authentication plugin
 
         :param provider: The provider for which to get the authentication plugin
+        :param required_for: if the authentication should be done for search or download
+                            (needed to find the right plugin)
         :param matching_url: url to compare with plugin matching_url pattern
         :param matching_conf: configuration to compare with plugin matching_conf
         :returns: All the Authentication plugins for the given criteria
@@ -398,6 +402,11 @@ class PluginManager:
         for auth_plugin in self.get_auth_or_download_plugins(
             "auth", provider, matching_url, matching_conf
         ):
+            if auth_plugin and required_for not in getattr(
+                auth_plugin.config, "required_for", []
+            ):
+                # not the plugin we were looking for
+                continue
             if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
                 try:
                     auth = auth_plugin.authenticate()
