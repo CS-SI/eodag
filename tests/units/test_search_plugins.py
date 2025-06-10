@@ -21,7 +21,7 @@ import os
 import re
 import ssl
 import unittest
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal, Union, get_origin
 from unittest import mock
@@ -1909,15 +1909,11 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         literal_args = get_args(base_type)
         self.assertEqual(literal_args, (Literal["00:00"],))
 
-        # Check that "start" has type typing.Annotated[typing.Union[datetime.datetime, datetime.date], ...]
+        # Check that "start" has type Annotated[str, ...]
         self.assertIn("start", queryables_dedl)
         annotated_type = queryables_dedl["start"]
         args = get_args(annotated_type)
-        base_type = args[0]
-        self.assertEqual(get_origin(base_type), Union)
-        union_args = get_args(base_type)
-        self.assertIn(datetime, union_args)
-        self.assertIn(date, union_args)
+        self.assertEqual(args[0], str)
 
         # Check that "geom" has type Annotated[Union[str, dict[str, float], BaseGeometry], ...]
         self.assertIn("geom", queryables_dedl)
