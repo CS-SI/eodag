@@ -29,7 +29,6 @@ from typing import (
     Optional,
     Sequence,
     TypedDict,
-    Union,
     cast,
     get_args,
 )
@@ -51,12 +50,11 @@ import requests
 import yaml
 from jsonpath_ng import JSONPath
 from lxml import etree
-from pydantic import Field, create_model
+from pydantic import create_model
 from pydantic.fields import FieldInfo
 from requests import Response
 from requests.adapters import HTTPAdapter
 from requests.auth import AuthBase
-from shapely.geometry.base import BaseGeometry
 from urllib3 import Retry
 
 from eodag.api.product import EOProduct
@@ -1928,17 +1926,9 @@ class StacSearch(PostJsonSearch):
             python_queryables = create_model("m", **field_definitions).model_fields
             geom_queryable = python_queryables.pop("geometry", None)
             if geom_queryable:
-                python_queryables["geom"] = geom_queryable
+                python_queryables["geom"] = Queryables.model_fields["geom"]
 
             queryables_dict = model_fields_to_annotated(python_queryables)
-            if "geom" in queryables_dict:
-                queryables_dict["geom"] = Annotated[
-                    Union[str, dict[str, float], BaseGeometry],
-                    Field(
-                        None,
-                        description="Read EODAG documentation for all supported geometry format.",
-                    ),
-                ]
             # append "datetime" as "start" & "end" if needed
             if "datetime" in json_queryables:
                 eodag_queryables = copy_deepcopy(

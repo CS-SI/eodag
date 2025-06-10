@@ -18,14 +18,14 @@
 from __future__ import annotations
 
 from collections import UserDict
-from datetime import date, datetime
 from typing import Annotated, Any, Optional, Union
 
 from annotated_types import Lt
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.fields import FieldInfo
 from pydantic.types import PositiveInt
 from pydantic_core import PydanticUndefined
+from shapely.geometry.base import BaseGeometry
 
 from eodag.types import annotated_dict_to_model, model_fields_to_annotated
 from eodag.utils.repr import remove_class_repr, shorter_type_repr
@@ -72,12 +72,28 @@ class Queryables(CommonQueryables):
     """
 
     start: Annotated[
-        Union[datetime, date], Field(None, alias="startTimeFromAscendingNode")
+        str,
+        Field(
+            None,
+            alias="startTimeFromAscendingNode",
+            description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
+        ),
     ]
     end: Annotated[
-        Union[datetime, date], Field(None, alias="completionTimeFromAscendingNode")
+        str,
+        Field(
+            None,
+            alias="completionTimeFromAscendingNode",
+            description="Date/time as string in ISO 8601 format (e.g. '2024-06-10T12:00:00Z')",
+        ),
     ]
-    geom: Annotated[str, Field(None, alias="geometry")]
+    geom: Annotated[
+        Union[str, dict[str, float], BaseGeometry],
+        Field(
+            None,
+            description="Read EODAG documentation for all supported geometry format.",
+        ),
+    ]
     uid: Annotated[str, Field(None)]
     # OpenSearch Parameters for Collection Search (Table 3)
     doi: Annotated[str, Field(None)]
@@ -149,6 +165,8 @@ class Queryables(CommonQueryables):
     # Custom parameters (not defined in the base document referenced above)
     id: Annotated[str, Field(None)]
     tileIdentifier: Annotated[str, Field(None, pattern=r"[0-9]{2}[A-Z]{3}")]
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class QueryablesDict(UserDict[str, Any]):
