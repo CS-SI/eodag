@@ -608,7 +608,7 @@ class Download(PluginTopic):
                             if (
                                 product.properties.get("storageStatus", ONLINE_STATUS)
                                 == ONLINE_STATUS
-                            ) or timeout < 0:
+                            ) or timeout <= 0:
                                 return download
 
                         if not getattr(self.config, "order_enabled", False):
