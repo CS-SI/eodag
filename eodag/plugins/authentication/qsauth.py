@@ -72,7 +72,13 @@ class HttpQueryStringAuth(Authentication):
         """Authenticate"""
         self.validate_config_credentials()
 
-        auth = QueryStringAuth(**self.config.credentials)
+        credentials = self.config.credentials
+        required_credentials = getattr(self.config, "required_credentials", None)
+        if required_credentials:
+            credentials = {
+                k: credentials[k] for k in credentials if k in required_credentials
+            }
+        auth = QueryStringAuth(**credentials)
 
         auth_uri = getattr(self.config, "auth_uri", None)
         ssl_verify = getattr(self.config, "ssl_verify", True)

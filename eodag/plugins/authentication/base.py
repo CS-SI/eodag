@@ -58,6 +58,12 @@ class Authentication(PluginTopic):
             raise MisconfiguredError(
                 f"Missing credentials for provider {self.provider}"
             )
+        # check if only specific credentials are required for the plugin
+        required_credentials = getattr(self.config, "required_credentials", None)
+        if required_credentials:
+            credentials = {
+                k: credentials[k] for k in credentials if k in required_credentials
+            }
         # Credentials keys but values are None.
         missing_credentials = [
             cred_name

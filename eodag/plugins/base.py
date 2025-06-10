@@ -68,6 +68,6 @@ class PluginTopic(metaclass=EODAGPluginMount):
         return "{}(provider={}, priority={}, topic={})".format(
             self.__class__.__name__,
             self.provider,
-            self.config.priority,
+            getattr(self.config, "priority", 0),
             self.__class__.mro()[-3].__name__,
         )
