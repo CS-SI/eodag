@@ -346,6 +346,7 @@ class PluginManager:
             provider: sorted_providers_config.pop(provider),
             **sorted_providers_config,
         }
+
         for plugin_provider, provider_conf in sorted_providers_config.items():
             plugin_confs = getattr(provider_conf, plugin_type, None)
             if not plugin_confs:
