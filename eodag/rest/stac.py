@@ -58,6 +58,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     RequestError,
     TimeOutError,
+    ValidationError,
 )
 from eodag.utils.requests import fetch_json
 
@@ -857,9 +858,12 @@ class StacCollection(StacCommon):
 
         _bbox_poly = None
         if bbox:
-            _bbox = [float(x) for x in bbox.split(",")]
-            SearchPostRequest.validate_bbox(_bbox)  # type: ignore
-            _bbox_poly = Polygon.from_bounds(*_bbox)
+            try:
+                _bbox = [float(x) for x in bbox.split(",")]
+                SearchPostRequest.validate_bbox(_bbox)  # type: ignore
+                _bbox_poly = Polygon.from_bounds(*_bbox)
+            except ValueError as e:
+                raise ValidationError(f"Wrong bbox: {e}")
 
         # list product types with all metadata using guessed ids
         collection_list: list[dict[str, Any]] = []
