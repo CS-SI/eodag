@@ -32,6 +32,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
+from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MISSION_START_DATE,
@@ -359,7 +360,19 @@ class DataRequestSearch(Search):
         ssl_verify = getattr(self.config.ssl_verify, "ssl_verify", True)
         try:
             url = self.config.data_request_url
-            request_body = format_query_params(eodag_product_type, self.config, kwargs)
+            try:
+                request_body = format_query_params(
+                    eodag_product_type, self.config, kwargs
+                )
+            except ValidationError as err:
+                not_queryable_search_param = Queryables.get_queryable_from_alias(
+                    str(err.message).split(":")[-1].strip()
+                )
+                raise ValidationError(
+                    f"Search parameters which are not queryable are disallowed for {product_type} on "
+                    f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
+                    {not_queryable_search_param},
+                ) from err
             logger.debug(
                 f"Sending search job request to {url} with {str(request_body)}"
             )
