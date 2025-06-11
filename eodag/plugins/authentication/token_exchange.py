@@ -79,7 +79,7 @@ class OIDCTokenExchangeAuth(Authentication):
             provider,
             PluginConfig.from_mapping(
                 {
-                    "credentials": getattr(self.config, "credentials", {}),
+                    "credentials": self.get_required_credentials(),
                     **self.config.subject,
                 }
             ),

@@ -1829,14 +1829,6 @@ class EODataAccessGateway:
 
         try:
             prep = PreparedSearch(count=count)
-            print(
-                self._plugins_manager.get_auth(
-                    search_plugin.provider,
-                    "search",
-                    getattr(search_plugin.config, "api_endpoint", None),
-                    search_plugin.config,
-                )
-            )
             # append auth if available
             if auth := self._plugins_manager.get_auth(
                 search_plugin.provider,
@@ -1844,7 +1836,6 @@ class EODataAccessGateway:
                 getattr(search_plugin.config, "api_endpoint", None),
                 search_plugin.config,
             ):
-                print("auth")
                 prep.auth = auth
 
             prep.page = kwargs.pop("page", None)
