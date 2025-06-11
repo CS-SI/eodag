@@ -1562,10 +1562,10 @@
         title: '$.properties."sentinel:product_id"'
         platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
         polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
-        utmZone: '$.properties."sentinel:utm_zone"'
-        latitudeBand: '$.properties."sentinel:latitude_band"'
-        gridSquare: '$.properties."sentinel:grid_square"'
-        downloadLink: 's3://gcp-public-data-sentinel-2/tiles/{utmZone}/{latitudeBand}/{gridSquare}/{title}.SAFE'
+        utmZone: '$.properties."mgrs:utm_zone"'
+        latitudeBand: '$.properties."mgrs:latitude_band"'
+        gridSquare: '$.properties."mgrs:grid_square"'
+        downloadLink: 's3://sentinel-s2-l1c/tiles/{utmZone}/{latitudeBand}/{gridSquare}/{title}.SAFE'
     L8_OLI_TIRS_C1L1:
       productType: landsat-8-l1-c1
       metadata_mapping:
@@ -1581,8 +1581,7 @@
       ignore_assets: True
       ssl_verify: true
       match:
-        url: s3://
-        s3_endpoint: https://storage.googleapis.com
+        href: s3://
       products:
         S2_MSI_L1C:
           default_bucket: 'gcp-public-data-sentinel-2'
@@ -4347,7 +4346,7 @@
       s3_bucket: 'eodata'
       ssl_verify: true
       match:
-        s3_endpoint: 'https://eodata.cloudferro.com'
+        href: 's3://eodata'
   auth:
     - !plugin
       type: AwsAuth
@@ -5834,8 +5833,7 @@
       s3_endpoint: https://s3.waw3-1.cloudferro.com
       bucket_path_level: 0
       match:
-        href: s3://
-        s3_endpoint: https://s3.waw3-1.cloudferro.com
+        href: https://s3.waw3-1.cloudferro.com
   auth:
     - !plugin
       type: AwsAuth
