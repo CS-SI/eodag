@@ -152,8 +152,8 @@ class TokenAuth(Authentication):
 
         # Use a thread lock to avoid several threads requesting the token at the same time
         with self.auth_lock:
-            expiration_margin = getattr(
-                self.config, "token_expiration_margin", timedelta(seconds=60)
+            expiration_margin = timedelta(
+                seconds=getattr(self.config, "token_expiration_margin", 60)
             )
             self.validate_config_credentials()
             if (

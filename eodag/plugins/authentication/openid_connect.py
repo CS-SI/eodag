@@ -117,8 +117,8 @@ class OIDCRefreshTokenBase(Authentication):
 
     def _get_access_token(self) -> str:
         now = datetime.now(timezone.utc)
-        expiration_margin = getattr(
-            self.config, "token_expiration_margin", timedelta(seconds=60)
+        expiration_margin = timedelta(
+            seconds=getattr(self.config, "token_expiration_margin", 60)
         )
 
         if self.access_token and self.access_token_expiration - now > expiration_margin:
