@@ -202,7 +202,7 @@ class StaticStacSearch(StacSearch):
             return_value=MockResponse(feature_collection, 200),
         ):
             eo_products, _ = super(StaticStacSearch, self).query(
-                PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
+                PreparedSearch(items_per_page=nb_features, page=1), **kwargs
             )
         # filter using query params
         search_result = SearchResult(eo_products)

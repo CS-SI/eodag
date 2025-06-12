@@ -313,24 +313,48 @@ class TestCoreSearchResults(EODagTestCase):
         # use given provider and not preferred provider
         self.assertEqual("peps", search_results[0].provider)
 
-    @mock.patch("eodag.plugins.search.qssearch.urlopen", autospec=True)
-    def test_core_search_with_count(self, mock_urlopen):
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+    )
+    def test_core_search_with_count(self, mock_query):
         """The core search must use the count parameter"""
+        # QueryStringSearch providers
+        search_results_file = os.path.join(
+            TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
+        )
+        with open(search_results_file, encoding="utf-8") as f:
+            search_results_geojson = json.load(f)
+        products = SearchResult.from_geojson(search_results_geojson)
 
-        # count disabled by default
+        mock_query.return_value = (products.data, len(products))
+
+        # when count is not specified, the configuration of the provider is used
+
+        # with a count parameter set to False in the provider configuration
         search_results = self.dag.search(productType="S2_MSI_L1C", provider="creodias")
-        self.assertNotIn(
-            self.dag.providers_config["creodias"].search.pagination["count_tpl"],
-            mock_urlopen.call_args_list[-1][0][0].full_url,
+        self.assertFalse(
+            getattr(
+                self.dag.providers_config["creodias"].search.pagination, "count", None
+            )
         )
         self.assertIsNone(search_results.number_matched)
 
-        # count enabled
+        # if there is no count parameter in the configuration, it defaults to True
+        search_results = self.dag.search(productType="S2_MSI_L1C", provider="peps")
+        self.assertIsNone(
+            getattr(self.dag.providers_config["peps"].search.pagination, "count", None)
+        )
+        self.assertIsNotNone(search_results.number_matched)
+
+        # count enabled by the user
         search_results = self.dag.search(
             productType="S2_MSI_L1C", provider="creodias", count=True
         )
-        self.assertIn(
-            self.dag.providers_config["creodias"].search.pagination["count_tpl"],
-            mock_urlopen.call_args_list[-1][0][0].full_url,
-        )
         self.assertIsNotNone(search_results.number_matched)
+
+        # count disabled by the user
+        search_results = self.dag.search(
+            productType="S2_MSI_L1C", provider="creodias", count=False
+        )
+        self.assertIsNone(search_results.number_matched)

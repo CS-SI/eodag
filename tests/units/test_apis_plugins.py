@@ -180,7 +180,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         EcmwfApi.query must build a EOProduct from input parameters without product type.
         For test only, result cannot be downloaded.
         """
-        results, count = self.api_plugin.query(**self.query_dates)
+        results, count = self.api_plugin.query(
+            PreparedSearch(count=True), **self.query_dates
+        )
         assert count == 1
         eoproduct = results[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)

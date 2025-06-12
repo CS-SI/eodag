@@ -896,6 +896,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
+      count: false
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
     sort:
@@ -2523,6 +2524,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
+      count: false
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
     sort:
@@ -4096,6 +4098,7 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
+      count: false
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
     sort:

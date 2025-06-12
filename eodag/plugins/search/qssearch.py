@@ -159,6 +159,8 @@ class QueryStringSearch(Search):
             returns a json or xml document
           * :attr:`~eodag.config.PluginConfig.Pagination.count_endpoint` (``str``): The endpoint for counting the number
             of items satisfying a request
+          * :attr:`~eodag.config.PluginConfig.Pagination.count` (``bool``): Whether the provider default search counts
+            items or not
           * :attr:`~eodag.config.PluginConfig.Pagination.count_tpl` (``str``): template for the count parameter that
             should be added to the search request
           * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_key_path` (``str``): A JsonPath expression used

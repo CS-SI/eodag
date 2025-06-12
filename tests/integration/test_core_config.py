@@ -336,7 +336,7 @@ class TestCoreProvidersConfig(TestCase):
             search={
                 "type": "QueryStringSearch",
                 "api_endpoint": "https://foo.bar/search",
-                "pagination": {"next_page_url_tpl": ""},
+                "pagination": {"next_page_url_tpl": "", "count": False},
                 "metadata_mapping": {"bar": "$.properties.bar"},
             },
         )
@@ -358,7 +358,7 @@ class TestCoreProvidersConfig(TestCase):
             search={
                 "type": "QueryStringSearch",
                 "api_endpoint": "https://foo.bar/search",
-                "pagination": {"next_page_url_tpl": ""},
+                "pagination": {"next_page_url_tpl": "", "count": False},
                 "metadata_mapping": {"bar": "$.properties.baz"},
             },
         )

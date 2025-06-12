@@ -1127,7 +1127,7 @@ class EODataAccessGateway:
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
-        count: bool = False,
+        count: Optional[bool] = None,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1803,7 +1803,7 @@ class EODataAccessGateway:
     def _do_search(
         self,
         search_plugin: Union[Search, Api],
-        count: bool = False,
+        count: Optional[bool] = None,
         raise_errors: bool = False,
         **kwargs: Any,
     ) -> SearchResult:
@@ -1833,6 +1833,12 @@ class EODataAccessGateway:
                 kwargs["items_per_page"],
                 max_items_per_page,
             )
+
+        count = (
+            search_plugin.config.pagination.get("count", True)
+            if count is None
+            else count
+        )
 
         results: list[EOProduct] = []
         total_results: Optional[int] = 0 if count else None

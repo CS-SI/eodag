@@ -224,6 +224,8 @@ class PluginConfig(yaml.YAMLObject):
         #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
         #: search request
         count_tpl: str
+        # Whether count is enabled by default in search request on the provider or not
+        count: bool
         #: The f-string template for pagination requests.
         next_page_url_tpl: str
         #: The query-object for POST pagination requests.
