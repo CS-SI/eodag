@@ -142,16 +142,21 @@ Core configuration using environment variables
 
 Some EODAG core settings can be overriden using environment variables:
 
-* ``EODAG_CFG_DIR`` customized configuration directory in place of ``~/.config/eodag``
+* ``EODAG_CFG_DIR`` customized configuration directory in place of `~/.config/eodag`.
 * ``EODAG_CFG_FILE`` for defining the desired path to the `user configuration file\
   <https://eodag.readthedocs.io/en/stable/getting_started_guide/configure.html#yaml-user-configuration-file>`_
+  in place of `~/.config/eodag/eodag.yml`.
 * ``EODAG_LOCS_CFG_FILE`` for defining the desired path to the
   `locations <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/4_search.html#Locations-search>`_
-  configuration file
-* ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file
-* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the product types configuration file
+  configuration file in place of `~/.config/eodag/locations.yml`.
+* ``EODAG_PROVIDERS_CFG_FILE`` for defining the desired path to the providers configuration file in place of
+  `<python-site-packages>/eodag/resources/providers.yml`.
+* ``EODAG_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the product types configuration file in place of
+  `<python-site-packages>/eodag/resources/product_types.yml`.
 * ``EODAG_EXT_PRODUCT_TYPES_CFG_FILE`` for defining the desired path to the `external product types configuration file\
   <https://eodag.readthedocs.io/en/stable/notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_
+  in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
+  If the file is not readable, only user-modified providers will be fetched.
 
 CLI configuration
 ^^^^^^^^^^^^^^^^^
