@@ -159,6 +159,7 @@ class StaticStacSearch(StacSearch):
         **kwargs: Any,
     ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on a static STAC Catalog"""
+        count = prep.count
 
         # only return 1 page if pagination is disabled
         if (
@@ -167,7 +168,7 @@ class StaticStacSearch(StacSearch):
             and prep.items_per_page is not None
             and prep.items_per_page <= 0
         ):
-            return ([], 0) if prep.count else ([], None)
+            return ([], 0) if count else ([], None)
 
         product_type = kwargs.get("productType", prep.product_type)
         # provider product type specific conf
@@ -247,6 +248,6 @@ class StaticStacSearch(StacSearch):
 
         return (
             (search_result.data, len(search_result))
-            if prep.count
+            if count
             else (search_result.data, None)
         )

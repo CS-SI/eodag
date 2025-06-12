@@ -734,7 +734,7 @@ class QueryStringSearch(Search):
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
-            return ([], 0) if prep.count else ([], None)
+            return ([], 0) if count else ([], None)
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         prep.sort_by_qs, _ = (
@@ -1549,7 +1549,7 @@ class PostJsonSearch(QueryStringSearch):
             for k in keywords.keys()
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
-            return ([], 0) if prep.count else ([], None)
+            return ([], 0) if count else ([], None)
         prep.query_params = dict(qp, **sort_by_qp)
         prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
         if not count and getattr(prep, "need_count", False):
