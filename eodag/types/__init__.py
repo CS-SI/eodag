@@ -183,6 +183,8 @@ def json_field_definition_to_python(
     )
 
     enum = json_field_definition.get("enum")
+    const = json_field_definition.get("const")
+    anyOf = json_field_definition.get("anyOf")
 
     if python_type in (list, set):
         items = json_field_definition.get("items")
@@ -194,11 +196,19 @@ def json_field_definition_to_python(
                 )
             ]
         elif isinstance(items, dict):
-            enum = items.get("enum")
+            if "enum" in items:
+                enum = items.get("enum")
+            elif "const" in items:
+                const = items.get("const")
 
     if enum:
         literal = Literal[tuple(sorted(enum))]  # type: ignore
         python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
+    elif const:
+        literal = Literal[const]
+        python_type = list[literal] if python_type in (list, set) else literal  # type: ignore
+    elif anyOf:
+        python_type = str
 
     if "$ref" in json_field_definition:
         field_type_kwargs["json_schema_extra"] = {"$ref": json_field_definition["$ref"]}
