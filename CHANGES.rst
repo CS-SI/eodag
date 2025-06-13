@@ -3,6 +3,63 @@ Release history
 ===============
 
 
+v3.4.3 (2025-06-12)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Queryables mismatch when list of possible values contains a single value (`#1666`_,
+  `538331d`_)
+
+* **plugins**: GenericAuth missing credentials handle (`#1678`_, `576a2ac`_)
+
+* **plugins**: Openid_connect requests error handling (#1320) (`#1663`_, `9926083`_)
+
+* **plugins**: Order retry (`#1676`_, `3602426`_)
+
+* **providers**: Dedl mapping for CORINE collection (`#1661`_, `4c61b54`_)
+
+* **providers**: Wekeo_main orderable products download (`#1670`_, `d573846`_)
+
+Chores
+------
+
+* **deploy**: Remove deprecated common values (`154ea6d`_)
+
+Documentation
+-------------
+
+* Configuration environment variables defaults (`#1681`_, `6e8eb6b`_)
+
+* Updated contribution guidelines link in PR template (`#1667`_, `e5cd082`_)
+
+Refactoring
+-----------
+
+* Typing fixes following mypy 1.16.0 (`#1673`_, `ece52c0`_)
+
+.. _#1661: https://github.com/CS-SI/eodag/pull/1661
+.. _#1663: https://github.com/CS-SI/eodag/pull/1663
+.. _#1666: https://github.com/CS-SI/eodag/pull/1666
+.. _#1667: https://github.com/CS-SI/eodag/pull/1667
+.. _#1670: https://github.com/CS-SI/eodag/pull/1670
+.. _#1673: https://github.com/CS-SI/eodag/pull/1673
+.. _#1676: https://github.com/CS-SI/eodag/pull/1676
+.. _#1678: https://github.com/CS-SI/eodag/pull/1678
+.. _#1681: https://github.com/CS-SI/eodag/pull/1681
+.. _154ea6d: https://github.com/CS-SI/eodag/commit/154ea6d035572e64c3a434bb41c095c9b4cc76b2
+.. _3602426: https://github.com/CS-SI/eodag/commit/360242653ddc2a5c8587b37b3d91800459f4c243
+.. _4c61b54: https://github.com/CS-SI/eodag/commit/4c61b540ee46a8ae70932d64e9d373653763eb16
+.. _538331d: https://github.com/CS-SI/eodag/commit/538331d30085a814307173913ff831ca5a3397af
+.. _576a2ac: https://github.com/CS-SI/eodag/commit/576a2ac95044d10367e91e5ef843fb33a921f5f5
+.. _6e8eb6b: https://github.com/CS-SI/eodag/commit/6e8eb6b94eaad6294fea45d764a0e7c18a4e6823
+.. _9926083: https://github.com/CS-SI/eodag/commit/99260837837c3b5f2eeac8b95dc2b2feae7a0390
+.. _d573846: https://github.com/CS-SI/eodag/commit/d5738465930e08b24d562af3b7bc040464ff970a
+.. _e5cd082: https://github.com/CS-SI/eodag/commit/e5cd082aa81eedb62cd48b7974362c99a6899d9c
+.. _ece52c0: https://github.com/CS-SI/eodag/commit/ece52c07685e5df21cfda0b6ddc6a7416194406c
+
+
 v3.4.2 (2025-05-15)
 ===================
 
