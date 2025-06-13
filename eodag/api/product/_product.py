@@ -143,7 +143,7 @@ class EOProduct:
             and "defaultGeometry" not in properties
         ):
             raise MisconfiguredError(
-                f"No geometry available to build EOProduct(id={properties.get('id', None)}, provider={provider})"
+                f"No geometry available to build EOProduct(id={properties.get('id')}, provider={provider})"
             )
         elif not properties["geometry"] or properties["geometry"] == NOT_AVAILABLE:
             product_geometry = properties.pop("defaultGeometry", DEFAULT_GEOMETRY)
@@ -445,7 +445,7 @@ class EOProduct:
                     }
                 )
 
-        if self.properties.get("quicklook", None) is None:
+        if self.properties.get("quicklook") is None:
             logger.warning(
                 "Missing information to retrieve quicklook for EO product: %s",
                 self.properties["id"],
@@ -555,7 +555,7 @@ class EOProduct:
         return NoDriver()
 
     def _repr_html_(self):
-        thumbnail = self.properties.get("thumbnail", None)
+        thumbnail = self.properties.get("thumbnail")
         thumbnail_html = (
             f"<img src='{thumbnail}' width=100 alt='thumbnail'/>"
             if thumbnail and not thumbnail.startswith("s3")
@@ -576,12 +576,12 @@ class EOProduct:
                         {dict_to_html_table({
                          "provider": self.provider,
                          "product_type": self.product_type,
-                         "properties[&quot;id&quot;]": self.properties.get('id', None),
+                         "properties[&quot;id&quot;]": self.properties.get('id'),
                          "properties[&quot;startTimeFromAscendingNode&quot;]": self.properties.get(
-                             'startTimeFromAscendingNode', None
+                             'startTimeFromAscendingNode'
                          ),
                          "properties[&quot;completionTimeFromAscendingNode&quot;]": self.properties.get(
-                             'completionTimeFromAscendingNode', None
+                             'completionTimeFromAscendingNode'
                          ),
                          }, brackets=False)}
                         <details><summary style='color: grey; margin-top: 10px;'>properties:&ensp;({len(

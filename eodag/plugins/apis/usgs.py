@@ -241,7 +241,7 @@ class UsgsApi(Api):
             download_options = api.download_options(
                 usgs_dataset, list(results_by_entity_id.keys())
             )
-            if download_options.get("data", None) is not None:
+            if download_options.get("data") is not None:
                 for download_option in download_options["data"]:
                     # update results with available downloadSystem
                     if (

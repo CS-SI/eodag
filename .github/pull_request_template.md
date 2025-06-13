@@ -1,5 +1,5 @@
 ### Your checklist for this pull request
-Please review the [guidelines for contributing](../CONTRIBUTING.md) to this repository.
+Please review the [guidelines for contributing](https://eodag.readthedocs.io/en/latest/contribute.html) to this repository.
 
 - [ ] Make sure you are making a pull request against the **develop branch** (left side). Also you should start *your branch* off *our develop*.
 - [ ] Check the commit's or even all commits' message styles matches our requested structure.

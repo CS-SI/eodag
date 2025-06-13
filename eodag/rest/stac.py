@@ -433,14 +433,14 @@ class StacItem(StacCommon):
                     ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
                 else:
                     assets[asset_key]["href"] += f"/{asset_key}"
-                if asset_type := asset_value.get("type", None):
+                if asset_type := asset_value.get("type"):
                     assets[asset_key]["type"] = asset_type
                     if origin := assets[asset_key].get("alternate", {}).get("origin"):
                         origin["type"] = asset_type
                 asset_value["href"] = _quote_url_path(asset_value["href"])
 
         if thumbnail_url := product.properties.get(
-            "quicklook", product.properties.get("thumbnail", None)
+            "quicklook", product.properties.get("thumbnail")
         ):
             assets["thumbnail"] = {
                 "title": "Thumbnail",

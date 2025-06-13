@@ -142,7 +142,7 @@ class S3RestDownload(Download):
             **kwargs: Unpack[DownloadConf],
         ):
             # check order status
-            if product.properties.get("orderStatusLink", None):
+            if product.properties.get("orderStatusLink"):
                 self.http_download_plugin._order_status(product=product, auth=auth)
 
             # get bucket urls
@@ -272,7 +272,7 @@ class S3RestDownload(Download):
 
             # total size for progress_callback
             size_list: list[int] = [
-                int(node.firstChild.nodeValue)  # type: ignore[attr-defined]
+                int(node.firstChild.nodeValue or 0)
                 for node in xmldoc.getElementsByTagName("Size")
                 if node.firstChild is not None
             ]
@@ -281,9 +281,13 @@ class S3RestDownload(Download):
 
             # download each node key
             for node_xml in nodes_xml_list:
-                node_key = unquote(
-                    node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue  # type: ignore[union-attr]
-                )
+                node_key = node_xml.getElementsByTagName("Key")[0].firstChild.nodeValue  # type: ignore[union-attr]
+                if node_key is None:
+                    logger.debug(
+                        "Node key is None, skipping this node: %s", node_xml.toxml()
+                    )
+                    continue
+                node_key = unquote(node_key)
                 # As "Key", "Size" and "ETag" (md5 hash) can also be retrieved from node_xml
                 node_url = urljoin(bucket_url.strip("/") + "/", node_key.strip("/"))
                 # output file location

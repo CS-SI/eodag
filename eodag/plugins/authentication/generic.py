@@ -46,7 +46,11 @@ class GenericAuth(Authentication):
         """Authenticate"""
         self.validate_config_credentials()
         method = getattr(self.config, "method", "basic")
-
+        if not all(x in self.config.credentials for x in ["username", "password"]):
+            raise MisconfiguredError(
+                f"Missing credentials for provider {self.provider}",
+                "You must provide 'username' and 'password' in the configuration.",
+            )
         if method == "digest":
             return HTTPDigestAuth(
                 self.config.credentials["username"],

@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 
+from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -600,15 +601,21 @@ class Download(PluginTopic):
                     if datetime_now >= product.next_try:
                         product.next_try += timedelta(minutes=wait)
                         try:
-                            return order_download(*args, **kwargs)
-
+                            download = order_download(*args, **kwargs)
                         except NotAvailableError as e:
-                            if not getattr(self.config, "order_enabled", False):
-                                raise NotAvailableError(
-                                    f"Product is not available for download and order is not supported for"
-                                    f" {self.provider}, {e}"
-                                )
                             not_available_info = str(e)
+                        else:
+                            if (
+                                product.properties.get("storageStatus", ONLINE_STATUS)
+                                == ONLINE_STATUS
+                            ) or timeout <= 0:
+                                return download
+
+                        if not getattr(self.config, "order_enabled", False):
+                            raise NotAvailableError(
+                                f"Product is not available for download and order is not supported for"
+                                f" {self.provider}, {not_available_info}"
+                            )
 
                     if datetime_now >= product.next_try and datetime_now < stop_time:
                         wait_seconds: Union[float, int] = (

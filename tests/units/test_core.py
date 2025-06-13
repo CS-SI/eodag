@@ -1026,7 +1026,7 @@ class TestCore(TestCoreBase):
                 continue
             if hasattr(
                 provider_search_config, "discover_product_types"
-            ) and provider_search_config.discover_product_types.get("fetch_url", None):
+            ) and provider_search_config.discover_product_types.get("fetch_url"):
                 mock_get_ext_product_types_conf.return_value[provider] = {}
         self.dag.fetch_product_types_list()
         self.assertTrue(self.dag.providers_config["earth_search"].product_types_fetched)
@@ -1140,9 +1140,7 @@ class TestCore(TestCoreBase):
                     continue
                 if hasattr(
                     provider_search_config, "discover_product_types"
-                ) and provider_search_config.discover_product_types.get(
-                    "fetch_url", None
-                ):
+                ) and provider_search_config.discover_product_types.get("fetch_url"):
                     mock_get_ext_product_types_conf.return_value[provider] = {}
 
             self.dag.fetch_product_types_list()
@@ -1927,7 +1925,7 @@ class TestCore(TestCoreBase):
 
         # check if sortables are set to None when the provider does not support the sorting feature
         self.assertFalse(hasattr(self.dag.providers_config["peps"].search, "sort"))
-        self.assertEqual(sortables["peps"], None)
+        self.assertIsNone(sortables["peps"])
 
         # check if sortable parameter(s) and its (their) maximum number of a provider are set
         # to their value when the provider supports the sorting feature and has a maximum number of sortables
@@ -2766,7 +2764,7 @@ class TestCoreSearch(TestCoreBase):
             items_per_page=2,
         )
         self.assertEqual(len(sr), self.search_results_size)
-        self.assertEqual(sr.number_matched, None)
+        self.assertIsNone(sr.number_matched)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_null_count(self, search_plugin):
@@ -3506,13 +3504,13 @@ class TestCoreProviderGroup(TestCoreBase):
             if (
                 provider not in self.group
                 and hasattr(provider_search_config, "discover_product_types")
-                and provider_search_config.discover_product_types.get("fetch_url", None)
+                and provider_search_config.discover_product_types.get("fetch_url")
             ):
                 mock_get_ext_product_types_conf.return_value[provider] = {}
             # update grouped providers conf and check that discover_product_types() is launched for them
             if provider in self.group and getattr(
                 provider_search_config, "discover_product_types", {}
-            ).get("fetch_url", None):
+            ).get("fetch_url"):
                 provider_search_config_key = (
                     "search" if hasattr(provider_config, "search") else "api"
                 )
