@@ -140,6 +140,9 @@ DEFAULT_MAX_ITEMS_PER_PAGE = 50
 # default product-types start date
 DEFAULT_MISSION_START_DATE = "2015-01-01T00:00:00.000Z"
 
+# default token expiration margin in seconds
+DEFAULT_TOKEN_EXPIRATION_MARGIN = 60
+
 # update missing mimetypes
 mimetypes.add_type("text/xml", ".xsd")
 mimetypes.add_type("application/x-grib", ".grib")

@@ -30,7 +30,14 @@ from lxml import etree
 from requests.auth import AuthBase
 
 from eodag.plugins.authentication import Authentication
-from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, parse_qs, repeatfunc, urlparse
+from eodag.utils import (
+    DEFAULT_TOKEN_EXPIRATION_MARGIN,
+    HTTP_REQ_TIMEOUT,
+    USER_AGENT,
+    parse_qs,
+    repeatfunc,
+    urlparse,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -118,7 +125,9 @@ class OIDCRefreshTokenBase(Authentication):
     def _get_access_token(self) -> str:
         now = datetime.now(timezone.utc)
         expiration_margin = timedelta(
-            seconds=getattr(self.config, "token_expiration_margin", 60)
+            seconds=getattr(
+                self.config, "token_expiration_margin", DEFAULT_TOKEN_EXPIRATION_MARGIN
+            )
         )
 
         if self.access_token and self.access_token_expiration - now > expiration_margin:
@@ -275,6 +284,8 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
           Refers to the name of the query param to be used in the query request
         * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): The key pointing to
           the refresh_token in the json response to the POST request to the token server
+        * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds)
+           before a token is considered expired. Default: 60 seconds.
 
     """
 

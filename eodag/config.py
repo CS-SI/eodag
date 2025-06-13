@@ -628,12 +628,12 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
     #: Identifies the issuer of the `subject_token`
     subject_issuer: str
-    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
-    #: Audience that the token ID is intended for. :attr:`~eodag.config.PluginConfig.client_id` of the Relying Party
-    token_expiration_margin: int
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth`
     #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: Safety buffer to prevent token rejection from unexpected expiry between validity check and request.
+    token_expiration_margin: int
+    #: :class:`~eodag.plugins.authentication.token_exchange.OIDCTokenExchangeAuth`
+    #: Audience that the token ID is intended for. :attr:`~eodag.config.PluginConfig.client_id` of the Relying Party
     audience: str
     #: :class:`~eodag.plugins.authentication.generic.GenericAuth`
     #: which authentication method should be used
