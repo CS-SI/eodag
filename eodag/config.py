@@ -689,6 +689,8 @@ def load_default_config() -> dict[str, ProviderConfig]:
 def load_config(config_path: str) -> dict[str, ProviderConfig]:
     """Load the providers configuration into a dictionary from a given file
 
+    If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
+
     :param config_path: The path to the provider config file
     :returns: The default provider's configuration
     """
@@ -701,10 +703,21 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     except yaml.parser.ParserError as e:
         logger.error("Unable to load configuration")
         raise e
+
     stac_provider_config = load_stac_provider_config()
+
+    whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
+    whitelist = None
+    if whitelist_env:
+        whitelist = {provider for provider in whitelist_env.split(",")}
+        logger.info("Using providers whitelist: %s", ", ".join(whitelist))
+
     for provider_config in providers_configs:
+        if whitelist and provider_config.name not in whitelist:
+            continue
         provider_config_init(provider_config, stac_provider_config)
         config[provider_config.name] = provider_config
+
     return config
 
 
@@ -818,6 +831,7 @@ def override_config_from_file(config: dict[str, Any], file_path: str) -> None:
         except yaml.parser.ParserError as e:
             logger.error("Unable to load user configuration file")
             raise e
+
     override_config_from_mapping(config, config_in_file)
 
 
@@ -894,11 +908,22 @@ def override_config_from_env(config: dict[str, Any]) -> None:
 def override_config_from_mapping(
     config: dict[str, Any], mapping: dict[str, Any]
 ) -> None:
-    """Override a configuration with the values in a mapping
+    """Override a configuration with the values in a mapping.
+
+    If the environment variable ``EODAG_PROVIDERS_WHITELIST`` is set (as a comma-separated list of provider names),
+    only the listed providers will be used from the mapping. All other providers in the mapping will be ignored.
 
     :param config: An eodag providers configuration dictionary
     :param mapping: The mapping containing the values to be overriden
     """
+    whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
+    whitelist = None
+    if whitelist_env:
+        whitelist = {provider for provider in whitelist_env.split(",")}
+        keys_to_remove = [key for key in mapping if key not in whitelist]
+        for key in keys_to_remove:
+            del mapping[key]
+
     for provider, new_conf in mapping.items():
         # check if metada-mapping as already been built as jsonpath in providers_config
         if not isinstance(new_conf, dict):
