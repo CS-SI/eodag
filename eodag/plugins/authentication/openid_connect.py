@@ -285,7 +285,7 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
         * :attr:`~eodag.config.PluginConfig.refresh_token_key` (``str``): The key pointing to
           the refresh_token in the json response to the POST request to the token server
         * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds)
-           before a token is considered expired. Default: 60 seconds.
+          before a token is considered expired. Default: 60 seconds.
 
     """
 
