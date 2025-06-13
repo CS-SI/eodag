@@ -52,11 +52,15 @@ from tests.context import (
 
 
 class TestUtils(unittest.TestCase):
+    """Unit tests for utility functions in eodag.utils."""
+
     def setUp(self) -> None:
+        """Set up logging before each test."""
         super(TestUtils, self).setUp()
         setup_logging(verbose=1)
 
     def tearDown(self) -> None:
+        """Reset logging after each test."""
         super(TestUtils, self).tearDown()
         # reset logging
         logger = logging.getLogger("eodag")
@@ -64,7 +68,7 @@ class TestUtils(unittest.TestCase):
         logger.level = 0
 
     def test_utils_get_timestamp(self):
-        """get_timestamp must return a UNIX timestamp"""
+        """Test get_timestamp returns correct UNIX timestamp for various date formats"""
         # Date to timestamp to date, this assumes the date is in UTC
         requested_date = "2020-08-08"  # Considered as 2020-08-08T00:00:00Z
         ts_in_secs = get_timestamp(requested_date)
@@ -87,6 +91,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(get_timestamp("2021-04-21T00:00:00+02:00"), 1618956000)
 
     def test_is_env_var_true(self):
+        """Test is_env_var_true correctly interprets environment variable values."""
         test_cases = {
             "true": True,
             "True": True,
@@ -104,6 +109,7 @@ class TestUtils(unittest.TestCase):
                 self.assertEqual(is_env_var_true("TEST_ENV_VAR"), expected)
 
     def test_uri_to_path(self):
+        """Test uri_to_path converts file URIs to file system paths."""
         if sys.platform == "win32":
             expected_path = r"C:\tmp\file.txt"
             tested_uri = r"file:///C:/tmp/file.txt"
@@ -120,6 +126,7 @@ class TestUtils(unittest.TestCase):
             uri_to_path("not_a_uri")
 
     def test_ssl_context(self):
+        """Test get_ssl_context returns SSL context with correct settings."""
 
         ssl_ctx = get_ssl_context(False)
         self.assertEqual(ssl_ctx.verify_mode, ssl.CERT_NONE)
@@ -130,13 +137,14 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(ssl_ctx.check_hostname, True)
 
     def test_path_to_uri(self):
+        """Test path_to_uri converts file system paths to file URIs."""
         if sys.platform == "win32":
             self.assertEqual(path_to_uri(r"C:\tmp\file.txt"), "file:///C:/tmp/file.txt")
         else:
             self.assertEqual(path_to_uri("/tmp/file.txt"), "file:///tmp/file.txt")
 
     def test_downloaded_callback(self):
-        """DownloadedCallback instance is callable with product as parameter"""
+        """Test DownloadedCallback is callable and handles product parameter"""
         downloaded_callback = DownloadedCallback()
         self.assertTrue(callable(downloaded_callback))
         try:
@@ -145,14 +153,14 @@ class TestUtils(unittest.TestCase):
             self.fail(f"DownloadedCallback got an error when called: {e}")
 
     def test_progresscallback_init(self):
-        """ProgressCallback can be instantiated using defaults values"""
+        """Test ProgressCallback can be instantiated with default values"""
         with ProgressCallback() as bar:
             self.assertEqual(bar.unit, "B")
             self.assertEqual(bar.unit_scale, True)
             self.assertEqual(bar.desc, "")
 
     def test_progresscallback_init_customize(self):
-        """ProgressCallback can be instantiated using custom values"""
+        """Test ProgressCallback can be instantiated with custom values"""
         with ProgressCallback(unit="foo", unit_scale=False, desc="bar", total=5) as bar:
             self.assertEqual(bar.unit, "foo")
             self.assertEqual(bar.unit_scale, False)
@@ -160,7 +168,7 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(bar.total, 5)
 
     def test_progresscallback_copy(self):
-        """ProgressCallback can be copied"""
+        """Test ProgressCallback can be copied with the same attributes"""
         with ProgressCallback(unit="foo", unit_scale=False, desc="bar", total=5) as bar:
             with bar.copy() as another_bar:
                 self.assertEqual(another_bar.unit, "foo")
@@ -169,7 +177,7 @@ class TestUtils(unittest.TestCase):
                 self.assertEqual(another_bar.total, 5)
 
     def test_progresscallback_disable(self):
-        """ProgressCallback can be disabled"""
+        """Test ProgressCallback can be disabled via logging or parameter"""
         # enabled
         with closing(StringIO()) as tqdm_out:
             with ProgressCallback(total=2, file=tqdm_out) as bar:
@@ -191,7 +199,7 @@ class TestUtils(unittest.TestCase):
             self.assertEqual(tqdm_out.getvalue(), "")
 
     def test_merge_mappings(self):
-        """Configuration mappings must be merged properly."""
+        """Test merge_mappings merges configuration mappings correctly."""
 
         # nested dict
         mapping = {"foo": {"keyA": "obsolete"}}
@@ -224,7 +232,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(mapping, {"keyA": True})
 
     def test_get_bucket_name_and_prefix(self):
-        """get_bucket_name_and_prefix must extract bucket and prefix from url"""
+        """Test get_bucket_name_and_prefix extracts bucket and prefix from URLs"""
         self.assertEqual(
             get_bucket_name_and_prefix(
                 "s3://sentinel-s2-l1c/tiles/50/R/LR/2021/6/8/0/B02.jp2"
@@ -281,7 +289,7 @@ class TestUtils(unittest.TestCase):
         )
 
     def test_flatten_top_dirs(self):
-        """flatten_top_dirs must flatten directory structure"""
+        """Test flatten_top_directories flattens nested directory structures"""
         with TemporaryDirectory() as nested_dir_root:
             os.makedirs(os.path.join(nested_dir_root, "a", "b", "c1"))
             os.makedirs(os.path.join(nested_dir_root, "a", "b", "c2"))
@@ -302,7 +310,7 @@ class TestUtils(unittest.TestCase):
             self.assertIn(Path(nested_dir_root) / "c2" / "baz", dir_content)
 
     def test_flatten_top_dirs_single_file(self):
-        """flatten_top_dirs must flatten directory structure containing a single file"""
+        """Test flatten_top_directories flattens structure with a single file"""
         with TemporaryDirectory() as nested_dir_root:
             os.makedirs(os.path.join(nested_dir_root, "a", "b", "c1"))
             # create empty file
@@ -316,7 +324,7 @@ class TestUtils(unittest.TestCase):
             self.assertIn(Path(nested_dir_root) / "foo", dir_content)
 
     def test_flatten_top_dirs_given_subdir(self):
-        """flatten_top_dirs must flatten directory structure using given subdirectory"""
+        """Test flatten_top_directories flattens structure from a given subdirectory"""
         with TemporaryDirectory() as nested_dir_root:
             os.makedirs(os.path.join(nested_dir_root, "a", "b", "c1"))
             os.makedirs(os.path.join(nested_dir_root, "a", "b", "c2"))
@@ -338,7 +346,7 @@ class TestUtils(unittest.TestCase):
             self.assertIn(Path(nested_dir_root) / "b" / "c2" / "baz", dir_content)
 
     def test_deepcopy(self):
-        """deepcopy must to a recursice copy of the given object"""
+        """Test deepcopy performs a recursive copy of objects"""
         original = {"a": [{"b": [0, 1, 2]}]}
         shallow_copied = copy.copy(original)
         deep_copied = deepcopy(original)
@@ -350,7 +358,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(deep_copied["a"][0]["b"][0], 0)
 
     def test_fetch_json(self):
-        """fetch_json must be able to fetch a distant json file"""
+        """Test fetch_json fetches and parses JSON from a URL, handles errors"""
 
         # distant
         file_url = "https://foo.bar"
