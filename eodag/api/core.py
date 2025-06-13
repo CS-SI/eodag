@@ -267,10 +267,12 @@ class EODataAccessGateway:
                     "permissive mode, adding empty product type %s", product_id
                 )
 
+        logger.debug(
+            "Product types strict mode, ignoring %s (provider %s)",
+            ", ".join(products_to_remove),
+            provider
+        )
         for id in products_to_remove:
-            logger.debug(
-                "strict mode, ignoring product type %s (provider %s)", id, provider
-            )
             del self.providers_config[provider].products[id]
 
     def get_version(self) -> str:
