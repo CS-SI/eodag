@@ -9,8 +9,6 @@ v3.4.3 (2025-06-12)
 Bug Fixes
 ---------
 
-* Dedl mapping for CORINE collection (`#1661`_, `4c61b54`_)
-
 * **core**: Queryables mismatch when list of possible values contains a single value (`#1666`_,
   `538331d`_)
 
@@ -19,6 +17,8 @@ Bug Fixes
 * **plugins**: Openid_connect requests error handling (#1320) (`#1663`_, `9926083`_)
 
 * **plugins**: Order retry (`#1676`_, `3602426`_)
+
+* **providers**: Dedl mapping for CORINE collection (`#1661`_, `4c61b54`_)
 
 * **providers**: Wekeo_main orderable products download (`#1670`_, `d573846`_)
 
