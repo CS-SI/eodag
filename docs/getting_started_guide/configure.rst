@@ -158,10 +158,11 @@ Some EODAG core settings can be overriden using environment variables:
   in place of https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json.
   If the file is not readable, only user-modified providers will be fetched.
 * ``EODAG_PROVIDERS_WHITELIST`` to restrict EODAG to only use a specific list of providers.
-   If this environment variable is set (as a comma-separated list of provider names), EODAG will only load and use the specified providers.
-   All other providers will be ignored, regardless of their presence in configuration files.
 
-   This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
+  If this environment variable is set (as a comma-separated list of provider names), EODAG will only load and use the specified providers.
+  All other providers will be ignored, regardless of their presence in configuration files.
+
+  This is useful for restricting EODAG to a subset of providers, for example in controlled or production environments.
 
 Example usage:
 
