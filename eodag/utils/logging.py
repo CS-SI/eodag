@@ -18,9 +18,20 @@
 from __future__ import annotations
 
 import logging.config
-from typing import Optional
+from typing import Any, Optional
+
+import tqdm
 
 disable_tqdm = False
+
+
+class TqdmStream(object):
+    """Logging stream handler to write tqdm in logger instead of stdout."""
+
+    @classmethod
+    def write(_, msg):
+        """Write tqdm to logger"""
+        tqdm.tqdm.write(msg, end="")
 
 
 def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
@@ -45,11 +56,12 @@ def setup_logging(verbose: int, no_progress_bar: bool = False) -> None:
 
     level = "DEBUG" if verbose == 3 else "INFO"
 
-    handlers = {
+    handlers: dict[str, dict[str, Any]] = {
         "console": {
             "level": level,
             "class": "logging.StreamHandler",
             "formatter": "standard",
+            "stream": TqdmStream,
         },
         "null": {"level": level, "class": "logging.NullHandler"},
     }
