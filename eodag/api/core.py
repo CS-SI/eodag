@@ -177,7 +177,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
-        available_product_types = self.product_types_config.source.keys()
+        available_product_types = set(self.product_types_config.source.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -185,33 +185,7 @@ class EODataAccessGateway:
                 load_stac_provider_config(),
             )
 
-            provider_products = self.providers_config[provider].products
-            products_to_remove: list[str] = []
-            for product_id in provider_products:
-                if product_id == GENERIC_PRODUCT_TYPE:
-                    continue
-
-                if product_id not in available_product_types:
-                    if strict_mode:
-                        products_to_remove.append(product_id)
-                        continue
-
-                    empty_product = {
-                        "title": product_id,
-                        "abstract": "No product type configuration found",
-                    }
-                    self.product_types_config.source[
-                        product_id
-                    ] = empty_product  # will update available_product_types
-                    logger.debug(
-                        "permissive mode, adding empty product type %s", product_id
-                    )
-
-            for id in products_to_remove:
-                logger.debug(
-                    "strict mode, ignoring product type %s (provider %s)", id, provider
-                )
-                del self.providers_config[provider].products[id]
+            self._prune_product_types(provider, available_product_types, strict_mode)
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -257,6 +231,47 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
+
+    def _prune_product_types(
+        self, provider: str, available_product_types: set[str], strict_mode: bool
+    ) -> None:
+        """
+        Remove or add product types for a provider based on strict or permissive mode.
+
+        In strict mode, removes product types not in available_product_types.
+        In permissive mode, adds empty product type configs for missing types.
+
+        :param provider: The provider name whose product types should be pruned.
+        :param available_product_types: The set of available product type IDs.
+        :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
+        """
+        provider_products = self.providers_config[provider].products
+        products_to_remove: list[str] = []
+        for product_id in provider_products:
+            if product_id == GENERIC_PRODUCT_TYPE:
+                continue
+
+            if product_id not in available_product_types:
+                if strict_mode:
+                    products_to_remove.append(product_id)
+                    continue
+
+                empty_product = {
+                    "title": product_id,
+                    "abstract": "No product type configuration found",
+                }
+                self.product_types_config.source[
+                    product_id
+                ] = empty_product  # will update available_product_types
+                logger.debug(
+                    "permissive mode, adding empty product type %s", product_id
+                )
+
+        for id in products_to_remove:
+            logger.debug(
+                "strict mode, ignoring product type %s (provider %s)", id, provider
+            )
+            del self.providers_config[provider].products[id]
 
     def get_version(self) -> str:
         """Get eodag package version"""
