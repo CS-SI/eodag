@@ -437,6 +437,7 @@ async def collections(
     request: Request,
     provider: Optional[str] = None,
     q: Optional[str] = None,
+    bbox: Optional[str] = None,
     platform: Optional[str] = None,
     instrument: Optional[str] = None,
     constellation: Optional[str] = None,
@@ -450,8 +451,9 @@ async def collections(
     logger.info(f"{request.method} {request.state.url}")
 
     collections = await all_collections(
-        request, provider, q, platform, instrument, constellation, datetime
+        request, provider, q, platform, instrument, constellation, datetime, bbox
     )
+
     return ORJSONResponse(collections)
 
 
