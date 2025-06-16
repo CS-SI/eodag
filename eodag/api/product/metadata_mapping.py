@@ -1300,23 +1300,15 @@ def format_query_params(
         **config.products.get(product_type, {}).get("metadata_mapping", {}),
     )
 
-    # Initialize the configuration parameter which indicates if an error must be raised while there is a search
-    # parameter which is not queryable. It is useful when the provider does not return any result if the search
-    # parameter is not a queryable without raising an error by itself.
-    # This parameter is set to False by default and the configuration at product type level has priority over the
-    # one at provider level
-    raise_mtd_discovery_error = (
-        config.products.get(product_type, {})
+    # Raise error if non-queryables parameters are used and raise_mtd_discovery_error configured
+    if (
+        raise_mtd_discovery_error := config.products.get(product_type, {})
         .get("discover_metadata", {})
         .get("raise_mtd_discovery_error")
-    )
-    raise_mtd_discovery_error = (
-        raise_mtd_discovery_error
-        if raise_mtd_discovery_error is not None
-        else getattr(config, "discover_metadata", {}).get(
+    ) is None:
+        raise_mtd_discovery_error = getattr(config, "discover_metadata", {}).get(
             "raise_mtd_discovery_error", False
         )
-    )
 
     query_params: dict[str, Any] = {}
     # Get all the search parameters that are recognised as queryables by the
