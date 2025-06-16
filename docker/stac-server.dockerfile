@@ -29,7 +29,7 @@ RUN apt-get update \
 
 # reconfigure timezone
 RUN echo $TZ > /etc/timezone && \
-    apt-get install -y tzdata && \
+    apt-get install -y tzdata git && \
     rm /etc/localtime && \
     ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
@@ -53,7 +53,7 @@ COPY README.rst README.rst
 COPY ./eodag /eodag/eodag
 
 # install eodag
-RUN python -m pip install .[all-providers,server]
+RUN python -m pip install .[all-providers,server,observability]
 
 # add python path
 ENV PYTHONPATH="${PYTHONPATH}:/eodag/eodag/resources"
