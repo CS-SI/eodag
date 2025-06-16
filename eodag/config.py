@@ -259,7 +259,7 @@ class PluginConfig(yaml.YAMLObject):
         search_param: str | dict[str, Any]
         #: Path to the metadata in search result
         metadata_path: str
-        #: Whether an error must be raised using a search parameter which is not queryable or not
+        #: Whether an error must be raised when using a search parameter which is not queryable or not
         raise_mtd_discovery_error: bool
 
     class DiscoverProductTypes(TypedDict, total=False):
