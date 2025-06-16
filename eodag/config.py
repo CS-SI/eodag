@@ -920,13 +920,11 @@ def override_config_from_mapping(
     whitelist = None
     if whitelist_env:
         whitelist = {provider for provider in whitelist_env.split(",")}
-        keys_to_remove = [key for key in mapping if key not in whitelist]
-        for key in keys_to_remove:
-            del mapping[key]
 
     for provider, new_conf in mapping.items():
         # check if metada-mapping as already been built as jsonpath in providers_config
-        if not isinstance(new_conf, dict):
+        # or provider not in whitelist
+        if not isinstance(new_conf, dict) or (whitelist and provider not in whitelist):
             continue
         new_conf_search = new_conf.get("search", {}) or {}
         new_conf_api = new_conf.get("api", {}) or {}
