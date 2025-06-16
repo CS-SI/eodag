@@ -276,7 +276,7 @@ class EODataAccessGateway:
 
         if products_to_add:
             logger.debug(
-                "Product types permissive mode, adding %s (provider %s)",
+                "Product types permissive mode, %s added (provider %s)",
                 ", ".join(products_to_add),
                 provider,
             )
