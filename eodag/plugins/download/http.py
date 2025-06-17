@@ -57,6 +57,7 @@ from eodag.utils import (
     USER_AGENT,
     ProgressCallback,
     StreamResponse,
+    deepcopy,
     flatten_top_directories,
     guess_extension,
     guess_file_type,
@@ -1105,16 +1106,14 @@ class HTTPDownload(Download):
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
         ssl_verify = getattr(self.config, "ssl_verify", True)
-        matching_url = (
-            getattr(product.downloader_auth.config, "matching_url", "")
-            if product.downloader_auth
-            else ""
-        )
-        matching_conf = (
-            getattr(product.downloader_auth.config, "matching_conf", None)
-            if product.downloader_auth
-            else None
-        )
+        if product.downloader_auth:
+            matching_conf = deepcopy(
+                getattr(product.downloader_auth.config, "match", {})
+            )
+            matching_url = matching_conf.pop("href", "")
+        else:
+            matching_conf = None
+            matching_url = ""
 
         # loop for assets download
         for asset in assets_values:
@@ -1129,6 +1128,7 @@ class HTTPDownload(Download):
                 auth_object = auth
             else:
                 auth_object = None
+
             with requests.get(
                 asset["href"],
                 stream=True,
