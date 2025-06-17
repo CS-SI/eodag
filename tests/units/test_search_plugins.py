@@ -359,9 +359,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.peps_search_plugin.provider}: "
-            "please remove 'foo' from your search parameters",
+            "Search parameters which are not queryable are disallowed for this product type on this provider: "
+            f"please remove 'foo' from your search parameters. Product type: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.peps_search_plugin.provider}",
             context.exception.message,
         )
 
@@ -387,9 +387,9 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.peps_search_plugin.provider}: "
-            "please remove 'foo' from your search parameters",
+            "Search parameters which are not queryable are disallowed for this product type on this provider: "
+            f"please remove 'foo' from your search parameters. Product type: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.peps_search_plugin.provider}",
             context.exception.message,
         )
 
@@ -3675,9 +3675,9 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.wekeomain_search_plugin.provider}: "
-            "please remove 'foo' from your search parameters",
+            "Search parameters which are not queryable are disallowed for this product type on this provider: "
+            f"please remove 'foo' from your search parameters. Product type: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.wekeomain_search_plugin.provider}",
             context.exception.message,
         )
 
@@ -3703,9 +3703,9 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for "
-            f"{self.search_criteria_s2_msi_l1c['productType']} on {self.wekeomain_search_plugin.provider}: "
-            "please remove 'foo' from your search parameters",
+            "Search parameters which are not queryable are disallowed for this product type on this provider: "
+            f"please remove 'foo' from your search parameters. Product type: "
+            f"{self.search_criteria_s2_msi_l1c['productType']} / provider : {self.wekeomain_search_plugin.provider}",
             context.exception.message,
         )
 

@@ -1287,7 +1287,10 @@ def mtd_cfg_as_conversion_and_querypath(
 
 
 def format_query_params(
-    product_type: str, config: PluginConfig, query_dict: dict[str, Any]
+    product_type: str,
+    config: PluginConfig,
+    query_dict: dict[str, Any],
+    error_context: str = "",
 ) -> dict[str, Any]:
     """format the search parameters to query parameters"""
     if "raise_errors" in query_dict.keys():
@@ -1314,7 +1317,11 @@ def format_query_params(
     # Get all the search parameters that are recognised as queryables by the
     # provider (they appear in the queryables dictionary)
     queryables = _get_queryables(
-        query_dict, config, product_type_metadata_mapping, raise_mtd_discovery_error
+        query_dict,
+        config,
+        product_type_metadata_mapping,
+        raise_mtd_discovery_error,
+        error_context,
     )
 
     for eodag_search_key, provider_search_key in queryables.items():
@@ -1452,6 +1459,7 @@ def _get_queryables(
     config: PluginConfig,
     metadata_mapping: dict[str, Any],
     raise_mtd_discovery_error: bool,
+    error_context: str,
 ) -> dict[str, Any]:
     """Retrieve the metadata mappings that are query-able"""
     logger.debug("Retrieving queryable metadata from metadata_mapping")
@@ -1462,7 +1470,8 @@ def _get_queryables(
             # raise an error when a query param not allowed by the provider is found
             if not isinstance(md_mapping, list) and raise_mtd_discovery_error:
                 raise ValidationError(
-                    f"Search parameters which are not queryable are disallowed: {eodag_search_key}",
+                    "Search parameters which are not queryable are disallowed for this product type on this provider: "
+                    f"please remove '{eodag_search_key}' from your search parameters. {error_context}",
                     {eodag_search_key},
                 )
             _, md_value = md_mapping

@@ -811,17 +811,10 @@ class QueryStringSearch(Search):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        try:
-            query_params = format_query_params(product_type, self.config, query_dict)
-        except ValidationError as err:
-            not_queryable_search_param = Queryables.get_queryable_from_alias(
-                str(err.message).split(":")[-1].strip()
-            )
-            raise ValidationError(
-                f"Search parameters which are not queryable are disallowed for {product_type} on "
-                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
-                {not_queryable_search_param},
-            ) from err
+        error_context = f"Product type: {product_type} / provider : {self.provider}"
+        query_params = format_query_params(
+            product_type, self.config, query_dict, error_context
+        )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
@@ -1791,17 +1784,10 @@ class StacSearch(PostJsonSearch):
             query_dict.setdefault("startTimeFromAscendingNode", "..")
             query_dict.setdefault("completionTimeFromAscendingNode", "..")
 
-        try:
-            query_params = format_query_params(product_type, self.config, query_dict)
-        except ValidationError as err:
-            not_queryable_search_param = Queryables.get_queryable_from_alias(
-                str(err.message).split(":")[-1].strip()
-            )
-            raise ValidationError(
-                f"Search parameters which are not queryable are disallowed for {product_type} on "
-                f"{self.provider}: please remove '{not_queryable_search_param}' from your search parameters",
-                {not_queryable_search_param},
-            ) from err
+        error_context = f"Product type: {product_type} / provider : {self.provider}"
+        query_params = format_query_params(
+            product_type, self.config, query_dict, error_context
+        )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
