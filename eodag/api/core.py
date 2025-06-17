@@ -647,9 +647,7 @@ class EODataAccessGateway:
         :returns: The list of the product types that can be accessed using eodag.
         :raises: :class:`~eodag.utils.exceptions.UnsupportedProvider`
         """
-
-        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
-        if fetch_providers and not strict_mode:
+        if fetch_providers:
             # First, update product types list if possible
             self.fetch_product_types_list(provider=provider)
 
@@ -689,11 +687,18 @@ class EODataAccessGateway:
         return sorted(product_types, key=itemgetter("ID"))
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
-        """Fetch product types list and update if needed
+        """Fetch product types list and update if needed.
+
+        If strict mode is enabled (by setting the ``EODAG_STRICT_PRODUCT_TYPES`` environment variable
+        to a truthy value), this method will not fetch or update product types and will return immediately.
 
         :param provider: The name of a provider or provider-group for which product types
                          list should be updated. Defaults to all providers (None value).
         """
+        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        if strict_mode:
+            return
+
         providers_to_fetch = list(self.providers_config.keys())
         # check if some providers are grouped under a group name which is not a provider name
         if provider is not None and provider not in self.providers_config:
