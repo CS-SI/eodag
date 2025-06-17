@@ -3653,6 +3653,8 @@ class TestCoreStrictMode(TestCoreBase):
         # Ensure a clean environment for each test
         self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
         self.mock_os_environ.start()
+        
+        # This file removes TEST_PRODUCT_2 from the main config, in order to test strict and permissive behavior
         os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_product_types_modes.yml"
         )
@@ -3663,15 +3665,17 @@ class TestCoreStrictMode(TestCoreBase):
 
     def test_list_product_types_strict_mode(self):
         """list_product_types must only return product types from the main config in strict mode"""
-        os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
-        dag = EODataAccessGateway()
+        try:
+            os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
+            dag = EODataAccessGateway()
 
-        # In strict mode, S1_SAR_GRD should not be listed
-        product_types = dag.list_product_types(fetch_providers=False)
-        ids = [pt["ID"] for pt in product_types]
-        self.assertNotIn("S1_SAR_GRD", ids)
+            # In strict mode, TEST_PRODUCT_2 should not be listed
+            product_types = dag.list_product_types(fetch_providers=False)
+            ids = [pt["ID"] for pt in product_types]
+            self.assertNotIn("TEST_PRODUCT_2", ids)
 
-        os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
+        finally:
+            os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
 
     def test_list_product_types_permissive_mode(self):
         """list_product_types must include provider-only product types in permissive mode"""
@@ -3680,7 +3684,7 @@ class TestCoreStrictMode(TestCoreBase):
 
         dag = EODataAccessGateway()
 
-        # In permissive mode, S1_SAR_GRD should be listed
+        # In permissive mode, TEST_PRODUCT_2 should be listed
         product_types = dag.list_product_types(fetch_providers=False)
         ids = [pt["ID"] for pt in product_types]
-        self.assertIn("S1_SAR_GRD", ids)
+        self.assertIn("TEST_PRODUCT_2", ids)
