@@ -190,7 +190,7 @@ class PluginManager:
                 plugin = cast(Api, self._build_plugin(config.name, api, Api))
             else:
                 raise MisconfiguredError(
-                    f"No search plugin configureed for {config.name}."
+                    f"No search plugin configured for {config.name}."
                 )
             return plugin
 
