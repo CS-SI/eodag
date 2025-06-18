@@ -79,6 +79,7 @@ class OIDCTokenExchangeAuth(Authentication):
             provider,
             PluginConfig.from_mapping(
                 {
+                    "type": "OIDCAuthorizationCodeFlowAuth",
                     "credentials": getattr(self.config, "credentials", {}),
                     **self.config.subject,
                 }

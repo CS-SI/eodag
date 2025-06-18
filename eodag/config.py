@@ -199,7 +199,19 @@ class ProviderConfig(yaml.YAMLObject):
             if current_value is not None:
                 current_value.update(mapping_value)
             elif mapping_value:
-                setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                try:
+                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                except ValidationError as e:
+                    logger.warning(
+                        (
+                            "Could not add %s Plugin config to %s configuration: %s. "
+                            "Try updating existing %s Plugin configs instead."
+                        ),
+                        key,
+                        self.name,
+                        str(e),
+                        ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
+                    )
 
 
 class PluginConfig(yaml.YAMLObject):
@@ -648,6 +660,7 @@ class PluginConfig(yaml.YAMLObject):
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> PluginConfig:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
+        cls.validate(tuple(mapping.keys()))
         c = cls()
         c.__dict__.update(mapping)
         return c
@@ -657,7 +670,7 @@ class PluginConfig(yaml.YAMLObject):
         """Validate a :class:`~eodag.config.PluginConfig`"""
         if "type" not in config_keys:
             raise ValidationError(
-                "A Plugin config must specify the Plugin it configures"
+                "A Plugin config must specify the type of Plugin it configures"
             )
 
     def update(self, mapping: Optional[dict[Any, Any]]) -> None:
