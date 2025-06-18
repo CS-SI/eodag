@@ -816,7 +816,7 @@ class EODataAccessGateway:
                     kwargs["auth"] = auth
                 else:
                     logger.debug(
-                        f"No authentification plugin for {provider} for product types discovery found"
+                        f"No authentication plugin for {provider} for product types discovery found"
                     )
                     ext_product_types_conf[provider] = None
                     continue

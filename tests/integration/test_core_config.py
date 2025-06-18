@@ -409,7 +409,6 @@ class TestCoreProductTypesConfig(TestCase):
                     api_endpoint: https://foo.bar/search
                     discover_product_types:
                         fetch_url: https://foo.bar/collections
-                    need_auth: true
                 products:
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
@@ -421,7 +420,7 @@ class TestCoreProductTypesConfig(TestCase):
             )
             self.assertIsNone(ext_product_types_conf["foo_provider"])
             self.assertIn(
-                "Could not authenticate on foo_provider for product types discovery",
+                "No authentication plugin for foo_provider for product types discovery found",
                 str(cm.output),
             )
 
@@ -430,10 +429,12 @@ class TestCoreProductTypesConfig(TestCase):
             """
             foo_provider:
                 auth:
-                    type: HTTPHeaderAuth
-                    matching_url: https://foo.bar
-                    headers:
-                        Authorization: "Apikey {apikey}"
+                    - type: HTTPHeaderAuth
+                      matching_url: https://foo.bar
+                      headers:
+                          Authorization: "Apikey {apikey}"
+                      required_for:
+                          - search
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
@@ -511,6 +512,6 @@ class TestCoreProductTypesConfig(TestCase):
                 )
                 self.assertIsNone(ext_product_types_conf["foo_provider"])
                 self.assertIn(
-                    "Could not authenticate on foo_provider: cannot auth for test",
+                    "No authentication plugin for foo_provider for product types discovery found",
                     str(cm.output),
                 )

@@ -113,10 +113,8 @@ class ProviderConfig(yaml.YAMLObject):
     :param api: (optional) The configuration of a plugin of type Api
     :param search: (optional) The configuration of a plugin of type Search
     :param products: (optional) The products types supported by the provider
-    :param download: (optional) The configuration of a plugin of type Download
-    :param auth: (optional) The configuration of a plugin of type Authentication
-    :param search_auth: (optional) The configuration of a plugin of type Authentication for search
-    :param download_auth: (optional) The configuration of a plugin of type Authentication for download
+    :param download: (optional) List of configurations of plugins of type Download
+    :param auth: (optional) List of configurations of plugins of type Authentication
     :param kwargs: Additional configuration variables for this provider
     """
 
@@ -153,7 +151,13 @@ class ProviderConfig(yaml.YAMLObject):
         cls.validate(mapping)
         for key in PLUGINS_TOPICS_KEYS:
             if key in mapping:
-                mapping[key] = PluginConfig.from_mapping(mapping[key])
+                if isinstance(mapping[key], list):
+                    config_list = []
+                    for entry in mapping[key]:
+                        config_list.append(PluginConfig.from_mapping(entry))
+                    mapping[key] = config_list
+                else:
+                    mapping[key] = PluginConfig.from_mapping(mapping[key])
         c = cls()
         c.__dict__.update(mapping)
         return c
