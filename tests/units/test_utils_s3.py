@@ -90,10 +90,11 @@ class TestUtilsS3(TestCase):
             "dummy",
             PluginConfig.from_mapping(
                 {
+                    "type": "AwsAuth",
                     "credentials": dict(
                         aws_access_key_id="foo",
                         aws_secret_access_key="bar",
-                    )
+                    ),
                 }
             ),
         )
@@ -139,10 +140,11 @@ class TestUtilsS3(TestCase):
             "dummy",
             PluginConfig.from_mapping(
                 {
+                    "type": "AwsAuth",
                     "credentials": dict(
                         aws_access_key_id="foo",
                         aws_secret_access_key="bar",
-                    )
+                    ),
                 }
             ),
         )
@@ -184,7 +186,7 @@ class TestUtilsS3(TestCase):
     def test_utils_s3_update_assets_from_s3_credentials_nok(self):
         """update_assets_from_s3 must have required credentials"""
         prod = EOProduct("dummy", dict(geometry="POINT (0 0)", id="foo"))
-        auth_plugin = AwsAuth("dummy", PluginConfig.from_mapping({}))
+        auth_plugin = AwsAuth("dummy", PluginConfig())
         self.assertRaises(
             MisconfiguredError,
             update_assets_from_s3,
