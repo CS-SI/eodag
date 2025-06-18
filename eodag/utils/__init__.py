@@ -388,7 +388,10 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
                 if row in mapping1:
                     continue
                 else:
-                    mapping1[key].append(row)
+                    if key in mapping1:
+                        mapping1[key].append(row)
+                    else:
+                        mapping1[key] = [row]
         elif isinstance(value, dict):
             try:
                 merge_mappings(mapping1[key], value)

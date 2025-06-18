@@ -120,7 +120,7 @@ class TokenAuth(Authentication):
         try:
             # format auth_uri using credentials if needed
             credentials = self.get_required_credentials()
-            self.config.auth_uri = self.config.auth_uri.format(credentials)
+            self.config.auth_uri = self.config.auth_uri.format(**credentials)
 
             # Format headers if needed with values from the credentials. Note:
             # if only 'headers' is given, it will be used for both token retrieve and authentication.

@@ -9,11 +9,9 @@ usgs:
 aws_eos:
   search:
     product_location_scheme: 'file'
-  search_auth:
+  auth:
     credentials:
       apikey: api-key
-  download_auth:
-    credentials:
       aws_access_key_id: access-key-id
       aws_secret_access_key: secret-access-key
 
@@ -36,11 +34,11 @@ my_new_provider:
         GENERIC_PRODUCT_TYPE:
           productType: '{productType}'
     download:
-        type: AwsDownload
-        s3_endpoint: https://api.my_new_provider
-        flatten_top_dirs: false
+        - type: AwsDownload
+          s3_endpoint: https://api.my_new_provider
+          flatten_top_dirs: false
     auth:
-        type: AwsAuth
-        credentials:
-          aws_access_key_id: access-key-id
-          aws_secret_access_key: secret-access-key
+        - type: AwsAuth
+          credentials:
+            aws_access_key_id: access-key-id
+            aws_secret_access_key: secret-access-key

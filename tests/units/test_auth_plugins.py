@@ -67,99 +67,119 @@ class TestAuthPluginTokenAuth(BaseAuthPluginTest):
             {
                 "provider_text_token_simple_url": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                        }
+                    ],
                 },
                 "provider_text_token_format_url": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar?username={username}",
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar?username={username}",
+                        }
+                    ],
                 },
                 "provider_text_token_header": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "headers": {
-                            "Content-Type": "application/json;charset=UTF-8",
-                            "Accept": "application/json",
-                            "foo": "{foo}",
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "headers": {
+                                "Content-Type": "application/json;charset=UTF-8",
+                                "Accept": "application/json",
+                                "foo": "{foo}",
+                            },
+                        }
+                    ],
                 },
                 "provider_text_token_retrieve_header": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "headers": {
-                            "Content-Type": "application/json;charset=UTF-8",
-                            "Accept": "application/json",
-                            "foo": "{foo}",
-                        },
-                        "retrieve_headers": {
-                            "Authorization": "Bearer {auth_for_token}",
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "headers": {
+                                "Content-Type": "application/json;charset=UTF-8",
+                                "Accept": "application/json",
+                                "foo": "{foo}",
+                            },
+                            "retrieve_headers": {
+                                "Authorization": "Bearer {auth_for_token}",
+                            },
+                        }
+                    ],
                 },
                 "provider_json_token_simple_url": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "token_type": "json",
-                        "token_key": "token_is_here",
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "token_type": "json",
+                            "token_key": "token_is_here",
+                        }
+                    ],
                 },
                 "provider_json_token_with_expiration": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "token_type": "json",
-                        "token_key": "token_is_here",
-                        "token_expiration_key": "token_expiration",
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "token_type": "json",
+                            "token_key": "token_is_here",
+                            "token_expiration_key": "token_expiration",
+                        }
+                    ],
                 },
                 "provider_json_token_with_refresh": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "refresh_uri": "http://baz.qux",
-                        "token_type": "json",
-                        "token_key": "token_is_here",
-                        "refresh_token_key": "refresh_token_is_here",
-                        "token_expiration_key": "token_expiration",
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "refresh_uri": "http://baz.qux",
+                            "token_type": "json",
+                            "token_key": "token_is_here",
+                            "refresh_token_key": "refresh_token_is_here",
+                            "token_expiration_key": "token_expiration",
+                        }
+                    ],
                 },
                 "provider_text_token_req_data": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "req_data": {"grant_type": "client_credentials"},
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "req_data": {"grant_type": "client_credentials"},
+                        }
+                    ],
                 },
                 "provider_text_token_get_method": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "request_method": "GET",
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "request_method": "GET",
+                        }
+                    ],
                 },
                 "provider_text_token_auth_error_code": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "TokenAuth",
-                        "auth_uri": "http://foo.bar",
-                        "auth_error_code": 401,
-                    },
+                    "auth": [
+                        {
+                            "type": "TokenAuth",
+                            "auth_uri": "http://foo.bar",
+                            "auth_error_code": 401,
+                        }
+                    ],
                 },
             },
         )
@@ -575,33 +595,39 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             {
                 "provider_with_auth_keys": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "AwsAuth",
-                        "credentials": {
-                            "aws_access_key_id": cls.aws_access_key_id,
-                            "aws_secret_access_key": cls.aws_secret_access_key,
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "AwsAuth",
+                            "credentials": {
+                                "aws_access_key_id": cls.aws_access_key_id,
+                                "aws_secret_access_key": cls.aws_secret_access_key,
+                            },
+                        }
+                    ],
                 },
                 "provider_with_auth_keys_session": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "AwsAuth",
-                        "credentials": {
-                            "aws_access_key_id": cls.aws_access_key_id,
-                            "aws_secret_access_key": cls.aws_secret_access_key,
-                            "aws_session_token": cls.aws_session_token,
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "AwsAuth",
+                            "credentials": {
+                                "aws_access_key_id": cls.aws_access_key_id,
+                                "aws_secret_access_key": cls.aws_secret_access_key,
+                                "aws_session_token": cls.aws_session_token,
+                            },
+                        }
+                    ],
                 },
                 "provider_with_auth_profile": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "AwsAuth",
-                        "credentials": {
-                            "aws_profile": cls.profile_name,
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "AwsAuth",
+                            "credentials": {
+                                "aws_profile": cls.profile_name,
+                            },
+                        }
+                    ],
                 },
             },
         )
@@ -641,16 +667,20 @@ class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
             {
                 "provider_with_headers_in_conf": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "HTTPHeaderAuth",
-                        "headers": {"X-API-Key": "{apikey}"},
-                    },
+                    "auth": [
+                        {
+                            "type": "HTTPHeaderAuth",
+                            "headers": {"X-API-Key": "{apikey}"},
+                        }
+                    ],
                 },
                 "provider_with_no_header_in_conf": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "HTTPHeaderAuth",
-                    },
+                    "auth": [
+                        {
+                            "type": "HTTPHeaderAuth",
+                        }
+                    ],
                 },
             },
         )
@@ -706,10 +736,12 @@ class TestAuthPluginHttpQueryStringAuth(BaseAuthPluginTest):
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "HttpQueryStringAuth",
-                        "auth_uri": "http://foo.bar",
-                    },
+                    "auth": [
+                        {
+                            "type": "HttpQueryStringAuth",
+                            "auth_uri": "http://foo.bar",
+                        }
+                    ],
                 },
             },
         )
@@ -787,14 +819,16 @@ class TestAuthPluginSASAuth(BaseAuthPluginTest):
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "SASAuth",
-                        "auth_uri": "http://foo.bar?href={url}",
-                        "signed_url_key": "href",
-                        "headers": {
-                            "Ocp-Apim-Subscription-Key": "{apikey}",
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "SASAuth",
+                            "auth_uri": "http://foo.bar?href={url}",
+                            "signed_url_key": "href",
+                            "headers": {
+                                "Ocp-Apim-Subscription-Key": "{apikey}",
+                            },
+                        }
+                    ],
                 },
             },
         )
@@ -906,15 +940,17 @@ class TestAuthPluginKeycloakOIDCPasswordAuth(BaseAuthPluginTest):
             {
                 "foo_provider": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "KeycloakOIDCPasswordAuth",
-                        "oidc_config_url": "http://foo.bar/auth/realms/myrealm/.well-known/openid-configuration",
-                        "client_id": "baz",
-                        "realm": "qux",
-                        "client_secret": "1234",
-                        "token_provision": "qs",
-                        "token_qs_key": "totoken",
-                    },
+                    "auth": [
+                        {
+                            "type": "KeycloakOIDCPasswordAuth",
+                            "oidc_config_url": "http://foo.bar/auth/realms/myrealm/.well-known/openid-configuration",
+                            "client_id": "baz",
+                            "realm": "qux",
+                            "client_secret": "1234",
+                            "token_provision": "qs",
+                            "token_qs_key": "totoken",
+                        }
+                    ],
                 },
             },
         )
@@ -1180,125 +1216,141 @@ class TestAuthPluginOIDCAuthorizationCodeFlowAuth(BaseAuthPluginTest):
             {
                 "provider_token_provision_invalid": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "token_provision": "invalid",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "token_provision": "invalid",
+                        }
+                    ],
                 },
                 "provider_token_qs_key_missing": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "token_provision": "qs",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "token_provision": "qs",
+                        }
+                    ],
                 },
                 "provider_authentication_uri_missing": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "redirect_uri": "http://provider.bar/redirect",
-                        "client_id": "provider-bar-id",
-                        "user_consent_needed": False,
-                        "token_provision": "header",
-                        "login_form_xpath": "//form[@id='form-login']",
-                        "authentication_uri_source": "config",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "redirect_uri": "http://provider.bar/redirect",
+                            "client_id": "provider-bar-id",
+                            "user_consent_needed": False,
+                            "token_provision": "header",
+                            "login_form_xpath": "//form[@id='form-login']",
+                            "authentication_uri_source": "config",
+                        }
+                    ],
                 },
                 "provider_user_consent": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "redirect_uri": "http://provider.bar/redirect",
-                        "client_id": "provider-bar-id",
-                        "user_consent_needed": True,
-                        "user_consent_form_xpath": "//form[@id='form-user-consent']",
-                        "user_consent_form_data": {
-                            "const_key": "const_value",
-                            "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
-                        },
-                        "token_exchange_post_data_method": "data",
-                        "token_key": "access_token",
-                        "token_provision": "header",
-                        "login_form_xpath": "//form[@id='form-login']",
-                        "authentication_uri_source": "login-form",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "redirect_uri": "http://provider.bar/redirect",
+                            "client_id": "provider-bar-id",
+                            "user_consent_needed": True,
+                            "user_consent_form_xpath": "//form[@id='form-user-consent']",
+                            "user_consent_form_data": {
+                                "const_key": "const_value",
+                                "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
+                            },
+                            "token_exchange_post_data_method": "data",
+                            "token_key": "access_token",
+                            "token_provision": "header",
+                            "login_form_xpath": "//form[@id='form-login']",
+                            "authentication_uri_source": "login-form",
+                        }
+                    ],
                 },
                 "provider_client_sercret": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "redirect_uri": "http://provider.bar/redirect",
-                        "client_id": "provider-bar-id",
-                        "client_secret": "this-is-the-secret",
-                        "user_consent_needed": False,
-                        "token_exchange_post_data_method": "data",
-                        "token_key": "access_token",
-                        "token_provision": "header",
-                        "login_form_xpath": "//form[@id='form-login']",
-                        "authentication_uri_source": "login-form",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "redirect_uri": "http://provider.bar/redirect",
+                            "client_id": "provider-bar-id",
+                            "client_secret": "this-is-the-secret",
+                            "user_consent_needed": False,
+                            "token_exchange_post_data_method": "data",
+                            "token_key": "access_token",
+                            "token_provision": "header",
+                            "login_form_xpath": "//form[@id='form-login']",
+                            "authentication_uri_source": "login-form",
+                        }
+                    ],
                 },
                 "provider_token_qs_key": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "redirect_uri": "http://provider.bar/redirect",
-                        "client_id": "provider-bar-id",
-                        "user_consent_needed": False,
-                        "token_exchange_post_data_method": "data",
-                        "token_key": "access_token",
-                        "token_provision": "qs",
-                        "token_qs_key": "totoken",
-                        "login_form_xpath": "//form[@id='form-login']",
-                        "authentication_uri_source": "login-form",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "redirect_uri": "http://provider.bar/redirect",
+                            "client_id": "provider-bar-id",
+                            "user_consent_needed": False,
+                            "token_exchange_post_data_method": "data",
+                            "token_key": "access_token",
+                            "token_provision": "qs",
+                            "token_qs_key": "totoken",
+                            "login_form_xpath": "//form[@id='form-login']",
+                            "authentication_uri_source": "login-form",
+                        }
+                    ],
                 },
                 "provider_token_exchange_params": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "redirect_uri": "http://provider.bar/redirect",
-                        "client_id": "provider-bar-id",
-                        "user_consent_needed": False,
-                        "token_exchange_post_data_method": "data",
-                        "token_exchange_params": {
-                            "redirect_uri": "new_redirect_uri",
-                            "client_id": "new_client_id",
-                        },
-                        "token_key": "access_token",
-                        "token_provision": "header",
-                        "login_form_xpath": "//form[@id='form-login']",
-                        "authentication_uri_source": "login-form",
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "redirect_uri": "http://provider.bar/redirect",
+                            "client_id": "provider-bar-id",
+                            "user_consent_needed": False,
+                            "token_exchange_post_data_method": "data",
+                            "token_exchange_params": {
+                                "redirect_uri": "new_redirect_uri",
+                                "client_id": "new_client_id",
+                            },
+                            "token_key": "access_token",
+                            "token_provision": "header",
+                            "login_form_xpath": "//form[@id='form-login']",
+                            "authentication_uri_source": "login-form",
+                        }
+                    ],
                 },
                 "provider_ok": {
                     "products": {"foo_product": {}},
-                    "auth": {
-                        "type": "OIDCAuthorizationCodeFlowAuth",
-                        "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
-                        "redirect_uri": "http://provider.bar/redirect",
-                        "client_id": "provider-bar-id",
-                        "user_consent_needed": False,
-                        "token_exchange_post_data_method": "data",
-                        "token_key": "access_token",
-                        "token_provision": "header",
-                        "login_form_xpath": "//form[@id='form-login']",
-                        "authentication_uri_source": "login-form",
-                        "additional_login_form_data": {
-                            "const_key": "const_value",
-                            "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
-                        },
-                        "exchange_url_error_pattern": {
-                            "TERMS_AND_CONDITIONS": "Terms and conditions are not accepted"
-                        },
-                    },
+                    "auth": [
+                        {
+                            "type": "OIDCAuthorizationCodeFlowAuth",
+                            "oidc_config_url": "http://auth.foo/auth/realms/myrealm/.well-known/openid-configuration",
+                            "redirect_uri": "http://provider.bar/redirect",
+                            "client_id": "provider-bar-id",
+                            "user_consent_needed": False,
+                            "token_exchange_post_data_method": "data",
+                            "token_key": "access_token",
+                            "token_provision": "header",
+                            "login_form_xpath": "//form[@id='form-login']",
+                            "authentication_uri_source": "login-form",
+                            "additional_login_form_data": {
+                                "const_key": "const_value",
+                                "xpath_key": 'xpath(//input[@name="input_name"]/@value)',
+                            },
+                            "exchange_url_error_pattern": {
+                                "TERMS_AND_CONDITIONS": "Terms and conditions are not accepted"
+                            },
+                        }
+                    ],
                 },
             },
         )

@@ -264,6 +264,8 @@ class TestConfigFunctions(unittest.TestCase):
             # providers implementing download or api store their downloaded products in
             # tempdir by default
             download_plugin = getattr(value, "download", getattr(value, "api", None))
+            if isinstance(download_plugin, list):
+                download_plugin = download_plugin[0]
             if download_plugin is not None:
                 self.assertEqual(download_plugin.output_dir, tempfile.gettempdir())
             # priority is set to 0 unless you are 'peps' provider
@@ -337,11 +339,9 @@ class TestConfigFunctions(unittest.TestCase):
         aws_eos:
           search:
               product_location_scheme: file
-          search_auth:
+          auth:
               credentials:
                   apikey: api-key
-          download_auth:
-              credentials:
                   aws_access_key_id: access-key-id
                   aws_secret_access_key: secret-access-key
 
@@ -364,14 +364,14 @@ class TestConfigFunctions(unittest.TestCase):
                 GENERIC_PRODUCT_TYPE:
                   productType: '{productType}'
             download:
-                type: AwsDownload
-                s3_endpoint: https://api.my_new_provider
-                flatten_top_dirs: false
+                - type: AwsDownload
+                  s3_endpoint: https://api.my_new_provider
+                  flatten_top_dirs: false
             auth:
-                type: AwsAuth
-                credentials:
-                  aws_access_key_id: access-key-id
-                  aws_secret_access_key: secret-access-key
+                - type: AwsAuth
+                  credentials:
+                    aws_access_key_id: access-key-id
+                    aws_secret_access_key: secret-access-key
         """
         default_config = config.load_default_config()
         file_path_override = os.path.join(
@@ -387,20 +387,27 @@ class TestConfigFunctions(unittest.TestCase):
 
         aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
-        self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
+
+        auth_config_search = list(
+            filter(lambda conf: ("search" in conf.required_for), aws_conf.auth)
+        )[0]
+        self.assertEqual(auth_config_search.credentials["apikey"], "api-key")
+        auth_config_download = list(
+            filter(lambda conf: "download" in conf.required_for, aws_conf.auth)
+        )[0]
         self.assertEqual(
-            aws_conf.download_auth.credentials["aws_access_key_id"], "access-key-id"
+            auth_config_download.credentials["aws_access_key_id"], "access-key-id"
         )
         self.assertEqual(
-            aws_conf.download_auth.credentials["aws_secret_access_key"],
+            auth_config_download.credentials["aws_secret_access_key"],
             "secret-access-key",
         )
 
         peps_conf = default_config["peps"]
-        self.assertEqual(peps_conf.download.output_dir, "/data")
+        self.assertEqual(peps_conf.download[0].output_dir, "/data")
 
         theia_conf = default_config["theia"]
-        self.assertEqual(theia_conf.download.output_dir, tempfile.gettempdir())
+        self.assertEqual(theia_conf.download[0].output_dir, tempfile.gettempdir())
 
         my_new_provider_conf = default_config["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)
@@ -418,19 +425,22 @@ class TestConfigFunctions(unittest.TestCase):
             my_new_provider_conf.products["GENERIC_PRODUCT_TYPE"]["productType"],
             "{productType}",
         )
-        self.assertIsInstance(my_new_provider_conf.download, config.PluginConfig)
-        self.assertEqual(my_new_provider_conf.download.type, "AwsDownload")
+        self.assertIsInstance(my_new_provider_conf.download, list)
+        self.assertIsInstance(my_new_provider_conf.download[0], config.PluginConfig)
+        self.assertEqual(my_new_provider_conf.download[0].type, "AwsDownload")
         self.assertEqual(
-            my_new_provider_conf.download.s3_endpoint, "https://api.my_new_provider"
+            my_new_provider_conf.download[0].s3_endpoint, "https://api.my_new_provider"
         )
-        self.assertFalse(my_new_provider_conf.download.flatten_top_dirs)
-        self.assertIsInstance(my_new_provider_conf.auth, config.PluginConfig)
-        self.assertEqual(my_new_provider_conf.auth.type, "AwsAuth")
+        self.assertFalse(my_new_provider_conf.download[0].flatten_top_dirs)
+        self.assertIsInstance(my_new_provider_conf.auth, list)
+        self.assertIsInstance(my_new_provider_conf.auth[0], config.PluginConfig)
+        self.assertEqual(my_new_provider_conf.auth[0].type, "AwsAuth")
         self.assertEqual(
-            my_new_provider_conf.auth.credentials["aws_access_key_id"], "access-key-id"
+            my_new_provider_conf.auth[0].credentials["aws_access_key_id"],
+            "access-key-id",
         )
         self.assertEqual(
-            my_new_provider_conf.auth.credentials["aws_secret_access_key"],
+            my_new_provider_conf.auth[0].credentials["aws_secret_access_key"],
             "secret-access-key",
         )
 
@@ -465,17 +475,23 @@ class TestConfigFunctions(unittest.TestCase):
 
         aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
-        self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
+        auth_config_search = list(
+            filter(lambda conf: ("search" in conf.required_for), aws_conf.auth)
+        )[0]
+        self.assertEqual(auth_config_search.credentials["apikey"], "api-key")
+        auth_config_download = list(
+            filter(lambda conf: "download" in conf.required_for, aws_conf.auth)
+        )[0]
         self.assertEqual(
-            aws_conf.download_auth.credentials["aws_access_key_id"], "access-key-id"
+            auth_config_download.credentials["aws_access_key_id"], "access-key-id"
         )
         self.assertEqual(
-            aws_conf.download_auth.credentials["aws_secret_access_key"],
+            auth_config_download.credentials["aws_secret_access_key"],
             "secret-access-key",
         )
 
         peps_conf = default_config["peps"]
-        self.assertEqual(peps_conf.download.output_dir, "/data")
+        self.assertEqual(peps_conf.download[0].output_dir, "/data")
         self.assertEqual(peps_conf.search.timeout, 3.1)
         self.assertEqual(peps_conf.search.pagination["start_page"], 2)
 
@@ -577,8 +593,8 @@ class TestStacProviderConfig(unittest.TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 download:
-                    type: HTTPDownload
-                    base_uri: https://foo.bar
+                    - type: HTTPDownload
+                      base_uri: https://foo.bar
         """
         self.dag.update_providers_config(custom_stac_provider_conf_yml)
         custom_stac_provider_conf = yaml.safe_load(custom_stac_provider_conf_yml)[
