@@ -713,7 +713,9 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
         logger.info("Using providers whitelist: %s", ", ".join(whitelist))
 
     for provider_config in providers_configs:
-        if whitelist and provider_config.name not in whitelist:
+        if provider_config is None or (
+            whitelist and provider_config.name not in whitelist
+        ):
             continue
         provider_config_init(provider_config, stac_provider_config)
         config[provider_config.name] = provider_config

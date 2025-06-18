@@ -31,3 +31,4 @@
   download: !plugin
     type: HTTPDownload
     base_uri: https://foo.bar
+---
