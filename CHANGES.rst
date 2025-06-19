@@ -33,9 +33,9 @@ Documentation
 Features
 --------
 
-* Add strict product types mode (`#1677`_, `5077fa5`_)
-
 * **core**: Add env variable to whitelist providers (`#1672`_, `b93c4c8`_)
+
+* **core**: Add strict product types mode (`#1677`_, `5077fa5`_)
 
 * **plugins**: Auth token expiration margin (`#1665`_, `ef5fc18`_)
 
