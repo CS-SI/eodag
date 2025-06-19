@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2023, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2024, CS GROUP - France, https://www.csgroup.eu/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
@@ -15,24 +15,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
----
-!provider
-  name: foo_provider
-  priority: 2
-  roles:
-    - host
-  description: provider for test
-  search: !plugin
-    type: StacSearch
-    api_endpoint: https://foo.bar/search
-  products:
-    TEST_PRODUCT_1:
-      productType: TEST_PRODUCT_1
-    TEST_PRODUCT_2:
-      productType: TEST_PRODUCT_2
-    GENERIC_PRODUCT_TYPE:
-      productType: '{productType}'
-  download: !plugin
-    type: HTTPDownload
-    base_uri: https://foo.bar
----
+
+import os
+
+
+def is_env_var_true(var_name: str) -> bool:
+    """
+    Check if an environment variable is set to 'true' (case-insensitive).
+
+    :param var_name: Name of the environment variable to check.
+    :return: True if the environment variable is set to 'true', False otherwise.
+    """
+    return os.getenv(var_name, "").strip().lower() in ("1", "true", "yes", "on")
