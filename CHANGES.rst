@@ -3,6 +3,66 @@ Release history
 ===============
 
 
+v3.5.0 (2025-06-19)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Always validate PluginConfig before loading (`#1690`_, `59ac437`_)
+
+* **core**: Skip provider empty conf on init (`#1687`_, `0a4104e`_)
+
+* **plugins**: Raise errors when metadata discovery is not allowed (`#1534`_, `855ffa3`_)
+
+Build System
+------------
+
+* Update usgs to 0.3.6 (`#1688`_, `e63cfb1`_)
+
+Continuous Integration
+----------------------
+
+* Use personal access token for deploy github action (`#1693`_, `ff777d7`_)
+
+Documentation
+-------------
+
+* Dead-links and out-of-date param fix (`#1692`_, `445a20e`_)
+
+Features
+--------
+
+* Add strict product types mode (`#1677`_, `5077fa5`_)
+
+* **core**: Add env variable to whitelist providers (`#1672`_, `b93c4c8`_)
+
+* **plugins**: Auth token expiration margin (`#1665`_, `ef5fc18`_)
+
+* **server**: Added bbox filter support for collections search (`#1671`_, `5717f0d`_)
+
+.. _#1534: https://github.com/CS-SI/eodag/pull/1534
+.. _#1665: https://github.com/CS-SI/eodag/pull/1665
+.. _#1671: https://github.com/CS-SI/eodag/pull/1671
+.. _#1672: https://github.com/CS-SI/eodag/pull/1672
+.. _#1677: https://github.com/CS-SI/eodag/pull/1677
+.. _#1687: https://github.com/CS-SI/eodag/pull/1687
+.. _#1688: https://github.com/CS-SI/eodag/pull/1688
+.. _#1690: https://github.com/CS-SI/eodag/pull/1690
+.. _#1692: https://github.com/CS-SI/eodag/pull/1692
+.. _#1693: https://github.com/CS-SI/eodag/pull/1693
+.. _0a4104e: https://github.com/CS-SI/eodag/commit/0a4104e0518abc70e2133ca98472eea87d673a1c
+.. _445a20e: https://github.com/CS-SI/eodag/commit/445a20e060730642e703615c73225c0df3cc84d0
+.. _5077fa5: https://github.com/CS-SI/eodag/commit/5077fa591496811fb100c1e6b6a3e452cbdbe2a5
+.. _5717f0d: https://github.com/CS-SI/eodag/commit/5717f0deddbf022f2c6d5207ade77de6afb0f9d5
+.. _59ac437: https://github.com/CS-SI/eodag/commit/59ac437de01a8996d247b1f8239f332ed5dc5456
+.. _855ffa3: https://github.com/CS-SI/eodag/commit/855ffa39fa9b914eb39cc20d6e5c2cbbc1b2097a
+.. _b93c4c8: https://github.com/CS-SI/eodag/commit/b93c4c88f323af0eecb0950c90c6862ca9a7c3f4
+.. _e63cfb1: https://github.com/CS-SI/eodag/commit/e63cfb19ca64a2ed65f500ae9678e117a2ea4cf8
+.. _ef5fc18: https://github.com/CS-SI/eodag/commit/ef5fc188e515759c9227584b25805db75f537833
+.. _ff777d7: https://github.com/CS-SI/eodag/commit/ff777d7a1e33f612c5227dba4fecfcec55ff18fc
+
+
 v3.4.3 (2025-06-12)
 ===================
 
