@@ -146,6 +146,8 @@ class TestCoreProvidersConfig(TestCase):
                     type: StacSearch
                     api_endpoint: https://foo.bar/search
                     need_auth: True
+                auth:
+                    type: GenericAuth
                 products:
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
@@ -178,6 +180,7 @@ class TestCoreProvidersConfig(TestCase):
             "a_provider_without_creds_matching_url",
             "https://foo.bar/search",
             auth={
+                "type": "GenericAuth",
                 "matching_url": "http://foo.bar",
             },
         )
@@ -185,6 +188,7 @@ class TestCoreProvidersConfig(TestCase):
             "a_provider_with_creds",
             "https://foo.bar/search",
             auth={
+                "type": "GenericAuth",
                 "matching_url": "http://foo.bar",
                 "credentials": {"username": "bar", "password": "foo"},
             },
@@ -199,6 +203,7 @@ class TestCoreProvidersConfig(TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 auth:
+                    type: GenericAuth
                     matching_conf:
                         something: special
                     credentials:
@@ -213,6 +218,7 @@ class TestCoreProvidersConfig(TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 auth:
+                    type: GenericAuth
                     matching_conf:
                         something: special
             """

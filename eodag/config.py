@@ -194,12 +194,24 @@ class ProviderConfig(yaml.YAMLObject):
             },
         )
         for key in PLUGINS_TOPICS_KEYS:
-            current_value: Optional[dict[str, Any]] = getattr(self, key, None)
+            current_value: Optional[PluginConfig] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
             if current_value is not None:
                 current_value.update(mapping_value)
             elif mapping_value:
-                setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                try:
+                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                except ValidationError as e:
+                    logger.warning(
+                        (
+                            "Could not add %s Plugin config to %s configuration: %s. "
+                            "Try updating existing %s Plugin configs instead."
+                        ),
+                        key,
+                        self.name,
+                        str(e),
+                        ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
+                    )
 
 
 class PluginConfig(yaml.YAMLObject):
@@ -648,6 +660,7 @@ class PluginConfig(yaml.YAMLObject):
     @classmethod
     def from_mapping(cls, mapping: dict[str, Any]) -> PluginConfig:
         """Build a :class:`~eodag.config.PluginConfig` from a mapping"""
+        cls.validate(tuple(mapping.keys()))
         c = cls()
         c.__dict__.update(mapping)
         return c
@@ -657,7 +670,7 @@ class PluginConfig(yaml.YAMLObject):
         """Validate a :class:`~eodag.config.PluginConfig`"""
         if "type" not in config_keys:
             raise ValidationError(
-                "A Plugin config must specify the Plugin it configures"
+                "A Plugin config must specify the type of Plugin it configures"
             )
 
     def update(self, mapping: Optional[dict[Any, Any]]) -> None:
@@ -818,7 +831,9 @@ def provider_config_init(
         pass
 
 
-def override_config_from_file(config: dict[str, Any], file_path: str) -> None:
+def override_config_from_file(
+    config: dict[str, ProviderConfig], file_path: str
+) -> None:
     """Override a configuration with the values in a file
 
     :param config: An eodag providers configuration dictionary
@@ -837,7 +852,7 @@ def override_config_from_file(config: dict[str, Any], file_path: str) -> None:
     override_config_from_mapping(config, config_in_file)
 
 
-def override_config_from_env(config: dict[str, Any]) -> None:
+def override_config_from_env(config: dict[str, ProviderConfig]) -> None:
     """Override a configuration with environment variables values
 
     :param config: An eodag providers configuration dictionary
@@ -908,7 +923,7 @@ def override_config_from_env(config: dict[str, Any]) -> None:
 
 
 def override_config_from_mapping(
-    config: dict[str, Any], mapping: dict[str, Any]
+    config: dict[str, ProviderConfig], mapping: dict[str, Any]
 ) -> None:
     """Override a configuration with the values in a mapping.
 
@@ -955,7 +970,7 @@ def override_config_from_mapping(
                 )
 
         # try overriding conf
-        old_conf: Optional[dict[str, Any]] = config.get(provider)
+        old_conf: Optional[ProviderConfig] = config.get(provider)
         if old_conf is not None:
             old_conf.update(new_conf)
         else:

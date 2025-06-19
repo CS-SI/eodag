@@ -57,6 +57,16 @@ class TestEOProduct(EODagTestCase):
         if os.path.isdir(self.output_dir):
             shutil.rmtree(self.output_dir)
 
+    def get_mock_downloader(self):
+        """Returns a mock downloader with a default configuration."""
+        mock_downloader = mock.MagicMock(
+            spec_set=Download(provider=self.provider, config=None)
+        )
+        mock_downloader.config = config.PluginConfig.from_mapping(
+            {"type": "Foo", "output_dir": tempfile.gettempdir()}
+        )
+        return mock_downloader
+
     def test_eoproduct_search_intersection_geom(self):
         """EOProduct search_intersection attr must be it's geom when no bbox_or_intersect param given"""
         product = self._dummy_product()
@@ -169,13 +179,7 @@ class TestEOProduct(EODagTestCase):
         self.requests_http_get.return_value.__enter__.return_value.raise_for_status.side_effect = (  # noqa
             requests.HTTPError
         )
-        mock_downloader = mock.MagicMock(
-            spec_set=Download(provider=self.provider, config=None)
-        )
-        mock_downloader.config = config.PluginConfig.from_mapping(
-            {"output_dir": tempfile.gettempdir()}
-        )
-        product.register_downloader(mock_downloader, None)
+        product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
         self.assertEqual(self.requests_http_get.call_count, 2)
@@ -198,13 +202,7 @@ class TestEOProduct(EODagTestCase):
             requests.HTTPError,
             None,
         )
-        mock_downloader = mock.MagicMock(
-            spec_set=Download(provider=self.provider, config=None)
-        )
-        mock_downloader.config = config.PluginConfig.from_mapping(
-            {"output_dir": tempfile.gettempdir()}
-        )
-        product.register_downloader(mock_downloader, None)
+        product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
         self.assertEqual(self.requests_http_get.call_count, 2)
@@ -224,16 +222,10 @@ class TestEOProduct(EODagTestCase):
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
 
         self.requests_http_get.return_value = self._quicklook_response()
-        mock_downloader = mock.MagicMock(
-            spec_set=Download(provider=self.provider, config=None)
-        )
-        mock_downloader.config = config.PluginConfig.from_mapping(
-            {"output_dir": tempfile.gettempdir()}
-        )
-        product.register_downloader(mock_downloader, None)
+        product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook()
-        self.requests_http_get.assert_called_with(
+        self.requests_http_get.assert_called_once_with(
             "https://fake.url.to/quicklook",
             stream=True,
             auth=None,
@@ -282,13 +274,7 @@ class TestEOProduct(EODagTestCase):
             fh.write(b"content")
         product = self._dummy_product()
         product.properties["quicklook"] = "https://fake.url.to/quicklook"
-        mock_downloader = mock.MagicMock(
-            spec_set=Download(provider=self.provider, config=None)
-        )
-        mock_downloader.config = config.PluginConfig.from_mapping(
-            {"output_dir": tempfile.gettempdir()}
-        )
-        product.register_downloader(mock_downloader, None)
+        product.register_downloader(self.get_mock_downloader(), None)
 
         quicklook_file_path = product.get_quicklook(filename=quicklook_basename)
         self.assertEqual(self.requests_http_get.call_count, 0)
@@ -421,7 +407,11 @@ class TestEOProduct(EODagTestCase):
         product = self._dummy_product()
         self._set_download_simulation()
         dl_config = config.PluginConfig.from_mapping(
-            {"base_uri": "fake_base_uri", "output_dir": "will_be_overriden"}
+            {
+                "type": "HTTPDownload",
+                "base_uri": "fake_base_uri",
+                "output_dir": "will_be_overriden",
+            }
         )
         downloader = HTTPDownload(provider=self.provider, config=dl_config)
         product.register_downloader(downloader, None)

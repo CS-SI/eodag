@@ -442,12 +442,12 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
         os.environ["EODAG__USGS__API__CREDENTIALS__PASSWORD"] = "pwd"
         os.environ["EODAG__AWS_EOS__SEARCH__PRODUCT_LOCATION_SCHEME"] = "file"
-        os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__APIKEY"] = "api-key"
+        os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "api-key"
         os.environ[
-            "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
+            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
         ] = "access-key-id"
         os.environ[
-            "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
+            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
         os.environ["EODAG__PEPS__DOWNLOAD__OUTPUT_DIR"] = "/data"
         # check a parameter that has not been set yet
@@ -465,12 +465,13 @@ class TestConfigFunctions(unittest.TestCase):
 
         aws_conf = default_config["aws_eos"]
         self.assertEqual(aws_conf.search.product_location_scheme, "file")
-        self.assertEqual(aws_conf.auth.credentials["apikey"], "api-key")
+        self.assertEqual(aws_conf.search_auth.credentials["apikey"], "api-key")
         self.assertEqual(
-            aws_conf.auth.credentials["aws_access_key_id"], "access-key-id"
+            aws_conf.download_auth.credentials["aws_access_key_id"], "access-key-id"
         )
         self.assertEqual(
-            aws_conf.auth.credentials["aws_secret_access_key"], "secret-access-key"
+            aws_conf.download_auth.credentials["aws_secret_access_key"],
+            "secret-access-key",
         )
 
         peps_conf = default_config["peps"]

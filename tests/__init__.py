@@ -309,6 +309,7 @@ class EODagTestCase(unittest.TestCase):
             output_dir = str(Path(self.tmp_download_dir.name).parent)
         dl_config = config.PluginConfig.from_mapping(
             {
+                "type": "HTTPDownload",
                 "base_uri": "fake_base_uri" if base_uri is None else base_uri,
                 "output_dir": output_dir,
                 "extract": True if extract is None else extract,
