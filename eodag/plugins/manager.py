@@ -69,6 +69,8 @@ def _is_plugin_matching(
         if plugin_matching_url and re.match(rf"{plugin_matching_url}", matching_url):
             # url matches
             return True
+        elif plugin_matching_url:
+            return False
     if matching_conf:
         if (
             plugin_matching_conf

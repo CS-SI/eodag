@@ -397,7 +397,7 @@ class EODataAccessGateway:
         products: dict[str, Any] = {
             GENERIC_PRODUCT_TYPE: {"productType": "{productType}"}
         },
-        download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        download: list[dict[str, Any]] = [],
         **kwargs: dict[str, Any],
     ):
         """Adds a new provider.
@@ -414,9 +414,11 @@ class EODataAccessGateway:
         :param priority: Provider priority. If None, provider will be set as preferred (highest priority)
         :param search: Search :class:`~eodag.config.PluginConfig` mapping
         :param products: Provider product types mapping
-        :param download: Download :class:`~eodag.config.PluginConfig` mapping
+        :param download: list of Download :class:`~eodag.config.PluginConfig` mapping
         :param kwargs: Additional :class:`~eodag.config.ProviderConfig` mapping
         """
+        if not download:
+            download.extend([{"type": "HTTPDownload", "auth_error_code": 401}])
         conf_dict: dict[str, Any] = {
             name: {
                 "url": url,
@@ -425,11 +427,7 @@ class EODataAccessGateway:
                     GENERIC_PRODUCT_TYPE: {"productType": "{productType}"},
                     **products,
                 },
-                "download": {
-                    "type": "HTTPDownload",
-                    "auth_error_code": 401,
-                    **download,
-                },
+                "download": download,
                 **kwargs,
             }
         }
