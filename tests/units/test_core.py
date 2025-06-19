@@ -1231,23 +1231,21 @@ class TestCore(TestCoreBase):
         try:
             # Default conf: no auth needed for search
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
-            assert not getattr(dag.providers_config["peps"].search, "need_auth", False)
 
             # auth needed for search without credentials
-            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__PEPS__AUTH__REQUIRED_FOR"] = "search,download"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
             assert "peps" not in dag.available_providers()
 
             # auth needed for search with credentials
-            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__PEPS__AUTH__REQUIRED_FOR"] = "search,download"
             os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
             assert "peps" in dag.available_providers()
-            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
 
         # Teardown
         finally:
-            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__PEPS__AUTH__REQUIRED_FOR", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
 
     @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
@@ -1278,25 +1276,16 @@ class TestCore(TestCoreBase):
         )
         try:
             # auth needed for search with need_auth but without auth plugin
-            os.environ["EODAG__PEPS__SEARCH__NEED_AUTH"] = "true"
+            os.environ["EODAG__PEPS__AUTH__REQUIRED_FOR"] = "search,download"
             os.environ["EODAG__PEPS__AUTH__CREDENTIALS__USERNAME"] = "foo"
             dag = EODataAccessGateway(user_conf_file_path=empty_conf_file)
             delattr(dag.providers_config["peps"], "auth")
             assert "peps" in dag.available_providers()
-            assert getattr(dag.providers_config["peps"].search, "need_auth", False)
             assert not hasattr(dag.providers_config["peps"], "auth")
-
-            with self.assertLogs(level="INFO") as cm:
-                dag._prune_providers_list()
-                self.assertNotIn("peps", dag.providers_config.keys())
-                self.assertIn(
-                    "peps: provider needing auth for search has been pruned because no auth plugin could be found",
-                    str(cm.output),
-                )
 
         # Teardown
         finally:
-            os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
+            os.environ.pop("EODAG__PEPS__AUTH__REQUIRED_FOR", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
 
     def test_prune_providers_list_without_api_or_search_plugin(self):
@@ -1983,7 +1972,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             self.assertEqual(self.dag.get_preferred_provider(), ("usgs", 5))
             # peps outputs prefix is set to /data
             self.assertEqual(
-                self.dag.providers_config["peps"].download.output_dir, "/data"
+                self.dag.providers_config["peps"].download[0].output_dir, "/data"
             )
         finally:
             os.environ.pop("EODAG_CFG_FILE", None)

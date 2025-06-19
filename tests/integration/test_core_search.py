@@ -142,6 +142,10 @@ class TestCoreSearch(unittest.TestCase):
         self.assertRaises(RequestError, next, self.dag.search_iter_page())
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
         autospec=True,
     )
@@ -159,7 +163,12 @@ class TestCoreSearch(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
     )
     def test_core_search_errors_odata(
-        self, mock_fetch_product_types_list, mock_get, mock_urlopen, mock_authenticate
+        self,
+        mock_fetch_product_types_list,
+        mock_get,
+        mock_urlopen,
+        mock_authenticate,
+        mock_oidc,
     ):
         # ODataV4Search / creodias
         self.dag.set_preferred_provider("creodias")
@@ -432,10 +441,16 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_find_on_second_empty_results(self, mock_query):
+    def test_core_search_fallback_find_on_second_empty_results(
+        self, mock_query, mock_oidc
+    ):
         """Core search must loop over providers until finding a non empty result"""
         product_type = "S1_SAR_SLC"
         available_providers = self.dag.available_providers(product_type)
@@ -454,7 +469,19 @@ class TestCoreSearch(unittest.TestCase):
 
         mock_query.side_effect = [
             ([], 0),
-            ([EOProduct("creodias", dict(geometry="POINT (0 0)", id="a"))], 1),
+            (
+                [
+                    EOProduct(
+                        "creodias",
+                        dict(
+                            geometry="POINT (0 0)",
+                            id="a",
+                            downloadLink="https://s1.creodias.eu/p1",
+                        ),
+                    )
+                ],
+                1,
+            ),
         ]
 
         search_result = self.dag.search(productType="S1_SAR_SLC", count=True)
@@ -467,10 +494,14 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.query",
         autospec=True,
     )
-    def test_core_search_fallback_given_provider(self, mock_query):
+    def test_core_search_fallback_given_provider(self, mock_query, mock_oidc):
         """Core search must not loop over providers if a provider is specified"""
         product_type = "S1_SAR_SLC"
         available_providers = self.dag.available_providers(product_type)
@@ -515,41 +546,48 @@ class TestCoreSearch(unittest.TestCase):
         self.dag.add_provider(
             "foo",
             "https://foo.bar/search",
-            auth={
-                "type": "GenericAuth",
-                "matching_url": "https://foo.bar",
-                "credentials": {"username": "a-username", "password": "a-password"},
-            },
-            search_auth={
-                "type": "GenericAuth",
-                "matching_conf": {"something": "special"},
-                "credentials": {
-                    "username": "another-username",
-                    "password": "another-password",
+            auth=[
+                {
+                    "type": "GenericAuth",
+                    "match": {"href": "https://foo.bar"},
+                    "credentials": {"username": "a-username", "password": "a-password"},
+                    "required_for": ["download", "search"],
                 },
-            },
-            download_auth={
-                "type": "GenericAuth",
-                "matching_url": "https://somewhere",
-                "credentials": {
-                    "username": "yet-another-username",
-                    "password": "yet-another-password",
+                {
+                    "type": "GenericAuth",
+                    "match": {"something": "special"},
+                    "credentials": {
+                        "username": "another-username",
+                        "password": "another-password",
+                    },
+                    "required_for": ["search"],
                 },
-            },
+                {
+                    "type": "GenericAuth",
+                    "match": {"href": "https://somewhere"},
+                    "credentials": {
+                        "username": "yet-another-username",
+                        "password": "yet-another-password",
+                    },
+                    "required_for": ["download"],
+                },
+            ],
         )
 
         # auth plugin without match configuration
         self.dag.add_provider(
             "provider_without_match_configured",
             "https://foo.bar/baz/search",
-            search={"need_auth": True},
-            auth={
-                "type": "GenericAuth",
-                "credentials": {
-                    "username": "some-username",
-                    "password": "some-password",
-                },
-            },
+            auth=[
+                {
+                    "type": "GenericAuth",
+                    "credentials": {
+                        "username": "some-username",
+                        "password": "some-password",
+                    },
+                    "required_for": ["search"],
+                }
+            ],
         )
         self.dag.search(provider="provider_without_match_configured")
         self.assertEqual(mock_query.call_args[0][1].auth.username, "some-username")
@@ -559,7 +597,7 @@ class TestCoreSearch(unittest.TestCase):
         self.dag.add_provider(
             "provider_matching_search_api",
             "https://foo.bar/baz/search",
-            search={"need_auth": True},
+            search={},
         )
         self.dag.search(provider="provider_matching_search_api")
         self.assertEqual(mock_query.call_args[0][1].auth.username, "a-username")
@@ -569,7 +607,7 @@ class TestCoreSearch(unittest.TestCase):
         self.dag.add_provider(
             "provider_matching_another_search_api",
             "https://fooooo.bar/search",
-            search={"need_auth": True, "something": "special"},
+            search={"something": "special"},
         )
         self.dag.search(provider="provider_matching_another_search_api")
         self.assertEqual(mock_query.call_args[0][1].auth.username, "another-username")

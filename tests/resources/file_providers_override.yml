@@ -32,7 +32,8 @@
       productType: TEST_PRODUCT_2
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
-  download: !plugin
-    type: HTTPDownload
-    base_uri: https://foo.bar
+  download:
+    - !plugin
+      type: HTTPDownload
+      base_uri: https://foo.bar
 ---

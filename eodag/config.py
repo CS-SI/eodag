@@ -226,6 +226,7 @@ class ProviderConfig(yaml.YAMLObject):
                         ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
                     )
 
+
 class PluginConfig(yaml.YAMLObject):
     """Representation of a plugin config.
 
@@ -936,6 +937,9 @@ def override_config_from_env(config: dict[str, ProviderConfig]) -> None:
             mapping[parts[0]][parts[1]] = env_value
         elif len(parts) == 1:
             # try converting env_value type from type hints
+            if "list" in str(env_type):
+                # convert str to array and then cast (only working for list[str] type)
+                env_value = env_value.split(",")
             try:
                 env_value = cast_scalar_value(env_value, env_type)
             except TypeError:

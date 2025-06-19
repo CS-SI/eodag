@@ -540,7 +540,10 @@ class QueryStringSearch(Search):
                 response = self._request(prep)
             else:
                 response = QueryStringSearch._request(self, prep)
-        except (RequestError, KeyError, AttributeError):
+        except (RequestError, KeyError, AttributeError) as e:
+            logger.warning(
+                "product types could not be fetched from %s: %s", fetch_url, e
+            )
             return None
         else:
             try:

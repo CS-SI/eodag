@@ -69,6 +69,8 @@ def _is_plugin_matching(
         if plugin_matching_url and re.match(rf"{plugin_matching_url}", matching_url):
             # url matches
             return True
+        elif plugin_matching_url:
+            return False
     if matching_conf:
         if (
             plugin_matching_conf
@@ -305,7 +307,9 @@ class PluginManager:
         :returns: The Authentication plugin
         """
         # matching url from product to download
-        matching_url = _get_matching_url_for_product(product)
+        matching_url = ""
+        if product:
+            matching_url = _get_matching_url_for_product(product)
         if not matching_url:
             # search auth
             matching_url = getattr(associated_plugin.config, "api_endpoint", None)
@@ -482,10 +486,12 @@ class PluginManager:
         """
         # md5 hash to helps identifying an auth plugin within several for a given provider
         # (each has distinct matching settings)
+        matching_conf = deepcopy(getattr(plugin_conf, "match", {}))
+        matching_url = matching_conf.pop("href", "")
         auth_match_md5 = dict_md5sum(
             {
-                "matching_url": getattr(plugin_conf, "matching_url", None),
-                "matching_conf": getattr(plugin_conf, "matching_conf", None),
+                "matching_url": matching_url,
+                "matching_conf": matching_conf,
             }
         )
         cached_instance = self._built_plugins_cache.setdefault(
