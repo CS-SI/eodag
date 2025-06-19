@@ -2698,7 +2698,6 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
         with self.assertLogs(level="WARNING") as cm:
             sr = self.dag._do_search(
-                count=True,
                 search_plugin=search_plugin,
                 items_per_page=2,
             )
@@ -2723,9 +2722,10 @@ class TestCoreSearch(TestCoreBase):
             pagination = {}
 
         search_plugin.config = DummyConfig()
-        sr = self.dag._do_search(search_plugin=search_plugin, count=True)
+        sr = self.dag._do_search(search_plugin=search_plugin)
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), self.search_results_size)
+        self.assertTrue(search_plugin.query.call_args[0][0].count)
         self.assertEqual(sr.number_matched, self.search_results_size)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
@@ -2743,8 +2743,37 @@ class TestCoreSearch(TestCoreBase):
         search_plugin.config = DummyConfig()
 
         sr = self.dag._do_search(search_plugin=search_plugin, count=False)
-        self.assertIsNone(sr.number_matched)
         self.assertEqual(len(sr), self.search_results_size)
+        self.assertFalse(search_plugin.query.call_args[0][0].count)
+        self.assertIsNone(sr.number_matched)
+
+    @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
+    def test__do_search_with_count_not_set(self, search_plugin):
+        """_do_search must be able to create a query with "count" not set. "count" has
+        provider configuration value by default, which is set itself to True by default."""
+        search_plugin.provider = "peps"
+
+        class DummyConfig:
+            def __init__(self, count):
+                self.pagination = {} if count is None else {"count": count}
+
+        # Case with count set to True in provider config
+        search_plugin.config = DummyConfig(True)
+        _ = self.dag._do_search(search_plugin=search_plugin)
+
+        self.assertTrue(search_plugin.query.call_args_list[0][0][0].count)
+
+        # Case with count set to False in provider config
+        search_plugin.config = DummyConfig(False)
+        _ = self.dag._do_search(search_plugin=search_plugin)
+
+        self.assertFalse(search_plugin.query.call_args_list[1][0][0].count)
+
+        # Case with count not set in provider config: True default value will take over
+        search_plugin.config = DummyConfig(None)
+        _ = self.dag._do_search(search_plugin=search_plugin)
+
+        self.assertTrue(search_plugin.query.call_args_list[2][0][0].count)
 
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
@@ -2759,7 +2788,6 @@ class TestCoreSearch(TestCoreBase):
 
         page = 4
         sr = self.dag._do_search(
-            count=True,
             search_plugin=search_plugin,
             page=page,
             items_per_page=2,
@@ -2781,7 +2809,6 @@ class TestCoreSearch(TestCoreBase):
         page = 4
         items_per_page = 10
         sr = self.dag._do_search(
-            count=True,
             search_plugin=search_plugin,
             page=page,
             items_per_page=items_per_page,
@@ -2800,7 +2827,7 @@ class TestCoreSearch(TestCoreBase):
             provider = "peps"
             config = DummyConfig()
 
-        sr = self.dag._do_search(search_plugin=DummySearchPlugin(), count=True)
+        sr = self.dag._do_search(search_plugin=DummySearchPlugin())
         self.assertIsInstance(sr, SearchResult)
         self.assertEqual(len(sr), 0)
         self.assertEqual(sr.number_matched, 0)

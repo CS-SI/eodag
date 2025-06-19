@@ -41,7 +41,7 @@ class PreparedSearch:
     items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
     auth: Optional[Union[AuthBase, S3SessionKwargs]] = None
     auth_plugin: Optional[Authentication] = None
-    count: bool = True
+    count: bool = False
     url: Optional[str] = None
     info_message: Optional[str] = None
     exception_message: Optional[str] = None

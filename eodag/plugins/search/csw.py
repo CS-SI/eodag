@@ -110,8 +110,9 @@ class CSWSearch(Search):
     ) -> tuple[list[EOProduct], Optional[int]]:
         """Perform a search on a OGC/CSW-like interface"""
         product_type = kwargs.get("productType")
+        count = prep.count
         if product_type is None:
-            return ([], 0) if prep.count else ([], None)
+            return ([], 0) if count else ([], None)
         auth = kwargs.get("auth")
         if auth:
             self.__init_catalog(**getattr(auth.config, "credentials", {}))
@@ -156,7 +157,7 @@ class CSWSearch(Search):
                 )
                 results.extend(partial_results)
         logger.info("Found %s overall results", len(results))
-        total_results = len(results) if prep.count else None
+        total_results = len(results) if count else None
         return results, total_results
 
     def __init_catalog(

@@ -159,6 +159,8 @@ class QueryStringSearch(Search):
             returns a json or xml document
           * :attr:`~eodag.config.PluginConfig.Pagination.count_endpoint` (``str``): The endpoint for counting the number
             of items satisfying a request
+          * :attr:`~eodag.config.PluginConfig.Pagination.count` (``bool``): Whether the provider default search counts
+            items or not
           * :attr:`~eodag.config.PluginConfig.Pagination.count_tpl` (``str``): template for the count parameter that
             should be added to the search request
           * :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_key_path` (``str``): A JsonPath expression used
@@ -732,7 +734,7 @@ class QueryStringSearch(Search):
             logger.warning(
                 "GENERIC_PRODUCT_TYPE is not a real product_type and should only be used internally as a template"
             )
-            return ([], 0) if prep.count else ([], None)
+            return ([], 0) if count else ([], None)
 
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         prep.sort_by_qs, _ = (
@@ -1550,7 +1552,7 @@ class PostJsonSearch(QueryStringSearch):
             for k in keywords.keys()
             if isinstance(product_type_metadata_mapping.get(k, []), list)
         ):
-            return ([], 0) if prep.count else ([], None)
+            return ([], 0) if count else ([], None)
         prep.query_params = dict(qp, **sort_by_qp)
         prep.search_urls, total_items = self.collect_search_urls(prep, **kwargs)
         if not count and getattr(prep, "need_count", False):

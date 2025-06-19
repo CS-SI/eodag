@@ -128,6 +128,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
 
         products, estimate = self.mundi_search_plugin.query(
             prep=PreparedSearch(
+                count=True,
                 page=1,
                 items_per_page=2,
                 auth_plugin=self.mundi_auth_plugin,
@@ -256,6 +257,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         ]
         products, estimate = self.peps_search_plugin.query(
             prep=PreparedSearch(
+                count=True,
                 page=1,
                 items_per_page=2,
                 auth_plugin=self.peps_auth_plugin,
@@ -295,7 +297,6 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         mock__request.return_value.json.return_value = peps_resp_search
         products, estimate = self.peps_search_plugin.query(
             prep=PreparedSearch(
-                count=False,
                 page=1,
                 items_per_page=2,
                 auth_plugin=self.peps_auth_plugin,
@@ -753,6 +754,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         ]
         products, estimate = self.awseos_search_plugin.query(
             prep=PreparedSearch(
+                count=True,
                 page=1,
                 items_per_page=2,
                 auth_plugin=self.awseos_auth_plugin,
@@ -1238,6 +1240,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         products, estimate = self.onda_search_plugin.query(
             prep=PreparedSearch(
+                count=True,
                 page=1,
                 items_per_page=2,
                 auth=self.onda_auth_plugin,
@@ -1283,7 +1286,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def test_plugins_search_odatav4search_with_ssl_context(
         self, mock_cast, mock_urlopen, mock_request, mock_get_ssl_context
     ):
-        """A query with a ODataV4Search (here onda) must return tuple with a list of EOProduct and a number of available products"""  # noqa
+        """A query with a ODataV4Search (here onda) must work in a ssl context"""  # noqa
         self.onda_search_plugin.config.ssl_verify = False
         mock_cast.return_value.json.return_value = 2
 
@@ -1302,15 +1305,12 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
                 items_per_page=2,
                 auth=self.onda_auth_plugin,
             ),
-            # custom query argument that must be mapped using discovery_metata.search_param
-            foo="bar",
-            **self.search_criteria_s2_msi_l1c,
         )
 
         mock_get_ssl_context.assert_called_with(False)
 
         # # Asserting that get_ssl_context has been called
-        self.assertEqual(mock_get_ssl_context.call_count, 2)
+        self.assertEqual(mock_get_ssl_context.call_count, 1)
 
         # Asserting that urlopen has been called with the correct arguments
         mock_urlopen.assert_called_with(
@@ -1350,6 +1350,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         )
         products, estimate = self.onda_search_plugin.query(
             prep=PreparedSearch(
+                count=True,
                 page=1,
                 items_per_page=2,
                 auth=self.onda_auth_plugin,
@@ -1430,8 +1431,9 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         mock_requests_get.side_effect = RequestException()
 
         with self.assertLogs(level="ERROR") as cm:
-            products, estimate = self.onda_search_plugin.query(
+            _, _ = self.onda_search_plugin.query(
                 prep=PreparedSearch(
+                    count=True,
                     page=1,
                     items_per_page=2,
                     auth=self.onda_auth_plugin,
