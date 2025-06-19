@@ -207,7 +207,7 @@ class AwsDownload(Download):
     :param config: Download plugin configuration:
 
         * :attr:`~eodag.config.PluginConfig.type` (``str``) (**mandatory**): AwsDownload
-        * :attr:`~eodag.config.PluginConfig.base_uri` (``str``) (**mandatory**): s3 endpoint url
+        * :attr:`~eodag.config.PluginConfig.s3_endpoint` (``str``): s3 endpoint url
         * :attr:`~eodag.config.PluginConfig.requester_pays` (``bool``): whether download is done
           from a requester-pays bucket or not; default: ``False``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure
