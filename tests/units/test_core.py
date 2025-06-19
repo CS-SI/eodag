@@ -3653,10 +3653,13 @@ class TestCoreStrictMode(TestCoreBase):
         # Ensure a clean environment for each test
         self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
         self.mock_os_environ.start()
-        
+
         # This file removes TEST_PRODUCT_2 from the main config, in order to test strict and permissive behavior
         os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_product_types_modes.yml"
+        )
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_providers_override.yml"
         )
 
     def tearDown(self):

@@ -26,6 +26,10 @@
     type: StacSearch
     api_endpoint: https://foo.bar/search
   products:
+    TEST_PRODUCT_1:
+      productType: TEST_PRODUCT_1
+    TEST_PRODUCT_2:
+      productType: TEST_PRODUCT_2
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
