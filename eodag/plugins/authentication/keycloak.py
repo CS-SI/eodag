@@ -60,8 +60,10 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
           The allowed audiences that have to be present in the user token.
         * :attr:`~eodag.config.PluginConfig.auth_error_code` (``int``): which error code is
           returned in case of an authentication error
-        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates
+        * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): If the SSL certificates
           should be verified in the token request; default: ``True``
+        * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds)
+          before a token is considered expired. Default: 60 seconds
 
     Using :class:`~eodag.plugins.download.http.HTTPDownload` a download link
     ``http://example.com?foo=bar`` will become
