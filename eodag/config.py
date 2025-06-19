@@ -268,9 +268,11 @@ class PluginConfig(yaml.YAMLObject):
         #: Metadata regex pattern used for discovery in search result properties
         metadata_pattern: str
         #: Configuration/template that will be used to query for a discovered parameter
-        search_param: str
+        search_param: str | dict[str, Any]
         #: Path to the metadata in search result
         metadata_path: str
+        #: Whether an error must be raised when using a search parameter which is not queryable or not
+        raise_mtd_discovery_error: bool
 
     class DiscoverProductTypes(TypedDict, total=False):
         """Configuration for product types discovery"""

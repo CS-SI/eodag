@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import re
 from typing import Union
 
 from fastapi import FastAPI, Request
@@ -95,10 +96,14 @@ class ResponseSearchError(Exception):
 
             if type(exception) is ValidationError:
                 for error_param in exception.parameters:
-                    stac_param = EODAGSearch.to_stac(error_param)
-                    exception.message = exception.message.replace(
-                        error_param, stac_param
-                    )
+                    error_param_pattern = rf"\b{error_param}\b"
+                    if re.search(error_param_pattern, exception.message):
+                        stac_param = EODAGSearch.to_stac(error_param)
+                        exception.message = re.sub(
+                            error_param_pattern,
+                            stac_param,
+                            exception.message,
+                        )
                 error_dict["message"] = exception.message
 
             error_list.append(error_dict)
