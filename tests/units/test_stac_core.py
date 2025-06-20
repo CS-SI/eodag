@@ -198,6 +198,134 @@ class TestStacCore(unittest.TestCase):
         """get_stac_collections runs without any error"""
         await self.rest_core.all_collections(mock_request("/"))
 
+    async def test_all_collections_with_various_params(self):
+        test_cases = [
+            ({"bbox": "5,5,15,15"}, ["test_id"], "bbox intersects"),
+            ({"bbox": "-10,-10,-5,-5"}, [], "bbox does not intersect"),
+            ({"q": "test"}, ["test_id"], "free text query matches"),
+            ({"q": "nomatch"}, [], "free text query does not match"),
+            ({"platform": "test_platform"}, ["test_id"], "platform matches"),
+            ({"platform": "other_platform"}, [], "platform does not match"),
+            ({"instrument": "test_instrument"}, ["test_id"], "instrument matches"),
+            ({"instrument": "other_instrument"}, [], "instrument does not match"),
+            (
+                {"constellation": "test_constellation"},
+                ["test_id"],
+                "constellation matches",
+            ),
+            (
+                {"constellation": "other_constellation"},
+                [],
+                "constellation does not match",
+            ),
+            (
+                {"datetime": "2020-01-01T00:00:00Z/2020-12-31T23:59:59Z"},
+                ["test_id"],
+                "datetime matches",
+            ),
+            (
+                {"datetime": "1990-01-01T00:00:00Z/1990-12-31T23:59:59Z"},
+                [],
+                "datetime does not match",
+            ),
+            (
+                {"bbox": "5,5,15,15", "q": "test", "platform": "test_platform"},
+                ["test_id"],
+                "multiple params match",
+            ),
+            (
+                {"bbox": "5,5,15,15", "q": "nomatch", "platform": "test_platform"},
+                [],
+                "multiple params, one does not match",
+            ),
+        ]
+
+        fake_product_type = {
+            "ID": "test_id",
+            "title": "Test Collection",
+            "description": "A test collection",
+            "keywords": ["test"],
+            "license": "test-license",
+            "platform": "test_platform",
+            "instrument": "test_instrument",
+            "constellation": "test_constellation",
+        }
+
+        # This is the external STAC collection, which provides the bbox for filtering
+        fake_ext_stac_collection = {
+            "extent": {"spatial": {"bbox": [[0.0, 0.0, 10.0, 10.0]]}},
+        }
+
+        def fake_guess_product_type(
+            free_text=None,
+            platformSerialIdentifier=None,
+            instrument=None,
+            platform=None,
+            productType=None,
+            missionStartDate=None,
+            missionEndDate=None,
+        ):
+            if free_text is not None:
+                return ["test_id"] if free_text == "test" else []
+            if platformSerialIdentifier is not None:
+                return (
+                    ["test_id"] if platformSerialIdentifier == "test_platform" else []
+                )
+            if instrument is not None:
+                return ["test_id"] if instrument == "test_instrument" else []
+            if platform is not None:
+                return ["test_id"] if platform == "test_constellation" else []
+            if productType is not None:
+                return ["test_id"] if productType == "test_id" else []
+            if missionStartDate or missionEndDate:
+                if missionStartDate and missionStartDate.startswith("2020"):
+                    return ["test_id"]
+                return []
+            return ["test_id"]
+
+        import inspect
+
+        from eodag.rest.stac import StacCollection
+
+        async def cached_side_effect(func, key, req):
+            if inspect.iscoroutinefunction(func):
+                return await func()
+            return func()
+
+        with (
+            mock.patch(
+                "eodag.rest.core.eodag_api.list_product_types",
+                return_value=[fake_product_type],
+            ),
+            mock.patch(
+                "eodag.rest.core.format_dict_items", side_effect=lambda x, **kwargs: x
+            ),
+            mock.patch("eodag.rest.core.cached", side_effect=cached_side_effect),
+            mock.patch(
+                "eodag.rest.core.eodag_api.guess_product_type",
+                side_effect=fake_guess_product_type,
+            ),
+            mock.patch(
+                "eodag.rest.core.SearchPostRequest.validate_bbox",
+                side_effect=lambda bbox: None,
+            ),
+            mock.patch.object(
+                StacCollection,
+                "ext_stac_collections",
+                {"test_id": fake_ext_stac_collection},
+            ),
+        ):
+            for params, expected_ids, desc in test_cases:
+                request = mock_request("http://testserver/collections")
+                params_copy = params.copy()
+                result = await self.rest_core.all_collections(
+                    request=request, **params_copy
+                )
+
+                self.assertIn("collections", result, f"Failed: {desc}")
+                ids = [col["id"] for col in result["collections"]]
+                self.assertEqual(ids, expected_ids, f"Failed: {desc} (params={params})")
+
     def test_get_stac_conformance(self):
         """get_stac_conformance runs without any error"""
         self.rest_core.get_stac_conformance()

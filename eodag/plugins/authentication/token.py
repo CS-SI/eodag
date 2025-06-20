@@ -31,6 +31,7 @@ from urllib3 import Retry
 
 from eodag.plugins.authentication.base import Authentication
 from eodag.utils import (
+    DEFAULT_TOKEN_EXPIRATION_MARGIN,
     HTTP_REQ_TIMEOUT,
     REQ_RETRY_BACKOFF_FACTOR,
     REQ_RETRY_STATUS_FORCELIST,
@@ -90,6 +91,8 @@ class TokenAuth(Authentication):
         * :attr:`~eodag.config.PluginConfig.retry_status_forcelist` (``list[int]``): :class:`urllib3.util.Retry`
           ``status_forcelist`` parameter, list of integer HTTP status codes that we should force a retry on; default:
           ``[401, 429, 500, 502, 503, 504]``
+        * :attr:`~eodag.config.PluginConfig.token_expiration_margin` (``int``): The margin of time (in seconds) before
+          a token is considered expired. Default: 60 seconds.
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
@@ -152,9 +155,18 @@ class TokenAuth(Authentication):
 
         # Use a thread lock to avoid several threads requesting the token at the same time
         with self.auth_lock:
-
+            expiration_margin = timedelta(
+                seconds=getattr(
+                    self.config,
+                    "token_expiration_margin",
+                    DEFAULT_TOKEN_EXPIRATION_MARGIN,
+                )
+            )
             self.validate_config_credentials()
-            if self.token and self.token_expiration > datetime.now():
+            if (
+                self.token
+                and self.token_expiration - datetime.now() > expiration_margin
+            ):
                 logger.debug("using existing access token")
                 return RequestsTokenAuth(
                     self.token, "header", headers=getattr(self.config, "headers", {})

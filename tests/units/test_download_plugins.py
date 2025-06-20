@@ -270,6 +270,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         )
         dl_config = config.PluginConfig.from_mapping(
             {
+                "type": "HTTPDownload",
                 "base_uri": "fake_base_uri",
                 "output_dir": self.output_dir,
                 "extract": False,

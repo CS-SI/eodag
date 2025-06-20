@@ -33,9 +33,12 @@ jobs:
         source .venv/bin/activate
         uv pip install python-semantic-release packaging
     - name: Set Git config
+      env:
+        TOKEN: ${{ secrets.USER_TOKEN }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
+        git remote set-url origin https://$TOKEN@github.com/${{ github.repository }}.git
     - name: Git merge develop in master
       run: |
         git checkout master
@@ -62,9 +65,12 @@ jobs:
         # Get history and tags for SCM versioning to work
         fetch-depth: 0
     - name: Set Git config
+      env:
+        TOKEN: ${{ secrets.USER_TOKEN }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "'github-actions[bot]@users.noreply.github.com"
+        git remote set-url origin https://$TOKEN@github.com/${{ github.repository }}.git
     - name: Git merge master in develop
       run: |
         git checkout develop

@@ -102,6 +102,7 @@ from eodag.utils import (
     get_ssl_context,
     cached_yaml_load_all,
 )
+from eodag.utils.env import is_env_var_true
 from eodag.utils.requests import fetch_json
 from eodag.utils.s3 import (
     list_files_in_s3_zipped_object,

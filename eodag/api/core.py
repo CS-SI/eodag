@@ -36,6 +36,7 @@ from whoosh.index import exists_in, open_dir
 from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import (
+    NOT_AVAILABLE,
     ONLINE_STATUS,
     mtd_cfg_as_conversion_and_querypath,
 )
@@ -79,6 +80,7 @@ from eodag.utils import (
     string_to_jsonpath,
     uri_to_path,
 )
+from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
     EodagError,
@@ -175,10 +177,17 @@ class EODataAccessGateway:
         share_credentials(self.providers_config)
 
         # init updated providers conf
+        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        available_product_types = set(self.product_types_config.source.keys())
+
         for provider in self.providers_config.keys():
             provider_config_init(
                 self.providers_config[provider],
                 load_stac_provider_config(),
+            )
+
+            self._sync_provider_product_types(
+                provider, available_product_types, strict_mode
             )
 
         # re-build _plugins_manager using up-to-date providers_config
@@ -225,6 +234,61 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
+
+    def _sync_provider_product_types(
+        self,
+        provider: str,
+        available_product_types: set[str],
+        strict_mode: bool,
+    ) -> None:
+        """
+        Synchronize product types for a provider based on strict or permissive mode.
+
+        In strict mode, removes product types not in available_product_types.
+        In permissive mode, adds empty product type configs for missing types.
+
+        :param provider: The provider name whose product types should be synchronized.
+        :param available_product_types: The set of available product type IDs.
+        :param strict_mode: If True, remove unknown product types; if False, add empty configs for them.
+        :returns: None
+        """
+        provider_products = self.providers_config[provider].products
+        products_to_remove: list[str] = []
+        products_to_add: list[str] = []
+
+        for product_id in provider_products:
+            if product_id == GENERIC_PRODUCT_TYPE:
+                continue
+
+            if product_id not in available_product_types:
+                if strict_mode:
+                    products_to_remove.append(product_id)
+                    continue
+
+                empty_product = {
+                    "title": product_id,
+                    "abstract": NOT_AVAILABLE,
+                }
+                self.product_types_config.source[
+                    product_id
+                ] = empty_product  # will update available_product_types
+                products_to_add.append(product_id)
+
+        if products_to_add:
+            logger.debug(
+                "Product types permissive mode, %s added (provider %s)",
+                ", ".join(products_to_add),
+                provider,
+            )
+
+        if products_to_remove:
+            logger.debug(
+                "Product types strict mode, ignoring %s (provider %s)",
+                ", ".join(products_to_remove),
+                provider,
+            )
+            for id in products_to_remove:
+                del self.providers_config[provider].products[id]
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -608,11 +672,14 @@ class EODataAccessGateway:
             for product_type_id in p.products:  # type: ignore
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
+
                 config = self.product_types_config[product_type_id]
                 config["_id"] = product_type_id
+
                 if "alias" in config:
                     product_type_id = config["alias"]
                 product_type = {"ID": product_type_id, **config}
+
                 if product_type not in product_types:
                     product_types.append(product_type)
 
@@ -620,11 +687,18 @@ class EODataAccessGateway:
         return sorted(product_types, key=itemgetter("ID"))
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
-        """Fetch product types list and update if needed
+        """Fetch product types list and update if needed.
+
+        If strict mode is enabled (by setting the ``EODAG_STRICT_PRODUCT_TYPES`` environment variable
+        to a truthy value), this method will not fetch or update product types and will return immediately.
 
         :param provider: The name of a provider or provider-group for which product types
                          list should be updated. Defaults to all providers (None value).
         """
+        strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
+        if strict_mode:
+            return
+
         providers_to_fetch = list(self.providers_config.keys())
         # check if some providers are grouped under a group name which is not a provider name
         if provider is not None and provider not in self.providers_config:

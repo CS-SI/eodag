@@ -811,7 +811,10 @@ class QueryStringSearch(Search):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters"""
         logger.debug("Building the query string that will be used for search")
-        query_params = format_query_params(product_type, self.config, query_dict)
+        error_context = f"Product type: {product_type} / provider : {self.provider}"
+        query_params = format_query_params(
+            product_type, self.config, query_dict, error_context
+        )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)
@@ -1781,7 +1784,10 @@ class StacSearch(PostJsonSearch):
             query_dict.setdefault("startTimeFromAscendingNode", "..")
             query_dict.setdefault("completionTimeFromAscendingNode", "..")
 
-        query_params = format_query_params(product_type, self.config, query_dict)
+        error_context = f"Product type: {product_type} / provider : {self.provider}"
+        query_params = format_query_params(
+            product_type, self.config, query_dict, error_context
+        )
 
         # Build the final query string, in one go without quoting it
         # (some providers do not operate well with urlencoded and quoted query strings)

@@ -150,7 +150,7 @@ No authentication needed.
 
 ``ecmwf``
 ^^^^^^^^^
-Create an account `here <https://apps.ecmwf.int/registration/>`__.
+Create an account `here <https://www.ecmwf.int/user/login>`__.
 
 Then use *email* as ``username`` and *key* as ``password`` from `here <https://api.ecmwf.int/v1/key/>`__ in eodag credentials.
 EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you

@@ -275,7 +275,8 @@ class Search(PluginTopic):
             if eodag_sort_order[:3] != "ASC" and eodag_sort_order[:3] != "DES":
                 raise ValidationError(
                     "Sorting order is invalid: it must be set to 'ASC' (ASCENDING) or "
-                    f"'DESC' (DESCENDING), got '{eodag_sort_order}' with '{eodag_sort_param}' instead"
+                    f"'DESC' (DESCENDING), got '{eodag_sort_order}' with '{eodag_sort_param}' instead",
+                    {eodag_sort_param},
                 )
             eodag_sort_order = eodag_sort_order[:3]
 
@@ -296,7 +297,7 @@ class Search(PluginTopic):
                     raise ValidationError(
                         f"'{eodag_sort_param}' parameter is called several times to sort results with different "
                         "sorting orders. Please set it to only one ('ASC' (ASCENDING) or 'DESC' (DESCENDING))",
-                        set([eodag_sort_param]),
+                        {eodag_sort_param},
                     )
             provider_sort_by_tuples_used.append(provider_sort_by_tuple)
 

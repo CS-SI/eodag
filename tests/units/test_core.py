@@ -2022,6 +2022,7 @@ class TestCoreConfWithEnvVar(TestCoreBase):
         os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
             TEST_RESOURCES_PATH, "file_product_types_override.yml"
         )
+
         # check product types
         try:
             self.dag = EODataAccessGateway()
@@ -3644,3 +3645,49 @@ class TestCoreProviderGroup(TestCoreBase):
         )
 
         self.assertCountEqual(group_plugins, [*plugin1, *plugin2])
+
+
+class TestCoreStrictMode(TestCoreBase):
+    def setUp(self):
+        super().setUp()
+        # Ensure a clean environment for each test
+        self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
+        self.mock_os_environ.start()
+
+        # This file removes TEST_PRODUCT_2 from the main config, in order to test strict and permissive behavior
+        os.environ["EODAG_PRODUCT_TYPES_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_product_types_modes.yml"
+        )
+        os.environ["EODAG_PROVIDERS_CFG_FILE"] = os.path.join(
+            TEST_RESOURCES_PATH, "file_providers_override.yml"
+        )
+
+    def tearDown(self):
+        self.mock_os_environ.stop()
+        super().tearDown()
+
+    def test_list_product_types_strict_mode(self):
+        """list_product_types must only return product types from the main config in strict mode"""
+        try:
+            os.environ["EODAG_STRICT_PRODUCT_TYPES"] = "true"
+            dag = EODataAccessGateway()
+
+            # In strict mode, TEST_PRODUCT_2 should not be listed
+            product_types = dag.list_product_types(fetch_providers=False)
+            ids = [pt["ID"] for pt in product_types]
+            self.assertNotIn("TEST_PRODUCT_2", ids)
+
+        finally:
+            os.environ.pop("EODAG_STRICT_PRODUCT_TYPES", None)
+
+    def test_list_product_types_permissive_mode(self):
+        """list_product_types must include provider-only product types in permissive mode"""
+        if "EODAG_STRICT_PRODUCT_TYPES" in os.environ:
+            del os.environ["EODAG_STRICT_PRODUCT_TYPES"]
+
+        dag = EODataAccessGateway()
+
+        # In permissive mode, TEST_PRODUCT_2 should be listed
+        product_types = dag.list_product_types(fetch_providers=False)
+        ids = [pt["ID"] for pt in product_types]
+        self.assertIn("TEST_PRODUCT_2", ids)
