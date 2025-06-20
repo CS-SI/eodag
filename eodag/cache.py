@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2022, CS GROUP - France, https://www.csgroup.eu/
+# Copyright 2025, CS GROUP - France, https://www.cs-soprasteria.com/
 #
 # This file is part of EODAG project
 #     https://www.github.com/CS-SI/EODAG
