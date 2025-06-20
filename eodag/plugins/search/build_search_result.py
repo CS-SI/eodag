@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-import functools
 import hashlib
 import logging
 import re
@@ -49,6 +48,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
+from eodag.cache import instance_cached_method
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
@@ -1099,6 +1099,7 @@ class ECMWFSearch(PostJsonSearch):
 
         return qp
 
+    @instance_cached_method()
     def _fetch_data(self, url: str) -> Any:
         """
         fetches from a provider elements like constraints or forms.
@@ -1115,7 +1116,7 @@ class ECMWFSearch(PostJsonSearch):
             else None
         )
         timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
-        return functools.lru_cache()(fetch_json)(url, auth=auth, timeout=timeout)
+        return fetch_json(url, auth=auth, timeout=timeout)
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
