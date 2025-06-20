@@ -3,6 +3,25 @@ Release history
 ===============
 
 
+v3.5.1 (2025-06-20)
+===================
+
+Bug Fixes
+---------
+
+* **plugins**: Lru caching when fetching constraints with ECMWF (`#1698`_, `e23f47e`_)
+
+Refactoring
+-----------
+
+* **core**: Register downloader using manager from search to EOProduct (`#1699`_, `fd0c149`_)
+
+.. _#1698: https://github.com/CS-SI/eodag/pull/1698
+.. _#1699: https://github.com/CS-SI/eodag/pull/1699
+.. _e23f47e: https://github.com/CS-SI/eodag/commit/e23f47ee97a50c0ba1d573801a17177c88f06eae
+.. _fd0c149: https://github.com/CS-SI/eodag/commit/fd0c149277735a3ecdc11588e8ac8e166b591ae8
+
+
 v3.5.0 (2025-06-20)
 ===================
 
