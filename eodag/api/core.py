@@ -37,7 +37,6 @@ from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
-    ONLINE_STATUS,
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.api.search_result import SearchResult
@@ -1981,29 +1980,7 @@ class EODataAccessGateway:
                     logger.debug("product type %s not found", eo_product.product_type)
 
                 if eo_product.search_intersection is not None:
-                    download_plugin = self._plugins_manager.get_download_plugin(
-                        eo_product
-                    )
-                    if len(eo_product.assets) > 0:
-                        matching_url = next(iter(eo_product.assets.values()))["href"]
-                    elif eo_product.properties.get("storageStatus") != ONLINE_STATUS:
-                        matching_url = eo_product.properties.get(
-                            "orderLink"
-                        ) or eo_product.properties.get("downloadLink")
-                    else:
-                        matching_url = eo_product.properties.get("downloadLink")
-
-                    try:
-                        auth_plugin = next(
-                            self._plugins_manager.get_auth_plugins(
-                                search_plugin.provider,
-                                matching_url=matching_url,
-                                matching_conf=download_plugin.config,
-                            )
-                        )
-                    except StopIteration:
-                        auth_plugin = None
-                    eo_product.register_downloader(download_plugin, auth_plugin)
+                    eo_product._register_downloader_from_manager(self._plugins_manager)
 
             results.extend(res)
             total_results = (
