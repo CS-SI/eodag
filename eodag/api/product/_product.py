@@ -43,6 +43,7 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
+    ONLINE_STATUS,
 )
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
     from eodag.plugins.apis.base import Api
     from eodag.plugins.authentication.base import Authentication
     from eodag.plugins.download.base import Download
+    from eodag.plugins.manager import PluginManager
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
 
@@ -237,6 +239,37 @@ class EOProduct:
             raise MisconfiguredError(
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
+
+    def register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
+        """Register the downloader and authenticator for this EOProduct using the
+        provided plugins manager.
+        This method is typically called after the EOProduct has been created and
+        before any download operation is performed.
+
+        :param plugins_manager: The plugins manager instance to use for retrieving
+                                the download and authentication plugins.
+        """
+        download_plugin = plugins_manager.get_download_plugin(self)
+        if len(self.assets) > 0:
+            matching_url = next(iter(self.assets.values()))["href"]
+        elif self.properties.get("storageStatus") != ONLINE_STATUS:
+            matching_url = self.properties.get("orderLink") or self.properties.get(
+                "downloadLink"
+            )
+        else:
+            matching_url = self.properties.get("downloadLink")
+
+        try:
+            auth_plugin = next(
+                plugins_manager.get_auth_plugins(
+                    self.provider,
+                    matching_url=matching_url,
+                    matching_conf=download_plugin.config,
+                )
+            )
+        except StopIteration:
+            auth_plugin = None
+        self.register_downloader(download_plugin, auth_plugin)
 
     def register_downloader(
         self, downloader: Union[Api, Download], authenticator: Optional[Authentication]
