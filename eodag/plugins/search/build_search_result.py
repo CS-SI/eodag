@@ -48,7 +48,6 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
 )
 from eodag.api.search_result import RawSearchResult
-from eodag.cache import instance_cached_method
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.qssearch import PostJsonSearch, QueryStringSearch
 from eodag.types import json_field_definition_to_python  # noqa: F401
@@ -61,6 +60,7 @@ from eodag.utils import (
     get_geometry_from_various,
     is_range_in_range,
 )
+from eodag.utils.cache import instance_cached_method
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 

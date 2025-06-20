@@ -17,7 +17,7 @@
 # limitations under the License.
 import unittest
 
-from eodag.cache import instance_cached_method
+from eodag.utils.cache import instance_cached_method
 
 
 class TestCachedMethodDecorator(unittest.TestCase):
