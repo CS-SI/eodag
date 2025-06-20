@@ -1980,7 +1980,7 @@ class EODataAccessGateway:
                     logger.debug("product type %s not found", eo_product.product_type)
 
                 if eo_product.search_intersection is not None:
-                    eo_product.register_downloader_from_manager(self._plugins_manager)
+                    eo_product._register_downloader_from_manager(self._plugins_manager)
 
             results.extend(res)
             total_results = (

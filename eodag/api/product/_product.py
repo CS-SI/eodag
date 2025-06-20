@@ -240,7 +240,7 @@ class EOProduct:
                 f"Unable to get {e.args[0]} key from EOProduct.properties"
             )
 
-    def register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
+    def _register_downloader_from_manager(self, plugins_manager: PluginManager) -> None:
         """Register the downloader and authenticator for this EOProduct using the
         provided plugins manager.
         This method is typically called after the EOProduct has been created and
