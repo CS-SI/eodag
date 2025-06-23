@@ -385,7 +385,7 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
             # both values are lists we skip values in mapping 2 which
             # are equal to an existing entry in mapping1 and add other values
             for row in value:
-                if row in mapping1:
+                if key in mapping1 and row in mapping1[key]:
                     continue
                 else:
                     if key in mapping1:

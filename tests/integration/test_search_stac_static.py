@@ -79,8 +79,8 @@ class TestSearchStacStatic(unittest.TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{{productType}}'
                 download:
-                    type: HTTPDownload
-                    base_uri: https://fake-endpoint
+                    - type: HTTPDownload
+                      base_uri: https://fake-endpoint
         """
         )
         self.dag.set_preferred_provider(self.static_stac_provider)

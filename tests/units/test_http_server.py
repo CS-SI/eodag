@@ -1640,7 +1640,11 @@ class RequestTestCase(unittest.TestCase):
         )
         self.assertFalse(res_product_type_with_provider["additionalProperties"])
 
-    def test_stac_queryables_type(self):
+    @mock.patch(
+        "eodag.plugins.authentication.openid_connect.requests.get",
+        autospec=True,
+    )
+    def test_stac_queryables_type(self, mock_request):
         res = self._request_valid(
             "collections/S2_MSI_L2A/queryables?provider=creodias",
             check_links=False,

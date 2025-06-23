@@ -356,13 +356,20 @@ class PluginManager:
             if not plugin_confs:
                 continue
             for plugin_conf in plugin_confs:
-                # plugin without configured match criteria: only works for given provider
+                # not match criteria or plugin without configured match criteria: only works for given provider
                 # we assume that if there are no match criteria given, there is only one plugin
                 unconfigured_match = (
                     True
                     if (
-                        not getattr(plugin_conf, "match", {})
-                        and provider == plugin_provider
+                        (
+                            not getattr(plugin_conf, "match", {})
+                            and provider == plugin_provider
+                        )
+                        or (
+                            not matching_conf
+                            and not matching_url
+                            and provider == plugin_provider
+                        )
                     )
                     else False
                 )
