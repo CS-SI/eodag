@@ -17,7 +17,6 @@
 # limitations under the License.
 from __future__ import annotations
 
-import functools
 import hashlib
 import logging
 import re
@@ -61,6 +60,7 @@ from eodag.utils import (
     get_geometry_from_various,
     is_range_in_range,
 )
+from eodag.utils.cache import instance_cached_method
 from eodag.utils.exceptions import DownloadError, NotAvailableError, ValidationError
 from eodag.utils.requests import fetch_json
 
@@ -1099,6 +1099,7 @@ class ECMWFSearch(PostJsonSearch):
 
         return qp
 
+    @instance_cached_method()
     def _fetch_data(self, url: str) -> Any:
         """
         fetches from a provider elements like constraints or forms.
@@ -1115,7 +1116,7 @@ class ECMWFSearch(PostJsonSearch):
             else None
         )
         timeout = getattr(self.config, "timeout", DEFAULT_SEARCH_TIMEOUT)
-        return functools.lru_cache()(fetch_json)(url, auth=auth, timeout=timeout)
+        return fetch_json(url, auth=auth, timeout=timeout)
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
