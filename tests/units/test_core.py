@@ -40,6 +40,7 @@ from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
+    DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MAX_ITEMS_PER_PAGE,
     CommonQueryables,
     EODataAccessGateway,
@@ -2649,7 +2650,6 @@ class TestCoreSearch(TestCoreBase):
             mock_get_search_plugins.return_value[0],
             id="foo",
             productType="bar",
-            count=False,
             raise_errors=True,
             page=1,
             items_per_page=100,
@@ -2893,6 +2893,64 @@ class TestCoreSearch(TestCoreBase):
         second_result_page = next(page_iterator)
         self.assertIsInstance(second_result_page, SearchResult)
         self.assertEqual(len(second_result_page), self.search_results_size_2)
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+    )
+    @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
+    def test_search_iter_page_count(self, mock_do_seach, mock_fetch_product_types_list):
+        """search_iter_page must return an iterator"""
+        mock_do_seach.side_effect = [
+            self.search_results,
+            self.search_results_2,
+        ]
+
+        # no count by default
+        page_iterator = self.dag.search_iter_page(productType="S2_MSI_L1C")
+        next(page_iterator)
+        mock_do_seach.assert_called_once_with(
+            mock.ANY,
+            mock.ANY,
+            productType="S2_MSI_L1C",
+            geometry=None,
+            raise_errors=True,
+            page=1,
+            items_per_page=DEFAULT_ITEMS_PER_PAGE,
+        )
+
+        # count only on 1st page if specified
+        mock_do_seach.reset_mock()
+        mock_do_seach.side_effect = [
+            self.search_results,
+            self.search_results_2,
+        ]
+        page_iterator = self.dag.search_iter_page(
+            productType="S2_MSI_L1C", count=True, items_per_page=2
+        )
+        next(page_iterator)
+        mock_do_seach.assert_called_once_with(
+            mock.ANY,
+            mock.ANY,
+            productType="S2_MSI_L1C",
+            geometry=None,
+            count=True,
+            raise_errors=True,
+            page=1,
+            items_per_page=2,
+        )
+        # 2nd page: no count
+        next(page_iterator)
+        self.assertEqual(mock_do_seach.call_count, 2)
+        mock_do_seach.assert_called_with(
+            mock.ANY,
+            mock.ANY,
+            productType="S2_MSI_L1C",
+            geometry=None,
+            count=False,
+            raise_errors=True,
+            page=2,
+            items_per_page=2,
+        )
 
     @mock.patch("eodag.api.core.EODataAccessGateway._prepare_search", autospec=True)
     @mock.patch("eodag.plugins.search.qssearch.QueryStringSearch", autospec=True)
