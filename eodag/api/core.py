@@ -1394,7 +1394,11 @@ class EODataAccessGateway:
         prev_product = None
         next_page_url = None
         next_page_query_obj = None
+        number_matched = None
         while True:
+            # if count is enabled, it will only be performed on 1st iteration
+            if iteration == 2:
+                kwargs["count"] = False
             if iteration > 1 and next_page_url:
                 pagination_config["next_page_url_tpl"] = next_page_url
             if iteration > 1 and next_page_query_obj:
@@ -1402,11 +1406,13 @@ class EODataAccessGateway:
             logger.info("Iterate search over multiple pages: page #%s", iteration)
             try:
                 # remove unwanted kwargs for _do_search
-                kwargs.pop("count", None)
                 kwargs.pop("raise_errors", None)
                 search_result = self._do_search(
-                    search_plugin, count=False, raise_errors=True, **kwargs
+                    search_plugin, raise_errors=True, **kwargs
                 )
+                # if count is enabled, it will only be performed on 1st iteration
+                if iteration == 1:
+                    number_matched = search_result.number_matched
             except Exception:
                 logger.warning(
                     "error at retrieval of data from %s, for params: %s",
@@ -1461,6 +1467,8 @@ class EODataAccessGateway:
                     )
                     last_page_with_products = iteration - 1
                     break
+                # use count got from 1st iteration
+                search_result.number_matched = number_matched
                 yield search_result
                 prev_product = product
                 # Prevent a last search if the current one returned less than the
@@ -1548,6 +1556,9 @@ class EODataAccessGateway:
                 )
                 self.fetch_product_types_list()
 
+        # remove unwanted count
+        kwargs.pop("count", None)
+
         search_plugins, search_kwargs = self._prepare_search(
             start=start, end=end, geom=geom, locations=locations, **kwargs
         )
@@ -1570,6 +1581,7 @@ class EODataAccessGateway:
                 for page_results in self.search_iter_page_plugin(
                     items_per_page=itp,
                     search_plugin=search_plugin,
+                    count=False,
                     **search_kwargs,
                 ):
                     all_results.data.extend(page_results.data)
