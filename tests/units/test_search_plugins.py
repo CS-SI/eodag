@@ -2681,6 +2681,15 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
             ecmwf_temporal_to_eodag(dict(date="20220215/to/20220216")),
             ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
         )
+        # List of dates
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(dict(date=["20220215", "20220216"])),
+            ("2022-02-15T00:00:00Z", "2022-02-16T00:00:00Z"),
+        )
+        self.assertEqual(
+            ecmwf_temporal_to_eodag(dict(date=["20220215"])),
+            ("2022-02-15T00:00:00Z", "2022-02-15T00:00:00Z"),
+        )
 
     def test_plugins_search_ecmwfsearch_get_available_values_from_contraints(self):
         """ECMWFSearch must return available values from constraints"""

@@ -383,24 +383,27 @@ async def list_collection_queryables(
     :returns: A json object containing the list of available queryable properties for the specified collection.
     """
     logger.info(f"{request.method} {request.state.url}")
-    # split by `,` to handle list of parameters
-    additional_params = {k: v.split(",") for k, v in dict(request.query_params).items()}
-    provider = additional_params.pop("provider", None)
 
-    datetime = additional_params.pop("datetime", None)
+    params: dict[str, list[Any]] = {}
+    for k, v in request.query_params.multi_items():
+        params.setdefault(k, []).append(v)
+
+    # parameter provider is deprecated
+    provider = params.pop("provider", [None])[0]
+    datetime = params.pop("datetime", [None])[0]
 
     queryables = await get_queryables(
         request,
         QueryablesGetParams.model_validate(
             {
-                **additional_params,
+                **params,
                 **{
                     "collection": collection_id,
-                    "datetime": datetime[0] if datetime else None,
+                    "datetime": datetime,
                 },
             }
         ),
-        provider=provider[0] if provider else None,
+        provider=provider,
     )
 
     return ORJSONResponse(queryables)
