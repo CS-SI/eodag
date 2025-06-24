@@ -62,7 +62,23 @@ class TestSearchStacStatic(unittest.TestCase):
         self.singlefile_cat = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")
         self.singlefile_cat_len = 5
 
-        self.stac_provider = "planetary_computer"
+        self.stac_provider = "stac_local"
+        self.dag.update_providers_config(
+            f"""
+            {self.stac_provider}:
+                search:
+                    type: StacSearch
+                    api_endpoint: {self.root_cat}
+                products:
+                    GENERIC_PRODUCT_TYPE:
+                        productType: '{{productType}}'
+                    S2_MSI_L2A:
+                        productType: S2
+                download:
+                    - type: HTTPDownload
+                      base_uri: http://fake-endpoint
+        """
+        )
         self.product_type = "S2_MSI_L2A"
 
         self.extent_big = {"lonmin": -55, "lonmax": -53, "latmin": 2, "latmax": 5}
@@ -220,8 +236,8 @@ class TestSearchStacStatic(unittest.TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 download:
-                    type: HTTPDownload
-                    base_uri: 'https://fake-uri'
+                    - type: HTTPDownload
+                      base_uri: 'https://fake-uri'
         """
         )
 

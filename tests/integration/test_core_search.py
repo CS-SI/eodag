@@ -143,7 +143,6 @@ class TestCoreSearch(unittest.TestCase):
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get",
-        autospec=True,
     )
     @mock.patch(
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",

@@ -452,12 +452,12 @@ class TestConfigFunctions(unittest.TestCase):
         os.environ["EODAG__USGS__API__CREDENTIALS__USERNAME"] = "usr"
         os.environ["EODAG__USGS__API__CREDENTIALS__PASSWORD"] = "pwd"
         os.environ["EODAG__AWS_EOS__SEARCH__PRODUCT_LOCATION_SCHEME"] = "file"
-        os.environ["EODAG__AWS_EOS__SEARCH_AUTH__CREDENTIALS__APIKEY"] = "api-key"
+        os.environ["EODAG__AWS_EOS__AUTH__CREDENTIALS__APIKEY"] = "api-key"
         os.environ[
-            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
+            "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_ACCESS_KEY_ID"
         ] = "access-key-id"
         os.environ[
-            "EODAG__AWS_EOS__DOWNLOAD_AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
+            "EODAG__AWS_EOS__AUTH__CREDENTIALS__AWS_SECRET_ACCESS_KEY"
         ] = "secret-access-key"
         os.environ["EODAG__PEPS__DOWNLOAD__OUTPUT_DIR"] = "/data"
         # check a parameter that has not been set yet

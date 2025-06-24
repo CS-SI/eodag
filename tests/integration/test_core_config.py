@@ -429,10 +429,7 @@ class TestCoreProductTypesConfig(TestCase):
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
-                provider="foo_provider"
-            )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.dag.discover_product_types(provider="foo_provider")
             self.assertIn(
                 "No authentication plugin for foo_provider for product types discovery found",
                 str(cm.output),
@@ -452,16 +449,14 @@ class TestCoreProductTypesConfig(TestCase):
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
-                provider="foo_provider"
-            )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.dag.discover_product_types(provider="foo_provider")
             self.assertIn(
                 "Could not authenticate on foo_provider: Missing credentials",
                 str(cm.output),
             )
 
         # succeeds with auth plugin and credentials
+        mock_requests_get.reset_mock()
         self.dag.update_providers_config(
             """
             foo_provider:
@@ -521,10 +516,7 @@ class TestCoreProductTypesConfig(TestCase):
             mock_get_auth_or_download_plugins.return_value = iter([mock_auth_plugin])
 
             with self.assertLogs(level="DEBUG") as cm:
-                ext_product_types_conf = self.dag.discover_product_types(
-                    provider="foo_provider"
-                )
-                self.assertIsNone(ext_product_types_conf["foo_provider"])
+                self.dag.discover_product_types(provider="foo_provider")
                 self.assertIn(
                     "No authentication plugin for foo_provider for product types discovery found",
                     str(cm.output),
