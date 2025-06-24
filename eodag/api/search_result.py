@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 from collections import UserList
 from typing import TYPE_CHECKING, Annotated, Any, Iterable, Optional, Union
 
@@ -29,11 +30,17 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
+from eodag.utils import GENERIC_STAC_PROVIDER, STAC_SEARCH_PLUGINS
+from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
 
     from eodag.plugins.crunch.base import Crunch
+    from eodag.plugins.manager import PluginManager
+
+
+logger = logging.getLogger("eodag.search_result")
 
 
 class SearchResult(UserList[EOProduct]):
@@ -210,6 +217,118 @@ class SearchResult(UserList[EOProduct]):
             self.errors.extend(other.errors)
 
         return super().extend(other)
+
+    @classmethod
+    def _from_stac_item(
+        cls, feature: dict[str, Any], plugins_manager: PluginManager
+    ) -> SearchResult:
+        """Create a SearchResult from a STAC item.
+
+        :param feature: A STAC item as a dictionary
+        :param plugins_manager: The EODAG plugin manager instance
+        :returns: A SearchResult containing the EOProduct(s) created from the STAC item
+        """
+
+        def unregistered_product_from_item(
+            feature: dict[str, Any], provider: str
+        ) -> Optional[EOProduct]:
+            """Create an EOProduct from a STAC item without registering it to a provider."""
+            for search_plugin in plugins_manager.get_search_plugins(provider=provider):
+                if hasattr(search_plugin, "normalize_results"):
+                    products = search_plugin.normalize_results([feature])
+                    if len(products) > 0:
+                        return products[0]
+            return None
+
+        # Try importing from EODAG Server
+        provider = None
+        if backends := feature["properties"].get("federation:backends"):
+            provider = backends[0]
+        elif providers := feature["properties"].get("providers"):
+            provider = providers[0].get("name")
+        if provider is not None:
+            logger.debug("Trying to import STAC item from EODAG Server")
+            # assets coming from a STAC provider
+            assets = {
+                k: v["alternate"]["origin"]
+                for k, v in feature.get("assets", {}).items()
+                if k not in ("thumbnail", "downloadLink")
+                and "origin" in v.get("alternate", {})
+            }
+            if assets:
+                updated_item = {**feature, **{"assets": assets}}
+            else:
+                # item coming from a non-STAC provider
+                updated_item = {**feature}
+                download_link = (
+                    feature.get("assets", {})
+                    .get("downloadLink", {})
+                    .get("alternate", {})
+                    .get("origin", {})
+                    .get("href")
+                )
+                if download_link:
+                    updated_item["assets"] = {}
+                    updated_item["links"] = [{"rel": "self", "href": download_link}]
+                else:
+                    updated_item = {}
+            try:
+                eo_product = unregistered_product_from_item(
+                    updated_item, GENERIC_STAC_PROVIDER
+                )
+            except MisconfiguredError:
+                eo_product = None
+            if eo_product is not None:
+                eo_product.provider = provider
+                eo_product._register_downloader_from_manager(plugins_manager)
+                return SearchResult([eo_product])
+
+        # try importing from a known STAC provider
+        item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
+        item_href = item_hrefs[0]["href"] if len(item_hrefs) > 0 else None
+        imported_products = SearchResult([])
+        for search_plugin in plugins_manager.get_search_plugins():
+            if (
+                search_plugin.config.type in STAC_SEARCH_PLUGINS
+                and search_plugin.provider != GENERIC_STAC_PROVIDER
+                and hasattr(search_plugin, "normalize_results")
+            ):
+                provider_base_url = search_plugin.config.api_endpoint.removesuffix(
+                    "/search"
+                )
+                provider = search_plugin.provider
+                if item_href and item_href.startswith(provider_base_url):
+                    products = search_plugin.normalize_results([feature])
+                    if len(products) == 0:
+                        continue
+                    eo_product = products[0]
+
+                    configured_pts = [
+                        k
+                        for k, v in search_plugin.config.products.items()
+                        if v.get("productType") == feature.get("collection")
+                    ]
+                    if len(configured_pts) > 0:
+                        eo_product.product_type = configured_pts[0]
+                    else:
+                        eo_product.product_type = feature.get("collection")
+
+                    eo_product._register_downloader_from_manager(plugins_manager)
+                    imported_products.append(eo_product)
+        if len(imported_products) > 0:
+            return imported_products
+
+        # try importing from an unknown STAC provider
+        try:
+            eo_product = unregistered_product_from_item(feature, GENERIC_STAC_PROVIDER)
+        except MisconfiguredError:
+            pass
+        if eo_product is not None:
+            eo_product.product_type = feature.get("collection")
+            eo_product._register_downloader_from_manager(plugins_manager)
+            return SearchResult([eo_product])
+        else:
+            return SearchResult([])
 
 
 class RawSearchResult(UserList[dict[str, Any]]):
