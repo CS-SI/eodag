@@ -4,10 +4,11 @@
 Authentication Plugins
 ======================
 
-Multiple authentication plugins can be defined per provider under ``auth``, ``search_auth``, or ``download_auth``
+Multiple authentication plugins can be defined per provider under ``auth``
 `provider configuration entries <../add_provider.rst>`_. They are shared across all providers, and can be identified
-using *matching settings* :attr:`~eodag.config.PluginConfig.matching_url` and
-:attr:`~eodag.config.PluginConfig.matching_conf` as configuration parameters.
+using *matching settings* with :attr:`~eodag.config.PluginConfig.match`. The parameter `href` can be used to define a url
+to match the authentication plugin with  the download/order link of a product or the `api_endpoint` of a search or download plugin.
+Other parameters can be added to match the authentication plugin with the configuration of a search or download plugin.
 Credentials are automatically shared between plugins having the same *matching settings*.
 Authentication plugins without *matching settings* configured will not be shared and will automatically match their
 provider.

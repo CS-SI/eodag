@@ -35,10 +35,8 @@ class Authentication(PluginTopic):
     :param provider: provider name
     :param config: Authentication plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with search plugin endpoint or
-          download link
-        * :attr:`~eodag.config.PluginConfig.matching_conf` (``dict[str, Any]``): Part of the search or download plugin
-          configuration that needs authentication and helps identifying it
+        * :attr:`~eodag.config.PluginConfig.match` (``dict[str, str]``): dict of parameters to
+          be matched with a product or a search/download plugin to find the correct auth plugin
     """
 
     def authenticate(self) -> Union[AuthBase, S3SessionKwargs]:

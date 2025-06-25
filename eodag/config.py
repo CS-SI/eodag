@@ -579,12 +579,6 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: Key to get the refresh token in the response from the token server
     refresh_token_key: str
-    #: :class:`~eodag.plugins.authentication.base.Authentication` URL pattern to match with search plugin endpoint or
-    #: download link
-    matching_url: str
-    #: :class:`~eodag.plugins.authentication.base.Authentication` Part of the search or download plugin configuration
-    #: that needs authentication
-    matching_conf: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
     #: How the token should be used in the request
     token_provision: str
