@@ -43,7 +43,6 @@ from eodag.api.product.metadata_mapping import (
     DEFAULT_GEOMETRY,
     NOT_AVAILABLE,
     NOT_MAPPED,
-    ONLINE_STATUS,
 )
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -251,9 +250,7 @@ class EOProduct:
         """
         download_plugin = plugins_manager.get_download_plugin(self)
         try:
-            auth_plugin = plugins_manager.get_auth_plugin(
-                download_plugin, self
-            )
+            auth_plugin = plugins_manager.get_auth_plugin(download_plugin, self)
         except StopIteration:
             auth_plugin = None
         self.register_downloader(download_plugin, auth_plugin)
