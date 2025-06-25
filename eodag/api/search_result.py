@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Iterable, Optional, Union
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
 
-from eodag.api.product import EOProduct
+from eodag.api.product import EOProduct, unregistered_product_from_item
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -228,107 +228,138 @@ class SearchResult(UserList[EOProduct]):
         :param plugins_manager: The EODAG plugin manager instance
         :returns: A SearchResult containing the EOProduct(s) created from the STAC item
         """
-
-        def unregistered_product_from_item(
-            feature: dict[str, Any], provider: str
-        ) -> Optional[EOProduct]:
-            """Create an EOProduct from a STAC item without registering it to a provider."""
-            for search_plugin in plugins_manager.get_search_plugins(provider=provider):
-                if hasattr(search_plugin, "normalize_results"):
-                    products = search_plugin.normalize_results([feature])
-                    if len(products) > 0:
-                        return products[0]
-            return None
-
         # Try importing from EODAG Server
-        provider = None
-        if backends := feature["properties"].get("federation:backends"):
-            provider = backends[0]
-        elif providers := feature["properties"].get("providers"):
-            provider = providers[0].get("name")
-        if provider is not None:
-            logger.debug("Trying to import STAC item from EODAG Server")
-            # assets coming from a STAC provider
-            assets = {
-                k: v["alternate"]["origin"]
-                for k, v in feature.get("assets", {}).items()
-                if k not in ("thumbnail", "downloadLink")
-                and "origin" in v.get("alternate", {})
-            }
-            if assets:
-                updated_item = {**feature, **{"assets": assets}}
-            else:
-                # item coming from a non-STAC provider
-                updated_item = {**feature}
-                download_link = (
-                    feature.get("assets", {})
-                    .get("downloadLink", {})
-                    .get("alternate", {})
-                    .get("origin", {})
-                    .get("href")
-                )
-                if download_link:
-                    updated_item["assets"] = {}
-                    updated_item["links"] = [{"rel": "self", "href": download_link}]
-                else:
-                    updated_item = {}
-            try:
-                eo_product = unregistered_product_from_item(
-                    updated_item, GENERIC_STAC_PROVIDER
-                )
-            except MisconfiguredError:
-                eo_product = None
-            if eo_product is not None:
-                eo_product.provider = provider
-                eo_product._register_downloader_from_manager(plugins_manager)
-                return SearchResult([eo_product])
+        if results := _import_stac_item_from_eodag_server(feature, plugins_manager):
+            return results
 
         # try importing from a known STAC provider
-        item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
-        item_href = item_hrefs[0]["href"] if len(item_hrefs) > 0 else None
-        imported_products = SearchResult([])
-        for search_plugin in plugins_manager.get_search_plugins():
-            if (
-                search_plugin.config.type in STAC_SEARCH_PLUGINS
-                and search_plugin.provider != GENERIC_STAC_PROVIDER
-                and hasattr(search_plugin, "normalize_results")
-            ):
-                provider_base_url = search_plugin.config.api_endpoint.removesuffix(
-                    "/search"
-                )
-                provider = search_plugin.provider
-                if item_href and item_href.startswith(provider_base_url):
-                    products = search_plugin.normalize_results([feature])
-                    if len(products) == 0:
-                        continue
-                    eo_product = products[0]
-
-                    configured_pts = [
-                        k
-                        for k, v in search_plugin.config.products.items()
-                        if v.get("productType") == feature.get("collection")
-                    ]
-                    if len(configured_pts) > 0:
-                        eo_product.product_type = configured_pts[0]
-                    else:
-                        eo_product.product_type = feature.get("collection")
-
-                    eo_product._register_downloader_from_manager(plugins_manager)
-                    imported_products.append(eo_product)
-        if len(imported_products) > 0:
-            return imported_products
+        if results := _import_stac_item_from_known_provider(feature, plugins_manager):
+            return results
 
         # try importing from an unknown STAC provider
+        return _import_stac_item_from_unknown_provider(feature, plugins_manager)
+
+
+def _import_stac_item_from_eodag_server(
+    feature: dict[str, Any], plugins_manager: PluginManager
+) -> Optional[SearchResult]:
+    """Import a STAC item from EODAG Server.
+
+    :param feature: A STAC item as a dictionary
+    :param plugins_manager: The EODAG plugin manager instance
+    :returns: A SearchResult containing the EOProduct(s) created from the STAC item
+    """
+    provider = None
+    if backends := feature["properties"].get("federation:backends"):
+        provider = backends[0]
+    elif providers := feature["properties"].get("providers"):
+        provider = providers[0].get("name")
+    if provider is not None:
+        logger.debug("Trying to import STAC item from EODAG Server")
+        # assets coming from a STAC provider
+        assets = {
+            k: v["alternate"]["origin"]
+            for k, v in feature.get("assets", {}).items()
+            if k not in ("thumbnail", "downloadLink")
+            and "origin" in v.get("alternate", {})
+        }
+        if assets:
+            updated_item = {**feature, **{"assets": assets}}
+        else:
+            # item coming from a non-STAC provider
+            updated_item = {**feature}
+            download_link = (
+                feature.get("assets", {})
+                .get("downloadLink", {})
+                .get("alternate", {})
+                .get("origin", {})
+                .get("href")
+            )
+            if download_link:
+                updated_item["assets"] = {}
+                updated_item["links"] = [{"rel": "self", "href": download_link}]
+            else:
+                updated_item = {}
         try:
-            eo_product = unregistered_product_from_item(feature, GENERIC_STAC_PROVIDER)
+            eo_product = unregistered_product_from_item(
+                updated_item, GENERIC_STAC_PROVIDER, plugins_manager
+            )
         except MisconfiguredError:
-            pass
+            eo_product = None
         if eo_product is not None:
-            eo_product.product_type = feature.get("collection")
+            eo_product.provider = provider
             eo_product._register_downloader_from_manager(plugins_manager)
             return SearchResult([eo_product])
-        else:
-            return SearchResult([])
+    return None
+
+
+def _import_stac_item_from_known_provider(
+    feature: dict[str, Any], plugins_manager: PluginManager
+) -> Optional[SearchResult]:
+    """Import a STAC item from an already-configured STAC provider.
+
+    :param feature: A STAC item as a dictionary
+    :param plugins_manager: The EODAG plugin manager instance
+    :returns: A SearchResult containing the EOProduct(s) created from the STAC item
+    """
+    item_hrefs = [f for f in feature.get("links", []) if f.get("rel") == "self"]
+    item_href = item_hrefs[0]["href"] if len(item_hrefs) > 0 else None
+    imported_products = SearchResult([])
+    for search_plugin in plugins_manager.get_search_plugins():
+        # only try STAC search plugins
+        if (
+            search_plugin.config.type in STAC_SEARCH_PLUGINS
+            and search_plugin.provider != GENERIC_STAC_PROVIDER
+            and hasattr(search_plugin, "normalize_results")
+        ):
+            provider_base_url = search_plugin.config.api_endpoint.removesuffix(
+                "/search"
+            )
+            # compare the item href with the provider base URL
+            if item_href and item_href.startswith(provider_base_url):
+                products = search_plugin.normalize_results([feature])
+                if len(products) == 0:
+                    continue
+                eo_product = products[0]
+
+                configured_pts = [
+                    k
+                    for k, v in search_plugin.config.products.items()
+                    if v.get("productType") == feature.get("collection")
+                ]
+                if len(configured_pts) > 0:
+                    eo_product.product_type = configured_pts[0]
+                else:
+                    eo_product.product_type = feature.get("collection")
+
+                eo_product._register_downloader_from_manager(plugins_manager)
+                imported_products.append(eo_product)
+    if len(imported_products) > 0:
+        return imported_products
+    return None
+
+
+def _import_stac_item_from_unknown_provider(
+    feature: dict[str, Any], plugins_manager: PluginManager
+) -> SearchResult:
+    """Import a STAC item from an unknown STAC provider.
+
+    :param feature: A STAC item as a dictionary
+    :param plugins_manager: The EODAG plugin manager instance
+    :returns: A SearchResult containing the EOProduct(s) created from the STAC item
+    """
+    try:
+        eo_product = unregistered_product_from_item(
+            feature, GENERIC_STAC_PROVIDER, plugins_manager
+        )
+    except MisconfiguredError:
+        pass
+    if eo_product is not None:
+        eo_product.product_type = feature.get("collection")
+        eo_product._register_downloader_from_manager(plugins_manager)
+        return SearchResult([eo_product])
+    else:
+        return SearchResult([])
 
 
 class RawSearchResult(UserList[dict[str, Any]]):
