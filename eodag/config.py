@@ -933,14 +933,22 @@ def override_config_from_env(config: dict[str, ProviderConfig]) -> None:
             # try converting env_value type from type hints
             if "list" in str(env_type):
                 # convert str to array and then cast (only working for list[str] type)
-                env_value = env_value.split(",")
-            try:
-                env_value = cast_scalar_value(env_value, env_type)
-            except TypeError:
-                logger.warning(
-                    f"Could not convert {parts[0]} value {env_value} to {env_type}"
-                )
-            mapping[parts[0]] = env_value
+                env_value_list = env_value.split(",")
+                try:
+                    env_value_list = cast_scalar_value(env_value_list, env_type)
+                except TypeError:
+                    logger.warning(
+                        f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                    )
+                mapping[parts[0]] = env_value_list
+            else:
+                try:
+                    env_value = cast_scalar_value(env_value, env_type)
+                except TypeError:
+                    logger.warning(
+                        f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                    )
+                mapping[parts[0]] = env_value
         else:
             new_map = mapping.setdefault(parts[0], {})
             build_mapping_from_env("__".join(parts[1:]), env_value, new_map)

@@ -278,18 +278,23 @@ class PluginManager:
         if api := getattr(plugin_conf, "api", None):
             plugin_conf.api.products = plugin_conf.products
             plugin_conf.api.priority = plugin_conf.priority
-            plugin = cast(Api, self._build_plugin(product.provider, api, Api))
+            return cast(Api, self._build_plugin(product.provider, api, Api))
         elif getattr(plugin_conf, "download", None):
             plugin = next(
                 self.get_auth_or_download_plugins(
                     "download", product.provider, matching_url=matching_url
                 )
             )
+            if not isinstance(plugin, Download):
+                # basically this should not happen
+                raise MisconfiguredError(
+                    f"Invalid download plugin for provider {plugin_conf.name}"
+                )
+            return plugin
         else:
             raise MisconfiguredError(
                 f"No download plugin configured for provider {plugin_conf.name}."
             )
-        return plugin
 
     def get_auth_plugin(
         self, associated_plugin: PluginTopic, product: Optional[EOProduct] = None
@@ -307,7 +312,7 @@ class PluginManager:
         :returns: The Authentication plugin
         """
         # matching url from product to download
-        matching_url = ""
+        matching_url = None
         if product:
             matching_url = _get_matching_url_for_product(product)
         if not matching_url:
@@ -323,6 +328,11 @@ class PluginManager:
                     matching_conf=associated_plugin.config,
                 )
             )
+            if not isinstance(auth_plugin, Authentication):
+                # basically this should not happen
+                raise MisconfiguredError(
+                    f"Invalid auth plugin found: {auth_plugin.config}"
+                )
         except StopIteration:
             auth_plugin = None
         return auth_plugin
@@ -333,7 +343,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
-    ) -> Iterator[Authentication]:
+    ) -> Iterator[Union[Authentication, Download]]:
         """Build and return the authentication plugin for the given provider and
         matching conf or url
 
@@ -379,18 +389,17 @@ class PluginManager:
                 ):
                     plugin_conf.priority = provider_conf.priority
                     if plugin_type == "auth":
-                        plugin = cast(
+                        yield cast(
                             Authentication,
                             self._build_plugin(
                                 plugin_provider, plugin_conf, Authentication
                             ),
                         )
                     else:
-                        plugin = cast(
+                        yield cast(
                             Download,
                             self._build_plugin(plugin_provider, plugin_conf, Download),
                         )
-                    yield plugin
                 else:
                     continue
 
@@ -419,7 +428,11 @@ class PluginManager:
             ):
                 # not the plugin we were looking for
                 continue
-            if auth_plugin and callable(getattr(auth_plugin, "authenticate", None)):
+            if (
+                auth_plugin
+                and isinstance(auth_plugin, Authentication)
+                and callable(getattr(auth_plugin, "authenticate", None))
+            ):
                 try:
                     auth = auth_plugin.authenticate()
                     return auth
