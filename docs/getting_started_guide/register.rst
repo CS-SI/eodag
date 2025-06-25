@@ -35,8 +35,8 @@ You need credentials for both EOS (search) and AWS (download):
 * In access keys, click on create access key.
 * Add these credentials to the user configuration file:
 
-  * ``search_auth.credentials.api_key``
-  * ``download_auth.credentials.aws_access_key_id`` and ``download_auth.credentials.aws_secret_access_key`` or ``download_auth.credentials.aws_profile``
+  * ``auth.credentials.api_key``
+  * ``auth.credentials.aws_access_key_id`` and ``auth.credentials.aws_secret_access_key`` or ``auth.credentials.aws_profile``
 
 .. note::
 

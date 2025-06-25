@@ -39,14 +39,14 @@ wekeo_old:
       orderLink: 'https://wekeo-broker.prod.wekeo2.eu/databroker/dataorder?{{"uri": "{downloadLink}","jobId":"requestJobId"}}'
       storageStatus: 'OFFLINE'
   auth:
-    type: TokenAuth
-    auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
-    token_type: json
-    token_key: access_token
-    request_method: GET
-    ssl_verify: true
-    headers:
-      Authorization: Bearer $token
+    - type: TokenAuth
+      auth_uri: 'https://wekeo-broker.prod.wekeo2.eu/databroker/gettoken'
+      token_type: json
+      token_key: access_token
+      request_method: GET
+      ssl_verify: true
+      headers:
+        Authorization: Bearer $token
   products:
     S1_SAR_SLC:
       productType: EO:ESA:DAT:SENTINEL-1:SAR

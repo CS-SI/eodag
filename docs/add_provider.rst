@@ -36,22 +36,22 @@ provide the new provider's configuration in a ``YAML`` format. The following exa
          GENERIC_PRODUCT_TYPE:
             productType: '{productType}'
       download:
-         type: AwsDownload
+         - type: AwsDownload
       auth:
-         type: AwsAuth
-         credentials:
-            aws_access_key_id: PLEASE_CHANGE_ME
-            aws_secret_access_key: PLEASE_CHANGE_ME
+         - type: AwsAuth
+           credentials:
+              aws_access_key_id: PLEASE_CHANGE_ME
+              aws_secret_access_key: PLEASE_CHANGE_ME
 
 It configures the following existing plugins: :class:`~eodag.plugins.search.qssearch.StacSearch` (search),
 :class:`~eodag.plugins.authentication.aws_auth.AwsAuth` (authentication) and :class:`~eodag.plugins.download.aws.AwsDownload` (download).
 
 Each plugin configuration is inserted following the appropriate plugin topic key:
 
-- ``search`` for `search plugins <plugins_reference/search.rst>`_
-- ``download`` for `download plugins <plugins_reference/download.rst>`_
-- ``auth``, ``search_auth``, or ``download_auth`` for `authentication plugins <plugins_reference/auth.rst>`_
-- ``api`` for `api plugins <plugins_reference/api.rst>`_
+- ``search`` for `search plugins <plugins_reference/search.rst>`_ - one single plugin
+- ``download`` for `download plugins <plugins_reference/download.rst>`_ - list of plugings
+- ``auth`` for `authentication plugins <plugins_reference/auth.rst>`_ - list of plugings
+- ``api`` for `api plugins <plugins_reference/api.rst>`_ - one single plugin
 
 Of course, it is also necessary to know how to configure these plugins (which parameters they take, what values they can have, etc.).
 You can get some inspiration from the *Providers pre-configuration* section by analysing how ``eodag`` configures the providers it comes installed with.
@@ -118,13 +118,15 @@ The plugin structure is reflected in the internal providers configuration file. 
             ...
          ...
       download:
-         plugin: CustomDownloadPlugin
-         # Same as with search for random config keys as needed by the plugin class
-         ...
+         # list of download plugins
+         - plugin: CustomDownloadPlugin
+           # Same as with search for random config keys as needed by the plugin class
+           ...
       auth:
-         plugin: CustomAuthPlugin
-         # Same as with search for random config keys as needed by the plugin class
-         ...
+         # list of auth plugins
+         - plugin: CustomAuthPlugin
+           # Same as with search for random config keys as needed by the plugin class
+           ...
 
 Note however, that for a provider which already has a Python library for accessing its products, the configuration
 varies a little bit. It does not have the 'search' and 'download' keys. Instead, there is a single 'api' key like this::

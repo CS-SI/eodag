@@ -430,7 +430,8 @@ class OIDCAuthorizationCodeFlowAuth(OIDCRefreshTokenBase):
             ).items()
         }
         # Add the credentials
-        login_data.update(self.config.credentials)
+        credentials = self.get_required_credentials()
+        login_data.update(credentials)
 
         # Retrieve the authentication_uri from the login form if so configured
         if self.config.authentication_uri_source == "login-form":

@@ -80,7 +80,7 @@ class OIDCTokenExchangeAuth(Authentication):
             PluginConfig.from_mapping(
                 {
                     "type": "OIDCAuthorizationCodeFlowAuth",
-                    "credentials": getattr(self.config, "credentials", {}),
+                    "credentials": self.get_required_credentials(),
                     **self.config.subject,
                 }
             ),

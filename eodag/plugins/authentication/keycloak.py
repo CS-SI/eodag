@@ -139,7 +139,7 @@ class KeycloakOIDCPasswordAuth(OIDCRefreshTokenBase):
             "client_secret": self.config.client_secret,
             "grant_type": self.GRANT_TYPE,
         }
-        credentials = {k: v for k, v in self.config.credentials.items()}
+        credentials = self.get_required_credentials()
         ssl_verify = getattr(self.config, "ssl_verify", True)
         try:
             response = self.session.post(
