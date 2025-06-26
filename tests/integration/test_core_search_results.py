@@ -24,7 +24,13 @@ import tempfile
 from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import EODataAccessGateway, EOProduct, PluginTopic, SearchResult
+from tests.context import (
+    Download,
+    EODataAccessGateway,
+    EOProduct,
+    PluginTopic,
+    SearchResult,
+)
 from tests.utils import mock
 
 
@@ -334,3 +340,123 @@ class TestCoreSearchResults(EODagTestCase):
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
         self.assertIsNotNone(search_results.number_matched)
+
+    @mock.patch(
+        "eodag.api.core.fetch_stac_items",
+        autospec=True,
+        side_effect=[
+            [
+                {
+                    "type": "Feature",
+                    "id": "stac-fastapi-eodag-id",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [0, 0],
+                    },
+                    "properties": {
+                        "title": "Stac-FastApi-Eodag item",
+                        "federation:backends": ["cop_dataspace"],
+                    },
+                    "assets": {
+                        "downloadLink": {
+                            "title": "Download link",
+                            "href": "https://stac-fastapi-eodag-server/download-link",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/origin-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                        "thumbnail": {
+                            "title": "Thumbnail",
+                            "href": "https://stac-fastapi-eodag-server/thumbnail",
+                            "type": "application/zip",
+                        },
+                    },
+                }
+            ],
+            [
+                {
+                    "type": "Feature",
+                    "id": "legacy-server-id",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [0, 0],
+                    },
+                    "properties": {
+                        "title": "Legacy-Eodag-server item",
+                        "providers": [{"name": "earth_search"}],
+                    },
+                    "assets": {
+                        "downloadLink": {
+                            "title": "Download link",
+                            "href": "https://legacy-server/download-link",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/origin-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                        "asset-1": {
+                            "title": "Asset 1",
+                            "href": "https://legacy-server/asset-1",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/asset-1-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                        "asset-2": {
+                            "title": "Asset 2",
+                            "href": "https://legacy-server/asset-2",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/asset-2-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                    },
+                }
+            ],
+        ],
+    )
+    def test_core_import_stac_items_from_eodag_server(self, mock_urlopen):
+        """The core api must import STAC items from EODAG server"""
+        results = self.dag.import_stac_items(
+            [
+                "https://stac-fastapi-eodag-server/collections/foo/items/stac-fastapi-eodag-id",
+                "https://legacy-server/collections/foo/items/legacy-server-id",
+            ]
+        )
+        self.assertEqual(len(results), 2)
+
+        self.assertEqual(results[0].provider, "cop_dataspace")
+        self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
+        self.assertEqual(len(results[0].assets), 0)
+        self.assertEqual(results[0].location, "https://provider-url/origin-link")
+        self.assertIsInstance(results[0].downloader, Download)
+
+        self.assertEqual(results[1].provider, "earth_search")
+        self.assertEqual(results[1].properties["id"], "legacy-server-id")
+        self.assertEqual(len(results[1].assets), 2)
+        self.assertEqual(
+            results[1].assets["asset-1-link"]["href"],
+            "https://provider-url/asset-1-link",
+        )
+        self.assertEqual(
+            results[1].assets["asset-2-link"]["href"],
+            "https://provider-url/asset-2-link",
+        )
+        self.assertIsInstance(results[1].downloader, Download)
