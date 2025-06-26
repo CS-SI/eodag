@@ -2486,9 +2486,7 @@ class EODataAccessGateway:
         """
         json_items = []
         for item_url in items_urls:
-            if not item_url.startswith("http"):
-                raise ValueError(f"Invalid STAC item URL: {item_url}")
-        json_items.extend(fetch_stac_items(item_url))
+            json_items.extend(fetch_stac_items(item_url))
 
         # add a generic STAC provider that might be needed to handle the items
         self.add_provider(GENERIC_STAC_PROVIDER)

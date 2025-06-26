@@ -39,7 +39,7 @@ __all__ = ["Asset", "AssetsDict", "EOProduct"]
 
 
 def unregistered_product_from_item(
-    feature: dict[str, Any], provider: str, plugins_manager: PluginManager
+    feature: dict[str, Any], provider: str, plugins_manager: "PluginManager"
 ) -> Optional[EOProduct]:
     """Create an EOProduct from a STAC item, map its metadata, but without registering its plugins.
 

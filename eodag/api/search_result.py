@@ -318,8 +318,11 @@ def _import_stac_item_from_known_provider(
             # compare the item href with the provider base URL
             if item_href and item_href.startswith(provider_base_url):
                 products = search_plugin.normalize_results([feature])
-                if len(products) == 0:
+                if len(products) == 0 or len(products[0].assets) == 0:
                     continue
+                logger.debug(
+                    "Trying to import STAC item from %s", search_plugin.provider
+                )
                 eo_product = products[0]
 
                 configured_pts = [
@@ -349,6 +352,7 @@ def _import_stac_item_from_unknown_provider(
     :returns: A SearchResult containing the EOProduct(s) created from the STAC item
     """
     try:
+        logger.debug("Trying to import STAC item from unknown provider")
         eo_product = unregistered_product_from_item(
             feature, GENERIC_STAC_PROVIDER, plugins_manager
         )
