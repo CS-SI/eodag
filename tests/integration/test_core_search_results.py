@@ -25,6 +25,7 @@ from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
 from tests.context import (
+    GENERIC_STAC_PROVIDER,
     Download,
     EODataAccessGateway,
     EOProduct,
@@ -432,7 +433,7 @@ class TestCoreSearchResults(EODagTestCase):
             ],
         ],
     )
-    def test_core_import_stac_items_from_eodag_server(self, mock_urlopen):
+    def test_core_import_stac_items_from_eodag_server(self, mock_fetch_stac_items):
         """The core api must import STAC items from EODAG server"""
         results = self.dag.import_stac_items(
             [
@@ -460,3 +461,46 @@ class TestCoreSearchResults(EODagTestCase):
             "https://provider-url/asset-2-link",
         )
         self.assertIsInstance(results[1].downloader, Download)
+
+    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    def test_core_import_stac_items_from_known_provider(self, mock_fetch_stac_items):
+        """The core api must import STAC items from a knwown provider"""
+        earth_search_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "earth_search_search.json"
+        )
+        with open(earth_search_resp_search_file, encoding="utf-8") as f:
+            mock_fetch_stac_items.return_value = [json.load(f)["features"][0]]
+
+        results = self.dag.import_stac_items(
+            [
+                "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l1c/items/S2B_27VWK_20240206_0_L1C",
+            ]
+        )
+        self.assertEqual(len(results), 1)
+
+        self.assertEqual(results[0].provider, "earth_search")
+        self.assertEqual(results[0].properties["id"], "S2B_27VWK_20240206_0_L1C")
+        self.assertEqual(len(results[0].assets), 17)
+        self.assertTrue(
+            all(v["href"].startswith("s3://") for v in results[0].assets.values())
+        )
+        self.assertIsInstance(results[0].downloader, Download)
+
+    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    def test_core_import_stac_items_from_unknown_provider(self, mock_fetch_stac_items):
+        """The core api must import STAC items from an unknwown provider"""
+        stac_singlefile = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")
+        with open(stac_singlefile, encoding="utf-8") as f:
+            mock_fetch_stac_items.return_value = [json.load(f)["features"][0]]
+
+        results = self.dag.import_stac_items(
+            [
+                "./tests/resources/stac_singlefile.json",
+            ]
+        )
+        self.assertEqual(len(results), 1)
+
+        self.assertEqual(results[0].provider, GENERIC_STAC_PROVIDER)
+        self.assertEqual(results[0].properties["id"], "S2B_9VXK_20171013_0")
+        self.assertEqual(len(results[0].assets), 1)
+        self.assertIsInstance(results[0].downloader, Download)
