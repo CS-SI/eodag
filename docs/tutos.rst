@@ -26,6 +26,7 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    of each tutorial.
 
 .. toctree::
+   :maxdepth: 2
 
    notebooks/tutos/tuto_search_location_tile.ipynb
    notebooks/tutos/tuto_cop_dem.ipynb

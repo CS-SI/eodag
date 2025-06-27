@@ -30,3 +30,4 @@ or run locally after being downloaded (see how to :ref:`install_notebooks`).
    notebooks/api_user_guide/7_crunch.ipynb
    notebooks/api_user_guide/8_download.ipynb
    notebooks/api_user_guide/9_post_process.ipynb
+   notebooks/tutos/tuto_stac_client.ipynb
