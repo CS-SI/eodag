@@ -2481,7 +2481,7 @@ class EODataAccessGateway:
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
 
-        :param items_urls: A list of STAC item URLs to import
+        :param items_urls: A list of STAC items URLs to import
         :returns: A SearchResult containing the imported STAC items
         """
         json_items = []
