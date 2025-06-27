@@ -52,5 +52,11 @@ def unregistered_product_from_item(
         if hasattr(search_plugin, "normalize_results"):
             products = search_plugin.normalize_results([feature])
             if len(products) > 0:
+                # properties cleanup
+                for prop in ("start_datetime", "end_datetime"):
+                    products[0].properties.pop(prop, None)
+                # set product type if not already set
+                if products[0].product_type is None:
+                    products[0].product_type = products[0].properties.get("productType")
                 return products[0]
     return None

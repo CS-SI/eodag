@@ -358,6 +358,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "title": "Stac-FastApi-Eodag item",
                         "federation:backends": ["cop_dataspace"],
                     },
+                    "collection": "foo-collection",
                     "assets": {
                         "downloadLink": {
                             "title": "Download link",
@@ -391,6 +392,7 @@ class TestCoreSearchResults(EODagTestCase):
                         "title": "Legacy-Eodag-server item",
                         "providers": [{"name": "earth_search"}],
                     },
+                    "collection": "bar-collection",
                     "assets": {
                         "downloadLink": {
                             "title": "Download link",
@@ -445,12 +447,14 @@ class TestCoreSearchResults(EODagTestCase):
 
         self.assertEqual(results[0].provider, "cop_dataspace")
         self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
+        self.assertEqual(results[0].product_type, "foo-collection")
         self.assertEqual(len(results[0].assets), 0)
         self.assertEqual(results[0].location, "https://provider-url/origin-link")
         self.assertIsInstance(results[0].downloader, Download)
 
         self.assertEqual(results[1].provider, "earth_search")
         self.assertEqual(results[1].properties["id"], "legacy-server-id")
+        self.assertEqual(results[1].product_type, "bar-collection")
         self.assertEqual(len(results[1].assets), 2)
         self.assertEqual(
             results[1].assets["asset-1-link"]["href"],
@@ -480,6 +484,7 @@ class TestCoreSearchResults(EODagTestCase):
 
         self.assertEqual(results[0].provider, "earth_search")
         self.assertEqual(results[0].properties["id"], "S2B_27VWK_20240206_0_L1C")
+        self.assertEqual(results[0].product_type, "S2_MSI_L1C")
         self.assertEqual(len(results[0].assets), 17)
         self.assertTrue(
             all(v["href"].startswith("s3://") for v in results[0].assets.values())
@@ -502,5 +507,6 @@ class TestCoreSearchResults(EODagTestCase):
 
         self.assertEqual(results[0].provider, GENERIC_STAC_PROVIDER)
         self.assertEqual(results[0].properties["id"], "S2B_9VXK_20171013_0")
+        self.assertEqual(results[0].product_type, "sentinel-2-l1c")
         self.assertEqual(len(results[0].assets), 1)
         self.assertIsInstance(results[0].downloader, Download)
