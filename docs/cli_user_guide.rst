@@ -9,52 +9,11 @@ Then you can start playing with it:
 
 * Run ``eodag --help`` to display all the available options and commands:
 
-.. code-block:: console
+.. command-output:: eodag --help
 
-        Usage: eodag [OPTIONS] COMMAND [ARGS]...
+* Each command has its own help, see for instance the help of the ``list`` command with ``eodag list --help``.
 
-        Earth Observation Data Access Gateway: work on EO products from any
-        provider
-
-        Options:
-        -v, --verbose  Control the verbosity of the logs. For maximum verbosity,
-                        type -vvv
-        --help         Show this message and exit.
-
-        Commands:
-        deploy-wsgi-app  Configure the settings of the HTTP web app (the...
-        discover         Fetch providers to discover product types
-        download         Download a list of products from a serialized search...
-        list             List supported product types
-        search           Search satellite images by their product types,...
-        serve-rest       Start eodag HTTP server
-        version          Print eodag version and exit
-
-* Each command has its own help, see for instance the help of the ``list`` command with ``eodag list --help``:
-
-.. code-block:: console
-
-        Usage: eodag list [OPTIONS]
-
-        List supported product types
-
-        Options:
-        -p, --provider TEXT             List product types supported by this
-                                        provider
-        -i, --instrument TEXT           List product types originating from this
-                                        instrument
-        -P, --platform TEXT             List product types originating from this
-                                        platform
-        -t, --platformSerialIdentifier TEXT
-                                        List product types originating from the
-                                        satellite identified by this keyword
-        -L, --processingLevel TEXT      List product types of processing level
-        -S, --sensorType TEXT           List product types originating from this
-                                        type of sensor
-        --no-fetch                      Do not fetch providers for new product types
-        --help                          Show this message and exit.
-
-* By default the command line interface of eodag is set to the minimum verbosity level. You can print more
+* By default the command line interface of eodag is set to the minimum **verbosity level**. You can print more
   log messages by adding ``-v`` to eodag master command. The more ``v`` given (up to 3), the more verbose the tool is.
   This feature comes in handy when you want to inspect an error or an unexpected behaviour. 4 different verbosity levels
   are offered to you:
@@ -65,6 +24,11 @@ Then you can start playing with it:
         eodag -v list
         eodag -vv list
         eodag -vvv list
+
+Search
+------
+
+.. command-output:: eodag search --help
 
 * To search for products and crunch the results of the search:
 
@@ -105,17 +69,19 @@ string search sent to the provider. For instance, if you want to add foo=1 and b
                      --cruncher-args FilterOverlap minimum_overlap 10 \
                      --query "foo=1&bar=2"
 
-* If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search request. The possible parameters are:
+* If the product type is not known, it can also be guessed by EODAG during the search based on parameters in the search
+  request. The possible parameters are:
 
-        * `instrument` (e.g. MSI)
-        * `platform` (e.g. SENTINEL2)
-        * `platformSerialIdentifier` (e.g. S2A)
-        * `processingLevel` (e.g. L1)
-        * `sensorType` (e.g. OPTICAL)
-        * `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
+  - `instrument` (e.g. MSI)
+  - `platform` (e.g. SENTINEL2)
+  - `platformSerialIdentifier` (e.g. S2A)
+  - `processingLevel` (e.g. L1)
+  - `sensorType` (e.g. OPTICAL)
+  - `keywords` (e.g. SENTINEL2 L1C SAFE), which is case insensitive and ignores `-` or `_` characters
 
-For example, the following search request will first search for a product type for platform SENTINEL2 and processingLevel L1
-(there are several product types matching these criteria, e.g., `S2_MSI_L1C`) and then use this product type to execute the actual search.
+For example, the following search request will first search for a product type for platform SENTINEL2 and
+processingLevel L1 (there are several product types matching these criteria, e.g., `S2_MSI_L1C`) and then use this
+product type to execute the actual search.
 
 .. code-block:: console
 
@@ -125,11 +91,21 @@ For example, the following search request will first search for a product type f
         --box 1 43 2 44 \
         --start 2021-03-01 --end 2021-03-31
 
+Download
+--------
+
+.. command-output:: eodag download --help
+
 * To download the result of a previous call to ``search``:
 
 .. code-block:: console
 
         eodag download --conf my_conf.yml --search-results my_search.geojson
+
+Product Types
+-------------
+
+.. command-output:: eodag list --help
 
 * To list all available product types and supported providers:
 
@@ -153,6 +129,10 @@ For example, the following search request will first search for a product type f
 * EODAG can fetch providers (all or only a given one) to discover available product types, using the following command.
   It will store result in a JSON file (defaults to `ext_product_types.json`):
 
+.. command-output:: eodag discover --help
+
+Examples:
+
 .. code-block:: console
 
         eodag discover
@@ -164,3 +144,22 @@ This file can then be used in EODAG using the environment variable ``EODAG_EXT_P
 Please note that if you did not customize EODAG with new providers settings, this command should not be useful.
 For more information on the product types discovery mechanism, please see
 `Python API User Guide / Providers and products / Product types discovery <notebooks/api_user_guide/2_providers_products_available.html#Product-types-discovery>`_.
+
+Server mode
+-----------
+
+EODAG has a STAC compliant REST API. It can serve configured providers data through
+this STAC API.
+
+.. command-output:: eodag serve-rest --help
+
+And for advanced configuration:
+
+.. command-output:: eodag deploy-wsgi-app --help
+
+See server mode usage examples in `STAC REST API Server <stac_rest.rst>`_.
+
+.. toctree::
+   :maxdepth: 2
+
+   stac_rest

@@ -59,7 +59,7 @@ integrate new data providers. Three types of plugins compose the tool:
 
 * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
 
-Since v2.0 EODAG can be run as `STAC client or server <https://eodag.readthedocs.io/en/latest/stac.html>`_.
+EODAG can be run as STAC client or server <https://eodag.readthedocs.io/en/latest/stac.html>`_.
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 

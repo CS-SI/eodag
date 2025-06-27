@@ -46,6 +46,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_tabs.tabs",
     "sphinx_autodoc_typehints",
+    "sphinxcontrib.programoutput",
     "sphinxemoji.sphinxemoji",
 ]
 

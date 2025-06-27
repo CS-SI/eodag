@@ -1,42 +1,20 @@
 .. _stac_rest:
 
-STAC REST API
-=============
+STAC REST API Server
+====================
 
 .. image:: _static/eodag_stac_server.png
    :width: 800
    :alt: EODAG as STAC server
    :class: no-scaled-link
 
-EODAG has a STAC compliant REST API. It can serve configured providers data through
-this STAC API. To run the server, do:
+EODAG has a STAC compliant REST API available through the CLI. It can serve configured
+providers data through this STAC API
+(See `CLI USer Guide / Server mode <cli_user_guide.rst#server-mode>`_). To run the server, do:
 
 .. code-block:: console
 
     eodag serve-rest
-
-Below is the content of the help message of this command (`eodag serve-rest --help`):
-
-.. code-block:: console
-
-    Usage: eodag serve-rest [OPTIONS]
-
-      Start eodag HTTP server
-
-      Set EODAG_CORS_ALLOWED_ORIGINS environment variable to configure Cross-
-      Origin Resource Sharing allowed origins as comma-separated URLs (e.g.
-      'http://somewhere,htttp://somewhere.else').
-
-    Options:
-      -f, --config PATH   File path to the user configuration file with its
-                          credentials, default is ~/.config/eodag/eodag.yml
-      -l, --locs PATH     File path to the location shapefiles configuration file
-      -d, --daemon        run in daemon mode
-      -w, --world         run uvicorn using IPv4 0.0.0.0 (all network interfaces),
-                          otherwise bind to 127.0.0.1 (localhost).
-      -p, --port INTEGER  The port on which to listen  [default: 5000]
-      --debug             Run in debug mode (for development purpose)
-      --help              Show this message and exit.
 
 Searching
 ---------
