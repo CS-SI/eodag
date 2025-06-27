@@ -3,6 +3,36 @@ Release history
 ===============
 
 
+v3.6.0 (2025-06-27)
+===================
+
+Bug Fixes
+---------
+
+* **queryables**: Improve date parameter parsing (`#1702`_, `9563d4b`_)
+
+Documentation
+-------------
+
+* Cli and stac support update (`#1707`_, `c50aae1`_)
+
+Features
+--------
+
+* **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
+
+* **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
+
+.. _#1662: https://github.com/CS-SI/eodag/pull/1662
+.. _#1702: https://github.com/CS-SI/eodag/pull/1702
+.. _#1703: https://github.com/CS-SI/eodag/pull/1703
+.. _#1707: https://github.com/CS-SI/eodag/pull/1707
+.. _1d49715: https://github.com/CS-SI/eodag/commit/1d4971560e9b789dfe96ca09b2fcd5d88cb4e30a
+.. _9563d4b: https://github.com/CS-SI/eodag/commit/9563d4bccaea5a87805fff77863d14cb4b422fb7
+.. _b7192b1: https://github.com/CS-SI/eodag/commit/b7192b14840d27a3558f4dc5dff0b99ea6c0d833
+.. _c50aae1: https://github.com/CS-SI/eodag/commit/c50aae12b344d81f66fc20a9a930b7718e0b12b7
+
+
 v3.5.1 (2025-06-23)
 ===================
 
