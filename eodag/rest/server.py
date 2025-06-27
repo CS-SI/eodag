@@ -388,7 +388,6 @@ async def list_collection_queryables(
     for k, v in request.query_params.multi_items():
         params.setdefault(k, []).append(v)
 
-    # parameter provider is deprecated
     provider = params.pop("provider", [None])[0]
     datetime = params.pop("datetime", [None])[0]
 
