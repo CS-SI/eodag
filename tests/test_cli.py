@@ -755,7 +755,7 @@ class TestEodagCli(unittest.TestCase):
                 no_blanks(
                     "".join(
                         (
-                            "Nothing to do (no search results file provided)",
+                            "Nothing to do (no search results file or stac item provided)",
                             ctx.get_help(),
                         )
                     )
@@ -776,7 +776,9 @@ class TestEodagCli(unittest.TestCase):
             ["download", "--search-results", search_results_path, "-f", config_path],
         )
         dag.assert_called_once_with(user_conf_file_path=config_path)
-        dag.return_value.deserialize.assert_called_once_with(search_results_path)
+        dag.return_value.deserialize_and_register.assert_called_once_with(
+            search_results_path
+        )
         self.assertEqual(dag.return_value.download_all.call_count, 1)
         self.assertEqual("Downloaded /fake_path\n", result.output)
 
@@ -806,6 +808,29 @@ class TestEodagCli(unittest.TestCase):
             "Error during download, a file may have been downloaded but we cannot locate it\n",
             result.output,
         )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_download_stac_items(self, dag):
+        """Calling eodag download with --stac-item argument"""
+        fake_result = SearchResult([mock.MagicMock() * 2], 2)
+        dag.return_value.import_stac_items.return_value = fake_result
+        with self.user_conf() as conf_file:
+            self.runner.invoke(
+                eodag,
+                [
+                    "download",
+                    "--conf",
+                    conf_file,
+                    "--stac-item",
+                    "foo",
+                    "--stac-item",
+                    "bar",
+                ],
+            )
+            dag.return_value.import_stac_items.assert_called_once_with(
+                ["foo", "bar"],
+            )
+            dag.return_value.download_all.assert_called_once_with(fake_result)
 
     def test_eodag_download_missingcredentials(self):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
