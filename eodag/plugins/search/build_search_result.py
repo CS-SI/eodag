@@ -317,17 +317,17 @@ def append_time(input_date: date, time: Optional[str]) -> datetime:
 
 
 def parse_date(
-    date_str: str, time: Optional[Union[str, list[str]]]
+    date: str, time: Optional[Union[str, list[str]]]
 ) -> tuple[datetime, datetime]:
     """Parses a date string in formats YYYY-MM-DD, YYYMMDD, solo or in start/end or start/to/end intervals."""
-    if "to" in date_str:
-        start_date_str, end_date_str = date_str.split("/to/")
-    elif "/" in date_str:
-        dates = date_str.split("/")
+    if "to" in date:
+        start_date_str, end_date_str = date.split("/to/")
+    elif "/" in date:
+        dates = date.split("/")
         start_date_str = dates[0]
         end_date_str = dates[-1]
     else:
-        start_date_str = end_date_str = date_str
+        start_date_str = end_date_str = date
 
     # Update YYYYMMDD formatted dates
     if re.match(r"^\d{8}$", start_date_str):
@@ -401,6 +401,8 @@ def ecmwf_temporal_to_eodag(
     start = end = None
 
     if date := params.get("date"):
+        if isinstance(date, list):
+            date = "/".join(date)
         start, end = parse_date(date, params.get("time"))
 
     elif year := (params.get("year") or params.get("hyear")):
