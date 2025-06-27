@@ -110,6 +110,13 @@ logger = py_logging.getLogger("eodag.utils")
 DEFAULT_PROJ = "EPSG:4326"
 
 GENERIC_PRODUCT_TYPE = "GENERIC_PRODUCT_TYPE"
+GENERIC_STAC_PROVIDER = "generic_stac_provider"
+
+STAC_SEARCH_PLUGINS = [
+    "StacSearch",
+    "StacListAssets",
+    "StaticStacSearch",
+]
 
 eodag_version = metadata("eodag")["Version"]
 USER_AGENT = {"User-Agent": f"eodag/{eodag_version}"}

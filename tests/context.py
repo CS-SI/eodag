@@ -94,6 +94,7 @@ from eodag.utils import (
     parse_qsl,
     urlsplit,
     GENERIC_PRODUCT_TYPE,
+    GENERIC_STAC_PROVIDER,
     flatten_top_directories,
     deepcopy,
     cached_parse,
