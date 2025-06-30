@@ -52,7 +52,7 @@ from typing import TYPE_CHECKING, Any, Mapping
 
 import click
 
-from eodag.api.core import EODataAccessGateway
+from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
@@ -528,11 +528,25 @@ def discover_pt(ctx: Context, **kwargs: Any) -> None:
     click.echo("Results stored at '{}'".format(storage_filepath))
 
 
-@eodag.command(help="Download a list of products from a serialized search result")
+@eodag.command(
+    help="""Download a list of products from a serialized search result or STAC items URLs/paths
+
+Examples:
+
+  eodag download --search-results /path/to/search_results.geojson
+
+  eodag download --stac-item https://example.com/stac/item1.json --stac-item /path/to/item2.json
+""",
+)
 @click.option(
     "--search-results",
     type=click.Path(exists=True, dir_okay=False),
     help="Path to a serialized search result",
+)
+@click.option(
+    "--stac-item",
+    multiple=True,
+    help="URL/path of a STAC item to download (multiple values accepted)",
 )
 @click.option(
     "-f",
@@ -550,9 +564,10 @@ def discover_pt(ctx: Context, **kwargs: Any) -> None:
 def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
     search_result_path = kwargs.pop("search_results")
-    if not search_result_path:
+    stac_items = kwargs.pop("stac_item")
+    if not search_result_path and not stac_items:
         with click.Context(download) as ctx:
-            click.echo("Nothing to do (no search results file provided)")
+            click.echo("Nothing to do (no search results file or stac item provided)")
             click.echo(download.get_help(ctx))
         sys.exit(1)
     setup_logging(verbose=ctx.obj["verbosity"])
@@ -561,24 +576,21 @@ def download(ctx: Context, **kwargs: Any) -> None:
         conf_file = click.format_filename(conf_file)
 
     satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
-    search_results = satim_api.deserialize(search_result_path)
+
+    search_results = SearchResult([])
+    if search_result_path:
+        search_results.extend(satim_api.deserialize_and_register(search_result_path))
+    if stac_items:
+        search_results.extend(satim_api.import_stac_items(list(stac_items)))
 
     get_quicklooks = kwargs.pop("quicklooks")
     if get_quicklooks:
+        # Download only quicklooks
         click.echo(
             "Flag 'quicklooks' specified, downloading only quicklooks of products"
         )
 
         for idx, product in enumerate(search_results):
-            if product.downloader is None:
-                downloader = satim_api._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(
-                        downloader, product
-                    )
-                search_results[idx].register_downloader(downloader, auth)
-
             downloaded_file = product.get_quicklook()
             if not downloaded_file:
                 click.echo(
@@ -589,17 +601,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
                 click.echo("Downloaded {}".format(downloaded_file))
 
     else:
-        # register downloader
-        for idx, product in enumerate(search_results):
-            if product.downloader is None:
-                downloader = satim_api._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(
-                        downloader, product
-                    )
-                search_results[idx].register_downloader(downloader, auth)
-
+        # Download products
         downloaded_files = satim_api.download_all(search_results)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:

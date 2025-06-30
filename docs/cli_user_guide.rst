@@ -102,6 +102,12 @@ Download
 
         eodag download --conf my_conf.yml --search-results my_search.geojson
 
+* To download STAC items from their URL or path:
+
+.. code-block:: console
+
+        eodag download --stac-item https://foo/collections/bar/items/item-1-id --stac-item /path/to/item2.json
+
 Product Types
 -------------
 
