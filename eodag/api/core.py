@@ -2481,6 +2481,12 @@ class EODataAccessGateway:
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.
 
+        - Origin provider and download links will be set if item comes from an EODAG
+          server.
+        - If item comes from a known EODAG provider, result will be registered to it,
+          ready to download and its metadata normalized.
+        - If item comes from an unknown provider, a generic STAC provider will be used.
+
         :param items_urls: A list of STAC items URLs to import
         :returns: A SearchResult containing the imported STAC items
         """
