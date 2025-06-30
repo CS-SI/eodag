@@ -377,6 +377,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_to_geojson_polytope(value: Any) -> str:
 
+            # ECMWF Polytope uses non-geojson structure for features
             if "feature" in value and isinstance(value["feature"], Polygon):
                 value["feature"] = {
                     "type": "polygon",
