@@ -460,11 +460,15 @@ class Search(PluginTopic):
                     f"asset mapping {key} skipped because no href is available"
                 )
                 continue
-            url_match = string_to_jsonpath(asset_href).find(provider_item)
-            if len(url_match) == 1:
-                url_path = url_match[0].value
+            json_url_path = string_to_jsonpath(asset_href)
+            if isinstance(json_url_path, str):
+                url_path = json_url_path
             else:
-                url_path = NOT_AVAILABLE
+                url_match = json_url_path.find(provider_item)
+                if len(url_match) == 1:
+                    url_path = url_match[0].value
+                else:
+                    url_path = NOT_AVAILABLE
             assets[key] = deepcopy(values)
             assets[key]["href"] = url_path
         return assets
