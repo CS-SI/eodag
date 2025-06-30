@@ -375,6 +375,17 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return geojson.dumps(value)
 
         @staticmethod
+        def convert_to_geojson_polytope(value: Any) -> str:
+
+            if "feature" in value and isinstance(value["feature"], Polygon):
+                value["feature"] = {
+                    "type": "polygon",
+                    "shape": [[y, x] for x, y in value["feature"].exterior.coords],
+                }
+
+            return geojson.dumps(value)
+
+        @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
