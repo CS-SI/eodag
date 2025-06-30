@@ -2483,7 +2483,7 @@ class EODataAccessGateway:
 
         - Origin provider and download links will be set if item comes from an EODAG
           server.
-        - If item comes from a knwon EODAG provider, result will be registered to it,
+        - If item comes from a known EODAG provider, result will be registered to it,
           ready to download and its metadata normalized.
         - If item comes from an unknown provider, a generic STAC provider will be used.
 
