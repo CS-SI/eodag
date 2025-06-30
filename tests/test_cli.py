@@ -374,6 +374,44 @@ class TestEodagCli(unittest.TestCase):
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_and_download(self, dag):
+        """Calling eodag search with --download argument should directly download search results"""
+        with self.user_conf() as conf_file:
+            api_obj = dag.return_value
+            search_results = api_obj.search.return_value = SearchResult(
+                [mock.MagicMock() * 2], 2
+            )
+
+            product_type = "whatever"
+            criteria = dict(
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                geometry=None,
+                cloudCover=None,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
+                id=None,
+                locations=None,
+            )
+            self.runner.invoke(
+                eodag,
+                ["search", "-f", conf_file, "-p", product_type, "--download"],
+            )
+
+            # Assertions
+            dag.assert_called_once_with(
+                user_conf_file_path=conf_file, locations_conf_path=None
+            )
+            api_obj.search.assert_called_once_with(
+                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+            )
+            api_obj.download_all.assert_called_once_with(search_results)
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_all(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:

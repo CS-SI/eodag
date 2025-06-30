@@ -213,6 +213,18 @@ def version() -> None:
 )
 @click.option("--id", help="Search for the product identified by this id")
 @click.option(
+    "--locations",
+    type=str,
+    help="Custom query-string argument(s) to select locations. "
+    "Format :'key1=value1&key2=value2'. Example: --locations country=FRA&continent=Africa",
+)
+@click.option(
+    "-q",
+    "--query",
+    type=str,
+    help="Custom query-string argument(s). Format :'key1=value1&key2=value2'",
+)
+@click.option(
     "--cruncher",
     type=click.Choice(CRUNCHERS),
     multiple=True,
@@ -262,19 +274,14 @@ def version() -> None:
 @click.option(
     "--count",
     is_flag=True,
-    help="Whether to run a query with a count request or not.",
+    help="Make a count request together with search (Enabling count will significantly "
+    "slow down search requests for some providers, and might be unavailable for some"
+    "others).",
 )
 @click.option(
-    "--locations",
-    type=str,
-    help="Custom query-string argument(s) to select locations. "
-    "Format :'key1=value1&key2=value2'. Example: --locations country=FRA&continent=Africa",
-)
-@click.option(
-    "-q",
-    "--query",
-    type=str,
-    help="Custom query-string argument(s). Format :'key1=value1&key2=value2'",
+    "--download",
+    is_flag=True,
+    help="Directly download search results.",
 )
 @click.pass_context
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
@@ -289,6 +296,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     id_ = kwargs.pop("id")
     locations_qs = kwargs.pop("locations")
     custom = kwargs.pop("query")
+    download = kwargs.pop("download")
     if not any(
         [
             product_type,
@@ -407,6 +415,20 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         storage_filepath += ".geojson"
     result_storage = gateway.serialize(results, filename=storage_filepath)
     click.echo("Results stored at '{}'".format(result_storage))
+    if download:
+        downloaded_files = gateway.download_all(results)
+        if downloaded_files and len(downloaded_files) > 0:
+            for downloaded_file in downloaded_files:
+                if downloaded_file is None:
+                    click.echo(
+                        "A file may have been downloaded but we cannot locate it"
+                    )
+                else:
+                    click.echo("Downloaded {}".format(downloaded_file))
+        else:
+            click.echo(
+                "Error during download, a file may have been downloaded but we cannot locate it"
+            )
 
 
 @eodag.command(name="list", help="List supported product types")
