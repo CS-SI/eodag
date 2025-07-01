@@ -108,11 +108,11 @@ Download
 
         eodag download --stac-item https://foo/collections/bar/items/item-1-id --stac-item /path/to/item2.json
 
-* Download can also directly be executed after a ``search`` with a single command:
+* Using commands chaining, ``download`` can also directly be executed after a ``search`` in a single command:
 
 .. code-block:: console
 
-        eodag search --download --productType S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01
+        eodag search --productType S2_MSI_L1C --bbox 1 43 2 44 --start 2025-03-01 download
 
 Product Types
 -------------
