@@ -29,8 +29,6 @@ Features
 
 * **cli**: Download STAC items from their urls (`#1705`_, `5d598a9`_)
 
-* **cli**: Search and directly download results (`#1706`_, `e1db471`_)
-
 * **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
 
 * **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
