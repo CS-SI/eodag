@@ -17,10 +17,14 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 import re
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
+from eodag.plugins.apis.base import Api
+from eodag.plugins.authentication.base import Authentication
+from eodag.plugins.download.base import Download
 from eodag.utils.exceptions import NotAvailableError
 from eodag.utils.repr import dict_to_html_table
 
@@ -28,6 +32,9 @@ if TYPE_CHECKING:
     from eodag.api.product import EOProduct
     from eodag.types.download_args import DownloadConf
     from eodag.utils import Unpack
+
+
+logger = logging.getLogger("eodag.assets")
 
 
 class AssetsDict(UserDict):
@@ -164,15 +171,26 @@ class Asset(UserDict):
     {'href': 'http://somewhere/something'}
     """
 
+    #: EOProduct the asset belongs to
     product: EOProduct
+    #: size of the asset
     size: int
+    #: name of the asset file
     filename: Optional[str]
+    #: relative path of the asset
     rel_path: str
+    #: The path to the asset, either remote or local if downloaded
+    location: str
+    #: The remote path to the asset
+    remote_location: str
 
     def __init__(self, product: EOProduct, key: str, *args: Any, **kwargs: Any) -> None:
         self.product = product
         self.key = key
+        self.downloader: Optional[Union[Api, Download]] = None
+        self.downloader_auth: Optional[Authentication] = None
         super(Asset, self).__init__(*args, **kwargs)
+        self.location = self.remote_location = self.data.get("href", "")
 
     def as_dict(self) -> dict[str, Any]:
         """Builds a representation of Asset to enable its serialization
@@ -201,3 +219,33 @@ class Asset(UserDict):
                 </details>
                 </td></tr>
             </table>"""
+
+    def register_downloader(
+        self, downloader: Union[Api, Download], authenticator: Optional[Authentication]
+    ) -> None:
+        """Give to the asset the information needed to download itself.
+
+        :param downloader: The download method that it can use
+                          :class:`~eodag.plugins.download.base.Download` or
+                          :class:`~eodag.plugins.api.base.Api`
+        :param authenticator: The authentication method needed to perform the download
+                             :class:`~eodag.plugins.authentication.base.Authentication`
+        """
+        self.downloader = downloader
+        self.downloader_auth = authenticator
+
+        # resolve locations and properties if needed with downloader configuration
+        location_attrs = ("location", "remote_location")
+        for location_attr in location_attrs:
+            if "%(" in getattr(self, location_attr):
+                try:
+                    setattr(
+                        self,
+                        location_attr,
+                        getattr(self, location_attr) % vars(self.downloader.config),
+                    )
+                except ValueError as e:
+                    logger.debug(
+                        f"Could not resolve asset.{location_attr} ({getattr(self, location_attr)})"
+                        f" in register_downloader: {str(e)}"
+                    )
