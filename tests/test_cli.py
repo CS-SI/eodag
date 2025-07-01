@@ -411,7 +411,9 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
-            api_obj.download_all.assert_called_once_with(search_results)
+            api_obj.download_all.assert_called_once_with(
+                search_results, output_dir=None
+            )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_all(self, dag):
@@ -888,7 +890,9 @@ class TestEodagCli(unittest.TestCase):
             dag.return_value.import_stac_items.assert_called_once_with(
                 ["foo", "bar"],
             )
-            dag.return_value.download_all.assert_called_once_with(fake_result)
+            dag.return_value.download_all.assert_called_once_with(
+                fake_result, output_dir=None
+            )
 
     def test_eodag_download_missingcredentials(self):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
