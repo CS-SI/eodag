@@ -42,6 +42,7 @@ import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
 
+from eodag.api.provider import Provider, ProvidersList
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
@@ -745,7 +746,7 @@ def load_default_config() -> dict[str, ProviderConfig]:
     return load_config(eodag_providers_cfg_file)
 
 
-def load_config(config_path: str) -> dict[str, ProviderConfig]:
+def load_config(config_path: str) -> ProvidersList:
     """Load the providers configuration into a dictionary from a given file
 
     If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
@@ -754,7 +755,8 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
     :returns: The default provider's configuration
     """
     logger.debug("Loading configuration from %s", config_path)
-    config: dict[str, ProviderConfig] = {}
+    providers = ProvidersList()
+    
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it
@@ -772,14 +774,14 @@ def load_config(config_path: str) -> dict[str, ProviderConfig]:
         logger.info("Using providers whitelist: %s", ", ".join(whitelist))
 
     for provider_config in providers_configs:
-        if provider_config is None or (
-            whitelist and provider_config.name not in whitelist
-        ):
+        provider_whitelisted = provider_config.name in whitelist if whitelist else True
+        if provider_config is None or not provider_whitelisted:
             continue
+        
         provider_config_init(provider_config, stac_provider_config)
-        config[provider_config.name] = provider_config
+        providers.append(Provider(provider_config.name, provider_config))
 
-    return config
+    return providers
 
 
 def credentials_in_auth(auth_conf: PluginConfig) -> bool:
