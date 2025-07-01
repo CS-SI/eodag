@@ -91,7 +91,10 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
         result = self.runner.invoke(eodag)
-        self.assertIn("Usage: eodag [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn(
+            "Usage: eodag [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...",
+            result.output,
+        )
         # Exit status 2 with no_args_is_help starting click >= 8.2.0
         self.assertIn(result.exit_code, (0, 2))
 
