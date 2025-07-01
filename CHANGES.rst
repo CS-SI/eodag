@@ -3,6 +3,60 @@ Release history
 ===============
 
 
+v3.6.0 (2025-07-01)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Do not download again unextracted products (`#1717`_, `29642e8`_)
+
+* **queryables**: Improve date parameter parsing (`#1702`_, `9563d4b`_)
+
+Documentation
+-------------
+
+* Cli and stac support update (`#1707`_, `c50aae1`_)
+
+* Import_stac_items documentation update (`#1709`_, `7a04158`_)
+
+Features
+--------
+
+* **cli**: Commands chaining (`#1714`_, `754772b`_)
+
+* **cli**: Download output directory (`#1716`_, `036b86b`_)
+
+* **cli**: Download STAC items from their urls (`#1705`_, `5d598a9`_)
+
+* **cli**: Search and directly download results (`#1706`_, `e1db471`_)
+
+* **core**: Import stac items as SearchResult (`#1703`_, `1d49715`_)
+
+* **providers**: Add new eurostat product types to dedl (`#1662`_, `b7192b1`_)
+
+.. _#1662: https://github.com/CS-SI/eodag/pull/1662
+.. _#1702: https://github.com/CS-SI/eodag/pull/1702
+.. _#1703: https://github.com/CS-SI/eodag/pull/1703
+.. _#1705: https://github.com/CS-SI/eodag/pull/1705
+.. _#1706: https://github.com/CS-SI/eodag/pull/1706
+.. _#1707: https://github.com/CS-SI/eodag/pull/1707
+.. _#1709: https://github.com/CS-SI/eodag/pull/1709
+.. _#1714: https://github.com/CS-SI/eodag/pull/1714
+.. _#1716: https://github.com/CS-SI/eodag/pull/1716
+.. _#1717: https://github.com/CS-SI/eodag/pull/1717
+.. _036b86b: https://github.com/CS-SI/eodag/commit/036b86bbefeed905c9962a7a4bf7bca8258246fb
+.. _1d49715: https://github.com/CS-SI/eodag/commit/1d4971560e9b789dfe96ca09b2fcd5d88cb4e30a
+.. _29642e8: https://github.com/CS-SI/eodag/commit/29642e87614b44ec3b544732ef6496ae8bf73087
+.. _5d598a9: https://github.com/CS-SI/eodag/commit/5d598a9934d36390e7b6f1ef2d746f9a9030198d
+.. _754772b: https://github.com/CS-SI/eodag/commit/754772b9e71700fb752cb632dfb66ef13cd2c743
+.. _7a04158: https://github.com/CS-SI/eodag/commit/7a041583695f71811baf56e5616415df60750814
+.. _9563d4b: https://github.com/CS-SI/eodag/commit/9563d4bccaea5a87805fff77863d14cb4b422fb7
+.. _b7192b1: https://github.com/CS-SI/eodag/commit/b7192b14840d27a3558f4dc5dff0b99ea6c0d833
+.. _c50aae1: https://github.com/CS-SI/eodag/commit/c50aae12b344d81f66fc20a9a930b7718e0b12b7
+.. _e1db471: https://github.com/CS-SI/eodag/commit/e1db47199d47c4988eaece7628005727dba2985f
+
+
 v3.5.1 (2025-06-23)
 ===================
 
