@@ -399,13 +399,12 @@ class TestEodagCli(unittest.TestCase):
             )
             self.runner.invoke(
                 eodag,
-                ["search", "-f", conf_file, "-p", product_type, "--download"],
+                ["search", "-f", conf_file, "-p", product_type, "download"],
             )
 
             # Assertions
-            dag.assert_called_once_with(
-                user_conf_file_path=conf_file, locations_conf_path=None
-            )
+            self.assertEqual(dag.call_count, 2)
+            dag.assert_any_call(user_conf_file_path=conf_file, locations_conf_path=None)
             api_obj.search.assert_called_once_with(
                 count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
