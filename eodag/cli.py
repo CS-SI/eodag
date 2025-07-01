@@ -116,7 +116,7 @@ class MutuallyExclusiveOption(click.Option):
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
 
-@click.group()
+@click.group(chain=True)
 @click.option(
     "-v",
     "--verbose",
@@ -278,11 +278,6 @@ def version() -> None:
     "slow down search requests for some providers, and might be unavailable for some"
     "others).",
 )
-@click.option(
-    "--download",
-    is_flag=True,
-    help="Directly download search results.",
-)
 @click.pass_context
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
     """Search product types and optionnaly apply crunchers to search results"""
@@ -296,7 +291,6 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     id_ = kwargs.pop("id")
     locations_qs = kwargs.pop("locations")
     custom = kwargs.pop("query")
-    download = kwargs.pop("download")
     if not any(
         [
             product_type,
@@ -415,20 +409,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         storage_filepath += ".geojson"
     result_storage = gateway.serialize(results, filename=storage_filepath)
     click.echo("Results stored at '{}'".format(result_storage))
-    if download:
-        downloaded_files = gateway.download_all(results)
-        if downloaded_files and len(downloaded_files) > 0:
-            for downloaded_file in downloaded_files:
-                if downloaded_file is None:
-                    click.echo(
-                        "A file may have been downloaded but we cannot locate it"
-                    )
-                else:
-                    click.echo("Downloaded {}".format(downloaded_file))
-        else:
-            click.echo(
-                "Error during download, a file may have been downloaded but we cannot locate it"
-            )
+    ctx.obj["search_results"] = results
 
 
 @eodag.command(name="list", help="List supported product types")
@@ -587,7 +568,8 @@ def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
     search_result_path = kwargs.pop("search_results")
     stac_items = kwargs.pop("stac_item")
-    if not search_result_path and not stac_items:
+    search_results = ctx.obj.get("search_results")
+    if not search_result_path and not stac_items and search_results is None:
         with click.Context(download) as ctx:
             click.echo("Nothing to do (no search results file or stac item provided)")
             click.echo(download.get_help(ctx))
@@ -599,7 +581,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
 
-    search_results = SearchResult([])
+    search_results = search_results or SearchResult([])
     if search_result_path:
         search_results.extend(satim_api.deserialize_and_register(search_result_path))
     if stac_items:

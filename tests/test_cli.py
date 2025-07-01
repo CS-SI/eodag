@@ -91,7 +91,10 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
         result = self.runner.invoke(eodag)
-        self.assertIn("Usage: eodag [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn(
+            "Usage: eodag [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...",
+            result.output,
+        )
         # Exit status 2 with no_args_is_help starting click >= 8.2.0
         self.assertIn(result.exit_code, (0, 2))
 
@@ -399,13 +402,12 @@ class TestEodagCli(unittest.TestCase):
             )
             self.runner.invoke(
                 eodag,
-                ["search", "-f", conf_file, "-p", product_type, "--download"],
+                ["search", "-f", conf_file, "-p", product_type, "download"],
             )
 
             # Assertions
-            dag.assert_called_once_with(
-                user_conf_file_path=conf_file, locations_conf_path=None
-            )
+            self.assertEqual(dag.call_count, 2)
+            dag.assert_any_call(user_conf_file_path=conf_file, locations_conf_path=None)
             api_obj.search.assert_called_once_with(
                 count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
