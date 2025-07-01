@@ -149,7 +149,8 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
 
             # < v3.0.0b1 formatted record file and product path exist, record file moved to new format
             product_path_dir.mkdir()
-            (product_path_dir / "foo").touch()
+            file_in_dir = product_path_dir / "foo"
+            file_in_dir.touch()
             old_recordfile_path.touch()
             with self.assertLogs(level="INFO") as cm:
                 plugin._prepare_download(self.product, **download_kwargs)
@@ -161,6 +162,24 @@ class TestDownloadPluginBase(BaseDownloadPluginTest):
             with self.assertLogs(level="INFO") as cm:
                 plugin._prepare_download(self.product, **download_kwargs)
                 self.assertTrue(os.path.isfile(recordfile_path))
+                self.assertIn("Product already downloaded", str(cm.output))
+
+            # already downloaded product without extension
+            file_in_dir.unlink()
+            product_path_dir.rmdir()
+            product_path_dir.touch()
+            with self.assertLogs(level="INFO") as cm:
+                plugin._prepare_download(self.product, **download_kwargs)
+                self.assertIn("Product already downloaded", str(cm.output))
+                self.assertIn(
+                    "Remove existing partially downloaded file", str(cm.output)
+                )
+
+            # already downloaded product with extension
+            product_path_with_ext = product_path_dir.with_suffix(".xyz")
+            product_path_with_ext.touch()
+            with self.assertLogs(level="INFO") as cm:
+                plugin._prepare_download(self.product, **download_kwargs)
                 self.assertIn("Product already downloaded", str(cm.output))
 
     def test_plugins_download_base_prepare_download_no_url(self):
