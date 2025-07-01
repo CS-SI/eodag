@@ -116,7 +116,7 @@ class MutuallyExclusiveOption(click.Option):
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
 
-@click.group()
+@click.group(chain=True)
 @click.option(
     "-v",
     "--verbose",
@@ -409,6 +409,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         storage_filepath += ".geojson"
     result_storage = gateway.serialize(results, filename=storage_filepath)
     click.echo("Results stored at '{}'".format(result_storage))
+    ctx.obj["search_results"] = results
 
 
 @eodag.command(name="list", help="List supported product types")
@@ -567,7 +568,8 @@ def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
     search_result_path = kwargs.pop("search_results")
     stac_items = kwargs.pop("stac_item")
-    if not search_result_path and not stac_items:
+    search_results = ctx.obj.get("search_results")
+    if not search_result_path and not stac_items and search_results is None:
         with click.Context(download) as ctx:
             click.echo("Nothing to do (no search results file or stac item provided)")
             click.echo(download.get_help(ctx))
@@ -579,7 +581,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
 
-    search_results = SearchResult([])
+    search_results = search_results or SearchResult([])
     if search_result_path:
         search_results.extend(satim_api.deserialize_and_register(search_result_path))
     if stac_items:
