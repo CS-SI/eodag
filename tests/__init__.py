@@ -306,7 +306,7 @@ class EODagTestCase(unittest.TestCase):
         self._set_download_simulation()
         self.tmp_download_dir = tempfile.TemporaryDirectory()
         if output_dir is None:
-            output_dir = str(Path(self.tmp_download_dir.name).parent)
+            output_dir = str(Path(self.tmp_download_dir.name))
         dl_config = config.PluginConfig.from_mapping(
             {
                 "type": "HTTPDownload",

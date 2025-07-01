@@ -12,8 +12,8 @@
             "type": "Feature",
             "stac_version": "1.0.0",
             "id": "S2B_9VXK_20171013_0",
+            "collection": "sentinel-2-l1c",
             "properties": {
-                "collection": "sentinel-2-l1c",
                 "datetime": "2017-10-13T20:03:46.461000Z",
                 "eo:cloud_cover": 41.52,
                 "sentinel:utm_zone": 9,
@@ -165,8 +165,8 @@
             "type": "Feature",
             "stac_version": "1.0.0",
             "id": "S2A_9VXK_20171015_0",
+            "collection": "sentinel-2-l1c",
             "properties": {
-                "collection": "sentinel-2-l1c",
                 "datetime": "2017-10-15T19:54:08.461000Z",
                 "eo:cloud_cover": 95.78,
                 "sentinel:utm_zone": 9,
@@ -318,8 +318,8 @@
             "type": "Feature",
             "stac_version": "1.0.0",
             "id": "S2B_9VXK_20171016_0",
+            "collection": "sentinel-2-l1c",
             "properties": {
-                "collection": "sentinel-2-l1c",
                 "datetime": "2017-10-16T20:16:16.730000Z",
                 "eo:cloud_cover": 74.99,
                 "sentinel:utm_zone": 9,
@@ -467,8 +467,8 @@
             "type": "Feature",
             "stac_version": "1.0.0",
             "id": "S2B_9VXK_20171017_0",
+            "collection": "sentinel-2-l1c",
             "properties": {
-                "collection": "sentinel-2-l1c",
                 "datetime": "2017-10-17T19:44:04.459000Z",
                 "eo:cloud_cover": 94.45,
                 "sentinel:utm_zone": 9,
@@ -632,8 +632,8 @@
             "type": "Feature",
             "stac_version": "1.0.0",
             "id": "S2A_9VXK_20171002_0",
+            "collection": "sentinel-2-l1c",
             "properties": {
-                "collection": "sentinel-2-l1c",
                 "datetime": "2017-10-02T19:42:34.456000Z",
                 "eo:cloud_cover": 100.0,
                 "sentinel:utm_zone": 9,

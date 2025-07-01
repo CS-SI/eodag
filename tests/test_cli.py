@@ -91,7 +91,10 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_without_args(self):
         """Calling eodag without arguments should print help message"""
         result = self.runner.invoke(eodag)
-        self.assertIn("Usage: eodag [OPTIONS] COMMAND [ARGS]...", result.output)
+        self.assertIn(
+            "Usage: eodag [OPTIONS] COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]...",
+            result.output,
+        )
         # Exit status 2 with no_args_is_help starting click >= 8.2.0
         self.assertIn(result.exit_code, (0, 2))
 
@@ -371,6 +374,45 @@ class TestEodagCli(unittest.TestCase):
                 search_results,
                 search_criteria=criteria,
                 **{cruncher: {"minimum_overlap": "10"}},
+            )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_search_and_download(self, dag):
+        """Calling eodag search with --download argument should directly download search results"""
+        with self.user_conf() as conf_file:
+            api_obj = dag.return_value
+            search_results = api_obj.search.return_value = SearchResult(
+                [mock.MagicMock() * 2], 2
+            )
+
+            product_type = "whatever"
+            criteria = dict(
+                startTimeFromAscendingNode=None,
+                completionTimeFromAscendingNode=None,
+                geometry=None,
+                cloudCover=None,
+                instrument=None,
+                platform=None,
+                platformSerialIdentifier=None,
+                processingLevel=None,
+                sensorType=None,
+                productType=product_type,
+                id=None,
+                locations=None,
+            )
+            self.runner.invoke(
+                eodag,
+                ["search", "-f", conf_file, "-p", product_type, "download"],
+            )
+
+            # Assertions
+            self.assertEqual(dag.call_count, 2)
+            dag.assert_any_call(user_conf_file_path=conf_file, locations_conf_path=None)
+            api_obj.search.assert_called_once_with(
+                count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
+            )
+            api_obj.download_all.assert_called_once_with(
+                search_results, output_dir=None
             )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -755,7 +797,7 @@ class TestEodagCli(unittest.TestCase):
                 no_blanks(
                     "".join(
                         (
-                            "Nothing to do (no search results file provided)",
+                            "Nothing to do (no search results file or stac item provided)",
                             ctx.get_help(),
                         )
                     )
@@ -776,7 +818,9 @@ class TestEodagCli(unittest.TestCase):
             ["download", "--search-results", search_results_path, "-f", config_path],
         )
         dag.assert_called_once_with(user_conf_file_path=config_path)
-        dag.return_value.deserialize.assert_called_once_with(search_results_path)
+        dag.return_value.deserialize_and_register.assert_called_once_with(
+            search_results_path
+        )
         self.assertEqual(dag.return_value.download_all.call_count, 1)
         self.assertEqual("Downloaded /fake_path\n", result.output)
 
@@ -788,6 +832,24 @@ class TestEodagCli(unittest.TestCase):
         )
         self.assertEqual(
             "A file may have been downloaded but we cannot locate it\n", result.output
+        )
+
+        # Testing output directory
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--output-dir",
+                output_dir,
+            ],
+        )
+        dag.return_value.download_all.assert_called_with(
+            mock.ANY, output_dir=output_dir
         )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
@@ -806,6 +868,31 @@ class TestEodagCli(unittest.TestCase):
             "Error during download, a file may have been downloaded but we cannot locate it\n",
             result.output,
         )
+
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_download_stac_items(self, dag):
+        """Calling eodag download with --stac-item argument"""
+        fake_result = SearchResult([mock.MagicMock() * 2], 2)
+        dag.return_value.import_stac_items.return_value = fake_result
+        with self.user_conf() as conf_file:
+            self.runner.invoke(
+                eodag,
+                [
+                    "download",
+                    "--conf",
+                    conf_file,
+                    "--stac-item",
+                    "foo",
+                    "--stac-item",
+                    "bar",
+                ],
+            )
+            dag.return_value.import_stac_items.assert_called_once_with(
+                ["foo", "bar"],
+            )
+            dag.return_value.download_all.assert_called_once_with(
+                fake_result, output_dir=None
+            )
 
     def test_eodag_download_missingcredentials(self):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
@@ -879,6 +966,23 @@ class TestEodagCli(unittest.TestCase):
         # 2 quicklooks are called in search_results_path
         self.assertEqual(mock_get_quicklook.call_count, 2)
         self.assertIn("Downloaded /fake_path\n", result.output)
+
+        # change output dir
+        output_dir = os.path.join(self.tmp_home_dir.name, "quicklooks")
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--quicklooks",
+                "--output-dir",
+                output_dir,
+            ],
+        )
+        mock_get_quicklook.assert_called_with(mock.ANY, output_dir=output_dir)
 
         # Testing the case when no quicklook path is returned
         mock_get_quicklook.return_value = None

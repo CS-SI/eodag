@@ -52,7 +52,7 @@ from typing import TYPE_CHECKING, Any, Mapping
 
 import click
 
-from eodag.api.core import EODataAccessGateway
+from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
@@ -116,7 +116,7 @@ class MutuallyExclusiveOption(click.Option):
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
 
-@click.group()
+@click.group(chain=True)
 @click.option(
     "-v",
     "--verbose",
@@ -213,6 +213,18 @@ def version() -> None:
 )
 @click.option("--id", help="Search for the product identified by this id")
 @click.option(
+    "--locations",
+    type=str,
+    help="Custom query-string argument(s) to select locations. "
+    "Format :'key1=value1&key2=value2'. Example: --locations country=FRA&continent=Africa",
+)
+@click.option(
+    "-q",
+    "--query",
+    type=str,
+    help="Custom query-string argument(s). Format :'key1=value1&key2=value2'",
+)
+@click.option(
     "--cruncher",
     type=click.Choice(CRUNCHERS),
     multiple=True,
@@ -262,19 +274,9 @@ def version() -> None:
 @click.option(
     "--count",
     is_flag=True,
-    help="Whether to run a query with a count request or not.",
-)
-@click.option(
-    "--locations",
-    type=str,
-    help="Custom query-string argument(s) to select locations. "
-    "Format :'key1=value1&key2=value2'. Example: --locations country=FRA&continent=Africa",
-)
-@click.option(
-    "-q",
-    "--query",
-    type=str,
-    help="Custom query-string argument(s). Format :'key1=value1&key2=value2'",
+    help="Make a count request together with search (Enabling count will significantly "
+    "slow down search requests for some providers, and might be unavailable for some"
+    "others).",
 )
 @click.pass_context
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
@@ -407,6 +409,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         storage_filepath += ".geojson"
     result_storage = gateway.serialize(results, filename=storage_filepath)
     click.echo("Results stored at '{}'".format(result_storage))
+    ctx.obj["search_results"] = results
 
 
 @eodag.command(name="list", help="List supported product types")
@@ -528,11 +531,25 @@ def discover_pt(ctx: Context, **kwargs: Any) -> None:
     click.echo("Results stored at '{}'".format(storage_filepath))
 
 
-@eodag.command(help="Download a list of products from a serialized search result")
+@eodag.command(
+    help="""Download a list of products from a serialized search result or STAC items URLs/paths
+
+Examples:
+
+  eodag download --search-results /path/to/search_results.geojson
+
+  eodag download --stac-item https://example.com/stac/item1.json --stac-item /path/to/item2.json
+""",
+)
 @click.option(
     "--search-results",
     type=click.Path(exists=True, dir_okay=False),
     help="Path to a serialized search result",
+)
+@click.option(
+    "--stac-item",
+    multiple=True,
+    help="URL/path of a STAC item to download (multiple values accepted)",
 )
 @click.option(
     "-f",
@@ -546,13 +563,20 @@ def discover_pt(ctx: Context, **kwargs: Any) -> None:
     show_default=False,
     help="Download only quicklooks of products instead full set of files",
 )
+@click.option(
+    "--output-dir",
+    type=click.Path(dir_okay=True, file_okay=False),
+    help="Products or quicklooks download directory (Default: local temporary directory)",
+)
 @click.pass_context
 def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
     search_result_path = kwargs.pop("search_results")
-    if not search_result_path:
+    stac_items = kwargs.pop("stac_item")
+    search_results = ctx.obj.get("search_results")
+    if not search_result_path and not stac_items and search_results is None:
         with click.Context(download) as ctx:
-            click.echo("Nothing to do (no search results file provided)")
+            click.echo("Nothing to do (no search results file or stac item provided)")
             click.echo(download.get_help(ctx))
         sys.exit(1)
     setup_logging(verbose=ctx.obj["verbosity"])
@@ -561,25 +585,24 @@ def download(ctx: Context, **kwargs: Any) -> None:
         conf_file = click.format_filename(conf_file)
 
     satim_api = EODataAccessGateway(user_conf_file_path=conf_file)
-    search_results = satim_api.deserialize(search_result_path)
 
+    search_results = search_results or SearchResult([])
+    if search_result_path:
+        search_results.extend(satim_api.deserialize_and_register(search_result_path))
+    if stac_items:
+        search_results.extend(satim_api.import_stac_items(list(stac_items)))
+
+    output_dir = kwargs.pop("output_dir")
     get_quicklooks = kwargs.pop("quicklooks")
+
     if get_quicklooks:
+        # Download only quicklooks
         click.echo(
             "Flag 'quicklooks' specified, downloading only quicklooks of products"
         )
 
         for idx, product in enumerate(search_results):
-            if product.downloader is None:
-                downloader = satim_api._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(
-                        downloader, product
-                    )
-                search_results[idx].register_downloader(downloader, auth)
-
-            downloaded_file = product.get_quicklook()
+            downloaded_file = product.get_quicklook(output_dir=output_dir)
             if not downloaded_file:
                 click.echo(
                     "A quicklook may have been downloaded but we cannot locate it. "
@@ -589,18 +612,8 @@ def download(ctx: Context, **kwargs: Any) -> None:
                 click.echo("Downloaded {}".format(downloaded_file))
 
     else:
-        # register downloader
-        for idx, product in enumerate(search_results):
-            if product.downloader is None:
-                downloader = satim_api._plugins_manager.get_download_plugin(product)
-                auth = product.downloader_auth
-                if auth is None:
-                    auth = satim_api._plugins_manager.get_auth_plugin(
-                        downloader, product
-                    )
-                search_results[idx].register_downloader(downloader, auth)
-
-        downloaded_files = satim_api.download_all(search_results)
+        # Download products
+        downloaded_files = satim_api.download_all(search_results, output_dir=output_dir)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
                 if downloaded_file is None:

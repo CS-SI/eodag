@@ -1173,7 +1173,10 @@ class QueryStringSearch(Search):
 
         collection = getattr(self.config, "collection", None)
         if collection is None:
-            collection = prep.product_type_def_params.get("collection") or product_type
+            collection = (
+                getattr(prep, "product_type_def_params", {}).get("collection")
+                or product_type
+            )
 
         if collection is None:
             return ()

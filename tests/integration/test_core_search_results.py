@@ -24,7 +24,14 @@ import tempfile
 from shapely import geometry
 
 from tests import TEST_RESOURCES_PATH, EODagTestCase
-from tests.context import EODataAccessGateway, EOProduct, PluginTopic, SearchResult
+from tests.context import (
+    GENERIC_STAC_PROVIDER,
+    Download,
+    EODataAccessGateway,
+    EOProduct,
+    PluginTopic,
+    SearchResult,
+)
 from tests.utils import mock
 
 
@@ -334,3 +341,172 @@ class TestCoreSearchResults(EODagTestCase):
             mock_urlopen.call_args_list[-1][0][0].full_url,
         )
         self.assertIsNotNone(search_results.number_matched)
+
+    @mock.patch(
+        "eodag.api.core.fetch_stac_items",
+        autospec=True,
+        side_effect=[
+            [
+                {
+                    "type": "Feature",
+                    "id": "stac-fastapi-eodag-id",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [0, 0],
+                    },
+                    "properties": {
+                        "title": "Stac-FastApi-Eodag item",
+                        "federation:backends": ["cop_dataspace"],
+                    },
+                    "collection": "foo-collection",
+                    "assets": {
+                        "downloadLink": {
+                            "title": "Download link",
+                            "href": "https://stac-fastapi-eodag-server/download-link",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/origin-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                        "thumbnail": {
+                            "title": "Thumbnail",
+                            "href": "https://stac-fastapi-eodag-server/thumbnail",
+                            "type": "application/zip",
+                        },
+                    },
+                }
+            ],
+            [
+                {
+                    "type": "Feature",
+                    "id": "legacy-server-id",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [0, 0],
+                    },
+                    "properties": {
+                        "title": "Legacy-Eodag-server item",
+                        "providers": [{"name": "earth_search"}],
+                    },
+                    "collection": "bar-collection",
+                    "assets": {
+                        "downloadLink": {
+                            "title": "Download link",
+                            "href": "https://legacy-server/download-link",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/origin-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                        "asset-1": {
+                            "title": "Asset 1",
+                            "href": "https://legacy-server/asset-1",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/asset-1-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                        "asset-2": {
+                            "title": "Asset 2",
+                            "href": "https://legacy-server/asset-2",
+                            "type": "application/zip",
+                            "alternate": {
+                                "origin": {
+                                    "title": "Origin asset link",
+                                    "href": "https://provider-url/asset-2-link",
+                                    "type": "application/zip",
+                                },
+                            },
+                        },
+                    },
+                }
+            ],
+        ],
+    )
+    def test_core_import_stac_items_from_eodag_server(self, mock_fetch_stac_items):
+        """The core api must import STAC items from EODAG server"""
+        results = self.dag.import_stac_items(
+            [
+                "https://stac-fastapi-eodag-server/collections/foo/items/stac-fastapi-eodag-id",
+                "https://legacy-server/collections/foo/items/legacy-server-id",
+            ]
+        )
+        self.assertEqual(len(results), 2)
+
+        self.assertEqual(results[0].provider, "cop_dataspace")
+        self.assertEqual(results[0].properties["id"], "stac-fastapi-eodag-id")
+        self.assertEqual(results[0].product_type, "foo-collection")
+        self.assertEqual(len(results[0].assets), 0)
+        self.assertEqual(results[0].location, "https://provider-url/origin-link")
+        self.assertIsInstance(results[0].downloader, Download)
+
+        self.assertEqual(results[1].provider, "earth_search")
+        self.assertEqual(results[1].properties["id"], "legacy-server-id")
+        self.assertEqual(results[1].product_type, "bar-collection")
+        self.assertEqual(len(results[1].assets), 2)
+        self.assertEqual(
+            results[1].assets["asset-1-link"]["href"],
+            "https://provider-url/asset-1-link",
+        )
+        self.assertEqual(
+            results[1].assets["asset-2-link"]["href"],
+            "https://provider-url/asset-2-link",
+        )
+        self.assertIsInstance(results[1].downloader, Download)
+
+    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    def test_core_import_stac_items_from_known_provider(self, mock_fetch_stac_items):
+        """The core api must import STAC items from a knwown provider"""
+        earth_search_resp_search_file = os.path.join(
+            TEST_RESOURCES_PATH, "provider_responses", "earth_search_search.json"
+        )
+        with open(earth_search_resp_search_file, encoding="utf-8") as f:
+            mock_fetch_stac_items.return_value = [json.load(f)["features"][0]]
+
+        results = self.dag.import_stac_items(
+            [
+                "https://earth-search.aws.element84.com/v1/collections/sentinel-2-l1c/items/S2B_27VWK_20240206_0_L1C",
+            ]
+        )
+        self.assertEqual(len(results), 1)
+
+        self.assertEqual(results[0].provider, "earth_search")
+        self.assertEqual(results[0].properties["id"], "S2B_27VWK_20240206_0_L1C")
+        self.assertEqual(results[0].product_type, "S2_MSI_L1C")
+        self.assertEqual(len(results[0].assets), 17)
+        self.assertTrue(
+            all(v["href"].startswith("s3://") for v in results[0].assets.values())
+        )
+        self.assertIsInstance(results[0].downloader, Download)
+
+    @mock.patch("eodag.api.core.fetch_stac_items", autospec=True)
+    def test_core_import_stac_items_from_unknown_provider(self, mock_fetch_stac_items):
+        """The core api must import STAC items from an unknwown provider"""
+        stac_singlefile = os.path.join(TEST_RESOURCES_PATH, "stac_singlefile.json")
+        with open(stac_singlefile, encoding="utf-8") as f:
+            mock_fetch_stac_items.return_value = [json.load(f)["features"][0]]
+
+        results = self.dag.import_stac_items(
+            [
+                "./tests/resources/stac_singlefile.json",
+            ]
+        )
+        self.assertEqual(len(results), 1)
+
+        self.assertEqual(results[0].provider, GENERIC_STAC_PROVIDER)
+        self.assertEqual(results[0].properties["id"], "S2B_9VXK_20171013_0")
+        self.assertEqual(results[0].product_type, "sentinel-2-l1c")
+        self.assertEqual(len(results[0].assets), 1)
+        self.assertIsInstance(results[0].downloader, Download)

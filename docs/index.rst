@@ -120,9 +120,8 @@ Site contents
    getting_started_guide/index
    api_user_guide
    api_reference/index
-   breaking_changes
    cli_user_guide
-   stac
+   breaking_changes
    tutos
 
 .. toctree::

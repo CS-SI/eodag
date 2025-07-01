@@ -69,6 +69,7 @@ from eodag.utils import (
     DEFAULT_MAX_ITEMS_PER_PAGE,
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
+    GENERIC_STAC_PROVIDER,
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
@@ -2476,3 +2477,31 @@ class EODataAccessGateway:
             )
         # Remove the ID since this is equal to productType.
         plugin.config.product_type_config.pop("ID", None)
+
+    def import_stac_items(self, items_urls: list[str]) -> SearchResult:
+        """Import STAC items from a list of URLs and convert them to SearchResult.
+
+        - Origin provider and download links will be set if item comes from an EODAG
+          server.
+        - If item comes from a known EODAG provider, result will be registered to it,
+          ready to download and its metadata normalized.
+        - If item comes from an unknown provider, a generic STAC provider will be used.
+
+        :param items_urls: A list of STAC items URLs to import
+        :returns: A SearchResult containing the imported STAC items
+        """
+        json_items = []
+        for item_url in items_urls:
+            json_items.extend(fetch_stac_items(item_url))
+
+        # add a generic STAC provider that might be needed to handle the items
+        self.add_provider(GENERIC_STAC_PROVIDER)
+
+        results = SearchResult([])
+        for json_item in json_items:
+            if search_result := SearchResult._from_stac_item(
+                json_item, self._plugins_manager
+            ):
+                results.extend(search_result)
+
+        return results

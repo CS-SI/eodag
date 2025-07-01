@@ -46,6 +46,7 @@ from jsonpath_ng import JSONPath
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
+    STAC_SEARCH_PLUGINS,
     USER_AGENT,
     cached_yaml_load,
     cached_yaml_load_all,
@@ -819,12 +820,7 @@ def provider_config_init(
         if (
             stac_search_default_conf is not None
             and provider_config.search
-            and provider_config.search.type
-            in [
-                "StacSearch",
-                "StacListAssets",
-                "StaticStacSearch",
-            ]
+            and provider_config.search.type in STAC_SEARCH_PLUGINS
         ):
             # search config set to stac defaults overriden with provider config
             per_provider_stac_provider_config = deepcopy(stac_search_default_conf)
