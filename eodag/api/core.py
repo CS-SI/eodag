@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 import geojson
 import yaml.parser
 
+from eodag.api.provider import Provider, ProvidersList
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
@@ -301,7 +302,7 @@ class EODataAccessGateway:
             new_priority = max_priority + 1
             self._plugins_manager.set_priority(provider, new_priority)
 
-    def get_preferred_provider(self) -> tuple[str, int]:
+    def get_preferred_provider(self) -> tuple[Provider, int]:
         """Get the provider currently set as the preferred one for searching
         products, along with its priority.
 
@@ -901,7 +902,7 @@ class EODataAccessGateway:
 
     def available_providers(
         self, product_type: Optional[str] = None, by_group: bool = False
-    ) -> list[str]:
+    ) -> ProvidersList:
         """Gives the sorted list of the available providers or groups
 
         The providers or groups are sorted first by their priority level in descending order,
