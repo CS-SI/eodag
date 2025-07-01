@@ -945,6 +945,23 @@ class TestEodagCli(unittest.TestCase):
         self.assertEqual(mock_get_quicklook.call_count, 2)
         self.assertIn("Downloaded /fake_path\n", result.output)
 
+        # change output dir
+        output_dir = os.path.join(self.tmp_home_dir.name, "quicklooks")
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--quicklooks",
+                "--output-dir",
+                output_dir,
+            ],
+        )
+        mock_get_quicklook.assert_called_with(mock.ANY, output_dir=output_dir)
+
         # Testing the case when no quicklook path is returned
         mock_get_quicklook.return_value = None
         result = self.runner.invoke(
