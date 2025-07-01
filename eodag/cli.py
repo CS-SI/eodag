@@ -563,6 +563,11 @@ Examples:
     show_default=False,
     help="Download only quicklooks of products instead full set of files",
 )
+@click.option(
+    "--output-dir",
+    type=click.Path(dir_okay=True, file_okay=False),
+    help="Products or quicklooks download directory (Default: local temporary directory)",
+)
 @click.pass_context
 def download(ctx: Context, **kwargs: Any) -> None:
     """Download a bunch of products from a serialized search result"""
@@ -587,7 +592,9 @@ def download(ctx: Context, **kwargs: Any) -> None:
     if stac_items:
         search_results.extend(satim_api.import_stac_items(list(stac_items)))
 
+    output_dir = kwargs.pop("output_dir")
     get_quicklooks = kwargs.pop("quicklooks")
+
     if get_quicklooks:
         # Download only quicklooks
         click.echo(
@@ -595,7 +602,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
         )
 
         for idx, product in enumerate(search_results):
-            downloaded_file = product.get_quicklook()
+            downloaded_file = product.get_quicklook(output_dir=output_dir)
             if not downloaded_file:
                 click.echo(
                     "A quicklook may have been downloaded but we cannot locate it. "
@@ -606,7 +613,7 @@ def download(ctx: Context, **kwargs: Any) -> None:
 
     else:
         # Download products
-        downloaded_files = satim_api.download_all(search_results)
+        downloaded_files = satim_api.download_all(search_results, output_dir=output_dir)
         if downloaded_files and len(downloaded_files) > 0:
             for downloaded_file in downloaded_files:
                 if downloaded_file is None:

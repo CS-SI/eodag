@@ -411,7 +411,9 @@ class TestEodagCli(unittest.TestCase):
             api_obj.search.assert_called_once_with(
                 count=False, items_per_page=DEFAULT_ITEMS_PER_PAGE, page=1, **criteria
             )
-            api_obj.download_all.assert_called_once_with(search_results)
+            api_obj.download_all.assert_called_once_with(
+                search_results, output_dir=None
+            )
 
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_search_all(self, dag):
@@ -832,6 +834,24 @@ class TestEodagCli(unittest.TestCase):
             "A file may have been downloaded but we cannot locate it\n", result.output
         )
 
+        # Testing output directory
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--output-dir",
+                output_dir,
+            ],
+        )
+        dag.return_value.download_all.assert_called_with(
+            mock.ANY, output_dir=output_dir
+        )
+
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_download_ko(self, dag):
         """Calling eodag download with all args well formed fails"""
@@ -870,7 +890,9 @@ class TestEodagCli(unittest.TestCase):
             dag.return_value.import_stac_items.assert_called_once_with(
                 ["foo", "bar"],
             )
-            dag.return_value.download_all.assert_called_once_with(fake_result)
+            dag.return_value.download_all.assert_called_once_with(
+                fake_result, output_dir=None
+            )
 
     def test_eodag_download_missingcredentials(self):
         """Calling eodag download with missing credentials must raise MisconfiguredError"""
@@ -944,6 +966,23 @@ class TestEodagCli(unittest.TestCase):
         # 2 quicklooks are called in search_results_path
         self.assertEqual(mock_get_quicklook.call_count, 2)
         self.assertIn("Downloaded /fake_path\n", result.output)
+
+        # change output dir
+        output_dir = os.path.join(self.tmp_home_dir.name, "quicklooks")
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--quicklooks",
+                "--output-dir",
+                output_dir,
+            ],
+        )
+        mock_get_quicklook.assert_called_with(mock.ANY, output_dir=output_dir)
 
         # Testing the case when no quicklook path is returned
         mock_get_quicklook.return_value = None
