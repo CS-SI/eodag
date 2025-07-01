@@ -832,6 +832,24 @@ class TestEodagCli(unittest.TestCase):
             "A file may have been downloaded but we cannot locate it\n", result.output
         )
 
+        # Testing output directory
+        output_dir = os.path.join(self.tmp_home_dir.name, "downloads")
+        result = self.runner.invoke(
+            eodag,
+            [
+                "download",
+                "--search-results",
+                search_results_path,
+                "-f",
+                config_path,
+                "--output-dir",
+                output_dir,
+            ],
+        )
+        dag.return_value.download_all.assert_called_with(
+            mock.ANY, output_dir=output_dir
+        )
+
     @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
     def test_eodag_download_ko(self, dag):
         """Calling eodag download with all args well formed fails"""
