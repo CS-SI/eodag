@@ -1,9 +1,11 @@
 from typing import Any, Optional, Union
 from collections import UserList
 
-from eodag.config import ProviderConfig
-
+from eodag.config import ProviderConfig, credentials_in_auth
+from eodag.utils import sort_dict
 from attrs import define, field
+
+AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
 
 @define
 class Provider:
@@ -57,8 +59,6 @@ class Provider:
         if self.discoverable:
             return getattr(self.search_config.discover_product_types, "generic_product_type_unparsable_properties", {}).keys()
 
-            
-            
     @property
     def api_config(self) -> Optional[Any]:
         """Return the api plugin config, if any."""
@@ -68,6 +68,14 @@ class Provider:
     def download_config(self) -> Optional[Any]:
         """Return the download plugin config, if any."""
         return getattr(self.config, "download", None)
+
+    # @property    
+    # def auth_conf_with_creds(self):
+    #     return [
+    #         getattr(self.config, auth_key)
+    #         for auth_key in AUTH_TOPIC_KEYS
+    #         if hasattr(self.config, auth_key) and credentials_in_auth(getattr(self.config, auth_key))
+    #     ]
 
     def product(self, product_type: str) -> Optional[Any]:
         """Return a product type if available from this provider."""
@@ -80,14 +88,6 @@ class Provider:
         else:
             raise KeyError(f"Product type '{product_type}' not found in provider '{self.name}'.")
 
-    def is_auth_needed(self) -> bool:
-        """Check if authentication is needed for this provider."""
-        search = self.search_config
-        api = self.api_config
-        return (
-            (search and getattr(search, "need_auth", False))
-            or (api and getattr(api, "need_auth", False))
-        )
 
 @define
 class ProvidersList(UserList):
@@ -116,11 +116,75 @@ class ProvidersList(UserList):
                 return p
         raise KeyError(key)
 
+    def __repr__(self) -> str:
+        return f"ProvidersList({[p.name for p in self.data]})"
+    
     def get(self, name: str) -> Optional[Provider]:
         for p in self.data:
             if p.name == name:
                 return p
         return None
 
-    def __repr__(self) -> str:
-        return f"ProvidersList({[p.name for p in self.data]})"
+    def share_credentials(self) -> None:
+        """
+        Share credentials between plugins having the same matching criteria
+        across all providers in this list.
+        """
+        auth_confs_with_creds = self._get_auth_confs_with_credentials()
+        if not auth_confs_with_creds:
+            return
+
+        for provider in self.data:
+            for auth_topic_key in AUTH_TOPIC_KEYS:
+                provider_auth_config = getattr(provider.config, auth_topic_key, None)
+                if provider_auth_config and not credentials_in_auth(provider_auth_config):
+                    self._copy_matching_credentials(
+                        provider_auth_config, auth_confs_with_creds, provider, auth_topic_key
+                    )
+
+    def _get_auth_confs_with_credentials(self) -> list[Any]:
+        """
+        Collect all auth configs from all providers that already have credentials.
+        """
+        return [
+            getattr(provider.config, auth_key)
+            for provider in self.data
+            for auth_key in AUTH_TOPIC_KEYS
+            if hasattr(provider.config, auth_key) and credentials_in_auth(getattr(provider.config, auth_key))
+        ]
+
+    def _copy_matching_credentials(
+        self,
+        target_auth_config: Any,
+        auth_confs_with_creds: list[Any],
+        provider: Provider,
+        auth_topic_key: str,
+    ) -> None:
+        """
+        Copy credentials from matching auth configs to the target auth config.
+        """
+        target_matching_conf = getattr(target_auth_config, "matching_conf", {})
+        target_matching_url = getattr(target_auth_config, "matching_url", None)
+
+        for conf_with_creds in auth_confs_with_creds:
+            if self._is_matching_auth(target_matching_conf, target_matching_url, conf_with_creds):
+                # Set credentials from the matching config
+                getattr(provider.config, auth_topic_key).credentials = conf_with_creds.credentials
+
+    @staticmethod
+    def _is_matching_auth(
+        target_matching_conf: dict,
+        target_matching_url: Optional[str],
+        conf_with_creds: Any,
+    ) -> bool:
+        """
+        Check if the target auth config matches the given config with credentials.
+        """
+        conf_with_creds_matching_conf = getattr(conf_with_creds, "matching_conf", {})
+        conf_with_creds_matching_url = getattr(conf_with_creds, "matching_url", None)
+
+        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(conf_with_creds_matching_conf):
+            return True
+        if target_matching_url and target_matching_url == conf_with_creds_matching_url:
+            return True
+        return False
