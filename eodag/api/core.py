@@ -37,6 +37,7 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.api.search_result import SearchResult
+from eodag.api.provider import Provider, ProvidersList
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
@@ -50,7 +51,6 @@ from eodag.config import (
     override_config_from_file,
     override_config_from_mapping,
     provider_config_init,
-    share_credentials,
 )
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
@@ -119,7 +119,9 @@ class EODataAccessGateway:
             res_files("eodag") / "resources" / "product_types.yml"
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
-        self.providers_config = load_default_config()
+
+        # self.providers_config = load_default_config()
+        self.providers: ProvidersList = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
         self.conf_dir = os.getenv(
@@ -167,7 +169,7 @@ class EODataAccessGateway:
         override_config_from_env(self.providers_config)
 
         # share credentials between updated plugins confs
-        share_credentials(self.providers_config)
+        self.providers.share_credentials()
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
