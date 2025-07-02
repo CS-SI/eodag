@@ -21,13 +21,10 @@ import logging
 import os
 import re
 import shutil
-import tarfile
-import zipfile
 from datetime import datetime
 from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator, Optional, TypedDict, Union, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -62,7 +59,6 @@ from eodag.utils import (
     guess_file_type,
     parse_header,
     path_to_uri,
-    rename_with_version,
     sanitize,
     string_to_jsonpath,
     uri_to_path,
@@ -601,109 +597,33 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        fs_path, record_filename = self._prepare_download(
+        fs_path, record_filenames = self._prepare_download(
             product,
             progress_callback=progress_callback,
             **kwargs,
         )
-        if not fs_path or not record_filename:
+        if not fs_path or not record_filenames:
             if fs_path:
                 product.location = path_to_uri(fs_path)
             return fs_path
 
-        # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset") is not None
-        ):
-            try:
-                fs_path = self._download_assets(
-                    product,
-                    fs_path,
-                    record_filename,
-                    auth,
-                    progress_callback,
-                    **kwargs,
-                )
-                if kwargs.get("asset") is None:
-                    product.location = path_to_uri(fs_path)
-                return fs_path
-            except NotAvailableError as e:
-                if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
-                else:
-                    pass
-
-        url = product.remote_location
-
-        @self._order_download_retry(product, wait, timeout)
-        def download_request(
-            product: EOProduct,
-            auth: AuthBase,
-            progress_callback: ProgressCallback,
-            wait: float,
-            timeout: float,
-            **kwargs: Unpack[DownloadConf],
-        ) -> os.PathLike:
-            is_empty = True
-            chunk_iterator = self._stream_download(
-                product, auth, progress_callback, **kwargs
+        try:
+            fs_path = self._download_assets(
+                product,
+                fs_path,
+                record_filenames,
+                auth,
+                progress_callback,
+                **kwargs,
             )
-            if fs_path is not None:
-                ext = Path(product.filename).suffix
-                path = Path(fs_path).with_suffix(ext)
-                if "ORDERABLE" in path.stem and product.properties.get("title"):
-                    path = path.with_stem(sanitize(product.properties["title"]))
-
-                with open(path, "wb") as fhandle:
-                    for chunk in chunk_iterator:
-                        is_empty = False
-                        progress_callback(len(chunk))
-                        fhandle.write(chunk)
-                self.stream.close()  # Closing response stream
-
-                if is_empty:
-                    raise DownloadError(f"product {product.properties['id']} is empty")
-                else:
-                    # make sure storage status is online
-                    product.properties["storageStatus"] = ONLINE_STATUS
-
-                return path
+            if kwargs.get("asset") is None:
+                product.location = path_to_uri(fs_path)
+            return fs_path
+        except NotAvailableError as e:
+            if kwargs.get("asset") is not None:
+                raise NotAvailableError(e).with_traceback(e.__traceback__)
             else:
-                raise DownloadError(
-                    f"download of product {product.properties['id']} failed"
-                )
-
-        path = download_request(
-            product, auth, progress_callback, wait, timeout, **kwargs
-        )
-
-        with open(record_filename, "w") as fh:
-            fh.write(url)
-        logger.debug("Download recorded in %s", record_filename)
-
-        if os.path.isfile(path) and not (
-            zipfile.is_zipfile(path) or tarfile.is_tarfile(path)
-        ):
-            new_fs_path = os.path.join(
-                os.path.dirname(path),
-                sanitize(product.properties["title"]),
-            )
-            if os.path.isfile(new_fs_path):
-                rename_with_version(new_fs_path)
-            if not os.path.isdir(new_fs_path):
-                os.makedirs(new_fs_path)
-            shutil.move(path, new_fs_path)
-            product.location = path_to_uri(new_fs_path)
-            return new_fs_path
-
-        product_path = self._finalize(
-            str(path),
-            progress_callback=progress_callback,
-            **kwargs,
-        )
-        product.location = path_to_uri(product_path)
-        return product_path
+                pass
 
     def _check_stream_size(self, product: EOProduct) -> int:
         stream_size = int(self.stream.headers.get("content-length", 0))
@@ -1129,6 +1049,7 @@ class HTTPDownload(Download):
                 auth_object = auth
             else:
                 auth_object = None
+
             with requests.get(
                 asset["href"],
                 stream=True,
@@ -1193,7 +1114,7 @@ class HTTPDownload(Download):
         self,
         product: EOProduct,
         fs_dir_path: str,
-        record_filename: str,
+        record_filenames: dict[str, str],
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         **kwargs: Unpack[DownloadConf],
@@ -1296,10 +1217,11 @@ class HTTPDownload(Download):
             flatten_top_directories(fs_dir_path)
 
         if kwargs.get("asset") is None:
-            # save hash/record file
-            with open(record_filename, "w") as fh:
-                fh.write(product.remote_location)
-            logger.debug("Download recorded in %s", record_filename)
+            for asset_key, asset in product.assets.items():
+                # save hash/record file
+                with open(record_filenames[asset_key], "w") as fh:
+                    fh.write(asset.remote_location)
+                logger.debug("Download recorded in %s", record_filenames[asset_key])
 
         return fs_dir_path
 

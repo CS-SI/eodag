@@ -169,25 +169,29 @@ class Download(PluginTopic):
         :param progress_callback: (optional) A progress callback
         :returns: fs_path, record_filename
         """
-        if product.location != product.remote_location:
-            fs_path = uri_to_path(product.location)
-            # The fs path of a product is either a file (if 'extract' config is False) or a directory
-            if os.path.isfile(fs_path) or os.path.isdir(fs_path):
-                logger.info(
-                    f"Product already present on this platform. Identifier: {fs_path}",
-                )
-                # Do not download data if we are on site. Instead give back the absolute path to the data
-                return fs_path, None
-
-        url = product.remote_location
-        if not url:
-            logger.debug(
-                f"Unable to get download url for {product}, skipping download",
+        if not getattr(product, "assets", None) or len(product.assets) == 0:
+            logger.error(
+                "No asset available to download, please check the provider configuration \
+                         (An asset_mapping must be added if the provide does not return any assets)!"
             )
-            return None, None
-        logger.info(
-            f"Download url: {url}",
-        )
+            raise MisconfiguredError(
+                "No asset available to download, please check the provider configuration!"
+            )
+        already_downloaded_assets = []
+        fs_path = ""
+        for asset_key, asset in product.assets.items():
+            if asset.location != asset.remote_location:
+                fs_path = uri_to_path(asset.location)
+                # The fs path of a product is either a file (if 'extract' config is False) or a directory
+                if os.path.isfile(fs_path) or os.path.isdir(fs_path):
+                    logger.info(
+                        f"Asset {asset_key} already present on this platform. Identifier: {fs_path}",
+                    )
+                    # Do not download data if we are on site. Instead give back the absolute path to the data
+                    already_downloaded_assets.append(asset_key)
+        if len(already_downloaded_assets) == len(product.assets):
+            logger.info(f"All assets of product {product} have already been downloaded")
+            return os.path.dirname(fs_path), None
 
         output_dir = (
             kwargs.pop("output_dir", None)
@@ -225,55 +229,78 @@ class Download(PluginTopic):
                 logger.warning(
                     f"Unable to create records directory. Got:\n{tb.format_exc()}",
                 )
-        url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
-        old_record_filename = os.path.join(download_records_dir, url_hash)
-        record_filename = os.path.join(
-            download_records_dir, self.generate_record_hash(product)
-        )
-        if os.path.isfile(old_record_filename):
-            os.rename(old_record_filename, record_filename)
-        if os.path.isfile(record_filename) and os.path.isfile(fs_path):
-            logger.info(
-                f"Product already downloaded: {fs_path}",
-            )
-            return (
-                self._finalize(fs_path, progress_callback=progress_callback, **kwargs),
-                None,
-            )
-        elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
-            logger.info(
-                f"Product already downloaded: {fs_dir_path}",
-            )
-            return (
-                self._finalize(
-                    fs_dir_path, progress_callback=progress_callback, **kwargs
-                ),
-                None,
-            )
-        # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
-        elif os.path.isfile(record_filename):
-            logger.debug(
-                f"Record file found ({record_filename}) but not the actual file",
-            )
-            logger.debug(
-                f"Removing record file : {record_filename}",
-            )
-            os.remove(record_filename)
+        record_filenames = {
+            k: os.path.join(download_records_dir, self.generate_record_hash(product)[k])
+            for k in product.assets
+        }
+        asset_paths = []
+        for asset_key, asset in product.assets.items():
+            url = asset.remote_location
+            url_hash = hashlib.md5(url.encode("utf-8")).hexdigest()
+            old_record_filename = os.path.join(download_records_dir, url_hash)
+            record_filename = record_filenames[asset_key]
+            if os.path.isfile(old_record_filename):
+                os.rename(old_record_filename, record_filename)
+            if os.path.isfile(record_filename) and os.path.isfile(fs_path):
+                logger.info(
+                    f"Asset {asset_key} of product {product} already downloaded",
+                )
+                asset_paths.append(
+                    self._finalize(
+                        fs_path, progress_callback=progress_callback, **kwargs
+                    )
+                )
 
-        return fs_path, record_filename
+            elif os.path.isfile(record_filename) and os.path.isdir(fs_dir_path):
+                logger.info(
+                    f"Asset {asset_key} of product {product} already downloaded: {fs_dir_path}",
+                )
+                asset_paths.append(
+                    self._finalize(
+                        fs_dir_path, progress_callback=progress_callback, **kwargs
+                    )
+                )
+            # Remove the record file if fs_path is absent (e.g. it was deleted while record wasn't)
+            elif os.path.isfile(record_filename):
+                logger.debug(
+                    f"Record file found ({record_filename}) but not the actual file",
+                )
+                logger.debug(
+                    f"Removing record file : {record_filename}",
+                )
+                os.remove(record_filename)
+        if len(asset_paths) == len(product.assets):
+            logger.info(f"All assets of product {product} have already been downloaded")
+            return os.path.dirname(asset_paths[0]), None
 
-    def generate_record_hash(self, product: EOProduct) -> str:
-        """Generate the record hash of the given product.
+        return fs_path, record_filenames
+
+    def generate_record_hash(self, product: EOProduct) -> dict[str, str]:
+        """Generate the record hash of the assets of the given product.
 
         The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
-        (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+        and from the asset key
+        (``hashlib.md5((asset.product.product_type+"-"+asset.product.properties['id']+"-"+asset.key)
+        .encode("utf-8")).hexdigest()``)
 
-        :param product: The product to calculate the record hash
-        :returns: The MD5 hash
+        :param product: The product to calculate the asset hashes
+        :returns: dict of MD5 hashes
         """
-        # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
-        product_hash = str(product.product_type) + "-" + str(product.properties["id"])
-        return hashlib.md5(product_hash.encode("utf-8")).hexdigest()
+        asset_hashes = {}
+        for asset_key in product.assets:
+            # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
+            asset_hash = (
+                str(product.product_type)
+                + "-"
+                + str(product.properties["id"])
+                + "-"
+                + asset_key
+            )
+            asset_hashes[asset_key] = hashlib.md5(
+                asset_hash.encode("utf-8")
+            ).hexdigest()
+
+        return asset_hashes
 
     def _resolve_archive_depth(self, product_path: str) -> str:
         """Update product_path using archive_depth from provider configuration.
