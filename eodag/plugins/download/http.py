@@ -637,12 +637,12 @@ class HTTPDownload(Download):
             )
             progress_callback = ProgressCallback(disable=True)
 
-        fs_path, record_filename = self._prepare_download(
+        fs_path, record_filenames = self._prepare_download(
             product,
             progress_callback=progress_callback,
             **kwargs,
         )
-        if not fs_path or not record_filename:
+        if not fs_path or not record_filenames:
             if fs_path:
                 product.location = path_to_uri(fs_path)
             return fs_path
@@ -663,7 +663,7 @@ class HTTPDownload(Download):
                 fs_path = self._download_assets(
                     product,
                     fs_path,
-                    record_filename,
+                    record_filenames,
                     auth,
                     progress_callback,
                     executor,
@@ -678,7 +678,8 @@ class HTTPDownload(Download):
             logger.info("Download only the full product asset, ignoring the other ones")
 
         # download the full product asset
-        url = product.remote_location
+        url = product.assets["eodag:download_link"].remote_location
+        record_filename = record_filenames["eodag:download_link"]
 
         @self._order_download_retry(product, wait, timeout)
         def download_request(
@@ -1265,7 +1266,7 @@ class HTTPDownload(Download):
         self,
         product: EOProduct,
         fs_dir_path: str,
-        record_filename: str,
+        record_filenames: dict[str, str],
         auth: Optional[AuthBase] = None,
         progress_callback: Optional[ProgressCallback] = None,
         executor: Optional[ThreadPoolExecutor] = None,
@@ -1384,10 +1385,11 @@ class HTTPDownload(Download):
             flatten_top_directories(fs_dir_path)
 
         if kwargs.get("asset") is None:
-            # save hash/record file
-            with open(record_filename, "w") as fh:
-                fh.write(product.remote_location)
-            logger.debug("Download recorded in %s", record_filename)
+            for asset_key, asset in product.assets.items():
+                # save hash/record file
+                with open(record_filenames[asset_key], "w") as fh:
+                    fh.write(asset.remote_location)
+                logger.debug("Download recorded in %s", record_filenames[asset_key])
 
         return fs_dir_path
 

@@ -199,16 +199,18 @@ class EcmwfApi(Api, ECMWFSearch):
         )
 
         # Prepare download
-        fs_path, record_filename = self._prepare_download(
+        fs_path, record_filenames = self._prepare_download(
             product,
             progress_callback=progress_callback,
             **kwargs,
         )
 
-        if not fs_path or not record_filename:
+        if not fs_path or not record_filenames:
             if fs_path:
                 product.location = path_to_uri(fs_path)
             return fs_path
+
+        record_filename = record_filenames["eodag:download_link"]
 
         new_fs_path = os.path.join(
             os.path.dirname(fs_path), sanitize(product.properties["title"])

@@ -260,10 +260,10 @@ class AwsDownload(Download):
             progress_callback = ProgressCallback(disable=True)
 
         # prepare download & create dirs (before updating metadata)
-        product_local_path, record_filename = self._download_preparation(
+        product_local_path, record_filenames = self._download_preparation(
             product, progress_callback=progress_callback, **kwargs
         )
-        if not record_filename or not product_local_path:
+        if not record_filenames or not product_local_path:
             return product_local_path
 
         asset_filter = kwargs.get("asset")
@@ -409,10 +409,11 @@ class AwsDownload(Download):
             self.check_manifest_file_list(product_local_path)
 
         if asset_filter is None:
-            # save hash/record file
-            with open(record_filename, "w") as fh:
-                fh.write(product.remote_location)
-            logger.debug("Download recorded in %s", record_filename)
+            for asset_key, asset in product.assets.items():
+                # save hash/record file
+                with open(record_filenames[asset_key], "w") as fh:
+                    fh.write(asset.remote_location)
+                logger.debug("Download recorded in %s", record_filenames[asset_key])
 
             product.location = path_to_uri(product_local_path)
 
@@ -499,23 +500,23 @@ class AwsDownload(Download):
         product: EOProduct,
         progress_callback: ProgressCallback,
         **kwargs: Unpack[DownloadConf],
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[dict[str, str]]]:
         """
         Preparation for the download:
 
-        - check if file was already downloaded
-        - get file path
+        - check if assets were already downloaded
+        - get files common path
         - create directories
 
         :param product: product to be downloaded
         :param progress_callback: progress callback to be used
         :param kwargs: additional arguments
-        :return: local path and file name
+        :return: local path and file names
         """
-        product_local_path, record_filename = self._prepare_download(
+        product_local_path, record_filenames = self._prepare_download(
             product, progress_callback=progress_callback, **kwargs
         )
-        if not product_local_path or not record_filename:
+        if not product_local_path or not record_filenames:
             if product_local_path:
                 product.location = path_to_uri(product_local_path)
             return product_local_path, None
@@ -526,7 +527,7 @@ class AwsDownload(Download):
         # create product dest dir
         if not os.path.isdir(product_local_path):
             os.makedirs(product_local_path)
-        return product_local_path, record_filename
+        return product_local_path, record_filenames
 
     def _configure_safe_build(self, build_safe: bool, product: EOProduct):
         """
