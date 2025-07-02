@@ -42,7 +42,7 @@ import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
 
-from eodag.api.provider import Provider, ProvidersList
+from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
@@ -715,7 +715,7 @@ class PluginConfig(yaml.YAMLObject):
 
         return False      
 
-def load_default_config() -> ProvidersList:
+def load_default_config() -> ProvidersDict:
     """Load the providers configuration into a dictionary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
@@ -730,7 +730,7 @@ def load_default_config() -> ProvidersList:
     return load_config(eodag_providers_cfg_file)
 
 
-def load_config(config_path: str) -> ProvidersList:
+def load_config(config_path: str) -> ProvidersDict:
     """Load the providers configuration into a dictionary from a given file
 
     If EODAG_PROVIDERS_WHITELIST is set, only load listed providers.
@@ -739,7 +739,7 @@ def load_config(config_path: str) -> ProvidersList:
     :returns: The default provider's configuration
     """
     logger.debug("Loading configuration from %s", config_path)
-    providers = ProvidersList()
+    providers = ProvidersDict()
     
     try:
         # Providers configs are stored in this file as separated yaml documents
@@ -763,7 +763,7 @@ def load_config(config_path: str) -> ProvidersList:
             continue
         
         provider_config_init(provider_config, stac_provider_config)
-        providers.append(Provider(provider_config.name, provider_config))
+        providers.add(Provider(provider_config.name, provider_config))
 
     return providers
 

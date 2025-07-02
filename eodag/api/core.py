@@ -34,13 +34,13 @@ import geojson
 import yaml
 
 from eodag.api.collection import Collection, CollectionsDict, CollectionsList
-from eodag.api.provider import Provider, ProvidersList
+from eodag.api.provider import Provider, ProvidersDict
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.api.search_result import SearchResult
-from eodag.api.provider import Provider, ProvidersList
+from eodag.api.provider import Provider, ProvidersDict
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
@@ -127,7 +127,8 @@ class EODataAccessGateway:
         )
         collections_config_dict = SimpleYamlProxyConfig(collections_config_path).source
         self.collections_config = self._collections_config_init(collections_config_dict)
-        self.providers: ProvidersList = load_default_config()
+
+        self.providers: ProvidersDict = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
         self.conf_dir = os.getenv(
@@ -365,7 +366,8 @@ class EODataAccessGateway:
         override_config_from_mapping(self.providers_config, conf_update)
 
         # share credentials between updated plugins confs
-        share_credentials(self.providers_config)
+        # share_credentials(self.providers_config)
+        self.providers.share_credentials()
 
         for provider in conf_update.keys():
             provider_config_init(
@@ -941,7 +943,7 @@ class EODataAccessGateway:
 
     def available_providers(
         self, collection: Optional[str] = None, by_group: bool = False
-    ) -> ProvidersList:
+    ) -> ProvidersDict:
         """Gives the sorted list of the available providers or groups
 
         The providers or groups are sorted first by their priority level in descending order,
