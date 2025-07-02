@@ -1722,6 +1722,19 @@ class PostJsonSearch(QueryStringSearch):
                 verify=ssl_verify,
                 **kwargs,
             )
+            for _ in range(1, prep.query_params.get("page", 1)):
+                data = response.json()
+                next_link = next(
+                    (link for link in data.get("links", []) if link["rel"] == "next"),
+                    None,
+                )
+                if next_link is None:
+                    break
+                token = next_link["body"]["token"]
+                prep.query_params["token"] = token
+                response = requests.post(
+                    url, json=prep.query_params, headers=USER_AGENT
+                )
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc
