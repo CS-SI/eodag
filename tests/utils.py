@@ -52,7 +52,7 @@ def write_eodag_conf_with_fake_credentials(config_file):
     with open(os.path.abspath(os.path.realpath(empty_conf_file_path)), "r") as fh:
         was_empty_conf = yaml.safe_load(fh)
     for provider, conf in was_empty_conf.items():
-        for auth_plugin_key in ("auth", "search_auth", "download_auth", "api"):
+        for auth_plugin_key in ("auth", "api"):
             if "credentials" in conf.get(auth_plugin_key, {}):
                 cred_key = next(iter(conf[auth_plugin_key]["credentials"]))
                 conf[auth_plugin_key]["credentials"][cred_key] = "foo"

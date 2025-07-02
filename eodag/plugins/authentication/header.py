@@ -85,6 +85,7 @@ class HTTPHeaderAuth(Authentication):
     def authenticate(self) -> HeaderAuth:
         """Authenticate"""
         self.validate_config_credentials()
+        credentials = self.get_required_credentials()
         try:
             headers = (
                 {
@@ -92,7 +93,7 @@ class HTTPHeaderAuth(Authentication):
                     for header, value in self.config.headers.items()
                 }
                 if getattr(self.config, "headers", None)
-                else self.config.credentials
+                else credentials
             )
             return HeaderAuth(headers)
         except KeyError as e:

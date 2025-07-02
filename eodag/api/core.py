@@ -29,7 +29,7 @@ from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 from whoosh import analysis, fields
 from whoosh.fields import Schema
 from whoosh.index import exists_in, open_dir
@@ -464,7 +464,7 @@ class EODataAccessGateway:
         products: dict[str, Any] = {
             GENERIC_PRODUCT_TYPE: {"productType": "{productType}"}
         },
-        download: dict[str, Any] = {"type": "HTTPDownload", "auth_error_code": 401},
+        download: list[dict[str, Any]] = [],
         **kwargs: dict[str, Any],
     ):
         """Adds a new provider.
@@ -481,9 +481,11 @@ class EODataAccessGateway:
         :param priority: Provider priority. If None, provider will be set as preferred (highest priority)
         :param search: Search :class:`~eodag.config.PluginConfig` mapping
         :param products: Provider product types mapping
-        :param download: Download :class:`~eodag.config.PluginConfig` mapping
+        :param download: list of Download :class:`~eodag.config.PluginConfig` mapping
         :param kwargs: Additional :class:`~eodag.config.ProviderConfig` mapping
         """
+        if not download:
+            download.extend([{"type": "HTTPDownload", "auth_error_code": 401}])
         conf_dict: dict[str, Any] = {
             name: {
                 "url": url,
@@ -492,11 +494,7 @@ class EODataAccessGateway:
                     GENERIC_PRODUCT_TYPE: {"productType": "{productType}"},
                     **products,
                 },
-                "download": {
-                    "type": "HTTPDownload",
-                    "auth_error_code": 401,
-                    **download,
-                },
+                "download": download,
                 **kwargs,
             }
         }
@@ -553,36 +551,27 @@ class EODataAccessGateway:
                         "%s: provider needing auth for search has been pruned because no credentials could be found",
                         provider,
                     )
-            elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
-                if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
-                    # credentials needed but no auth plugin was found
-                    self._pruned_providers_config[provider] = self.providers_config.pop(
-                        provider
-                    )
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no auth plugin could be found",
-                        provider,
-                    )
+            elif hasattr(conf, "search"):
+                if not hasattr(conf, "auth"):
+                    # no auth plugin found -> we assume that no auth is necessary
                     continue
-                credentials_exist = (
-                    hasattr(conf, "search_auth")
-                    and credentials_in_auth(conf.search_auth)
-                ) or (
-                    not hasattr(conf, "search_auth")
-                    and hasattr(conf, "auth")
-                    and credentials_in_auth(conf.auth)
-                )
-                if not credentials_exist:
-                    # credentials needed but not found
-                    self._pruned_providers_config[provider] = self.providers_config.pop(
-                        provider
-                    )
-                    update_needed = True
-                    logger.info(
-                        "%s: provider needing auth for search has been pruned because no credentials could be found",
-                        provider,
-                    )
+                for auth_config in conf.auth:
+                    if "search" not in getattr(auth_config, "required_for", []):
+                        # plugin not required for search
+                        continue
+                    credentials_exist = credentials_in_auth(auth_config)
+                    if not credentials_exist:
+                        update_needed = True
+                        logger.info(
+                            "%s: provider needing auth for search has been pruned because "
+                            "no credentials could be found",
+                            provider,
+                        )
+                        self._pruned_providers_config[
+                            provider
+                        ] = self.providers_config.pop(provider)
+                        break
+
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
                 self._pruned_providers_config[provider] = self.providers_config.pop(
@@ -892,20 +881,18 @@ class EODataAccessGateway:
                     "fetch_url"
                 ):
                     continue
-                # append auth to search plugin if needed
-                if getattr(search_plugin.config, "need_auth", False):
-                    if auth := self._plugins_manager.get_auth(
-                        search_plugin.provider,
-                        getattr(search_plugin.config, "api_endpoint", None),
-                        search_plugin.config,
-                    ):
-                        kwargs["auth"] = auth
-                    else:
-                        logger.debug(
-                            f"Could not authenticate on {provider} for product types discovery"
-                        )
-                        ext_product_types_conf[provider] = None
-                        continue
+                # append auth to search plugin if available
+                if auth := self._plugins_manager.get_auth(
+                    search_plugin.provider,
+                    "search",
+                    getattr(search_plugin.config, "api_endpoint", None),
+                    search_plugin.config,
+                ):
+                    kwargs["auth"] = auth
+                else:
+                    logger.debug(
+                        f"No authentication plugin for {provider} for product types discovery found"
+                    )
 
                 ext_product_types_conf[provider] = search_plugin.discover_product_types(
                     **kwargs
@@ -1721,14 +1708,14 @@ class EODataAccessGateway:
 
         kwargs: dict[str, Any] = {"productType": product_type}
 
-        # append auth if needed
-        if getattr(plugin.config, "need_auth", False):
-            if auth := self._plugins_manager.get_auth(
-                plugin.provider,
-                getattr(plugin.config, "api_endpoint", None),
-                plugin.config,
-            ):
-                kwargs["auth"] = auth
+        # append auth if available
+        if auth := self._plugins_manager.get_auth(
+            plugin.provider,
+            "search",
+            getattr(plugin.config, "api_endpoint", None),
+            plugin.config,
+        ):
+            kwargs["auth"] = auth
 
         product_type_config = plugin.discover_product_types(**kwargs)
         self.update_product_types_list({provider: product_type_config})
@@ -1927,15 +1914,14 @@ class EODataAccessGateway:
 
         try:
             prep = PreparedSearch(count=count)
-
-            # append auth if needed
-            if getattr(search_plugin.config, "need_auth", False):
-                if auth := self._plugins_manager.get_auth(
-                    search_plugin.provider,
-                    getattr(search_plugin.config, "api_endpoint", None),
-                    search_plugin.config,
-                ):
-                    prep.auth = auth
+            # append auth if available
+            if auth := self._plugins_manager.get_auth(
+                search_plugin.provider,
+                "search",
+                getattr(search_plugin.config, "api_endpoint", None),
+                search_plugin.config,
+            ):
+                prep.auth = auth
 
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
@@ -2385,9 +2371,8 @@ class EODataAccessGateway:
                     product_type_configs[pt] = plugin.config.product_type_config
 
             # authenticate if required
-            if getattr(plugin.config, "need_auth", False) and (
-                auth := self._plugins_manager.get_auth_plugin(plugin)
-            ):
+            auth = self._plugins_manager.get_auth_plugin(plugin)
+            if auth and "search" in getattr(auth, "required_for", []):
                 try:
                     plugin.auth = auth.authenticate()
                 except AuthenticationError:

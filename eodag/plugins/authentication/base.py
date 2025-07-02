@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Union
 
 from eodag.plugins.base import PluginTopic
+from eodag.utils import deepcopy
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
@@ -34,15 +35,26 @@ class Authentication(PluginTopic):
     :param provider: provider name
     :param config: Authentication plugin configuration:
 
-        * :attr:`~eodag.config.PluginConfig.matching_url` (``str``): URL pattern to match with search plugin endpoint or
-          download link
-        * :attr:`~eodag.config.PluginConfig.matching_conf` (``dict[str, Any]``): Part of the search or download plugin
-          configuration that needs authentication and helps identifying it
+        * :attr:`~eodag.config.PluginConfig.match` (``dict[str, str]``): dict of parameters to
+          be matched with a product or a search/download plugin to find the correct auth plugin
     """
 
     def authenticate(self) -> Union[AuthBase, S3SessionKwargs]:
         """Authenticate"""
         raise NotImplementedError
+
+    def get_required_credentials(self) -> dict[str, str]:
+        """checks if only a subset of the credentials is required for the plugin object
+        and returns this subset; returns all credentials if not required credentials are given
+        :returns: dict of credentials
+        """
+        credentials = deepcopy(self.config.credentials)
+        required_credentials = getattr(self.config, "required_credentials", None)
+        if required_credentials:
+            credentials = {
+                k: credentials[k] for k in credentials if k in required_credentials
+            }
+        return credentials
 
     def validate_config_credentials(self) -> None:
         """Validate configured credentials"""
@@ -58,6 +70,8 @@ class Authentication(PluginTopic):
             raise MisconfiguredError(
                 f"Missing credentials for provider {self.provider}"
             )
+        # check if only specific credentials are required for the plugin
+        credentials = self.get_required_credentials()
         # Credentials keys but values are None.
         missing_credentials = [
             cred_name

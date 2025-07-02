@@ -85,8 +85,8 @@ class TestCoreProvidersConfig(TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 download:
-                    type: HTTPDownload
-                    base_uri: https://foo.bar
+                    - type: HTTPDownload
+                      base_uri: https://foo.bar
             """
         )
         self.dag.set_preferred_provider("foo_provider")
@@ -112,14 +112,15 @@ class TestCoreProvidersConfig(TestCase):
             """
             foo_provider:
                 auth:
-                    type: GenericAuth
+                    - type: GenericAuth
             """
         )
+        self.assertIsInstance(self.dag.providers_config["foo_provider"].auth, list)
         self.assertIsInstance(
-            self.dag.providers_config["foo_provider"].auth, PluginConfig
+            self.dag.providers_config["foo_provider"].auth[0], PluginConfig
         )
         self.assertEqual(
-            self.dag.providers_config["foo_provider"].auth.type, "GenericAuth"
+            self.dag.providers_config["foo_provider"].auth[0].type, "GenericAuth"
         )
 
         # update pruned provider with credentials
@@ -147,7 +148,7 @@ class TestCoreProvidersConfig(TestCase):
                     api_endpoint: https://foo.bar/search
                     need_auth: True
                 auth:
-                    type: GenericAuth
+                    - type: GenericAuth
                 products:
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
@@ -165,11 +166,12 @@ class TestCoreProvidersConfig(TestCase):
                         password: foo
             """
         )
+        self.assertIsInstance(self.dag.providers_config["bar_provider"].auth, list)
         self.assertIsInstance(
-            self.dag.providers_config["bar_provider"].auth, PluginConfig
+            self.dag.providers_config["bar_provider"].auth[0], PluginConfig
         )
         self.assertEqual(
-            self.dag.providers_config["bar_provider"].auth.credentials["username"],
+            self.dag.providers_config["bar_provider"].auth[0].credentials["username"],
             "bar",
         )
 
@@ -179,19 +181,27 @@ class TestCoreProvidersConfig(TestCase):
         self.dag.add_provider(
             "a_provider_without_creds_matching_url",
             "https://foo.bar/search",
-            auth={
-                "type": "GenericAuth",
-                "matching_url": "http://foo.bar",
-            },
+            auth=[
+                {
+                    "type": "GenericAuth",
+                    "match": {
+                        "href": "http://foo.bar",
+                    },
+                }
+            ],
         )
         self.dag.add_provider(
             "a_provider_with_creds",
             "https://foo.bar/search",
-            auth={
-                "type": "GenericAuth",
-                "matching_url": "http://foo.bar",
-                "credentials": {"username": "bar", "password": "foo"},
-            },
+            auth=[
+                {
+                    "type": "GenericAuth",
+                    "match": {
+                        "href": "http://foo.bar",
+                    },
+                    "credentials": {"username": "bar", "password": "foo"},
+                }
+            ],
         )
         self.dag.update_providers_config(
             """
@@ -203,12 +213,12 @@ class TestCoreProvidersConfig(TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 auth:
-                    type: GenericAuth
-                    matching_conf:
-                        something: special
-                    credentials:
-                        username: baz
-                        password: qux
+                    -   type: GenericAuth
+                        match:
+                            something: special
+                        credentials:
+                            username: baz
+                            password: qux
 
             a_provider_without_creds_matching_conf:
                 search:
@@ -218,30 +228,34 @@ class TestCoreProvidersConfig(TestCase):
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
                 auth:
-                    type: GenericAuth
-                    matching_conf:
-                        something: special
+                    -   type: GenericAuth
+                        match:
+                            something: special
             """
         )
         self.assertDictEqual(
-            self.dag.providers_config["a_provider_with_creds"].auth.credentials,
+            self.dag.providers_config["a_provider_with_creds"].auth[0].credentials,
             {"username": "bar", "password": "foo"},
         )
         self.assertDictEqual(
-            self.dag.providers_config["a_provider_with_creds"].auth.credentials,
-            self.dag.providers_config[
-                "a_provider_without_creds_matching_url"
-            ].auth.credentials,
+            self.dag.providers_config["a_provider_with_creds"].auth[0].credentials,
+            self.dag.providers_config["a_provider_without_creds_matching_url"]
+            .auth[0]
+            .credentials,
         )
         self.assertDictEqual(
-            self.dag.providers_config["another_provider_with_creds"].auth.credentials,
+            self.dag.providers_config["another_provider_with_creds"]
+            .auth[0]
+            .credentials,
             {"username": "baz", "password": "qux"},
         )
         self.assertDictEqual(
-            self.dag.providers_config["another_provider_with_creds"].auth.credentials,
-            self.dag.providers_config[
-                "a_provider_without_creds_matching_conf"
-            ].auth.credentials,
+            self.dag.providers_config["another_provider_with_creds"]
+            .auth[0]
+            .credentials,
+            self.dag.providers_config["a_provider_without_creds_matching_conf"]
+            .auth[0]
+            .credentials,
         )
 
     def test_core_providers_add(self):
@@ -258,7 +272,7 @@ class TestCoreProvidersConfig(TestCase):
             "https://foo.bar/search",
         )
         self.assertEqual(
-            self.dag.providers_config["foo"].download.type,
+            self.dag.providers_config["foo"].download[0].type,
             "HTTPDownload",
         )
         self.assertFalse(hasattr(self.dag.providers_config["foo"], "auth"))
@@ -275,8 +289,8 @@ class TestCoreProvidersConfig(TestCase):
                 "api_endpoint": "https://foo.bar/search",
                 "discover_metadata": {"metadata_path": "$.properties.*"},
             },
-            download={"type": "AwsDownload"},
-            auth={"type": "AwsAuth", "credentials": {"aws_profile": "abc"}},
+            download=[{"type": "AwsDownload"}],
+            auth=[{"type": "AwsAuth", "credentials": {"aws_profile": "abc"}}],
             priority=0,
         )
         self.assertEqual(
@@ -288,15 +302,15 @@ class TestCoreProvidersConfig(TestCase):
             "https://foo.bar/search",
         )
         self.assertEqual(
-            self.dag.providers_config["bar"].download.type,
+            self.dag.providers_config["bar"].download[0].type,
             "AwsDownload",
         )
         self.assertEqual(
-            self.dag.providers_config["bar"].auth.type,
+            self.dag.providers_config["bar"].auth[0].type,
             "AwsAuth",
         )
         self.assertDictEqual(
-            self.dag.providers_config["bar"].auth.credentials,
+            self.dag.providers_config["bar"].auth[0].credentials,
             {"aws_profile": "abc"},
         )
         self.assertNotEqual(
@@ -409,19 +423,15 @@ class TestCoreProductTypesConfig(TestCase):
                     api_endpoint: https://foo.bar/search
                     discover_product_types:
                         fetch_url: https://foo.bar/collections
-                    need_auth: true
                 products:
                     GENERIC_PRODUCT_TYPE:
                         productType: '{productType}'
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
-                provider="foo_provider"
-            )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.dag.discover_product_types(provider="foo_provider")
             self.assertIn(
-                "Could not authenticate on foo_provider for product types discovery",
+                "No authentication plugin for foo_provider for product types discovery found",
                 str(cm.output),
             )
 
@@ -430,23 +440,23 @@ class TestCoreProductTypesConfig(TestCase):
             """
             foo_provider:
                 auth:
-                    type: HTTPHeaderAuth
-                    matching_url: https://foo.bar
-                    headers:
-                        Authorization: "Apikey {apikey}"
+                    - type: HTTPHeaderAuth
+                      matching_url: https://foo.bar
+                      headers:
+                          Authorization: "Apikey {apikey}"
+                      required_for:
+                          - search
             """
         )
         with self.assertLogs(level="DEBUG") as cm:
-            ext_product_types_conf = self.dag.discover_product_types(
-                provider="foo_provider"
-            )
-            self.assertIsNone(ext_product_types_conf["foo_provider"])
+            self.dag.discover_product_types(provider="foo_provider")
             self.assertIn(
                 "Could not authenticate on foo_provider: Missing credentials",
                 str(cm.output),
             )
 
         # succeeds with auth plugin and credentials
+        mock_requests_get.reset_mock()
         self.dag.update_providers_config(
             """
             foo_provider:
@@ -497,20 +507,17 @@ class TestCoreProductTypesConfig(TestCase):
 
         # warning if another AuthenticationError
         with mock.patch(
-            "eodag.plugins.manager.PluginManager.get_auth_plugins",
-        ) as mock_get_auth_plugins:
+            "eodag.plugins.manager.PluginManager.get_auth_or_download_plugins",
+        ) as mock_get_auth_or_download_plugins:
             mock_auth_plugin = mock.MagicMock()
             mock_auth_plugin.authenticate = mock.MagicMock(
                 side_effect=AuthenticationError("cannot auth for test")
             )
-            mock_get_auth_plugins.return_value = iter([mock_auth_plugin])
+            mock_get_auth_or_download_plugins.return_value = iter([mock_auth_plugin])
 
             with self.assertLogs(level="DEBUG") as cm:
-                ext_product_types_conf = self.dag.discover_product_types(
-                    provider="foo_provider"
-                )
-                self.assertIsNone(ext_product_types_conf["foo_provider"])
+                self.dag.discover_product_types(provider="foo_provider")
                 self.assertIn(
-                    "Could not authenticate on foo_provider: cannot auth for test",
+                    "No authentication plugin for foo_provider for product types discovery found",
                     str(cm.output),
                 )
