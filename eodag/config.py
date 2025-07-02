@@ -731,8 +731,20 @@ class PluginConfig(yaml.YAMLObject):
             self.__dict__, {k: v for k, v in mapping.items() if v is not None}
         )
 
+    def matches_target_auth(self, target_config: PluginConfig):
+        """Check if the target auth configuration matches this one"""
+        target_matching_conf = target_config.matching_conf
+        target_matching_url = target_config.matching_url
 
-def load_default_config() -> dict[str, ProviderConfig]:
+        if target_matching_conf and sort_dict(target_matching_conf) == sort_dict(self.matching_conf):
+            return True
+
+        if target_matching_url and target_matching_url == self.matching_url:
+            return True
+
+        return False      
+
+def load_default_config() -> ProvidersList:
     """Load the providers configuration into a dictionary.
 
     Load from eodag `resources/providers.yml` or `EODAG_PROVIDERS_CFG_FILE` environment
@@ -743,6 +755,7 @@ def load_default_config() -> dict[str, ProviderConfig]:
     eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
         res_files("eodag") / "resources" / "providers.yml"
     )
+    
     return load_config(eodag_providers_cfg_file)
 
 
@@ -793,50 +806,6 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     return any(
         c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
     )
-
-
-def share_credentials(
-    providers_config: dict[str, ProviderConfig],
-) -> None:
-    """Share credentials between plugins having the same matching criteria
-
-    :param providers_configs: eodag providers configurations
-    """
-    auth_confs_with_creds = [
-        getattr(p, k)
-        for p in providers_config.values()
-        for k in AUTH_TOPIC_KEYS
-        if hasattr(p, k) and credentials_in_auth(getattr(p, k))
-    ]
-    for provider, provider_config in providers_config.items():
-        if auth_confs_with_creds:
-            for auth_topic_key in AUTH_TOPIC_KEYS:
-                provider_config_auth = getattr(provider_config, auth_topic_key, None)
-                if provider_config_auth and not credentials_in_auth(
-                    provider_config_auth
-                ):
-                    # no credentials set for this provider
-                    provider_matching_conf = getattr(
-                        provider_config_auth, "matching_conf", {}
-                    )
-                    provider_matching_url = getattr(
-                        provider_config_auth, "matching_url", None
-                    )
-                    for conf_with_creds in auth_confs_with_creds:
-                        # copy credentials between plugins if `matching_conf` or `matching_url` are matching
-                        if (
-                            provider_matching_conf
-                            and sort_dict(provider_matching_conf)
-                            == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
-                        ) or (
-                            provider_matching_url
-                            and provider_matching_url
-                            == getattr(conf_with_creds, "matching_url", None)
-                        ):
-                            getattr(
-                                providers_config[provider], auth_topic_key
-                            ).credentials = conf_with_creds.credentials
-
 
 def provider_config_init(
     provider_config: ProviderConfig,
