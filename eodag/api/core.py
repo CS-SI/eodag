@@ -40,12 +40,10 @@ from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
 )
 from eodag.api.search_result import SearchResult
-from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.plugin import PluginConfig, credentials_in_auth
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
-    PluginConfig,
     SimpleYamlProxyConfig,
-    credentials_in_auth,
     get_ext_collections_conf,
     load_default_config,
     load_stac_provider_config,
@@ -150,9 +148,11 @@ class EODataAccessGateway:
             self.conf_dir = tmp_conf_dir
             makedirs(self.conf_dir)
 
-        self._plugins_manager = PluginManager(self.providers_config)
+        self._plugins_manager = PluginManager(self.providers)
+        # self._plugins_manager = PluginManager(self.providers_config)
         # use updated providers_config
-        self.providers_config = self._plugins_manager.providers_config
+        # self.providers_config = self._plugins_manager.providers_config
+        self.providers = self._plugins_manager.providers
 
         # First level override: From a user configuration file
         if user_conf_file_path is None:

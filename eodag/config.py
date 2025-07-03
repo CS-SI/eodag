@@ -23,14 +23,10 @@ import tempfile
 from importlib.resources import files as res_files
 from inspect import isclass
 from typing import (
-    Annotated,
     Any,
     ItemsView,
     Iterator,
-    Literal,
     Optional,
-    TypedDict,
-    Union,
     ValuesView,
     get_type_hints,
 )
@@ -39,10 +35,9 @@ import orjson
 import requests
 import yaml
 import yaml.parser
-from annotated_types import Gt
-from jsonpath_ng import JSONPath
 
-from eodag.api.provider import Provider, ProvidersDict
+from eodag.api.plugin import PluginConfig
+from eodag.api.provider import Provider, ProvidersDict, ProviderConfig
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
@@ -53,14 +48,10 @@ from eodag.utils import (
     cast_scalar_value,
     deepcopy,
     dict_items_recursive_apply,
-    merge_mappings,
-    slugify,
-    sort_dict,
     string_to_jsonpath,
     update_nested_dict,
     uri_to_path,
 )
-from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.config")
 
@@ -755,7 +746,7 @@ def load_default_config() -> ProvidersDict:
     eodag_providers_cfg_file = os.getenv("EODAG_PROVIDERS_CFG_FILE") or str(
         res_files("eodag") / "resources" / "providers.yml"
     )
-    
+
     return load_config(eodag_providers_cfg_file)
 
 
@@ -768,8 +759,8 @@ def load_config(config_path: str) -> ProvidersDict:
     :returns: The default provider's configuration
     """
     logger.debug("Loading configuration from %s", config_path)
-    providers = ProvidersDict()
-    
+    providers = ProvidersDict(providers=None)
+
     try:
         # Providers configs are stored in this file as separated yaml documents
         # Load all of it
@@ -790,22 +781,12 @@ def load_config(config_path: str) -> ProvidersDict:
         provider_whitelisted = provider_config.name in whitelist if whitelist else True
         if provider_config is None or not provider_whitelisted:
             continue
-        
+
         provider_config_init(provider_config, stac_provider_config)
         providers.add(Provider(provider_config.name, provider_config))
 
     return providers
 
-
-def credentials_in_auth(auth_conf: PluginConfig) -> bool:
-    """Checks if credentials are set for this Authentication plugin configuration
-
-    :param auth_conf: Authentication plugin configuration
-    :returns: True if credentials are set, else False
-    """
-    return any(
-        c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
-    )
 
 def provider_config_init(
     provider_config: ProviderConfig,
