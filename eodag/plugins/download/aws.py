@@ -212,8 +212,6 @@ class AwsDownload(Download):
           from a requester-pays bucket or not; default: ``False``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure
           should be flattened; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download
-          using ``downloadLink``; default: ``False``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should
           be verified in requests; default: ``True``
         * :attr:`~eodag.config.PluginConfig.bucket_path_level` (``int``): at which level of the
@@ -292,10 +290,8 @@ class AwsDownload(Download):
         asset_filter = kwargs.get("asset")
         if asset_filter:
             build_safe = False
-            ignore_assets = False
         else:
             build_safe = product_conf.get("build_safe", False)
-            ignore_assets = getattr(self.config, "ignore_assets", False)
 
         # product conf overrides provider conf for "flatten_top_dirs"
         flatten_top_dirs = product_conf.get(
@@ -306,7 +302,7 @@ class AwsDownload(Download):
         self._configure_safe_build(build_safe, product)
         # bucket names and prefixes
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset_filter, ignore_assets
+            product, asset_filter
         )
 
         # add complementary urls
@@ -343,9 +339,6 @@ class AwsDownload(Download):
         unique_product_chunks = self._get_unique_products(
             updated_bucket_names_and_prefixes,
             authenticated_objects,
-            asset_filter,
-            ignore_assets,
-            product,
             raise_error=raise_error,
         )
 
@@ -532,45 +525,39 @@ class AwsDownload(Download):
         self,
         product: EOProduct,
         asset_filter: Optional[str] = None,
-        ignore_assets: Optional[bool] = False,
     ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
 
         :param product: product for which the assets shall be downloaded
         :param asset_filter: text for which the assets should be filtered
-        :param ignore_assets: if product instead of individual assets should be used
         :return: tuples of bucket names and prefixes
         """
         # if assets are defined, use them instead of scanning product.location
-        if len(product.assets) > 0 and not ignore_assets:
-            if asset_filter:
-                filter_regex = re.compile(asset_filter)
-                assets_keys = getattr(product, "assets", {}).keys()
-                assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
-                filtered_assets = {
-                    a_key: getattr(product, "assets", {})[a_key]
-                    for a_key in assets_keys
-                }
-                assets_values = [a for a in filtered_assets.values() if "href" in a]
-                if not assets_values:
-                    raise NotAvailableError(
-                        rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
-                    )
-            else:
-                assets_values = product.assets.values()
 
-            bucket_names_and_prefixes = []
-            for complementary_url in assets_values:
-                bucket_names_and_prefixes.append(
-                    self.get_product_bucket_name_and_prefix(
-                        product, complementary_url.get("href", "")
-                    )
+        if asset_filter:
+            filter_regex = re.compile(asset_filter)
+            assets_keys = getattr(product, "assets", {}).keys()
+            assets_keys = list(filter(filter_regex.fullmatch, assets_keys))
+            filtered_assets = {
+                a_key: getattr(product, "assets", {})[a_key] for a_key in assets_keys
+            }
+            assets_values = [a for a in filtered_assets.values() if "href" in a]
+            if not assets_values:
+                raise NotAvailableError(
+                    rf"No asset key matching re.fullmatch(r'{asset_filter}') was found in {product}"
                 )
         else:
-            bucket_names_and_prefixes = [
-                self.get_product_bucket_name_and_prefix(product)
-            ]
+            assets_values = product.assets.values()
+
+        bucket_names_and_prefixes = []
+        for complementary_url in assets_values:
+            bucket_names_and_prefixes.append(
+                self.get_product_bucket_name_and_prefix(
+                    product, complementary_url.get("href", "")
+                )
+            )
+
         return bucket_names_and_prefixes
 
     def _do_authentication(
@@ -647,9 +634,6 @@ class AwsDownload(Download):
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
         authenticated_objects: dict[str, Any],
-        asset_filter: Optional[str],
-        ignore_assets: bool,
-        product: EOProduct,
         raise_error: bool = True,
     ) -> set[Any]:
         """
@@ -657,9 +641,6 @@ class AwsDownload(Download):
 
         :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
         :param authenticated_objects: available objects per bucket
-        :param asset_filter: text for which assets should be filtered
-        :param ignore_assets: if product instead of individual assets should be used
-        :param product: product that shall be downloaded
         :param raise_error: raise error if there is nothing to download
         :return: set of product chunks that can be downloaded
         """
@@ -672,20 +653,6 @@ class AwsDownload(Download):
                 )
 
         unique_product_chunks = set(product_chunks)
-
-        # if asset_filter is used with ignore_assets, apply filtering on listed prefixes
-        if asset_filter and ignore_assets:
-            filter_regex = re.compile(asset_filter)
-            unique_product_chunks = set(
-                filter(
-                    lambda c: filter_regex.search(os.path.basename(c.key)),
-                    unique_product_chunks,
-                )
-            )
-            if not unique_product_chunks and raise_error:
-                raise NotAvailableError(
-                    rf"No file basename matching re.fullmatch(r'{asset_filter}') was found in {product.remote_location}"
-                )
 
         if not unique_product_chunks and raise_error:
             raise NoMatchingProductType("No product found to download.")
@@ -727,6 +694,14 @@ class AwsDownload(Download):
                         file or with environment variables.
         :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
+        if not getattr(product, "assets", None) or len(product.assets) == 0:
+            logger.error(
+                "No asset available to download, please check the provider configuration \
+                         (An asset_mapping must be added if the provide does not return any assets)!"
+            )
+            raise MisconfiguredError(
+                "No asset available to download, please check the provider configuration!"
+            )
         if progress_callback is None:
             logger.info(
                 "Progress bar unavailable, please call product.download() instead of plugin.download()"
@@ -743,13 +718,11 @@ class AwsDownload(Download):
         else:
             build_safe = product_conf.get("build_safe", False)
 
-        ignore_assets = getattr(self.config, "ignore_assets", False)
-
         # xtra metadata needed for SAFE product
         self._configure_safe_build(build_safe, product)
         # bucket names and prefixes
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset_filter, ignore_assets
+            product, asset_filter
         )
 
         # add complementary urls
@@ -780,11 +753,7 @@ class AwsDownload(Download):
 
         # downloadable files
         unique_product_chunks = self._get_unique_products(
-            bucket_names_and_prefixes,
-            authenticated_objects,
-            asset_filter,
-            ignore_assets,
-            product,
+            bucket_names_and_prefixes, authenticated_objects
         )
         assets_values = product.assets.get_values(asset_filter)
         chunks_tuples = self._stream_download(

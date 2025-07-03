@@ -1531,7 +1531,6 @@
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://storage.googleapis.com
-    ignore_assets: True
     ssl_verify: true
     products:
       S2_MSI_L1C:
@@ -5533,7 +5532,6 @@
   download: !plugin
     type: HTTPDownload
     extract: true
-    ignore_assets: True
     ssl_verify: true
   auth: !plugin
     type: TokenAuth
@@ -5827,7 +5825,6 @@
   download: !plugin
     type: HTTPDownload
     ssl_verify: false
-    ignore_assets: true
     archive_depth: 2
     auth_error_code:
       - 401
@@ -5950,7 +5947,6 @@
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
-    ignore_assets: True
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403

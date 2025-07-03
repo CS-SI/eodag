@@ -513,8 +513,6 @@ class PluginConfig(yaml.YAMLObject):
     flatten_top_dirs: bool
     #: :class:`~eodag.plugins.download.base.Download` Level in extracted path tree where to find data
     archive_depth: int
-    #: :class:`~eodag.plugins.download.base.Download` Whether ignore assets and download using ``downloadLink`` or not
-    ignore_assets: bool
     #: :class:`~eodag.plugins.download.base.Download` Product type specific configuration
     products: dict[str, dict[str, Any]]
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Whether the product has to be ordered to download it or not

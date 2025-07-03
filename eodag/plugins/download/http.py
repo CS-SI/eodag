@@ -106,8 +106,6 @@ class HTTPDownload(Download):
           default: ``1``
         * :attr:`~eodag.config.PluginConfig.flatten_top_dirs` (``bool``): if the directory structure should be
           flattened; default: ``True``
-        * :attr:`~eodag.config.PluginConfig.ignore_assets` (``bool``): ignore assets and download using downloadLink;
-          default: ``False``
         * :attr:`~eodag.config.PluginConfig.timeout` (``int``): time to wait until request timeout in seconds;
           default: ``5``
         * :attr:`~eodag.config.PluginConfig.ssl_verify` (``bool``): if the ssl certificates should be verified in
@@ -689,78 +687,64 @@ class HTTPDownload(Download):
         if auth is not None and not isinstance(auth, AuthBase):
             raise MisconfiguredError(f"Incompatible auth plugin: {type(auth)}")
 
-        # download assets if exist instead of remote_location
-        if len(product.assets) > 0 and (
-            not getattr(self.config, "ignore_assets", False)
-            or kwargs.get("asset") is not None
-        ):
-            try:
-                assets_values = product.assets.get_values(kwargs.get("asset"))
-                chunks_tuples = self._stream_download_assets(
-                    product,
-                    auth,
-                    progress_callback,
-                    assets_values=assets_values,
-                    **kwargs,
+        if not getattr(product, "assets", None) or len(product.assets) == 0:
+            logger.error(
+                "No asset available to download, please check the provider configuration \
+                         (An asset_mapping must be added if the provide does not return any assets)!"
+            )
+            raise MisconfiguredError(
+                "No asset available to download, please check the provider configuration!"
+            )
+
+        # download assets
+        try:
+            assets_values = product.assets.get_values(kwargs.get("asset"))
+            chunks_tuples = self._stream_download_assets(
+                product,
+                auth,
+                progress_callback,
+                assets_values=assets_values,
+                **kwargs,
+            )
+
+            if len(assets_values) == 1:
+                # start reading chunks to set asset.headers
+                first_chunks_tuple = next(chunks_tuples)
+
+                # update headers
+                assets_values[0].headers[
+                    "content-disposition"
+                ] = f"attachment; filename={assets_values[0].filename}"
+                if assets_values[0].get("type"):
+                    assets_values[0].headers["content-type"] = assets_values[0]["type"]
+
+                return StreamResponse(
+                    content=chain(iter([first_chunks_tuple]), chunks_tuples),
+                    headers=assets_values[0].headers,
                 )
 
-                if len(assets_values) == 1:
-                    # start reading chunks to set asset.headers
-                    first_chunks_tuple = next(chunks_tuples)
-
-                    # update headers
-                    assets_values[0].headers[
-                        "content-disposition"
-                    ] = f"attachment; filename={assets_values[0].filename}"
-                    if assets_values[0].get("type"):
-                        assets_values[0].headers["content-type"] = assets_values[0][
-                            "type"
-                        ]
-
-                    return StreamResponse(
-                        content=chain(iter([first_chunks_tuple]), chunks_tuples),
-                        headers=assets_values[0].headers,
-                    )
-
-                else:
-                    # get first chunk to check if it does not contain an error (if it does, that error will be raised)
-                    first_chunks_tuple = next(chunks_tuples)
-                    outputs_filename = (
-                        sanitize(product.properties["title"])
-                        if "title" in product.properties
-                        else sanitize(product.properties.get("id", "download"))
-                    )
-                    return StreamResponse(
-                        content=stream_zip(
-                            chain(iter([first_chunks_tuple]), chunks_tuples)
-                        ),
-                        media_type="application/zip",
-                        headers={
-                            "content-disposition": f"attachment; filename={outputs_filename}.zip",
-                        },
-                    )
-            except NotAvailableError as e:
-                if kwargs.get("asset") is not None:
-                    raise NotAvailableError(e).with_traceback(e.__traceback__)
-                else:
-                    pass
-
-        chunk_iterator = self._stream_download(
-            product, auth, progress_callback, **kwargs
-        )
-
-        # start reading chunks to set product.headers
-        try:
-            first_chunk = next(chunk_iterator)
-        except StopIteration:
-            # product is empty file
-            logger.error("product %s is empty", product.properties["id"])
-            raise NotAvailableError(f"product {product.properties['id']} is empty")
-
-        return StreamResponse(
-            content=chain(iter([first_chunk]), chunk_iterator),
-            headers=product.headers,
-        )
+            else:
+                # get first chunk to check if it does not contain an error (if it does, that error will be raised)
+                first_chunks_tuple = next(chunks_tuples)
+                outputs_filename = (
+                    sanitize(product.properties["title"])
+                    if "title" in product.properties
+                    else sanitize(product.properties.get("id", "download"))
+                )
+                return StreamResponse(
+                    content=stream_zip(
+                        chain(iter([first_chunks_tuple]), chunks_tuples)
+                    ),
+                    media_type="application/zip",
+                    headers={
+                        "content-disposition": f"attachment; filename={outputs_filename}.zip",
+                    },
+                )
+        except NotAvailableError as e:
+            if kwargs.get("asset") is not None:
+                raise NotAvailableError(e).with_traceback(e.__traceback__)
+            else:
+                pass
 
     def _check_auth_exception(self, e: Optional[RequestException]) -> None:
         # check if error is identified as auth_error in provider conf

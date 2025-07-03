@@ -15,12 +15,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
 
-from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
 from eodag.utils.exceptions import MisconfiguredError
 
@@ -67,30 +65,3 @@ class CreodiasS3Download(AwsDownload):
         list(objects.filter(Prefix=prefix).limit(1))
         self.s3_session = s3_session
         return objects
-
-    def _get_bucket_names_and_prefixes(
-        self,
-        product: EOProduct,
-        asset_filter: Optional[str] = None,
-        ignore_assets: Optional[bool] = False,
-    ) -> list[tuple[str, Optional[str]]]:
-        """
-        Retrieves the bucket names and path prefixes for the assets
-
-        :param product: product for which the assets shall be downloaded
-        :param asset_filter: text for which the assets should be filtered
-        :param ignore_assets: if product instead of individual assets should be used
-        :return: tuples of bucket names and prefixes
-        """
-        # if assets are defined, use them instead of scanning product.location
-        if len(product.assets) > 0 and not ignore_assets:
-            bucket_names_and_prefixes = super()._get_bucket_names_and_prefixes(
-                product, asset_filter, ignore_assets
-            )
-        else:
-            # if no assets are given, use productIdentifier to get S3 path for download
-            s3_url = "s3:/" + product.properties["productIdentifier"]
-            bucket_names_and_prefixes = [
-                self.get_product_bucket_name_and_prefix(product, s3_url)
-            ]
-        return bucket_names_and_prefixes
