@@ -1,10 +1,127 @@
-from typing import Any, Optional, Union, Self
+from typing import Any, Optional, Union, Self, Iterator
 from collections import UserDict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+import yaml
+import logging
 
-from eodag.config import ProviderConfig, credentials_in_auth, PluginConfig
+from eodag.api.plugin import credentials_in_auth, PluginConfig
+from eodag.utils import slugify, merge_mappings
+
+from eodag.utils.exceptions import ValidationError
+
+logger = logging.getLogger("eodag.provider")
 
 AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
+PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
+
+
+class ProviderConfig(yaml.YAMLObject):
+    """Representation of eodag configuration.
+
+    :param name: The name of the provider
+    :param priority: (optional) The priority of the provider while searching a product.
+                     Lower value means lower priority. (Default: 0)
+    :param api: (optional) The configuration of a plugin of type Api
+    :param search: (optional) The configuration of a plugin of type Search
+    :param products: (optional) The products types supported by the provider
+    :param download: (optional) The configuration of a plugin of type Download
+    :param auth: (optional) The configuration of a plugin of type Authentication
+    :param search_auth: (optional) The configuration of a plugin of type Authentication for search
+    :param download_auth: (optional) The configuration of a plugin of type Authentication for download
+    :param kwargs: Additional configuration variables for this provider
+    """
+
+    name: str
+    group: str
+    priority: int = 0  # Set default priority to 0
+    roles: list[str]
+    description: str
+    url: str
+    api: PluginConfig
+    search: PluginConfig
+    products: dict[str, Any]
+    download: PluginConfig
+    auth: PluginConfig
+    search_auth: PluginConfig
+    download_auth: PluginConfig
+    product_types_fetched: bool  # set in core.update_product_types_list
+
+    yaml_loader = yaml.Loader
+    yaml_dumper = yaml.SafeDumper
+    yaml_tag = "!provider"
+
+    @classmethod
+    def from_yaml(cls, loader: yaml.Loader, node: Any) -> Self:
+        """Build a :class:`~eodag.config.ProviderConfig` from Yaml"""
+        cls.validate(tuple(node_key.value for node_key, _ in node.value))
+        for node_key, node_value in node.value:
+            if node_key.value == "name":
+                node_value.value = slugify(node_value.value).replace("-", "_")
+                break
+        return loader.construct_yaml_object(node, cls)
+
+    @classmethod
+    def from_mapping(cls, mapping: dict[str, Any]) -> Self:
+        """Build a :class:`~eodag.config.ProviderConfig` from a mapping"""
+        cls.validate(mapping)
+        for key in PLUGINS_TOPICS_KEYS:
+            if key in mapping:
+                mapping[key] = PluginConfig.from_mapping(mapping[key])
+        c = cls()
+        c.__dict__.update(mapping)
+        return c
+
+    @staticmethod
+    def validate(config_keys: Union[tuple[str, ...], dict[str, Any]]) -> None:
+        """Validate a :class:`~eodag.config.ProviderConfig`
+
+        :param config_keys: The configurations keys to validate
+        """
+        if "name" not in config_keys:
+            raise ValidationError("Provider config must have name key")
+        if not any(k in config_keys for k in PLUGINS_TOPICS_KEYS):
+            raise ValidationError("A provider must implement at least one plugin")
+        non_api_keys = [k for k in PLUGINS_TOPICS_KEYS if k != "api"]
+        if "api" in config_keys and any(k in config_keys for k in non_api_keys):
+            raise ValidationError(
+                "A provider implementing an Api plugin must not implement any other "
+                "type of plugin"
+            )
+
+    def update(self, mapping: Optional[dict[str, Any]]) -> None:
+        """Update the configuration parameters with values from `mapping`
+
+        :param mapping: The mapping from which to override configuration parameters
+        """
+        if mapping is None:
+            mapping = {}
+        merge_mappings(
+            self.__dict__,
+            {
+                key: value
+                for key, value in mapping.items()
+                if key not in PLUGINS_TOPICS_KEYS and value is not None
+            },
+        )
+        for key in PLUGINS_TOPICS_KEYS:
+            current_value: Optional[PluginConfig] = getattr(self, key, None)
+            mapping_value = mapping.get(key, {})
+            if current_value is not None:
+                current_value.update(mapping_value)
+            elif mapping_value:
+                try:
+                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                except ValidationError as e:
+                    logger.warning(
+                        (
+                            "Could not add %s Plugin config to %s configuration: %s. "
+                            "Try updating existing %s Plugin configs instead."
+                        ),
+                        key,
+                        self.name,
+                        str(e),
+                        ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
+                    )
 
 @dataclass
 class Provider:
@@ -112,12 +229,14 @@ class ProvidersDict(UserDict[str, Provider]):
     """
     def __init__(
         self,
-        providers: Union[list[Provider], list[str], list[dict], dict[str, Any]],
-        plugins_manager=None,
+        providers: list[Provider] | dict[str, PluginConfig] | None,
     ):
         super().__init__()
-
-        if isinstance(providers, dict):
+        
+        if providers is None:
+            self.data = {}
+            
+        elif isinstance(providers, dict):
             self.data = {name: Provider(name, conf) for name, conf in providers.items()}
         else:
             self.data = {
