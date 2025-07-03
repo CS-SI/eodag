@@ -170,10 +170,10 @@ class EODataAccessGateway:
                         ),
                         standard_configuration_path,
                     )
-        override_config_from_file(self.providers_config, user_conf_file_path)
+        self.providers.override_configs_from_file(user_conf_file_path)
 
         # Second level override: From environment variables
-        override_config_from_env(self.providers_config)
+        self.providers.override_configs_from_env()
 
         # share credentials between updated plugins confs
         self.providers.share_credentials()
@@ -182,9 +182,9 @@ class EODataAccessGateway:
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
         available_collections = set(self.collections_config.keys())
 
-        for provider in self.providers_config.keys():
+        for provider in self.providers.values():
             provider_config_init(
-                self.providers_config[provider],
+                provider.config,
                 load_stac_provider_config(),
             )
 
@@ -193,10 +193,11 @@ class EODataAccessGateway:
             )
 
         # re-build _plugins_manager using up-to-date providers_config
-        self._plugins_manager.rebuild(self.providers_config)
+        self._plugins_manager.rebuild(self.providers)
 
         # store pruned providers configs
         self._pruned_providers_config: dict[str, Any] = {}
+        
         # filter out providers needing auth that have no credentials set
         self._prune_providers_list()
 
@@ -264,7 +265,7 @@ class EODataAccessGateway:
         :param strict_mode: If True, remove unknown collections; if False, add empty configs for them.
         :returns: None
         """
-        provider_products = self.providers_config[provider].products
+        provider_products = self.providers.get_products(provider)
         products_to_remove: list[str] = []
         products_to_add: list[str] = []
 
@@ -299,7 +300,7 @@ class EODataAccessGateway:
                 provider,
             )
             for id in products_to_remove:
-                del self.providers_config[provider].products[id]
+                self.providers.delete_product(provider, id)
 
     def get_version(self) -> str:
         """Get eodag package version"""
@@ -326,11 +327,9 @@ class EODataAccessGateway:
 
         :returns: The provider with the maximum priority and its priority
         """
-        providers_with_priority = [
-            (provider, conf.priority)
-            for provider, conf in self.providers_config.items()
-        ]
+        providers_with_priority = self.providers.priorities
         preferred, priority = max(providers_with_priority, key=itemgetter(1))
+        
         return preferred, priority
 
     def update_providers_config(
@@ -363,15 +362,15 @@ class EODataAccessGateway:
                     provider
                 )
 
-        override_config_from_mapping(self.providers_config, conf_update)
+        self.providers.override_configs_from_mapping(conf_update)
 
         # share credentials between updated plugins confs
-        # share_credentials(self.providers_config)
         self.providers.share_credentials()
 
         for provider in conf_update.keys():
+            # self.providers.set_config(provider, load_stac_provider_config())
             provider_config_init(
-                self.providers_config[provider],
+                self.providers.get_config(name=provider),
                 load_stac_provider_config(),
             )
             setattr(self.providers_config[provider], "collections_fetched", False)
@@ -447,8 +446,9 @@ class EODataAccessGateway:
     def _prune_providers_list(self) -> None:
         """Removes from config providers needing auth that have no credentials set."""
         update_needed = False
-        for provider in list(self.providers_config.keys()):
-            conf = self.providers_config[provider]
+        # for provider in list(self.providers_config.keys()):
+        for provider in self.providers.values():
+            conf = provider.config
 
             # remove providers using skipped plugins
             if [
@@ -457,7 +457,8 @@ class EODataAccessGateway:
                 if isinstance(v, PluginConfig)
                 and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
             ]:
-                self.providers_config.pop(provider)
+                # self.providers_config.pop(provider)
+                self.providers.delete(provider.name)
                 logger.debug(
                     f"{provider}: provider needing unavailable plugin has been removed"
                 )
@@ -468,26 +469,35 @@ class EODataAccessGateway:
                 credentials_exist = credentials_in_auth(conf.api)
                 if not credentials_exist:
                     # credentials needed but not found
-                    self._pruned_providers_config[provider] = self.providers_config.pop(
-                        provider
-                    )
+                    # self._pruned_providers_config[provider] =  self.providers_config.pop(
+                    #     provider
+                    # )
+                    self._pruned_providers_config[provider] =  conf
+                    self.providers.delete(provider.name)
+                    
                     update_needed = True
                     logger.info(
                         "%s: provider needing auth for search has been pruned because no credentials could be found",
                         provider,
                     )
+                    
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
                 if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
-                    self._pruned_providers_config[provider] = self.providers_config.pop(
-                        provider
-                    )
+                    # self._pruned_providers_config[provider] = self.providers_config.pop(
+                    #     provider
+                    # )
+                    
+                    self._pruned_providers_config[provider] =  conf
+                    self.providers.delete(provider.name)
+                    
                     update_needed = True
                     logger.info(
                         "%s: provider needing auth for search has been pruned because no auth plugin could be found",
                         provider,
                     )
                     continue
+                
                 credentials_exist = (
                     hasattr(conf, "search_auth")
                     and credentials_in_auth(conf.search_auth)
@@ -498,28 +508,35 @@ class EODataAccessGateway:
                 )
                 if not credentials_exist:
                     # credentials needed but not found
-                    self._pruned_providers_config[provider] = self.providers_config.pop(
-                        provider
-                    )
+                    # self._pruned_providers_config[provider] = self.providers_config.pop(
+                    #     provider
+                    # )
+                    self._pruned_providers_config[provider] =  conf
+                    self.providers.delete(provider.name)
+                    
                     update_needed = True
                     logger.info(
                         "%s: provider needing auth for search has been pruned because no credentials could be found",
                         provider,
                     )
+
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
-                self._pruned_providers_config[provider] = self.providers_config.pop(
-                    provider
-                )
+                # self._pruned_providers_config[provider] = self.providers_config.pop(
+                #     provider
+                # )
+                self._pruned_providers_config[provider] =  conf
+                self.providers.delete(provider.name)
+                
+                update_needed = True
                 logger.info(
                     "%s: provider has been pruned because no api or search plugin could be found",
                     provider,
                 )
-                update_needed = True
 
         if update_needed:
             # rebuild _plugins_manager with updated providers list
-            self._plugins_manager.rebuild(self.providers_config)
+            self._plugins_manager.rebuild(self.providers)
 
     def set_locations_conf(self, locations_conf_path: str) -> None:
         """Set locations configuration.
@@ -575,24 +592,15 @@ class EODataAccessGateway:
             self.fetch_collections_list(provider=provider)
 
         collections: CollectionsList = CollectionsList([])
+        providers = self.providers.filter_by_name(provider)
 
-        providers_configs = (
-            list(self.providers_config.values())
-            if not provider
-            else [
-                p
-                for p in self.providers_config.values()
-                if provider in [p.name, getattr(p, "group", None)]
-            ]
-        )
-
-        if provider and not providers_configs:
+        if provider and not providers:
             raise UnsupportedProvider(
                 f"The requested provider is not (yet) supported: {provider}"
             )
 
-        for p in providers_configs:
-            for collection_id in p.products:
+        for p in providers.values():
+            for collection_id in p.products:  # type: ignore
                 if collection_id == GENERIC_COLLECTION:
                     continue
 
