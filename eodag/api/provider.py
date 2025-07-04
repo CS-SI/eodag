@@ -125,11 +125,13 @@ class ProviderConfig(yaml.YAMLObject):
                         ", ".join([k for k in PLUGINS_TOPICS_KEYS if hasattr(self, k)]),
                     )
 
+
 @dataclass
 class Provider:
     """
     Represents a data provider with its configuration and utility methods.
     """
+
     name: str
     _config: ProviderConfig
 
@@ -142,11 +144,11 @@ class Provider:
     @property
     def config(self) -> ProviderConfig:
         return self._config
-    
+
     @config.setter
     def config(self, value: ProviderConfig) -> None:
         self.config = value
-        
+
     @property
     def products(self) -> dict[str, Any]:
         """Return the products dictionary for this provider."""
@@ -168,23 +170,27 @@ class Provider:
         return getattr(self.config, "search", None) or getattr(self.config, "api", None)
 
     @property
-    def discoverable(self) -> bool:
+    def fetchable(self) -> bool:
         if self.search_config is None:
             return False
-        
+
         if not hasattr(self.search_config, "discover_product_types"):
             return False
-        
+
         if not hasattr(self.search_config.discover_product_types, "fetch_url"):
             return False
-        
+
         return True
 
     @property
     def unparsable_properties(self) -> Optional[set[str]]:
-        if self.discoverable:
-            return getattr(self.search_config.discover_product_types, "generic_product_type_unparsable_properties", {}).keys()
-        
+        if self.fetchable:
+            return getattr(
+                self.search_config.discover_product_types,
+                "generic_product_type_unparsable_properties",
+                {},
+            ).keys()
+
         return None
 
     @property
@@ -206,7 +212,9 @@ class Provider:
         if self.product(product_type):
             del self.products[product_type]
         else:
-            raise KeyError(f"Product type '{product_type}' not found in provider '{self.name}'.")
+            raise KeyError(
+                f"Product type '{product_type}' not found in provider '{self.name}'."
+            )
 
     def _get_auth_confs_with_credentials(self) -> list[PluginConfig]:
         """
@@ -215,9 +223,10 @@ class Provider:
         return [
             getattr(self.config, auth_key)
             for auth_key in AUTH_TOPIC_KEYS
-            if hasattr(self.config, auth_key) and credentials_in_auth(getattr(self.config, auth_key))
+            if hasattr(self.config, auth_key)
+            and credentials_in_auth(getattr(self.config, auth_key))
         ]
-        
+
     def _copy_matching_credentials(
         self,
         auth_confs_with_creds: list[PluginConfig],
@@ -230,33 +239,40 @@ class Provider:
             if provider_auth_config and not credentials_in_auth(provider_auth_config):
                 for conf_with_creds in auth_confs_with_creds:
                     if conf_with_creds.matches_target_auth(self.config):
-                        getattr(self.config, key).credentials = conf_with_creds.credentials
+                        getattr(
+                            self.config, key
+                        ).credentials = conf_with_creds.credentials
+
 
 @dataclass
 class ProvidersDict(UserDict[str, Provider]):
     """
     A dictionary-like collection of Provider objects, keyed by provider name.
     """
+
     def __init__(
         self,
         providers: list[Provider] | dict[str, PluginConfig] | None,
     ):
         super().__init__()
-        
+
         if providers is None:
             self.data = {}
-            
+
         elif isinstance(providers, dict):
             self.data = {name: Provider(name, conf) for name, conf in providers.items()}
         else:
             self.data = {
-                p.name if isinstance(p, Provider) else p: p if isinstance(p, Provider) else Provider(p, {})
+                p.name if isinstance(p, Provider) else p: p
+                if isinstance(p, Provider)
+                else Provider(p, {})
                 for p in providers
             }
 
     def __contains__(self, item: str | Provider) -> bool:
         if isinstance(item, Provider):
             return item.name in self.data
+
         return item in self.data
 
     def __getitem__(self, key: str) -> Provider:
@@ -266,15 +282,22 @@ class ProvidersDict(UserDict[str, Provider]):
         return f"ProvidersDict({list(self.data.keys())})"
 
     @property
+    def names(self) -> list[str]:
+        return [provider.name for provider in self.data.values()]
+
+    @property
+    def configs(self) -> dict[str, ProviderConfig]:
+        return {provider.name: provider.config for provider in self.data.values()}
+
+    @property
     def priorities(self) -> dict[str, int]:
         return {
-            provider.name: provider.config.priority
-            for provider in self.data.values()
+            provider.name: provider.config.priority for provider in self.data.values()
         }
-    
+
     def get(self, name: str) -> Optional[Provider]:
         return self.data.get(name)
-    
+
     def get_config(self, name: str) -> Optional[ProviderConfig]:
         return self.data.get(name).config
 
@@ -289,7 +312,7 @@ class ProvidersDict(UserDict[str, Provider]):
             self.data[name].config = cfg
         else:
             raise KeyError(f"Provider '{name}' not found.")
-    
+
     def get_products(self, name: str) -> Optional[dict[str, Any]]:
         return self.data.get(name).products
 
@@ -304,24 +327,33 @@ class ProvidersDict(UserDict[str, Provider]):
         else:
             raise KeyError(f"Provider '{name}' not found.")
 
-    def filter_by_name(self, name: Optional[str]) -> dict[str, Provider]:
+    def filter_by_name(self, name: Optional[str]) -> Self:
         if not name:
-            return self.data
-        
-        return {
-            p.name: p
-            for p in self.data.values()
-            if p.name in [name, getattr(p.config, "group", None)]
-        }
-        
+            return self
+
+        filtered_providers = [
+            p for p in self.data.values() if p.name in [name, p.group]
+        ]
+
+        return ProvidersDict(filtered_providers)
+
+    def filter_by_group(self, name: Optional[str]) -> Self:
+        if not name:
+            return self
+
+        filtered_providers = [p for p in self.data.values() if p.name == p.group]
+
+        return ProvidersDict(filtered_providers)
 
     def delete_product(self, provider_name: str, product_ID: str) -> None:
         if provider := self.get(provider_name):
             if product_ID in provider.products:
                 provider.delete_product(product_ID)
             else:
-                raise KeyError(f"Product '{product_ID}' not found for Provider '{provider_name}'.")
-                
+                raise KeyError(
+                    f"Product '{product_ID}' not found for Provider '{provider_name}'."
+                )
+
         else:
             raise KeyError(f"Provider '{provider_name}' not found.")
 
@@ -333,13 +365,13 @@ class ProvidersDict(UserDict[str, Provider]):
         auth_confs_with_creds: list[PluginConfig] = []
         for provider in self.values():
             auth_confs_with_creds.extend(provider._get_auth_confs_with_credentials())
-            
+
         if not auth_confs_with_creds:
             return
 
         for provider in self.values():
             provider._copy_matching_credentials(auth_confs_with_creds)
-            
+
     def merge(self, other: Self) -> None:
         """
         Override the current providers' configuration with the values of another ProvidersDict.
@@ -357,7 +389,9 @@ class ProvidersDict(UserDict[str, Provider]):
 
                 for key, value in merged_dict.items():
                     old_val = getattr(old_conf, key, None)
-                    if isinstance(value, PluginConfig) and isinstance(old_val, PluginConfig):
+                    if isinstance(value, PluginConfig) and isinstance(
+                        old_val, PluginConfig
+                    ):
                         old_val.update(value.__dict__)
                         merged_dict[key] = old_val
                     elif isinstance(old_val, PluginConfig):
@@ -365,78 +399,78 @@ class ProvidersDict(UserDict[str, Provider]):
 
                     setattr(old_conf, key, merged_dict[key])
             else:
-                self.data[name] = other_provider 
-         
+                self.data[name] = other_provider
+
     def override_configs_from_mapping(self, mapping: dict[str, Any]) -> None:
-            """Override a configuration with the values in a mapping.
+        """Override a configuration with the values in a mapping.
 
-            If the environment variable ``EODAG_PROVIDERS_WHITELIST`` is set (as a comma-separated list of provider names),
-            only the listed providers will be used from the mapping. All other providers in the mapping will be ignored.
+        If the environment variable ``EODAG_PROVIDERS_WHITELIST`` is set (as a comma-separated list of provider names),
+        only the listed providers will be used from the mapping. All other providers in the mapping will be ignored.
 
-            :param config: An eodag providers configuration dictionary
-            :param mapping: The mapping containing the values to be overriden
-            """
-            whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
-            whitelist = None
-            if whitelist_env:
-                whitelist = {provider for provider in whitelist_env.split(",")}
+        :param config: An eodag providers configuration dictionary
+        :param mapping: The mapping containing the values to be overriden
+        """
+        whitelist_env = os.getenv("EODAG_PROVIDERS_WHITELIST")
+        whitelist = None
+        if whitelist_env:
+            whitelist = {provider for provider in whitelist_env.split(",")}
 
-            for name, conf in mapping.items():
-                # check if metada-mapping as already been built as jsonpath in providers_config
-                # or provider not in whitelist
-                if not isinstance(conf, dict) or (whitelist and name not in whitelist):
-                    continue
-                
-                conf_search = conf.get("search", {})
-                conf_api = conf.get("api", {})
-                
-                if name in self.keys() and "metadata_mapping" in {
-                    **conf_search,
-                    **conf_api,
-                }:
-                    search_plugin_key = (
-                        "search" if "metadata_mapping" in conf_search else "api"
+        for name, conf in mapping.items():
+            # check if metada-mapping as already been built as jsonpath in providers_config
+            # or provider not in whitelist
+            if not isinstance(conf, dict) or (whitelist and name not in whitelist):
+                continue
+
+            conf_search = conf.get("search", {})
+            conf_api = conf.get("api", {})
+
+            if name in self.keys() and "metadata_mapping" in {
+                **conf_search,
+                **conf_api,
+            }:
+                search_plugin_key = (
+                    "search" if "metadata_mapping" in conf_search else "api"
+                )
+
+                # get some already configured value
+                configured_metadata_mapping = getattr(
+                    self.get_config(name), search_plugin_key
+                ).metadata_mapping
+                some_configured_value = next(iter(configured_metadata_mapping.values()))
+
+                # check if the configured value has already been built as jsonpath
+                if (
+                    isinstance(some_configured_value, list)
+                    and isinstance(some_configured_value[1], tuple)
+                    or isinstance(some_configured_value, tuple)
+                ):
+                    # also build as jsonpath the incoming conf
+                    mtd_cfg_as_conversion_and_querypath(
+                        deepcopy(mapping[name][search_plugin_key]["metadata_mapping"]),
+                        mapping[name][search_plugin_key]["metadata_mapping"],
                     )
-                    
-                    # get some already configured value
-                    configured_metadata_mapping = getattr(
-                        self.get_config(name), search_plugin_key
-                    ).metadata_mapping
-                    some_configured_value = next(iter(configured_metadata_mapping.values()))
-                    
-                    # check if the configured value has already been built as jsonpath
-                    if (
-                        isinstance(some_configured_value, list)
-                        and isinstance(some_configured_value[1], tuple)
-                        or isinstance(some_configured_value, tuple)
-                    ):
-                        # also build as jsonpath the incoming conf
-                        mtd_cfg_as_conversion_and_querypath(
-                            deepcopy(mapping[name][search_plugin_key]["metadata_mapping"]),
-                            mapping[name][search_plugin_key]["metadata_mapping"],
-                        )
 
-                # try overriding conf
-                old_conf: Optional[ProviderConfig] = self.get_config(name)
-                if old_conf is not None:
-                    old_conf.update(conf)
-                else:
-                    logger.info(
-                        "%s: unknown provider found in user conf, trying to use provided configuration",
-                        name,
+            # try overriding conf
+            old_conf: Optional[ProviderConfig] = self.get_config(name)
+            if old_conf is not None:
+                old_conf.update(conf)
+            else:
+                logger.info(
+                    "%s: unknown provider found in user conf, trying to use provided configuration",
+                    name,
+                )
+                try:
+                    conf["name"] = conf.get("name", name)
+                    conf = ProviderConfig.from_mapping(conf)
+                    self.set_config(name, conf)
+                except Exception:
+                    logger.warning(
+                        "%s skipped: could not be loaded from user configuration", name
                     )
-                    try:
-                        conf["name"] = conf.get("name", name)
-                        conf = ProviderConfig.from_mapping(conf)
-                        self.set_config(name, conf)
-                    except Exception:
-                        logger.warning(
-                            "%s skipped: could not be loaded from user configuration", name
-                        )
 
-                        import traceback as tb
+                    import traceback as tb
 
-                        logger.debug(tb.format_exc())
+                    logger.debug(tb.format_exc())
 
     def override_configs_from_file(self, file_path: str) -> None:
         """Override a configuration with the values in a file
@@ -454,8 +488,8 @@ class ProvidersDict(UserDict[str, Provider]):
                 logger.error("Unable to load user configuration file")
                 raise e
 
-        self.override_configs_from_mapping(config_in_file)    
-        
+        self.override_configs_from_mapping(config_in_file)
+
     def override_configs_from_env(self) -> None:
         """Override a configuration with environment variables values
 
@@ -522,5 +556,5 @@ class ProvidersDict(UserDict[str, Provider]):
                     os.environ[env_var],
                     mapping_from_env,
                 )
-                
+
         self.override_configs_from_mapping(mapping_from_env)
