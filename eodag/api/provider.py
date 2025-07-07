@@ -9,6 +9,7 @@ from inspect import isclass
 from eodag.api.plugin import credentials_in_auth, PluginConfig
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
 from eodag.utils import slugify, merge_mappings, deepcopy, cast_scalar_value
+from eodag.utils.repr import dict_to_html_table
 from eodag.utils.exceptions import ValidationError
 
 logger = logging.getLogger("eodag.provider")
@@ -140,6 +141,27 @@ class Provider:
 
     def __repr__(self) -> str:
         return f"Provider('{self.name}')"
+
+    def _repr_html_(self) -> str:
+        """HTML representation for Jupyter/IPython display."""
+        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
+            Provider: <span style='color: black'>{self.name}</span>
+            </td></tr></thead>
+        """
+        # Show some key info, but not all config
+        summary = {
+            "name": self.name,
+            "group": self.group,
+            "priority": self.priority,
+            "products": list(self.products.keys()) if self.products else [],
+        }
+
+        return (
+            f"<table>{thead}"
+            f"<tr><td style='text-align: left;'>"
+            f"{dict_to_html_table(summary, depth=1)}"
+            f"</td></tr></table>"
+        )
 
     @property
     def config(self) -> ProviderConfig:
@@ -280,6 +302,20 @@ class ProvidersDict(UserDict[str, Provider]):
 
     def __repr__(self) -> str:
         return f"ProvidersDict({list(self.data.keys())})"
+
+    def _repr_html_(self) -> str:
+        """HTML representation for Jupyter/IPython display."""
+        thead = f"""<thead><tr><td style='text-align: left; color: grey;'>
+                ProvidersDict ({len(self.data)})
+                </td></tr></thead>"""
+        rows = ""
+
+        for provider in self.data.values():
+            rows += (
+                f"<tr><td style='text-align: left;'>{provider._repr_html_()}</td></tr>"
+            )
+
+        return f"<table>{thead}{rows}</table>"
 
     @property
     def names(self) -> list[str]:
