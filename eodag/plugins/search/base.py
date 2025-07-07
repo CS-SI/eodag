@@ -444,8 +444,9 @@ class Search(PluginTopic):
 
     def get_assets_from_mapping(self, provider_item: dict[str, Any]) -> dict[str, Any]:
         """
-        create assets based on the assets_mapping in the provider's config
+        Create assets based on the assets_mapping in the provider's config
         and an item returned by the provider
+
         :param provider_item: dict of item properties returned by the provider
         :returns: dict containing the asset metadata
         """
@@ -457,7 +458,7 @@ class Search(PluginTopic):
             asset_href = values.get("href")
             if not asset_href:
                 logger.warning(
-                    f"asset mapping {key} skipped because no href is available"
+                    "asset mapping %s skipped because no href is available", key
                 )
                 continue
             json_url_path = string_to_jsonpath(asset_href)
