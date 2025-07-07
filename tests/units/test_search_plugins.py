@@ -96,6 +96,26 @@ class BaseSearchPluginTest(unittest.TestCase):
     def get_auth_plugin(self, search_plugin):
         return self.plugins_manager.get_auth_plugin(search_plugin)
 
+    def test_get_assets_from_mapping(self):
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {
+            "one": {"href": "$.properties.href", "roles": ["a_role"], "title": "One"},
+            "two": {
+                "href": "https://a.static_url.com",
+                "roles": ["a_role"],
+                "title": "Two",
+            },
+        }
+        provider_item = {"id": "ID123456", "properties": {"href": "a.product.com/ONE"}}
+        asset_mappings = search_plugin.get_assets_from_mapping(provider_item)
+        self.assertEqual(2, len(asset_mappings))
+        self.assertEqual("a.product.com/ONE", asset_mappings["one"]["href"])
+        self.assertEqual("One", asset_mappings["one"]["title"])
+        self.assertListEqual(["a_role"], asset_mappings["one"]["roles"])
+        self.assertEqual("https://a.static_url.com", asset_mappings["two"]["href"])
+        self.assertEqual("Two", asset_mappings["two"]["title"])
+        self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
+
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):

@@ -25,6 +25,7 @@ from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
     DEFAULT_METADATA_MAPPING,
+    NOT_AVAILABLE,
     NOT_MAPPED,
     mtd_cfg_as_conversion_and_querypath,
 )
@@ -38,6 +39,7 @@ from eodag.utils import (
     copy_deepcopy,
     deepcopy,
     format_dict_items,
+    string_to_jsonpath,
     update_nested_dict,
 )
 from eodag.utils.exceptions import ValidationError
@@ -439,3 +441,35 @@ class Search(PluginTopic):
             ):
                 queryables[k] = v
         return queryables
+
+    def get_assets_from_mapping(self, provider_item: dict[str, Any]) -> dict[str, Any]:
+        """
+        Create assets based on the assets_mapping in the provider's config
+        and an item returned by the provider
+
+        :param provider_item: dict of item properties returned by the provider
+        :returns: dict containing the asset metadata
+        """
+        assets_mapping = getattr(self.config, "assets_mapping", None)
+        if not assets_mapping:
+            return {}
+        assets = {}
+        for key, values in assets_mapping.items():
+            asset_href = values.get("href")
+            if not asset_href:
+                logger.warning(
+                    "asset mapping %s skipped because no href is available", key
+                )
+                continue
+            json_url_path = string_to_jsonpath(asset_href)
+            if isinstance(json_url_path, str):
+                url_path = json_url_path
+            else:
+                url_match = json_url_path.find(provider_item)
+                if len(url_match) == 1:
+                    url_path = url_match[0].value
+                else:
+                    url_path = NOT_AVAILABLE
+            assets[key] = deepcopy(values)
+            assets[key]["href"] = url_path
+        return assets

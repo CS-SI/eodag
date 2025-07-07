@@ -1090,6 +1090,8 @@ class QueryStringSearch(Search):
             product.properties = dict(
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
+            additional_assets = self.get_assets_from_mapping(result)
+            product.assets.update(additional_assets)
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
                 norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
