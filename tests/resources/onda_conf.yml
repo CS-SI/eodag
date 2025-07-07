@@ -291,17 +291,19 @@
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       platform: '{platform}'
-  download: !plugin
-    type: HTTPDownload
-    # base_uri used to parse downloadLink
-    base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
-    extract: true
-    archive_depth: 2
-    auth_error_code: 401
-    order_enabled: true
-    order_method: 'POST'
-    ssl_verify: true
-    order_headers:
-      Content-Type: application/json
-  auth: !plugin
-    type: GenericAuth
+  download:
+   - !plugin
+      type: HTTPDownload
+      # base_uri used to parse downloadLink
+      base_uri: 'https://catalogue.onda-dias.eu/dias-catalogue/Products'
+      extract: true
+      archive_depth: 2
+      auth_error_code: 401
+      order_enabled: true
+      order_method: 'POST'
+      ssl_verify: true
+      order_headers:
+        Content-Type: application/json
+  auth:
+   - !plugin
+      type: GenericAuth

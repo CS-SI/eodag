@@ -67,8 +67,7 @@ logger = logging.getLogger("eodag.config")
 EXT_PRODUCT_TYPES_CONF_URI = (
     "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
 )
-AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
-PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
+PLUGINS_TOPICS_KEYS = ("api", "search", "download", "auth")
 
 
 class SimpleYamlProxyConfig:
@@ -115,10 +114,8 @@ class ProviderConfig(yaml.YAMLObject):
     :param api: (optional) The configuration of a plugin of type Api
     :param search: (optional) The configuration of a plugin of type Search
     :param products: (optional) The products types supported by the provider
-    :param download: (optional) The configuration of a plugin of type Download
-    :param auth: (optional) The configuration of a plugin of type Authentication
-    :param search_auth: (optional) The configuration of a plugin of type Authentication for search
-    :param download_auth: (optional) The configuration of a plugin of type Authentication for download
+    :param download: (optional) List of configurations of plugins of type Download
+    :param auth: (optional) List of configurations of plugins of type Authentication
     :param kwargs: Additional configuration variables for this provider
     """
 
@@ -131,10 +128,8 @@ class ProviderConfig(yaml.YAMLObject):
     api: PluginConfig
     search: PluginConfig
     products: dict[str, Any]
-    download: PluginConfig
-    auth: PluginConfig
-    search_auth: PluginConfig
-    download_auth: PluginConfig
+    download: list[PluginConfig]
+    auth: list[PluginConfig]
     product_types_fetched: bool  # set in core.update_product_types_list
 
     yaml_loader = yaml.Loader
@@ -157,7 +152,13 @@ class ProviderConfig(yaml.YAMLObject):
         cls.validate(mapping)
         for key in PLUGINS_TOPICS_KEYS:
             if key in mapping:
-                mapping[key] = PluginConfig.from_mapping(mapping[key])
+                if isinstance(mapping[key], list):
+                    config_list = []
+                    for entry in mapping[key]:
+                        config_list.append(PluginConfig.from_mapping(entry))
+                    mapping[key] = config_list
+                else:
+                    mapping[key] = PluginConfig.from_mapping(mapping[key])
         c = cls()
         c.__dict__.update(mapping)
         return c
@@ -197,11 +198,23 @@ class ProviderConfig(yaml.YAMLObject):
         for key in PLUGINS_TOPICS_KEYS:
             current_value: Optional[PluginConfig] = getattr(self, key, None)
             mapping_value = mapping.get(key, {})
-            if current_value is not None:
+            if isinstance(current_value, list):
+                if isinstance(mapping_value, list):
+                    current_value = mapping_value
+                else:
+                    for cv in current_value:
+                        cv.update(mapping_value)
+            elif current_value is not None:
                 current_value.update(mapping_value)
             elif mapping_value:
                 try:
-                    setattr(self, key, PluginConfig.from_mapping(mapping_value))
+                    if isinstance(mapping_value, list):
+                        list_configs = []
+                        for value in mapping_value:
+                            list_configs.append(PluginConfig.from_mapping(value))
+                        setattr(self, key, list_configs)
+                    else:
+                        setattr(self, key, PluginConfig.from_mapping(mapping_value))
                 except ValidationError as e:
                     logger.warning(
                         (
@@ -424,6 +437,8 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.base.PluginTopic` :class:`urllib3.util.Retry` ``status_forcelist`` parameter,
     #: list of integer HTTP status codes that we should force a retry on
     retry_status_forcelist: list[int]
+    #: :class:`~eodag.plugins.base.PluginTopic` Dictionary used to find the matching plugin
+    match: dict[str, str]
 
     # search & api -----------------------------------------------------------------------------------------------------
     # copied from ProviderConfig in PluginManager.get_search_plugins()
@@ -547,6 +562,12 @@ class PluginConfig(yaml.YAMLObject):
     # auth -------------------------------------------------------------------------------------------------------------
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication credentials dictionary
     credentials: dict[str, str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    # List containing information for what the authentification is used (search, download or both)
+    required_for: list[str]
+    #: :class:`~eodag.plugins.authentication.base.Authentication`
+    # List containing credentials that are required for the plugin
+    required_credentials: list[str]
     #: :class:`~eodag.plugins.authentication.base.Authentication` Authentication URL
     auth_uri: str
     #: :class:`~eodag.plugins.authentication.base.Authentication`
@@ -561,12 +582,6 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.authentication.base.Authentication`
     #: Key to get the refresh token in the response from the token server
     refresh_token_key: str
-    #: :class:`~eodag.plugins.authentication.base.Authentication` URL pattern to match with search plugin endpoint or
-    #: download link
-    matching_url: str
-    #: :class:`~eodag.plugins.authentication.base.Authentication` Part of the search or download plugin configuration
-    #: that needs authentication
-    matching_conf: dict[str, Any]
     #: :class:`~eodag.plugins.authentication.openid_connect.OIDCRefreshTokenBase`
     #: How the token should be used in the request
     token_provision: str
@@ -751,9 +766,14 @@ def credentials_in_auth(auth_conf: PluginConfig) -> bool:
     :param auth_conf: Authentication plugin configuration
     :returns: True if credentials are set, else False
     """
-    return any(
-        c is not None for c in (getattr(auth_conf, "credentials", {}) or {}).values()
-    )
+    credentials = getattr(auth_conf, "credentials", {})
+    if required_creds := getattr(auth_conf, "required_credentials", None):
+        for cred in required_creds:
+            if cred not in credentials or not credentials[cred]:
+                return False
+        return True
+    else:
+        return any(c is not None for c in credentials.values())
 
 
 def share_credentials(
@@ -763,40 +783,40 @@ def share_credentials(
 
     :param providers_configs: eodag providers configurations
     """
-    auth_confs_with_creds = [
-        getattr(p, k)
-        for p in providers_config.values()
-        for k in AUTH_TOPIC_KEYS
-        if hasattr(p, k) and credentials_in_auth(getattr(p, k))
-    ]
+    auth_confs_with_creds = []
+    for provider_config in providers_config.values():
+        auth_configs = getattr(provider_config, "auth", {})
+        auth_confs_with_creds.extend(
+            [p for p in auth_configs if credentials_in_auth(p)]
+        )
+
     for provider, provider_config in providers_config.items():
         if auth_confs_with_creds:
-            for auth_topic_key in AUTH_TOPIC_KEYS:
-                provider_config_auth = getattr(provider_config, auth_topic_key, None)
+            provider_configs_auth = getattr(provider_config, "auth", None)
+            if not provider_configs_auth:
+                continue
+            for provider_config_auth in provider_configs_auth:
                 if provider_config_auth and not credentials_in_auth(
                     provider_config_auth
                 ):
                     # no credentials set for this provider
-                    provider_matching_conf = getattr(
-                        provider_config_auth, "matching_conf", {}
-                    )
-                    provider_matching_url = getattr(
-                        provider_config_auth, "matching_url", None
-                    )
+                    provider_matching_conf = getattr(provider_config_auth, "match", {})
+                    provider_matching_url = provider_matching_conf.get("href", None)
                     for conf_with_creds in auth_confs_with_creds:
                         # copy credentials between plugins if `matching_conf` or `matching_url` are matching
+
                         if (
                             provider_matching_conf
                             and sort_dict(provider_matching_conf)
-                            == sort_dict(getattr(conf_with_creds, "matching_conf", {}))
+                            == sort_dict(getattr(conf_with_creds, "match", {}))
                         ) or (
                             provider_matching_url
                             and provider_matching_url
-                            == getattr(conf_with_creds, "matching_url", None)
+                            == getattr(conf_with_creds, "match", {}).get("href", None)
                         ):
-                            getattr(
-                                providers_config[provider], auth_topic_key
-                            ).credentials = conf_with_creds.credentials
+                            provider_config_auth.credentials = (
+                                conf_with_creds.credentials
+                            )
 
 
 def provider_config_init(
@@ -810,13 +830,19 @@ def provider_config_init(
     """
     # For the provider, set the default output_dir of its download plugin
     # as tempdir in a portable way
-    for download_topic_key in ("download", "api"):
-        if download_topic_key in vars(provider_config):
-            download_conf = getattr(provider_config, download_topic_key)
+    if "download" in vars(provider_config):
+        download_confs = getattr(provider_config, "download")
+        for download_conf in download_confs:
             if not getattr(download_conf, "output_dir", None):
                 download_conf.output_dir = tempfile.gettempdir()
             if not getattr(download_conf, "delete_archive", None):
                 download_conf.delete_archive = True
+    elif "api" in vars(provider_config):
+        download_conf = getattr(provider_config, "api")
+        if not getattr(download_conf, "output_dir", None):
+            download_conf.output_dir = tempfile.gettempdir()
+        if not getattr(download_conf, "delete_archive", None):
+            download_conf.delete_archive = True
 
     try:
         if (
@@ -903,13 +929,24 @@ def override_config_from_env(config: dict[str, ProviderConfig]) -> None:
             mapping[parts[0]][parts[1]] = env_value
         elif len(parts) == 1:
             # try converting env_value type from type hints
-            try:
-                env_value = cast_scalar_value(env_value, env_type)
-            except TypeError:
-                logger.warning(
-                    f"Could not convert {parts[0]} value {env_value} to {env_type}"
-                )
-            mapping[parts[0]] = env_value
+            if "list" in str(env_type):
+                # convert str to array and then cast (only working for list[str] type)
+                env_value_list = env_value.split(",")
+                try:
+                    env_value_list = cast_scalar_value(env_value_list, env_type)
+                except TypeError:
+                    logger.warning(
+                        f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                    )
+                mapping[parts[0]] = env_value_list
+            else:
+                try:
+                    env_value = cast_scalar_value(env_value, env_type)
+                except TypeError:
+                    logger.warning(
+                        f"Could not convert {parts[0]} value {env_value} to {env_type}"
+                    )
+                mapping[parts[0]] = env_value
         else:
             new_map = mapping.setdefault(parts[0], {})
             build_mapping_from_env("__".join(parts[1:]), env_value, new_map)

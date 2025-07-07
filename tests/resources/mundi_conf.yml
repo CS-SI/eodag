@@ -61,7 +61,8 @@
         collection: '{collection}'
         instrument: '{instrument}'
         processingLevel: '{processingLevel}'
-  auth: !plugin
-    type: HTTPHeaderAuth
-    headers:
-        Cookie: "seeedtoken={apikey}"
+  auth:
+   - !plugin
+        type: HTTPHeaderAuth
+        headers:
+            Cookie: "seeedtoken={apikey}"

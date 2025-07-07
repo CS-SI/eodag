@@ -119,9 +119,8 @@ class TokenAuth(Authentication):
         super(TokenAuth, self).validate_config_credentials()
         try:
             # format auth_uri using credentials if needed
-            self.config.auth_uri = self.config.auth_uri.format(
-                **self.config.credentials
-            )
+            credentials = self.get_required_credentials()
+            self.config.auth_uri = self.config.auth_uri.format(**credentials)
 
             # Format headers if needed with values from the credentials. Note:
             # if only 'headers' is given, it will be used for both token retrieve and authentication.
@@ -258,7 +257,9 @@ class TokenAuth(Authentication):
                 return
 
             # append req_data to credentials if specified in config
-            data = dict(getattr(self.config, "req_data", {}), **self.config.credentials)
+            data = dict(
+                getattr(self.config, "req_data", {}), **self.get_required_credentials()
+            )
 
             # when refreshing the token, we pass only the client_id/secret if present,
             # not other parameters (username/password, scope, ...)

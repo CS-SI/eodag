@@ -1161,7 +1161,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         """HTTPDownload._order() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["orderLink"] = "https://peps.cnes.fr/order"
         self.product.properties["storageStatus"] = OFFLINE_STATUS
 
         # customized timeout
@@ -1198,7 +1198,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["orderLink"] = "https://peps.cnes.fr/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1223,7 +1223,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
+        self.product.properties["orderLink"] = "https://peps.cnes.fr/order"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1354,8 +1354,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         plugin: HTTPDownload = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
+        self.product.properties["orderLink"] = "https://peps.cnes.fr/order"
+        self.product.properties["orderStatusLink"] = "https://peps.cnes.fr/orderstatus"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -1383,8 +1383,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         # Set up the EOProduct and the necessary properties
         plugin: HTTPDownload = self.get_download_plugin(self.product)
         self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
+        self.product.properties["orderLink"] = "https://peps.cnes.fr/order"
+        self.product.properties["orderStatusLink"] = "https://peps.cnes.fr/orderstatus"
 
         auth_plugin = self.get_auth_plugin(plugin, self.product)
         auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
@@ -2102,33 +2102,35 @@ class TestDownloadPluginS3Rest(BaseDownloadPluginTest):
                         instrument: '{instrument}'
                         processingLevel: '{processingLevel}'
                 download:
-                    type: S3RestDownload
-                    base_uri: 'https://mundiwebservices.com/dp'
-                    extract: true
-                    auth_error_code: 401
-                    bucket_path_level: 0
-                    # order mechanism
-                    order_enabled: true
-                    order_method: 'POST'
-                    order_headers:
-                    accept: application/json
-                    Content-Type: application/json
-                    order_on_response:
-                    metadata_mapping:
-                        order_id: '{$.requestId#replace_str("Not Available","")}'
-                        reorder_id: '{$.message.`sub(/.*requestId: ([a-z0-9]+)/, \\1)`#replace_str("Not Available","")}'
-                        orderStatusLink: 'https://apis.mundiwebservices.com/odrapi/0.1/request/{order_id}{reorder_id}'
-                    order_status_method: 'GET'
-                    order_status_percent: status
-                    order_status_success:
-                    status: Success
-                    order_status_on_success:
-                    need_search: true
-                    result_type: 'xml'
-                    results_entry: '//ns:entry'
-                    metadata_mapping:
-                        downloadLink: 'ns:link[@rel="enclosure"]/@href'
-                        storageStatus: 'DIAS:onlineStatus/text()'
+                    -   type: S3RestDownload
+                        base_uri: 'https://mundiwebservices.com/dp'
+                        extract: true
+                        auth_error_code: 401
+                        bucket_path_level: 0
+                        # order mechanism
+                        order_enabled: true
+                        order_method: 'POST'
+                        order_headers:
+                        accept: application/json
+                        Content-Type: application/json
+                        order_on_response:
+                        metadata_mapping:
+                            order_id: '{$.requestId#replace_str("Not Available","")}'
+                            reorder_id: '{$.message.`sub(/.*requestId: ([a-z0-9]+)/, \\1)
+                                        `#replace_str("Not Available","")}'
+                            orderStatusLink: 'https://apis.mundiwebservices.com/odrapi/0.1/
+                                              request/{order_id}{reorder_id}'
+                        order_status_method: 'GET'
+                        order_status_percent: status
+                        order_status_success:
+                        status: Success
+                        order_status_on_success:
+                        need_search: true
+                        result_type: 'xml'
+                        results_entry: '//ns:entry'
+                        metadata_mapping:
+                            downloadLink: 'ns:link[@rel="enclosure"]/@href'
+                            storageStatus: 'DIAS:onlineStatus/text()'
         """
         mundi_config_dict = yaml.safe_load(mundi_config_yaml)
         override_config_from_mapping(providers_config, mundi_config_dict)

@@ -365,8 +365,35 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
     :param mapping1: The mapping containing values to be overridden
     :param mapping2: The mapping containing values that will override the first mapping
     """
-    # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
-    m1_keys_lowercase = {key.lower(): key for key in mapping1}
+    # if one of the 2 mappings is a list, merge all entries with other mapping
+    if isinstance(mapping1, list) and not isinstance(mapping2, list):
+        for row in mapping1:
+            try:
+                row = row.__dict__
+            except AttributeError:
+                # already a dict
+                pass
+            merge_mappings(row, mapping2)
+        return
+    elif isinstance(mapping2, list) and not isinstance(mapping1, list):
+        for row in mapping2:
+            try:
+                row = row.__dict__
+            except AttributeError:
+                # already a dict
+                pass
+            merge_mappings(mapping1, row)
+        return
+    elif isinstance(mapping1, list) and isinstance(mapping2, list):
+        # both mappings are lists -> merge lists
+        for row in mapping2:
+            if row in mapping1:
+                continue
+            else:
+                mapping1.append(row)
+    elif not isinstance(mapping1, list):
+        # A mapping between mapping1 keys as lowercase strings and original mapping1 keys
+        m1_keys_lowercase = {key.lower(): key for key in mapping1}
     for key, value in mapping2.items():
         if isinstance(value, dict):
             try:
