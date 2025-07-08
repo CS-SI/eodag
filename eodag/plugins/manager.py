@@ -120,16 +120,12 @@ class PluginManager:
                         str(x) for x in dist.locate_file(name).rglob("providers.yml")
                     ]
                     if plugin_providers_config_path:
-                        plugin_providers = load_config(
-                            plugin_providers_config_path[0]
-                        )
+                        plugin_providers = load_config(plugin_providers_config_path[0])
 
                         self.providers.merge(plugin_providers)
         self.rebuild()
 
-    def rebuild(
-        self, providers: Optional[ProvidersDict] = None
-    ) -> None:
+    def rebuild(self, providers: Optional[ProvidersDict] = None) -> None:
         """(Re)Build plugin manager mapping and cache"""
         if providers is not None:
             self.providers = providers
@@ -191,7 +187,6 @@ class PluginManager:
             return plugin
 
         configs: Optional[list[ProviderConfig]]
-        # TODO fix that
         if collection:
             configs = self.collection_to_provider_config_map.get(collection)
             if not configs:
@@ -459,7 +454,7 @@ class PluginManager:
         plugin: Union[Api, Search, Download, Authentication, Crunch] = plugin_class(
             provider, plugin_conf
         )
-        self._built_plugins_cache[
-            (provider, topic_class.__name__, auth_match_md5)
-        ] = plugin
+        self._built_plugins_cache[(provider, topic_class.__name__, auth_match_md5)] = (
+            plugin
+        )
         return plugin
