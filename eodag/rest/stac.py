@@ -193,11 +193,13 @@ class StacCommon:
 
     def get_provider_dict(self, provider: str) -> dict[str, Any]:
         """Generate STAC provider dict"""
-        provider_config = next(
-            p
-            for p in self.eodag_api.providers_config.values()
-            if provider in [p.name, getattr(p, "group", None)]
-        )
+        # provider_config = next(
+        #     p
+        #     for p in self.eodag_api.providers_config.values()
+        #     if provider in [p.name, getattr(p, "group", None)]
+        # )
+        provider_config = self.eodag_api.providers.get_config(provider)
+
         return {
             "name": getattr(provider_config, "group", provider_config.name),
             "description": getattr(provider_config, "description", None),
@@ -363,9 +365,9 @@ class StacItem(StacCommon):
                     if url_parts.scheme
                     else f"{url_parts.netloc}{url_parts.path}"
                 )
-                product_item["links"][0][
-                    "href"
-                ] = f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                product_item["links"][0]["href"] = (
+                    f"{without_arg_url}?{urlencode(query_dict, doseq=True)}"
+                )
 
             item_list.append(product_item)
 
@@ -431,9 +433,9 @@ class StacItem(StacCommon):
                 # use server-mode assets download links
                 asset_value["href"] = without_arg_url
                 if query_dict:
-                    assets[asset_key][
-                        "href"
-                    ] += f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
+                    assets[asset_key]["href"] += (
+                        f"/{asset_key}?{urlencode(query_dict, doseq=True)}"
+                    )
                 else:
                     assets[asset_key]["href"] += f"/{asset_key}"
                 if asset_type := asset_value.get("type"):

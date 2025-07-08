@@ -137,10 +137,26 @@ class Provider:
     _config: ProviderConfig
 
     def __str__(self) -> str:
+        """Return the provider's name as string."""
         return self.name
 
     def __repr__(self) -> str:
+        """Return a string representation of the Provider."""
         return f"Provider('{self.name}')"
+
+    def __eq__(self, other: str | Self):
+        """Compare providers by name or with a string."""
+        if isinstance(other, Provider):
+            return self.name == other.name
+
+        elif isinstance(other, str):
+            return self.name == other
+
+        return False
+
+    def __hash__(self):
+        """Hash based on provider name, for use in sets/dicts."""
+        return hash(self.name)
 
     def _repr_html_(self) -> str:
         """HTML representation for Jupyter/IPython display."""
@@ -165,10 +181,12 @@ class Provider:
 
     @property
     def config(self) -> ProviderConfig:
+        """Get the provider's configuration."""
         return self._config
 
     @config.setter
     def config(self, value: ProviderConfig) -> None:
+        """Set the provider's configuration."""
         self.config = value
 
     @property
@@ -193,6 +211,7 @@ class Provider:
 
     @property
     def fetchable(self) -> bool:
+        """Return True if the provider can fetch product types."""
         if self.search_config is None:
             return False
 
@@ -206,6 +225,7 @@ class Provider:
 
     @property
     def unparsable_properties(self) -> Optional[set[str]]:
+        """Return set of unparsable properties for generic product types, if any."""
         if self.fetchable:
             return getattr(
                 self.search_config.discover_product_types,
@@ -226,11 +246,25 @@ class Provider:
         return getattr(self.config, "download", None)
 
     def product(self, product_type: str) -> Optional[Any]:
-        """Return a product type if available from this provider."""
+        """Return a product type if available from this provider.
+
+        Args:
+            product_type (str): The product type name.
+
+        Returns:
+            Optional[Any]: The product type config or None if not found.
+        """
         return self.products.get(product_type)
 
     def delete_product(self, product_type: str) -> None:
-        """Remove a product type from this provider."""
+        """Remove a product type from this provider.
+
+        Args:
+            product_type (str): The product type name.
+
+        Raises:
+            KeyError: If the product type is not found.
+        """
         if self.product(product_type):
             del self.products[product_type]
         else:
@@ -240,7 +274,10 @@ class Provider:
 
     def _get_auth_confs_with_credentials(self) -> list[PluginConfig]:
         """
-        Collect all auth configs from the provider.
+        Collect all auth configs from the provider that have credentials.
+
+        Returns:
+            list[PluginConfig]: List of auth plugin configs with credentials.
         """
         return [
             getattr(self.config, auth_key)
@@ -255,6 +292,9 @@ class Provider:
     ) -> None:
         """
         Copy credentials from matching auth configs to the target auth config.
+
+        Args:
+            auth_confs_with_creds (list[PluginConfig]): Auth configs with credentials.
         """
         for key in AUTH_TOPIC_KEYS:
             provider_auth_config = getattr(self.config, key, None)
@@ -270,12 +310,22 @@ class Provider:
 class ProvidersDict(UserDict[str, Provider]):
     """
     A dictionary-like collection of Provider objects, keyed by provider name.
+
+    Args:
+        providers (list[Provider] | dict[str, PluginConfig] | None): Initial providers.
     """
 
     def __init__(
         self,
         providers: list[Provider] | dict[str, PluginConfig] | None,
     ):
+        """
+        Initialize the ProvidersDict.
+
+        Args:
+            providers (list[Provider] | dict[str, PluginConfig] | None): Initial providers.
+        """
+
         super().__init__()
 
         if providers is None:
@@ -292,15 +342,18 @@ class ProvidersDict(UserDict[str, Provider]):
             }
 
     def __contains__(self, item: str | Provider) -> bool:
+        """Check if a provider is in the dictionary by name or Provider instance."""
         if isinstance(item, Provider):
             return item.name in self.data
 
         return item in self.data
 
     def __getitem__(self, key: str) -> Provider:
+        """Get a Provider by name."""
         return self.data[key]
 
     def __repr__(self) -> str:
+        """String representation of ProvidersDict."""
         return f"ProvidersDict({list(self.data.keys())})"
 
     def _repr_html_(self) -> str:
@@ -319,51 +372,101 @@ class ProvidersDict(UserDict[str, Provider]):
 
     @property
     def names(self) -> list[str]:
+        """List of provider names."""
         return [provider.name for provider in self.data.values()]
 
     @property
     def configs(self) -> dict[str, ProviderConfig]:
+        """Dictionary of provider configs keyed by provider name."""
         return {provider.name: provider.config for provider in self.data.values()}
 
     @property
     def priorities(self) -> dict[str, int]:
+        """Dictionary of provider priorities keyed by provider name."""
         return {
             provider.name: provider.config.priority for provider in self.data.values()
         }
 
-    def get(self, name: str) -> Optional[Provider]:
-        return self.data.get(name)
+    def get(self, provider: str) -> Optional[Provider]:
+        """Get a Provider by name, or by group if not found by name."""
+        # Try by name first
+        result = self.data.get(provider)
+        if result is not None:
+            return result
 
-    def get_config(self, name: str) -> Optional[ProviderConfig]:
-        return self.data.get(name).config
+        # Try by group attribute
+        for prov in self.data.values():
+            if getattr(prov, "group", None) == provider:
+                return prov
 
-    def set_config(self, name: str, cfg: ProviderConfig) -> None:
+        return None
+
+    def get_config(self, provider: str) -> Optional[ProviderConfig]:
+        """Get a ProviderConfig by provider name, or by group if not found by name."""
+        prov = self.get(provider)
+        return prov.config if prov else None
+
+    def set_config(self, provider: str, cfg: ProviderConfig) -> None:
         """
         Update the ProviderConfig for a given provider name in place.
 
-        :param name: The name of the provider to update.
-        :param config: The new ProviderConfig to set.
-        """
-        if name in self.data:
-            self.data[name].config = cfg
-        else:
-            raise KeyError(f"Provider '{name}' not found.")
+        Args:
+            name (str): The name of the provider to update.
+            cfg (ProviderConfig): The new ProviderConfig to set.
 
-    def get_products(self, name: str) -> Optional[dict[str, Any]]:
-        return self.data.get(name).products
+        Raises:
+            KeyError: If the provider is not found.
+        """
+        if provider in self.data:
+            self.data[provider].config = cfg
+        else:
+            raise KeyError(f"Provider '{provider}' not found.")
+
+    def get_products(self, provider: str | Provider) -> Optional[dict[str, Any]]:
+        """Get the products dictionary for a provider by name or Provider instance."""
+        if isinstance(provider, Provider):
+            name = provider.name
+
+        provider = self.data.get(name)
+        return provider.products if provider else None
 
     def add(self, provider: Provider) -> None:
+        """Add a Provider to the dictionary.
+
+        Args:
+            provider (Provider): The provider to add.
+
+        Raises:
+            ValueError: If the provider already exists.
+        """
         if provider.name in self.data:
             raise ValueError(f"Provider '{provider.name}' already exists.")
+
         self.data[provider.name] = provider
 
     def delete(self, name: str) -> None:
+        """Delete a provider by name.
+
+        Args:
+            name (str): The name of the provider to delete.
+
+        Raises:
+            KeyError: If the provider is not found.
+        """
         if name in self.data:
             del self.data[name]
         else:
             raise KeyError(f"Provider '{name}' not found.")
 
     def filter_by_name(self, name: Optional[str]) -> Self:
+        """Return a ProvidersDict filtered by provider name or group.
+
+        Args:
+            name (Optional[str]): The name or group to filter by.
+
+        Returns:
+            ProvidersDict: The filtered ProvidersDict.
+        """
         if not name:
             return self
 
@@ -374,6 +477,14 @@ class ProvidersDict(UserDict[str, Provider]):
         return ProvidersDict(filtered_providers)
 
     def filter_by_group(self, name: Optional[str]) -> Self:
+        """Return a ProvidersDict filtered by group name.
+
+        Args:
+            name (Optional[str]): The group name to filter by.
+
+        Returns:
+            ProvidersDict: The filtered ProvidersDict.
+        """
         if not name:
             return self
 
@@ -381,17 +492,26 @@ class ProvidersDict(UserDict[str, Provider]):
 
         return ProvidersDict(filtered_providers)
 
-    def delete_product(self, provider_name: str, product_ID: str) -> None:
-        if provider := self.get(provider_name):
+    def delete_product(self, provider: str, product_ID: str) -> None:
+        """Delete a product from a provider.
+
+        Args:
+            provider (str): The provider's name.
+            product_ID (str): The product type to delete.
+
+        Raises:
+            KeyError: If the provider or product is not found.
+        """
+        if provider := self.get(provider):
             if product_ID in provider.products:
                 provider.delete_product(product_ID)
             else:
                 raise KeyError(
-                    f"Product '{product_ID}' not found for Provider '{provider_name}'."
+                    f"Product '{product_ID}' not found for Provider '{provider}'."
                 )
 
         else:
-            raise KeyError(f"Provider '{provider_name}' not found.")
+            raise KeyError(f"Provider '{provider}' not found.")
 
     def share_credentials(self) -> None:
         """
@@ -457,8 +577,8 @@ class ProvidersDict(UserDict[str, Provider]):
             if not isinstance(conf, dict) or (whitelist and name not in whitelist):
                 continue
 
-            conf_search = conf.get("search", {})
-            conf_api = conf.get("api", {})
+            conf_search = conf.get("search", {}) or {}
+            conf_api = conf.get("api", {}) or {}
 
             if name in self.keys() and "metadata_mapping" in {
                 **conf_search,
