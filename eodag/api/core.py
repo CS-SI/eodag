@@ -250,7 +250,7 @@ class EODataAccessGateway:
 
     def _sync_provider_collections(
         self,
-        provider: str,
+        provider: str | Provider,
         available_collections: set[str],
         strict_mode: bool,
     ) -> None:
@@ -306,7 +306,7 @@ class EODataAccessGateway:
         """Get eodag package version"""
         return version("eodag")
 
-    def set_preferred_provider(self, provider: str) -> None:
+    def set_preferred_provider(self, provider: str | Provider) -> None:
         """Set max priority for the given provider.
 
         :param provider: The name of the provider that should be considered as the
@@ -316,6 +316,7 @@ class EODataAccessGateway:
             raise UnsupportedProvider(
                 f"This provider is not recognised by eodag: {provider}"
             )
+
         preferred_provider, max_priority = self.get_preferred_provider()
         if preferred_provider != provider:
             new_priority = max_priority + 1
@@ -451,8 +452,9 @@ class EODataAccessGateway:
     def _prune_providers_list(self) -> None:
         """Removes from config providers needing auth that have no credentials set."""
         update_needed = False
-        # for provider in list(self.providers_config.keys()):
-        for provider in self.providers.values():
+
+        # loop over a copy to allow popping items
+        for name, provider in list(self.providers.items()):
             conf = provider.config
 
             # remove providers using skipped plugins
@@ -462,7 +464,6 @@ class EODataAccessGateway:
                 if isinstance(v, PluginConfig)
                 and getattr(v, "type", None) in self._plugins_manager.skipped_plugins
             ]:
-                # self.providers_config.pop(provider)
                 self.providers.delete(provider.name)
                 logger.debug(
                     f"{provider}: provider needing unavailable plugin has been removed"
@@ -474,10 +475,7 @@ class EODataAccessGateway:
                 credentials_exist = credentials_in_auth(conf.api)
                 if not credentials_exist:
                     # credentials needed but not found
-                    # self._pruned_providers_config[provider] =  self.providers_config.pop(
-                    #     provider
-                    # )
-                    self._pruned_providers_config[provider] = conf
+                    self._pruned_providers_config[provider.name] = conf
                     self.providers.delete(provider.name)
 
                     update_needed = True
@@ -489,10 +487,6 @@ class EODataAccessGateway:
             elif hasattr(conf, "search") and getattr(conf.search, "need_auth", False):
                 if not hasattr(conf, "auth") and not hasattr(conf, "search_auth"):
                     # credentials needed but no auth plugin was found
-                    # self._pruned_providers_config[provider] = self.providers_config.pop(
-                    #     provider
-                    # )
-
                     self._pruned_providers_config[provider] = conf
                     self.providers.delete(provider.name)
 
@@ -513,9 +507,6 @@ class EODataAccessGateway:
                 )
                 if not credentials_exist:
                     # credentials needed but not found
-                    # self._pruned_providers_config[provider] = self.providers_config.pop(
-                    #     provider
-                    # )
                     self._pruned_providers_config[provider] = conf
                     self.providers.delete(provider.name)
 
@@ -527,9 +518,6 @@ class EODataAccessGateway:
 
             elif not hasattr(conf, "api") and not hasattr(conf, "search"):
                 # provider should have at least an api or search plugin
-                # self._pruned_providers_config[provider] = self.providers_config.pop(
-                #     provider
-                # )
                 self._pruned_providers_config[provider] = conf
                 self.providers.delete(provider.name)
 
@@ -632,22 +620,6 @@ class EODataAccessGateway:
             return
 
         providers_to_fetch = self.providers.filter_by_name(provider)
-        # check if some providers are grouped under a group name which is not a provider name
-        # if provider is not None and provider not in self.providers_config:
-        #     providers_to_fetch = [
-        #         p
-        #         for p, pconf in self.providers_config.items()
-        #         if provider == getattr(pconf, "group", None)
-        #     ]
-        #     if providers_to_fetch:
-        #         logger.info(
-        #             f"Fetch product types for {provider} group: {', '.join(providers_to_fetch)}"
-        #         )
-        #     else:
-        #         return None
-
-        # elif provider is not None:
-        #     providers_to_fetch = [provider]
 
         # providers discovery confs that are fetchable
         providers_discovery_configs_fetchable: dict[str, Any] = {}
@@ -693,14 +665,6 @@ class EODataAccessGateway:
         ) in providers_discovery_configs_fetchable.items():
             # default discover_collections conf
             if provider in default_providers:
-                # default_provider_config = default_providers.get_config(provider)
-                # if hasattr(default_provider_config, "search"):
-                #     default_provider_search_config = default_provider_config.search
-                # elif hasattr(default_provider_config, "api"):
-                #     default_provider_search_config = default_provider_config.api
-                # else:
-                #     continue
-                # if not provider.
                 default_provider = default_providers[provider]
                 if not default_provider.search_config:
                     continue
@@ -708,9 +672,7 @@ class EODataAccessGateway:
                 default_discovery_conf = (
                     default_provider.search_config.discover_collections
                 )
-                # default_discovery_conf = getattr(
-                #     default_provider_search_config, "discover_product_types", {}
-                # )
+
                 # compare confs
                 if default_discovery_conf["result_type"] == "json" and isinstance(
                     default_discovery_conf["results_entry"], str
