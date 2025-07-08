@@ -109,7 +109,7 @@ class PluginManager:
                     logger.warning("Reason:\n%s", tb.format_exc())
                     logger.warning(
                         "Check that the plugin module (%s) is importable",
-                        entry_point.module_name,
+                        entry_point.name,
                     )
                 if entry_point.dist and entry_point.dist.name != "eodag":
                     # use plugin providers if any
