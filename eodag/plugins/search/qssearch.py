@@ -88,7 +88,6 @@ from eodag.utils import (
     get_ssl_context,
     quote,
     string_to_jsonpath,
-    update_nested_dict,
     urlencode,
 )
 from eodag.utils.exceptions import (
@@ -302,6 +301,7 @@ class QueryStringSearch(Search):
         self.next_page_url = None
         self.next_page_query_obj = None
         self.next_page_merge = None
+        self.next_page_token_key = None
         # parse jsonpath on init: pagination
         if (
             self.config.result_type == "json"
@@ -1051,6 +1051,16 @@ class QueryStringSearch(Search):
                 )
             else:
                 results.extend(result)
+            next_link = next(
+                (
+                    link
+                    for link in resp_as_json.get("links", [])
+                    if link["rel"] == "next"
+                ),
+                None,
+            )
+            if next_link is not None:
+                self.next_page_token_key = next_link["body"]["token"]
             if getattr(prep, "need_count", False):
                 prep.total_items_nb = total_items_nb
                 del prep.need_count
@@ -1611,7 +1621,7 @@ class PostJsonSearch(QueryStringSearch):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
-        page = prep.page
+        token = prep.token
         items_per_page = prep.items_per_page
         count = prep.count
         urls: list[str] = []
@@ -1637,39 +1647,9 @@ class PostJsonSearch(QueryStringSearch):
                 raise MisconfiguredError(
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
-            if page is not None and items_per_page is not None:
-                page = page - 1 + self.config.pagination.get("start_page", 1)
-                if count:
-                    count_endpoint = self.config.pagination.get(
-                        "count_endpoint", ""
-                    ).format(**dict(collection=collection, **auth_conf_dict))
-                    if count_endpoint:
-                        _total_results = self.count_hits(
-                            count_endpoint, result_type=self.config.result_type
-                        )
-                        if getattr(self.config, "merge_responses", False):
-                            total_results = _total_results or 0
-                        else:
-                            total_results = (
-                                (_total_results or 0)
-                                if total_results is None
-                                else total_results + (_total_results or 0)
-                            )
-                if "next_page_query_obj" in self.config.pagination and isinstance(
-                    self.config.pagination["next_page_query_obj"], str
-                ):
-                    # next_page_query_obj needs to be parsed
-                    next_page_query_obj = self.config.pagination[
-                        "next_page_query_obj"
-                    ].format(
-                        items_per_page=items_per_page,
-                        page=page,
-                        skip=(page - 1) * items_per_page,
-                        skip_base_1=(page - 1) * items_per_page + 1,
-                    )
-                    update_nested_dict(
-                        prep.query_params, orjson.loads(next_page_query_obj)
-                    )
+            if token is not None and items_per_page is not None:
+                prep.query_params["token"] = token
+                prep.query_params["limit"] = items_per_page
 
             urls.append(search_endpoint)
         return list(dict.fromkeys(urls)), total_results
@@ -1722,19 +1702,6 @@ class PostJsonSearch(QueryStringSearch):
                 verify=ssl_verify,
                 **kwargs,
             )
-            for _ in range(1, prep.query_params.get("page", 1)):
-                data = response.json()
-                next_link = next(
-                    (link for link in data.get("links", []) if link["rel"] == "next"),
-                    None,
-                )
-                if next_link is None:
-                    break
-                token = next_link["body"]["token"]
-                prep.query_params["token"] = token
-                response = requests.post(
-                    url, json=prep.query_params, headers=USER_AGENT
-                )
             response.raise_for_status()
         except requests.exceptions.Timeout as exc:
             raise TimeOutError(exc, timeout=timeout) from exc

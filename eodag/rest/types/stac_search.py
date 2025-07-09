@@ -107,6 +107,10 @@ class SearchPostRequest(BaseModel):
     page: Optional[PositiveInt] = Field(  # type: ignore
         default=None, description="Page number, must be a positive integer."
     )
+    next_page_token: Optional[str] = Field(
+        default=None,
+        description="Token for pagination, used to retrieve the next page of results.",
+    )
     query: Optional[dict[str, Any]] = None
     filter: Optional[dict[str, Any]] = None
     filter_lang: Optional[str] = Field(

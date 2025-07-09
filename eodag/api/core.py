@@ -67,7 +67,6 @@ from eodag.utils import (
     DEFAULT_DOWNLOAD_WAIT,
     DEFAULT_ITEMS_PER_PAGE,
     DEFAULT_MAX_ITEMS_PER_PAGE,
-    DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     GENERIC_STAC_PROVIDER,
     HTTP_REQ_TIMEOUT,
@@ -1193,7 +1192,7 @@ class EODataAccessGateway:
 
     def search(
         self,
-        page: int = DEFAULT_PAGE,
+        token: Optional[str] = None,
         items_per_page: int = DEFAULT_ITEMS_PER_PAGE,
         raise_errors: bool = False,
         start: Optional[str] = None,
@@ -1274,7 +1273,7 @@ class EODataAccessGateway:
         search_kwargs.pop("_dc_qs", None)
 
         search_kwargs.update(
-            page=page,
+            token=token,
             items_per_page=items_per_page,
         )
 
@@ -1296,6 +1295,10 @@ class EODataAccessGateway:
                 )
             elif len(search_results) > 0:
                 search_results.errors = errors
+                if search_plugin.next_page_token_key is not None:
+                    search_results.next_page_token_key = (
+                        search_plugin.next_page_token_key
+                    )
                 return search_results
 
         if i > 1:
@@ -1937,7 +1940,7 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
-            prep.page = kwargs.pop("page", None)
+            prep.token = kwargs.pop("token", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
             res, nb_res = search_plugin.query(prep, **kwargs)

@@ -234,6 +234,8 @@ class PluginConfig(yaml.YAMLObject):
         next_page_query_obj_key_path: Union[str, JSONPath]
         # TODO: change this typing to bool and adapt code to it
         next_page_merge_key_path: Union[str, JSONPath]
+        #: Token for the next page
+        next_page_token: Union[str, JSONPath]
         #: Template to add to :attr:`~eodag.config.PluginConfig.Pagination.next_page_url_tpl` to enable count in
         #: search request
         count_tpl: str
