@@ -1747,9 +1747,9 @@ class EODataAccessGateway:
         kwargs["productType"] = product_type
 
         if start is not None:
-            kwargs["startTimeFromAscendingNode"] = start
+            kwargs["start_datetime"] = start
         if end is not None:
-            kwargs["completionTimeFromAscendingNode"] = end
+            kwargs["end_datetime"] = end
         if "box" in kwargs or "bbox" in kwargs:
             logger.warning(
                 "'box' or 'bbox' parameters are only supported for backwards "

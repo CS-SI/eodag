@@ -198,6 +198,41 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             self.custom_converter: Optional[Callable] = None
             self.custom_args: Optional[str] = None
 
+        def parse(self, format_string: str):
+            """
+            Rewrite field names in the template before the base parser sees them.
+            Replaces `{foo:bar}` with `{foo__bar}`.
+            """
+            pattern = re.compile(r"{([^{}]+)}")
+
+            def rewrite_field(field: str) -> str:
+                # If there's a format spec (e.g., {foo:bar:.2f}), preserve it
+                if ":" in field and not field.lstrip().startswith(("!", ".", ":")):
+                    before_colon, *after = field.split(":")
+                    # Don't confuse format spec with field name colons
+                    if len(after) == 1 and "." in after[0]:
+                        # It's a format specifier, leave it
+                        return field
+                    return field.replace(":", "__", 1)
+                return field
+
+            # Replace in string (but not in format_spec itself)
+            safe_template = pattern.sub(
+                lambda m: "{" + rewrite_field(m.group(1)) + "}", format_string
+            )
+
+            # Yield from base class
+            yield from super().parse(safe_template)
+
+        def get_value(self, key: Any, args: tuple, kwargs: dict[str, Any]) -> Any:
+            """
+            Look up rewritten field name in kwargs by converting __ back to :
+            """
+            if isinstance(key, str):
+                original_key = key.replace("__", ":")
+                return kwargs[original_key]
+            return super().get_value(key, args, kwargs)
+
         def get_field(self, field_name: str, args: Any, kwargs: Any) -> Any:
             conversion_func_spec = self.CONVERSION_REGEX.match(field_name)
             # Register a custom converter if any for later use (see convert_field)
