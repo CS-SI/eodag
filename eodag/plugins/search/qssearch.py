@@ -832,7 +832,7 @@ class QueryStringSearch(Search):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
-        page = prep.page
+        token = prep.token
         items_per_page = prep.items_per_page
         count = prep.count
 
@@ -859,42 +859,23 @@ class QueryStringSearch(Search):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 collection=collection
             )
-            if page is not None and items_per_page is not None:
-                page = page - 1 + self.config.pagination.get("start_page", 1)
-                if count:
-                    count_endpoint = self.config.pagination.get(
-                        "count_endpoint", ""
-                    ).format(collection=collection)
-                    if count_endpoint:
-                        count_url = "{}?{}".format(count_endpoint, prep.query_string)
-                        _total_results = (
-                            self.count_hits(
-                                count_url, result_type=self.config.result_type
-                            )
-                            or 0
-                        )
-                        if getattr(self.config, "merge_responses", False):
-                            total_results = _total_results
-                        else:
-                            total_results = (
-                                0 if total_results is None else total_results
-                            )
-                            total_results += _total_results or 0
-                if "next_page_url_tpl" not in self.config.pagination:
-                    raise MisconfiguredError(
-                        f"next_page_url_tpl is missing in {self.provider} search.pagination configuration"
+            if token is not None and items_per_page is not None:
+                if token.isdigit():
+                    token = str(int(token) + 1)
+                    prep.query_params["token"] = token
+                    prep.query_params["limit"] = items_per_page
+                    next_url = self.config.pagination["next_page_url_tpl"].format(
+                        url=search_endpoint,
+                        search=qs_with_sort,
+                        items_per_page=items_per_page,
+                        page=token,
+                        skip=(int(token) - 1) * items_per_page,
+                        skip_base_1=(int(token) - 1) * items_per_page + 1,
                     )
-                next_url = self.config.pagination["next_page_url_tpl"].format(
-                    url=search_endpoint,
-                    search=qs_with_sort,
-                    items_per_page=items_per_page,
-                    page=page,
-                    skip=(page - 1) * items_per_page,
-                    skip_base_1=(page - 1) * items_per_page + 1,
-                )
             else:
                 next_url = "{}?{}".format(search_endpoint, qs_with_sort)
-            urls.append(next_url)
+            if next_url:
+                urls.append(next_url)
         return list(dict.fromkeys(urls)), total_results
 
     def do_search(
@@ -1647,8 +1628,9 @@ class PostJsonSearch(QueryStringSearch):
                 raise MisconfiguredError(
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
-            if token is not None and items_per_page is not None:
+            if token is not None:
                 prep.query_params["token"] = token
+            if items_per_page is not None:
                 prep.query_params["limit"] = items_per_page
 
             urls.append(search_endpoint)

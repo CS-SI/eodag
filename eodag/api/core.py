@@ -1299,6 +1299,12 @@ class EODataAccessGateway:
                     search_results.next_page_token_key = (
                         search_plugin.next_page_token_key
                     )
+                else:
+                    if token is None:
+                        token = "1"
+                    if token.isdigit():
+                        token = str(int(token) + 1)
+                    search_results.next_page_token_key = f"page:{token}"
                 return search_results
 
         if i > 1:
