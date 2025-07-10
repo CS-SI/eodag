@@ -89,65 +89,13 @@ search:
       - '{$.properties.instruments#csv_list}'
     # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
     title: '$.id'
-    description: '$.properties.description'
-    gsd:
-      - '{{"query":{{"gsd":{{"eq":"{gsd}"}}}}}}'
-      - '$.properties.gsd'
-    publicationDate:
-      - '{{"query":{{"published":{{"eq":"{publicationDate}"}}}}}}'
-      - '$.properties.published'
-    # OpenSearch Parameters for Product Search (Table 5)
-    sat:absolute_orbit:
-      - '{{"query":{{"sat:absolute_orbit":{{"eq":"{sat:absolute_orbit}"}}}}}}'
-      - '$.properties."sat:absolute_orbit"'
-    sat:relative_orbit:
-      - '{{"query":{{"sat:relative_orbit":{{"eq":"{sat:relative_orbit}"}}}}}}'
-      - '$.properties."sat:relative_orbit"'
-    sat:orbit_state:
-      - '{{"query":{{"sat:orbit_state":{{"eq":"{sat:orbit_state}"}}}}}}'
-      - '{$.properties."sat:orbit_state"#to_lower}'
     eo:cloud_cover:
       - '{{"query":{{"eo:cloud_cover":{{"lte":"{eo:cloud_cover}"}}}}}}'
       - '$.properties."eo:cloud_cover"'
-    sar:instrument_mode:
-      - '{{"query":{{"sar:instrument_mode":{{"eq":"{sar:instrument_mode}"}}}}}}'
-      - '$.properties."sar:instrument_mode"'
-    created:
-      - '{{"query":{{"created":{{"eq":"{created}"}}}}}}'
-      - '$.properties.created'
-    updated:
-      - '{{"query":{{"updated":{{"eq":"{updated}"}}}}}}'
-      - '$.properties.updated'
-    version:
-      - '{{"query":{{"version":{{"eq":"{version}"}}}}}}'
-      - '$.properties.version'
-    # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-    availabilityTime:
-      - '{{"query":{{"availabilityTime":{{"eq":"{availabilityTime}"}}}}}}'
-      - '$.properties.availabilityTime'
-    acquisitionStation:
-      - '{{"query":{{"acquisitionStation":{{"eq":"{acquisitionStation}"}}}}}}'
-      - '$.properties.acquisitionStation'
-    acquisitionSubType:
-      - '{{"query":{{"acquisitionSubType":{{"eq":"{acquisitionSubType}"}}}}}}'
-      - '$.properties.acquisitionSubType'
     start_datetime: '$.properties.datetime'
     end_datetime:
       - '{{"datetime":"{start_datetime#to_iso_utc_datetime}/{end_datetime#to_iso_utc_datetime}"}}'
       - '$.properties.end_datetime'
-    view:sun_azimuth:
-      - '{{"query":{{"view:sun_azimuth":{{"eq":"{view:sun_azimuth}"}}}}}}'
-      - '$.properties."view:sun_azimuth"'
-    view:sun_elevation:
-      - '{{"query":{{"view:sun_elevation":{{"eq":"{view:sun_elevation}"}}}}}}'
-      - '$.properties."view:sun_elevation"'
-    sar:polarizations:
-      - '{{"query":{{"sar:polarizations":{{"eq":"{sar:polarizations}"}}}}}}'
-      - '{$.properties."sar:polarizations"'
-    sar:frequency_band:
-      - '{{"query":{{"sar:frequency_band":{{"eq":"{sar:frequency_band}"}}}}}}'
-      - '$.properties."sar:frequency_band"'
-    # Custom parameters (not defined in the base document referenced above)
     id:
       - '{{"ids":["{id}"]}}'
       - '$.id'
