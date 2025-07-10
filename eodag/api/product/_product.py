@@ -136,6 +136,7 @@ class EOProduct:
             if key != "geometry"
             and value != NOT_MAPPED
             and NOT_AVAILABLE not in str(value)
+            and not key.startswith("_")
         }
         if "geometry" not in properties or (
             (
