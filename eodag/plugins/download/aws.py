@@ -211,7 +211,7 @@ class AwsDownload(Download):
           specific config; the keys are the product types, the values are dictionaries which can contain the keys:
 
           * **default_bucket** (``str``): bucket where the product type can be found
-          * **complementary_url_key** (``str``): keys to add additional urls
+          * **complementary_url_key** (``str``): properties keys pointing to additional urls of content to download
           * **build_safe** (``bool``): if a SAFE (Standard Archive Format for Europe) product should
             be created; used for Sentinel products; default: False
           * **fetch_metadata** (``dict[str, Any]``): config for metadata to be fetched for the SAFE product
