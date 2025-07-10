@@ -72,7 +72,7 @@
     S2_MSI_L1C:
       dataset: SENTINEL_2A
     GENERIC_PRODUCT_TYPE:
-      dataset: '{product:type}'
+      dataset: '{productType}'
 
 ---
 !provider # MARK: aws_eos
@@ -678,7 +678,7 @@
       collection: S2ST
       product:type: S2MSI1C
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      product:type: '{productType}'
       collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -1301,21 +1301,21 @@
       awsProductId: '{$.assets.thumbnail.href#replace_str(r".+/([A-Z0-9_]+)/[\w.]+$",r"\1")}'
   products:
     LANDSAT_C2L1:
-      product:type: landsat-c2l1
+      _collection: landsat-c2l1
     LANDSAT_C2L2_SR:
-      product:type: landsat-c2l2-sr
+      _collection: landsat-c2l2-sr
     LANDSAT_C2L2_ST:
-      product:type: landsat-c2l2-st
+      _collection: landsat-c2l2-st
     LANDSAT_C2L2ALB_BT:
-      product:type: landsat-c2l2alb-bt
+      _collection: landsat-c2l2alb-bt
     LANDSAT_C2L2ALB_SR:
-      product:type: landsat-c2l2alb-sr
+      _collection: landsat-c2l2alb-sr
     LANDSAT_C2L2ALB_ST:
-      product:type: landsat-c2l2alb-st
+      _collection: landsat-c2l2alb-st
     LANDSAT_C2L2ALB_TA:
-      product:type: landsat-c2l2alb-ta
+      _collection: landsat-c2l2alb-ta
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: AwsDownload
     ssl_verify: true
@@ -1364,24 +1364,15 @@
         gsd: properties.gsd
         eo:cloud_cover: properties.eo:cloud_cover
     metadata_mapping:
-      mgrs:utm_zone:
-        - '{{"query":{{"mgrs:utm_zone":{{"eq":"{mgrs:utm_zone}"}}}}}}'
-        - '$.properties."mgrs:utm_zone"'
-      mgrs:latitude_band:
-        - '{{"query":{{"mgrs:latitude_band":{{"eq":"{mgrs:latitude_band}"}}}}}}'
-        - '$.properties."mgrs:latitude_band"'
-      mgrs:grid_square:
-        - '{{"query":{{"mgrs:grid_square":{{"eq":"{mgrs:grid_square}"}}}}}}'
-        - '$.properties."mgrs:grid_square"'
       grid:code:
         - '{{"query":{{"mgrs:utm_zone":{{"eq":"{grid:code#slice_str(0,2,1)}"}},"mgrs:latitude_band":{{"eq":"{grid:code#slice_str(2,3,1)}"}},"mgrs:grid_square":{{"eq":"{grid:code#slice_str(3,5,1)}"}}}}}}'
         - '{mgrs:utm_zone}{mgrs:latitude_band}{mgrs:grid_square}'
       assets: '{$.assets#dict_filter($[?(href=~"^s3.*")])}'
   products:
     S1_SAR_GRD:
-      product:type: sentinel-1-grd
+      _collection: sentinel-1-grd
     S2_MSI_L1C:
-      product:type: sentinel-2-l1c
+      _collection: sentinel-2-l1c
       metadata_mapping:
         id:
           - '{{"query":{{"s2:product_uri":{{"eq":"{id}.SAFE"}}}}}}'
@@ -1410,15 +1401,15 @@
       metadata_mapping:
         assets: '{$.assets#dict_filter_and_sub("$[?(@.href =~ \"^https://sentinel-cogs.*/\")]","https\u003A//[a-z0-9-\.]+/","s3\u003A//sentinel-cogs/")}'
     LANDSAT_C2L2:
-      product:type: landsat-c2-l2
+      _collection: landsat-c2-l2
     NAIP:
-      product:type: naip
+      _collection: naip
     COP_DEM_GLO30_DGED:
-      product:type: cop-dem-glo-30
+      _collection: cop-dem-glo-30
     COP_DEM_GLO90_DGED:
-      product:type: cop-dem-glo-90
+      _collection: cop-dem-glo-90
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: AwsDownload
     ssl_verify: true
@@ -1475,7 +1466,7 @@
         eo:cloud_cover: properties.eo:cloud_cover
   products:
     S2_MSI_L1C:
-      product:type: sentinel-s2-l1c
+      _collection: sentinel-s2-l1c
       metadata_mapping:
         title: '$.properties."sentinel:product_id"'
         platform: '$.id.`split(_, 0, -1)`'
@@ -1485,13 +1476,13 @@
         mgrs:grid_square: '$.properties."sentinel:grid_square"'
         downloadLink: 's3://gcp-public-data-sentinel-2/tiles/{mgrs:utm_zone}/{mgrs:latitude_band}/{mgrs:grid_square}/{title}.SAFE'
     L8_OLI_TIRS_C1L1:
-      product:type: landsat-8-l1-c1
+      _collection: landsat-8-l1-c1
       metadata_mapping:
         wrsPath: '$.properties."landsat:wrs_path"'
         wrsRow: '$.properties."landsat:wrs_row"'
         downloadLink: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://storage.googleapis.com
@@ -2185,7 +2176,7 @@
       instruments: SYNERGY
       processing:level: LEVEL-2
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      product:type: '{productType}'
       collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -2265,7 +2256,7 @@
       timeIntervalsAlignment:
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      product:type: '{productType}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
   download: !plugin
     type: HTTPDownload
@@ -2895,23 +2886,23 @@
         - '$.properties."s2:mgrs_tile"'
   products:
     S1_SAR_GRD:
-      product:type: sentinel-1-grd
+      _collection: sentinel-1-grd
       metadata_mapping:
         processing:level:
           - '{{"query":{{"s1:processing_level":{{"eq":"{processing:level}"}}}}}}'
           - '$.properties."s1:processing_level"'
     S2_MSI_L2A:
-      product:type: sentinel-2-l2a
+      _collection: sentinel-2-l2a
     LANDSAT_C2L1:
-      product:type: landsat-c2-l1
+      _collection: landsat-c2-l1
     LANDSAT_C2L2:
-      product:type: landsat-c2-l2
+      _collection: landsat-c2-l2
     MODIS_MCD43A4:
-      product:type: modis-43A4-061
+      _collection: modis-43A4-061
     NAIP:
-      product:type: naip
+      _collection: naip
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: HTTPDownload
     auth_error_code: 403
@@ -2962,7 +2953,7 @@
         - '$.properties.end_datetime'
   products:
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: HTTPDownload
     auth_error_code: 401
@@ -3745,7 +3736,7 @@
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      product:type: '{productType}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -4514,458 +4505,458 @@
   products:
     # Sentinel 1
     S1_SAR_GRD:
-      product:type: EO.ESA.DAT.SENTINEL-1.L1_GRD
+      _collection: EO.ESA.DAT.SENTINEL-1.L1_GRD
     S1_SAR_SLC:
-      product:type: EO.ESA.DAT.SENTINEL-1.L1_SLC
+      _collection: EO.ESA.DAT.SENTINEL-1.L1_SLC
     # Sentinel 2
     S2_MSI_L1C:
-      product:type: EO.ESA.DAT.SENTINEL-2.MSI.L1C
+      _collection: EO.ESA.DAT.SENTINEL-2.MSI.L1C
     S2_MSI_L2A:
-      product:type: EO.ESA.DAT.SENTINEL-2.MSI.L2A
+      _collection: EO.ESA.DAT.SENTINEL-2.MSI.L2A
     # Sentinel 3 - S3 OLCI L1
     S3_EFR:
-      product:type: EO.EUM.DAT.SENTINEL-3.OL_1_EFR___
+      _collection: EO.EUM.DAT.SENTINEL-3.OL_1_EFR___
     S3_ERR:
-      product:type: EO.EUM.DAT.SENTINEL-3.OL_1_ERR___
+      _collection: EO.EUM.DAT.SENTINEL-3.OL_1_ERR___
     # Sentinel 3 - S3 OLCI L2
     S3_OLCI_L2LRR:
-      product:type: EO.ESA.DAT.SENTINEL-3.OL_2_LRR___
+      _collection: EO.ESA.DAT.SENTINEL-3.OL_2_LRR___
     S3_OLCI_L2LFR:
-      product:type: EO.ESA.DAT.SENTINEL-3.OL_2_LFR___
+      _collection: EO.ESA.DAT.SENTINEL-3.OL_2_LFR___
     S3_OLCI_L2WRR:
-      product:type: EO.EUM.DAT.SENTINEL-3.OL_2_WRR___
+      _collection: EO.EUM.DAT.SENTINEL-3.OL_2_WRR___
     S3_OLCI_L2WFR:
-      product:type: EO.EUM.DAT.SENTINEL-3.OL_2_WFR___
+      _collection: EO.EUM.DAT.SENTINEL-3.OL_2_WFR___
     # Sentinel 3 - S3 SLSTR
     S3_SLSTR_L1RBT:
-      product:type: EO.EUM.DAT.SENTINEL-3.SL_1_RBT___
+      _collection: EO.EUM.DAT.SENTINEL-3.SL_1_RBT___
     S3_SLSTR_L2LST:
-      product:type: EO.ESA.DAT.SENTINEL-3.SL_2_LST___
+      _collection: EO.ESA.DAT.SENTINEL-3.SL_2_LST___
     S3_SLSTR_L2WST:
-      product:type: EO.EUM.DAT.SENTINEL-3.SL_2_WST___
+      _collection: EO.EUM.DAT.SENTINEL-3.SL_2_WST___
     S3_SLSTR_L2AOD:
-      product:type: EO.EUM.DAT.SENTINEL-3.AOD
+      _collection: EO.EUM.DAT.SENTINEL-3.AOD
     S3_SLSTR_L2FRP:
-      product:type: EO.EUM.DAT.SENTINEL-3.FRP
+      _collection: EO.EUM.DAT.SENTINEL-3.FRP
     # Sentinel 3 - S3 SRAL
     S3_SRA:
-      product:type: EO.EUM.DAT.SENTINEL-3.SR_1_SRA___
+      _collection: EO.EUM.DAT.SENTINEL-3.SR_1_SRA___
     S3_SRA_A:
-      product:type: EO.EUM.DAT.SENTINEL-3.SR_1_SRA_A_
+      _collection: EO.EUM.DAT.SENTINEL-3.SR_1_SRA_A_
     S3_SRA_BS:
-      product:type: EO.EUM.DAT.SENTINEL-3.SR_1_SRA_BS
+      _collection: EO.EUM.DAT.SENTINEL-3.SR_1_SRA_BS
     S3_LAN:
-      product:type: EO.ESA.DAT.SENTINEL-3.SR_2_LAN___
+      _collection: EO.ESA.DAT.SENTINEL-3.SR_2_LAN___
     S3_WAT:
-      product:type: EO.EUM.DAT.SENTINEL-3.SR_2_WAT___
+      _collection: EO.EUM.DAT.SENTINEL-3.SR_2_WAT___
     # S5
     S5P_L1B_IR_ALL:
-      product:type: EO.ESA.DAT.SENTINEL-5P.TROPOMI.L1
+      _collection: EO.ESA.DAT.SENTINEL-5P.TROPOMI.L1
     S5P_L2_IR_ALL:
-      product:type: EO.ESA.DAT.SENTINEL-5P.TROPOMI.L2
+      _collection: EO.ESA.DAT.SENTINEL-5P.TROPOMI.L2
     # ECMWF - COPERNICUS CDS
     ERA5_SL:
-      product:type: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
+      _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
     ERA5_SL_MONTHLY:
-      product:type: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
+      _collection: EO.ECMWF.DAT.REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
       metadata_mapping:
         <<: *orderable_mm
     ERA5_PL:
-      product:type: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
+      _collection: EO.ECMWF.DAT.ERA5_HOURLY_VARIABLES_ON_PRESSURE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
     ERA5_PL_MONTHLY:
-      product:type: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
+      _collection: EO.ECMWF.DAT.ERA5_MONTHLY_MEANS_VARIABLES_ON_PRESSURE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
     ERA5_LAND:
-      product:type: EO.ECMWF.DAT.ERA5_LAND_HOURLY
+      _collection: EO.ECMWF.DAT.ERA5_LAND_HOURLY
       metadata_mapping:
         <<: *orderable_mm
     ERA5_LAND_MONTHLY:
-      product:type: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
+      _collection: EO.ECMWF.DAT.ERA5_LAND_MONTHLY
       metadata_mapping:
         <<: *orderable_mm
     UERRA_EUROPE_SL:
-      product:type: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
+      _collection: EO.ECMWF.DAT.REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
       metadata_mapping:
         <<: *orderable_mm
     GRIDDED_GLACIERS_MASS_CHANGE:
-      product:type: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
+      _collection: EO.ECMWF.DAT.DERIVED_GRIDDED_GLACIER_MASS_CHANGE
       metadata_mapping:
         <<: *orderable_mm
     GLACIERS_DIST_RANDOLPH:
-      product:type: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
+      _collection: EO.ECMWF.DAT.GLACIERS_DISTRIBUTION_DATA_FROM_RANDOLPH_GLACIER_INVENTORY_2000
       metadata_mapping:
         <<: *orderable_mm
     SATELLITE_CARBON_DIOXIDE:
-      product:type: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
+      _collection: EO.ECMWF.DAT.CO2_DATA_FROM_SATELLITE_SENSORS_2002_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SATELLITE_METHANE:
-      product:type: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
+      _collection: EO.ECMWF.DAT.METHANE_DATA_SATELLITE_SENSORS_2002_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SEASONAL_POSTPROCESSED_PL:
-      product:type: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
+      _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_PRESSURE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SATELLITE_SEA_LEVEL_GLOBAL:
-      product:type: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
+      _collection: EO.ECMWF.DAT.SEA_LEVEL_DAILY_GRIDDED_DATA_FOR_GLOBAL_OCEAN_1993_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SATELLITE_SEA_ICE_EDGE_TYPE:
-      product:type: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
+      _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_EDGE_TYPE
       metadata_mapping:
         <<: *orderable_mm
     SATELLITE_SEA_ICE_THICKNESS:
-      product:type: EO.ECMWF.DAT.SATELLITE_SEA_ICE_THICKNESS
+      _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_THICKNESS
       metadata_mapping:
         <<: *orderable_mm
     SATELLITE_SEA_ICE_CONCENTRATION:
-      product:type: EO.ECMWF.DAT.SATELLITE_SEA_ICE_CONCENTRATION
+      _collection: EO.ECMWF.DAT.SATELLITE_SEA_ICE_CONCENTRATION
       metadata_mapping:
         <<: *orderable_mm
     SEASONAL_POSTPROCESSED_SL:
-      product:type: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
+      _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_ANOMALIES_ON_SINGLE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SEASONAL_ORIGINAL_SL:
-      product:type: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
+      _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_SINGLE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SEASONAL_ORIGINAL_PL:
-      product:type: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
+      _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_DAILY_DATA_ON_PRESSURE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SEASONAL_MONTHLY_PL:
-      product:type: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
+      _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_PRESSURE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SEASONAL_MONTHLY_SL:
-      product:type: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
+      _collection: EO.ECMWF.DAT.SEASONAL_FORECAST_MONTHLY_STATISTICS_ON_SINGLE_LEVELS_2017_PRESENT
       metadata_mapping:
         <<: *orderable_mm
     SIS_HYDRO_MET_PROJ:
-      product:type: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
+      _collection: EO.ECMWF.DAT.SIS_HYDROLOGY_METEOROLOGY_DERIVED_PROJECTIONS
       metadata_mapping:
         <<: *orderable_mm
     # ECMWF - CEMS
     FIRE_HISTORICAL:
-      product:type: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
+      _collection: EO.ECMWF.DAT.CEMS_FIRE_HISTORICAL
     GLOFAS_FORECAST:
-      product:type: EO.ECMWF.DAT.CEMS_GLOFAS_FORECAST
+      _collection: EO.ECMWF.DAT.CEMS_GLOFAS_FORECAST
     GLOFAS_HISTORICAL:
-      product:type: EO.ECMWF.DAT.CEMS_GLOFAS_HISTORICAL
+      _collection: EO.ECMWF.DAT.CEMS_GLOFAS_HISTORICAL
     GLOFAS_REFORECAST:
-      product:type: EO.ECMWF.DAT.CEMS_GLOFAS_REFORECAST
+      _collection: EO.ECMWF.DAT.CEMS_GLOFAS_REFORECAST
     GLOFAS_SEASONAL:
-      product:type: EO.ECMWF.DAT.CEMS_GLOFAS_SEASONAL
+      _collection: EO.ECMWF.DAT.CEMS_GLOFAS_SEASONAL
     GLOFAS_SEASONAL_REFORECAST:
-      product:type: EO.ECMWF.DAT.CEMS_GLOFAS_SEASONAL_REFORECAST
+      _collection: EO.ECMWF.DAT.CEMS_GLOFAS_SEASONAL_REFORECAST
     EFAS_FORECAST:
-      product:type: EO.ECMWF.DAT.EFAS_FORECAST
+      _collection: EO.ECMWF.DAT.EFAS_FORECAST
     EFAS_HISTORICAL:
-      product:type: EO.ECMWF.DAT.EFAS_HISTORICAL
+      _collection: EO.ECMWF.DAT.EFAS_HISTORICAL
     EFAS_REFORECAST:
-      product:type: EO.ECMWF.DAT.EFAS_REFORECAST
+      _collection: EO.ECMWF.DAT.EFAS_REFORECAST
     EFAS_SEASONAL:
-      product:type: EO.ECMWF.DAT.EFAS_SEASONAL
+      _collection: EO.ECMWF.DAT.EFAS_SEASONAL
     EFAS_SEASONAL_REFORECAST:
-      product:type: EO.ECMWF.DAT.EFAS_SEASONAL_REFORECAST
+      _collection: EO.ECMWF.DAT.EFAS_SEASONAL_REFORECAST
     # COPERNICUS ADS
     CAMS_GAC_FORECAST:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_ATMOSHERIC_COMPO_FORECAST
       metadata_mapping:
         <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_FORECAST:
-      product:type: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
+      _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_FORECASTS
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GFE_GFAS:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
       metadata_mapping:
         <<: *orderable_mm
     CAMS_SOLAR_RADIATION:
-      product:type: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
+      _collection: EO.ECMWF.DAT.CAMS_SOLAR_RADIATION_TIMESERIES
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GREENHOUSE_INVERSION:
-      product:type: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
+      _collection: EO.ECMWF.DAT.CAMS_GREENHOUSE_GAS_FLUXES
       metadata_mapping:
         <<: *orderable_mm
     CAMS_EAC4_MONTHLY:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY_AV_FIELDS
       metadata_mapping:
         <<: *orderable_mm
     CAMS_EU_AIR_QUALITY_RE:
-      product:type: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
+      _collection: EO.ECMWF.DAT.CAMS_EUROPE_AIR_QUALITY_REANALYSES
       metadata_mapping:
         <<: *orderable_mm
     CAMS_EAC4:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_REANALYSIS_EAC4
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GRF_AUX:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING_AUX
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GRF:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_RADIATIVE_FORCING
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4_MONTHLY:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS_MONTHLY_AV_FIELDS
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GREENHOUSE_EGG4:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_GREENHOUSE_GAS_REANALYSIS
       metadata_mapping:
         <<: *orderable_mm
     CAMS_GLOBAL_EMISSIONS:
-      product:type: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
+      _collection: EO.ECMWF.DAT.CAMS_GLOBAL_EMISSION_INVENTORIES
       metadata_mapping:
         <<: *orderable_mm
     # COPERNICUS ADS - Digital Elevation Model
     COP_DEM_GLO30_DGED:
-      product:type: EO.DEM.DAT.COP-DEM_GLO-30-DGED
+      _collection: EO.DEM.DAT.COP-DEM_GLO-30-DGED
     COP_DEM_GLO30_DTED:
-      product:type: EO.DEM.DAT.COP-DEM_GLO-30-DTED
+      _collection: EO.DEM.DAT.COP-DEM_GLO-30-DTED
     COP_DEM_GLO90_DGED:
       title: Copernicus DEM GLO-90 DGED
-      product:type: EO.DEM.DAT.COP-DEM_GLO-90-DGED
+      _collection: EO.DEM.DAT.COP-DEM_GLO-90-DGED
     COP_DEM_GLO90_DTED:
-      product:type: EO.DEM.DAT.COP-DEM_GLO-90-DTED
+      _collection: EO.DEM.DAT.COP-DEM_GLO-90-DTED
     # COPERNICUS Marine
     MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
-      product:type: EO.MO.DAT.GLOBAL_ANALYSISFORECAST_PHY_001_024
+      _collection: EO.MO.DAT.GLOBAL_ANALYSISFORECAST_PHY_001_024
     MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
-      product:type: EO.MO.DAT.GLOBAL_ANALYSISFORECAST_WAV_001_027
+      _collection: EO.MO.DAT.GLOBAL_ANALYSISFORECAST_WAV_001_027
     MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
-      product:type: EO.MO.DAT.GLOBAL_ANALYSISFORECAST_BGC_001_028
+      _collection: EO.MO.DAT.GLOBAL_ANALYSISFORECAST_BGC_001_028
     MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
-      product:type: EO.MO.DAT.GLOBAL_MULTIYEAR_PHY_ENS_001_031
+      _collection: EO.MO.DAT.GLOBAL_MULTIYEAR_PHY_ENS_001_031
     MO_GLOBAL_MULTIYEAR_WAV_001_032:
-      product:type: EO.MO.DAT.GLOBAL_MULTIYEAR_WAV_001_032
+      _collection: EO.MO.DAT.GLOBAL_MULTIYEAR_WAV_001_032
     MO_GLOBAL_MULTIYEAR_BGC_001_033:
-      product:type: EO.MO.DAT.GLOBAL_MULTIYEAR_BGC_001_033
+      _collection: EO.MO.DAT.GLOBAL_MULTIYEAR_BGC_001_033
     MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
-      product:type: EO.MO.DAT.INSITU_GLO_PHY_TS_OA_NRT_013_002
+      _collection: EO.MO.DAT.INSITU_GLO_PHY_TS_OA_NRT_013_002
     MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
-      product:type: EO.MO.DAT.INSITU_GLO_PHY_TS_OA_MY_013_052
+      _collection: EO.MO.DAT.INSITU_GLO_PHY_TS_OA_MY_013_052
     MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
-      product:type: EO.MO.DAT.INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
+      _collection: EO.MO.DAT.INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
     MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
+      _collection: EO.MO.DAT.MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
     MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008
+      _collection: EO.MO.DAT.MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008
     MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009
+      _collection: EO.MO.DAT.MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009
     MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_PHY_MYNRT_015_003
+      _collection: EO.MO.DAT.MULTIOBS_GLO_PHY_MYNRT_015_003
     MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013
+      _collection: EO.MO.DAT.MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013
     MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012
+      _collection: EO.MO.DAT.MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012
     MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
-      product:type: EO.MO.DAT.MULTIOBS_GLO_PHY_W_3D_REP_015_007
+      _collection: EO.MO.DAT.MULTIOBS_GLO_PHY_W_3D_REP_015_007
     MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
-      product:type: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L3_MY_009_103
+      _collection: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L3_MY_009_103
     MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
-      product:type: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L3_MY_009_107
+      _collection: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L3_MY_009_107
     MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
-      product:type: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L3_NRT_009_101
+      _collection: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L3_NRT_009_101
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
-      product:type: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L4_MY_009_104
+      _collection: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L4_MY_009_104
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
-      product:type: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L4_MY_009_108
+      _collection: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L4_MY_009_108
     MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
-      product:type: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L4_NRT_009_102
+      _collection: EO.MO.DAT.OCEANCOLOUR_GLO_BGC_L4_NRT_009_102
     MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
-      product:type: EO.MO.DAT.SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001
+      _collection: EO.MO.DAT.SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001
     MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
-      product:type: EO.MO.DAT.SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006
+      _collection: EO.MO.DAT.SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006
     MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
-      product:type: EO.MO.DAT.SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009
+      _collection: EO.MO.DAT.SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009
     MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
-      product:type: EO.MO.DAT.SEALEVEL_GLO_PHY_L4_NRT_008_046
+      _collection: EO.MO.DAT.SEALEVEL_GLO_PHY_L4_NRT_008_046
     MO_SEALEVEL_GLO_PHY_MDT_008_063:
-      product:type: EO.MO.DAT.SEALEVEL_GLO_PHY_MDT_008_063
+      _collection: EO.MO.DAT.SEALEVEL_GLO_PHY_MDT_008_063
     MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
-      product:type: EO.MO.DAT.SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010
+      _collection: EO.MO.DAT.SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010
     MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
-      product:type: EO.MO.DAT.SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001
+      _collection: EO.MO.DAT.SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001
     MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
-      product:type: EO.MO.DAT.SST_GLO_SST_L4_REP_OBSERVATIONS_010_011
+      _collection: EO.MO.DAT.SST_GLO_SST_L4_REP_OBSERVATIONS_010_011
     MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
-      product:type: EO.MO.DAT.SST_GLO_SST_L4_REP_OBSERVATIONS_010_024
+      _collection: EO.MO.DAT.SST_GLO_SST_L4_REP_OBSERVATIONS_010_024
     MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
-      product:type: EO.MO.DAT.WIND_GLO_PHY_CLIMATE_L4_MY_012_003
+      _collection: EO.MO.DAT.WIND_GLO_PHY_CLIMATE_L4_MY_012_003
     MO_WIND_GLO_PHY_L3_MY_012_005:
-      product:type: EO.MO.DAT.WIND_GLO_PHY_L3_MY_012_005
+      _collection: EO.MO.DAT.WIND_GLO_PHY_L3_MY_012_005
     MO_WIND_GLO_PHY_L3_NRT_012_002:
-      product:type: EO.MO.DAT.WIND_GLO_PHY_L3_NRT_012_002
+      _collection: EO.MO.DAT.WIND_GLO_PHY_L3_NRT_012_002
     MO_WIND_GLO_PHY_L4_MY_012_006:
-      product:type: EO.MO.DAT.WIND_GLO_PHY_L4_MY_012_006
+      _collection: EO.MO.DAT.WIND_GLO_PHY_L4_MY_012_006
     MO_WIND_GLO_PHY_L4_NRT_012_004:
-      product:type: EO.MO.DAT.WIND_GLO_PHY_L4_NRT_012_004
+      _collection: EO.MO.DAT.WIND_GLO_PHY_L4_NRT_012_004
     MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
-      product:type: EO.MO.DAT.WAVE_GLO_PHY_SWH_L3_NRT_014_001
+      _collection: EO.MO.DAT.WAVE_GLO_PHY_SWH_L3_NRT_014_001
     MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
-      product:type: EO.MO.DAT.WAVE_GLO_PHY_SWH_L4_NRT_014_003
+      _collection: EO.MO.DAT.WAVE_GLO_PHY_SWH_L4_NRT_014_003
     MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
-      product:type: EO.MO.DAT.WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002
+      _collection: EO.MO.DAT.WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002
     # CLMS
     CLMS_CORINE:
-      product:type: EO.CLMS.DAT.CORINE
+      _collection: EO.CLMS.DAT.CORINE
     CLMS_GLO_DMP_333M:
-      product:type: EO.CLMS.DAT.GLO.DMP300_V1
+      _collection: EO.CLMS.DAT.GLO.DMP300_V1
     CLMS_GLO_FAPAR_333M:
-      product:type: EO.CLMS.DAT.GLO.FAPAR300_V1
+      _collection: EO.CLMS.DAT.GLO.FAPAR300_V1
     CLMS_GLO_FCOVER_333M:
-      product:type: EO.CLMS.DAT.GLO.FCOVER300_V1
+      _collection: EO.CLMS.DAT.GLO.FCOVER300_V1
     CLMS_GLO_GDMP_333M:
-      product:type: EO.CLMS.DAT.GLO.GDMP300_V1
+      _collection: EO.CLMS.DAT.GLO.GDMP300_V1
     CLMS_GLO_LAI_333M:
-      product:type: EO.CLMS.DAT.GLO.LAI300_V1
+      _collection: EO.CLMS.DAT.GLO.LAI300_V1
     CLMS_GLO_NDVI_1KM_LTS:
-      product:type: EO.CLMS.DAT.GLO.NDVI_1KM_V2
+      _collection: EO.CLMS.DAT.GLO.NDVI_1KM_V2
     CLMS_GLO_NDVI_333M:
-      product:type: EO.CLMS.DAT.GLO.NDVI300_V1
+      _collection: EO.CLMS.DAT.GLO.NDVI300_V1
     EEA_DAILY_VI:
-      product:type: EO.CLMS.DAT.SENTINEL-2.HRVPP.VI
+      _collection: EO.CLMS.DAT.SENTINEL-2.HRVPP.VI
     # Landsat data
     LANDSAT_C2L1:
-      product:type: EO.NASA.DAT.LANDSAT.C2_L1
+      _collection: EO.NASA.DAT.LANDSAT.C2_L1
     LANDSAT_C2L2:
-      product:type: EO.NASA.DAT.LANDSAT.C2_L2
+      _collection: EO.NASA.DAT.LANDSAT.C2_L2
     # DT Output
     DT_EXTREMES:
-      product:type: EO.ECMWF.DAT.DT_EXTREMES
+      _collection: EO.ECMWF.DAT.DT_EXTREMES
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","OFFLINE")}'
         <<: *orderable_mm
     DT_CLIMATE_ADAPTATION:
-      product:type: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
+      _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
       metadata_mapping:
         order:status: '{$.null#replace_str("Not Available","OFFLINE")}'
         <<: *orderable_mm
     # AERIS
     AERIS_IAGOS:
-      product:type: EO.AERIS.DAT.IAGOS
+      _collection: EO.AERIS.DAT.IAGOS
     # METOP
     METOP_ASCSZFR02:
-      product:type: EO.EUM.CM.METOP.ASCSZFR02
+      _collection: EO.EUM.CM.METOP.ASCSZFR02
     METOP_ASCSZOR02:
-      product:type: EO.EUM.CM.METOP.ASCSZOR02
+      _collection: EO.EUM.CM.METOP.ASCSZOR02
     METOP_ASCSZRR02:
-      product:type: EO.EUM.CM.METOP.ASCSZRR02
+      _collection: EO.EUM.CM.METOP.ASCSZRR02
     METOP_AMSU_L1:
-      product:type: EO.EUM.DAT.METOP.AMSUL1
+      _collection: EO.EUM.DAT.METOP.AMSUL1
     METOP_ASCSZF1B:
-      product:type: EO.EUM.DAT.METOP.ASCSZF1B
+      _collection: EO.EUM.DAT.METOP.ASCSZF1B
     METOP_ASCSZR1B:
-      product:type: EO.EUM.DAT.METOP.ASCSZR1B
+      _collection: EO.EUM.DAT.METOP.ASCSZR1B
     METOP_ASCSZO1B:
-      product:type: EO.EUM.DAT.METOP.ASCSZO1B
+      _collection: EO.EUM.DAT.METOP.ASCSZO1B
     METOP_AVHRRGACR02:
-      product:type: EO.EUM.DAT.METOP.AVHRRGACR02
+      _collection: EO.EUM.DAT.METOP.AVHRRGACR02
     METOP_AVHRRL1:
-      product:type: EO.EUM.DAT.METOP.AVHRRL1
+      _collection: EO.EUM.DAT.METOP.AVHRRL1
     METOP_GLB_SST_NC:
-      product:type: EO.EUM.DAT.METOP.GLB-SST-NC
+      _collection: EO.EUM.DAT.METOP.GLB-SST-NC
     METOP_GOMEL1:
-      product:type: EO.EUM.DAT.METOP.GOMEL1
+      _collection: EO.EUM.DAT.METOP.GOMEL1
     METOP_GOMEL1R03:
-      product:type: EO.EUM.DAT.METOP.GOMEL1R03
+      _collection: EO.EUM.DAT.METOP.GOMEL1R03
     METOP_HIRSL1:
-      product:type: EO.EUM.DAT.MULT.HIRSL1
+      _collection: EO.EUM.DAT.MULT.HIRSL1
     METOP_IASIL1C_ALL:
-      product:type: EO.EUM.DAT.METOP.IASIL1C-ALL
+      _collection: EO.EUM.DAT.METOP.IASIL1C-ALL
     METOP_IASSND02:
-      product:type: EO.EUM.DAT.METOP.IASSND02
+      _collection: EO.EUM.DAT.METOP.IASSND02
     METOP_IASTHR011:
-      product:type: EO.EUM.DAT.METOP.IASTHR011
+      _collection: EO.EUM.DAT.METOP.IASTHR011
     METOP_LSA_002:
-      product:type: EO.EUM.DAT.METOP.LSA-002
+      _collection: EO.EUM.DAT.METOP.LSA-002
     METOP_MHSL1:
-      product:type: EO.EUM.DAT.METOP.MHSL1
+      _collection: EO.EUM.DAT.METOP.MHSL1
     METOP_OSI_104:
-      product:type: EO.EUM.DAT.METOP.OSI-104
+      _collection: EO.EUM.DAT.METOP.OSI-104
     METOP_OSI_150A:
-      product:type: EO.EUM.DAT.METOP.OSI-150-A
+      _collection: EO.EUM.DAT.METOP.OSI-150-A
     METOP_OSI_150B:
-      product:type: EO.EUM.DAT.METOP.OSI-150-B
+      _collection: EO.EUM.DAT.METOP.OSI-150-B
     METOP_SOMO12:
-      product:type: EO.EUM.DAT.METOP.SOMO12
+      _collection: EO.EUM.DAT.METOP.SOMO12
     METOP_SOMO25:
-      product:type: EO.EUM.DAT.METOP.SOMO25
+      _collection: EO.EUM.DAT.METOP.SOMO25
     # MSG
     MSG_AMVR02:
-      product:type: EO.EUM.DAT.AMVR02
+      _collection: EO.EUM.DAT.AMVR02
     MSG_GSAL2R02:
-      product:type: EO.EUM.DAT.GSAL2R02
+      _collection: EO.EUM.DAT.GSAL2R02
     MSG_CLM:
-      product:type: EO.EUM.DAT.MSG.CLM
+      _collection: EO.EUM.DAT.MSG.CLM
     MSG_CLM_IODC:
-      product:type: EO.EUM.DAT.MSG.CLM-IODC
+      _collection: EO.EUM.DAT.MSG.CLM-IODC
     MSG_HRSEVIRI:
-      product:type: EO.EUM.DAT.MSG.HRSEVIRI
+      _collection: EO.EUM.DAT.MSG.HRSEVIRI
     MSG_HRSEVIRI_IODC:
-      product:type: EO.EUM.DAT.MSG.HRSEVIRI-IODC
+      _collection: EO.EUM.DAT.MSG.HRSEVIRI-IODC
     MSG_LSA_FRM:
-      product:type: EO.EUM.DAT.MSG.LSA-FRM
+      _collection: EO.EUM.DAT.MSG.LSA-FRM
     MSG_LSA_LST_CDR:
-      product:type: EO.EUM.DAT.MSG.LSA-LST-CDR
+      _collection: EO.EUM.DAT.MSG.LSA-LST-CDR
     MSG_LSA_LSTDE:
-      product:type: EO.EUM.DAT.MSG.LSA-LSTDE
+      _collection: EO.EUM.DAT.MSG.LSA-LSTDE
     MSG_RSS_CLM:
-      product:type: EO.EUM.DAT.MSG.RSS-CLM
+      _collection: EO.EUM.DAT.MSG.RSS-CLM
     MSG_MSG15_RSS:
-      product:type: EO.EUM.DAT.MSG.MSG15-RSS
+      _collection: EO.EUM.DAT.MSG.MSG15-RSS
     # GSW
     GSW_CHANGE:
-      product:type: EO.GSW.DAT.CHANGE
+      _collection: EO.GSW.DAT.CHANGE
     GSW_EXTENT:
-      product:type: EO.GSW.DAT.EXTENT
+      _collection: EO.GSW.DAT.EXTENT
     GSW_OCCURRENCE:
-      product:type: EO.GSW.DAT.OCCURRENCE
+      _collection: EO.GSW.DAT.OCCURRENCE
     GSW_RECURRENCE:
-      product:type: EO.GSW.DAT.RECURRENCE
+      _collection: EO.GSW.DAT.RECURRENCE
     GSW_SEASONALITY:
-      product:type: EO.GSW.DAT.SEASONALITY
+      _collection: EO.GSW.DAT.SEASONALITY
     GSW_TRANSITIONS:
-      product:type: EO.GSW.DAT.TRANSITIONS
+      _collection: EO.GSW.DAT.TRANSITIONS
     # Eurostat
     EUSTAT_GREENHOUSE_GAS_EMISSION_AGRICULTURE:
-      product:type: STAT.EUSTAT.DAT.GREENHOUSE_GAS_EMISSION_AGRICULTURE
+      _collection: STAT.EUSTAT.DAT.GREENHOUSE_GAS_EMISSION_AGRICULTURE
     EUSTAT_POP_AGE_GROUP_SEX_NUTS3:
-      product:type: STAT.EUSTAT.DAT.POP_AGE_GROUP_SEX_NUTS3
+      _collection: STAT.EUSTAT.DAT.POP_AGE_GROUP_SEX_NUTS3
     EUSTAT_POP_AGE_SEX_NUTS2:
-      product:type: STAT.EUSTAT.DAT.POP_AGE_SEX_NUTS2
+      _collection: STAT.EUSTAT.DAT.POP_AGE_SEX_NUTS2
     EUSTAT_POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3:
-      product:type: STAT.EUSTAT.DAT.POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3
+      _collection: STAT.EUSTAT.DAT.POP_CHANGE_DEMO_BALANCE_CRUDE_RATES_NUTS3
     EUSTAT_SHARE_ENERGY_FROM_RENEWABLE:
-      product:type: STAT.EUSTAT.DAT.SHARE_ENERGY_FROM_RENEWABLE
+      _collection: STAT.EUSTAT.DAT.SHARE_ENERGY_FROM_RENEWABLE
     EUSTAT_AVAILABLE_BEDS_HOSPITALS_NUTS2:
-      product:type: STAT.EUSTAT.DAT.AVAILABLE_BEDS_HOSPITALS_NUTS2
+      _collection: STAT.EUSTAT.DAT.AVAILABLE_BEDS_HOSPITALS_NUTS2
     EUSTAT_BATHING_SITES_WATER_QUALITY:
-      product:type: STAT.EUSTAT.DAT.BATHING_SITES_WATER_QUALITY
+      _collection: STAT.EUSTAT.DAT.BATHING_SITES_WATER_QUALITY
     EUSTAT_SOIL_SEALING_INDEX:
-      product:type: STAT.EUSTAT.DAT.SOIL_SEALING_INDEX
+      _collection: STAT.EUSTAT.DAT.SOIL_SEALING_INDEX
     EUSTAT_SURFACE_TERRESTRIAL_PROTECTED_AREAS:
-      product:type: STAT.EUSTAT.DAT.SURFACE_TERRESTRIAL_PROTECTED_AREAS
+      _collection: STAT.EUSTAT.DAT.SURFACE_TERRESTRIAL_PROTECTED_AREAS
     EUSTAT_POP_DENSITY_NUTS3:
-      product:type: STAT.EUSTAT.DAT.POP_DENSITY_NUTS3
+      _collection: STAT.EUSTAT.DAT.POP_DENSITY_NUTS3
     # ISIMIP
     ISIMIP_CLIMATE_FORCING_ISIMIP3B:
-      product:type: EO.ISIMIP.DAT.CLIMATE-FORCING_ISIMIP3b
+      _collection: EO.ISIMIP.DAT.CLIMATE-FORCING_ISIMIP3b
     ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
-      product:type: EO.ISIMIP.DAT.SOCIO-ECONOMIC-FORCING_ISIMIP3b
+      _collection: EO.ISIMIP.DAT.SOCIO-ECONOMIC-FORCING_ISIMIP3b
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
 ---
 !provider # MARK: eumetsat_ds
   name: eumetsat_ds
@@ -5409,7 +5400,7 @@
     MTG_FCI_OLR:
       parentIdentifier: EO:EUM:DAT:0685
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      product:type: '{productType}'
       parentIdentifier: '{parentIdentifier}'
   download: !plugin
     type: HTTPDownload
@@ -5471,122 +5462,121 @@
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
   products:
     MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
-      product:type: GLOBAL_ANALYSISFORECAST_PHY_001_024
+      _collection: GLOBAL_ANALYSISFORECAST_PHY_001_024
     MO_GLOBAL_ANALYSISFORECAST_BGC_001_028:
-      product:type: GLOBAL_ANALYSISFORECAST_BGC_001_028
+      _collection: GLOBAL_ANALYSISFORECAST_BGC_001_028
     MO_GLOBAL_ANALYSISFORECAST_WAV_001_027:
-      product:type: GLOBAL_ANALYSISFORECAST_WAV_001_027
+      _collection: GLOBAL_ANALYSISFORECAST_WAV_001_027
     MO_GLOBAL_MULTIYEAR_BGC_001_033:
-      product:type: GLOBAL_MULTIYEAR_BGC_001_033
+      _collection: GLOBAL_MULTIYEAR_BGC_001_033
     MO_GLOBAL_MULTIYEAR_WAV_001_032:
-      product:type: GLOBAL_MULTIYEAR_WAV_001_032
+      _collection: GLOBAL_MULTIYEAR_WAV_001_032
     MO_GLOBAL_MULTIYEAR_PHY_ENS_001_031:
-      product:type: GLOBAL_MULTIYEAR_PHY_ENS_001_031
+      _collection: GLOBAL_MULTIYEAR_PHY_ENS_001_031
     MO_INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048:
-      product:type: INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
+      _collection: INSITU_GLO_PHY_UV_DISCRETE_NRT_013_048
       code_mapping:
         param: platformSerialIdentifier
         index: 3
     MO_INSITU_GLO_PHY_TS_OA_NRT_013_002:
-      product:type: INSITU_GLO_PHY_TS_OA_NRT_013_002
+      _collection: INSITU_GLO_PHY_TS_OA_NRT_013_002
       code_mapping:
         param: analysis_name
         index: 1
     MO_INSITU_GLO_PHY_TS_OA_MY_013_052:
-      product:type: INSITU_GLO_PHY_TS_OA_MY_013_052
+      _collection: INSITU_GLO_PHY_TS_OA_MY_013_052
       code_mapping:
         param: analysis_name
         index: 1
     MO_MULTIOBS_GLO_BIO_BGC_3D_REP_015_010:
-      product:type: MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
+      _collection: MULTIOBS_GLO_BIO_BGC_3D_REP_015_010
     MO_MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008:
-      product:type: MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008
+      _collection: MULTIOBS_GLO_BIO_CARBON_SURFACE_MYNRT_015_008
     MO_MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009:
-      product:type: MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009
+      _collection: MULTIOBS_GLO_BGC_NUTRIENTS_CARBON_PROFILES_MYNRT_015_009
     MO_MULTIOBS_GLO_PHY_MYNRT_015_003:
-      product:type: MULTIOBS_GLO_PHY_MYNRT_015_003
+      _collection: MULTIOBS_GLO_PHY_MYNRT_015_003
     MO_MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013:
-      product:type: MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013
+      _collection: MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013
     MO_MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012:
-      product:type: MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012
+      _collection: MULTIOBS_GLO_PHY_TSUV_3D_MYNRT_015_012
     MO_MULTIOBS_GLO_PHY_W_3D_REP_015_007:
-      product:type: MULTIOBS_GLO_PHY_W_3D_REP_015_007
+      _collection: MULTIOBS_GLO_PHY_W_3D_REP_015_007
     MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001:
-      product:type: SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001
+      _collection: SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_001
     MO_SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009:
-      product:type: SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009
+      _collection: SEAICE_GLO_SEAICE_L4_REP_OBSERVATIONS_011_009
     MO_SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006:
-      product:type: SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006
+      _collection: SEAICE_GLO_SEAICE_L4_NRT_OBSERVATIONS_011_006
     MO_SEALEVEL_GLO_PHY_L4_NRT_008_046:
-      product:type: SEALEVEL_GLO_PHY_L4_NRT_008_046
+      _collection: SEALEVEL_GLO_PHY_L4_NRT_008_046
     MO_SEALEVEL_GLO_PHY_MDT_008_063:
-      product:type: SEALEVEL_GLO_PHY_MDT_008_063
+      _collection: SEALEVEL_GLO_PHY_MDT_008_063
     MO_SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010:
-      product:type: SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010
+      _collection: SST_GLO_SST_L3S_NRT_OBSERVATIONS_010_010
       code_mapping:
         param: sensorType
         index: 3
         pattern: '[A-Z]{3}'
     MO_SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001:
-      product:type: SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001
+      _collection: SST_GLO_SST_L4_NRT_OBSERVATIONS_010_001
     MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_011:
-      product:type: SST_GLO_SST_L4_REP_OBSERVATIONS_010_011
+      _collection: SST_GLO_SST_L4_REP_OBSERVATIONS_010_011
     MO_SST_GLO_SST_L4_REP_OBSERVATIONS_010_024:
-      product:type: SST_GLO_SST_L4_REP_OBSERVATIONS_010_024
+      _collection: SST_GLO_SST_L4_REP_OBSERVATIONS_010_024
     MO_WAVE_GLO_PHY_SPC_FWK_L3_NRT_014_002:
-      product:type: WAVE_GLO_PHY_SPC-FWK_L3_NRT_014_002
+      _collection: WAVE_GLO_PHY_SPC-FWK_L3_NRT_014_002
       code_mapping:
         param: platformSerialIdentifier
         index: 0
         pattern: 's1a|s1b|cfo'
     MO_WAVE_GLO_PHY_SWH_L3_NRT_014_001:
-      product:type: WAVE_GLO_PHY_SWH_L3_NRT_014_001
+      _collection: WAVE_GLO_PHY_SWH_L3_NRT_014_001
       code_mapping:
         param: platformSerialIdentifier
         index: 4
     MO_WAVE_GLO_PHY_SWH_L4_NRT_014_003:
-      product:type: WAVE_GLO_PHY_SWH_L4_NRT_014_003
+      _collection: WAVE_GLO_PHY_SWH_L4_NRT_014_003
     MO_WIND_GLO_PHY_CLIMATE_L4_MY_012_003:
-      product:type: WIND_GLO_PHY_CLIMATE_L4_MY_012_003
+      _collection: WIND_GLO_PHY_CLIMATE_L4_MY_012_003
     MO_WIND_GLO_PHY_L3_NRT_012_002:
-      product:type: WIND_GLO_PHY_L3_NRT_012_002
+      _collection: WIND_GLO_PHY_L3_NRT_012_002
     MO_WIND_GLO_PHY_L3_MY_012_005:
-      product:type: WIND_GLO_PHY_L3_MY_012_005
+      _collection: WIND_GLO_PHY_L3_MY_012_005
     MO_WIND_GLO_PHY_L4_NRT_012_004:
-      product:type: WIND_GLO_PHY_L4_NRT_012_004
+      _collection: WIND_GLO_PHY_L4_NRT_012_004
     MO_WIND_GLO_PHY_L4_MY_012_006:
-      product:type: WIND_GLO_PHY_L4_MY_012_006
+      _collection: WIND_GLO_PHY_L4_MY_012_006
     MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_107:
-      product:type: OCEANCOLOUR_GLO_BGC_L3_MY_009_107
+      _collection: OCEANCOLOUR_GLO_BGC_L3_MY_009_107
     MO_OCEANCOLOUR_GLO_BGC_L3_NRT_009_101:
-      product:type: OCEANCOLOUR_GLO_BGC_L3_NRT_009_101
+      _collection: OCEANCOLOUR_GLO_BGC_L3_NRT_009_101
       code_mapping:
         param: sensorType
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L3_MY_009_103:
-      product:type: OCEANCOLOUR_GLO_BGC_L3_MY_009_103
+      _collection: OCEANCOLOUR_GLO_BGC_L3_MY_009_103
       code_mapping:
         param: sensorType
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_NRT_009_102:
-      product:type: OCEANCOLOUR_GLO_BGC_L4_NRT_009_102
+      _collection: OCEANCOLOUR_GLO_BGC_L4_NRT_009_102
       code_mapping:
         param: sensorType
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_104:
-      product:type: OCEANCOLOUR_GLO_BGC_L4_MY_009_104
+      _collection: OCEANCOLOUR_GLO_BGC_L4_MY_009_104
       code_mapping:
         param: sensorType
         index: 6
         pattern: 'olci|gapfree-multi|multi-climatology|multi'
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
-      product:type: OCEANCOLOUR_GLO_BGC_L4_MY_009_108
+      _collection: OCEANCOLOUR_GLO_BGC_L4_MY_009_108
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
-      collection: '{collection}'
+      _collection: '{productType}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.waw3-1.cloudferro.com
@@ -5686,29 +5676,29 @@
   products:
     S1_SAR_OCN:
       providerProductType: OCN
-      product:type: PEPS_S1_L2
+      _collection: PEPS_S1_L2
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S1_SAR_GRD:
       providerProductType: GRD
-      product:type: PEPS_S1_L1
+      _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S1_SAR_SLC:
       providerProductType: SLC
-      product:type: PEPS_S1_L1
+      _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S2_MSI_L1C:
-      product:type: PEPS_S2_L1C
+      _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
-      product:type: MUSCATE_SENTINEL2_SENTINEL2_L2A
+      _collection: MUSCATE_SENTINEL2_SENTINEL2_L2A
     S2_MSI_L2B_MAJA_SNOW:
-      product:type: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+      _collection: MUSCATE_Snow_SENTINEL2_L2B-SNOW
     S2_MSI_L2B_MAJA_WATER:
-      product:type: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
+      _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: HTTPDownload
     ignore_assets: true
@@ -5811,29 +5801,29 @@
   products:
     S1_SAR_OCN:
       providerProductType: OCN
-      product:type: PEPS_S1_L2
+      _collection: PEPS_S1_L2
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S1_SAR_GRD:
       providerProductType: GRD
-      product:type: PEPS_S1_L1
+      _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S1_SAR_SLC:
       providerProductType: SLC
-      product:type: PEPS_S1_L1
+      _collection: PEPS_S1_L1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S2_MSI_L1C:
-      product:type: PEPS_S2_L1C
+      _collection: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
-      product:type: MUSCATE_SENTINEL2_SENTINEL2_L2A
+      _collection: MUSCATE_SENTINEL2_SENTINEL2_L2A
     S2_MSI_L2B_MAJA_SNOW:
-      product:type: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+     _collection: MUSCATE_Snow_SENTINEL2_L2B-SNOW
     S2_MSI_L2B_MAJA_WATER:
-      product:type: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
+      _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
+      _collection: '{productType}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
