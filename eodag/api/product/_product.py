@@ -138,6 +138,16 @@ class EOProduct:
             and NOT_AVAILABLE not in str(value)
             and not key.startswith("_")
         }
+        common_stac_properties = {
+            key: self.properties[key]
+            for key in sorted(self.properties)
+            if ":" not in key
+        }
+        extensions_stac_properties = {
+            key: self.properties[key] for key in sorted(self.properties) if ":" in key
+        }
+        self.properties = common_stac_properties | extensions_stac_properties
+
         if "geometry" not in properties or (
             (
                 properties["geometry"] == NOT_AVAILABLE
