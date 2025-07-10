@@ -143,7 +143,7 @@ class CopMarineSearch(StaticStacSearch):
 
         logger.debug("fetch data for collection %s", product_type)
         provider_product_type = self.config.products.get(product_type, {}).get(
-            "productType", None
+            "_collection", None
         )
         if not provider_product_type:
             provider_product_type = product_type
@@ -230,8 +230,8 @@ class CopMarineSearch(StaticStacSearch):
             dates = _get_dates_from_dataset_data(dataset_item)
             if not dates:
                 return None
-            properties["startTimeFromAscendingNode"] = dates["start"]
-            properties["completionTimeFromAscendingNode"] = dates["end"]
+            properties["start_datetime"] = dates["start"]
+            properties["end_datetime"] = dates["end"]
         else:
             item_dates = re.findall(r"(\d{4})(0[1-9]|1[0-2])([0-3]\d)", item_id)
             if not item_dates:
@@ -244,12 +244,10 @@ class CopMarineSearch(StaticStacSearch):
                 item_end = _get_date_from_yyyymmdd(item_dates[1], item_key)
             else:  # only date and created_at timestamps
                 item_end = item_start
-            properties["startTimeFromAscendingNode"] = item_start.strftime(
+            properties["start_datetime"] = item_start.strftime("%Y-%m-%dT%H:%M:%SZ")
+            properties["end_datetime"] = (item_end or item_start).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
-            properties["completionTimeFromAscendingNode"] = (
-                item_end or item_start
-            ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         for key, value in collection_dict["properties"].items():
             if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
@@ -328,16 +326,16 @@ class CopMarineSearch(StaticStacSearch):
                 logger.debug("searching data for dataset %s", dataset_item["id"])
 
                 # date bounds
-                if "startTimeFromAscendingNode" in kwargs:
-                    start_date = isoparse(kwargs["startTimeFromAscendingNode"])
+                if "start_datetime" in kwargs:
+                    start_date = isoparse(kwargs["start_datetime"])
                 elif "start_datetime" in dataset_item["properties"]:
                     start_date = isoparse(dataset_item["properties"]["start_datetime"])
                 else:
                     start_date = isoparse(dataset_item["properties"]["datetime"])
                 if not start_date.tzinfo:
                     start_date = start_date.replace(tzinfo=tzutc())
-                if "completionTimeFromAscendingNode" in kwargs:
-                    end_date = isoparse(kwargs["completionTimeFromAscendingNode"])
+                if "end_datetime" in kwargs:
+                    end_date = isoparse(kwargs["end_datetime"])
                 elif "end_datetime" in dataset_item["properties"]:
                     end_date = isoparse(dataset_item["properties"]["end_datetime"])
                 else:

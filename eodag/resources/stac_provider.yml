@@ -67,9 +67,9 @@ search:
       pattern: '$.pattern'
   common_metadata_mapping_path: '$'
   metadata_mapping:
-    # OpenSearch Parameters for Collection Search (Table 3)
-    product:type:
-      - '{{"collections":["{product:type}"]}}'
+    productType: '$.null'
+    _collection:
+      - '{{"collections":["{_collection}"]}}'
       - '$.collection'
     sci:doi:
       - '{{"query":{{"sci:doi":{{"eq":"{sci:doi}"}}}}}}'
