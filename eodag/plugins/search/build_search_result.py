@@ -1194,9 +1194,6 @@ class ECMWFSearch(PostJsonSearch):
                 + "_ORDERABLE_"
                 + query_hash
             )
-            # use product_type_config as default properties
-            product_type_config = getattr(self.config, "product_type_config", {})
-            properties = dict(product_type_config, **properties)
 
         qs = geojson.dumps(sorted_unpaginated_qp)
 
@@ -1431,11 +1428,7 @@ class MeteoblueSearch(ECMWFSearch):
             discovery_config=getattr(self.config, "discover_metadata", {}),
         )
 
-        properties = {
-            # use product_type_config as default properties
-            **getattr(self.config, "product_type_config", {}),
-            **{ecmwf_format(k): v for k, v in parsed_properties.items()},
-        }
+        properties = {ecmwf_format(k): v for k, v in parsed_properties.items()}
 
         def slugify(date_str: str) -> str:
             return date_str.split("T")[0].replace("-", "")
@@ -1463,9 +1456,6 @@ class MeteoblueSearch(ECMWFSearch):
             productType=product_type,
             properties=properties,
         )
-        # use product_type_config as default properties
-        product_type_config = getattr(self.config, "product_type_config", {})
-        product.properties = dict(product_type_config, **product.properties)
 
         return [
             product,

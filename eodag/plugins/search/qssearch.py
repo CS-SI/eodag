@@ -1100,19 +1100,13 @@ class QueryStringSearch(Search):
         products: list[EOProduct] = []
         asset_key_from_href = getattr(self.config, "asset_key_from_href", True)
         for result in results:
-            product = EOProduct(
-                self.provider,
-                QueryStringSearch.extract_properties[self.config.result_type](
-                    result,
-                    self.get_metadata_mapping(kwargs.get("productType")),
-                    discovery_config=getattr(self.config, "discover_metadata", {}),
-                ),
-                **kwargs,
+            properties = QueryStringSearch.extract_properties[self.config.result_type](
+                result,
+                self.get_metadata_mapping(kwargs.get("productType")),
+                discovery_config=getattr(self.config, "discover_metadata", {}),
             )
-            # use product_type_config as default properties
-            product.properties = dict(
-                getattr(self.config, "product_type_config", {}), **product.properties
-            )
+            product = EOProduct(self.provider, properties, **kwargs)
+
             additional_assets = self.get_assets_from_mapping(result)
             product.assets.update(additional_assets)
             # move assets from properties to product's attr, normalize keys & roles
