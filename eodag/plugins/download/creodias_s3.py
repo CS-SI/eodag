@@ -19,6 +19,7 @@ from typing import Optional
 
 import boto3
 from botocore.exceptions import ClientError
+from mypy_boto3_s3.service_resource import S3ServiceResource
 
 from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
@@ -60,10 +61,10 @@ class CreodiasS3Download(AwsDownload):
             )
 
         s3_session = boto3.session.Session(**auth_dict)
-        s3_resource = s3_session.resource(
+        self.s3_resource: S3ServiceResource = s3_session.resource(
             "s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
-        objects = s3_resource.Bucket(bucket_name).objects.filter()
+        objects = self.s3_resource.Bucket(bucket_name).objects.filter()
         list(objects.filter(Prefix=prefix).limit(1))
         self.s3_session = s3_session
         return objects

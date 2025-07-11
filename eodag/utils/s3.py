@@ -20,18 +20,23 @@ from __future__ import annotations
 import io
 import logging
 import os
+import uuid
 import zipfile
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from datetime import datetime
+from itertools import chain
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import boto3
 import botocore
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from stream_zip import ZIP_AUTO, Method, stream_zip
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import (
+    StreamResponse,
     get_bucket_name_and_prefix,
     guess_file_type,
     parse_le_uint16,
@@ -48,7 +53,6 @@ if TYPE_CHECKING:
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
-    from mypy_boto3_s3.service_resource import ObjectSummary
 
     from eodag.api.product import EOProduct  # type: ignore
 
@@ -75,7 +79,7 @@ def fetch_range(
 
 
 @dataclass
-class _FileInfo:
+class FileInfo:
     """
     Describe a S3 object with basic info and its download state.
     """
@@ -85,6 +89,8 @@ class _FileInfo:
     bucket_name: str
     zip_filename: Optional[str] = None
     data_start_offset: int = 0
+    data_type: str = "application/octet-stream"
+    rel_path: Optional[str] = None
 
     # These fields hold the state for downloading
     file_start_offset: int = 0
@@ -97,7 +103,7 @@ class _FileInfo:
     next_yield: int = 0  # The next offset to yield in the file
 
 
-def _prepare_file_in_zip(info: _FileInfo, s3_client: S3Client) -> _FileInfo:
+def _prepare_file_in_zip(info: FileInfo, s3_client: S3Client):
     """Update file information with the offset and size of the file inside the zip archive"""
 
     splitted_path = info.key.split(".zip!")
@@ -113,7 +119,7 @@ def _prepare_file_in_zip(info: _FileInfo, s3_client: S3Client) -> _FileInfo:
 
 
 def _compute_file_ranges(
-    file_info: _FileInfo,
+    file_info: FileInfo,
     byte_range: tuple[Optional[int], Optional[int]],
     range_size: int,
 ) -> Optional[list[tuple[int, int]]]:
@@ -124,7 +130,7 @@ def _compute_file_ranges(
     based on the global requested byte range (`byte_range`) and the size of each chunk (`range_size`).
     It accounts for possible offsets if the file is part of a ZIP archive or not aligned at offset zero.
 
-    :param file_info: The _FileInfo object containing file metadata, including size, data offset,
+    :param file_info: The FileInfo object containing file metadata, including size, data offset,
                       and its starting offset in the full logical file stream.
     :param byte_range: A tuple (start, end) specifying the requested global byte range, where either
                        value may be None to indicate an open-ended range.
@@ -164,70 +170,93 @@ def _compute_file_ranges(
     return ranges
 
 
-def stream_download_from_s3(
-    s3_client: "S3Client",
-    object_summaries: list[ObjectSummary],
+def _build_stream_response(
+    output_filename: str,
+    list_info: list[FileInfo],
+    chunks_iterator: Iterator[tuple[int, bytes]],
+    response_size: int,
+    compress: Literal["zip", "raw", "auto"],
+) -> StreamResponse:
+    """Produce the response in the adapted format: zip, multipart/mixed or single object stream."""
+
+    zip_response = len(list_info) > 1 and compress == "auto" or compress == "zip"
+
+    headers = {
+        "Content-Length": str(response_size),
+        "Accept-Ranges": "bytes",
+    }
+
+    modified_at = datetime.now()
+    perms = 0o600
+
+    if zip_response:
+
+        def zip_stream() -> Iterator[tuple[str, datetime, Literal[384], Method, bytes]]:
+            for index, chunk in chunks_iterator:
+                yield (
+                    list_info[index].rel_path or list_info[index].key,
+                    modified_at,
+                    perms,
+                    ZIP_AUTO(list_info[index].size),
+                    chunk,
+                )
+
+        return StreamResponse(
+            content=stream_zip(zip_stream()),  # type: ignore[return-value]
+            media_type="application/zip",
+            headers={
+                **headers,
+                "content-disposition": f'attachment; filename="{output_filename}.zip"',
+            },
+        )
+
+    elif len(list_info) > 1:
+        boundary = uuid.uuid4().hex
+
+        def multipart_stream():
+            current_index = -1
+            for index, chunk in chunks_iterator:
+                if index != current_index:
+                    if current_index != -1:
+                        yield b"\r\n"
+                    filename = os.path.basename(list_info[index].key)
+                    yield (
+                        f"--{boundary}\r\n"
+                        f'Content-Disposition: attachment; filename="{filename}"\r\n'
+                        f"Content-Type: {list_info[index].data_type}\r\n\r\n"
+                    ).encode()
+                    current_index = index
+                yield chunk
+            yield f"\r\n--{boundary}--\r\n".encode()
+
+        return StreamResponse(
+            content=multipart_stream(),
+            media_type=f"multipart/mixed; boundary={boundary}",
+            headers=headers,
+        )
+
+    else:
+        index, first_chunk = next(chunks_iterator)
+        filename = os.path.basename(list_info[index].key)
+
+        headers["content-disposition"] = f'attachment; filename="{filename}"'
+        headers["content-type"] = list_info[index].data_type
+
+        return StreamResponse(
+            content=chain(iter([first_chunk]), (chunk for _, chunk in chunks_iterator)),
+            headers=headers,
+        )
+
+
+def _chunks_from_s3_objects(
+    s3_client: S3Client,
+    list_info: list[FileInfo],
     byte_range: tuple[Optional[int], Optional[int]] = (None, None),
     range_size: int = 1024**2 * 8,
     max_workers: int = 8,
 ) -> Iterator[tuple[int, bytes]]:
-    """
-    Stream data from one or more S3 objects in chunks, with support for global byte ranges
-    and partial file extraction from ZIP archives.
-
-    This method downloads product data from S3 using concurrent range requests across one or
-    multiple files. It divides the requested data into chunks (default: 8 MiB) and issues
-    parallel HTTP range requests to optimize download throughput. This is particularly useful
-    for large files or datasets stored across multiple S3 objects.
-
-    If the S3 key refers to a path inside a `.zip` file (denoted by `.zip!<internal_path>`),
-    the function extracts the specified file from the archive **only if it is stored uncompressed**
-    (i.e., ZIP method = STORE). Compressed formats (like DEFLATE) are not supported for partial ZIP extraction.
-
-    The function supports global byte range filtering via the `byte_range` parameter, which allows
-    requesting only a specific portion of the logical file stream across all provided objects.
-
-    Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
-    as a separate HTTP request and yielded in file order.
-
-    :param s3_client: A configured S3 client capable of making range requests.
-    :param object_summaries: A list of S3 object metadata representing the files to download.
-    :param byte_range: A tuple of (start, end) defining the inclusive global byte range to download
-                       across all objects. Either value can be None to indicate open-ended range.
-    :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
-    :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
-    :returns: An iterator yielding (file_index, data_chunk) tuples, where:
-              - file_index is the index of the file in the input object list
-              - data_chunk is a `bytes` object containing the downloaded chunk
-    :rtype: Iterator[tuple[int, bytes]]
-    """
-    list_info: list[_FileInfo] = []
-    offset = 0
-
+    """Download chunks from S3 objects in parallel, respecting byte ranges and file order."""
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Compute start offset of each file within the aggregated stream
-        for obj_summary in object_summaries:
-            info = _FileInfo(
-                size=obj_summary.size,
-                key=obj_summary.key,
-                bucket_name=obj_summary.bucket_name,
-            )
-
-            list_info.append(info)
-
-            # Check if file is inside a ZIP
-            if ".zip!" in info.key:
-                future = executor.submit(_prepare_file_in_zip, info)
-                info.futures[future] = 0  # track this future for download state
-
-        # Wait for ZIP file preparation
-        for info in list_info:
-            for future in info.futures:
-                future.result()
-            info.file_start_offset = offset
-            offset += info.size
-
-        # Submit download tasks per file
         for info in list_info:
             ranges = _compute_file_ranges(info, byte_range, range_size)
 
@@ -284,6 +313,83 @@ def stream_download_from_s3(
 
             if next_start > last_chunk_start:
                 current_file_index += 1
+
+
+def stream_download_from_s3(
+    s3_client: S3Client,
+    list_info: list[FileInfo],
+    byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+    range_size: int = 1024**2 * 8,
+    max_workers: int = 8,
+    compress: Literal["zip", "raw", "auto"] = "auto",
+    zip_filename: str = "archive",
+) -> StreamResponse:
+    """
+    Stream data from one or more S3 objects in chunks, with support for global byte ranges
+    and partial file extraction from ZIP archives.
+
+    This method downloads product data from S3 using concurrent range requests across one or
+    multiple files. It divides the requested data into chunks (default: 8 MiB) and issues
+    parallel HTTP range requests to optimize download throughput. This is particularly useful
+    for large files or datasets stored across multiple S3 objects.
+
+    If the S3 key refers to a path inside a `.zip` file (denoted by `.zip!<internal_path>`),
+    the function extracts the specified file from the archive **only if it is stored uncompressed**
+    (i.e., ZIP method = STORE). Compressed formats (like DEFLATE) are not supported for partial ZIP extraction.
+
+    The function supports global byte range filtering via the `byte_range` parameter, which allows
+    requesting only a specific portion of the logical file stream across all provided objects.
+
+    Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
+    as a separate HTTP request and yielded in file order.
+
+    :param s3_client: A configured S3 client capable of making range requests.
+    :param object_summaries: A list of S3 object metadata representing the files to download.
+    :param byte_range: A tuple of (start, end) defining the inclusive global byte range to download
+                       across all objects. Either value can be None to indicate open-ended range.
+    :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
+    :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
+    :returns: An iterator yielding (file_index, data_chunk) tuples, where:
+              - file_index is the index of the file in the input object list
+              - data_chunk is a `bytes` object containing the downloaded chunk
+    :rtype: Iterator[tuple[int, bytes]]
+    """
+
+    offset = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for info in list_info:
+            # Check if file is inside a ZIP
+            if ".zip!" in info.key:
+                future = executor.submit(_prepare_file_in_zip, info, s3_client)
+                info.futures[future] = 0  # track this future for download state
+
+        # Wait for ZIP file preparation
+        for info in list_info:
+            for future in info.futures:
+                future.result()
+            info.file_start_offset = offset
+            offset += info.size
+
+    chunks_tuple = _chunks_from_s3_objects(
+        s3_client,
+        list_info,
+        byte_range=byte_range,
+        range_size=range_size,
+        max_workers=max_workers,
+    )
+
+    return _build_stream_response(
+        zip_filename,
+        list_info,
+        chunks_tuple,
+        offset,
+        compress,
+    )
+
+    # Compute start offset of each file within the aggregated stream
+
+    # Submit download tasks per file
 
 
 def update_assets_from_s3(
@@ -401,7 +507,7 @@ def open_s3_zipped_object(
     # For simplicity, we fetch last 64KB max (max EOCD + comment length allowed by ZIP spec)
     if zip_size is None:
         response = s3_client.head_object(Bucket=bucket_name, Key=key_name)
-        zip_size = response["ContentLength"]
+        zip_size = int(response["ContentLength"])
 
     fetch_size = min(65536, zip_size)
     eocd_search = fetch_range(
@@ -563,6 +669,7 @@ def list_files_in_s3_zipped_object(
     :param s3_resource: s3 resource used to fetch the object
     :returns: List of files in zip
     """
-    with open_s3_zipped_object(bucket_name, key_name, s3_client) as (zip_file, _):
+    zip_file, _ = open_s3_zipped_object(bucket_name, key_name, s3_client)
+    with zip_file:
         logger.debug("Found %s files in %s" % (len(zip_file.filelist), key_name))
         return zip_file.filelist

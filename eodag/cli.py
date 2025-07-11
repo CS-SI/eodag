@@ -109,8 +109,9 @@ class MutuallyExclusiveOption(click.Option):
         """Raise error or use parent handle_parse_result()"""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise click.UsageError(
-                "Illegal usage: `{}` is mutually exclusive with "
-                "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
+                "Illegal usage: `{}` is mutually exclusive with arguments `{}`.".format(
+                    self.name, ", ".join(self.mutually_exclusive)
+                )
             )
 
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
@@ -687,6 +688,7 @@ def serve_rest(
     setup_logging(verbose=ctx.obj["verbosity"])
     try:
         import uvicorn
+        import uvicorn.config
     except ImportError:
         raise ImportError(
             "Feature not available, please install eodag[server] or eodag[all]"

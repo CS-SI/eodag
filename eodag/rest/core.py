@@ -28,6 +28,7 @@ import dateutil
 from cachetools.func import lru_cache
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
+from pyinstrument import Profiler
 from requests.models import Response as RequestsResponse
 
 import eodag
@@ -97,6 +98,19 @@ crunchers = {
 }
 
 
+def profile_generator(gen, profile_file="stream_profile.html"):
+    """Wrap generator with PyInstrument profiler"""
+    profiler = Profiler()
+    profiler.start()
+
+    for chunk in gen:
+        yield chunk
+
+    profiler.stop()
+    with open(profile_file, "w", encoding="utf-8") as f:
+        f.write(profiler.output_html())
+
+
 @_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
 def get_home_page_content(base_url: str, ipp: Optional[int] = None) -> str:
     """Compute eodag service home page content
@@ -123,7 +137,7 @@ def format_product_types(product_types: list[dict[str, Any]]) -> str:
     """
     result: list[str] = []
     for pt in product_types:
-        result.append(f'* *__{pt["ID"]}__*: {pt["abstract"]}')
+        result.append(f"* *__{pt['ID']}__*: {pt['abstract']}")
     return "\n".join(sorted(result))
 
 
@@ -265,13 +279,7 @@ def download_stac_item(
         if product.properties.get("orderLink"):
             _order_and_update(product, auth, kwargs)
 
-        download_stream = product.downloader._stream_download_dict(
-            product,
-            auth=auth,
-            asset=asset,
-            wait=-1,
-            timeout=-1,
-        )
+        download_stream = product.downloader.stream_download(product, asset, auth)
     except NotImplementedError:
         logger.warning(
             "Download streaming not supported for %s: downloading locally then delete",
@@ -301,7 +309,7 @@ def download_stac_item(
             raise
 
     return StreamingResponse(
-        content=download_stream.content,
+        content=profile_generator(download_stream.content),
         headers=download_stream.headers,
         media_type=download_stream.media_type,
     )
@@ -686,7 +694,7 @@ def crunch_products(
     cruncher = crunchers.get(cruncher_name)
     if not cruncher:
         raise ValidationError(
-            f'Unknown crunch name. Use one of: {", ".join(crunchers.keys())}'
+            f"Unknown crunch name. Use one of: {', '.join(crunchers.keys())}"
         )
 
     cruncher_config: dict[str, Any] = {}
@@ -696,7 +704,7 @@ def crunch_products(
             raise ValidationError(
                 (
                     f"cruncher {cruncher} require additional parameters:"
-                    f' {", ".join(cruncher.config_params)}'
+                    f" {', '.join(cruncher.config_params)}"
                 )
             )
         cruncher_config[config_param] = config_param_value
