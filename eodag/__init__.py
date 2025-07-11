@@ -26,6 +26,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from .api.core import EODataAccessGateway
 from .api.product import EOProduct
+from .api.product_type import ProductType
 from .api.search_result import SearchResult
 from .utils.logging import setup_logging
 
@@ -35,4 +36,10 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
 
 # exportable content
-__all__ = ["EODataAccessGateway", "EOProduct", "SearchResult", "setup_logging"]
+__all__ = [
+    "EODataAccessGateway",
+    "EOProduct",
+    "ProductType",
+    "SearchResult",
+    "setup_logging",
+]
