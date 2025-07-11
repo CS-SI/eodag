@@ -44,7 +44,6 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
-    SimpleYamlProxyConfig,
     credentials_in_auth,
     get_ext_product_types_conf,
     load_default_config,
@@ -53,6 +52,7 @@ from eodag.config import (
     override_config_from_env,
     override_config_from_file,
     override_config_from_mapping,
+    product_types_config_init,
     provider_config_init,
     share_credentials,
 )
@@ -125,8 +125,10 @@ class EODataAccessGateway:
         product_types_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
             res_files("eodag") / "resources" / "product_types.yml"
         )
-        self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
-        self.product_types_config_md5 = obj_md5sum(self.product_types_config.source)
+        self.product_types_config = product_types_config_init(product_types_config_path)
+        self.product_types_config_md5 = obj_md5sum(
+            {p: p_f.model_dump() for p, p_f in self.product_types_config.items()}
+        )
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -179,7 +181,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_PRODUCT_TYPES")
-        available_product_types = set(self.product_types_config.source.keys())
+        available_product_types = set(self.product_types_config.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -266,11 +268,10 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = {
-                    "title": product_id,
-                    "abstract": NOT_AVAILABLE,
-                }
-                self.product_types_config.source[
+                empty_product = ProductType(
+                    id=product_id, title=product_id, abstract=NOT_AVAILABLE
+                )
+                self.product_types_config[
                     product_id
                 ] = empty_product  # will update available_product_types
                 products_to_add.append(product_id)
@@ -675,14 +676,12 @@ class EODataAccessGateway:
                 if product_type_id == GENERIC_PRODUCT_TYPE:
                     continue
 
-                config = self.product_types_config[product_type_id]
-
-                product_type = ProductType(id=product_type_id, **config)
-
-                if product_type not in product_types:
+                if (
+                    product_type := self.product_types_config[product_type_id]
+                ) not in product_types:
                     product_types.append(product_type)
 
-        # Return the product_types sorted in lexicographic order of their ID
+        # Return the product_types sorted in lexicographic order of their id
         product_types.sort(key=attrgetter("id"))
         return product_types
 
@@ -975,15 +974,21 @@ class EODataAccessGateway:
                                 new_product_type
                             ] = new_product_type_conf
                             # to self.product_types_config
-                            self.product_types_config.source.update(
+                            self.product_types_config.update(
                                 {
-                                    new_product_type: new_product_types_conf[
-                                        "product_types_config"
-                                    ][new_product_type]
+                                    new_product_type: ProductType(
+                                        id=new_product_type,
+                                        **new_product_types_conf[
+                                            "product_types_config"
+                                        ][new_product_type],
+                                    )
                                 }
                             )
                             self.product_types_config_md5 = obj_md5sum(
-                                self.product_types_config.source
+                                {
+                                    p: p_f.model_dump()
+                                    for p, p_f in self.product_types_config.items()
+                                }
                             )
                             ext_product_types_conf[provider] = new_product_types_conf
                             new_product_types.append(new_product_type)
@@ -1045,16 +1050,14 @@ class EODataAccessGateway:
         return [name for name, _ in providers]
 
     def get_product_type_from_alias(self, alias_or_id: str) -> str:
-        """Return the ID of a product type by either its ID or alias
+        """Return the id of a product type by either its id or alias
 
-        :param alias_or_id: Alias of the product type. If an existing ID is given, this
+        :param alias_or_id: Alias of the product type. If an existing id is given, this
                             method will directly return the given value.
         :returns: Internal name of the product type.
         """
         product_types = [
-            k
-            for k, v in self.product_types_config.items()
-            if v.get("alias") == alias_or_id
+            k for k, v in self.product_types_config.items() if v.alias == alias_or_id
         ]
 
         if len(product_types) > 1:
@@ -1067,22 +1070,24 @@ class EODataAccessGateway:
                 return alias_or_id
             else:
                 raise NoMatchingProductType(
-                    f"Could not find product type from alias or ID {alias_or_id}"
+                    f"Could not find product type from alias or id {alias_or_id}"
                 )
 
         return product_types[0]
 
     def get_alias_from_product_type(self, product_type: str) -> str:
-        """Return the alias of a product type by its ID. If no alias was defined for the
-        given product type, its ID is returned instead.
+        """Return the alias of a product type by its id. If no alias was defined for the
+        given product type, its id is returned instead.
 
-        :param product_type: product type ID
-        :returns: Alias of the product type or its ID if no alias has been defined for it.
+        :param product_type: product type id
+        :returns: Alias of the product type or its id if no alias has been defined for it.
         """
         if product_type not in self.product_types_config:
             raise NoMatchingProductType(product_type)
 
-        return self.product_types_config[product_type].get("alias", product_type)
+        if alias := self.product_types_config[product_type].alias:
+            return alias
+        return product_type
 
     def guess_product_type(
         self,
@@ -2457,8 +2462,7 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_PRODUCT_TYPE metadata
             plugin.config.product_type_config = dict(
-                id=GENERIC_PRODUCT_TYPE,
-                **self.product_types_config[GENERIC_PRODUCT_TYPE],
+                **self.product_types_config[GENERIC_PRODUCT_TYPE].model_dump(),
                 productType=product_type,
             )
         # Remove the id since this is equal to productType.
