@@ -90,6 +90,7 @@ def dict_to_html_table(
                 </tr>
                 """
                     for k, v in input_dict.items()
+                    if v is not None
                 ]
             )
             + f"</table>{closing_bracket}"
@@ -103,6 +104,7 @@ def dict_to_html_table(
                     '{k}': {html_table(v, depth=depth)}
                 </span>"""
                     for k, v in input_dict.items()
+                    if v is not None
                 ]
             )
             + f"{closing_bracket}"
