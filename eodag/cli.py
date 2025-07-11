@@ -54,6 +54,7 @@ from urllib.parse import parse_qs
 import click
 
 from eodag.api.core import EODataAccessGateway, SearchResult
+from eodag.api.product_type import ProductTypesList
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
@@ -472,22 +473,24 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             sys.exit(1)
     try:
         if guessed_product_types:
-            product_types = [
-                pt
-                for pt in dag.list_product_types(
-                    provider=provider, fetch_providers=fetch_providers
-                )
-                if pt["ID"] in guessed_product_types
-            ]
+            product_types = ProductTypesList(
+                [
+                    pt
+                    for pt in dag.list_product_types(
+                        provider=provider, fetch_providers=fetch_providers
+                    )
+                    if pt.id in guessed_product_types
+                ]
+            )
         else:
             product_types = dag.list_product_types(
                 provider=provider, fetch_providers=fetch_providers
             )
         click.echo("Listing available product types:")
         for product_type in product_types:
-            click.echo("\n* {}: ".format(product_type["ID"]))
-            for prop, value in product_type.items():
-                if prop != "ID":
+            click.echo("\n* {}: ".format(product_type.id))
+            for prop, value in product_type.model_dump().items():
+                if prop != "id":
                     text_wrapper.initial_indent = "    - {}: ".format(prop)
                     text_wrapper.subsequent_indent = " " * len(
                         text_wrapper.initial_indent
