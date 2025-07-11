@@ -25,7 +25,7 @@ import shutil
 import tempfile
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
@@ -35,6 +35,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.api.product_type import ProductType, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -540,7 +541,7 @@ class EODataAccessGateway:
 
     def list_product_types(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> list[dict[str, Any]]:
+    ) -> ProductTypesList:
         """Lists supported product types.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -554,7 +555,7 @@ class EODataAccessGateway:
             # First, update product types list if possible
             self.fetch_product_types_list(provider=provider)
 
-        product_types: list[dict[str, Any]] = []
+        product_types: ProductTypesList = ProductTypesList([])
 
         providers_configs = (
             list(self.providers_config.values())
@@ -577,15 +578,15 @@ class EODataAccessGateway:
                     continue
 
                 config = self.product_types_config[product_type_id]
-                if "alias" in config:
-                    product_type_id = config["alias"]
-                product_type = {"ID": product_type_id, **config}
+
+                product_type = ProductType(id=product_type_id, **config)
 
                 if product_type not in product_types:
                     product_types.append(product_type)
 
         # Return the product_types sorted in lexicographic order of their ID
-        return sorted(product_types, key=itemgetter("ID"))
+        product_types.sort(key=attrgetter("id"))
+        return product_types
 
     def fetch_product_types_list(self, provider: Optional[str] = None) -> None:
         """Fetch product types list and update if needed.
@@ -2207,7 +2208,7 @@ class EODataAccessGateway:
         """
         # only fetch providers if product type is not found
         available_product_types: list[str] = [
-            pt["ID"]
+            pt.id
             for pt in self.list_product_types(provider=provider, fetch_providers=False)
         ]
         product_type: Optional[str] = kwargs.get("productType")
@@ -2218,7 +2219,7 @@ class EODataAccessGateway:
                 if fetch_providers:
                     # fetch providers and try again
                     available_product_types = [
-                        pt["ID"]
+                        pt.id
                         for pt in self.list_product_types(
                             provider=provider, fetch_providers=True
                         )
@@ -2331,7 +2332,7 @@ class EODataAccessGateway:
                     for p in self.list_product_types(
                         plugin.provider, fetch_providers=False
                     )
-                    if p["_id"] == product_type
+                    if p._id == product_type
                 ][0],
                 **{"productType": product_type},
             )
@@ -2339,12 +2340,12 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_PRODUCT_TYPE metadata
             plugin.config.product_type_config = dict(
-                ID=GENERIC_PRODUCT_TYPE,
+                id=GENERIC_PRODUCT_TYPE,
                 **self.product_types_config[GENERIC_PRODUCT_TYPE],
                 productType=product_type,
             )
-        # Remove the ID since this is equal to productType.
-        plugin.config.product_type_config.pop("ID", None)
+        # Remove the id since this is equal to productType.
+        plugin.config.product_type_config.pop("id", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.

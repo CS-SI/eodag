@@ -61,10 +61,8 @@ def product_types_info_to_csv(
     os.environ.update(eodag_env_backup)
 
     product_types = dag.list_product_types(fetch_providers=False)
-    product_types_names: list[str] = [
-        product_type["ID"] for product_type in product_types
-    ]
-    metadata_params = list(k for k in product_types[0].keys() if k != "ID")
+    product_types_names: list[str] = [product_type.id for product_type in product_types]
+    metadata_params = list(k for k in product_types[0].model_dump().keys() if k != "id")
 
     # csv fieldnames
     fieldnames = ["product type"] + metadata_params + providers
@@ -82,9 +80,9 @@ def product_types_info_to_csv(
             product_types_rows[product_type_name] = {"product type": product_type_name}
             for metadata_param in metadata_params:
                 metadata_string = [
-                    product_type[metadata_param]
+                    getattr(product_type, metadata_param)
                     for product_type in product_types
-                    if product_type["ID"] == product_type_name
+                    if product_type.id == product_type_name
                 ][0]
                 if metadata_string is not None:
                     metadata_string = metadata_string.replace("\n", " ")
