@@ -21,14 +21,22 @@ import io
 import logging
 import os
 import zipfile
-from typing import TYPE_CHECKING, List, Optional
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
+from zipfile import ZipFile
 
 import boto3
 import botocore
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
-from eodag.utils import get_bucket_name_and_prefix, guess_file_type
+from eodag.utils import (
+    get_bucket_name_and_prefix,
+    guess_file_type,
+    parse_le_uint16,
+    parse_le_uint32,
+)
 from eodag.utils.exceptions import (
     AuthenticationError,
     MisconfiguredError,
@@ -36,102 +44,246 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from zipfile import ZipFile, ZipInfo
+    from typing import Iterator, Optional
+    from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import ObjectSummary
 
     from eodag.api.product import EOProduct  # type: ignore
 
 logger = logging.getLogger("eodag.utils.s3")
 
 
-def fetch(
-    bucket_name: str, key_name: str, start: int, len: int, client_s3: S3Client
+def fetch_range(
+    bucket_name: str, key_name: str, start: int, end: int, client_s3: S3Client
 ) -> bytes:
     """
     Range-fetches a S3 key.
 
     :param bucket_name: Bucket name of the object to fetch
     :param key_name: Key name of the object to fetch
-    :param start: Bucket name to fetch
-    :param len: Bucket name to fetch
+    :param start: Start byte position to fetch
+    :param end: End byte position to fetch
     :param client_s3: s3 client used to fetch the object
     :returns: Object bytes
     """
-    end = start + len - 1
-    s3_object = client_s3.get_object(
+    response = client_s3.get_object(
         Bucket=bucket_name, Key=key_name, Range="bytes=%d-%d" % (start, end)
     )
-    return s3_object["Body"].read()
+    return response["Body"].read()
 
 
-def parse_int(bytes: bytes) -> int:
+@dataclass
+class _FileInfo:
     """
-    Parses 2 or 4 little-endian bits into their corresponding integer value.
-
-    :param bytes: bytes to parse
-    :returns: parsed int
+    Describe a S3 object with basic info and its download state.
     """
-    val = (bytes[0]) + ((bytes[1]) << 8)
-    if len(bytes) > 3:
-        val += ((bytes[2]) << 16) + ((bytes[3]) << 24)
-    return val
+
+    size: int
+    key: str
+    bucket_name: str
+    zip_filename: Optional[str] = None
+    data_start_offset: int = 0
+
+    # These fields hold the state for downloading
+    file_start_offset: int = 0
+    futures: dict = field(
+        default_factory=dict
+    )  # Mapping of futures for each range (start -> future)
+    buffers: dict[int, bytes] = field(
+        default_factory=dict
+    )  # Map of start byte to data chunks
+    next_yield: int = 0  # The next offset to yield in the file
 
 
-def open_s3_zipped_object(
-    bucket_name: str, key_name: str, client_s3: S3Client, partial: bool = True
-) -> ZipFile:
-    """
-    Open s3 zipped object, without downloading it.
+def _prepare_file_in_zip(info: _FileInfo, s3_client: S3Client) -> _FileInfo:
+    """Update file information with the offset and size of the file inside the zip archive"""
 
-    See https://stackoverflow.com/questions/41789176/how-to-count-files-inside-zip-in-aws-s3-without-downloading-it;
-    Based on https://stackoverflow.com/questions/51351000/read-zip-files-from-s3-without-downloading-the-entire-file
+    splitted_path = info.key.split(".zip!")
+    info.key = f"{splitted_path[0]}.zip"
+    info.zip_filename = splitted_path[-1]  # file path inside the ZIP archive
 
-    :param bucket_name: Bucket name of the object to fetch
-    :param key_name: Key name of the object to fetch
-    :param client_s3: s3 client used to fetch the object
-    :param partial: fetch partial data if only content info is needed
-    :returns: List of files in zip
-    """
-    response = client_s3.head_object(Bucket=bucket_name, Key=key_name)
-    size = response["ContentLength"]
-
-    # End Of Central Directory bytes
-    eocd = fetch(bucket_name, key_name, size - 22, 22, client_s3)
-
-    # start offset and size of the central directory
-    cd_start = parse_int(eocd[16:20])
-    cd_size = parse_int(eocd[12:16])
-
-    # fetch central directory, append EOCD, and open as zipfile
-    cd = fetch(bucket_name, key_name, cd_start, cd_size, client_s3)
-
-    zip_data = (
-        cd + eocd if partial else fetch(bucket_name, key_name, 0, size, client_s3)
+    info.data_start_offset, info.size = file_position_from_s3_zip(
+        info.bucket_name,
+        info.key,
+        s3_client,
+        info.zip_filename,
     )
 
-    zip = zipfile.ZipFile(io.BytesIO(zip_data))
 
-    return zip
-
-
-def list_files_in_s3_zipped_object(
-    bucket_name: str, key_name: str, client_s3: S3Client
-) -> List[ZipInfo]:
+def _compute_file_ranges(
+    file_info: _FileInfo,
+    byte_range: tuple[Optional[int], Optional[int]],
+    range_size: int,
+) -> Optional[list[tuple[int, int]]]:
     """
-    List files in s3 zipped object, without downloading it.
+    Compute the byte ranges to download for a single file, considering the overall requested range.
 
-    See https://stackoverflow.com/questions/41789176/how-to-count-files-inside-zip-in-aws-s3-without-downloading-it;
-    Based on https://stackoverflow.com/questions/51351000/read-zip-files-from-s3-without-downloading-the-entire-file
+    This function calculates which byte ranges within the given file should be downloaded,
+    based on the global requested byte range (`byte_range`) and the size of each chunk (`range_size`).
+    It accounts for possible offsets if the file is part of a ZIP archive or not aligned at offset zero.
 
-    :param bucket_name: Bucket name of the object to fetch
-    :param key_name: Key name of the object to fetch
-    :param client_s3: s3 client used to fetch the object
-    :returns: List of files in zip
+    :param file_info: The _FileInfo object containing file metadata, including size, data offset,
+                      and its starting offset in the full logical file stream.
+    :param byte_range: A tuple (start, end) specifying the requested global byte range, where either
+                       value may be None to indicate an open-ended range.
+    :param range_size: The size of each download chunk in bytes.
+    :returns: A list of (start, end) tuples indicating byte ranges to download within this file,
+              or None if the file lies completely outside the requested range.
     """
-    with open_s3_zipped_object(bucket_name, key_name, client_s3) as zip_file:
-        logger.debug("Found %s files in %s" % (len(zip_file.filelist), key_name))
-        return zip_file.filelist
+    file_size = file_info.size
+    file_start_offset = file_info.file_start_offset
+    file_end_offset = file_start_offset + file_size - 1
+
+    range_start, range_end = byte_range
+
+    # Check if the file overlaps with the requested range
+    if range_end is not None and range_start is not None:
+        if file_end_offset < range_start or file_start_offset > range_end:
+            return None  # No overlap, skip this file
+
+    start = 0
+    end = file_size - 1
+
+    # Adjust start and end based on the requested range
+    if range_start is not None:
+        start = max(0, range_start - file_start_offset)
+    if range_end is not None:
+        end = min(file_size - 1, range_end - file_start_offset)
+
+    start += file_info.data_start_offset
+    end += file_info.data_start_offset
+
+    # Compute the ranges in chunks
+    ranges = []
+    for chunk_start in range(start, end + 1, range_size):
+        chunk_end = min(chunk_start + range_size - 1, end)
+        ranges.append((chunk_start, chunk_end))
+
+    return ranges
+
+
+def stream_download_from_s3(
+    s3_client: "S3Client",
+    object_summaries: list[ObjectSummary],
+    byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+    range_size: int = 1024**2 * 8,
+    max_workers: int = 8,
+) -> Iterator[tuple[int, bytes]]:
+    """
+    Stream data from one or more S3 objects in chunks, with support for global byte ranges
+    and partial file extraction from ZIP archives.
+
+    This method downloads product data from S3 using concurrent range requests across one or
+    multiple files. It divides the requested data into chunks (default: 8 MiB) and issues
+    parallel HTTP range requests to optimize download throughput. This is particularly useful
+    for large files or datasets stored across multiple S3 objects.
+
+    If the S3 key refers to a path inside a `.zip` file (denoted by `.zip!<internal_path>`),
+    the function extracts the specified file from the archive **only if it is stored uncompressed**
+    (i.e., ZIP method = STORE). Compressed formats (like DEFLATE) are not supported for partial ZIP extraction.
+
+    The function supports global byte range filtering via the `byte_range` parameter, which allows
+    requesting only a specific portion of the logical file stream across all provided objects.
+
+    Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
+    as a separate HTTP request and yielded in file order.
+
+    :param s3_client: A configured S3 client capable of making range requests.
+    :param object_summaries: A list of S3 object metadata representing the files to download.
+    :param byte_range: A tuple of (start, end) defining the inclusive global byte range to download
+                       across all objects. Either value can be None to indicate open-ended range.
+    :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
+    :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
+    :returns: An iterator yielding (file_index, data_chunk) tuples, where:
+              - file_index is the index of the file in the input object list
+              - data_chunk is a `bytes` object containing the downloaded chunk
+    :rtype: Iterator[tuple[int, bytes]]
+    """
+    list_info: list[_FileInfo] = []
+    offset = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Compute start offset of each file within the aggregated stream
+        for obj_summary in object_summaries:
+            info = _FileInfo(
+                size=obj_summary.size,
+                key=obj_summary.key,
+                bucket_name=obj_summary.bucket_name,
+            )
+
+            list_info.append(info)
+
+            # Check if file is inside a ZIP
+            if ".zip!" in info.key:
+                future = executor.submit(_prepare_file_in_zip, info)
+                info.futures[future] = 0  # track this future for download state
+
+        # Wait for ZIP file preparation
+        for info in list_info:
+            for future in info.futures:
+                future.result()
+            info.file_start_offset = offset
+            offset += info.size
+
+        # Submit download tasks per file
+        for info in list_info:
+            ranges = _compute_file_ranges(info, byte_range, range_size)
+
+            if not ranges:
+                # File lies outside requested range; skip it
+                continue
+
+            futures = {}
+            for start, length in ranges:
+                future = executor.submit(
+                    fetch_range,
+                    info.bucket_name,
+                    info.key,
+                    start,
+                    length,
+                    s3_client,
+                )
+                futures[future] = start
+
+            info.futures = futures
+
+        # Combine all futures to wait on globally
+        all_futures = {
+            fut: (info, start)
+            for info in list_info
+            for fut, start in info.futures.items()
+        }
+
+        current_file_index = 0
+
+        # Yield chunks in order, honoring file ordering
+        while current_file_index < len(list_info):
+            if not all_futures:
+                break  # No more data to process
+
+            done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+            for fut in done:
+                info, start = all_futures.pop(fut)
+                data = fut.result()
+                info.buffers[start] = data
+
+            # Try to yield available chunks from current file in order
+            buffer = list_info[current_file_index].buffers
+            next_start = list_info[current_file_index].next_yield
+
+            while next_start in buffer:
+                yield current_file_index, buffer.pop(next_start)
+                next_start += range_size
+                list_info[current_file_index].next_yield = next_start
+
+            # Check if current file is fully downloaded
+            file_size = list_info[current_file_index].size
+            last_chunk_start = (file_size - 1) // range_size * range_size
+
+            if next_start > last_chunk_start:
+                current_file_index += 1
 
 
 def update_assets_from_s3(
@@ -229,3 +381,188 @@ def update_assets_from_s3(
         raise NotAvailableError(
             f"assets for product {prefix} could not be found"
         ) from e
+
+
+# ----- ZIP section -----
+
+
+def open_s3_zipped_object(
+    bucket_name: str,
+    key_name: str,
+    s3_client,
+    zip_size: Optional[int] = None,
+    partial: bool = True,
+) -> tuple[ZipFile, bytes]:
+    """
+    Fetch central directory + EOCD from S3 and open ZipFile in memory.
+    Returns (ZipFile, central_directory_bytes)
+    """
+    # EOCD is at least 22 bytes, but can be longer if ZIP comment exists.
+    # For simplicity, we fetch last 64KB max (max EOCD + comment length allowed by ZIP spec)
+    if zip_size is None:
+        response = s3_client.head_object(Bucket=bucket_name, Key=key_name)
+        zip_size = response["ContentLength"]
+
+    fetch_size = min(65536, zip_size)
+    eocd_search = fetch_range(
+        bucket_name, key_name, zip_size - fetch_size, zip_size - 1, s3_client
+    )
+
+    # Find EOCD signature from end: 0x06054b50 (little endian)
+    eocd_signature = b"\x50\x4b\x05\x06"
+    eocd_offset = eocd_search.rfind(eocd_signature)
+    if eocd_offset == -1:
+        raise RuntimeError("EOCD signature not found in last 64KB of the file.")
+
+    eocd = eocd_search[eocd_offset : eocd_offset + 22]
+
+    cd_size = parse_le_uint32(eocd[12:16])
+    cd_start = parse_le_uint32(eocd[16:20])
+
+    # Fetch central directory
+    cd_data = fetch_range(
+        bucket_name, key_name, cd_start, cd_start + cd_size - 1, s3_client
+    )
+
+    zip_data = (
+        cd_data + eocd
+        if partial
+        else fetch_range(bucket_name, key_name, 0, zip_size - 1, s3_client)
+    )
+    zipf = ZipFile(io.BytesIO(zip_data))
+    return zipf, cd_data
+
+
+def _parse_central_directory_entry(cd_data: bytes, offset: int) -> dict[str, int]:
+    """
+    Parse one central directory file header entry starting at offset.
+    Returns dict with relative local header offset and sizes.
+    """
+    signature = cd_data[offset : offset + 4]
+    if signature != b"PK\x01\x02":
+        raise RuntimeError("Bad central directory file header signature")
+
+    filename_len = parse_le_uint16(cd_data[offset + 28 : offset + 30])
+    extra_len = parse_le_uint16(cd_data[offset + 30 : offset + 32])
+    comment_len = parse_le_uint16(cd_data[offset + 32 : offset + 34])
+
+    relative_offset = parse_le_uint32(cd_data[offset + 42 : offset + 46])
+
+    header_size = 46 + filename_len + extra_len + comment_len
+
+    return {
+        "relative_offset": relative_offset,
+        "header_size": header_size,
+        "filename_len": filename_len,
+        "extra_len": extra_len,
+        "comment_len": comment_len,
+        "total_size": header_size,
+    }
+
+
+def _parse_local_file_header(local_header_bytes: bytes) -> int:
+    """
+    Parse local file header to find total header size:
+    fixed 30 bytes + filename length + extra field length
+    """
+    if local_header_bytes[0:4] != b"PK\x03\x04":
+        raise RuntimeError("Bad local file header signature")
+
+    filename_len = parse_le_uint16(local_header_bytes[26:28])
+    extra_len = parse_le_uint16(local_header_bytes[28:30])
+    total_size = 30 + filename_len + extra_len
+    return total_size
+
+
+def file_position_from_s3_zip(
+    s3_bucket: str,
+    object_key: str,
+    s3_client,
+    target_filename: str,
+) -> tuple[int, int]:
+    """
+    Get the start position and size of a specific file inside a ZIP archive stored in S3.
+    This function assumes the file is uncompressed (ZIP_STORED).
+
+    :param s3_bucket: The S3 bucket name.
+    :param object_key: The S3 object key for the ZIP file.
+    :param s3_client: The Boto3 S3 client.
+    :param target_filename: The filename inside the ZIP archive to locate.
+    :return: A tuple (file_data_start, file_size) where:
+             - file_data_start is the byte offset where the file data starts in the ZIP archive.
+             - file_size is the size of the file in bytes.
+    :raises FileNotFoundError: If the target file is not found in the ZIP archive.
+    :raises NotImplementedError: If the file is not uncompressed (ZIP_STORED)
+    """
+    zipf, cd_data = open_s3_zipped_object(s3_bucket, object_key, s3_client)
+
+    # Find file in zipf.filelist to get its index and info
+    target_info = None
+    cd_offset = 0
+    for fi in zipf.filelist:
+        if fi.filename == target_filename:
+            target_info = fi
+            break
+        cd_entry_len = (
+            46 + len(fi.filename.encode("utf-8")) + len(fi.extra) + len(fi.comment)
+        )
+        cd_offset += cd_entry_len
+
+    zipf.close()
+
+    if target_info is None:
+        raise FileNotFoundError(f"File {target_filename} not found in ZIP archive")
+
+    if target_info.compress_type != zipfile.ZIP_STORED:
+        raise NotImplementedError("Only uncompressed files (ZIP_STORED) are supported.")
+
+    # Parse central directory entry to get relative local header offset
+    cd_entry = cd_data[
+        cd_offset : cd_offset
+        + (
+            46
+            + len(target_info.filename.encode("utf-8"))
+            + len(target_info.extra)
+            + len(target_info.comment)
+        )
+    ]
+    cd_entry_info = _parse_central_directory_entry(cd_entry, 0)
+
+    local_header_offset = cd_entry_info["relative_offset"]
+
+    # Fetch local file header from S3 (at least 30 bytes + filename + extra field)
+    # We'll fetch 4 KB max to cover large filenames/extra fields safely
+    local_header_fetch_size = 4096
+    local_header_bytes = fetch_range(
+        s3_bucket,
+        object_key,
+        local_header_offset,
+        local_header_offset + local_header_fetch_size - 1,
+        s3_client,
+    )
+
+    local_header_size = _parse_local_file_header(local_header_bytes)
+
+    # Calculate file data start and end offsets
+    file_data_start = local_header_offset + local_header_size
+
+    return file_data_start, target_info.file_size
+
+
+def list_files_in_s3_zipped_object(
+    bucket_name: str, key_name: str, s3_client: S3Client
+) -> list[ZipInfo]:
+    """
+    List files in s3 zipped object, without downloading it.
+
+    See https://stackoverflow.com/questions/41789176/how-to-count-files-inside-zip-in-aws-s3-without-downloading-it;
+    Based on https://stackoverflow.com/questions/51351000/read-zip-files-from-s3-without-downloading-the-entire-file
+
+    :param bucket_name: Bucket name of the object to fetch
+    :param key_name: Key name of the object to fetch
+    :param s3_resource: s3 resource used to fetch the object
+    :returns: List of files in zip
+    """
+    with open_s3_zipped_object(bucket_name, key_name, s3_client) as (zip_file, _):
+        logger.debug("Found %s files in %s" % (len(zip_file.filelist), key_name))
+        return zip_file.filelist
