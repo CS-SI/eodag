@@ -27,7 +27,7 @@ import warnings
 from collections import deque
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from operator import itemgetter
+from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
@@ -37,6 +37,7 @@ from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
+from eodag.api.product_type import ProductType, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
@@ -548,7 +549,7 @@ class EODataAccessGateway:
 
     def list_collections(
         self, provider: Optional[str] = None, fetch_providers: bool = True
-    ) -> list[dict[str, Any]]:
+    ) -> ProductTypesList:
         """Lists supported collections.
 
         :param provider: (optional) The name of a provider that must support the product
@@ -562,7 +563,7 @@ class EODataAccessGateway:
             # First, update collections list if possible
             self.fetch_collections_list(provider=provider)
 
-        collections: list[dict[str, Any]] = []
+        collections: ProductTypesList = ProductTypesList([])
 
         providers_configs = (
             list(self.providers_config.values())
@@ -580,20 +581,20 @@ class EODataAccessGateway:
             )
 
         for p in providers_configs:
-            for collection_id in p.products:  # type: ignore
+            for collection_id in p.products:
                 if collection_id == GENERIC_COLLECTION:
                     continue
 
                 config = self.collections_config[collection_id]
-                if "alias" in config:
-                    collection_id = config["alias"]
-                collection = {"ID": collection_id, **config}
+
+                collection = ProductType(id=collection_id, **config)
 
                 if collection not in collections:
                     collections.append(collection)
 
-        # Return the collections sorted in lexicographic order of their ID
-        return sorted(collections, key=itemgetter("ID"))
+        # Return the collections sorted in lexicographic order of their id
+        collections.sort(key=attrgetter("id"))
+        return collections
 
     def fetch_collections_list(self, provider: Optional[str] = None) -> None:
         """Fetch collections list and update if needed.
@@ -2178,7 +2179,7 @@ class EODataAccessGateway:
         """
         # only fetch providers if collection is not found
         available_collections: list[str] = [
-            pt["ID"]
+            pt.id
             for pt in self.list_collections(provider=provider, fetch_providers=False)
         ]
         collection: Optional[str] = kwargs.get("collection")
@@ -2189,7 +2190,7 @@ class EODataAccessGateway:
                 if fetch_providers:
                     # fetch providers and try again
                     available_collections = [
-                        pt["ID"]
+                        pt.id
                         for pt in self.list_collections(
                             provider=provider, fetch_providers=True
                         )
@@ -2308,7 +2309,7 @@ class EODataAccessGateway:
                     for p in self.list_collections(
                         plugin.provider, fetch_providers=False
                     )
-                    if p["_id"] == collection
+                    if p._id == collection
                 ][0],
                 **{"collection": collection},
             )
@@ -2316,12 +2317,12 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                ID=GENERIC_COLLECTION,
+                id=GENERIC_COLLECTION,
                 **self.collections_config[GENERIC_COLLECTION],
                 collection=collection,
             )
-        # Remove the ID since this is equal to collection.
-        plugin.config.collection_config.pop("ID", None)
+        # Remove the id since this is equal to collections.
+        plugin.config.collection_config.pop("id", None)
 
     def import_stac_items(self, items_urls: list[str]) -> SearchResult:
         """Import STAC items from a list of URLs and convert them to SearchResult.

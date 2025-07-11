@@ -51,6 +51,7 @@ import click
 from concurrent.futures import ThreadPoolExecutor
 
 from eodag.api.core import EODataAccessGateway, SearchResult
+from eodag.api.product_type import ProductTypesList
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
@@ -458,22 +459,24 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             sys.exit(1)
     try:
         if guessed_collections:
-            collections = [
-                pt
-                for pt in dag.list_collections(
-                    provider=provider, fetch_providers=fetch_providers
-                )
-                if pt["ID"] in guessed_collections
-            ]
+            collections = ProductTypesList(
+                [
+                    pt
+                    for pt in dag.list_collections(
+                        provider=provider, fetch_providers=fetch_providers
+                    )
+                    if pt.id in guessed_collections
+                ]
+            )
         else:
             collections = dag.list_collections(
                 provider=provider, fetch_providers=fetch_providers
             )
         click.echo("Listing available collections:")
         for collection in collections:
-            click.echo("\n* {}: ".format(collection["ID"]))
-            for prop, value in collection.items():
-                if prop != "ID":
+            click.echo("\n* {}: ".format(collection.id))
+            for prop, value in collection.model_dump().items():
+                if prop != "id":
                     text_wrapper.initial_indent = "    - {}: ".format(prop)
                     text_wrapper.subsequent_indent = " " * len(
                         text_wrapper.initial_indent
