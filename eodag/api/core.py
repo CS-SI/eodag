@@ -42,7 +42,6 @@ from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
-    SimpleYamlProxyConfig,
     credentials_in_auth,
     get_ext_collections_conf,
     load_default_config,
@@ -51,6 +50,7 @@ from eodag.config import (
     override_config_from_env,
     override_config_from_file,
     override_config_from_mapping,
+    collections_config_init,
     provider_config_init,
     share_credentials,
 )
@@ -123,7 +123,7 @@ class EODataAccessGateway:
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
-        self.collections_config = SimpleYamlProxyConfig(collections_config_path)
+        self.collections_config = collections_config_init(collections_config_path)
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -176,7 +176,7 @@ class EODataAccessGateway:
 
         # init updated providers conf
         strict_mode = is_env_var_true("EODAG_STRICT_COLLECTIONS")
-        available_collections = set(self.collections_config.source.keys())
+        available_collections = set(self.collections_config.keys())
 
         for provider in self.providers_config.keys():
             provider_config_init(
@@ -266,11 +266,10 @@ class EODataAccessGateway:
                     products_to_remove.append(product_id)
                     continue
 
-                empty_product = {
-                    "title": product_id,
-                    "description": NOT_AVAILABLE,
-                }
-                self.collections_config.source[
+                empty_product = ProductType(
+                    id=product_id, title=product_id, abstract=NOT_AVAILABLE
+                )
+                self.collections_config[
                     product_id
                 ] = empty_product  # will update available_collections
                 products_to_add.append(product_id)
@@ -585,11 +584,9 @@ class EODataAccessGateway:
                 if collection_id == GENERIC_COLLECTION:
                     continue
 
-                config = self.collections_config[collection_id]
-
-                collection = ProductType(id=collection_id, **config)
-
-                if collection not in collections:
+                if (
+                    collection := self.collections_config[collection_id]
+                ) not in collections:
                     collections.append(collection)
 
         # Return the collections sorted in lexicographic order of their id
@@ -881,12 +878,14 @@ class EODataAccessGateway:
                                 new_collection
                             ] = new_collection_conf
                             # to self.collections_config
-                            self.collections_config.source.update(
+                            self.collections_config.update(
                                 {
-                                    new_collection: {"_id": new_collection}
-                                    | new_collections_conf["collections_config"][
-                                        new_collection
-                                    ]
+                                    new_collection: ProductType(
+                                        id=new_collection,
+                                        **new_collections_conf[
+                                            "collections_config"
+                                        ][new_collection],
+                                    )
                                 }
                             )
                             ext_collections_conf[provider] = new_collections_conf
@@ -946,16 +945,14 @@ class EODataAccessGateway:
         return [name for name, _ in providers]
 
     def get_collection_from_alias(self, alias_or_id: str) -> str:
-        """Return the ID of a collection by either its ID or alias
+        """Return the id of a collection by either its id or alias
 
-        :param alias_or_id: Alias of the collection. If an existing ID is given, this
+        :param alias_or_id: Alias of the collection. If an existing id is given, this
                             method will directly return the given value.
         :returns: Internal name of the collection.
         """
         collections = [
-            k
-            for k, v in self.collections_config.items()
-            if v.get("alias") == alias_or_id
+            k for k, v in self.collections_config.items() if v.alias == alias_or_id
         ]
 
         if len(collections) > 1:
@@ -968,22 +965,24 @@ class EODataAccessGateway:
                 return alias_or_id
             else:
                 raise NoMatchingCollection(
-                    f"Could not find collection from alias or ID {alias_or_id}"
+                    f"Could not find collection from alias or id {alias_or_id}"
                 )
 
         return collections[0]
 
     def get_alias_from_collection(self, collection: str) -> str:
-        """Return the alias of a collection by its ID. If no alias was defined for the
-        given collection, its ID is returned instead.
+        """Return the alias of a collection by its id. If no alias was defined for the
+        given collection, its id is returned instead.
 
-        :param collection: collection ID
-        :returns: Alias of the collection or its ID if no alias has been defined for it.
+        :param collection: collection id
+        :returns: Alias of the collection or its id if no alias has been defined for it.
         """
         if collection not in self.collections_config:
             raise NoMatchingCollection(collection)
 
-        return self.collections_config[collection].get("alias", collection)
+        if alias := self.collections_config[collection].alias:
+            return alias
+        return collection
 
     def guess_collection(
         self,
@@ -2317,8 +2316,7 @@ class EODataAccessGateway:
         except IndexError:
             # Construct the GENERIC_COLLECTION metadata
             plugin.config.collection_config = dict(
-                id=GENERIC_COLLECTION,
-                **self.collections_config[GENERIC_COLLECTION],
+                **self.collections_config[GENERIC_COLLECTION].model_dump(),
                 collection=collection,
             )
         # Remove the id since this is equal to collections.

@@ -44,6 +44,7 @@ from annotated_types import Gt
 from jsonpath_ng import JSONPath
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
+from eodag.api.product_type import ProductType, ProductTypesDict
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     STAC_SEARCH_PLUGINS,
@@ -806,6 +807,22 @@ def share_credentials(
                             getattr(
                                 providers_config[provider], auth_topic_key
                             ).credentials = conf_with_creds.credentials
+
+
+def collections_config_init(
+    product_types_config_path: str,
+) -> ProductTypesDict:
+    """Set product types config of a yaml file to a :class:`~eodag.api.product_type.ProductTypesDict` object
+    to manipulate directly :class:`~eodag.api.product_type.ProductType` objects.
+
+    :param product_types_config_path: The path to the product types config file
+    """
+    # Turn the product types config from a dict into a ProductTypesDict() object
+    product_types_config_dict = SimpleYamlProxyConfig(product_types_config_path).source
+    product_types = [
+        ProductType(id=pt, **pt_f) for pt, pt_f in product_types_config_dict.items()
+    ]
+    return ProductTypesDict(product_types)
 
 
 def provider_config_init(
