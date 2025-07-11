@@ -3708,7 +3708,7 @@
         collection: '$.dataset_id'
       generic_product_type_parsable_metadata:
         abstract: '$.metadata.description'
-        license: '$.terms'
+        license: '{$.terms#csv_list}'
         instrument: '$.null'
         platform: '$.null'
         platformSerialIdentifier: '$.null'
@@ -5285,6 +5285,8 @@
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
         collection: '$.id'
+        providers: '$.providers'
+        doi: '$.sci:doi'
       generic_product_type_parsable_metadata:
         instrument: '$.null'
         platform:  '$.null'
@@ -5295,8 +5297,6 @@
         title: '$.title'
         missionStartDate: '$.extent.temporal.interval[0][0]'
         abstract: '$.description'
-        providers: '$.providers'
-        doi: '$.sci:doi'
     discover_metadata:
       auto_discovery: false
     discover_queryables:
@@ -5453,6 +5453,8 @@
       fetch_method: POST
       fetch_body:
         limit: 10000
+      generic_product_type_parsable_metadata:
+        processingLevel: '{$.summaries."processing:level"#csv_list}'
     pagination:
       total_items_nb_key_path: '$.context.matched'
       # 1000 is ok and 2000 fails
