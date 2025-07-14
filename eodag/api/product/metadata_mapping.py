@@ -376,15 +376,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_to_geojson_polytope(value: Any) -> str:
-
             # ECMWF Polytope uses non-geojson structure for features
-            if "feature" in value and isinstance(value["feature"], Polygon):
-                value["feature"] = {
+            if isinstance(value, Polygon):
+                return {
                     "type": "polygon",
-                    "shape": [[y, x] for x, y in value["feature"].exterior.coords],
+                    "shape": [[y, x] for x, y in value.exterior.coords],
                 }
 
-            return geojson.dumps(value)
+            return value
 
         @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
@@ -1354,6 +1353,7 @@ def format_query_params(
                     formatted_query_param = remove_str_array_quotes(
                         formatted_query_param
                     )
+
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,

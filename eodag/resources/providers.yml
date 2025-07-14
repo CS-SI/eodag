@@ -4463,6 +4463,9 @@
       product_type_fetch_url: null
       constraints_url: "https://s3.central.data.destination-earth.eu/swift/v1/dedt-lumi-constraints/{dataset}.json"
     metadata_mapping:
+      geometry:
+        - '{{"feature": {geometry#to_geojson_polytope}}}'
+        - "$.geometry"
       startTimeFromAscendingNode: '{$.startTimeFromAscendingNode#to_iso_utc_datetime}'
       completionTimeFromAscendingNode:
         - '{{"date": "{startTimeFromAscendingNode#to_non_separated_date}/to/{completionTimeFromAscendingNode#to_non_separated_date}"}}'
@@ -4471,7 +4474,7 @@
         - dataset
         - $.dataset
       qs: $.qs
-      orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson_polytope} }}'
+      orderLink: 'https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/destination-earth?{{"verb": "retrieve", "request": {qs#to_geojson} }}'
   products:
     DT_EXTREMES:
       dataset: extremes-dt
