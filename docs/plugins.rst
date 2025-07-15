@@ -185,7 +185,7 @@ Read the :ref:`mock search plugin` section to get an example of how to build a s
 plugin.
 
 As an example of external plugin, you can have a look to
-`eodag-sentinelsat <https://github.com/CS-SI/eodag-sentinelsat>`_.
+`eodag-sentinelsat (archived) <https://github.com/CS-SI/eodag-sentinelsat>`_.
 
 .. _mock search plugin:
 
