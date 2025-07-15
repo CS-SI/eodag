@@ -1,7 +1,7 @@
-.. _side_projects:
+.. ecosystem:
 
-Side projects
-=============
+Ecosystem
+=========
 
 EODAG-cube
 ----------
