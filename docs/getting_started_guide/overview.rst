@@ -6,7 +6,7 @@ Why EODAG?
 Nowadays, we observe a rise in publicly accessible Earth Observation (EO) data.
 Together with it, there is more and more EO data providers, each potentially having
 a different data access policy. This difference is visible at various levels:
-in the data discovery (CSW, OpenSearch more or less custom, etc.), in the
+in the data discovery (STAC, OData, OpenSearch more or less custom, etc.), in the
 product access (object storage, downloads, direct file system access, etc.), in
 the storage structure and in the authentication mechanisms (OAUTH, JWT, basic
 auth,...). All these different technologies add a knowledge overhead on a user
@@ -28,9 +28,9 @@ EODAG is developed in Python. It is structured according to a modular plugin
 architecture, easily extensible and able to integrate new data providers. Three
 types of plugins compose the tool:
 
-* Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...),
+* Catalog search plugins, responsible for searching data (STAC, OpenSearch, OData, ...),
   building paths, retrieving quicklook, combining results
-* Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..),
+* Download plugins, allowing to download and retrieve data locally (via HTTP, S3, ...),
   always with the same directory organization
 * Authentication plugins, which are used to authenticate the user on the
   external services used (JSON Token, Basic Auth, OAUTH, ...).
