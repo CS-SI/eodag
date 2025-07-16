@@ -26,7 +26,7 @@ import geojson
 import responses
 from dateutil.parser import isoparse
 from ecmwfapi.api import ANONYMOUS_APIKEY_VALUES
-from shapely.geometry import shape
+from shapely.geometry import Polygon, shape
 
 from eodag.utils import deepcopy
 from tests.context import (
@@ -734,3 +734,59 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 )
 
         run()
+
+
+class TestApisPluginDedtLumifApi(BaseApisPluginTest):
+    def setUp(self):
+        self.provider = "dedt_lumi"
+        self.api_plugin = self.get_search_plugin(provider=self.provider)
+        self.product_type = "DT_CLIMATE_ADAPTATION"
+
+    def test_plugins_apis_dedt_lumi_query_feature(self):
+        """Test the proper handling of geom into ecmwf:feature"""
+
+        _expected_feature = {
+            "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
+            "type": "polygon",
+        }
+
+        # bbox definition
+
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            start="20210101",
+            geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
+        )
+
+        eoproduct = results[0]
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # shapely polygon
+
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            start="20210101",
+            geometry=Polygon([(1, 43), (1, 44), (2, 44), (2, 43), (1, 43)]),
+        )
+
+        eoproduct = results[0]
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # WKT polygon
+
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            start="20210101",
+            geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+        )
+
+        eoproduct = results[0]
+
+        import json
+
+        print(json.dumps(_expected_feature, indent=2))
+        print(json.dumps(eoproduct.properties["ecmwf:feature"], indent=2))
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])

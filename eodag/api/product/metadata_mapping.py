@@ -375,7 +375,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return geojson.dumps(value)
 
         @staticmethod
-        def convert_to_geojson_polytope(value: Any) -> Union[dict, str]:
+        def convert_to_geojson_polytope(value: Any) -> Union[dict[Any, Any], str]:
             # ECMWF Polytope uses non-geojson structure for features
             if isinstance(value, Polygon):
                 return {
