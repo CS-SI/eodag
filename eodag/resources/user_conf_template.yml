@@ -215,17 +215,6 @@ sara:
         credentials:
             username:
             password:
-theia:
-    priority: # Lower value means lower priority (Default: 0)
-    search: # Search parameters configuration
-    download:
-        extract:
-        output_dir:
-        dl_url_params:
-    auth:
-        credentials:
-            ident:
-            pass:
 usgs:
     priority: # Lower value means lower priority (Default: 0)
     api:

@@ -175,7 +175,7 @@ Example usage:
 
 .. code-block:: bash
 
-   export EODAG_PROVIDERS_WHITELIST=peps,creodias,theia
+   export EODAG_PROVIDERS_WHITELIST=peps,creodias,cop_dataspace
    export EODAG_STRICT_PRODUCT_TYPES=true
 
 CLI configuration

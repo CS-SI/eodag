@@ -349,10 +349,6 @@ class TestConfigFunctions(unittest.TestCase):
           download:
               output_dir: /data
 
-        theia:
-            download:
-                output_dir:
-
         my_new_provider:
             priority: 4
             search:
@@ -398,9 +394,6 @@ class TestConfigFunctions(unittest.TestCase):
 
         peps_conf = default_config["peps"]
         self.assertEqual(peps_conf.download.output_dir, "/data")
-
-        theia_conf = default_config["theia"]
-        self.assertEqual(theia_conf.download.output_dir, tempfile.gettempdir())
 
         my_new_provider_conf = default_config["my_new_provider"]
         self.assertEqual(my_new_provider_conf.priority, 4)

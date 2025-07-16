@@ -12,8 +12,6 @@ onda_count.json and onda_search.json are results obtained from https://www.onda-
 
 peps_search.json are results obtained from https://peps.cnes.fr/ catalog and eodag_search_result_peps.geojson is derived from results from this catalog.
 
-eodag_search_result_theia.geojson is derived from results from https://theia.cnes.fr/ catalog.
-
 
 The product S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911 found under products and under products/as_archive
 was found on https://creodias.eu/ catalog. It has been modified (some files have been removed to keep it lightweighted)

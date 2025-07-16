@@ -207,10 +207,6 @@ with your Microsoft account `here <https://planetarycomputer.developer.azure-api
 Create an account `here <https://copernicus.nci.org.au/sara.client/#/register>`__, then use your email as ``username`` in
 eodag credentials.
 
-``theia``
-^^^^^^^^^
-Create an account `here <https://sso.theia-land.fr/theia/register/register.xhtml>`__
-
 ``usgs``
 ^^^^^^^^
 Create an account  `here <https://ers.cr.usgs.gov/register/>`__, and

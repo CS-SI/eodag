@@ -60,16 +60,6 @@ class TestEODagDownloadCredentialsNotSet(unittest.TestCase):
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
 
-    def test_eodag_download_missing_credentials_theia(self):
-        search_resuls = os.path.join(
-            TEST_RESOURCES_PATH, "eodag_search_result_theia.geojson"
-        )
-        products = self.eodag.deserialize_and_register(search_resuls)
-        with self.assertRaises(MisconfiguredError):
-            self.eodag.download(products[0])
-        with self.assertRaises(MisconfiguredError):
-            self.eodag.download_all(products)
-
     def test_eodag_download_missing_credentials_peps(self):
         search_resuls = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"

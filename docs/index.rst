@@ -47,7 +47,6 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `peps <https://peps.cnes.fr/rocket/#/home>`_,
       `planetary_computer <https://planetarycomputer.microsoft.com>`_,
       `sara <https://copernicus.nci.org.au>`_,
-      `theia <https://theia.cnes.fr/atdistrib/rocket>`_,
       `usgs <https://earthexplorer.usgs.gov>`_,
       `usgs_satapi_aws <https://landsatlook.usgs.gov>`_,
       `wekeo_cmems <https://www.wekeo.eu>`_,

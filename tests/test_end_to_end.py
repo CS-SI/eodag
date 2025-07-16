@@ -40,13 +40,6 @@ from tests.context import (
     uri_to_path,
 )
 
-THEIA_SEARCH_ARGS = [
-    "theia",
-    "S2_MSI_L2A_MAJA",
-    "2019-03-01",
-    "2019-03-15",
-    [0.2563590566012408, 43.19555008715042, 2.379835675499976, 43.907759172380565],
-]
 PEPS_SEARCH_ARGS = [
     "peps",
     "S2_MSI_L1C",
@@ -427,12 +420,6 @@ class TestEODagEndToEnd(EndToEndBase):
         expected_filename = "{}.zip".format(product.properties["title"])
         self.execute_download(product, expected_filename)
 
-    # @unittest.skip("service unavailable for the moment")
-    def test_end_to_end_search_download_theia(self):
-        product = self.execute_search(*THEIA_SEARCH_ARGS)
-        expected_filename = "{}.zip".format(product.properties["title"])
-        self.execute_download(product, expected_filename)
-
     def test_end_to_end_search_download_geodes(self):
         product = self.execute_search(*GEODES_SEARCH_ARGS)
         expected_filename = "{}.zip".format(product.properties["title"])
@@ -587,7 +574,6 @@ class TestEODagEndToEnd(EndToEndBase):
         # providers supporting search-by-tile
         supported_providers_product_types = [
             ("peps", "S2_MSI_L1C"),
-            ("theia", "S2_MSI_L2A_MAJA"),
             ("planetary_computer", "S2_MSI_L2A"),
             ("earth_search", "S2_MSI_L1C"),
         ]
@@ -941,11 +927,6 @@ class TestEODagEndToEndWrongCredentials(EndToEndBase):
             if cls.eodag_env_pattern.match(k):
                 os.environ.pop(k)
         os.environ.update(cls.eodag_env_backup)
-
-    def test_end_to_end_wrong_credentials_theia(self):
-        product = self.execute_search(*THEIA_SEARCH_ARGS)
-        with self.assertRaises(AuthenticationError):
-            self.eodag.download(product)
 
     def test_end_to_end_wrong_credentials_peps(self):
         product = self.execute_search(*PEPS_SEARCH_ARGS)

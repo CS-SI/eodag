@@ -535,187 +535,6 @@
     type: HttpQueryStringAuth
     matching_url: https://gate.eos.com
     ssl_verify: true
-
----
-!provider # MARK: theia
-  name: theia
-  priority: 0
-  description: French National Space Agency (CNES) catalog for Sentinel 2 products, Pleiades and Landsat products
-  roles:
-    - host
-  url: https://theia.cnes.fr/atdistrib/rocket/
-  search: !plugin
-    type: QueryStringSearch
-    api_endpoint: 'https://theia.cnes.fr/atdistrib/resto2/api/collections/{collection}/search.json'
-    need_auth: false
-    ssl_verify: true
-    pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
-      total_items_nb_key_path: '$.properties.totalResults'
-      # 2021/03/19: Returns a 400 error code if greater than 500.
-      max_items_per_page: 500
-    discover_metadata:
-      auto_discovery: true
-      metadata_pattern: '^(?!collection)[a-zA-Z0-9_]+$'
-      search_param: '{metadata}={{{metadata}}}'
-      metadata_path: '$.properties.*'
-    metadata_mapping:
-      # Opensearch resource identifier within the search engine context (in our case
-      # within the context of the data provider)
-      uid: '$.id'
-      # OpenSearch Parameters for Collection Search (Table 3)
-      productType:
-        - productType
-        - '$.properties.productType'
-      platform:
-        - platform
-        - '$.properties.platform'
-      platformSerialIdentifier:
-        - 'platform={platformSerialIdentifier}'
-        - '$.properties.platform'
-      instrument:
-        - instrument
-        - '$.properties.instrument'
-      processingLevel:
-        - processingLevel
-        - '$.properties.processingLevel'
-
-      # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
-      title: '$.properties.title'
-      keyword: '$.properties.keywords'
-      resolution: '$.properties.resolution'
-      organisationName: '$.properties.organisationName'
-      publicationDate: '$.properties.published'
-      accessConstraint: '$.properties.license'
-
-      # OpenSearch Parameters for Product Search (Table 5)
-      parentIdentifier: '$.properties.parentIdentifier'
-      orbitNumber: '$.properties.orbitNumber'
-      cloudCover:
-        - 'cloudCover=[0,{cloudCover}]'
-        - '$.properties.cloudCover'
-      snowCover: '$.properties.snowCover'
-      productVersion: '$.properties.version'
-      creationDate: '$.properties.productionDate'
-      modificationDate: '$.properties.modificationDate'
-      processingDate: '$.properties.processingDate'
-      sensorMode: '$.properties.sensorMode'
-      archivingCenter: '$.properties.archivingCenter'
-      processingMode: '$.properties.processingMode'
-
-      # OpenSearch Parameters for Acquistion Parameters Search (Table 6)
-      availabilityTime: '$.properties.availabilityTime'
-      acquisitionStation: '$.properties.acquisitionStation'
-      acquisitionSubType: '$.properties.acquisitionSubType'
-      startTimeFromAscendingNode:
-        - 'startDate={startTimeFromAscendingNode#to_iso_date}'
-        - '$.properties.startDate'
-      completionTimeFromAscendingNode:
-        - 'completionDate={completionTimeFromAscendingNode#to_iso_date}'
-        - '$.properties.completionDate'
-      illuminationAzimuthAngle: '$.properties.illuminationAzimuthAngle'
-      illuminationZenithAngle: '$.properties.illuminationZenithAngle'
-      illuminationElevationAngle: '$.properties.illuminationElevationAngle'
-      polarizationMode: '$.properties.polarizationMode'
-      polarizationChannels: '$.properties.polarisationChannels'
-      antennaLookDirection: '$.properties.antennaLookDirection'
-      minimumIncidenceAngle: '$.properties.minimumIncidenceAngle'
-      maximumIncidenceAngle: '$.properties.maximumIncidenceAngle'
-      dopplerFrequency: '$.properties.dopplerFrequency'
-      incidenceAngleVariation: '$.properties.incidenceAngleVariation'
-
-      # Custom parameters (not defined in the base document referenced above)
-      id: '$.properties.productIdentifier'
-      tileIdentifier:
-        - 'location=T{tileIdentifier#replace_str(r"^T(.*)$",r"\1")}'
-        - '{$.properties.location#replace_str(r"^T(.*)$",r"\1")}'
-      # The geographic extent of the product
-      geometry:
-        - 'geometry={geometry#to_rounded_wkt}'
-        - '$.geometry'
-      # The url of the quicklook
-      quicklook: '$.properties.quicklook'
-      # The url to download the product "as is" (literal or as a template to be completed either after the search result
-      # is obtained from the provider or during the eodag download phase)
-      downloadLink: '$.properties.services.download.url'
-
-      # Additional metadata provided by the providers but that don't appear in the reference spec
-      # Or has a different signification for the provider
-      thumbnail: '$.properties.thumbnail'
-
-      # storageStatus set to ONLINE for consistency between providers
-      storageStatus: '{$.null#replace_str("Not Available","ONLINE")}'
-
-  products:
-    S2_MSI_L2A_MAJA:
-      processingLevel: LEVEL2A
-      collection: SENTINEL2
-    S2_MSI_L2B_MAJA_SNOW:
-      processingLevel: L2B-SNOW
-      collection: Snow
-    S2_MSI_L2B_MAJA_WATER:
-      processingLevel: L2B-WATER
-      collection: WaterQual
-    S2_MSI_L3A_WASP:
-      processingLevel: LEVEL3A
-      collection: SENTINEL2
-    SPOT_SWH:
-      collection: SPOTWORLDHERITAGE
-      processingLevel: LEVEL1C
-    SPOT_SWH_OLD:
-      collection: SWH1
-      processingLevel: LEVEL1C
-    SPOT5_SPIRIT:
-      collection: Spirit
-      processingLevel: 1A
-    VENUS_L1C:
-      collection: VENUS
-      processingLevel: LEVEL1C
-    VENUS_L2A_MAJA:
-      collection: VENUS
-      processingLevel: LEVEL2A
-    VENUS_L3A_MAJA:
-      collection: VENUS
-      processingLevel: LEVEL3A
-    L8_REFLECTANCE:
-      collection: LANDSAT
-      productType: REFLECTANCE
-    L57_REFLECTANCE:
-      collection: Landsat57
-      productType: REFLECTANCE
-    PLD_PAN:
-      collection: Pleiades
-      productType: Panchromatique+(Pan)
-    PLD_XS:
-      collection: Pleiades
-      productType: Multispectral+(XS)
-    PLD_BUNDLE:
-      collection: Pleiades
-      productType: Bundle+(Pan,+XS)
-    PLD_PANSHARPENED:
-      collection: Pleiades
-      productType: Pansharpened+(Pan%2BXS)
-    OSO:
-      collection: OSO
-    GENERIC_PRODUCT_TYPE:
-      productType: '{productType}'
-      collection: '{collection}'
-      processingLevel: '{processingLevel}'
-  download: !plugin
-    type: HTTPDownload
-    extract: true
-    archive_depth: 2
-    order_enabled: true
-    auth_error_code: 403
-    ssl_verify: true
-    dl_url_params:
-      issuerId: theia
-  auth: !plugin
-    type: TokenAuth
-    matching_url: https://theia.cnes.fr
-    auth_uri: 'https://theia.cnes.fr/atdistrib/services/authenticate/'
-    ssl_verify: true
-
 ---
 !provider # MARK: peps
   name: peps
@@ -5822,6 +5641,10 @@
       productType: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
       productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
+    S2_MSI_L2B_MAJA_SNOW:
+      productType: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+    S2_MSI_L2B_MAJA_WATER:
+      productType: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
@@ -5945,6 +5768,10 @@
       productType: PEPS_S2_L1C
     S2_MSI_L2A_MAJA:
       productType: MUSCATE_SENTINEL2_SENTINEL2_L2A
+    S2_MSI_L2B_MAJA_SNOW:
+      productType: MUSCATE_Snow_SENTINEL2_L2B-SNOW
+    S2_MSI_L2B_MAJA_WATER:
+      productType: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin

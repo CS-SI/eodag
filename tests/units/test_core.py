@@ -183,9 +183,7 @@ class TestCore(TestCoreBase):
         "GSW_TRANSITIONS": ["dedl"],
         "ISIMIP_CLIMATE_FORCING_ISIMIP3B": ["dedl"],
         "ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B": ["dedl"],
-        "L57_REFLECTANCE": ["theia"],
         "L8_OLI_TIRS_C1L1": ["aws_eos", "earth_search_gcs"],
-        "L8_REFLECTANCE": ["theia"],
         "LANDSAT_C2L1": [
             "dedl",
             "planetary_computer",
@@ -307,11 +305,6 @@ class TestCore(TestCoreBase):
         "NAIP": ["aws_eos", "earth_search", "planetary_computer"],
         "NEMSAUTO_TCDC": ["meteoblue"],
         "NEMSGLOBAL_TCDC": ["meteoblue"],
-        "OSO": ["theia"],
-        "PLD_BUNDLE": ["theia"],
-        "PLD_PAN": ["theia"],
-        "PLD_PANSHARPENED": ["theia"],
-        "PLD_XS": ["theia"],
         "S1_SAR_GRD": [
             "aws_eos",
             "cop_dataspace",
@@ -380,10 +373,9 @@ class TestCore(TestCoreBase):
             "wekeo_main",
         ],
         "S2_MSI_L2A_COG": ["earth_search_cog"],
-        "S2_MSI_L2A_MAJA": ["geodes", "geodes_s3", "theia"],
-        "S2_MSI_L2B_MAJA_SNOW": ["theia"],
-        "S2_MSI_L2B_MAJA_WATER": ["theia"],
-        "S2_MSI_L3A_WASP": ["theia"],
+        "S2_MSI_L2A_MAJA": ["geodes", "geodes_s3"],
+        "S2_MSI_L2B_MAJA_SNOW": ["geodes", "geodes_s3"],
+        "S2_MSI_L2B_MAJA_WATER": ["geodes", "geodes_s3"],
         "S3_EFR": [
             "cop_dataspace",
             "creodias",
@@ -585,16 +577,9 @@ class TestCore(TestCoreBase):
         "SEASONAL_POSTPROCESSED_PL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SEASONAL_POSTPROCESSED_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
         "SIS_HYDRO_MET_PROJ": ["cop_cds", "dedl"],
-        "SPOT5_SPIRIT": ["theia"],
-        "SPOT_SWH": ["theia"],
-        "SPOT_SWH_OLD": ["theia"],
         "TIGGE_CF_SFC": ["ecmwf"],
         "UERRA_EUROPE_SL": ["cop_cds", "dedl", "wekeo_ecmwf"],
-        "VENUS_L1C": ["theia"],
-        "VENUS_L2A_MAJA": ["theia"],
-        "VENUS_L3A_MAJA": ["theia"],
         GENERIC_PRODUCT_TYPE: [
-            "theia",
             "peps",
             "usgs",
             "creodias",
@@ -636,7 +621,6 @@ class TestCore(TestCoreBase):
         "meteoblue",
         "planetary_computer",
         "sara",
-        "theia",
         "usgs",
         "usgs_satapi_aws",
         "wekeo_cmems",
@@ -1387,8 +1371,8 @@ class TestCore(TestCoreBase):
         self.dag.set_preferred_provider("creodias")
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 2))
 
-        self.dag.set_preferred_provider("theia")
-        self.assertEqual(self.dag.get_preferred_provider(), ("theia", 3))
+        self.dag.set_preferred_provider("cop_dataspace")
+        self.assertEqual(self.dag.get_preferred_provider(), ("cop_dataspace", 3))
 
         self.dag.set_preferred_provider("creodias")
         self.assertEqual(self.dag.get_preferred_provider(), ("creodias", 4))
@@ -1907,7 +1891,6 @@ class TestCore(TestCoreBase):
                 ],
                 "max_sort_params": 1,
             },
-            "theia": None,
             "usgs": None,
             "usgs_satapi_aws": {
                 "sortables": [
@@ -2326,7 +2309,6 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
-            "S2_MSI_L3A_WASP",
             "EEA_DAILY_VI",
         ]
         self.assertEqual(actual, expected)
@@ -2590,7 +2572,7 @@ class TestCoreSearch(TestCoreBase):
         # of providers that make it available.
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
-            self.dag.set_preferred_provider("theia")
+            self.dag.set_preferred_provider("cop_cds")
             base = {"productType": "S2_MSI_L1C"}
             search_plugins, _ = self.dag._prepare_search(**base)
             self.assertEqual(search_plugins[0].provider, "peps")
