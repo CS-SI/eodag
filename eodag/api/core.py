@@ -2007,20 +2007,6 @@ class EODataAccessGateway:
                     nb_res,
                     search_plugin.provider,
                 )
-                # Hitting for instance
-                # https://theia.cnes.fr/atdistrib/resto2/api/collections/SENTINEL2/
-                #   search.json?startDate=2019-03-01&completionDate=2019-06-15
-                #   &processingLevel=LEVEL2A&maxRecords=1&page=1
-                # returns a number (properties.totalResults) that is the number of
-                # products in the collection (here SENTINEL2) instead of the estimated
-                # total number of products matching the search criteria (start/end date).
-                # Remove this warning when this is fixed upstream by THEIA.
-                if search_plugin.provider == "theia":
-                    logger.warning(
-                        "Results found on provider 'theia' is the total number of products "
-                        "available in the searched collection (e.g. SENTINEL2) instead of "
-                        "the total number of products matching the search criteria"
-                    )
         except Exception as e:
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that

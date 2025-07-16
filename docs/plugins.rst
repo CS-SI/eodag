@@ -76,8 +76,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``usgs_satapi_aws``    | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``theia``              | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
-+------------------------+------------------------------------+---------------------------------+------------------+
 | ``wekeo_ecmwf``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``wekeo_cmems``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
