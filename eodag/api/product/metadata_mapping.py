@@ -71,9 +71,9 @@ INGEST_CONVERSION_REGEX = re.compile(
 )
 NOT_AVAILABLE = "Not Available"
 NOT_MAPPED = "Not Mapped"
-ONLINE_STATUS = "ONLINE"
-STAGING_STATUS = "STAGING"
-OFFLINE_STATUS = "OFFLINE"
+ONLINE_STATUS = "succeeded"
+STAGING_STATUS = "ordered"
+OFFLINE_STATUS = "orderable"
 COORDS_ROUNDING_PRECISION = 4
 WKT_MAX_LEN = 1600
 COMPLEX_QS_REGEX = re.compile(r"^(.+=)?([^=]*)({.+})+([^=&]*)$")

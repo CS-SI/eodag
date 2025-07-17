@@ -43,7 +43,7 @@
       published: '$.publishDate'
       thumbnail: '$.browse[0].thumbnailPath'
       quicklook: '$.browse[0].browsePath'
-      order:status: '{$.available#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+      order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       downloadLink: 'https://earthexplorer.usgs.gov/download/external/options/{product:type}/{entityId}/M2M/'
       # metadata needed for download
       entityId: '$.entityId'
@@ -108,8 +108,8 @@
       geometry:
         - '{{"search":{{"shape": {geometry#to_geojson} }} }}'
         - '$.dataGeometry'
-      # storageStatus set to ONLINE for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
     CBERS4_PAN10M_L2:
       instruments: PAN10M
@@ -651,8 +651,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
-      # order:status: must be one of ONLINE, STAGING, OFFLINE
-      order:status: '{$.properties.storage.mode#get_group_name((?P<ONLINE>disk|tier2)|(?P<STAGING>staging)|(?P<OFFLINE>unknown|tape|tier3))}'
+      # order:status: must be one of succeeded, ordered, orderable
+      order:status: '{$.properties.storage.mode#get_group_name((?P<succeeded>disk|tier2)|(?P<ordered>staging)|(?P<orderable>unknown|tape|tier3))}'
 
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
@@ -842,8 +842,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://zipper.creodias.eu/odata/v1/Products({uid})/$value'
-      # order:status: must be one of ONLINE, STAGING, OFFLINE
-      order:status: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+      # order:status: must be one of succeeded, ordered, orderable
+      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
@@ -1520,8 +1520,8 @@
         - 'area={geometry#to_nwse_bounds_str(/)}'
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      # storageStatus set to ONLINE for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       qs: $.qs
       downloadLink: 'https://apps.ecmwf.int/datasets/data/{dataset}?{qs#to_geojson}'
   products:
@@ -2027,8 +2027,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.services.download.url'
-      # storageStatus set to ONLINE for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       thumbnail: '$.properties.thumbnail'
   products:
@@ -2219,7 +2219,7 @@
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       product:type: '$.queries[0].domain'
-      order:status: '{$.requiresJobQueue#get_group_name((?P<ONLINE>False)|(?P<OFFLINE>True))}'
+      order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       qs: $.qs
       downloadLink: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
       # Meteoblue specific parameters
@@ -2456,8 +2456,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: 'https://catalogue.dataspace.copernicus.eu/odata/v1/Products({uid})/$value'
-      # order:status: must be one of ONLINE, STAGING, OFFLINE
-      order:status: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+      # order:status: must be one of succeeded, ordered, orderable
+      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
@@ -3048,7 +3048,7 @@
         - '$.properties.enddate'
       downloadLink: '$.properties.location'
       title: '$.id'
-      order:status: 'OFFLINE'
+      order:status: 'orderable'
       processing:level:
         - '{{"processingLevel": "{processing:level}"}}'
         - '$.null'
@@ -3732,7 +3732,7 @@
         - '{$.properties.location#get_variables_from_path}'
       downloadLink: '$.properties.location'
       title: '$.id'
-      order:status: 'OFFLINE'
+      order:status: 'orderable'
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_PRODUCT_TYPE:
@@ -3921,8 +3921,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.S3Path.`sub(/^(.*)$/, s3:/\\1)`'
-      # order:status: must be one of ONLINE, STAGING, OFFLINE
-      order:status: '{$.Online#get_group_name((?P<ONLINE>True)|(?P<OFFLINE>False))}'
+      # order:status: must be one of succeeded, ordered, orderable
+      order:status: '{$.Online#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
       collection:
         - null
         - $.null
@@ -4431,7 +4431,7 @@
     metadata_mapping:
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
       quicklook: '{thumbnail}'
-      order:status: '{$.properties."order:status"#get_group_name((?P<ONLINE>succeeded)|(?P<STAGING>shipping)|(?P<OFFLINE>orderable))}'
+      order:status: '{$.properties."order:status"#get_group_name((?P<succeeded>succeeded)|(?P<ordered>shipping)|(?P<orderable>orderable))}'
       downloadLink: '$.assets.downloadLink.href'
       assets: '$.null'
     discover_product_types:
@@ -4836,12 +4836,12 @@
     DT_EXTREMES:
       _collection: EO.ECMWF.DAT.DT_EXTREMES
       metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","OFFLINE")}'
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
     DT_CLIMATE_ADAPTATION:
       _collection: EO.ECMWF.DAT.DT_CLIMATE_ADAPTATION
       metadata_mapping:
-        order:status: '{$.null#replace_str("Not Available","OFFLINE")}'
+        order:status: '{$.null#replace_str("Not Available","orderable")}'
         <<: *orderable_mm
     # AERIS
     AERIS_IAGOS:
@@ -5062,8 +5062,8 @@
       # The url to download the product "as is" (literal or as a template to be completed either after the search result
       # is obtained from the provider or during the eodag download phase)
       downloadLink: '$.properties.links.data[?(@.title="Product download")].href'
-      # storageStatus set to ONLINE for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
       assets: '{$.properties.links.sip-entries#assets_list_to_dict}'
       # Additional metadata provided by the providers but that don't appear in the reference spec
       size: '$.properties.productInformation.size'
@@ -5671,8 +5671,8 @@
       downloadLink: '$.assets[?(@.roles[0] == "data") & (@.type != "application/xml")].href'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # storageStatus set to ONLINE for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
     S1_SAR_OCN:
       providerProductType: OCN
@@ -5796,8 +5796,8 @@
       downloadLink: '$.properties.endpoint_url'
       quicklook: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
       thumbnail: '$.assets[?(@.roles[0] == "overview")].href.`sub(/^(.*)$/, \\1?scope=gdh)`'
-      # storageStatus set to ONLINE for consistency between providers
-      order:status: '{$.null#replace_str("Not Available","ONLINE")}'
+      # order:status set to succeeded for consistency between providers
+      order:status: '{$.null#replace_str("Not Available","succeeded")}'
   products:
     S1_SAR_OCN:
       providerProductType: OCN
