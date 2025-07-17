@@ -1574,7 +1574,7 @@
         <<: *month_year
     CAMS_GLOBAL_EMISSIONS:
       dataset: cams-global-emission-inventories
-      version: latest
+      version: v6.2
       data_format: zip
       variable: acids
       source: anthropogenic
@@ -3641,7 +3641,7 @@
       time: 00:00
     CAMS_GLOBAL_EMISSIONS:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES
-      version: latest
+      version: v6.2
       data_format: zip
       variable: acids
       source: anthropogenic
