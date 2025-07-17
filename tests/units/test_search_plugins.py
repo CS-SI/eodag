@@ -3635,6 +3635,59 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         )
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
+    def test_plugins_search_postjsonsearchwithstacqueryables_init_wekeomain(self):
+        """Check that the PostJsonSearchWithStacQueryables plugin is initialized correctly for wekeo_main provider"""
+
+        default_providers_config = load_default_config()
+        default_config = default_providers_config["wekeo_main"]
+        # "orderLink" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
+        self.assertNotIn("orderLink", default_config.search.metadata_mapping)
+        self.assertIn(
+            "orderLink", default_config.products["S1_SAR_GRD"]["metadata_mapping"]
+        )
+        self.assertNotIn("metadata_mapping", default_config.products["S1_SAR_SLC"])
+
+        # metadata_mapping_from_product: from S1_SAR_GRD to S1_SAR_SLC
+        self.assertEqual(
+            default_config.products["S1_SAR_SLC"]["metadata_mapping_from_product"],
+            "S1_SAR_GRD",
+        )
+
+        # check initialized plugin configuration
+        self.assertDictEqual(
+            self.wekeomain_search_plugin.config.products["S1_SAR_GRD"][
+                "metadata_mapping"
+            ],
+            self.wekeomain_search_plugin.config.products["S1_SAR_SLC"][
+                "metadata_mapping"
+            ],
+        )
+
+        # CLMS_GLO_LAI_333M has both metadata_mapping_from_product and metadata_mapping
+        # "metadata_mapping" must override "metadata_mapping_from_product"
+        self.assertIn(
+            "orderLink",
+            default_config.products["CLMS_GLO_LAI_333M"]["metadata_mapping"],
+        )
+        self.assertIn(
+            "orderLink",
+            default_config.products["CLMS_GLO_FCOVER_333M"]["metadata_mapping"],
+        )
+        self.assertEqual(
+            default_config.products["CLMS_GLO_LAI_333M"][
+                "metadata_mapping_from_product"
+            ],
+            "CLMS_GLO_FCOVER_333M",
+        )
+        self.assertNotEqual(
+            self.wekeomain_search_plugin.config.products["CLMS_GLO_LAI_333M"][
+                "metadata_mapping"
+            ]["orderLink"],
+            self.wekeomain_search_plugin.config.products["CLMS_GLO_FCOVER_333M"][
+                "metadata_mapping"
+            ]["orderLink"],
+        )
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
         autospec=True,

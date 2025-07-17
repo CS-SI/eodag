@@ -386,36 +386,48 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: product type specific metadata-mapping
         for product_type in self.config.products.keys():
-            if "metadata_mapping" in self.config.products[product_type].keys():
-                self.config.products[product_type][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[product_type]["metadata_mapping"]
-                )
+
+            product_type_metadata_mapping = {}
+            # product-type specific metadata-mapping
+            if any(
+                mm in self.config.products[product_type].keys()
+                for mm in ("metadata_mapping", "metadata_mapping_from_product")
+            ):
                 # Complete and ready to use product type specific metadata-mapping
                 product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
 
-                # update config using provider product type definition metadata_mapping
-                # from another product
-                other_product_for_mapping = cast(
-                    str,
-                    self.config.products[product_type].get(
-                        "metadata_mapping_from_product", ""
-                    ),
+            # metadata_mapping from another product
+            if other_product_for_mapping := self.config.products[product_type].get(
+                "metadata_mapping_from_product"
+            ):
+                other_product_type_def_params = self.get_product_type_def_params(
+                    other_product_for_mapping,
                 )
-                if other_product_for_mapping:
-                    other_product_type_def_params = self.get_product_type_def_params(
-                        other_product_for_mapping,
-                    )
+                # parse mapping to apply
+                if other_product_type_mtd_mapping := other_product_type_def_params.get(
+                    "metadata_mapping", {}
+                ):
                     other_product_type_mtd_mapping = (
                         mtd_cfg_as_conversion_and_querypath(
                             other_product_type_def_params.get("metadata_mapping", {})
                         )
                     )
-                    # updated mapping at the end
-                    for metadata, mapping in other_product_type_mtd_mapping.items():
-                        product_type_metadata_mapping.pop(metadata, None)
-                        product_type_metadata_mapping[metadata] = mapping
+                else:
+                    msg = f"Cannot reuse empty metadata_mapping from {other_product_for_mapping} for {product_type}"
+                    raise MisconfiguredError(msg)
+                # update mapping
+                for metadata, mapping in other_product_type_mtd_mapping.items():
+                    product_type_metadata_mapping.pop(metadata, None)
+                    product_type_metadata_mapping[metadata] = mapping
+
+            # metadata_mapping from current product
+            if "metadata_mapping" in self.config.products[product_type].keys():
+                # parse mapping to apply
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
 
                 # from current product, updated mapping at the end
                 for metadata, mapping in self.config.products[product_type][
@@ -424,6 +436,7 @@ class QueryStringSearch(Search):
                     product_type_metadata_mapping.pop(metadata, None)
                     product_type_metadata_mapping[metadata] = mapping
 
+            if product_type_metadata_mapping:
                 self.config.products[product_type][
                     "metadata_mapping"
                 ] = product_type_metadata_mapping

@@ -160,10 +160,6 @@ class Search(PluginTopic):
         :returns: The product type definition parameters
         """
         if product_type in self.config.products.keys():
-            logger.debug(
-                "Getting provider product type definition parameters for %s",
-                product_type,
-            )
             return self.config.products[product_type]
         elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
             logger.debug(
