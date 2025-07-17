@@ -574,7 +574,7 @@
         - '$.properties.platform'
       instruments:
         - instrument
-        - '$.properties.instrument'
+        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
       processing:level:
         - processingLevel
         - '$.properties.processingLevel'
@@ -790,7 +790,7 @@
         - '$.Attributes.platformSerialIdentifier'
       instruments:
         - null
-        - '$.Attributes.instrumentShortName'
+        - '{$.Attributes.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
       processing:level:
         - null
         - '$.Attributes.processingLevel'
@@ -1958,7 +1958,7 @@
         - '$.properties.platform'
       instruments:
         - instrument
-        - '$.properties.instrument'
+        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
       processing:level:
         - processingLevel
         - '$.properties.processingLevel'
@@ -2388,7 +2388,7 @@
         - '$.Attributes.platformSerialIdentifier'
       instruments:
         - null
-        - '$.Attributes.instrumentShortName'
+        - '{$.Attributes.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
       processing:level:
         - null
         - '$.Attributes.processingLevel'
@@ -3870,7 +3870,7 @@
         - '$.Attributes.platformSerialIdentifier'
       instruments:
         - null
-        - '$.Attributes.instrumentShortName'
+        - '{$.Attributes.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
       processing:level:
         - null
         - '$.Attributes.processingLevel'
@@ -5033,7 +5033,7 @@
         - type
         - '$.properties.productInformation.productType'
       constellation: '$.properties.acquisitionInformation[0].platform.platformShortName'
-      instruments: '$.properties.acquisitionInformation[0].instrument.instrumentShortName'
+      instruments: '{$.properties.acquisitionInformation[0].instrument.instrumentShortName#replace_str(r"^(.*)$",r"""["\1"]""")}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '{$.properties.title#sanitize}'
       # OpenSearch Parameters for Product Search (Table 5)
@@ -5634,7 +5634,7 @@
         - '$.properties.dataset'
       instruments:
         - '{{"query":{{"instrument":{{"eq":"{instruments}"}}}}}}'
-        - '$.properties.instrument'
+        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
       keywords: '$.properties.keywords'
@@ -5759,7 +5759,7 @@
         - '$.properties.dataset'
       instruments:
         - '{{"query":{{"instrument":{{"eq":"{instruments}"}}}}}}'
-        - '$.properties.instrument'
+        - '{$.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
       # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
       title: '$.properties.identifier'
       keywords: '$.properties.keywords'
