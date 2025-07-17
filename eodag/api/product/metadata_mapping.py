@@ -57,6 +57,8 @@ from eodag.utils.dates import get_timestamp
 from eodag.utils.exceptions import ValidationError
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from shapely.geometry.base import BaseGeometry
 
     from eodag.config import PluginConfig
@@ -224,7 +226,9 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             # Yield from base class
             yield from super().parse(safe_template)
 
-        def get_value(self, key: Any, args: tuple, kwargs: dict[str, Any]) -> Any:
+        def get_value(
+            self, key: Any, args: "Sequence[Any]", kwargs: "Mapping[str, Any]"
+        ) -> Any:
             """
             Look up rewritten field name in kwargs by converting __ back to :
             """
@@ -988,8 +992,12 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return assets_dict
 
     # if stac extension colon separator `:` is in search params, parse it to prevent issues with vformat
-    if re.search(r"{[\w-]*:[\w#-]*}", search_param):
-        search_param = re.sub(r"{([\w-]*):([\w#-]*)}", r"{\1_COLON_\2}", search_param)
+    if re.search(r"{[\w-]*:[\w#-]*\(?.*}", search_param):
+        search_param = re.sub(
+            r"{([\w-]*):([\w#-]*\(?.*)}",
+            r"{\1_COLON_\2}",
+            search_param,
+        )
         kwargs = {k.replace(":", "_COLON_"): v for k, v in kwargs.items()}
 
     return MetadataFormatter().vformat(search_param, args, kwargs)
