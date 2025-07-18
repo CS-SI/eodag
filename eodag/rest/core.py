@@ -756,8 +756,6 @@ def eodag_api_init() -> None:
         eodag_api.product_types_config.source
     )
 
-    eodag_api.build_index()
-
     # pre-build search plugins
     for provider in eodag_api.available_providers():
         next(eodag_api._plugins_manager.get_search_plugins(provider=provider))

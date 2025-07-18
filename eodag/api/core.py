@@ -30,10 +30,6 @@ from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
 import yaml.parser
-from whoosh import analysis, fields
-from whoosh.fields import Schema
-from whoosh.index import exists_in, open_dir
-from whoosh.qparser import QueryParser
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
@@ -61,7 +57,6 @@ from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, QueryablesDict
-from eodag.types.whoosh import EODAGQueryParser, create_in
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -83,19 +78,18 @@ from eodag.utils import (
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
-    EodagError,
     NoMatchingProductType,
     PluginImplementationError,
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
 )
+from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.rest import rfc3339_str_to_datetime
 from eodag.utils.stac_reader import fetch_stac_items
 
 if TYPE_CHECKING:
     from shapely.geometry.base import BaseGeometry
-    from whoosh.index import Index
 
     from eodag.api.product import EOProduct
     from eodag.plugins.apis.base import Api
@@ -201,10 +195,6 @@ class EODataAccessGateway:
         # Sort providers taking into account of possible new priority orders
         self._plugins_manager.sort_providers()
 
-        # Build a search index for product types
-        self._product_types_index: Optional[Index] = None
-        self.build_index()
-
         # set locations configuration
         if locations_conf_path is None:
             locations_conf_path = os.getenv("EODAG_LOCS_CFG_FILE")
@@ -293,95 +283,6 @@ class EODataAccessGateway:
     def get_version(self) -> str:
         """Get eodag package version"""
         return version("eodag")
-
-    def build_index(self) -> None:
-        """Build a `Whoosh <https://whoosh.readthedocs.io/en/latest/index.html>`_
-        index for product types searches.
-        """
-        index_dir = os.path.join(self.conf_dir, ".index")
-
-        try:
-            create_index = not exists_in(index_dir)
-        except ValueError as ve:
-            # Whoosh uses pickle internally. New versions of Python sometimes introduce
-            # a new pickle protocol (e.g. 3.4 -> 4, 3.8 -> 5), the new version not
-            # being supported by previous versions of Python (e.g. Python 3.7 doesn't
-            # support Protocol 5). In that case, we need to recreate the .index.
-            if "unsupported pickle protocol" in str(ve):
-                logger.debug("Need to recreate whoosh .index: '%s'", ve)
-                create_index = True
-            # Unexpected error
-            else:
-                logger.error(
-                    "Error while opening .index using whoosh, "
-                    "please report this issue and try to delete '%s' manually",
-                    index_dir,
-                )
-                raise
-        # check index version
-        if not create_index:
-            if self._product_types_index is None:
-                logger.debug("Opening product types index in %s", index_dir)
-                self._product_types_index = open_dir(index_dir)
-
-            with self._product_types_index.searcher() as searcher:
-                p = QueryParser("md5", self._product_types_index.schema, plugins=[])
-                query = p.parse(self.product_types_config_md5)
-                results = searcher.search(query, limit=1)
-
-                if not results:
-                    create_index = True
-                    logger.debug(
-                        "Out-of-date product types index removed from %s", index_dir
-                    )
-
-        if create_index:
-            logger.debug("Creating product types index in %s", index_dir)
-            makedirs(index_dir)
-
-            kw_analyzer = (
-                analysis.CommaSeparatedTokenizer()
-                | analysis.LowercaseFilter()
-                | analysis.SubstitutionFilter("-", "")
-                | analysis.SubstitutionFilter("_", "")
-            )
-
-            product_types_schema = Schema(
-                ID=fields.ID(stored=True),
-                abstract=fields.TEXT,
-                instrument=fields.IDLIST,
-                platform=fields.ID,
-                platformSerialIdentifier=fields.IDLIST,
-                processingLevel=fields.ID,
-                sensorType=fields.ID,
-                md5=fields.ID,
-                license=fields.ID,
-                title=fields.TEXT,
-                missionStartDate=fields.STORED,
-                missionEndDate=fields.STORED,
-                keywords=fields.KEYWORD(analyzer=kw_analyzer),
-                stacCollection=fields.STORED,
-            )
-            self._product_types_index = create_in(index_dir, product_types_schema)
-            ix_writer = self._product_types_index.writer()
-            for product_type in self.list_product_types(fetch_providers=False):
-                versioned_product_type = dict(
-                    product_type, **{"md5": self.product_types_config_md5}
-                )
-                # add to index
-                try:
-                    ix_writer.add_document(
-                        **{
-                            k: v
-                            for k, v in versioned_product_type.items()
-                            if k in product_types_schema.names()
-                        }
-                    )
-                except TypeError as e:
-                    logger.error(
-                        f"Cannot write product type {product_type['ID']} into index. e={e} product_type={product_type}"
-                    )
-            ix_writer.commit()
 
     def set_preferred_provider(self, provider: str) -> None:
         """Set max priority for the given provider.
@@ -1000,9 +901,6 @@ class EODataAccessGateway:
         # re-create _plugins_manager using up-to-date providers_config
         self._plugins_manager.build_product_type_to_provider_config_map()
 
-        # rebuild index after product types list update
-        self.build_index()
-
     def available_providers(
         self, product_type: Optional[str] = None, by_group: bool = False
     ) -> list[str]:
@@ -1125,69 +1023,93 @@ class EODataAccessGateway:
         if productType := kwargs.get("productType"):
             return [productType]
 
-        if not self._product_types_index:
-            raise EodagError("Missing product types index")
-
-        filters = {
-            "instrument": instrument,
-            "platform": platform,
-            "platformSerialIdentifier": platformSerialIdentifier,
-            "processingLevel": processingLevel,
-            "sensorType": sensorType,
-            "keywords": keywords,
-            "abstract": abstract,
-            "title": title,
+        filters: dict[str, str] = {
+            k: v
+            for k, v in {
+                "instrument": instrument,
+                "platform": platform,
+                "platformSerialIdentifier": platformSerialIdentifier,
+                "processingLevel": processingLevel,
+                "sensorType": sensorType,
+                "keywords": keywords,
+                "abstract": abstract,
+                "title": title,
+            }.items()
+            if v is not None
         }
-        joint = " AND " if intersect else " OR "
-        filters_text = joint.join(
-            [f"{k}:({v})" for k, v in filters.items() if v is not None]
+
+        free_text_evaluator = (
+            compile_free_text_query(free_text) if free_text else lambda _: True
         )
 
-        text = f"({free_text})" if free_text else ""
-        if free_text and filters_text:
-            text += joint
-        if filters_text:
-            text += f"({filters_text})"
+        guesses: list[str] = []
 
-        if not text and (missionStartDate or missionEndDate):
-            text = "*"
+        for pt_id, pt_dict in self.product_types_config.source.items():
+            # whether this product type matched any filter
+            matching_once = False
 
-        with self._product_types_index.searcher() as searcher:
-            p = EODAGQueryParser(list(filters.keys()), self._product_types_index.schema)
-            query = p.parse(text)
-            results = searcher.search(query, limit=None)
+            # free text search
+            if free_text:
+                match = free_text_evaluator(pt_dict)
+                if match and not intersect:
+                    matching_once = True
+                elif match:
+                    matching_once = True
+                elif not match and intersect:
+                    # skip to next pt
+                    continue
 
-            guesses: list[dict[str, str]] = [dict(r) for r in results or []]
-
-        # datetime filtering
-        if missionStartDate or missionEndDate:
-            min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
-            max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
-            guesses = [
-                g
-                for g in guesses
-                if (
-                    max(
-                        rfc3339_str_to_datetime(missionStartDate)
-                        if missionStartDate
-                        else min_aware,
-                        rfc3339_str_to_datetime(g["missionStartDate"])
-                        if g.get("missionStartDate")
-                        else min_aware,
-                    )
-                    <= min(
-                        rfc3339_str_to_datetime(missionEndDate)
-                        if missionEndDate
-                        else max_aware,
-                        rfc3339_str_to_datetime(g["missionEndDate"])
-                        if g.get("missionEndDate")
-                        else max_aware,
-                    )
+            # individual filters
+            if filters:
+                filters_matching = all(
+                    key in pt_dict
+                    and pt_dict[key] is not None
+                    and value in pt_dict[key]
+                    for key, value in filters.items()
+                    if value is not None
                 )
-            ]
+                if filters_matching and not intersect:
+                    matching_once = True
+                elif filters_matching:
+                    matching_once = True
+                elif not filters_matching and intersect:
+                    # skip to next pt
+                    continue
+
+            # as no filters matched, skip
+            if not matching_once:
+                continue
+
+            # datetime filtering
+            if missionStartDate or missionEndDate:
+                min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+                max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+
+                max_start = max(
+                    rfc3339_str_to_datetime(missionStartDate)
+                    if missionStartDate
+                    else min_aware,
+                    rfc3339_str_to_datetime(pt_dict["missionStartDate"])
+                    if pt_dict.get("missionStartDate")
+                    else min_aware,
+                )
+                min_end = min(
+                    rfc3339_str_to_datetime(missionEndDate)
+                    if missionEndDate
+                    else max_aware,
+                    rfc3339_str_to_datetime(pt_dict["missionEndDate"])
+                    if pt_dict.get("missionEndDate")
+                    else max_aware,
+                )
+                if not (max_start <= min_end):
+                    # datetime check failed
+                    continue
+
+            # all checks passed, keep this pt
+            guesses.append(pt_id)
 
         if guesses:
-            return [g["ID"] for g in guesses or []]
+            return guesses
 
         raise NoMatchingProductType()
 
