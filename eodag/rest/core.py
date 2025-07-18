@@ -279,7 +279,9 @@ def download_stac_item(
         if product.properties.get("orderLink"):
             _order_and_update(product, auth, kwargs)
 
-        download_stream = product.downloader.stream_download(product, asset, auth)
+        download_stream = product.downloader._stream_download_dict(
+            product, auth=auth, asset=asset
+        )
     except NotImplementedError:
         logger.warning(
             "Download streaming not supported for %s: downloading locally then delete",
@@ -309,7 +311,7 @@ def download_stac_item(
             raise
 
     return StreamingResponse(
-        content=profile_generator(download_stream.content),
+        content=download_stream.content,
         headers=download_stream.headers,
         media_type=download_stream.media_type,
     )

@@ -45,6 +45,7 @@ from eodag.utils import (
     StreamResponse,
     flatten_top_directories,
     get_bucket_name_and_prefix,
+    guess_file_type,
     path_to_uri,
     rename_subfolder,
     sanitize,
@@ -60,7 +61,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.s3 import FileInfo, open_s3_zipped_object, stream_download_from_s3
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection, ObjectSummary
+    from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -303,22 +304,11 @@ class AwsDownload(Download):
         self._configure_safe_build(build_safe, product)
         # bucket names and prefixes
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset_filter, ignore_assets
+            product,
+            asset_filter,
+            ignore_assets,
+            product_conf.get("complementary_url_key", []),
         )
-
-        # add complementary urls
-        try:
-            for complementary_url_key in product_conf.get("complementary_url_key", []):
-                bucket_names_and_prefixes.append(
-                    self.get_product_bucket_name_and_prefix(
-                        product, product.properties[complementary_url_key]
-                    )
-                )
-        except KeyError:
-            logger.warning(
-                "complementary_url_key %s is missing in %s properties"
-                % (complementary_url_key, product.properties["id"])
-            )
 
         # authenticate
         authenticated_objects, s3_objects = self._do_authentication(
@@ -529,8 +519,9 @@ class AwsDownload(Download):
     def _get_bucket_names_and_prefixes(
         self,
         product: EOProduct,
-        asset_filter: Optional[str] = None,
-        ignore_assets: Optional[bool] = False,
+        asset_filter: Optional[str],
+        ignore_assets: bool,
+        complementary_url_keys: list[str],
     ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
@@ -569,6 +560,20 @@ class AwsDownload(Download):
             bucket_names_and_prefixes = [
                 self.get_product_bucket_name_and_prefix(product)
             ]
+
+        # add complementary urls
+        try:
+            for complementary_url_key in complementary_url_keys or []:
+                bucket_names_and_prefixes.append(
+                    self.get_product_bucket_name_and_prefix(
+                        product, product.properties[complementary_url_key]
+                    )
+                )
+        except KeyError:
+            logger.warning(
+                "complementary_url_key %s is missing in %s properties"
+                % (complementary_url_key, product.properties["id"])
+            )
         return bucket_names_and_prefixes
 
     def _do_authentication(
@@ -700,10 +705,10 @@ class AwsDownload(Download):
                 err["Code"] + ": " + err["Message"],
             )
 
-    def stream_download(
+    def _stream_download_dict(
         self,
         product: EOProduct,
-        asset_regex: Optional[str] = None,
+        asset: Optional[str] = None,
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
@@ -715,7 +720,7 @@ class AwsDownload(Download):
         This method streams data from one or more S3 objects that belong to a given EO product.
         It supports:
 
-        - **Regex-based asset filtering** via `asset_regex`, allowing partial product downloads.
+        - **Regex-based asset filtering** via `asset`, allowing partial product downloads.
         - **Byte-range requests** through the `byte_range` parameter, enabling partial download of data.
         - **Selective file extraction from ZIP archives**, for uncompressed entries (ZIP method: STORE only).
         This enables lazy access to individual files inside ZIPs without downloading the entire archive.
@@ -743,7 +748,7 @@ class AwsDownload(Download):
         the method attempts to reconstruct a valid SAFE archive layout in the streamed output.
 
         :param product: The EO product to download.
-        :param asset_regex: (optional) Regex pattern to filter which assets/files to include.
+        :param asset: (optional) Regex pattern to filter which assets/files to include.
         :param auth: (optional) Authentication configuration (e.g., AWS credentials).
         :param byte_range: Tuple of (start, end) for a global byte range request. Either can be None for open-ended
             ranges.
@@ -758,122 +763,82 @@ class AwsDownload(Download):
         )
 
         build_safe = (
-            False if asset_regex is not None else product_conf.get("build_safe", False)
+            False if asset is not None else product_conf.get("build_safe", False)
         )
         ignore_assets = getattr(self.config, "ignore_assets", False)
 
         self._configure_safe_build(build_safe, product)
 
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset_regex, ignore_assets
+            product, asset, ignore_assets, product_conf.get("complementary_url_key", [])
         )
-
-        # add complementary urls
-        try:
-            for complementary_url_key in product_conf.get("complementary_url_key", []):
-                bucket_names_and_prefixes.append(
-                    self.get_product_bucket_name_and_prefix(
-                        product, product.properties[complementary_url_key]
-                    )
-                )
-        except KeyError:
-            logger.warning(
-                "complementary_url_key %s is missing in %s properties"
-                % (complementary_url_key, product.properties["id"])
-            )
 
         # authenticate
         authenticated_objects, _ = self._do_authentication(
             bucket_names_and_prefixes, auth
         )
 
-        # stream not implemented for prefixes like `foo/bar.zip!file.txt`
-        for _, prefix in bucket_names_and_prefixes:
-            if prefix and ".zip!" in prefix:
-                raise NotImplementedError(
-                    "Download streaming is not implemented for files in zip on S3"
-                )
-
         # downloadable files
-        unique_product_objects = self._get_unique_products(
+        product_objects = self._get_unique_products(
             bucket_names_and_prefixes,
             authenticated_objects,
-            asset_regex,
+            asset,
             ignore_assets,
             product,
         )
 
-        valid_product_objects, objects_rel_path = self._validate_product_objects(
-            product, unique_product_objects, build_safe
-        )
-
-        assets_values = product.assets.get_values(asset_filter=asset_regex or "")
-        assets_by_key = {a.get("key"): a for a in assets_values}
-
-        zip_filename = (
-            sanitize(product.properties["title"])
-            if "title" in product.properties
-            else sanitize(product.properties.get("id", "download"))
-        )
-
-        list_info = []
-        for i, obj in enumerate(valid_product_objects):
-            info = FileInfo(
-                key=obj.key,
-                size=obj.size,
-                bucket_name=obj.bucket_name,
-                rel_path=objects_rel_path[i],
-            )
-            if data_type := assets_by_key.get(obj.key, {}).get("type"):
-                info.data_type = data_type
-
-            list_info.append(info)
-
-        return stream_download_from_s3(
-            self.s3_resource.meta.client, list_info, byte_range, compress, zip_filename
-        )
-
-    def _validate_product_objects(
-        self, product: EOProduct, product_objects: set[ObjectSummary], build_safe: bool
-    ) -> tuple[list[ObjectSummary], list[str]]:
-        """
-        Validate product objects against the product configuration.
-        """
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
-
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
-
         common_path = (
             self._get_commonpath(product, product_objects, build_safe)
             if flatten_top_dirs
             else ""
         )
 
-        valid_product_objects = []
-        objects_rel_path = []
-        for product_object in product_objects:
+        assets_by_path = {
+            a.get("href", "").split("s3://")[-1]: a
+            for a in product.assets.get_values(asset_filter=asset or "")
+        }
+
+        files_info = []
+        for obj in product_objects:
             try:
-                object_rel_path = self.get_chunk_dest_path(
-                    product,
-                    product_object,
-                    build_safe=build_safe,
-                )
+                rel_path = self.get_chunk_dest_path(product, obj, build_safe=build_safe)
                 if flatten_top_dirs:
-                    object_rel_path = os.path.join(
+                    rel_path = os.path.join(
                         product.properties["title"],
-                        re.sub(rf"^{common_path}/?", "", object_rel_path),
+                        re.sub(rf"^{common_path}/?", "", rel_path),
                     )
-                valid_product_objects.append(product_object)
-                objects_rel_path.append(object_rel_path)
+
+                data_type = assets_by_path.get(f"{obj.bucket_name}/{obj.key}", {}).get(
+                    "type"
+                ) or guess_file_type(obj.key)
+
+                file_info = FileInfo(
+                    key=obj.key,
+                    size=obj.size,
+                    bucket_name=obj.bucket_name,
+                    rel_path=rel_path,
+                )
+                if data_type:
+                    file_info.data_type = data_type
+
+                files_info.append(file_info)
             except NotAvailableError as e:
-                # object out of SAFE format
-                # exclude the object from the response
                 logger.warning(e)
-        return valid_product_objects, objects_rel_path
+
+        title = product.properties.get("title") or product.properties.get(
+            "id", "download"
+        )
+        zip_filename = sanitize(title)
+
+        return stream_download_from_s3(
+            self.s3_resource.meta.client, files_info, byte_range, compress, zip_filename
+        )
 
     def _get_commonpath(
         self, product: EOProduct, product_chunks: set[Any], build_safe: bool

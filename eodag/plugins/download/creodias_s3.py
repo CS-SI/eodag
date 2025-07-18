@@ -72,8 +72,9 @@ class CreodiasS3Download(AwsDownload):
     def _get_bucket_names_and_prefixes(
         self,
         product: EOProduct,
-        asset_filter: Optional[str] = None,
-        ignore_assets: Optional[bool] = False,
+        asset_filter: Optional[str],
+        ignore_assets: bool,
+        complementary_url_keys: list[str],
     ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
@@ -86,7 +87,7 @@ class CreodiasS3Download(AwsDownload):
         # if assets are defined, use them instead of scanning product.location
         if len(product.assets) > 0 and not ignore_assets:
             bucket_names_and_prefixes = super()._get_bucket_names_and_prefixes(
-                product, asset_filter, ignore_assets
+                product, asset_filter, ignore_assets, complementary_url_keys
             )
         else:
             # if no assets are given, use productIdentifier to get S3 path for download
