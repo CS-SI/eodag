@@ -197,8 +197,6 @@ def _chunks_from_s3_objects(
 
             f_info.buffers = {}
             f_info.next_yield = 0
-            f_info.total_chunks = len(ranges)
-            f_info.expected_starts = {start for start, _ in ranges}
 
             futures = {}
             for start, length in ranges:
@@ -228,6 +226,7 @@ def _chunks_from_s3_objects(
             current_info = files_info[current_file_index]
 
             def chunks_generator() -> Iterator[bytes]:
+                """yield chunks of data for the current file."""
                 nonlocal current_file_index, all_futures
                 while current_info.next_yield < current_info.size:
                     # Wait for any futures to complete
@@ -266,8 +265,31 @@ def _build_stream_response(
     files_iterator: Iterator[tuple[int, Iterator[bytes]]],
     compress: Literal["zip", "raw", "auto"],
 ) -> StreamResponse:
-    """Produce the response in the adapted format: zip, multipart/mixed or single object stream."""
+    """
+    Produce a streaming HTTP response for one or multiple files in different formats.
 
+    The response format depends on the `compress` parameter and the number of files.
+
+    :param output_filename: Base filename to use when producing a ZIP archive.
+    :param files_info: List of FileInfo objects describing each file (metadata like path, size, MIME type).
+    :param chunks_iterator: Iterator yielding tuples (file_index, bytes_chunk) streaming file contents.
+    :param response_size: Total byte size of the response content.
+    :param compress: Determines the output format:
+        - ``zip``: Always produce a single ZIP archive containing all files.
+        - ``raw``: Stream files directly without any wrapping, as a single file or multipart response.
+        - ``auto``: Automatically decide format:
+            - If multiple files: produce a ZIP archive.
+            - If a single file: stream the file raw.
+
+    :returns: A StreamResponse object with streaming content and appropriate headers set,
+              including Content-Length, Content-Disposition, and Accept-Ranges.
+
+    Response formats:
+        - ZIP archive (Content-Type: application/zip) when compress is ``zip`` or ``auto`` with multiple files.
+        - Multipart/mixed (Content-Type: multipart/mixed) with boundaries when compress is ``raw`` and multiple files.
+        - Single raw file stream with appropriate Content-Type when only one file is present and compress
+            is ``raw`` or ``auto``.
+    """
     zip_response = len(files_info) > 1 and compress == "auto" or compress == "zip"
 
     headers = {
@@ -344,7 +366,7 @@ def _build_stream_response(
 
         # Instead of chaining the first chunk generator, just yield it first then continue
         return StreamResponse(
-            content=chain(iter(first_chunk), chunks_generator),
+            content=chain(iter([first_chunk]), chunks_generator),
             headers=headers,
         )
 
@@ -377,23 +399,21 @@ def stream_download_from_s3(
     Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
     as a separate HTTP request and yielded in file order.
 
-    :param s3_client: An initialized S3 client instance used to perform requests.
-    :param files_info: List of FileInfo objects describing the S3 files to download.
-    :param byte_range: Tuple specifying the global byte range (start, end) to download.
-                       Use (None, None) to download the full files.
-    :param compress: Compression mode for the output stream.
-                     Options are:
-                     - "zip": compress output as a ZIP archive
-                     - "raw": output raw concatenated files without compression
-                     - "auto": decide automatically based on context (default)
-    :param zip_filename: Filename to use for the ZIP archive when compress="zip".
-    :param range_size: Size in bytes of each chunk to request via HTTP range.
-                       Default is 8 MiB.
-    :param max_workers: Maximum number of concurrent threads for downloading chunks.
-
-    :return: A StreamResponse object yielding the requested data as bytes.
+    :param s3_client: A configured S3 client capable of making range requests.
+    :param list_info: A list of FileInfo objects representing the files to download.
+    :param byte_range: A tuple of (start, end) defining the inclusive global byte range to download
+                       across all objects. Either value can be None to indicate open-ended range.
+    :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
+    :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
+    :param compress: Determines the output format of the streamed response:
+        - ``zip``: Always produce a ZIP archive containing all files.
+        - ``raw``: Stream files directly without wrapping, either as a single file or multipart response.
+        - ``auto``: Automatically select the format:
+            - ZIP archive if multiple files are requested.
+            - Raw stream if only a single file is requested.
+    :param zip_filename: The base filename to use when producing a ZIP archive (without extension).
+    :returns: A StreamResponse object with streaming content according to the requested format.
     """
-
     offset = 0
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -418,9 +438,9 @@ def stream_download_from_s3(
     chunks_tuple = _chunks_from_s3_objects(
         s3_client,
         files_info,
-        byte_range=byte_range,
-        range_size=range_size,
-        max_workers=max_workers,
+        byte_range,
+        range_size,
+        max_workers,
     )
 
     return _build_stream_response(
