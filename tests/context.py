@@ -17,8 +17,9 @@
 # limitations under the License.
 """Explicitly import here everything you want to use from the eodag package
 
-    isort:skip_file
+isort:skip_file
 """
+
 # ruff: noqa
 import os
 import sys
@@ -102,6 +103,7 @@ from eodag.utils import (
     parse_header,
     get_ssl_context,
     cached_yaml_load_all,
+    StreamResponse,
 )
 from eodag.utils.env import is_env_var_true
 from eodag.utils.requests import fetch_json
@@ -109,7 +111,16 @@ from eodag.utils.s3 import (
     list_files_in_s3_zipped_object,
     update_assets_from_s3,
     open_s3_zipped_object,
+    FileInfo,
+    file_position_from_s3_zip,
+    _chunks_from_s3_objects,
+    _prepare_file_in_zip,
+    _compute_file_ranges,
+    stream_download_from_s3,
+    _build_stream_response,
 )
+
+
 from eodag.utils.exceptions import (
     AddressNotFound,
     AuthenticationError,

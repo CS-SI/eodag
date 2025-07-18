@@ -45,7 +45,6 @@ from eodag.utils import (
     StreamResponse,
     flatten_top_directories,
     get_bucket_name_and_prefix,
-    guess_file_type,
     path_to_uri,
     rename_subfolder,
     sanitize,
@@ -819,7 +818,7 @@ class AwsDownload(Download):
 
                 data_type = assets_by_path.get(f"{obj.bucket_name}/{obj.key}", {}).get(
                     "type"
-                ) or guess_file_type(obj.key)
+                )
 
                 file_info = FileInfo(
                     key=obj.key,

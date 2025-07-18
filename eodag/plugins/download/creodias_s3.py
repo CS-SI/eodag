@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -25,8 +25,6 @@ from eodag.plugins.download.aws import AwsDownload
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
-    from typing import Optional
-
     from mypy_boto3_s3.service_resource import S3ServiceResource
 
 

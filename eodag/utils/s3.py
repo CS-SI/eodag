@@ -29,6 +29,7 @@ from zipfile import ZIP_STORED, ZipFile
 
 import boto3
 import botocore
+import botocore.exceptions
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from stream_zip import ZIP_AUTO, stream_zip
 
@@ -265,29 +266,32 @@ def _build_stream_response(
     executor: ThreadPoolExecutor,
 ) -> StreamResponse:
     """
-    Produce a streaming HTTP response for one or multiple files in different formats.
+    Build a streaming HTTP response for one or multiple files from S3, supporting ZIP, raw, and multipart formats.
 
-    The response format depends on the `compress` parameter and the number of files.
+    The response format depends on the `compress` parameter and the number of files:
 
-    :param output_filename: Base filename to use when producing a ZIP archive.
-    :param files_info: List of FileInfo objects describing each file (metadata like path, size, MIME type).
-    :param chunks_iterator: Iterator yielding tuples (file_index, bytes_chunk) streaming file contents.
-    :param response_size: Total byte size of the response content.
-    :param compress: Determines the output format:
-        - ``zip``: Always produce a single ZIP archive containing all files.
-        - ``raw``: Stream files directly without any wrapping, as a single file or multipart response.
-        - ``auto``: Automatically decide format:
-            - If multiple files: produce a ZIP archive.
-            - If a single file: stream the file raw.
+    - If `compress` is "zip" or "auto" with multiple files, returns a ZIP archive containing all files.
+    - If `compress` is "raw" and multiple files, returns a multipart/mixed response with each file as a part.
+    - If only one file is present and `compress` is "raw" or "auto", streams the file directly with its MIME type.
 
-    :returns: A StreamResponse object with streaming content and appropriate headers set,
-              including Content-Length, Content-Disposition, and Accept-Ranges.
+    Args:
+        zip_filename (str): Base filename to use for the ZIP archive (without extension).
+        files_info (list[FileInfo]): List of FileInfo objects describing each file (metadata, MIME type, etc.).
+        files_iterator (Iterator[tuple[int, Iterator[bytes]]]): Iterator yielding (file_index, chunk_iterator) for
+            streaming file contents.
+        compress (Literal["zip", "raw", "auto"]): Output format:
+            - "zip": Always produce a ZIP archive.
+            - "raw": Stream files directly, as a single file or multipart.
+            - "auto": ZIP if multiple files, raw if single file.
+        executor (ThreadPoolExecutor): Executor used for concurrent streaming and cleanup.
+
+    Returns:
+        StreamResponse: Streaming HTTP response with appropriate content, headers, and media type.
 
     Response formats:
-        - ZIP archive (Content-Type: application/zip) when compress is ``zip`` or ``auto`` with multiple files.
-        - Multipart/mixed (Content-Type: multipart/mixed) with boundaries when compress is ``raw`` and multiple files.
-        - Single raw file stream with appropriate Content-Type when only one file is present and compress
-            is ``raw`` or ``auto``.
+        - ZIP archive (Content-Type: application/zip) with Content-Disposition for download.
+        - Multipart/mixed (Content-Type: multipart/mixed; boundary=...) with each file as a part.
+        - Single raw file stream with its MIME type and Content-Disposition for download.
     """
     headers = {
         "Accept-Ranges": "bytes",
@@ -430,16 +434,15 @@ def stream_download_from_s3(
             # Check if file is inside a ZIP
             if ".zip!" in f_info.key:
                 future = executor.submit(_prepare_file_in_zip, f_info, s3_client)
-                f_info.futures[future] = 0  # track this future for download state
+                f_info.futures[future] = 0
 
         for f_info in files_info:
-            # Wait for ZIP file preparation
             for future in f_info.futures:
                 future.result()
             f_info.file_start_offset = offset
             offset += f_info.size
 
-            if f_info.data_type == MIME_OCTET_STREAM:
+            if not f_info.data_type or f_info.data_type == MIME_OCTET_STREAM:
                 guessed = guess_file_type(f_info.key)
                 if guessed:
                     f_info.data_type = guessed
