@@ -52,6 +52,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    EodagError,
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
@@ -60,6 +61,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.s3 import FileInfo, open_s3_zipped_object, stream_download_from_s3
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3.client import S3Client
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.api.product import EOProduct
@@ -707,10 +709,11 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        asset: Optional[str] = None,
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
+        wait: float = DEFAULT_DOWNLOAD_WAIT,
+        timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Any,
     ) -> StreamResponse:
         """
@@ -758,19 +761,24 @@ class AwsDownload(Download):
                         - "zip": always returns a ZIP archive.
         :returns: A `StreamResponse` object containing the streamed download and appropriate headers.
         """
+        asset_regex = kwargs.get("asset")
+
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
 
         build_safe = (
-            False if asset is not None else product_conf.get("build_safe", False)
+            False if asset_regex is not None else product_conf.get("build_safe", False)
         )
         ignore_assets = getattr(self.config, "ignore_assets", False)
 
         self._configure_safe_build(build_safe, product)
 
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset, ignore_assets, product_conf.get("complementary_url_key", [])
+            product,
+            asset_regex,
+            ignore_assets,
+            product_conf.get("complementary_url_key", []),
         )
 
         # authenticate
@@ -782,10 +790,13 @@ class AwsDownload(Download):
         product_objects = self._get_unique_products(
             bucket_names_and_prefixes,
             authenticated_objects,
-            asset,
+            asset_regex,
             ignore_assets,
             product,
         )
+
+        if self.s3_resource is None:
+            raise EodagError("Cannot check files in s3 zip without s3 resource")
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
@@ -803,7 +814,7 @@ class AwsDownload(Download):
 
         assets_by_path = {
             a.get("href", "").split("s3://")[-1]: a
-            for a in product.assets.get_values(asset_filter=asset or "")
+            for a in product.assets.get_values(asset_filter=asset_regex or "")
         }
 
         files_info = []
@@ -839,7 +850,11 @@ class AwsDownload(Download):
         zip_filename = sanitize(title)
 
         return stream_download_from_s3(
-            self.s3_resource.meta.client, files_info, byte_range, compress, zip_filename
+            cast("S3Client", self.s3_resource.meta.client),
+            files_info,
+            byte_range,
+            compress,
+            zip_filename,
         )
 
     def _get_commonpath(

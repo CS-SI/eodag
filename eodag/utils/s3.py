@@ -396,35 +396,38 @@ def stream_download_from_s3(
     Stream data from one or more S3 objects in chunks, with support for global byte ranges
     and partial file extraction from ZIP archives.
 
-    This method downloads product data from S3 using concurrent range requests across one or
+    This function downloads product data from S3 using concurrent range requests across one or
     multiple files. It divides the requested data into chunks (default: 8 MiB) and issues
     parallel HTTP range requests to optimize download throughput. This is particularly useful
     for large files or datasets stored across multiple S3 objects.
 
-    If the S3 key refers to a path inside a `.zip` file (denoted by `.zip!<internal_path>`),
-    the function extracts the specified file from the archive **only if it is stored uncompressed**
-    (i.e., ZIP method = STORE). Compressed formats (like DEFLATE) are not supported for partial ZIP extraction.
+    If the S3 key refers to a path inside a ``.zip`` file (denoted by ``.zip!<internal_path>``),
+    the function extracts the specified file from the archive only if it is stored uncompressed
+    (ZIP method = STORE). Compressed formats (like DEFLATE) are not supported for partial ZIP extraction.
 
-    The function supports global byte range filtering via the `byte_range` parameter, which allows
+    The function supports global byte range filtering via the ``byte_range`` parameter, which allows
     requesting only a specific portion of the logical file stream across all provided objects.
 
     Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
     as a separate HTTP request and yielded in file order.
 
+    The ``compress`` parameter determines the output format:
+
+    - ``zip``: Always produce a ZIP archive containing all files.
+    - ``raw``: Stream files directly without wrapping, either as a single file or multipart response.
+    - ``auto``: Automatically select the format:
+        - raw stream if only a single file is requested
+        - ZIP archive if multiple files are requested
+
     :param s3_client: A configured S3 client capable of making range requests.
-    :param list_info: A list of FileInfo objects representing the files to download.
-    :param byte_range: A tuple of (start, end) defining the inclusive global byte range to download
-                       across all objects. Either value can be None to indicate open-ended range.
+    :param files_info: List of FileInfo objects representing the files to download.
+    :param byte_range: Tuple (start, end) defining the inclusive global byte range to download across all objects.
+        Either value can be None to indicate open-ended range.
+    :param compress: Determines the output format of the streamed response.
+    :param zip_filename: The base filename to use when producing a ZIP archive (without extension).
     :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
     :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
-    :param compress: Determines the output format of the streamed response:
-        - ``zip``: Always produce a ZIP archive containing all files.
-        - ``raw``: Stream files directly without wrapping, either as a single file or multipart response.
-        - ``auto``: Automatically select the format:
-            - ZIP archive if multiple files are requested.
-            - Raw stream if only a single file is requested.
-    :param zip_filename: The base filename to use when producing a ZIP archive (without extension).
-    :returns: A StreamResponse object with streaming content according to the requested format.
+    :return: Streaming HTTP response with content according to the requested format.
     """
     offset = 0
 
@@ -444,8 +447,7 @@ def stream_download_from_s3(
 
             if not f_info.data_type or f_info.data_type == MIME_OCTET_STREAM:
                 guessed = guess_file_type(f_info.key)
-                if guessed:
-                    f_info.data_type = guessed
+                f_info.data_type = guessed or MIME_OCTET_STREAM
 
         chunks_tuple = _chunks_from_s3_objects(
             s3_client,
