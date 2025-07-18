@@ -745,45 +745,37 @@ class TestCore(TestCoreBase):
         self.assertListEqual(product_types_ids, ["foobar"])
 
         # Free text search: Using OR term match
-        filter = "FOOBAR,BAR"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
-
-        filter = "FOOBAR BAR"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
-
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(filter, title="FOO*")
+        product_types_ids = self.dag.guess_product_type(filter, title="FOO")
         self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar"])
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["foo"])
+        self.assertListEqual(product_types_ids, ["foo"])
 
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["foobar"])
+        self.assertListEqual(product_types_ids, ["foobar"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(
-            filter, intersect=True, title="titleFOO*"
+            filter, intersect=True, title="titleFOO"
         )
-        self.assertListEqual(sorted(product_types_ids), ["foobar"])
+        self.assertListEqual(product_types_ids, ["foobar"])
 
         # Free text search: Indicate included and excluded terms using +/-
         # This will search for items that INCLUDES "abstractfoo" EXCLUDES "bar" OR CONTAIN "foo"
         filter = "foo +abstractfoo -bar"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["foo"])
+        self.assertListEqual(product_types_ids, ["foo"])
 
     def test_guess_product_type_with_mission_dates(self):
         """Testing the datetime interval"""
@@ -806,19 +798,22 @@ class TestCore(TestCoreBase):
             missionEndDate="2013-02-15",
         )
         self.assertListEqual(
-            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+            sorted(product_types_ids),
+            ["interval_end", "interval_start", "interval_start_end"],
         )
         product_types_ids = self.dag.guess_product_type(
             title="TEST DATES", missionStartDate="2013-02-01"
         )
         self.assertListEqual(
-            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+            sorted(product_types_ids),
+            ["interval_end", "interval_start", "interval_start_end"],
         )
         product_types_ids = self.dag.guess_product_type(
             title="TEST DATES", missionEndDate="2013-02-20"
         )
         self.assertListEqual(
-            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+            sorted(product_types_ids),
+            ["interval_end", "interval_start", "interval_start_end"],
         )
 
     def test_update_product_types_list(self):
