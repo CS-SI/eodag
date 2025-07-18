@@ -21,18 +21,17 @@ import io
 import logging
 import os
 import uuid
-import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from itertools import chain
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
-from zipfile import ZipFile
+from zipfile import ZIP_STORED, ZipFile
 
 import boto3
 import botocore
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from stream_zip import ZIP_AUTO, Method, stream_zip
+from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import (
@@ -49,14 +48,17 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
-    from typing import Iterator, Optional
+    from typing import Iterable, Iterator, Literal, Optional
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
+    from stream_zip import Method
 
     from eodag.api.product import EOProduct  # type: ignore
 
 logger = logging.getLogger("eodag.utils.s3")
+
+MIME_OCTET_STREAM = "application/octet-stream"
 
 
 def fetch_range(
@@ -81,40 +83,47 @@ def fetch_range(
 @dataclass
 class FileInfo:
     """
-    Describe a S3 object with basic info and its download state.
+    Describe a S3 object with basic f_info and its download state.
+
+    zip_filepath is the path inside the ZIP archive if the file is stored inside a ZIP.
+    data_start_offset is the offset in the ZIP archive where the file data starts.
+    file_start_offset is the offset in the logical (global) file stream where this file starts.
+    futures is a mapping of futures for each range (start byte -> future).
+    buffers is a mapping of start byte to data chunks that have been downloaded.
+    next_yield is the next offset to yield in the file, used to track progress during
+    downloading and yielding chunks.
+    rel_path is the relative path of the file, if applicable (e.g., inside a ZIP archive).
+    data_type is the MIME type of the file, defaulting to application/octet-stream
+    if not guessed. It can be updated based on the file extension or content type.
     """
 
     size: int
     key: str
     bucket_name: str
-    zip_filename: Optional[str] = None
+    zip_filepath: Optional[str] = None
     data_start_offset: int = 0
-    data_type: str = "application/octet-stream"
+    data_type: str = MIME_OCTET_STREAM
     rel_path: Optional[str] = None
 
     # These fields hold the state for downloading
     file_start_offset: int = 0
-    futures: dict = field(
-        default_factory=dict
-    )  # Mapping of futures for each range (start -> future)
-    buffers: dict[int, bytes] = field(
-        default_factory=dict
-    )  # Map of start byte to data chunks
-    next_yield: int = 0  # The next offset to yield in the file
+    futures: dict = field(default_factory=dict)
+    buffers: dict[int, bytes] = field(default_factory=dict)
+    next_yield: int = 0
 
 
-def _prepare_file_in_zip(info: FileInfo, s3_client: S3Client):
+def _prepare_file_in_zip(f_info: FileInfo, s3_client: S3Client):
     """Update file information with the offset and size of the file inside the zip archive"""
 
-    splitted_path = info.key.split(".zip!")
-    info.key = f"{splitted_path[0]}.zip"
-    info.zip_filename = splitted_path[-1]  # file path inside the ZIP archive
+    splitted_path = f_info.key.split(".zip!")
+    f_info.key = f"{splitted_path[0]}.zip"
+    f_info.zip_filepath = splitted_path[-1]  # file path inside the ZIP archive
 
-    info.data_start_offset, info.size = file_position_from_s3_zip(
-        info.bucket_name,
-        info.key,
+    f_info.data_start_offset, f_info.size = file_position_from_s3_zip(
+        f_info.bucket_name,
+        f_info.key,
         s3_client,
-        info.zip_filename,
+        f_info.zip_filepath,
     )
 
 
@@ -170,19 +179,98 @@ def _compute_file_ranges(
     return ranges
 
 
+def _chunks_from_s3_objects(
+    s3_client: S3Client,
+    files_info: list[FileInfo],
+    byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+    range_size: int = 1024**2 * 8,
+    max_workers: int = 8,
+) -> Iterator[tuple[int, Iterator[bytes]]]:
+    """Download chunks from S3 objects in parallel, respecting byte ranges and file order."""
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for f_info in files_info:
+            ranges = _compute_file_ranges(f_info, byte_range, range_size)
+
+            if not ranges:
+                logger.debug("Skipping %s: no ranges to fetch", f_info.key)
+                continue
+
+            f_info.buffers = {}
+            f_info.next_yield = 0
+            f_info.total_chunks = len(ranges)
+            f_info.expected_starts = {start for start, _ in ranges}
+
+            futures = {}
+            for start, length in ranges:
+                future = executor.submit(
+                    fetch_range,
+                    f_info.bucket_name,
+                    f_info.key,
+                    start,
+                    length,
+                    s3_client,
+                )
+                futures[future] = start
+
+            f_info.futures = futures
+
+        # Combine all futures to wait on globally
+        all_futures = {
+            fut: (f_info, start)
+            for f_info in files_info
+            for fut, start in f_info.futures.items()
+        }
+
+        current_file_index = 0
+
+        # Yield chunks per file (one at a time)
+        while current_file_index < len(files_info):
+            current_info = files_info[current_file_index]
+
+            def chunks_generator() -> Iterator[bytes]:
+                nonlocal current_file_index, all_futures
+                while current_info.next_yield < current_info.size:
+                    # Wait for any futures to complete
+                    done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+
+                    for fut in done:
+                        f_info, start = all_futures.pop(fut)
+                        data = fut.result()
+                        f_info.buffers[start] = data
+
+                    # Yield chunks as they are available
+                    next_start = current_info.next_yield
+                    while next_start in current_info.buffers:
+                        chunk = current_info.buffers.pop(next_start)
+                        if not isinstance(chunk, bytes):
+                            raise TypeError(
+                                f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
+                            )
+                        yield chunk
+
+                        next_start += range_size
+                        current_info.next_yield = next_start
+
+                    # If done with this file, stop yielding chunks for this file
+                    if current_info.next_yield >= current_info.size:
+                        break
+
+            yield current_file_index, chunks_generator()
+
+            current_file_index += 1
+
+
 def _build_stream_response(
-    output_filename: str,
-    list_info: list[FileInfo],
-    chunks_iterator: Iterator[tuple[int, bytes]],
-    response_size: int,
+    zip_filename: str,
+    files_info: list[FileInfo],
+    files_iterator: Iterator[tuple[int, Iterator[bytes]]],
     compress: Literal["zip", "raw", "auto"],
 ) -> StreamResponse:
     """Produce the response in the adapted format: zip, multipart/mixed or single object stream."""
 
-    zip_response = len(list_info) > 1 and compress == "auto" or compress == "zip"
+    zip_response = len(files_info) > 1 and compress == "auto" or compress == "zip"
 
     headers = {
-        "Content-Length": str(response_size),
         "Accept-Ranges": "bytes",
     }
 
@@ -190,43 +278,51 @@ def _build_stream_response(
     perms = 0o600
 
     if zip_response:
+        total_file_size = sum(f.size for f in files_info)
 
-        def zip_stream() -> Iterator[tuple[str, datetime, Literal[384], Method, bytes]]:
-            for index, chunk in chunks_iterator:
+        def zip_stream() -> Iterator[
+            tuple[str, datetime, int, Method, Iterable[bytes]]
+        ]:
+            # Now we iterate over each file's chunk generator
+            for index, chunks_generator in files_iterator:
                 yield (
-                    list_info[index].rel_path or list_info[index].key,
+                    files_info[index].rel_path or files_info[index].key,
                     modified_at,
                     perms,
-                    ZIP_AUTO(list_info[index].size),
-                    chunk,
+                    ZIP_AUTO(total_file_size, level=0),  # 0 means no compression
+                    chunks_generator,  # The iterator for the chunks of the file
                 )
 
         return StreamResponse(
-            content=stream_zip(zip_stream()),  # type: ignore[return-value]
+            content=stream_zip(zip_stream()),  # Zip the stream from the generator
             media_type="application/zip",
             headers={
                 **headers,
-                "content-disposition": f'attachment; filename="{output_filename}.zip"',
+                "content-disposition": f'attachment; filename="{zip_filename}.zip"',
             },
         )
 
-    elif len(list_info) > 1:
+    elif len(files_info) > 1:
+        # For multipart response, create a boundary and stream multiple files
         boundary = uuid.uuid4().hex
 
         def multipart_stream():
             current_index = -1
-            for index, chunk in chunks_iterator:
+            for index, chunks_generator in files_iterator:
+                # Only switch files if the index changes
                 if index != current_index:
                     if current_index != -1:
                         yield b"\r\n"
-                    filename = os.path.basename(list_info[index].key)
+                    filename = os.path.basename(files_info[index].key)
                     yield (
                         f"--{boundary}\r\n"
                         f'Content-Disposition: attachment; filename="{filename}"\r\n'
-                        f"Content-Type: {list_info[index].data_type}\r\n\r\n"
+                        f"Content-Type: {files_info[index].data_type}\r\n\r\n"
                     ).encode()
                     current_index = index
-                yield chunk
+                # Yield the chunks for the current file
+                yield from chunks_generator
+
             yield f"\r\n--{boundary}--\r\n".encode()
 
         return StreamResponse(
@@ -236,93 +332,31 @@ def _build_stream_response(
         )
 
     else:
-        index, first_chunk = next(chunks_iterator)
-        filename = os.path.basename(list_info[index].key)
+        # For a single file, directly stream the chunks (flatten iterators properly)
+        index, chunks_generator = next(files_iterator)
+
+        first_chunk = next(chunks_generator)
+
+        filename = os.path.basename(files_info[index].key)
 
         headers["content-disposition"] = f'attachment; filename="{filename}"'
-        headers["content-type"] = list_info[index].data_type
+        headers["content-type"] = files_info[index].data_type
 
+        # Instead of chaining the first chunk generator, just yield it first then continue
         return StreamResponse(
-            content=chain(iter([first_chunk]), (chunk for _, chunk in chunks_iterator)),
+            content=chain(iter(first_chunk), chunks_generator),
             headers=headers,
         )
 
 
-def _chunks_from_s3_objects(
-    s3_client: S3Client,
-    list_info: list[FileInfo],
-    byte_range: tuple[Optional[int], Optional[int]] = (None, None),
-    range_size: int = 1024**2 * 8,
-    max_workers: int = 8,
-) -> Iterator[tuple[int, bytes]]:
-    """Download chunks from S3 objects in parallel, respecting byte ranges and file order."""
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for info in list_info:
-            ranges = _compute_file_ranges(info, byte_range, range_size)
-
-            if not ranges:
-                # File lies outside requested range; skip it
-                continue
-
-            futures = {}
-            for start, length in ranges:
-                future = executor.submit(
-                    fetch_range,
-                    info.bucket_name,
-                    info.key,
-                    start,
-                    length,
-                    s3_client,
-                )
-                futures[future] = start
-
-            info.futures = futures
-
-        # Combine all futures to wait on globally
-        all_futures = {
-            fut: (info, start)
-            for info in list_info
-            for fut, start in info.futures.items()
-        }
-
-        current_file_index = 0
-
-        # Yield chunks in order, honoring file ordering
-        while current_file_index < len(list_info):
-            if not all_futures:
-                break  # No more data to process
-
-            done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
-            for fut in done:
-                info, start = all_futures.pop(fut)
-                data = fut.result()
-                info.buffers[start] = data
-
-            # Try to yield available chunks from current file in order
-            buffer = list_info[current_file_index].buffers
-            next_start = list_info[current_file_index].next_yield
-
-            while next_start in buffer:
-                yield current_file_index, buffer.pop(next_start)
-                next_start += range_size
-                list_info[current_file_index].next_yield = next_start
-
-            # Check if current file is fully downloaded
-            file_size = list_info[current_file_index].size
-            last_chunk_start = (file_size - 1) // range_size * range_size
-
-            if next_start > last_chunk_start:
-                current_file_index += 1
-
-
 def stream_download_from_s3(
     s3_client: S3Client,
-    list_info: list[FileInfo],
+    files_info: list[FileInfo],
     byte_range: tuple[Optional[int], Optional[int]] = (None, None),
-    range_size: int = 1024**2 * 8,
-    max_workers: int = 8,
     compress: Literal["zip", "raw", "auto"] = "auto",
     zip_filename: str = "archive",
+    range_size: int = 1024**2 * 8,
+    max_workers: int = 8,
 ) -> StreamResponse:
     """
     Stream data from one or more S3 objects in chunks, with support for global byte ranges
@@ -343,37 +377,47 @@ def stream_download_from_s3(
     Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
     as a separate HTTP request and yielded in file order.
 
-    :param s3_client: A configured S3 client capable of making range requests.
-    :param object_summaries: A list of S3 object metadata representing the files to download.
-    :param byte_range: A tuple of (start, end) defining the inclusive global byte range to download
-                       across all objects. Either value can be None to indicate open-ended range.
-    :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
-    :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
-    :returns: An iterator yielding (file_index, data_chunk) tuples, where:
-              - file_index is the index of the file in the input object list
-              - data_chunk is a `bytes` object containing the downloaded chunk
-    :rtype: Iterator[tuple[int, bytes]]
+    :param s3_client: An initialized S3 client instance used to perform requests.
+    :param files_info: List of FileInfo objects describing the S3 files to download.
+    :param byte_range: Tuple specifying the global byte range (start, end) to download.
+                       Use (None, None) to download the full files.
+    :param compress: Compression mode for the output stream.
+                     Options are:
+                     - "zip": compress output as a ZIP archive
+                     - "raw": output raw concatenated files without compression
+                     - "auto": decide automatically based on context (default)
+    :param zip_filename: Filename to use for the ZIP archive when compress="zip".
+    :param range_size: Size in bytes of each chunk to request via HTTP range.
+                       Default is 8 MiB.
+    :param max_workers: Maximum number of concurrent threads for downloading chunks.
+
+    :return: A StreamResponse object yielding the requested data as bytes.
     """
 
     offset = 0
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for info in list_info:
+        for f_info in files_info:
             # Check if file is inside a ZIP
-            if ".zip!" in info.key:
-                future = executor.submit(_prepare_file_in_zip, info, s3_client)
-                info.futures[future] = 0  # track this future for download state
+            if ".zip!" in f_info.key:
+                future = executor.submit(_prepare_file_in_zip, f_info, s3_client)
+                f_info.futures[future] = 0  # track this future for download state
 
         # Wait for ZIP file preparation
-        for info in list_info:
-            for future in info.futures:
+        for f_info in files_info:
+            for future in f_info.futures:
                 future.result()
-            info.file_start_offset = offset
-            offset += info.size
+            f_info.file_start_offset = offset
+            offset += f_info.size
+
+            if f_info.data_type == MIME_OCTET_STREAM:
+                guessed = guess_file_type(f_info.key)
+                if guessed:
+                    f_info.data_type = guessed
 
     chunks_tuple = _chunks_from_s3_objects(
         s3_client,
-        list_info,
+        files_info,
         byte_range=byte_range,
         range_size=range_size,
         max_workers=max_workers,
@@ -381,15 +425,10 @@ def stream_download_from_s3(
 
     return _build_stream_response(
         zip_filename,
-        list_info,
+        files_info,
         chunks_tuple,
-        offset,
         compress,
     )
-
-    # Compute start offset of each file within the aggregated stream
-
-    # Submit download tasks per file
 
 
 def update_assets_from_s3(
@@ -584,7 +623,7 @@ def file_position_from_s3_zip(
     s3_bucket: str,
     object_key: str,
     s3_client,
-    target_filename: str,
+    target_filepath: str,
 ) -> tuple[int, int]:
     """
     Get the start position and size of a specific file inside a ZIP archive stored in S3.
@@ -593,7 +632,7 @@ def file_position_from_s3_zip(
     :param s3_bucket: The S3 bucket name.
     :param object_key: The S3 object key for the ZIP file.
     :param s3_client: The Boto3 S3 client.
-    :param target_filename: The filename inside the ZIP archive to locate.
+    :param target_filepath: The file path inside the ZIP archive to locate.
     :return: A tuple (file_data_start, file_size) where:
              - file_data_start is the byte offset where the file data starts in the ZIP archive.
              - file_size is the size of the file in bytes.
@@ -602,11 +641,11 @@ def file_position_from_s3_zip(
     """
     zipf, cd_data = open_s3_zipped_object(s3_bucket, object_key, s3_client)
 
-    # Find file in zipf.filelist to get its index and info
+    # Find file in zipf.filelist to get its index and f_info
     target_info = None
     cd_offset = 0
     for fi in zipf.filelist:
-        if fi.filename == target_filename:
+        if fi.filename == target_filepath:
             target_info = fi
             break
         cd_entry_len = (
@@ -617,9 +656,9 @@ def file_position_from_s3_zip(
     zipf.close()
 
     if target_info is None:
-        raise FileNotFoundError(f"File {target_filename} not found in ZIP archive")
+        raise FileNotFoundError(f"File {target_filepath} not found in ZIP archive")
 
-    if target_info.compress_type != zipfile.ZIP_STORED:
+    if target_info.compress_type != ZIP_STORED:
         raise NotImplementedError("Only uncompressed files (ZIP_STORED) are supported.")
 
     # Parse central directory entry to get relative local header offset

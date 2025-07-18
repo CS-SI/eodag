@@ -808,6 +808,7 @@ class AwsDownload(Download):
         )
 
         assets_values = product.assets.get_values(asset_filter=asset_regex or "")
+        assets_by_key = {a.get("key"): a for a in assets_values}
 
         zip_filename = (
             sanitize(product.properties["title"])
@@ -822,17 +823,14 @@ class AwsDownload(Download):
                 size=obj.size,
                 bucket_name=obj.bucket_name,
                 rel_path=objects_rel_path[i],
-                zip_filename=zip_filename,
             )
-            if data_type := assets_values[i].get(obj.key, None):
+            if data_type := assets_by_key.get(obj.key, {}).get("type"):
                 info.data_type = data_type
 
             list_info.append(info)
 
         return stream_download_from_s3(
-            self.s3_resource.meta.client,
-            list_info,
-            byte_range,
+            self.s3_resource.meta.client, list_info, byte_range, compress, zip_filename
         )
 
     def _validate_product_objects(
