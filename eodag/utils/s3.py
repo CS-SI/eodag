@@ -23,7 +23,6 @@ import os
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from itertools import chain
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 from zipfile import ZIP_STORED, ZipFile
@@ -182,81 +181,80 @@ def _compute_file_ranges(
 def _chunks_from_s3_objects(
     s3_client: S3Client,
     files_info: list[FileInfo],
-    byte_range: tuple[Optional[int], Optional[int]] = (None, None),
-    range_size: int = 1024**2 * 8,
-    max_workers: int = 8,
+    byte_range: tuple[Optional[int], Optional[int]],
+    range_size: int,
+    executor: ThreadPoolExecutor,
 ) -> Iterator[tuple[int, Iterator[bytes]]]:
     """Download chunks from S3 objects in parallel, respecting byte ranges and file order."""
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for f_info in files_info:
-            ranges = _compute_file_ranges(f_info, byte_range, range_size)
+    for f_info in files_info:
+        ranges = _compute_file_ranges(f_info, byte_range, range_size)
 
-            if not ranges:
-                logger.debug("Skipping %s: no ranges to fetch", f_info.key)
-                continue
+        if not ranges:
+            logger.debug("Skipping %s: no ranges to fetch", f_info.key)
+            continue
 
-            f_info.buffers = {}
-            f_info.next_yield = 0
+        f_info.buffers = {}
+        f_info.next_yield = 0
 
-            futures = {}
-            for start, length in ranges:
-                future = executor.submit(
-                    fetch_range,
-                    f_info.bucket_name,
-                    f_info.key,
-                    start,
-                    length,
-                    s3_client,
-                )
-                futures[future] = start
+        futures = {}
+        for start, length in ranges:
+            future = executor.submit(
+                fetch_range,
+                f_info.bucket_name,
+                f_info.key,
+                start,
+                length,
+                s3_client,
+            )
+            futures[future] = start
 
-            f_info.futures = futures
+        f_info.futures = futures
 
-        # Combine all futures to wait on globally
-        all_futures = {
-            fut: (f_info, start)
-            for f_info in files_info
-            for fut, start in f_info.futures.items()
-        }
+    # Combine all futures to wait on globally
+    all_futures = {
+        fut: (f_info, start)
+        for f_info in files_info
+        for fut, start in f_info.futures.items()
+    }
 
-        current_file_index = 0
+    current_file_index = 0
 
-        # Yield chunks per file (one at a time)
-        while current_file_index < len(files_info):
-            current_info = files_info[current_file_index]
+    # Yield chunks per file (one at a time)
+    while current_file_index < len(files_info):
+        current_info = files_info[current_file_index]
 
-            def chunks_generator() -> Iterator[bytes]:
-                """yield chunks of data for the current file."""
-                nonlocal current_file_index, all_futures
-                while current_info.next_yield < current_info.size:
-                    # Wait for any futures to complete
-                    done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+        def chunks_generator() -> Iterator[bytes]:
+            """yield chunks of data for the current file."""
+            nonlocal current_file_index, all_futures
+            while current_info.next_yield < current_info.size:
+                # Wait for any futures to complete
+                done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
 
-                    for fut in done:
-                        f_info, start = all_futures.pop(fut)
-                        data = fut.result()
-                        f_info.buffers[start] = data
+                for fut in done:
+                    f_info, start = all_futures.pop(fut)
+                    data = fut.result()
+                    f_info.buffers[start] = data
 
-                    # Yield chunks as they are available
-                    next_start = current_info.next_yield
-                    while next_start in current_info.buffers:
-                        chunk = current_info.buffers.pop(next_start)
-                        if not isinstance(chunk, bytes):
-                            raise TypeError(
-                                f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
-                            )
-                        yield chunk
+                # Yield chunks as they are available
+                next_start = current_info.next_yield
+                while next_start in current_info.buffers:
+                    chunk = current_info.buffers.pop(next_start)
+                    if not isinstance(chunk, bytes):
+                        raise TypeError(
+                            f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
+                        )
+                    yield chunk
 
-                        next_start += range_size
-                        current_info.next_yield = next_start
+                    next_start += range_size
+                    current_info.next_yield = next_start
 
-                    # If done with this file, stop yielding chunks for this file
-                    if current_info.next_yield >= current_info.size:
-                        break
+                # If done with this file, stop yielding chunks for this file
+                if current_info.next_yield >= current_info.size:
+                    break
 
-            yield current_file_index, chunks_generator()
+        yield current_file_index, chunks_generator()
 
-            current_file_index += 1
+        current_file_index += 1
 
 
 def _build_stream_response(
@@ -264,6 +262,7 @@ def _build_stream_response(
     files_info: list[FileInfo],
     files_iterator: Iterator[tuple[int, Iterator[bytes]]],
     compress: Literal["zip", "raw", "auto"],
+    executor: ThreadPoolExecutor,
 ) -> StreamResponse:
     """
     Produce a streaming HTTP response for one or multiple files in different formats.
@@ -290,48 +289,62 @@ def _build_stream_response(
         - Single raw file stream with appropriate Content-Type when only one file is present and compress
             is ``raw`` or ``auto``.
     """
-    zip_response = len(files_info) > 1 and compress == "auto" or compress == "zip"
-
     headers = {
         "Accept-Ranges": "bytes",
     }
 
-    modified_at = datetime.now()
-    perms = 0o600
+    def _wrap_generator_with_cleanup(
+        generator: Iterable[bytes], executor: ThreadPoolExecutor
+    ) -> Iterator[bytes]:
+        try:
+            yield from generator
+        finally:
+            executor.shutdown(wait=True)
+
+    def _build_response(
+        content_gen: Iterable[bytes],
+        media_type: str,
+        extra_headers: dict[str, str] = {},
+    ) -> StreamResponse:
+        return StreamResponse(
+            content=_wrap_generator_with_cleanup(content_gen, executor),
+            media_type=media_type,
+            headers={**headers, **extra_headers},
+        )
+
+    zip_response = (len(files_info) > 1 and compress == "auto") or compress == "zip"
 
     if zip_response:
+        modified_at = datetime.now()
+        perms = 0o600
         total_file_size = sum(f.size for f in files_info)
 
         def zip_stream() -> Iterator[
             tuple[str, datetime, int, Method, Iterable[bytes]]
         ]:
-            # Now we iterate over each file's chunk generator
             for index, chunks_generator in files_iterator:
                 yield (
                     files_info[index].rel_path or files_info[index].key,
                     modified_at,
                     perms,
-                    ZIP_AUTO(total_file_size, level=0),  # 0 means no compression
-                    chunks_generator,  # The iterator for the chunks of the file
+                    ZIP_AUTO(total_file_size, level=0),
+                    chunks_generator,
                 )
 
-        return StreamResponse(
-            content=stream_zip(zip_stream()),  # Zip the stream from the generator
+        return _build_response(
+            content_gen=stream_zip(zip_stream()),
             media_type="application/zip",
-            headers={
-                **headers,
-                "content-disposition": f'attachment; filename="{zip_filename}.zip"',
+            extra_headers={
+                "content-disposition": f'attachment; filename="{zip_filename}.zip"'
             },
         )
 
     elif len(files_info) > 1:
-        # For multipart response, create a boundary and stream multiple files
         boundary = uuid.uuid4().hex
 
         def multipart_stream():
             current_index = -1
             for index, chunks_generator in files_iterator:
-                # Only switch files if the index changes
                 if index != current_index:
                     if current_index != -1:
                         yield b"\r\n"
@@ -342,32 +355,27 @@ def _build_stream_response(
                         f"Content-Type: {files_info[index].data_type}\r\n\r\n"
                     ).encode()
                     current_index = index
-                # Yield the chunks for the current file
                 yield from chunks_generator
-
             yield f"\r\n--{boundary}--\r\n".encode()
 
-        return StreamResponse(
-            content=multipart_stream(),
+        return _build_response(
+            content_gen=multipart_stream(),
             media_type=f"multipart/mixed; boundary={boundary}",
-            headers=headers,
         )
 
     else:
-        # For a single file, directly stream the chunks (flatten iterators properly)
         index, chunks_generator = next(files_iterator)
-
         first_chunk = next(chunks_generator)
-
         filename = os.path.basename(files_info[index].key)
 
-        headers["content-disposition"] = f'attachment; filename="{filename}"'
-        headers["content-type"] = files_info[index].data_type
+        def single_file_stream() -> Iterator[bytes]:
+            yield first_chunk
+            yield from chunks_generator
 
-        # Instead of chaining the first chunk generator, just yield it first then continue
-        return StreamResponse(
-            content=chain(iter([first_chunk]), chunks_generator),
-            headers=headers,
+        return _build_response(
+            content_gen=single_file_stream(),
+            media_type=files_info[index].data_type,
+            extra_headers={"content-disposition": f'attachment; filename="{filename}"'},
         )
 
 
@@ -416,15 +424,16 @@ def stream_download_from_s3(
     """
     offset = 0
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    executor = ThreadPoolExecutor(max_workers=max_workers)
+    try:
         for f_info in files_info:
             # Check if file is inside a ZIP
             if ".zip!" in f_info.key:
                 future = executor.submit(_prepare_file_in_zip, f_info, s3_client)
                 f_info.futures[future] = 0  # track this future for download state
 
-        # Wait for ZIP file preparation
         for f_info in files_info:
+            # Wait for ZIP file preparation
             for future in f_info.futures:
                 future.result()
             f_info.file_start_offset = offset
@@ -435,20 +444,20 @@ def stream_download_from_s3(
                 if guessed:
                     f_info.data_type = guessed
 
-    chunks_tuple = _chunks_from_s3_objects(
-        s3_client,
-        files_info,
-        byte_range,
-        range_size,
-        max_workers,
-    )
+        chunks_tuple = _chunks_from_s3_objects(
+            s3_client,
+            files_info,
+            byte_range,
+            range_size,
+            executor,
+        )
 
-    return _build_stream_response(
-        zip_filename,
-        files_info,
-        chunks_tuple,
-        compress,
-    )
+        return _build_stream_response(
+            zip_filename, files_info, chunks_tuple, compress, executor
+        )
+    except Exception:
+        executor.shutdown(wait=True)
+        raise
 
 
 def update_assets_from_s3(

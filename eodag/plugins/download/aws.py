@@ -798,6 +798,8 @@ class AwsDownload(Download):
             if flatten_top_dirs
             else ""
         )
+        if len(product_objects) == 1:
+            common_path = os.path.dirname(common_path)
 
         assets_by_path = {
             a.get("href", "").split("s3://")[-1]: a

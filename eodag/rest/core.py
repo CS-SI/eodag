@@ -28,7 +28,6 @@ import dateutil
 from cachetools.func import lru_cache
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
-from pyinstrument import Profiler
 from requests.models import Response as RequestsResponse
 
 import eodag
@@ -96,19 +95,6 @@ crunchers = {
     "filterLatestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
     "filterOverlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
-
-
-def profile_generator(gen, profile_file="stream_profile.html"):
-    """Wrap generator with PyInstrument profiler"""
-    profiler = Profiler()
-    profiler.start()
-
-    for chunk in gen:
-        yield chunk
-
-    profiler.stop()
-    with open(profile_file, "w", encoding="utf-8") as f:
-        f.write(profiler.output_html())
 
 
 @_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
