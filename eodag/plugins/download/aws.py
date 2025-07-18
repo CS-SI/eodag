@@ -712,6 +712,7 @@ class AwsDownload(Download):
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
+        **kwargs: Any,
     ) -> StreamResponse:
         """
         Stream EO product data as a FastAPI `StreamResponse`, with support for partial downloads,

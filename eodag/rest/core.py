@@ -266,7 +266,7 @@ def download_stac_item(
             _order_and_update(product, auth, kwargs)
 
         download_stream = product.downloader._stream_download_dict(
-            product, auth=auth, asset=asset
+            product, auth=auth, asset=asset, wait=-1, timeout=-1
         )
     except NotImplementedError:
         logger.warning(
