@@ -2306,7 +2306,6 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
-            "EEA_DAILY_VI",
         ]
         self.assertEqual(actual, expected)
 
