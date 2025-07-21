@@ -1076,7 +1076,8 @@ class EODataAccessGateway:
 
             # individual filters
             if filters:
-                filters_matching = all(
+                filters_matching_method = all if intersect else any
+                filters_matching = filters_matching_method(
                     key in pt_dict
                     and pt_dict[key] is not None
                     and value in pt_dict[key]

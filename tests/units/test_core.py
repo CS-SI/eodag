@@ -2244,12 +2244,13 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2A_MAJA",
             "S2_MSI_L2B_MAJA_SNOW",
             "S2_MSI_L2B_MAJA_WATER",
+            "EEA_DAILY_VI",
         ]
-        self.assertEqual(actual, expected)
+        self.assertListEqual(actual, expected)
 
         # with product type specified
         actual = self.dag.guess_product_type(productType="foo")
-        self.assertEqual(actual, ["foo"])
+        self.assertListEqual(actual, ["foo"])
 
         # with dates
         self.assertEqual(
