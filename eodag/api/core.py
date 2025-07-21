@@ -70,7 +70,6 @@ from eodag.utils import (
     _deprecated,
     get_geometry_from_various,
     makedirs,
-    obj_md5sum,
     sort_dict,
     string_to_jsonpath,
     uri_to_path,
@@ -119,7 +118,6 @@ class EODataAccessGateway:
             res_files("eodag") / "resources" / "product_types.yml"
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
-        self.product_types_config_md5 = obj_md5sum(self.product_types_config.source)
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -882,9 +880,6 @@ class EODataAccessGateway:
                                         "product_types_config"
                                     ][new_product_type]
                                 }
-                            )
-                            self.product_types_config_md5 = obj_md5sum(
-                                self.product_types_config.source
                             )
                             ext_product_types_conf[provider] = new_product_types_conf
                             new_product_types.append(new_product_type)
