@@ -1045,6 +1045,15 @@ class EODataAccessGateway:
         guesses: list[str] = []
 
         for pt_id, pt_dict in self.product_types_config.source.items():
+
+            # skip GENERIC_PRODUCT_TYPE and product types not configured for any provider
+            if (
+                pt_id == GENERIC_PRODUCT_TYPE
+                or pt_id
+                not in self._plugins_manager.product_type_to_provider_config_map
+            ):
+                continue
+
             # whether this product type matched any filter
             matching_once = False
 
