@@ -118,6 +118,7 @@ class EODataAccessGateway:
             res_files("eodag") / "resources" / "product_types.yml"
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
+        self._product_types_config_init()
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -222,6 +223,11 @@ class EODataAccessGateway:
                         os.path.join(self.conf_dir, "shp"),
                     )
         self.set_locations_conf(locations_conf_path)
+
+    def _product_types_config_init(self) -> None:
+        """Initialize product types configuration."""
+        for pt_id, pd_dict in self.product_types_config.source.items():
+            self.product_types_config.source[pt_id].setdefault("_id", pt_id)
 
     def _sync_provider_product_types(
         self,
@@ -573,8 +579,6 @@ class EODataAccessGateway:
                     continue
 
                 config = self.product_types_config[product_type_id]
-                config["_id"] = product_type_id
-
                 if "alias" in config:
                     product_type_id = config["alias"]
                 product_type = {"ID": product_type_id, **config}
@@ -876,9 +880,10 @@ class EODataAccessGateway:
                             # to self.product_types_config
                             self.product_types_config.source.update(
                                 {
-                                    new_product_type: new_product_types_conf[
-                                        "product_types_config"
-                                    ][new_product_type]
+                                    new_product_type: {"_id": new_product_type}
+                                    | new_product_types_conf["product_types_config"][
+                                        new_product_type
+                                    ]
                                 }
                             )
                             ext_product_types_conf[provider] = new_product_types_conf
