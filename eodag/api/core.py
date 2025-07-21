@@ -1038,6 +1038,12 @@ class EODataAccessGateway:
             if v is not None
         }
 
+        only_dates = (
+            True
+            if (not free_text and not filters and (missionStartDate or missionEndDate))
+            else False
+        )
+
         free_text_evaluator = (
             compile_free_text_query(free_text) if free_text else lambda _: True
         )
@@ -1086,7 +1092,7 @@ class EODataAccessGateway:
                     continue
 
             # as no filters matched, skip
-            if not matching_once:
+            if not matching_once and not only_dates:
                 continue
 
             # datetime filtering
