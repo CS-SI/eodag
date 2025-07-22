@@ -5639,6 +5639,36 @@ MSG_AMVR02:
   title: Atmospheric Motion Vectors Climate Data Record Release 2 - MFG and MSG - 0 degree
   missionStartDate: "1981-09-03"
 
+MSG_CTH:
+  abstract: |
+    The product indicates the height of highest cloud. Based on a subset of the information derived during Scenes and Cloud Analysis,
+    but also makes use of other external meteorological data. Applications and Users: Aviation meteorology.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLTH,CTH
+  sensorType: OPTICAL
+  license: other
+  title: Cloud Top Height - MSG - 0 degree
+  missionStartDate: "2020-09-01T00:00:00Z"
+
+MSG_CTH_IODC:
+  abstract: |
+    The product indicates the height of highest cloud. Based on a subset of the information derived during Scenes and Cloud Analysis,
+    but also makes use of other external meteorological data. Applications and Users: Aviation meteorology. From 1 June 2022,
+    Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLTH,CTH
+  sensorType: OPTICAL
+  license: other
+  title: Cloud Top Height - MSG - Indian Ocean
+  missionStartDate: "2020-09-01T00:00:00Z"
+
+
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:
   abstract: |

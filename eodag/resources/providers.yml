@@ -5193,6 +5193,10 @@
       parentIdentifier: EO:EUM:DAT:0302
     MSG_MFG_GSA_0:
       parentIdentifier: EO:EUM:DAT:0300
+    MSG_CTH:
+      parentIdentifier: EO:EUM:DAT:MSG:CTH
+    MSG_CTH_IODC:
+      parentIdentifier: EO:EUM:DAT:MSG:CTH-IODC
     HIRS_FDR_1_MULTI:
       parentIdentifier: EO:EUM:DAT:0647
     MSG_OCA_CDR:
