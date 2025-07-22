@@ -22,6 +22,7 @@ from botocore.exceptions import ClientError
 
 from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
+from eodag.types import S3SessionKwargs
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
@@ -99,3 +100,12 @@ class CreodiasS3Download(AwsDownload):
                 self.get_product_bucket_name_and_prefix(product, s3_url)
             ]
         return bucket_names_and_prefixes
+
+    def _presign_url(self, asset_info: Any, auth: S3SessionKwargs) -> str:
+        """presign a url to download an asset from s3
+        :param product_info: S3 resource object containing information about bucket and key of the asset
+        :param auth: auth dict with s3 credentials
+        :returns: presigned url
+        """
+        # presigned urls are not working with creodias -> return enpty string
+        return ""

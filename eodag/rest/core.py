@@ -26,7 +26,7 @@ from unittest.mock import Mock
 
 import dateutil
 from cachetools.func import lru_cache
-from fastapi.responses import ORJSONResponse, StreamingResponse
+from fastapi.responses import ORJSONResponse, RedirectResponse, StreamingResponse
 from pydantic import ValidationError as pydanticValidationError
 from requests.models import Response as RequestsResponse
 
@@ -295,6 +295,10 @@ def download_stac_item(
             )
         else:
             raise
+
+    # redirect to presigned url
+    if isinstance(download_stream, RedirectResponse):
+        return download_stream
 
     return StreamingResponse(
         content=download_stream.content,

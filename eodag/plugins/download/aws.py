@@ -27,6 +27,7 @@ import boto3
 import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
+from fastapi.responses import RedirectResponse
 from lxml import etree
 from requests.auth import AuthBase
 
@@ -705,6 +706,39 @@ class AwsDownload(Download):
                 f"HTTP Error {exception.response['ResponseMetadata']['HTTPStatusCode']} returned.",
                 err["Code"] + ": " + err["Message"],
             )
+
+    def _presign_url(self, asset_info: Any, auth: S3SessionKwargs) -> str:
+        """presign a url to download an asset from s3
+        :param product_info: S3 resource object containing information about bucket and key of the asset
+        :param auth: auth dict with s3 credentials
+        :returns: presigned url
+        """
+        s3_endpoint = self.config.s3_endpoint
+        if "aws_access_key_id" in auth:
+            s3_client = boto3.client(
+                service_name="s3",
+                aws_access_key_id=auth["aws_access_key_id"],
+                aws_secret_access_key=auth["aws_secret_access_key"],
+                endpoint_url=s3_endpoint,
+            )
+        else:
+            # no auth necessary
+            url = s3_endpoint + "/" + asset_info.bucket_name + "/" + asset_info.key
+            return url
+
+        try:
+            presigned_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": asset_info.bucket_name,
+                    "Key": asset_info.key,
+                },
+                ExpiresIn=3600,
+            )
+            return presigned_url
+        except ClientError:
+            logger.warning(f"Couldn't get a presigned URL for url '{asset_info}'.")
+            return ""
 
     def _stream_download_dict(
         self,
