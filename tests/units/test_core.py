@@ -237,6 +237,8 @@ class TestCore(TestCoreBase):
         "MSG_LSA_LST_CDR": ["dedl", "eumetsat_ds"],
         "MSG_LSA_LSTDE": ["dedl", "eumetsat_ds"],
         "MSG_AMVR02": ["dedl", "eumetsat_ds"],
+        "MSG_CTH": ["eumetsat_ds"],
+        "MSG_CTH_IODC": ["eumetsat_ds"],
         "MFG_GSA_57": ["eumetsat_ds"],
         "MFG_GSA_63": ["eumetsat_ds"],
         "MSG_MFG_GSA_0": ["eumetsat_ds"],
