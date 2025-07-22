@@ -1,0 +1,8 @@
+[dependencies]
+pyo3 = { version = "0.18", features = ["extension-module", "auto-initialize"] }
+pyo3-asyncio = { version = "0.18", features = ["tokio-runtime"] }
+aws-sdk-s3 = "0.27"
+aws-config = "0.27"
+tokio = { version = "1.28", features = ["rt-multi-thread", "macros"] }
+bytes = "1.4"
+anyhow = "1.0"
