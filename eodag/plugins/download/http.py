@@ -42,6 +42,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
+from fastapi.responses import RedirectResponse
 from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
@@ -57,6 +58,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
+from eodag.plugins.authentication.sas_auth import RequestsSASAuth
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -786,6 +788,18 @@ class HTTPDownload(Download):
         ):
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
+                if len(assets_values) == 1 and isinstance(
+                    auth, RequestsSASAuth
+                ):  # sas auth (auth_uri)
+                    url = assets_values[0]["href"]
+                    signed_url = auth.auth_uri.format(url=url)
+                    headers = {
+                        "content-disposition": f"attachment; filename={assets_values[0]['title']}"
+                    }
+                    return RedirectResponse(
+                        signed_url, status_code=302, headers=headers
+                    )
+
                 chunks_tuples = self._stream_download_assets(
                     product,
                     auth,
