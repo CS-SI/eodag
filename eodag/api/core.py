@@ -20,7 +20,6 @@ from __future__ import annotations
 import datetime
 import logging
 import os
-import re
 import shutil
 import tempfile
 from importlib.metadata import version
@@ -80,7 +79,6 @@ from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingCollection,
-    PluginImplementationError,
     RequestError,
     UnsupportedCollection,
     UnsupportedProvider,
@@ -1864,9 +1862,6 @@ class EODataAccessGateway:
                 max_items_per_page,
             )
 
-        results: list[EOProduct] = []
-        total_results: Optional[int] = 0 if count else None
-
         errors: list[tuple[str, Exception]] = []
 
         try:
@@ -1910,75 +1905,8 @@ class EODataAccessGateway:
             if validate:
                 search_plugin.validate(search_params, prep.auth)
 
-            results_test = search_plugin.query(prep, **search_params)
-            res = results_test.data
-            nb_res = results_test.number_matched
+            return search_plugin.query(prep, **kwargs)
 
-            if not isinstance(res, list):
-                raise PluginImplementationError(
-                    "The query function of a Search plugin must return a list of "
-                    "results, got {} instead".format(type(res))
-                )
-
-            # Filter and attach to each eoproduct in the result the plugin capable of
-            # downloading it (this is done to enable the eo_product to download itself
-            # doing: eo_product.download()). The filtering is done by keeping only
-            # those eo_products that intersects the search extent (if there was no
-            # search extent, search_intersection contains the geometry of the
-            # eo_product)
-            # WARNING: this means an eo_product that has an invalid geometry can still
-            # be returned as a search result if there was no search extent (because we
-            # will not try to do an intersection)
-            for eo_product in res:
-                # if collection is not defined, try to guess using properties
-                if eo_product.collection is None:
-                    pattern = re.compile(r"[^\w,]+")
-                    try:
-                        guesses = self.guess_collection(
-                            intersect=False,
-                            **{
-                                k: pattern.sub("", str(v).upper())
-                                for k, v in eo_product.properties.items()
-                                if k
-                                in [
-                                    "instruments",
-                                    "constellation",
-                                    "platform",
-                                    "processing:level",
-                                    "eodag:sensor_type",
-                                    "keywords",
-                                ]
-                                and v is not None
-                            },
-                        )
-                    except NoMatchingCollection:
-                        pass
-                    else:
-                        eo_product.collection = guesses[0]
-
-                try:
-                    if eo_product.collection is not None:
-                        eo_product.collection = self.get_collection_from_alias(
-                            eo_product.collection
-                        )
-                except NoMatchingCollection:
-                    logger.debug("collection %s not found", eo_product.collection)
-
-                if eo_product.search_intersection is not None:
-                    eo_product._register_downloader_from_manager(self._plugins_manager)
-
-            results.extend(res)
-            total_results = (
-                None
-                if (nb_res is None or total_results is None)
-                else total_results + nb_res
-            )
-            if count and nb_res is not None:
-                logger.info(
-                    "Found %s result(s) on provider '%s'",
-                    nb_res,
-                    search_plugin.provider,
-                )
         except Exception as e:
             if raise_errors:
                 # Raise the error, letting the application wrapping eodag know that
@@ -1990,13 +1918,6 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 errors.append((search_plugin.provider, e))
-        return SearchResult(
-            results,
-            total_results,
-            errors,
-            results_test.search_params,
-            results_test.next_page_token,
-        )
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results

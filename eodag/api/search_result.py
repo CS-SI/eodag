@@ -73,7 +73,7 @@ class SearchResult(UserList[EOProduct]):
 
         from eodag.api.core import EODataAccessGateway
 
-        self.dag = EODataAccessGateway()
+        self._dag = EODataAccessGateway()
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -232,12 +232,16 @@ class SearchResult(UserList[EOProduct]):
         """Get the next page of results based on the current search parameters."""
         if self.next_page_token is None:
             logger.info("No next page available.")
-            return SearchResult(["No next page available."], errors=self.errors)
+            raise StopIteration()
         self.search_params["next_page_token"] = self.next_page_token
-        search = self.dag.search_iter_page(**self.search_params)
-
-        search_result = next(search)
-        return search_result
+        search_plugins, search_kwargs = self._dag._prepare_search(**self.search_params)
+        for i, search_plugin in enumerate(search_plugins):
+            print(f"search_plugin: {search_plugin}")
+            self.search_params["next_page_token"] = self.next_page_token
+            search_result = self._dag._do_search(
+                search_plugin, raise_errors=False, **search_kwargs
+            )
+            return search_result
 
     @classmethod
     def _from_stac_item(

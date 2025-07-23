@@ -1717,6 +1717,7 @@ class PostJsonSearch(QueryStringSearch):
                     )
             if token is not None:
                 prep.query_params["token"] = token
+            prep.query_params["limit"] = items_per_page
             urls.append(search_endpoint)
         return list(dict.fromkeys(urls)), total_results
 
