@@ -1881,6 +1881,7 @@ class EODataAccessGateway:
                 ):
                     prep.auth = auth
 
+            prep.next_page_token = kwargs.pop("next_page_token", None)
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
@@ -1909,7 +1910,9 @@ class EODataAccessGateway:
             if validate:
                 search_plugin.validate(search_params, prep.auth)
 
-            res, nb_res = search_plugin.query(prep, **search_params)
+            results_test = search_plugin.query(prep, **search_params)
+            res = results_test.data
+            nb_res = results_test.number_matched
 
             if not isinstance(res, list):
                 raise PluginImplementationError(
@@ -1987,7 +1990,13 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 errors.append((search_plugin.provider, e))
-        return SearchResult(results, total_results, errors)
+        return SearchResult(
+            results,
+            total_results,
+            errors,
+            results_test.search_params,
+            results_test.next_page_token,
+        )
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results

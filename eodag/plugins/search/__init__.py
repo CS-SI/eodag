@@ -53,3 +53,4 @@ class PreparedSearch:
     collection_def_params: dict[str, Any] = field(init=False, repr=False)
     total_items_nb: int = field(init=False, repr=False)
     sort_by_qs: str = field(init=False, repr=False)
+    next_page_token: Optional[str] = field(init=False, repr=False)

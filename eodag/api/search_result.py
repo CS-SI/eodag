@@ -62,10 +62,18 @@ class SearchResult(UserList[EOProduct]):
         products: list[EOProduct],
         number_matched: Optional[int] = None,
         errors: Optional[list[tuple[str, Exception]]] = None,
+        search_params: Optional[dict[str, Any]] = None,
+        next_page_token: Optional[str] = None,
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
         self.errors = errors if errors is not None else []
+        self.search_params = search_params
+        self.next_page_token = next_page_token
+
+        from eodag.api.core import EODataAccessGateway
+
+        self.dag = EODataAccessGateway()
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -217,6 +225,19 @@ class SearchResult(UserList[EOProduct]):
             self.errors.extend(other.errors)
 
         return super().extend(other)
+
+    def next_page(
+        self,
+    ) -> SearchResult:
+        """Get the next page of results based on the current search parameters."""
+        if self.next_page_token is None:
+            logger.info("No next page available.")
+            return SearchResult(["No next page available."], errors=self.errors)
+        self.search_params["next_page_token"] = self.next_page_token
+        search = self.dag.search_iter_page(**self.search_params)
+
+        search_result = next(search)
+        return search_result
 
     @classmethod
     def _from_stac_item(
@@ -380,6 +401,8 @@ class RawSearchResult(UserList[dict[str, Any]]):
 
     query_params: dict[str, Any]
     collection_def_params: dict[str, Any]
+    search_params: dict[str, Any]
+    next_page_token: str
 
     def __init__(self, results: list[Any]) -> None:
         super(RawSearchResult, self).__init__(results)

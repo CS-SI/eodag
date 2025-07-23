@@ -68,7 +68,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.api.search_result import RawSearchResult
+from eodag.api.search_result import RawSearchResult, SearchResult
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.types import json_field_definition_to_python, model_fields_to_annotated
@@ -921,7 +921,7 @@ class QueryStringSearch(Search):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> list[Any]:
+    ) -> RawSearchResult:
         """Perform the actual search request.
 
         If there is a specified number of items per page, return the results as soon
@@ -1006,7 +1006,6 @@ class QueryStringSearch(Search):
                     path_parsed = next_page_url_key_path
                     found_paths = path_parsed.find(resp_as_json)
                     if found_paths and not isinstance(found_paths, int):
-                        self.next_page_url = found_paths[0].value
                         logger.debug(
                             "Next page URL collected and set for the next search",
                         )
@@ -1016,7 +1015,6 @@ class QueryStringSearch(Search):
                     path_parsed = next_page_query_obj_key_path
                     found_paths = path_parsed.find(resp_as_json)
                     if found_paths and not isinstance(found_paths, int):
-                        self.next_page_query_obj = found_paths[0].value
                         logger.debug(
                             "Next page Query-object collected and set for the next search",
                         )
@@ -1084,8 +1082,27 @@ class QueryStringSearch(Search):
             ):
                 del prep.total_items_nb
             if items_per_page is not None and len(results) == items_per_page:
-                return results
-        return results
+
+                raw_search_results = self._build_raw_search_results(
+                    results, resp_as_json, kwargs, items_per_page
+                )
+                return raw_search_results
+
+        raw_search_results = self._build_raw_search_results(
+            results, resp_as_json, kwargs, items_per_page
+        )
+        return raw_search_results
+
+    def _build_raw_search_results(self, results, resp_as_json, kwargs, items_per_page):
+        raw_search_results = RawSearchResult(results)
+        raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
+        next_link = next(
+            (link for link in resp_as_json.get("links", []) if link["rel"] == "next"),
+            None,
+        )
+        if next_link is not None:
+            raw_search_results.next_page_token = next_link["body"]["token"]
+        return raw_search_results
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
@@ -1466,7 +1483,7 @@ class PostJsonSearch(QueryStringSearch):
         self,
         prep: PreparedSearch = PreparedSearch(),
         **kwargs: Any,
-    ) -> tuple[list[EOProduct], Optional[int]]:
+    ) -> SearchResult:
         """Perform a search on an OpenSearch-like interface"""
         collection = kwargs.get("collection", "")
         count = prep.count
@@ -1586,16 +1603,18 @@ class PostJsonSearch(QueryStringSearch):
             del prep.total_items_nb
             del prep.need_count
 
-        provider_results = self.do_search(prep, **kwargs)
+        raw_search_result = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
 
-        raw_search_result = RawSearchResult(provider_results)
-        raw_search_result.query_params = prep.query_params
-        raw_search_result.collection_def_params = prep.collection_def_params
-
         eo_products = self.normalize_results(raw_search_result, **kwargs)
-        return eo_products, total_items
+        formated_result = SearchResult(
+            eo_products,
+            total_items,
+            search_params=raw_search_result.search_params,
+            next_page_token=getattr(raw_search_result, "next_page_token", None),
+        )
+        return formated_result
 
     def normalize_results(
         self, results: RawSearchResult, **kwargs: Any
@@ -1637,6 +1656,7 @@ class PostJsonSearch(QueryStringSearch):
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
         page = prep.page
+        token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
         urls: list[str] = []
@@ -1695,7 +1715,8 @@ class PostJsonSearch(QueryStringSearch):
                     update_nested_dict(
                         prep.query_params, orjson.loads(next_page_query_obj)
                     )
-
+            if token is not None:
+                prep.query_params["token"] = token
             urls.append(search_endpoint)
         return list(dict.fromkeys(urls)), total_results
 
