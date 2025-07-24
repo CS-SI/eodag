@@ -107,5 +107,5 @@ class CreodiasS3Download(AwsDownload):
         :param auth: auth dict with s3 credentials
         :returns: presigned url
         """
-        # presigned urls are not working with creodias -> return enpty string
+        # presigned urls are not working with creodias -> return empty string
         return ""

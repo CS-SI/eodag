@@ -761,7 +761,7 @@ class HTTPDownload(Download):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> StreamResponse:
+    ) -> StreamResponse | RedirectResponse:
         r"""
         Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
