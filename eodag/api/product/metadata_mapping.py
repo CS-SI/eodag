@@ -488,10 +488,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_get_group_name(string: str, pattern: str) -> str:
+            sanitized_pattern = pattern.replace(" ", "_SPACE_")
             try:
-                match = re.search(pattern, str(string))
+                match = re.search(sanitized_pattern, str(string))
                 if match:
-                    return match.lastgroup or NOT_AVAILABLE
+                    if result := match.lastgroup:
+                        return result.replace("_SPACE_", " ")
+                    else:
+                        return NOT_AVAILABLE
             except AttributeError:
                 pass
             logger.warning(
