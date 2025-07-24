@@ -793,8 +793,9 @@ class HTTPDownload(Download):
                 ):  # sas auth (auth_uri)
                     url = assets_values[0]["href"]
                     signed_url = auth.auth_uri.format(url=url)
+                    filename = assets_values[0].get("title", kwargs.get("asset"))
                     headers = {
-                        "content-disposition": f"attachment; filename={assets_values[0]['title']}"
+                        "content-disposition": f"attachment; filename={filename}"
                     }
                     return RedirectResponse(
                         signed_url, status_code=302, headers=headers
