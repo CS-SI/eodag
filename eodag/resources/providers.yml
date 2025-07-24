@@ -3133,7 +3133,9 @@
       discover_metadata:
         raise_mtd_discovery_error: true
       metadata_mapping:
-        id: '$.id'
+        id:
+          - '{{}}'
+          - '$.id'
         providerProductType:
           - '{{"product_type": "{providerProductType}"}}'
           - '$.null'
