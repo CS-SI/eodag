@@ -707,14 +707,16 @@ class AwsDownload(Download):
                 err["Code"] + ": " + err["Message"],
             )
 
-    def _presign_url(self, asset_info: Any, auth: S3SessionKwargs) -> str:
+    def _presign_url(
+        self, asset_info: Any, auth: Union[AuthBase, S3SessionKwargs, None]
+    ) -> str:
         """presign a url to download an asset from s3
         :param product_info: S3 resource object containing information about bucket and key of the asset
         :param auth: auth dict with s3 credentials
         :returns: presigned url
         """
         s3_endpoint = self.config.s3_endpoint
-        if "aws_access_key_id" in auth:
+        if isinstance(auth, dict) and "aws_access_key_id" in auth:
             s3_client = boto3.client(
                 service_name="s3",
                 aws_access_key_id=auth["aws_access_key_id"],

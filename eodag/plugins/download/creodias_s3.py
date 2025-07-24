@@ -15,10 +15,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import TYPE_CHECKING, Optional
+
+from typing import Optional, Union, TYPE_CHECKING
 
 import boto3
 from botocore.exceptions import ClientError
+from requests.auth import AuthBase
 
 from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
@@ -101,7 +103,9 @@ class CreodiasS3Download(AwsDownload):
             ]
         return bucket_names_and_prefixes
 
-    def _presign_url(self, asset_info: Any, auth: S3SessionKwargs) -> str:
+    def _presign_url(
+        self, asset_info: Any, auth: Union[AuthBase, S3SessionKwargs, None]
+    ) -> str:
         """presign a url to download an asset from s3
         :param product_info: S3 resource object containing information about bucket and key of the asset
         :param auth: auth dict with s3 credentials

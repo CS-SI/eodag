@@ -29,6 +29,8 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
 
+from fastapi.responses import RedirectResponse
+
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
@@ -139,7 +141,7 @@ class Download(PluginTopic):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> StreamResponse:
+    ) -> StreamResponse | RedirectResponse:
         r"""
         Base _stream_download_dict method. Not available, it must be defined for each plugin.
 
