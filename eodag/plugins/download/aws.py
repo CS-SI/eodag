@@ -714,10 +714,10 @@ class AwsDownload(Download):
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
-        **kwargs: Any,
+        **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
         """
-        Stream EO product data as a FastAPI `StreamResponse`, with support for partial downloads,
+        Stream EO product data as a FastAPI-compatible `StreamResponse`, with support for partial downloads,
         asset filtering, and on-the-fly compression.
 
         This method streams data from one or more S3 objects that belong to a given EO product.
@@ -956,6 +956,7 @@ class AwsDownload(Download):
         )
         objects = s3_resource.Bucket(bucket_name).objects
         list(objects.filter(Prefix=prefix).limit(1))
+        self.s3_resource = s3_resource
         return objects
 
     def _get_authenticated_objects_from_auth_profile(
