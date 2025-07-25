@@ -823,12 +823,15 @@ class QueryStringSearch(Search):
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
 
-        raw_search_result = RawSearchResult(provider_results)
-        raw_search_result.query_params = prep.query_params
-        raw_search_result.product_type_def_params = prep.product_type_def_params
+        eo_products = self.normalize_results(provider_results, **kwargs)
 
-        eo_products = self.normalize_results(raw_search_result, **kwargs)
-        return eo_products, total_items
+        formated_result = SearchResult(
+            eo_products,
+            total_items,
+            search_params=provider_results.search_params,
+            next_page_token=getattr(provider_results, "next_page_token", None),
+        )
+        return formated_result
 
     @_deprecated(
         reason="Simply run `self.config.metadata_mapping.update(metadata_mapping)` instead",
@@ -865,7 +868,7 @@ class QueryStringSearch(Search):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
-        page = prep.page
+        token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
 
@@ -892,8 +895,15 @@ class QueryStringSearch(Search):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 collection=collection
             )
-            if page is not None and items_per_page is not None:
-                page = page - 1 + self.config.pagination.get("start_page", 1)
+            if (
+                self.config.pagination["next_page_token_key"] == "page"
+                and items_per_page is not None
+            ):
+                if token is None:
+                    token = 1
+                else:
+                    token = int(token)
+                token = token - 1 + self.config.pagination.get("start_page", 1)
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
@@ -917,17 +927,20 @@ class QueryStringSearch(Search):
                     raise MisconfiguredError(
                         f"next_page_url_tpl is missing in {self.provider} search.pagination configuration"
                     )
-                next_url = self.config.pagination["next_page_url_tpl"].format(
+                search_endpoint = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=qs_with_sort,
                     items_per_page=items_per_page,
-                    page=page,
-                    skip=(page - 1) * items_per_page,
-                    skip_base_1=(page - 1) * items_per_page + 1,
+                    page=token,
+                    skip=(token - 1) * items_per_page,
+                    skip_base_1=(token - 1) * items_per_page + 1,
                 )
-            else:
-                next_url = "{}?{}".format(search_endpoint, qs_with_sort)
-            urls.append(next_url)
+
+            elif token is not None:
+                prep.query_params[self.config.pagination["next_page_token_key"]] = token
+            prep.query_params["limit"] = items_per_page
+            urls.append(search_endpoint)
+
         return list(dict.fromkeys(urls)), total_results
 
     def do_search(
@@ -1107,12 +1120,31 @@ class QueryStringSearch(Search):
     def _build_raw_search_results(self, results, resp_as_json, kwargs, items_per_page):
         raw_search_results = RawSearchResult(results)
         raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
+        links = resp_as_json.get("links") or resp_as_json.get("properties", {}).get(
+            "links", []
+        )
         next_link = next(
-            (link for link in resp_as_json.get("links", []) if link["rel"] == "next"),
+            (link for link in links if link.get("rel") == "next"),
             None,
         )
         if next_link is not None:
-            raw_search_results.next_page_token = next_link["body"]["token"]
+            if "body" in next_link and isinstance(next_link["body"], dict):
+                if "token" in next_link["body"]:
+                    raw_search_results.next_page_token = next_link["body"]["token"]
+                elif "page" in next_link["body"]:
+                    raw_search_results.next_page_token = next_link["body"]["page"]
+                elif "next" in next_link["body"]:
+                    raw_search_results.next_page_token = next_link["body"]["next"]
+            else:
+                href = next_link.get("href", "")
+                if "page=" in href:
+                    from urllib.parse import parse_qs, urlparse
+
+                    query = urlparse(href).query
+                    page_param = parse_qs(query).get("page")
+                    if page_param:
+                        raw_search_results.next_page_token = page_param[0]
+
         return raw_search_results
 
     def normalize_results(
@@ -1619,16 +1651,16 @@ class PostJsonSearch(QueryStringSearch):
             del prep.total_items_nb
             del prep.need_count
 
-        raw_search_result = self.do_search(prep, **kwargs)
+        provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
 
-        eo_products = self.normalize_results(raw_search_result, **kwargs)
+        eo_products = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
             eo_products,
             total_items,
-            search_params=raw_search_result.search_params,
-            next_page_token=getattr(raw_search_result, "next_page_token", None),
+            search_params=provider_results.search_params,
+            next_page_token=getattr(provider_results, "next_page_token", None),
         )
         return formated_result
 
@@ -1671,7 +1703,6 @@ class PostJsonSearch(QueryStringSearch):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
-        page = prep.page
         token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
@@ -1698,8 +1729,15 @@ class PostJsonSearch(QueryStringSearch):
                 raise MisconfiguredError(
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
-            if page is not None and items_per_page is not None:
-                page = page - 1 + self.config.pagination.get("start_page", 1)
+            if (
+                self.config.pagination["next_page_token_key"] == "page"
+                and items_per_page is not None
+            ):
+                if token is None:
+                    token = 1
+                else:
+                    token = int(token)
+                token = token - 1 + self.config.pagination.get("start_page", 1)
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
@@ -1724,15 +1762,17 @@ class PostJsonSearch(QueryStringSearch):
                         "next_page_query_obj"
                     ].format(
                         items_per_page=items_per_page,
-                        page=page,
-                        skip=(page - 1) * items_per_page,
-                        skip_base_1=(page - 1) * items_per_page + 1,
+                        page=token,
+                        skip=(token - 1) * items_per_page,
+                        skip_base_1=(token - 1) * items_per_page + 1,
                     )
                     update_nested_dict(
                         prep.query_params, orjson.loads(next_page_query_obj)
                     )
-            if token is not None:
-                prep.query_params["token"] = token
+
+            elif token is not None:
+                prep.query_params[self.config.pagination["next_page_token_key"]] = token
+
             prep.query_params["limit"] = items_per_page
             urls.append(search_endpoint)
         return list(dict.fromkeys(urls)), total_results
