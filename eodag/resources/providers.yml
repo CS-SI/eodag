@@ -521,8 +521,11 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      # next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_token_key: page
+
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     discover_metadata:
@@ -1406,6 +1409,7 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
+      next_page_token_key: next
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -2962,6 +2966,7 @@
     ssl_verify: true
     pagination:
       max_items_per_page: 1000
+      next_page_token_key: token
     sort:
       sort_param_mapping:
         id: id
@@ -4622,8 +4627,10 @@
         title: '$.title'
         extent: '$.extent'
     pagination:
-      next_page_url_key_path: null
+      # next_page_url_key_path: null
       max_items_per_page: 100
+      next_page_query_obj: '{{"limit":{items_per_page},"token":{next_page_token}}}'
+      next_page_token_key: token
     sort:
       sort_param_mapping:
         id: id

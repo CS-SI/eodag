@@ -1225,6 +1225,7 @@ class EODataAccessGateway:
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
+                search_results.provider = provider
                 search_results.errors = errors
                 return search_results
 
