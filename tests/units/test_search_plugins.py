@@ -3731,10 +3731,11 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         mock_postjsonsearch_discover_queryables.assert_not_called()
 
 
-class TestApisPluginDedtLumifApi(TestSearchPluginECMWFSearch):
+class TestSearchPluginDedtLumi(BaseSearchPluginTest):
     def setUp(self):
+        super(TestSearchPluginDedtLumi, self).setUp()
         self.provider = "dedt_lumi"
-        self.api_plugin = self.get_search_plugin(provider=self.provider)
+        self.search_plugin = self.get_search_plugin(provider=self.provider)
         self.product_type = "DT_CLIMATE_ADAPTATION"
 
     def test_plugins_apis_dedt_lumi_query_feature(self):
@@ -3747,7 +3748,7 @@ class TestApisPluginDedtLumifApi(TestSearchPluginECMWFSearch):
 
         # bbox definition
 
-        results, _ = self.api_plugin.query(
+        results, _ = self.search_plugin.query(
             productType=self.product_type,
             start="20210101",
             geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
@@ -3759,7 +3760,7 @@ class TestApisPluginDedtLumifApi(TestSearchPluginECMWFSearch):
 
         # shapely polygon
 
-        results, _ = self.api_plugin.query(
+        results, _ = self.search_plugin.query(
             productType=self.product_type,
             start="20210101",
             geometry=Polygon([(1, 43), (1, 44), (2, 44), (2, 43), (1, 43)]),
@@ -3771,7 +3772,7 @@ class TestApisPluginDedtLumifApi(TestSearchPluginECMWFSearch):
 
         # WKT polygon
 
-        results, _ = self.api_plugin.query(
+        results, _ = self.search_plugin.query(
             productType=self.product_type,
             start="20210101",
             geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
