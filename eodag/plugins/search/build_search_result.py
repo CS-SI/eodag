@@ -782,6 +782,7 @@ class ECMWFSearch(PostJsonSearch):
                     START,
                     END,
                     "geom",
+                    "geometry",
                 }
                 and keyword not in [f["name"] for f in form]
                 and keyword.removeprefix(ECMWF_PREFIX)
