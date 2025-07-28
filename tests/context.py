@@ -136,6 +136,7 @@ from eodag.utils.exceptions import (
     UnsupportedProductType,
     UnsupportedProvider,
     ValidationError,
+    InvalidDataError,
 )
 from eodag.utils.stac_reader import fetch_stac_items, _TextOpener
 from tests import TEST_RESOURCES_PATH

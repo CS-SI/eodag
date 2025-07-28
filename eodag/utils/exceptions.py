@@ -79,6 +79,10 @@ class STACOpenerError(EodagError):
     """An error indicating that a STAC file could not be opened"""
 
 
+class InvalidDataError(EodagError):
+    """Raised when data is invalid, malformed, or corrupt and cannot be processed as expected."""
+
+
 class RequestError(EodagError):
     """An error indicating that a request has failed. Usually eodag functions
     and methods should catch and skip this"""

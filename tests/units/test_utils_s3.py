@@ -13,6 +13,7 @@ from tests import TEST_RESOURCES_PATH
 from tests.context import (
     AwsAuth,
     EOProduct,
+    InvalidDataError,
     MisconfiguredError,
     PluginConfig,
     S3FileInfo,
@@ -335,7 +336,7 @@ class TestUtilsS3(TestCase):
         )
         from tests.context import open_s3_zipped_object
 
-        with self.assertRaises(RuntimeError) as e:
+        with self.assertRaises(InvalidDataError) as e:
             open_s3_zipped_object("mybucket", "bad.zip", self.s3_client)
         self.assertIn("EOCD signature not found", str(e.exception))
 

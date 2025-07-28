@@ -44,6 +44,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    InvalidDataError,
     MisconfiguredError,
     NotAvailableError,
 )
@@ -592,7 +593,7 @@ def open_s3_zipped_object(
     :param zip_size: Size of the ZIP file in bytes. If None, it will be determined via a HEAD request.
     :param partial: If True, only fetch the central directory and EOCD. If False, fetch the entire ZIP file.
     :return: Tuple containing the opened ZipFile object and the central directory bytes.
-    :raises RuntimeError: If the EOCD signature is not found in the last 64KB of the file.
+    :raises InvalidDataError: If the EOCD signature is not found in the last 64KB of the file.
     """
     # EOCD is at least 22 bytes, but can be longer if ZIP comment exists.
     # For simplicity, we fetch last 64KB max (max EOCD + comment length allowed by ZIP spec)
@@ -609,7 +610,7 @@ def open_s3_zipped_object(
     eocd_signature = b"\x50\x4b\x05\x06"
     eocd_offset = eocd_search.rfind(eocd_signature)
     if eocd_offset == -1:
-        raise RuntimeError("EOCD signature not found in last 64KB of the file.")
+        raise InvalidDataError("EOCD signature not found in last 64KB of the file.")
 
     eocd = eocd_search[eocd_offset : eocd_offset + 22]
 
@@ -637,7 +638,7 @@ def _parse_central_directory_entry(cd_data: bytes, offset: int) -> dict[str, int
     """
     signature = cd_data[offset : offset + 4]
     if signature != b"PK\x01\x02":
-        raise RuntimeError("Bad central directory file header signature")
+        raise InvalidDataError("Bad central directory file header signature")
 
     filename_len = parse_le_uint16(cd_data[offset + 28 : offset + 30])
     extra_len = parse_le_uint16(cd_data[offset + 30 : offset + 32])
@@ -663,7 +664,7 @@ def _parse_local_file_header(local_header_bytes: bytes) -> int:
     fixed 30 bytes + filename length + extra field length
     """
     if local_header_bytes[0:4] != b"PK\x03\x04":
-        raise RuntimeError("Bad local file header signature")
+        raise InvalidDataError("Bad local file header signature")
 
     filename_len = parse_le_uint16(local_header_bytes[26:28])
     extra_len = parse_le_uint16(local_header_bytes[28:30])
