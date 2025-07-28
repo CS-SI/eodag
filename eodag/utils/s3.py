@@ -251,7 +251,7 @@ def _chunks_from_s3_objects(
                 while next_start in current_info.buffers:
                     chunk = current_info.buffers.pop(next_start)
                     if not isinstance(chunk, bytes):
-                        raise TypeError(
+                        raise InvalidDataError(
                             f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
                         )
                     yield chunk
