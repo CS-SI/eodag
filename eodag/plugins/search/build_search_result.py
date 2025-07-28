@@ -309,8 +309,7 @@ def append_time(input_date: date, time: Optional[str]) -> datetime:
     """
     if not time:
         time = "0000"
-    time = time.replace(":", "")
-    time = time.replace("_", "")
+    time = re.sub(":|_", "", time)
     if time == "2400":
         time = "0000"
     dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
@@ -1024,7 +1023,9 @@ class ECMWFSearch(PostJsonSearch):
             if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
-            is_required = bool(element.get("required"))
+            is_required = bool(element.get("required")) and bool(
+                available_values.get(name)
+            )
             if is_required:
                 required_list.append(name)
 

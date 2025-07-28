@@ -107,9 +107,11 @@ class TestCoreSearch(unittest.TestCase):
         mock_query.return_value = ([], 0)
         # StacSearch / earth_search
         self.dag.set_preferred_provider("earth_search")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, raise_errors=True, validate=False
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
@@ -137,9 +139,11 @@ class TestCoreSearch(unittest.TestCase):
         mock_request.return_value = MockResponse({"results": []})
         # PostJsonSearch / aws_eos
         self.dag.set_preferred_provider("aws_eos")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, raise_errors=True, validate=False
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
         "eodag.plugins.authentication.qsauth.HttpQueryStringAuth.authenticate",
@@ -191,13 +195,21 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
-        self.assertRaises(NoMatchingProductType, self.dag.search, raise_errors=True)
         self.assertRaises(
-            RequestError, self.dag.search, raise_errors=True, productType="foo"
+            NoMatchingProductType, self.dag.search, raise_errors=True, validate=False
+        )
+        self.assertRaises(
+            RequestError,
+            self.dag.search,
+            raise_errors=True,
+            productType="foo",
+            validate=False,
         )
         # search iterator
         self.assertRaises(
-            RequestError, next, self.dag.search_iter_page(productType="foo")
+            RequestError,
+            next,
+            self.dag.search_iter_page(productType="foo", validate=False),
         )
 
     @mock.patch(
@@ -231,9 +243,11 @@ class TestCoreSearch(unittest.TestCase):
         mock_request.return_value = MockResponse({"results": []})
         # MeteoblueSearch / meteoblue
         self.dag.set_preferred_provider("meteoblue")
-        self.assertRaises(RequestError, self.dag.search, raise_errors=True)
+        self.assertRaises(
+            RequestError, self.dag.search, raise_errors=True, validate=False
+        )
         # search iterator
-        self.assertRaises(RequestError, next, self.dag.search_iter_page())
+        self.assertRaises(RequestError, next, self.dag.search_iter_page(validate=False))
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.get",
@@ -551,7 +565,7 @@ class TestCoreSearch(unittest.TestCase):
                 },
             },
         )
-        self.dag.search(provider="provider_without_match_configured")
+        self.dag.search(provider="provider_without_match_configured", validate=False)
         self.assertEqual(mock_query.call_args[0][1].auth.username, "some-username")
         mock_query.reset_mock()
 
@@ -561,7 +575,7 @@ class TestCoreSearch(unittest.TestCase):
             "https://foo.bar/baz/search",
             search={"need_auth": True},
         )
-        self.dag.search(provider="provider_matching_search_api")
+        self.dag.search(provider="provider_matching_search_api", validate=False)
         self.assertEqual(mock_query.call_args[0][1].auth.username, "a-username")
         mock_query.reset_mock()
 
@@ -571,7 +585,7 @@ class TestCoreSearch(unittest.TestCase):
             "https://fooooo.bar/search",
             search={"need_auth": True, "something": "special"},
         )
-        self.dag.search(provider="provider_matching_another_search_api")
+        self.dag.search(provider="provider_matching_another_search_api", validate=False)
         self.assertEqual(mock_query.call_args[0][1].auth.username, "another-username")
         mock_query.reset_mock()
 
@@ -595,7 +609,9 @@ class TestCoreSearch(unittest.TestCase):
                 1,
             ),
         ]
-        results = self.dag.search(provider="provider_matching_download_link")
+        results = self.dag.search(
+            provider="provider_matching_download_link", validate=False
+        )
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
@@ -622,7 +638,9 @@ class TestCoreSearch(unittest.TestCase):
                 1,
             ),
         ]
-        results = self.dag.search(provider="provider_matching_download_link")
+        results = self.dag.search(
+            provider="provider_matching_download_link", validate=False
+        )
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"],
             "yet-another-username",
@@ -641,7 +659,7 @@ class TestCoreSearch(unittest.TestCase):
             {"aa": {"href": "https://foo.bar/download/asset"}}
         )
         mock_query.side_effect = [([product_with_assets], 1)]
-        results = self.dag.search(provider="provider_matching_asset")
+        results = self.dag.search(provider="provider_matching_asset", validate=False)
         self.assertEqual(
             results[0].downloader_auth.config.credentials["username"], "a-username"
         )

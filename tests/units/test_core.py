@@ -29,13 +29,14 @@ from tempfile import TemporaryDirectory
 
 import yaml
 from lxml import html
-from pydantic import ValidationError
+from pydantic import ValidationError as PydanticValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -1443,7 +1444,7 @@ class TestCore(TestCoreBase):
             {"productType": "S1_SAR_GRD", "snowCover": 50}
         )
         self.assertIn("snowCover", queryables_validated.__dict__)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(PydanticValidationError):
             queryables_peps_s1grd.get_model().model_validate(
                 {"productType": "S1_SAR_GRD", "snowCover": 500}
             )
@@ -1502,11 +1503,7 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "productType": "ERA5_SL",
-            "product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "data_format": "grib",
-            "download_format": "zip",
-            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
@@ -1516,11 +1513,7 @@ class TestCore(TestCoreBase):
         )
         params = {
             "productType": "ERA5_SL",
-            "product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "data_format": "grib",
-            "download_format": "zip",
-            "variable": "10m_u_component_of_wind",
             "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
@@ -1533,11 +1526,8 @@ class TestCore(TestCoreBase):
         )
         defaults = {
             "productType": "ERA5_SL",
-            "product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "variable": "10m_u_component_of_wind",
             "data_format": "",
-            "download_format": "zip",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
 
@@ -1869,6 +1859,76 @@ class TestCore(TestCoreBase):
         )
         if sortables["planetary_computer"]:
             self.assertIsNone(sortables["planetary_computer"]["max_sort_params"])
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch("eodag.plugins.search.base.Search.validate", autospec=True)
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+        return_value=([], 0),
+    )
+    def test_search_validate(
+        self,
+        mock_query: mock.Mock,
+        mock_validate: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ) -> None:
+        """Search filter must be validated if requested"""
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "lorem": "ipsum",
+        }
+        # Validation by default
+        self.dag.search(**filter)
+        mock_validate.assert_called_once()
+        args, kwargs = mock_validate.call_args
+        # Some other default keyword may be added to the kwargs (e.g. geometry)
+        self.assertEqual("S1_SAR_GRD", args[1].get("productType"))
+        self.assertEqual("ipsum", args[1].get("lorem"))
+        mock_validate.reset_mock()
+
+        self.dag.search(validate=True, **filter)
+        mock_validate.assert_called_once()
+        mock_validate.reset_mock()
+
+        # Don't validate request
+        self.dag.search(validate=False, **filter)
+        mock_validate.assert_not_called()
+        mock_validate.reset_mock()
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+        return_value=([], 0),
+    )
+    def test_search_validate_invalid_filter(
+        self,
+        mock_query: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ) -> None:
+        """Search must fail if validation is enabled and the filter is not valid"""
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "orbitNumber": "dolorem",
+        }
+        # Validation by default: fails cause orbitNumber
+        with self.assertRaises(ValidationError):
+            self.dag.search(raise_errors=True, **filter)
+
+        with self.assertRaises(ValidationError):
+            self.dag.search(validate=True, raise_errors=True, **filter)
+
+        # No validation, no exception
+        self.dag.search(validate=False, raise_errors=True, **filter)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):
@@ -2205,6 +2265,7 @@ class TestCoreSearch(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreSearch, cls).setUpClass()
         cls.dag = EODataAccessGateway()
+        cls.dag.validate_search_request = mock.MagicMock()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
