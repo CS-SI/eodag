@@ -103,13 +103,13 @@ class CreodiasS3Download(AwsDownload):
             ]
         return bucket_names_and_prefixes
 
-    def _presign_url(
-        self, asset_info: Any, auth: Union[AuthBase, S3SessionKwargs, None]
+    def presign_url(
+        self, asset_info: dict, auth: Union[AuthBase, S3SessionKwargs, None]
     ) -> str:
-        """presign a url to download an asset from s3
-        :param product_info: S3 resource object containing information about bucket and key of the asset
-        :param auth: auth dict with s3 credentials
+        """presign a url to download an asset
+        :param asset_info: asset values dict
+        :param auth: authentication information
         :returns: presigned url
         """
-        # presigned urls are not working with creodias -> return empty string
-        return ""
+        # presigned urls are not working with creodias -> method not implemented
+        raise NotImplementedError

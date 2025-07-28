@@ -21,13 +21,14 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
+
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
+from urllib.parse import urlparse
 
 import boto3
 import requests
 from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
-from fastapi.responses import RedirectResponse
 from lxml import etree
 from requests.auth import AuthBase
 
@@ -707,14 +708,20 @@ class AwsDownload(Download):
                 err["Code"] + ": " + err["Message"],
             )
 
-    def _presign_url(
+    def presign_url(
         self, asset_info: Any, auth: Union[AuthBase, S3SessionKwargs, None]
     ) -> str:
         """presign a url to download an asset from s3
-        :param product_info: S3 resource object containing information about bucket and key of the asset
+        :param asset_info: asset values dict
         :param auth: auth dict with s3 credentials
         :returns: presigned url
         """
+        url_parts = urlparse(asset_info["href"])
+        if "." not in url_parts.netloc:
+            # not a full url
+            logger.warning(f"Couldn't get a presigned URL for '{asset_info}'.")
+            return ""
+
         s3_endpoint = self.config.s3_endpoint
         if isinstance(auth, dict) and "aws_access_key_id" in auth:
             s3_client = boto3.client(
@@ -725,21 +732,21 @@ class AwsDownload(Download):
             )
         else:
             # no auth necessary
-            url = s3_endpoint + "/" + asset_info.bucket_name + "/" + asset_info.key
-            return url
+            return asset_info["href"]
 
+        url_path_parts = url_parts.path[1:].split("/")  # remove leading "/" and split
         try:
             presigned_url = s3_client.generate_presigned_url(
                 "get_object",
                 Params={
-                    "Bucket": asset_info.bucket_name,
-                    "Key": asset_info.key,
+                    "Bucket": url_path_parts[0],
+                    "Key": "/".join(url_path_parts[1:]),
                 },
                 ExpiresIn=3600,
             )
             return presigned_url
         except ClientError:
-            logger.warning(f"Couldn't get a presigned URL for url '{asset_info}'.")
+            logger.warning(f"Couldn't get a presigned URL for '{asset_info}'.")
             return ""
 
     def _stream_download_dict(

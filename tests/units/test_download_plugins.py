@@ -30,7 +30,6 @@ from unittest import mock
 
 import responses
 import yaml
-from fastapi.responses import RedirectResponse
 
 from eodag.api.product.metadata_mapping import DEFAULT_METADATA_MAPPING
 from eodag.utils import MockResponse, ProgressCallback
@@ -1514,7 +1513,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         run(error_code=500)
         run(error_code=400)
 
-    def test_plugins_download_http_presign_redirect(self):
+    def test_plugins_download_http_presign_url(self):
+        """should create a presigned url to download via HTTP"""
         provider = "planetary_computer"
         product_type = "LANDSAT_C2_L1"
         product = EOProduct(
@@ -1536,11 +1536,13 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         plugin = self.get_download_plugin(product=product)
         auth_plugin = self.get_auth_plugin(plugin, product)
         auth = auth_plugin.authenticate()
-        res = plugin._stream_download_dict(
-            product=product, auth=auth, **{"asset": "a1"}
+        url = plugin.presign_url(product.assets["a1"], auth)
+        expected_url = (
+            "https://planetarycomputer.microsoft.com/api/sas/v1/sign?href={url}".format(
+                url="https://abc.blob.core.windows.net/b1/a1/a1.json"
+            )
         )
-        self.assertIsInstance(res, RedirectResponse)
-        self.assertEqual(302, res.status_code)
+        self.assertEqual(expected_url, url)
 
 
 class TestDownloadPluginHttpRetry(BaseDownloadPluginTest):
@@ -2118,17 +2120,9 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             },
         )
 
-    @mock.patch(
-        "eodag.plugins.download.aws.AwsDownload._get_unique_products",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.plugins.download.aws.AwsDownload._do_authentication",
-        autospec=True,
-    )
-    def test_plugins_download_aws_presign_redirect(
-        self, mock_do_auth, mock_unique_products
-    ):
+    def test_plugins_download_aws_presigned_url(self):
+        """should create a presigned url to download from S3"""
+        # provider with no credentials required
         provider = "cop_marine"
         product_type = "MO_GLOBAL_ANALYSISFORECAST_PHY_001_024"
         product = EOProduct(
@@ -2146,27 +2140,19 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         product.assets.update(
             {"a2": {"href": "https://s3.waw3-1.cloudferro.com/b1/a2/a2.json"}}
         )
-
-        mock_do_auth.return_value = {"b1": "a1"}, ["a1"]
-
-        class MockS3Object:
-
-            key: str
-            bucket_name: str
-
-        asset1_data = MockS3Object()
-        asset1_data.key = "a1"
-        asset1_data.bucket_name = "b1"
-        mock_unique_products.return_value = [asset1_data]
-
         plugin = self.get_download_plugin(product=product)
         auth_plugin = self.get_auth_plugin(plugin, product)
         auth = auth_plugin.authenticate()
-        res = plugin._stream_download_dict(
-            product=product, auth=auth, **{"asset": "a1"}
-        )
-        self.assertIsInstance(res, RedirectResponse)
-        self.assertEqual(302, res.status_code)
+        url = plugin.presign_url(product.assets["a1"], auth)
+        self.assertEqual("https://s3.waw3-1.cloudferro.com/b1/a1/a1.json", url)
+
+        # add access and secret key
+        auth["aws_access_key_id"] = "123"
+        auth["aws_secret_access_key"] = "abc"
+        url = plugin.presign_url(product.assets["a1"], auth)
+        self.assertIn("https://s3.waw3-1.cloudferro.com/b1/a1/a1.json", url)
+        self.assertIn("AWSAccessKeyId=123", url)
+        self.assertIn("Expires", url)
 
 
 class TestDownloadPluginS3Rest(BaseDownloadPluginTest):

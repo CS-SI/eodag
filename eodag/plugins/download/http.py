@@ -42,7 +42,6 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import requests
-from fastapi.responses import RedirectResponse
 from lxml import etree
 from requests import RequestException
 from requests.auth import AuthBase
@@ -752,6 +751,20 @@ class HTTPDownload(Download):
                         filename += ext
         return filename
 
+    def presign_url(
+        self, asset_info: dict, auth: Union[AuthBase, S3SessionKwargs, None]
+    ) -> str:
+        """presign a url to download an asset via http
+        :param asset_info: asset values dict
+        :param auth: auth object containing information to presign url
+        :returns: presigned url
+        """
+        if isinstance(auth, RequestsSASAuth):  # sas auth (auth_uri)
+            url = asset_info["href"]
+            return auth.auth_uri.format(url=url)
+        else:
+            raise NotImplementedError
+
     def _stream_download_dict(
         self,
         product: EOProduct,
@@ -761,7 +774,7 @@ class HTTPDownload(Download):
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
-    ) -> StreamResponse | RedirectResponse:
+    ) -> StreamResponse:
         r"""
         Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
         It contains a generator to streamed download chunks and the response headers.
@@ -788,18 +801,6 @@ class HTTPDownload(Download):
         ):
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
-                if len(assets_values) == 1 and isinstance(
-                    auth, RequestsSASAuth
-                ):  # sas auth (auth_uri)
-                    url = assets_values[0]["href"]
-                    signed_url = auth.auth_uri.format(url=url)
-                    filename = assets_values[0].get("title", kwargs.get("asset"))
-                    headers = {
-                        "content-disposition": f"attachment; filename={filename}"
-                    }
-                    return RedirectResponse(
-                        signed_url, status_code=302, headers=headers
-                    )
 
                 chunks_tuples = self._stream_download_assets(
                     product,
