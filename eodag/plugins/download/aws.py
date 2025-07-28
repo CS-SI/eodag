@@ -21,8 +21,7 @@ import logging
 import os
 import re
 from pathlib import Path
-
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 from urllib.parse import urlparse
 
 import boto3
