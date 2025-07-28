@@ -17,7 +17,6 @@ from tests.context import (
     PluginConfig,
     S3FileInfo,
     StreamResponse,
-    _build_stream_response,
     _chunks_from_s3_objects,
     _compute_file_ranges,
     _prepare_file_in_zip,
@@ -81,6 +80,9 @@ class TestUtilsS3(TestCase):
                 s3_key = os.path.join(s3_prefix, relative_path).replace("\\", "/")
                 cls.s3_client.upload_file(file_path, "mybucket", s3_key)
 
+        cls.s3_client.put_object(Bucket="mybucket", Key="file1.txt", Body=b"abcdef")
+        cls.s3_client.put_object(Bucket="mybucket", Key="file2.txt", Body=b"ghijkl")
+
     @classmethod
     def tearDownClass(cls):
         cls.mock_aws.stop()
@@ -106,6 +108,8 @@ class TestUtilsS3(TestCase):
         expected_media_type,
         expected_filename_ext=None,
         expected_filename=None,
+        expected_content=None,
+        expected_files=None,
     ):
         self.assertIsInstance(response, StreamResponse)
         if expected_media_type == "multipart/mixed":
@@ -126,6 +130,25 @@ class TestUtilsS3(TestCase):
             self.assertIn(expected_filename, response.headers["content-disposition"])
         else:
             self.assertNotIn("content-disposition", response.headers)
+
+        # --- Content checks ---
+        content = b"".join(response.content)
+        if expected_content is not None:
+            # For single file, raw
+            self.assertEqual(content, expected_content)
+        elif expected_files is not None:
+            if expected_media_type == "application/zip":
+                # For zipped responses: check zip content
+                with io.BytesIO(content) as bio:
+                    with zipfile.ZipFile(bio) as zf:
+                        names = set(zf.namelist())
+                        self.assertEqual(names, set(expected_files.keys()))
+                        for fname, fcontent in expected_files.items():
+                            self.assertEqual(zf.read(fname), fcontent)
+            elif expected_media_type == "multipart/mixed":
+                # For multipart: check that all filenames are present in the payload
+                for fname in expected_files:
+                    self.assertIn(fname.encode(), content)
 
     def test_utils_s3_list_files_in_s3_zipped_object(self):
         """list_files_in_s3_zipped_object must list the files in a zipped object stored in S3"""
@@ -475,122 +498,67 @@ class TestUtilsS3(TestCase):
                 )
                 self.assertEqual(result, case["expected"])
 
-    def test_build_stream_response(self):
-        test_cases = [
-            {
-                "desc": "single file, raw",
-                "zip_filename": "file.txt",
-                "files_info": [
-                    make_mock_fileinfo("file.txt", size=11, data_type="text/plain")
-                ],
-                "files_iterator": iter([(0, iter([b"hello world"]))]),
-                "compress": "raw",
-                "expected_media_type": "text/plain",
-                "expected_filename": "file.txt",
-            },
-            {
-                "desc": "multiple files, zip",
-                "zip_filename": "archive.zip",
-                "files_info": [
-                    make_mock_fileinfo("file1.txt", size=5),
-                    make_mock_fileinfo("file2.txt", size=6),
-                ],
-                "files_iterator": iter(
-                    [
-                        (0, iter([b"abcde"])),
-                        (1, iter([b"123456"])),
-                    ]
-                ),
-                "compress": "zip",
-                "expected_media_type": "application/zip",
-                "expected_filename": "archive.zip",
-            },
-            {
-                "desc": "multiple files, multipart",
-                "zip_filename": "archive",
-                "files_info": [
-                    make_mock_fileinfo("file1.txt", size=5, data_type="text/plain"),
-                    make_mock_fileinfo("file2.txt", size=6, data_type="text/plain"),
-                ],
-                "files_iterator": iter(
-                    [
-                        (0, iter([b"abcde"])),
-                        (1, iter([b"123456"])),
-                    ]
-                ),
-                "compress": "raw",
-                "expected_media_type": "multipart/mixed",  # boundary will be appended
-                "expected_filename": None,
-            },
-            {
-                "desc": "single file, zipped",
-                "zip_filename": "singlefile",
-                "files_info": [
-                    make_mock_fileinfo("file.txt", size=11, data_type="text/plain")
-                ],
-                "files_iterator": iter([(0, iter([b"hello world"]))]),
-                "compress": "zip",
-                "expected_media_type": "application/zip",
-                "expected_filename": "singlefile.zip",
-            },
-        ]
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            for case in test_cases:
-                with self.subTest(msg=case["desc"]):
-                    response = _build_stream_response(
-                        zip_filename=case["zip_filename"],
-                        files_info=case["files_info"],
-                        files_iterator=case["files_iterator"],
-                        compress=case["compress"],
-                        executor=executor,
-                    )
-                    self.assert_stream_response(
-                        response,
-                        case["expected_media_type"],
-                        expected_filename=case.get("expected_filename"),
-                    )
-
     def test_stream_download_from_s3(self):
         test_cases = [
             {
                 "desc": "single file, raw",
                 "files_info": [
-                    make_mock_fileinfo(
-                        "path/to/unzipped/file1.txt", size=6, data_type="text/plain"
-                    )
+                    make_mock_fileinfo("file1.txt", size=6, data_type="text/plain")
                 ],
-                "s3_objects": {
-                    "path/to/unzipped/file1.txt": b"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                },
                 "compress": "raw",
                 "zip_filename": "archive",
                 "expected_media_type": "text/plain",
                 "expected_filename_ext": None,
                 "expected_filename": "file1.txt",
+                "expected_content": b"abcdef",
             },
             {
                 "desc": "multiple files, zip",
                 "files_info": [
-                    make_mock_fileinfo("path/to/unzipped/file1.txt", size=6),
-                    make_mock_fileinfo("path/to/unzipped/file2.txt", size=6),
+                    make_mock_fileinfo("file1.txt", size=6),
+                    make_mock_fileinfo("file2.txt", size=6),
                 ],
-                "s3_objects": {
-                    "path/to/unzipped/file1.txt": b"abcdef",
-                    "path/to/unzipped/file2.txt": b"ghijkl",
-                },
                 "compress": "zip",
                 "zip_filename": "myarchive",
                 "expected_media_type": "application/zip",
                 "expected_filename_ext": ".zip",
+                "expected_files": {
+                    "file1.txt": b"abcdef",
+                    "file2.txt": b"ghijkl",
+                },
+            },
+            {
+                "desc": "multiple files, multipart",
+                "files_info": [
+                    make_mock_fileinfo("file1.txt", size=6, data_type="text/plain"),
+                    make_mock_fileinfo("file2.txt", size=6, data_type="text/plain"),
+                ],
+                "compress": "raw",
+                "zip_filename": "archive",
+                "expected_media_type": "multipart/mixed",
+                "expected_filename_ext": None,
+                "expected_filename": None,
+                "expected_files": {
+                    "file1.txt": b"abcdef",
+                    "file2.txt": b"ghijkl",
+                },
+            },
+            {
+                "desc": "single file, zipped",
+                "files_info": [
+                    make_mock_fileinfo("file1.txt", size=6, data_type="text/plain")
+                ],
+                "compress": "zip",
+                "zip_filename": "singlefile",
+                "expected_media_type": "application/zip",
+                "expected_filename_ext": ".zip",
+                "expected_files": {
+                    "file1.txt": b"abcdef",
+                },
             },
         ]
 
         for case in test_cases:
-            # Upload test data to moto S3
-            for key, data in case["s3_objects"].items():
-                self.s3_client.put_object(Bucket="mybucket", Key=key, Body=data)
-
             with self.subTest(msg=case["desc"]):
                 response = stream_download_from_s3(
                     s3_client=self.s3_client,
@@ -605,4 +573,6 @@ class TestUtilsS3(TestCase):
                     case["expected_media_type"],
                     expected_filename_ext=case.get("expected_filename_ext"),
                     expected_filename=case.get("expected_filename"),
+                    expected_content=case.get("expected_content"),
+                    expected_files=case.get("expected_files"),
                 )
