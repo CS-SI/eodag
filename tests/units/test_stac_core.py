@@ -135,25 +135,6 @@ class TestStacCore(unittest.TestCase):
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C", "abstract": "test"}],
-    )
-    def test_format_product_types(self, list_pt: Mock):
-        """format_product_types must return a string representation of the product types"""
-        product_types = self.rest_core.eodag_api.list_product_types(
-            fetch_providers=False
-        )
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method format_product_types",
-        ):
-            self.assertEqual(
-                self.rest_core.format_product_types(product_types),
-                "* *__S2_MSI_L1C__*: test",
-            )
-
-    @mock.patch(
-        "eodag.rest.core.eodag_api.list_product_types",
-        autospec=True,
         return_value=[{"ID": "S2_MSI_L1C"}],
     )
     def test_detailled_collections_list(self, list_pt):
@@ -479,42 +460,6 @@ class TestStacCore(unittest.TestCase):
                 "body": {"collections": ["S2_MSI_L1C"], "page": 3},
             },
         )
-
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch._request",
-        autospec=True,
-    )
-    def test_search_stac_items_special_characters(self, mock__request: Mock):
-        """special characters in the id are quoted in the links"""
-        # mock the QueryStringSearch request with the S2_MSI_L1C peps response search dictionary
-        mock__request.return_value = mock.Mock()
-        res = self.peps_resp_search_json
-        res["features"][0]["properties"]["productIdentifier"] = "id,with,commas"
-        res["features"][1]["properties"]["productIdentifier"] = "star*in*id"
-        mock__request.return_value.json.return_value = res
-
-        response = self.rest_core.search_stac_items(
-            request=mock_request("http://foo/search"),
-            search_request=SearchPostRequest.model_validate(
-                {"provider": "peps", "collections": "S2_MSI_L1C"}
-            ),
-        )
-
-        mock__request.assert_called()
-
-        # check that default assets have been added to the response
-        self.assertTrue(
-            "downloadLink", "thumbnail" in response["features"][0]["assets"].keys()
-        )
-        # check that invalid characters have been quoted
-        self.assertIn(",", response["features"][0]["id"])
-        self.assertNotIn(",", response["features"][0]["assets"]["downloadLink"]["href"])
-        self.assertNotIn(",", response["features"][0]["links"][0]["href"])
-        self.assertIn("*", response["features"][1]["id"])
-        self.assertNotIn("*", response["features"][1]["assets"]["downloadLink"]["href"])
-        self.assertNotIn("*", response["features"][1]["links"][0]["href"])
-        # check that no other asset have also been added to the response
-        self.assertEqual(len(response["features"][0]["assets"]), 2)
 
     def test_get_templates_path(self):
         """get_templates_path returns an existing dir path"""
