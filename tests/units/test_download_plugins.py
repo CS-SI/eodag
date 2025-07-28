@@ -1818,13 +1818,16 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         """AwsDownload.download() must handle files in zip"""
 
         def _open_zip(*args, **kwargs):
-            return zipfile.ZipFile(
-                os.path.join(
-                    TEST_RESOURCES_PATH,
-                    "products",
-                    "as_archive",
-                    "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.zip",
-                )
+            return (
+                zipfile.ZipFile(
+                    os.path.join(
+                        TEST_RESOURCES_PATH,
+                        "products",
+                        "as_archive",
+                        "S2A_MSIL1C_20180101T105441_N0206_R051_T31TDH_20180101T124911.zip",
+                    )
+                ),
+                b"",
             )
 
         mock_open_s3_zipped_object.side_effect = _open_zip

@@ -36,6 +36,7 @@ import re
 import shutil
 import ssl
 import string
+import struct
 import sys
 import types
 import unicodedata
@@ -224,14 +225,13 @@ class FloatRange(click.types.FloatParamType):
         ):
             if self.min is None:
                 self.fail(
-                    "%s is bigger than the maximum valid value " "%s." % (rv, self.max),
+                    "%s is bigger than the maximum valid value %s." % (rv, self.max),
                     param,
                     ctx,
                 )
             elif self.max is None:
                 self.fail(
-                    "%s is smaller than the minimum valid value "
-                    "%s." % (rv, self.min),
+                    "%s is smaller than the minimum valid value %s." % (rv, self.min),
                     param,
                     ctx,
                 )
@@ -1451,8 +1451,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
         # case
         if value.capitalize() not in ("True", "False"):
             raise ValueError(
-                "Only true or false strings (case insensitive) are "
-                "allowed for booleans"
+                "Only true or false strings (case insensitive) are allowed for booleans"
             )
         # Get the real Python value of the boolean. e.g: value='tRuE'
         # => eval(value.capitalize())=True.
@@ -1572,3 +1571,27 @@ def remove_str_array_quotes(input_str: str) -> str:
             continue
         output_str += input_str[i]
     return output_str
+
+
+def parse_le_uint32(data: bytes) -> int:
+    """
+    Parse little-endian unsigned 4-byte integer.
+
+    >>> parse_le_uint32(b'\\x01\\x00\\x00\\x00')
+    1
+    >>> parse_le_uint32(b'\\xff\\xff\\xff\\xff')
+    4294967295
+    """
+    return struct.unpack("<I", data)[0]
+
+
+def parse_le_uint16(data: bytes) -> int:
+    """
+    Parse little-endian unsigned 2-byte integer.
+
+    >>> parse_le_uint16(b'\\x01\\x00')
+    1
+    >>> parse_le_uint16(b'\\xff\\xff')
+    65535
+    """
+    return struct.unpack("<H", data)[0]

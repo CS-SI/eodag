@@ -123,7 +123,7 @@ def format_product_types(product_types: list[dict[str, Any]]) -> str:
     """
     result: list[str] = []
     for pt in product_types:
-        result.append(f'* *__{pt["ID"]}__*: {pt["abstract"]}')
+        result.append(f"* *__{pt['ID']}__*: {pt['abstract']}")
     return "\n".join(sorted(result))
 
 
@@ -266,11 +266,7 @@ def download_stac_item(
             _order_and_update(product, auth, kwargs)
 
         download_stream = product.downloader._stream_download_dict(
-            product,
-            auth=auth,
-            asset=asset,
-            wait=-1,
-            timeout=-1,
+            product, auth=auth, asset=asset, wait=-1, timeout=-1
         )
     except NotImplementedError:
         logger.warning(
@@ -686,7 +682,7 @@ def crunch_products(
     cruncher = crunchers.get(cruncher_name)
     if not cruncher:
         raise ValidationError(
-            f'Unknown crunch name. Use one of: {", ".join(crunchers.keys())}'
+            f"Unknown crunch name. Use one of: {', '.join(crunchers.keys())}"
         )
 
     cruncher_config: dict[str, Any] = {}
@@ -696,7 +692,7 @@ def crunch_products(
             raise ValidationError(
                 (
                     f"cruncher {cruncher} require additional parameters:"
-                    f' {", ".join(cruncher.config_params)}'
+                    f" {', '.join(cruncher.config_params)}"
                 )
             )
         cruncher_config[config_param] = config_param_value

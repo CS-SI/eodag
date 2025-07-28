@@ -28,7 +28,16 @@ from email.message import Message
 from itertools import chain
 from json import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator, Optional, TypedDict, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterator,
+    Literal,
+    Optional,
+    TypedDict,
+    Union,
+    cast,
+)
 from urllib.parse import parse_qs, urlparse
 
 import geojson
@@ -745,7 +754,8 @@ class HTTPDownload(Download):
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
@@ -779,7 +789,7 @@ class HTTPDownload(Download):
                 chunks_tuples = self._stream_download_assets(
                     product,
                     auth,
-                    progress_callback,
+                    None,
                     assets_values=assets_values,
                     **kwargs,
                 )
@@ -825,9 +835,7 @@ class HTTPDownload(Download):
                 else:
                     pass
 
-        chunk_iterator = self._stream_download(
-            product, auth, progress_callback, **kwargs
-        )
+        chunk_iterator = self._stream_download(product, auth, None, **kwargs)
 
         # start reading chunks to set product.headers
         try:
