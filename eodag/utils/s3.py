@@ -84,31 +84,39 @@ def fetch_range(
 class FileInfo:
     """
     Describe a S3 object with basic f_info and its download state.
-
-    zip_filepath is the path inside the ZIP archive if the file is stored inside a ZIP.
-    data_start_offset is the offset in the ZIP archive where the file data starts.
-    file_start_offset is the offset in the logical (global) file stream where this file starts.
-    futures is a mapping of futures for each range (start byte -> future).
-    buffers is a mapping of start byte to data chunks that have been downloaded.
-    next_yield is the next offset to yield in the file, used to track progress during
-    downloading and yielding chunks.
-    rel_path is the relative path of the file, if applicable (e.g., inside a ZIP archive).
-    data_type is the MIME type of the file, defaulting to application/octet-stream
-    if not guessed. It can be updated based on the file extension or content type.
     """
 
     size: int
     key: str
     bucket_name: str
+    #: Path inside the ZIP archive if the file is stored inside a ZIP.
     zip_filepath: Optional[str] = None
+    #: Offset in the ZIP archive where the file data starts.
     data_start_offset: int = 0
+    #: MIME type of the file, defaulting to application/octet-stream.
+    #: It can be updated based on the file extension or content type.
     data_type: str = MIME_OCTET_STREAM
+    #: Relative path of the file, if applicable (e.g., inside a ZIP archive).
     rel_path: Optional[str] = None
 
     # These fields hold the state for downloading
+    #: Offset in the logical (global) file stream where this file starts.
     file_start_offset: int = 0
+    #: Mapping of futures to their start byte offsets, used to track download progress.
+    #: Each future corresponds to a chunk of data being downloaded.
+    #: The key is the future object, and the value is the start byte offset of that
+    #: chunk in the logical file stream.
     futures: dict = field(default_factory=dict)
+    #: Buffers for downloaded data chunks, mapping start byte offsets to the actual data.
+    #: This allows for partial downloads and efficient memory usage.
+    #: The key is the start byte offset, and the value is the bytes data for that
+    #: offset. This is used to yield data in the correct order during streaming.
+    #: It is updated as chunks are downloaded.
     buffers: dict[int, bytes] = field(default_factory=dict)
+    #: The next offset to yield in the file, used to track progress during downloading
+    #: and yielding chunks. It starts at 0 and is updated as data is yielded.
+    #: This allows the streaming process to continue from where it left off,
+    #: ensuring that all data is eventually yielded without duplication.
     next_yield: int = 0
 
 
@@ -274,24 +282,21 @@ def _build_stream_response(
     - If `compress` is "raw" and multiple files, returns a multipart/mixed response with each file as a part.
     - If only one file is present and `compress` is "raw" or "auto", streams the file directly with its MIME type.
 
-    Args:
-        zip_filename (str): Base filename to use for the ZIP archive (without extension).
-        files_info (list[FileInfo]): List of FileInfo objects describing each file (metadata, MIME type, etc.).
-        files_iterator (Iterator[tuple[int, Iterator[bytes]]]): Iterator yielding (file_index, chunk_iterator) for
-            streaming file contents.
-        compress (Literal["zip", "raw", "auto"]): Output format:
-            - "zip": Always produce a ZIP archive.
-            - "raw": Stream files directly, as a single file or multipart.
-            - "auto": ZIP if multiple files, raw if single file.
-        executor (ThreadPoolExecutor): Executor used for concurrent streaming and cleanup.
-
-    Returns:
-        StreamResponse: Streaming HTTP response with appropriate content, headers, and media type.
-
     Response formats:
-        - ZIP archive (Content-Type: application/zip) with Content-Disposition for download.
-        - Multipart/mixed (Content-Type: multipart/mixed; boundary=...) with each file as a part.
-        - Single raw file stream with its MIME type and Content-Disposition for download.
+
+    - ZIP archive (Content-Type: application/zip) with Content-Disposition for download.
+    - Multipart/mixed (Content-Type: multipart/mixed; boundary=...) with each file as a part.
+    - Single raw file stream with its MIME type and Content-Disposition for download.
+
+    :param zip_filename: Base filename to use for the ZIP archive (without extension).
+    :param files_info: List of FileInfo objects describing each file (metadata, MIME type, etc.).
+    :param files_iterator: Iterator yielding (file_index, chunk_iterator) for streaming file contents.
+    :param compress: Output format:
+        - "zip": Always produce a ZIP archive.
+        - "raw": Stream files directly, as a single file or multipart.
+        - "auto": ZIP if multiple files, raw if single file.
+    :param executor: Executor used for concurrent streaming and cleanup.
+    :return: Streaming HTTP response with appropriate content, headers, and media type.
     """
     headers = {
         "Accept-Ranges": "bytes",
