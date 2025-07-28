@@ -43,6 +43,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
+    DownloadError,
     MisconfiguredError,
     NotAvailableError,
 )
@@ -81,7 +82,7 @@ def fetch_range(
 
 
 @dataclass
-class FileInfo:
+class S3FileInfo:
     """
     Describe a S3 object with basic f_info and its download state.
     """
@@ -120,7 +121,7 @@ class FileInfo:
     next_yield: int = 0
 
 
-def _prepare_file_in_zip(f_info: FileInfo, s3_client: S3Client):
+def _prepare_file_in_zip(f_info: S3FileInfo, s3_client: S3Client):
     """Update file information with the offset and size of the file inside the zip archive"""
 
     splitted_path = f_info.key.split(".zip!")
@@ -136,7 +137,7 @@ def _prepare_file_in_zip(f_info: FileInfo, s3_client: S3Client):
 
 
 def _compute_file_ranges(
-    file_info: FileInfo,
+    file_info: S3FileInfo,
     byte_range: tuple[Optional[int], Optional[int]],
     range_size: int,
 ) -> Optional[list[tuple[int, int]]]:
@@ -147,7 +148,7 @@ def _compute_file_ranges(
     based on the global requested byte range (`byte_range`) and the size of each chunk (`range_size`).
     It accounts for possible offsets if the file is part of a ZIP archive or not aligned at offset zero.
 
-    :param file_info: The FileInfo object containing file metadata, including size, data offset,
+    :param file_info: The S3FileInfo object containing file metadata, including size, data offset,
                       and its starting offset in the full logical file stream.
     :param byte_range: A tuple (start, end) specifying the requested global byte range, where either
                        value may be None to indicate an open-ended range.
@@ -189,7 +190,7 @@ def _compute_file_ranges(
 
 def _chunks_from_s3_objects(
     s3_client: S3Client,
-    files_info: list[FileInfo],
+    files_info: list[S3FileInfo],
     byte_range: tuple[Optional[int], Optional[int]],
     range_size: int,
     executor: ThreadPoolExecutor,
@@ -268,7 +269,7 @@ def _chunks_from_s3_objects(
 
 def _build_stream_response(
     zip_filename: str,
-    files_info: list[FileInfo],
+    files_info: list[S3FileInfo],
     files_iterator: Iterator[tuple[int, Iterator[bytes]]],
     compress: Literal["zip", "raw", "auto"],
     executor: ThreadPoolExecutor,
@@ -289,7 +290,7 @@ def _build_stream_response(
     - Single raw file stream with its MIME type and Content-Disposition for download.
 
     :param zip_filename: Base filename to use for the ZIP archive (without extension).
-    :param files_info: List of FileInfo objects describing each file (metadata, MIME type, etc.).
+    :param files_info: List of S3FileInfo objects describing each file (metadata, MIME type, etc.).
     :param files_iterator: Iterator yielding (file_index, chunk_iterator) for streaming file contents.
     :param compress: Output format:
         - "zip": Always produce a ZIP archive.
@@ -390,7 +391,7 @@ def _build_stream_response(
 
 def stream_download_from_s3(
     s3_client: S3Client,
-    files_info: list[FileInfo],
+    files_info: list[S3FileInfo],
     byte_range: tuple[Optional[int], Optional[int]] = (None, None),
     compress: Literal["zip", "raw", "auto"] = "auto",
     zip_filename: str = "archive",
@@ -425,7 +426,7 @@ def stream_download_from_s3(
         - ZIP archive if multiple files are requested
 
     :param s3_client: A configured S3 client capable of making range requests.
-    :param files_info: List of FileInfo objects representing the files to download.
+    :param files_info: List of S3FileInfo objects representing the files to download.
     :param byte_range: Tuple (start, end) defining the inclusive global byte range to download across all objects.
         Either value can be None to indicate open-ended range.
     :param compress: Determines the output format of the streamed response.
@@ -433,6 +434,8 @@ def stream_download_from_s3(
     :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
     :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
     :return: Streaming HTTP response with content according to the requested format.
+    :raises DownloadError: If any error occurs during streaming from S3, including missing files or
+        unsupported ZIP compression.
     """
     offset = 0
 
@@ -465,9 +468,9 @@ def stream_download_from_s3(
         return _build_stream_response(
             zip_filename, files_info, chunks_tuple, compress, executor
         )
-    except Exception:
+    except Exception as e:
         executor.shutdown(wait=True)
-        raise
+        raise DownloadError(str(e)) from e
 
 
 def update_assets_from_s3(
@@ -578,8 +581,18 @@ def open_s3_zipped_object(
     partial: bool = True,
 ) -> tuple[ZipFile, bytes]:
     """
-    Fetch central directory + EOCD from S3 and open ZipFile in memory.
-    Returns (ZipFile, central_directory_bytes)
+    Fetches the central directory and EOCD (End Of Central Directory) from an S3 object and opens a ZipFile in memory.
+
+    This function retrieves the ZIP file's central directory and EOCD by performing range requests on the S3 object.
+    It supports partial fetching (only the central directory and EOCD) for efficiency, or full ZIP download if needed.
+
+    :param bucket_name: Name of the S3 bucket containing the ZIP file.
+    :param key_name: Key (path) of the ZIP file in the S3 bucket.
+    :param s3_client: S3 client instance used to perform range requests.
+    :param zip_size: Size of the ZIP file in bytes. If None, it will be determined via a HEAD request.
+    :param partial: If True, only fetch the central directory and EOCD. If False, fetch the entire ZIP file.
+    :return: Tuple containing the opened ZipFile object and the central directory bytes.
+    :raises RuntimeError: If the EOCD signature is not found in the last 64KB of the file.
     """
     # EOCD is at least 22 bytes, but can be longer if ZIP comment exists.
     # For simplicity, we fetch last 64KB max (max EOCD + comment length allowed by ZIP spec)
@@ -668,13 +681,16 @@ def file_position_from_s3_zip(
     Get the start position and size of a specific file inside a ZIP archive stored in S3.
     This function assumes the file is uncompressed (ZIP_STORED).
 
+    The returned tuple contains:
+
+    - **file_data_start**: The byte offset where the file data starts in the ZIP archive.
+    - **file_size**: The size of the file in bytes.
+
     :param s3_bucket: The S3 bucket name.
     :param object_key: The S3 object key for the ZIP file.
     :param s3_client: The Boto3 S3 client.
     :param target_filepath: The file path inside the ZIP archive to locate.
-    :return: A tuple (file_data_start, file_size) where:
-             - file_data_start is the byte offset where the file data starts in the ZIP archive.
-             - file_size is the size of the file in bytes.
+    :return: A tuple (file_data_start, file_size)
     :raises FileNotFoundError: If the target file is not found in the ZIP archive.
     :raises NotImplementedError: If the file is not uncompressed (ZIP_STORED)
     """
@@ -687,6 +703,7 @@ def file_position_from_s3_zip(
         if fi.filename == target_filepath:
             target_info = fi
             break
+        # 46 is the fixed size (in bytes) of the Central Directory File Header according to the ZIP spec
         cd_entry_len = (
             46 + len(fi.filename.encode("utf-8")) + len(fi.extra) + len(fi.comment)
         )

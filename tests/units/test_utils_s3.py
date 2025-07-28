@@ -13,9 +13,9 @@ from tests import TEST_RESOURCES_PATH
 from tests.context import (
     AwsAuth,
     EOProduct,
-    FileInfo,
     MisconfiguredError,
     PluginConfig,
+    S3FileInfo,
     StreamResponse,
     _build_stream_response,
     _chunks_from_s3_objects,
@@ -56,7 +56,7 @@ def make_mock_fileinfo(
     file_start_offset=0,
     data_type="application/octet-stream",
 ):
-    fi = FileInfo(key=key, size=size, data_type=data_type, bucket_name="mybucket")
+    fi = S3FileInfo(key=key, size=size, data_type=data_type, bucket_name="mybucket")
     fi.rel_path = key
     fi.futures = {}
     fi.file_start_offset = file_start_offset

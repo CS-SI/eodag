@@ -111,7 +111,7 @@ from eodag.utils.s3 import (
     list_files_in_s3_zipped_object,
     update_assets_from_s3,
     open_s3_zipped_object,
-    FileInfo,
+    S3FileInfo,
     file_position_from_s3_zip,
     _chunks_from_s3_objects,
     _prepare_file_in_zip,

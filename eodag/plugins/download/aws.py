@@ -58,7 +58,7 @@ from eodag.utils.exceptions import (
     NotAvailableError,
     TimeOutError,
 )
-from eodag.utils.s3 import FileInfo, open_s3_zipped_object, stream_download_from_s3
+from eodag.utils.s3 import S3FileInfo, open_s3_zipped_object, stream_download_from_s3
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
@@ -831,7 +831,7 @@ class AwsDownload(Download):
                     "type"
                 )
 
-                file_info = FileInfo(
+                file_info = S3FileInfo(
                     key=obj.key,
                     size=obj.size,
                     bucket_name=obj.bucket_name,
