@@ -34,6 +34,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
+from eodag.api.collection import ProductType, ProductTypesList
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
@@ -672,28 +673,45 @@ class TestCore(TestCoreBase):
         """Every collection must be referenced in the core unit test SUPPORTED_COLLECTIONS class attribute"""
         for collection in self.dag.list_collections(fetch_providers=False):
             assert (
-                collection["ID"] in self.SUPPORTED_COLLECTIONS.keys()
-                or collection["_id"] in self.SUPPORTED_COLLECTIONS.keys()
+                collection.id in self.SUPPORTED_COLLECTIONS.keys()
+                or collection._id in self.SUPPORTED_COLLECTIONS.keys()
             )
 
     def test_list_collections_ok(self):
         """Core api must correctly return the list of supported collections"""
         collections = self.dag.list_collections(fetch_providers=False)
-        self.assertIsInstance(collections, list)
+        self.assertIsInstance(collections, ProductTypesList)
         for collection in collections:
             self.assertListCollectionsRightStructure(collection)
         # There should be no repeated collection in the output
-        self.assertEqual(len(collections), len(set(pt["ID"] for pt in collections)))
+        self.assertEqual(len(collections), len(set(pt.id for pt in collections)))
         # add alias for collection - should still work
         products = self.dag.collections_config
-        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    alias="S2_MSI_ALIAS",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
         collections = self.dag.list_collections(fetch_providers=False)
         for collection in collections:
             self.assertListCollectionsRightStructure(collection)
         # There should be no repeated collection in the output
-        self.assertEqual(len(collections), len(set(pt["ID"] for pt in collections)))
+        self.assertEqual(len(collections), len(set(pt.id for pt in collections)))
         # use alias as id
-        self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in collections])
+        self.assertIn("S2_MSI_ALIAS", [pt.id for pt in collections])
+
+        # restore the original collection instance in the config
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    id="S2_MSI_L1C",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
+                )
+            }
+        )
 
     def test_list_collections_for_provider_ok(self):
         """Core api must correctly return the list of supported collections for a given provider"""
@@ -701,20 +719,20 @@ class TestCore(TestCoreBase):
             collections = self.dag.list_collections(
                 provider=provider, fetch_providers=False
             )
-            self.assertIsInstance(collections, list)
+            self.assertIsInstance(collections, ProductTypesList)
             for collection in collections:
                 self.assertListCollectionsRightStructure(collection)
-                if collection["ID"] in self.SUPPORTED_COLLECTIONS:
+                if collection.id in self.SUPPORTED_COLLECTIONS:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_COLLECTIONS[collection["ID"]],
-                        f"missing in supported providers for {collection['ID']}",
+                        self.SUPPORTED_COLLECTIONS[collection.id],
+                        f"missing in supported providers for {collection.id}",
                     )
                 else:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_COLLECTIONS[collection["_id"]],
-                        f"missing in supported providers for {collection['_id']}",
+                        self.SUPPORTED_COLLECTIONS[collection._id],
+                        f"missing in supported providers for {collection._id}",
                     )
 
     def test_list_collections_for_unsupported_provider(self):
@@ -844,8 +862,8 @@ class TestCore(TestCoreBase):
 
         self.assertIn("foo", self.dag.providers_config["earth_search"].products)
         self.assertIn("bar", self.dag.providers_config["earth_search"].products)
-        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
-        self.assertEqual(self.dag.collections_config["bar"]["title"], "Bar collection")
+        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
+        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
     def test_update_collections_list_unknown_provider(self):
         """Core api.update_collections_list on unkwnown provider must not crash and not update conf"""
@@ -890,8 +908,8 @@ class TestCore(TestCoreBase):
 
         self.assertIn("foo", self.dag.providers_config["ecmwf"].products)
         self.assertIn("bar", self.dag.providers_config["ecmwf"].products)
-        self.assertEqual(self.dag.collections_config["foo"]["license"], "WTFPL")
-        self.assertEqual(self.dag.collections_config["bar"]["title"], "Bar collection")
+        self.assertEqual(self.dag.collections_config["foo"].license, "WTFPL")
+        self.assertEqual(self.dag.collections_config["bar"].title, "Bar collection")
 
     def test_update_collections_list_without_plugin(self):
         """Core api.update_collections_list without search and api plugin do nothing"""
@@ -1026,8 +1044,8 @@ class TestCore(TestCoreBase):
             {"_collection": "foo"},
         )
         self.assertEqual(
-            self.dag.collections_config.source["foo"],
-            {"_id": "foo", "title": "Foo collection"},
+            self.dag.collections_config.data["foo"],
+            ProductType(id="foo", title="Foo collection"),
         )
 
         # update existing provider conf and check that discover_collections() is launched for it
@@ -1173,17 +1191,25 @@ class TestCore(TestCoreBase):
         """Helper method to verify that the structure given is a good result of
         EODataAccessGateway.list_collections
         """
-        self.assertIsInstance(structure, dict)
-        self.assertIn("ID", structure)
-        self.assertIn("description", structure)
-        self.assertIn("instruments", structure)
-        self.assertIn("constellation", structure)
-        self.assertIn("platform", structure)
-        self.assertIn("processing:level", structure)
-        self.assertIn("eodag:sensor_type", structure)
+        self.assertIsInstance(structure, ProductType)
+
+        product_type_dict = structure.model_dump()
+
+        self.assertIn("id", product_type_dict)
+        self.assertIn("abstract", product_type_dict)
+        self.assertIn("instrument", product_type_dict)
+        self.assertIn("platform", product_type_dict)
+        self.assertIn("platformSerialIdentifier", product_type_dict)
+        self.assertIn("processingLevel", product_type_dict)
+        self.assertIn("sensorType", product_type_dict)
+        self.assertIn("title", product_type_dict)
+        self.assertIn("keywords", product_type_dict)
+        self.assertIn("license", product_type_dict)
+        self.assertIn("missionStartDate", product_type_dict)
+        self.assertIn("alias", product_type_dict)
         self.assertTrue(
-            structure["ID"] in self.SUPPORTED_COLLECTIONS
-            or structure["_id"] in self.SUPPORTED_COLLECTIONS
+            structure.id in self.SUPPORTED_COLLECTIONS
+            or structure._id in self.SUPPORTED_COLLECTIONS
         )
 
     def test_core_object_set_default_locations_config(self):
@@ -1408,7 +1434,15 @@ class TestCore(TestCoreBase):
         # provider & collection alias
         # result should be the same if alias is used
         products = self.dag.collections_config
-        products["S1_SAR_GRD"]["alias"] = "S1_SG"
+        # add an alias to the collection
+        products.update(
+            {
+                "S1_SAR_GRD": ProductType(
+                    alias="S1_SG",
+                    **products["S1_SAR_GRD"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
         queryables_peps_s1grd_alias = self.dag.list_queryables(
             provider="peps", collection="S1_SG"
         )
@@ -1417,7 +1451,15 @@ class TestCore(TestCoreBase):
             "S1_SG",
             queryables_peps_s1grd_alias["collection"].__metadata__[0].get_default(),
         )
-        products["S1_SAR_GRD"].pop("alias")
+        # restore the original product type instance in the config
+        products.update(
+            {
+                "S1_SAR_GRD": ProductType(
+                    id="S1_SAR_GRD",
+                    **products["S1_SAR_GRD"].model_dump(exclude={"id", "alias"}),
+                )
+            }
+        )
 
         # Only collection
         # when a collection is specified but not the provider, the union of the queryables of all providers
@@ -2045,8 +2087,8 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             self.dag = EODataAccessGateway()
             pt = self.dag.list_collections(fetch_providers=False)
             self.assertEqual(2, len(pt))
-            self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
-            self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
+            self.assertEqual("TEST_PRODUCT_1", pt[0].id)
+            self.assertEqual("TEST_PRODUCT_2", pt[1].id)
         finally:
             # remove env variables
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
@@ -2344,9 +2386,7 @@ class TestCoreSearch(TestCoreBase):
 
         # with dates
         self.assertEqual(
-            self.dag.collections_config.source["S2_MSI_L1C"]["extent"]["temporal"][
-                "interval"
-            ][0][0],
+            self.dag.collections_config.data["S2_MSI_L1C"].missionStartDate,
             "2015-06-23T00:00:00Z",
         )
         self.assertNotIn("S2_MSI_L1C", self.dag.guess_collection(end_date="2015-06-01"))
@@ -2368,6 +2408,21 @@ class TestCoreSearch(TestCoreBase):
         """guess_collection must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingCollection):
             self.dag.guess_collection()
+
+    def test_guess_product_type_has_no_limit(self):
+        """guess_product_type must run a whoosh search without any limit"""
+        # Filter that should give more than 10 products referenced in the catalog.
+        opt_prods = [
+            p
+            for p in self.dag.list_collections(fetch_providers=False)
+            if p.sensorType == "OPTICAL"
+        ]
+        if len(opt_prods) <= 10:
+            self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
+        guesses = self.dag.guess_product_type(
+            sensorType="OPTICAL",
+        )
+        self.assertGreater(len(guesses), 10)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
@@ -2564,7 +2619,14 @@ class TestCoreSearch(TestCoreBase):
     def test__prepare_search_peps_plugins_product_available_with_alias(self):
         """_prepare_search must return the search plugins when collection is defined and alias is used"""
         products = self.dag.collections_config
-        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    alias="S2_MSI_ALIAS",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
@@ -2574,6 +2636,16 @@ class TestCoreSearch(TestCoreBase):
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
             products["S2_MSI_L1C"].pop("alias")
+
+        # restore the original product type instance in the config
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    id="S2_MSI_L1C",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
+                )
+            }
+        )
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
@@ -3769,7 +3841,14 @@ class TestCoreProductAlias(TestCoreBase):
         super(TestCoreProductAlias, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         products = cls.dag.collections_config
-        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    alias="S2_MSI_ALIAS",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
 
     def test_get_alias_from_collection(self):
         # return product alias
@@ -3839,7 +3918,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 self.dag.list_collections(provider, fetch_providers=False)
             )
 
-        merged_list = list({d["ID"]: d for d in search_products}.values())
+        merged_list = list({d.id: d for d in search_products}.values())
 
         self.assertCountEqual(
             self.dag.list_collections(self.group_name, fetch_providers=False),
@@ -3939,8 +4018,8 @@ class TestCoreProviderGroup(TestCoreBase):
                 )
 
         self.assertEqual(
-            self.dag.collections_config.source["foo"],
-            {"_id": "foo", "title": "Foo collection"},
+            self.dag.collections_config.data["foo"],
+            ProductType(id="foo", title="Foo collection"),
         )
 
         # restore providers config
@@ -4048,7 +4127,7 @@ class TestCoreStrictMode(TestCoreBase):
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
             collections = dag.list_collections(fetch_providers=False)
-            ids = [pt["ID"] for pt in collections]
+            ids = [pt.id for pt in collections]
             self.assertNotIn("TEST_PRODUCT_2", ids)
 
         finally:
@@ -4063,5 +4142,5 @@ class TestCoreStrictMode(TestCoreBase):
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
         collections = dag.list_collections(fetch_providers=False)
-        ids = [pt["ID"] for pt in collections]
+        ids = [pt.id for pt in collections]
         self.assertIn("TEST_PRODUCT_2", ids)

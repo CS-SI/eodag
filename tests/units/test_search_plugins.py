@@ -1218,7 +1218,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         # no date info given -> default dates (missionStartDate) which are then converted to year, month, day, time
         pt_conf = {
-            "ID": "ERA5_SL",
+            "id": "ERA5_SL",
             "description": "ERA5 abstract",
             "instruments": [],
             "constellation": "ERA5",
@@ -1264,7 +1264,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         )
         # collection with dates are query params -> use missionStartDate and today
         pt_conf = {
-            "ID": "CAMS_EAC4",
+            "id": "CAMS_EAC4",
             "description": "CAMS_EAC4 abstract",
             "instruments": [],
             "constellation": "CAMS",
