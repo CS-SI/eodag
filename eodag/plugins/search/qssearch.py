@@ -858,6 +858,7 @@ class QueryStringSearch(Search):
         token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
+        next_page_token_key = self.config.pagination.get("next_page_token_key", "page")
 
         urls = []
         total_results = 0 if count else None
@@ -884,10 +885,7 @@ class QueryStringSearch(Search):
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
                 _collection=provider_collection
             )
-            if (
-                self.config.pagination["next_page_token_key"] == "page"
-                and items_per_page is not None
-            ):
+            if next_page_token_key == "page" and items_per_page is not None:
                 if token is None:
                     token = 1
                 else:
@@ -926,7 +924,7 @@ class QueryStringSearch(Search):
                 )
 
             elif token is not None:
-                prep.query_params[self.config.pagination["next_page_token_key"]] = token
+                prep.query_params[next_page_token_key] = token
             prep.query_params["limit"] = items_per_page
             urls.append(search_endpoint)
 
@@ -1692,6 +1690,7 @@ class PostJsonSearch(QueryStringSearch):
         count = prep.count
         urls: list[str] = []
         total_results = 0 if count else None
+        next_page_token_key = self.config.pagination.get("next_page_token_key", "page")
 
         if "count_endpoint" not in self.config.pagination:
             # if count_endpoint is not set, total_results should be extracted from search result
@@ -1713,10 +1712,7 @@ class PostJsonSearch(QueryStringSearch):
                 raise MisconfiguredError(
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
-            if (
-                self.config.pagination["next_page_token_key"] == "page"
-                and items_per_page is not None
-            ):
+            if next_page_token_key == "page" and items_per_page is not None:
                 if token is None:
                     token = 1
                 else:
@@ -1755,7 +1751,7 @@ class PostJsonSearch(QueryStringSearch):
                     )
 
             elif token is not None:
-                prep.query_params[self.config.pagination["next_page_token_key"]] = token
+                prep.query_params[next_page_token_key] = token
 
             prep.query_params["limit"] = items_per_page
             urls.append(search_endpoint)
