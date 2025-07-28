@@ -69,6 +69,7 @@ class CreodiasS3Download(AwsDownload):
         objects = s3_resource.Bucket(bucket_name).objects.filter()
         list(objects.filter(Prefix=prefix).limit(1))
         self.s3_session = s3_session
+        self.s3_resource = s3_resource
         return objects
 
     def _get_bucket_names_and_prefixes(
