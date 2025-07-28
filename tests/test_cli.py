@@ -30,6 +30,7 @@ from click.testing import CliRunner
 from faker import Faker
 from packaging import version
 
+from eodag.api.product_type import ProductType
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
@@ -699,9 +700,9 @@ class TestEodagCli(unittest.TestCase):
         provider = "peps"
         mock_guess_product_type.return_value = ["foo", "bar"]
         mock_list_product_types.return_value = [
-            {"ID": "foo", "title": "this is foo"},
-            {"ID": "bar", "title": "this is bar"},
-            {"ID": "baz", "title": "this is baz"},
+            ProductType(id="foo", title="this is foo"),
+            ProductType(id="bar", title="this is bar"),
+            ProductType(id="baz", title="this is baz"),
         ]
 
         result = self.runner.invoke(
