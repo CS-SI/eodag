@@ -1574,10 +1574,24 @@ def remove_str_array_quotes(input_str: str) -> str:
 
 
 def parse_le_uint32(data: bytes) -> int:
-    """Parse little-endian unsigned 4-byte integer."""
+    """
+    Parse little-endian unsigned 4-byte integer.
+
+    >>> parse_le_uint32(b'\\x01\\x00\\x00\\x00')
+    1
+    >>> parse_le_uint32(b'\\xff\\xff\\xff\\xff')
+    4294967295
+    """
     return struct.unpack("<I", data)[0]
 
 
 def parse_le_uint16(data: bytes) -> int:
-    """Parse little-endian unsigned 2-byte integer."""
+    """
+    Parse little-endian unsigned 2-byte integer.
+
+    >>> parse_le_uint16(b'\\x01\\x00')
+    1
+    >>> parse_le_uint16(b'\\xff\\xff')
+    65535
+    """
     return struct.unpack("<H", data)[0]
