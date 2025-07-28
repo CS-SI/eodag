@@ -36,6 +36,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
+from eodag.api.product_type import ProductType, ProductTypesList
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
 from tests import TEST_RESOURCES_PATH
@@ -652,28 +653,45 @@ class TestCore(TestCoreBase):
         """Every product type must be referenced in the core unit test SUPPORTED_PRODUCT_TYPES class attribute"""
         for product_type in self.dag.list_product_types(fetch_providers=False):
             assert (
-                product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES.keys()
-                or product_type["_id"] in self.SUPPORTED_PRODUCT_TYPES.keys()
+                product_type.id in self.SUPPORTED_PRODUCT_TYPES.keys()
+                or product_type._id in self.SUPPORTED_PRODUCT_TYPES.keys()
             )
 
     def test_list_product_types_ok(self):
         """Core api must correctly return the list of supported product types"""
         product_types = self.dag.list_product_types(fetch_providers=False)
-        self.assertIsInstance(product_types, list)
+        self.assertIsInstance(product_types, ProductTypesList)
         for product_type in product_types:
             self.assertListProductTypesRightStructure(product_type)
         # There should be no repeated product type in the output
-        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        self.assertEqual(len(product_types), len(set(pt.id for pt in product_types)))
         # add alias for product type - should still work
         products = self.dag.product_types_config
-        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    alias="S2_MSI_ALIAS",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
         product_types = self.dag.list_product_types(fetch_providers=False)
         for product_type in product_types:
             self.assertListProductTypesRightStructure(product_type)
         # There should be no repeated product type in the output
-        self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
+        self.assertEqual(len(product_types), len(set(pt.id for pt in product_types)))
         # use alias as id
-        self.assertIn("S2_MSI_ALIAS", [pt["ID"] for pt in product_types])
+        self.assertIn("S2_MSI_ALIAS", [pt.id for pt in product_types])
+
+        # restore the original product type instance in the config
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    id="S2_MSI_L1C",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
+                )
+            }
+        )
 
     def test_list_product_types_for_provider_ok(self):
         """Core api must correctly return the list of supported product types for a given provider"""
@@ -681,20 +699,20 @@ class TestCore(TestCoreBase):
             product_types = self.dag.list_product_types(
                 provider=provider, fetch_providers=False
             )
-            self.assertIsInstance(product_types, list)
+            self.assertIsInstance(product_types, ProductTypesList)
             for product_type in product_types:
                 self.assertListProductTypesRightStructure(product_type)
-                if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
+                if product_type.id in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_PRODUCT_TYPES[product_type["ID"]],
-                        f"missing in supported providers for {product_type['ID']}",
+                        self.SUPPORTED_PRODUCT_TYPES[product_type.id],
+                        f"missing in supported providers for {product_type.id}",
                     )
                 else:
                     self.assertIn(
                         provider,
-                        self.SUPPORTED_PRODUCT_TYPES[product_type["_id"]],
-                        f"missing in supported providers for {product_type['_id']}",
+                        self.SUPPORTED_PRODUCT_TYPES[product_type._id],
+                        f"missing in supported providers for {product_type._id}",
                     )
 
     def test_list_product_types_for_unsupported_provider(self):
@@ -835,10 +853,8 @@ class TestCore(TestCoreBase):
 
         self.assertIn("foo", self.dag.providers_config["earth_search"].products)
         self.assertIn("bar", self.dag.providers_config["earth_search"].products)
-        self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
-        self.assertEqual(
-            self.dag.product_types_config["bar"]["title"], "Bar collection"
-        )
+        self.assertEqual(self.dag.product_types_config["foo"].license, "WTFPL")
+        self.assertEqual(self.dag.product_types_config["bar"].title, "Bar collection")
 
     def test_update_product_types_list_unknown_provider(self):
         """Core api.update_product_types_list on unkwnown provider must not crash and not update conf"""
@@ -883,10 +899,8 @@ class TestCore(TestCoreBase):
 
         self.assertIn("foo", self.dag.providers_config["ecmwf"].products)
         self.assertIn("bar", self.dag.providers_config["ecmwf"].products)
-        self.assertEqual(self.dag.product_types_config["foo"]["license"], "WTFPL")
-        self.assertEqual(
-            self.dag.product_types_config["bar"]["title"], "Bar collection"
-        )
+        self.assertEqual(self.dag.product_types_config["foo"].license, "WTFPL")
+        self.assertEqual(self.dag.product_types_config["bar"].title, "Bar collection")
 
     def test_update_product_types_list_without_plugin(self):
         """Core api.update_product_types_list without search and api plugin do nothing"""
@@ -1027,8 +1041,8 @@ class TestCore(TestCoreBase):
             {"productType": "foo"},
         )
         self.assertEqual(
-            self.dag.product_types_config.source["foo"],
-            {"_id": "foo", "title": "Foo collection"},
+            self.dag.product_types_config.data["foo"],
+            ProductType(id="foo", title="Foo collection"),
         )
 
         # update existing provider conf and check that discover_product_types() is launched for it
@@ -1176,17 +1190,25 @@ class TestCore(TestCoreBase):
         """Helper method to verify that the structure given is a good result of
         EODataAccessGateway.list_product_types
         """
-        self.assertIsInstance(structure, dict)
-        self.assertIn("ID", structure)
-        self.assertIn("abstract", structure)
-        self.assertIn("instrument", structure)
-        self.assertIn("platform", structure)
-        self.assertIn("platformSerialIdentifier", structure)
-        self.assertIn("processingLevel", structure)
-        self.assertIn("sensorType", structure)
+        self.assertIsInstance(structure, ProductType)
+
+        product_type_dict = structure.model_dump()
+
+        self.assertIn("id", product_type_dict)
+        self.assertIn("abstract", product_type_dict)
+        self.assertIn("instrument", product_type_dict)
+        self.assertIn("platform", product_type_dict)
+        self.assertIn("platformSerialIdentifier", product_type_dict)
+        self.assertIn("processingLevel", product_type_dict)
+        self.assertIn("sensorType", product_type_dict)
+        self.assertIn("title", product_type_dict)
+        self.assertIn("keywords", product_type_dict)
+        self.assertIn("license", product_type_dict)
+        self.assertIn("missionStartDate", product_type_dict)
+        self.assertIn("alias", product_type_dict)
         self.assertTrue(
-            structure["ID"] in self.SUPPORTED_PRODUCT_TYPES
-            or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
+            structure.id in self.SUPPORTED_PRODUCT_TYPES
+            or structure._id in self.SUPPORTED_PRODUCT_TYPES
         )
 
     @mock.patch("eodag.api.core.open_dir", autospec=True)
@@ -1465,7 +1487,15 @@ class TestCore(TestCoreBase):
         # provider & product type alias
         # result should be the same if alias is used
         products = self.dag.product_types_config
-        products["S1_SAR_GRD"]["alias"] = "S1_SG"
+        # add an alias to the product type
+        products.update(
+            {
+                "S1_SAR_GRD": ProductType(
+                    alias="S1_SG",
+                    **products["S1_SAR_GRD"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
         queryables_peps_s1grd_alias = self.dag.list_queryables(
             provider="peps", productType="S1_SG"
         )
@@ -1474,7 +1504,15 @@ class TestCore(TestCoreBase):
             "S1_SG",
             queryables_peps_s1grd_alias["productType"].__metadata__[0].get_default(),
         )
-        products["S1_SAR_GRD"].pop("alias")
+        # restore the original product type instance in the config
+        products.update(
+            {
+                "S1_SAR_GRD": ProductType(
+                    id="S1_SAR_GRD",
+                    **products["S1_SAR_GRD"].model_dump(exclude={"id", "alias"}),
+                )
+            }
+        )
 
         # Only product type
         # when a product type is specified but not the provider, the union of the queryables of all providers
@@ -2019,8 +2057,8 @@ class TestCoreConfWithEnvVar(TestCoreBase):
             self.dag = EODataAccessGateway()
             pt = self.dag.list_product_types(fetch_providers=False)
             self.assertEqual(2, len(pt))
-            self.assertEqual("TEST_PRODUCT_1", pt[0]["ID"])
-            self.assertEqual("TEST_PRODUCT_2", pt[1]["ID"])
+            self.assertEqual("TEST_PRODUCT_1", pt[0].id)
+            self.assertEqual("TEST_PRODUCT_2", pt[1].id)
         finally:
             # remove env variables
             os.environ.pop("EODAG_PROVIDERS_CFG_FILE", None)
@@ -2321,7 +2359,7 @@ class TestCoreSearch(TestCoreBase):
 
         # with dates
         self.assertEqual(
-            self.dag.product_types_config.source["S2_MSI_L1C"]["missionStartDate"],
+            self.dag.product_types_config.data["S2_MSI_L1C"].missionStartDate,
             "2015-06-23T00:00:00Z",
         )
         self.assertNotIn(
@@ -2342,7 +2380,7 @@ class TestCoreSearch(TestCoreBase):
         opt_prods = [
             p
             for p in self.dag.list_product_types(fetch_providers=False)
-            if p["sensorType"] == "OPTICAL"
+            if p.sensorType == "OPTICAL"
         ]
         if len(opt_prods) <= 10:
             self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
@@ -2548,7 +2586,14 @@ class TestCoreSearch(TestCoreBase):
     def test__prepare_search_peps_plugins_product_available_with_alias(self):
         """_prepare_search must return the search plugins when productType is defined and alias is used"""
         products = self.dag.product_types_config
-        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    alias="S2_MSI_ALIAS",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
         prev_fav_provider = self.dag.get_preferred_provider()[0]
         try:
             self.dag.set_preferred_provider("peps")
@@ -2557,6 +2602,16 @@ class TestCoreSearch(TestCoreBase):
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
+
+        # restore the original product type instance in the config
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    id="S2_MSI_L1C",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
+                )
+            }
+        )
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
@@ -3438,7 +3493,14 @@ class TestCoreProductAlias(TestCoreBase):
         super(TestCoreProductAlias, cls).setUpClass()
         cls.dag = EODataAccessGateway()
         products = cls.dag.product_types_config
-        products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
+        products.update(
+            {
+                "S2_MSI_L1C": ProductType(
+                    alias="S2_MSI_ALIAS",
+                    **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
+                )
+            }
+        )
 
     def test_get_alias_from_product_type(self):
         # return product alias
@@ -3512,7 +3574,7 @@ class TestCoreProviderGroup(TestCoreBase):
                 self.dag.list_product_types(provider, fetch_providers=False)
             )
 
-        merged_list = list({d["ID"]: d for d in search_products}.values())
+        merged_list = list({d.id: d for d in search_products}.values())
 
         self.assertCountEqual(
             self.dag.list_product_types(self.group_name, fetch_providers=False),
@@ -3612,8 +3674,8 @@ class TestCoreProviderGroup(TestCoreBase):
                 )
 
         self.assertEqual(
-            self.dag.product_types_config.source["foo"],
-            {"_id": "foo", "title": "Foo collection"},
+            self.dag.product_types_config.data["foo"],
+            ProductType(id="foo", title="Foo collection"),
         )
 
         # restore providers config
@@ -3721,7 +3783,7 @@ class TestCoreStrictMode(TestCoreBase):
 
             # In strict mode, TEST_PRODUCT_2 should not be listed
             product_types = dag.list_product_types(fetch_providers=False)
-            ids = [pt["ID"] for pt in product_types]
+            ids = [pt.id for pt in product_types]
             self.assertNotIn("TEST_PRODUCT_2", ids)
 
         finally:
@@ -3736,5 +3798,5 @@ class TestCoreStrictMode(TestCoreBase):
 
         # In permissive mode, TEST_PRODUCT_2 should be listed
         product_types = dag.list_product_types(fetch_providers=False)
-        ids = [pt["ID"] for pt in product_types]
+        ids = [pt.id for pt in product_types]
         self.assertIn("TEST_PRODUCT_2", ids)
