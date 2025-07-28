@@ -29,26 +29,6 @@ from tests.context import (
 )
 
 
-def fake_get_object(files):
-    """Help function to mock S3 get_object calls."""
-
-    def _get_object(Bucket, Key, Range=None):
-        full_data = files.get(Key)
-        if full_data is None:
-            raise KeyError(f"No such key: {Key}")
-        if Range:
-            _, byte_range = Range.split("=")
-            start_str, end_str = byte_range.split("-")
-            start = int(start_str) if start_str else 0
-            end = int(end_str) if end_str else len(full_data) - 1
-            chunk = full_data[start : end + 1]
-        else:
-            chunk = full_data
-        return {"Body": io.BytesIO(chunk)}
-
-    return _get_object
-
-
 def make_mock_fileinfo(
     key,
     size=10,
@@ -580,7 +560,7 @@ class TestUtilsS3(TestCase):
                         "path/to/unzipped/file1.txt", size=6, data_type="text/plain"
                     )
                 ],
-                "data_map": {
+                "s3_objects": {
                     "path/to/unzipped/file1.txt": b"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
                 },
                 "compress": "raw",
@@ -595,7 +575,7 @@ class TestUtilsS3(TestCase):
                     make_mock_fileinfo("path/to/unzipped/file1.txt", size=6),
                     make_mock_fileinfo("path/to/unzipped/file2.txt", size=6),
                 ],
-                "data_map": {
+                "s3_objects": {
                     "path/to/unzipped/file1.txt": b"abcdef",
                     "path/to/unzipped/file2.txt": b"ghijkl",
                 },
@@ -607,19 +587,18 @@ class TestUtilsS3(TestCase):
         ]
 
         for case in test_cases:
+            # Upload test data to moto S3
+            for key, data in case["s3_objects"].items():
+                self.s3_client.put_object(Bucket="mybucket", Key=key, Body=data)
+
             with self.subTest(msg=case["desc"]):
-                with patch.object(
-                    self.s3_client,
-                    "get_object",
-                    side_effect=fake_get_object(case["data_map"]),
-                ):
-                    response = stream_download_from_s3(
-                        s3_client=self.s3_client,
-                        files_info=case["files_info"],
-                        compress=case["compress"],
-                        zip_filename=case["zip_filename"],
-                        max_workers=2,
-                    )
+                response = stream_download_from_s3(
+                    s3_client=self.s3_client,
+                    files_info=case["files_info"],
+                    compress=case["compress"],
+                    zip_filename=case["zip_filename"],
+                    max_workers=2,
+                )
 
                 self.assert_stream_response(
                     response,
