@@ -37,6 +37,7 @@ import yaml
 from botocore.stub import Stubber
 from pydantic_core import PydanticUndefined
 from requests import RequestException
+from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 from typing_extensions import get_args
 
@@ -3728,3 +3729,59 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
+
+
+class TestApisPluginDedtLumifApi(TestSearchPluginECMWFSearch):
+    def setUp(self):
+        self.provider = "dedt_lumi"
+        self.api_plugin = self.get_search_plugin(provider=self.provider)
+        self.product_type = "DT_CLIMATE_ADAPTATION"
+
+    def test_plugins_apis_dedt_lumi_query_feature(self):
+        """Test the proper handling of geom into ecmwf:feature"""
+
+        _expected_feature = {
+            "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
+            "type": "polygon",
+        }
+
+        # bbox definition
+
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            start="20210101",
+            geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
+        )
+
+        eoproduct = results[0]
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # shapely polygon
+
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            start="20210101",
+            geometry=Polygon([(1, 43), (1, 44), (2, 44), (2, 43), (1, 43)]),
+        )
+
+        eoproduct = results[0]
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # WKT polygon
+
+        results, _ = self.api_plugin.query(
+            productType=self.product_type,
+            start="20210101",
+            geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
+        )
+
+        eoproduct = results[0]
+
+        import json
+
+        print(json.dumps(_expected_feature, indent=2))
+        print(json.dumps(eoproduct.properties["ecmwf:feature"], indent=2))
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
