@@ -36,6 +36,10 @@ from eodag.utils.repr import dict_to_html_table
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+    from eodag.api.core import EODataAccessGateway
+    from eodag.api.search_result import SearchResult
+    from eodag.types.queryables import QueryablesDict
+
 RFC3339_PATTERN = (
     r"^(\d{4})-(\d{2})-(\d{2})"
     r"(?:T(\d{2}):(\d{2}):(\d{2})(\.\d+)?"
@@ -136,9 +140,61 @@ class ProductType(BaseModel):
             "</tbody></table>"
         )
 
-    # TODO: Add a method to do a search from the product type
+    def search(self, dag: EODataAccessGateway, **kwargs: Any) -> SearchResult:
+        """Look for products of this product type matching criteria using the given EODataAccessGateway.
 
-    # TODO: Add a method to list queryables from the product type
+        :param dag: The EODataAccessGateway to use for the search
+        :param kwargs: Some other criteria that will be used to do the search,
+                       using paramaters compatibles with the provider
+
+        :returns: A collection of EO products matching the criteria.
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in kwargs,
+                                                                   since it is already defined by the instance, or if
+                                                                   the `dag` argument is not an instance of
+                                                                   `~eodag.api.core.EODataAccessGateway`
+        """
+        product_type_search_arg = "productType"
+        if product_type_search_arg in kwargs:
+            raise ValidationError(
+                f"{product_type_search_arg} should not be set in kwargs since a product type instance is used",
+                {product_type_search_arg},
+            )
+
+        try:
+            return dag.search(productType=self.id, **kwargs)
+        except AttributeError as e:
+            raise ValidationError(
+                "dag argument must be an instance of EODataAccessGateway()"
+            ) from e
+
+    def list_queryables(
+        self, dag: EODataAccessGateway, **kwargs: Any
+    ) -> QueryablesDict:
+        """Fetch the queryable properties for this product type using the given EODataAccessGateway.
+
+        :param dag: The EODataAccessGateway to use for fetching queryables
+        :param kwargs: additional filters for queryables
+
+        :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
+                  properties, associating parameters to their annotated type, and a additional_properties attribute
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in kwargs,
+                                                                   since it is already defined by the instance, or if
+                                                                   the `dag` argument is not an instance of
+                                                                   `~eodag.api.core.EODataAccessGateway`
+        """
+        product_type_search_arg = "productType"
+        if product_type_search_arg in kwargs:
+            raise ValidationError(
+                f"{product_type_search_arg} should not be set in kwargs since a product type instance is used",
+                {product_type_search_arg},
+            )
+
+        try:
+            return dag.list_queryables(productType=self.id, **kwargs)
+        except AttributeError as e:
+            raise ValidationError(
+                "dag argument must be an instance of EODataAccessGateway()"
+            ) from e
 
 
 class ProductTypesDict(UserDict[str, ProductType]):
