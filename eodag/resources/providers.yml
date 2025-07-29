@@ -3133,7 +3133,7 @@
         raise_mtd_discovery_error: true
       metadata_mapping:
         id:
-          - '{{}}'
+          - '{{"format": "{id#get_group_name((?P<GeoPackage>geoPackage)|(?P<ESRI fgdb>fgdb)|(?P<GeoTiff100mt>raster100m))}"}}'
           - '$.id'
         providerProductType:
           - '{{"product_type": "{providerProductType}"}}'
