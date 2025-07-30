@@ -62,25 +62,13 @@ from typing import (
     Union,
     cast,
 )
-
-# All modules using these should import them from utils package
-from urllib.parse import (  # noqa; noqa
-    parse_qs,
-    parse_qsl,
-    quote,
-    unquote,
-    urlencode,
-    urljoin,
-    urlparse,
-    urlsplit,
-)
+from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
     from typing_extensions import Unpack  # noqa
-
 
 import click
 import orjson
@@ -387,27 +375,29 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
             # `m1_keys_lowercase.get(key, key)`
             current_value = mapping1.get(m1_keys_lowercase.get(key, key))
             if current_value is not None:
-                current_value_type = type(current_value)
-                new_value_type = type(value)
                 try:
                     # If current or new value is a list (search queryable parameter), simply replace current with new
                     if (
-                        new_value_type == list
-                        and current_value_type != list
-                        or new_value_type != list
-                        and current_value_type == list
+                        isinstance(value, list)
+                        and not isinstance(current_value, list)
+                        or not isinstance(value, list)
+                        and isinstance(current_value, list)
                     ):
                         mapping1[m1_keys_lowercase.get(key, key)] = value
                     else:
                         mapping1[m1_keys_lowercase.get(key, key)] = cast_scalar_value(
-                            value, current_value_type
+                            value, type(current_value)
                         )
                 except (TypeError, ValueError):
                     # Ignore any override value that does not have the same type
                     # as the default value
                     logger.debug(
-                        f"Ignored '{key}' setting override from '{current_value}' to '{value}', "
-                        f"(could not cast {new_value_type} to {current_value_type})"
+                        "Ignored '%s' setting override from '%s' to '%s', (could not cast %s to %s)",
+                        key,
+                        current_value,
+                        value,
+                        type(value),
+                        type(current_value),
                     )
                     pass
             else:

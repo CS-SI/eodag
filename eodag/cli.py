@@ -49,11 +49,12 @@ import sys
 import textwrap
 from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Mapping
+from urllib.parse import parse_qs
 
 import click
 
 from eodag.api.core import EODataAccessGateway, SearchResult
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 

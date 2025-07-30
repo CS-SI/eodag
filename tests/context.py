@@ -92,7 +92,6 @@ from eodag.utils import (
     ProgressCallback,
     DownloadedCallback,
     uri_to_path,
-    parse_qsl,
     urlsplit,
     GENERIC_PRODUCT_TYPE,
     GENERIC_STAC_PROVIDER,

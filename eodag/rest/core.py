@@ -23,6 +23,7 @@ import os
 import re
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
+from urllib.parse import urlencode
 
 import dateutil
 from cachetools.func import lru_cache
@@ -68,7 +69,6 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
     obj_md5sum,
-    urlencode,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
