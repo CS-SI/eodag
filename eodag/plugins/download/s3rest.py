@@ -21,6 +21,7 @@ import logging
 import os
 import os.path
 from typing import TYPE_CHECKING, Optional, Union
+from urllib.parse import unquote, urljoin
 from xml.dom import minidom
 from xml.parsers.expat import ExpatError
 
@@ -40,8 +41,6 @@ from eodag.utils import (
     ProgressCallback,
     get_bucket_name_and_prefix,
     path_to_uri,
-    unquote,
-    urljoin,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,

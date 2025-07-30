@@ -62,25 +62,13 @@ from typing import (
     Union,
     cast,
 )
-
-# All modules using these should import them from utils package
-from urllib.parse import (  # noqa; noqa
-    parse_qs,
-    parse_qsl,
-    quote,
-    unquote,
-    urlencode,
-    urljoin,
-    urlparse,
-    urlsplit,
-)
+from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
     from typing_extensions import Unpack  # noqa
-
 
 import click
 import orjson

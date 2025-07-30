@@ -35,9 +35,11 @@ from typing import (
 from urllib.error import URLError
 from urllib.parse import (
     parse_qsl,
+    quote,
     quote_plus,
     unquote,
     unquote_plus,
+    urlencode,
     urlparse,
     urlunparse,
 )
@@ -86,10 +88,8 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
     get_ssl_context,
-    quote,
     string_to_jsonpath,
     update_nested_dict,
-    urlencode,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
