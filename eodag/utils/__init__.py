@@ -1494,6 +1494,7 @@ def guess_extension(type: str) -> Optional[str]:
     return mimetypes.guess_extension(type, strict=False)
 
 
+@functools.lru_cache(maxsize=2)
 def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     """
     Returns an SSL context based on ``ssl_verify`` argument.
