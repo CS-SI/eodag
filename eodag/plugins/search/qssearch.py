@@ -1100,14 +1100,14 @@ class QueryStringSearch(Search):
                 **kwargs,
             )
             # use product_type_config as default properties
-            product.properties = dict(
-                getattr(self.config, "product_type_config", {}), **product.properties
-            )
-            instrument = product.properties.get("instrument")
-            if instrument is None or (
-                isinstance(instrument, list) and instrument[0] is None
-            ):
-                del product.properties["instrument"]
+            product_type_config = {
+                k: v
+                for k, v in getattr(self.config, "product_type_config", {}).items()
+                if v not in (None, [], {}, "")
+            }
+
+            product.properties = dict(product_type_config, **product.properties)
+
             additional_assets = self.get_assets_from_mapping(result)
             product.assets.update(additional_assets)
             # move assets from properties to product's attr, normalize keys & roles
