@@ -1496,13 +1496,17 @@ class PostJsonSearch(QueryStringSearch):
             )
 
             # Add to the query, the queryable parameters set in the provider product type definition
+            product_type_metadata_mapping = {
+                **getattr(self.config, "metadata_mapping", {}),
+                **prep.product_type_def_params.get("metadata_mapping", {}),
+            }
             keywords.update(
                 {
                     k: v
                     for k, v in prep.product_type_def_params.items()
                     if k not in keywords.keys()
-                    and k in self.config.metadata_mapping.keys()
-                    and isinstance(self.config.metadata_mapping[k], list)
+                    and k in product_type_metadata_mapping.keys()
+                    and isinstance(product_type_metadata_mapping[k], list)
                 }
             )
 

@@ -235,11 +235,11 @@ class TestMetadataFormatter(unittest.TestCase):
 
     def test_convert_get_group_name(self):
         to_format = (
-            "{fieldname#get_group_name((?P<this_is_foo>foo)|(?P<that_is_bar>bar))}"
+            "{fieldname#get_group_name((?P<this is foo>foo)|(?P<that_is_bar>bar))}"
         )
         self.assertEqual(
             format_metadata(to_format, fieldname="foo"),
-            "this_is_foo",
+            "this is foo",
         )
 
     def test_convert_replace_str(self):
