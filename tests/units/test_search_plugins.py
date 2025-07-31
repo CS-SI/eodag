@@ -3740,19 +3740,27 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
     def test_plugins_apis_dedt_lumi_query_feature(self):
         """Test the proper handling of geom into ecmwf:feature"""
 
+        # Search using geometry
         _expected_feature = {
             "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
             "type": "polygon",
         }
-
-        # bbox definition
-
         results, _ = self.search_plugin.query(
             productType=self.product_type,
             start="2021-01-01",
             geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
         )
-
         eoproduct = results[0]
 
         self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # Unsupported multi-polygon
+        with self.assertRaises(ValidationError):
+            self.search_plugin.query(
+                productType=self.product_type,
+                start="2021-01-01",
+                geometry="""MULTIPOLYGON (
+                    ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)),
+                    ((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))
+                )""",
+            )
