@@ -219,7 +219,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 elif value is not None:
                     converted = self.custom_converter(value)
                 else:
-                    converted = ""
+                    converted = None
                 # Clear this state variable in case the same converter is used to
                 # resolve other named arguments
                 self.custom_converter = None
