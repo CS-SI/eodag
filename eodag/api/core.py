@@ -68,6 +68,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
+    deepcopy,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -1875,6 +1876,15 @@ class EODataAccessGateway:
 
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
+
+            kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
+            product_type: str = kwargs_queryables.pop("productType")
+            search_plugin.list_queryables(
+                filters=kwargs_queryables,
+                available_product_types=[product_type],
+                product_type_configs=search_plugin.config.products,
+                product_type=product_type,
+            ).get_model().model_validate(kwargs_queryables)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 

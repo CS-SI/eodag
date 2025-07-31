@@ -503,28 +503,12 @@ class ECMWFSearch(PostJsonSearch):
         product_type = prep.product_type
         if not product_type:
             product_type = kwargs.get("productType")
-        self.validate_request(product_type, kwargs)
         kwargs = self._preprocess_search_params(kwargs, product_type)
         result, num_items = super().query(prep, **kwargs)
         if prep.count and not num_items:
             num_items = 1
 
         return result, num_items
-
-    def validate_request(
-        self,
-        product_type: str,
-        filters: dict[str, Any],
-    ) -> None:
-        """Validate the request
-
-        :param product_type: product type id
-        :param filters: keyword arguments to be used in the search
-        """
-        queryables: QueryablesDict = self._get_product_type_queryables(
-            product_type, product_type, filters
-        )
-        queryables.get_model("Validation").model_validate(filters)
 
     def clear(self) -> None:
         """Clear search context"""
@@ -1039,7 +1023,9 @@ class ECMWFSearch(PostJsonSearch):
             if default and prop.get("type") == "string" and isinstance(default, list):
                 default = ",".join(default)
 
-            is_required = bool(element.get("required"))
+            is_required = bool(element.get("required")) and bool(
+                available_values.get(name)
+            )
             if is_required:
                 required_list.append(name)
 
