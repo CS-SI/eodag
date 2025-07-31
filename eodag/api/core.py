@@ -77,6 +77,7 @@ from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingProductType,
+    PluginImplementationError,
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
@@ -1229,7 +1230,6 @@ class EODataAccessGateway:
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
-                search_results.provider = provider
                 search_results.errors = errors
                 return search_results
 
@@ -1873,7 +1873,14 @@ class EODataAccessGateway:
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
-            return search_plugin.query(prep, **kwargs)
+            search_result = search_plugin.query(prep, **kwargs)
+
+            if not isinstance(search_result.data, list):
+                raise PluginImplementationError(
+                    "The query function of a Search plugin must return a list of "
+                    "results, got {} instead".format(type(search_result.data))
+                )
+            return search_result
 
         except Exception as e:
             if raise_errors:
@@ -1886,6 +1893,7 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 errors.append((search_plugin.provider, e))
+                return SearchResult([], 0, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results

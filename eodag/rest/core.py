@@ -227,7 +227,11 @@ def search_stac_items(
         search_results=results,
         total=total,
         next_link=get_next_link(
-            request, search_request, total, eodag_args.items_per_page
+            request,
+            search_request,
+            total,
+            eodag_args.items_per_page,
+            results.next_page_token,
         ),
         catalog={
             **catalog.data,

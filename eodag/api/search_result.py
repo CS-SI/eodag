@@ -63,7 +63,6 @@ class SearchResult(UserList[EOProduct]):
         number_matched: Optional[int] = None,
         errors: Optional[list[tuple[str, Exception]]] = None,
         search_params: Optional[dict[str, Any]] = None,
-        provider: Optional[str] = None,
         next_page_token: Optional[str] = None,
     ) -> None:
         super().__init__(products)
@@ -235,15 +234,15 @@ class SearchResult(UserList[EOProduct]):
             logger.info("No next page available.")
             raise StopIteration()
         self.search_params["next_page_token"] = self.next_page_token
-        self.search_params["provider"] = self.provider
+        self.search_params["provider"] = self.data[-1].provider
         search_plugins, search_kwargs = self._dag._prepare_search(**self.search_params)
         for i, search_plugin in enumerate(search_plugins):
-            print(f"search_plugin: {search_plugin}")
             self.search_params["next_page_token"] = self.next_page_token
             search_result = self._dag._do_search(
                 search_plugin, raise_errors=False, **search_kwargs
             )
             return search_result
+        return SearchResult([])
 
     @classmethod
     def _from_stac_item(
