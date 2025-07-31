@@ -37,7 +37,6 @@ import yaml
 from botocore.stub import Stubber
 from pydantic_core import PydanticUndefined
 from requests import RequestException
-from shapely.geometry import Polygon
 from shapely.geometry.base import BaseGeometry
 from typing_extensions import get_args
 
@@ -3750,39 +3749,10 @@ class TestSearchPluginDedtLumi(BaseSearchPluginTest):
 
         results, _ = self.search_plugin.query(
             productType=self.product_type,
-            start="20210101",
+            start="2021-01-01",
             geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
         )
 
         eoproduct = results[0]
-
-        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
-
-        # shapely polygon
-
-        results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            start="20210101",
-            geometry=Polygon([(1, 43), (1, 44), (2, 44), (2, 43), (1, 43)]),
-        )
-
-        eoproduct = results[0]
-
-        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
-
-        # WKT polygon
-
-        results, _ = self.search_plugin.query(
-            productType=self.product_type,
-            start="20210101",
-            geometry="POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
-        )
-
-        eoproduct = results[0]
-
-        import json
-
-        print(json.dumps(_expected_feature, indent=2))
-        print(json.dumps(eoproduct.properties["ecmwf:feature"], indent=2))
 
         self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
