@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 from zipfile import ZIP_STORED, ZipFile
 
-import boto3
 import botocore
 import botocore.exceptions
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
@@ -45,7 +44,6 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     InvalidDataError,
-    MisconfiguredError,
     NotAvailableError,
 )
 
@@ -491,7 +489,6 @@ def update_assets_from_s3(
     :param content_url: s3 URL pointing to the content that must be listed (defaults to
                         ``product.remote_location`` if empty)
     """
-    required_creds = ["aws_access_key_id", "aws_secret_access_key"]
 
     if content_url is None:
         content_url = product.remote_location
@@ -503,21 +500,6 @@ def update_assets_from_s3(
         return None
 
     try:
-        auth_dict = auth.authenticate()
-
-        if not all(x in auth_dict for x in required_creds):
-            raise MisconfiguredError(
-                f"Incomplete credentials for {product.provider}, missing "
-                f"{[x for x in required_creds if x not in auth_dict]}"
-            )
-        if not getattr(auth, "s3_client", None):
-            auth.s3_client = boto3.client(
-                service_name="s3",
-                endpoint_url=s3_endpoint,
-                aws_access_key_id=auth_dict.get("aws_access_key_id"),
-                aws_secret_access_key=auth_dict.get("aws_secret_access_key"),
-                aws_session_token=auth_dict.get("aws_session_token"),
-            )
 
         logger.debug("Listing assets in %s", prefix)
 

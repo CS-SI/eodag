@@ -21,12 +21,11 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 import boto3
 import requests
-from botocore.exceptions import ClientError, ProfileNotFound
-from botocore.handlers import disable_signing
+from botocore.exceptions import ClientError
 from lxml import etree
 from requests.auth import AuthBase
 
@@ -35,6 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
+from eodag.plugins.authentication.aws_auth import AWS_AUTH_ERROR_MESSAGES
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -53,7 +53,6 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     EodagError,
-    MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
     TimeOutError,
@@ -62,7 +61,6 @@ from eodag.utils.s3 import S3FileInfo, open_s3_zipped_object, stream_download_fr
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
-    from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -191,13 +189,6 @@ S1_IMG_NB_PER_POLAR = {
     "VH": {"VH": 1},
 }
 
-AWS_AUTH_ERROR_MESSAGES = [
-    "AccessDenied",
-    "InvalidAccessKeyId",
-    "SignatureDoesNotMatch",
-    "InvalidRequest",
-]
-
 
 class AwsDownload(Download):
     """Download on AWS using S3 protocol.
@@ -265,10 +256,6 @@ class AwsDownload(Download):
                         file or with environment variables.
         :returns: The absolute path to the downloaded product in the local filesystem
         """
-        if auth is None:
-            auth = {}
-        if isinstance(auth, AuthBase):
-            raise MisconfiguredError("Please use AwsAuth plugin with AwsDownload")
 
         if progress_callback is None:
             logger.info(
@@ -312,9 +299,10 @@ class AwsDownload(Download):
         )
 
         # authenticate
-        authenticated_objects, s3_objects = self._do_authentication(
-            bucket_names_and_prefixes, auth
-        )
+        (
+            authenticated_objects,
+            s3_objects,
+        ) = product.downloader_auth.authenticate_objects(bucket_names_and_prefixes)
 
         # files in zip
         updated_bucket_names_and_prefixes = self._download_file_in_zip(
@@ -577,76 +565,6 @@ class AwsDownload(Download):
             )
         return bucket_names_and_prefixes
 
-    def _do_authentication(
-        self,
-        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-    ) -> tuple[dict[str, Any], BucketObjectsCollection]:
-        """
-        Authenticates with s3 and retrieves the available objects
-
-        :param bucket_names_and_prefixes: list of bucket names and corresponding path prefixes
-        :param auth: authentication information
-        :raises AuthenticationError: authentication is not possible
-        :return: authenticated objects per bucket, list of available objects
-        """
-        if not isinstance(auth, (dict, type(None))):
-            raise AuthenticationError(
-                f"Incompatible authentication information, expected dict or None, got {type(auth)}"
-            )
-        if auth is None:
-            auth = {}
-        authenticated_objects: dict[str, Any] = {}
-        auth_error_messages: set[str] = set()
-        for _, pack in enumerate(bucket_names_and_prefixes):
-            try:
-                bucket_name, prefix = pack
-                if not prefix:
-                    continue
-                if bucket_name not in authenticated_objects:
-                    # get Prefixes longest common base path
-                    common_prefix = ""
-                    prefix_split = prefix.split("/")
-                    prefixes_in_bucket = len(
-                        [p for b, p in bucket_names_and_prefixes if b == bucket_name]
-                    )
-                    for i in range(1, len(prefix_split)):
-                        common_prefix = "/".join(prefix_split[0:i])
-                        if (
-                            len(
-                                [
-                                    p
-                                    for b, p in bucket_names_and_prefixes
-                                    if p and b == bucket_name and common_prefix in p
-                                ]
-                            )
-                            < prefixes_in_bucket
-                        ):
-                            common_prefix = "/".join(prefix_split[0 : i - 1])
-                            break
-                    # connect to aws s3 and get bucket auhenticated objects
-                    s3_objects = self.get_authenticated_objects(
-                        bucket_name, common_prefix, auth
-                    )
-                    authenticated_objects[bucket_name] = s3_objects
-                else:
-                    s3_objects = authenticated_objects[bucket_name]
-
-            except AuthenticationError as e:
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                auth_error_messages.add(str(e))
-            except ClientError as e:
-                self._raise_if_auth_error(e)
-                logger.warning("Unexpected error: %s" % e)
-                logger.warning("Skipping %s/%s" % (bucket_name, prefix))
-                auth_error_messages.add(str(e))
-
-        # could not auth on any bucket
-        if not authenticated_objects:
-            raise AuthenticationError(", ".join(auth_error_messages))
-        return authenticated_objects, s3_objects
-
     def _get_unique_products(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
@@ -782,8 +700,8 @@ class AwsDownload(Download):
         )
 
         # authenticate
-        authenticated_objects, _ = self._do_authentication(
-            bucket_names_and_prefixes, auth
+        authenticated_objects, _ = product.downloader_auth.authenticate_objects(
+            bucket_names_and_prefixes
         )
 
         # downloadable files
@@ -894,145 +812,6 @@ class AwsDownload(Download):
             }
         else:
             return {"aws_unsigned": True, **rio_env_kwargs}
-
-    def get_authenticated_objects(
-        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> BucketObjectsCollection:
-        """Get boto3 authenticated objects for the given bucket using
-        the most adapted auth strategy.
-        Also expose ``s3_session`` as class variable if available.
-
-        :param bucket_name: Bucket containg objects
-        :param prefix: Prefix used to filter objects on auth try
-                       (not used to filter returned objects)
-        :param auth_dict: Dictionary containing authentication keys
-        :returns: The boto3 authenticated objects
-        """
-        auth_methods: list[
-            Callable[[str, str, S3SessionKwargs], Optional[BucketObjectsCollection]]
-        ] = [
-            self._get_authenticated_objects_unsigned,
-            self._get_authenticated_objects_from_auth_profile,
-            self._get_authenticated_objects_from_auth_keys,
-            self._get_authenticated_objects_from_env,
-        ]
-        # skip _get_authenticated_objects_from_env if credentials were filled in eodag conf
-        if auth_dict:
-            del auth_methods[-1]
-
-        for try_auth_method in auth_methods:
-            try:
-                s3_objects = try_auth_method(bucket_name, prefix, auth_dict)
-                if s3_objects:
-                    logger.debug("Auth using %s succeeded", try_auth_method.__name__)
-                    return s3_objects
-            except ClientError as e:
-                if (
-                    e.response.get("Error", {}).get("Code", {})
-                    in AWS_AUTH_ERROR_MESSAGES
-                ):
-                    pass
-                else:
-                    raise e
-            except ProfileNotFound:
-                pass
-            logger.debug("Auth using %s failed", try_auth_method.__name__)
-
-        raise AuthenticationError(
-            "Unable do authenticate on s3://%s using any available credendials configuration"
-            % bucket_name
-        )
-
-    def _get_authenticated_objects_unsigned(
-        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[BucketObjectsCollection]:
-        """Auth strategy using no-sign-request"""
-
-        s3_resource = boto3.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
-        )
-        s3_resource.meta.client.meta.events.register(
-            "choose-signer.s3.*", disable_signing
-        )
-        objects = s3_resource.Bucket(bucket_name).objects
-        list(objects.filter(Prefix=prefix).limit(1))
-        self.s3_resource = s3_resource
-        return objects
-
-    def _get_authenticated_objects_from_auth_profile(
-        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[BucketObjectsCollection]:
-        """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
-
-        if "profile_name" in auth_dict.keys():
-            s3_session = boto3.session.Session(profile_name=auth_dict["profile_name"])
-            s3_resource = s3_session.resource(
-                service_name="s3",
-                endpoint_url=getattr(self.config, "s3_endpoint", None),
-            )
-            if self.requester_pays:
-                objects = s3_resource.Bucket(bucket_name).objects.filter(
-                    RequestPayer="requester"
-                )
-            else:
-                objects = s3_resource.Bucket(bucket_name).objects
-            list(objects.filter(Prefix=prefix).limit(1))
-            self.s3_session = s3_session
-            self.s3_resource = s3_resource
-            return objects
-        else:
-            return None
-
-    def _get_authenticated_objects_from_auth_keys(
-        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[BucketObjectsCollection]:
-        """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
-        from provided credentials"""
-
-        if all(k in auth_dict for k in ("aws_access_key_id", "aws_secret_access_key")):
-            s3_session_kwargs: S3SessionKwargs = {
-                "aws_access_key_id": auth_dict["aws_access_key_id"],
-                "aws_secret_access_key": auth_dict["aws_secret_access_key"],
-            }
-            if auth_dict.get("aws_session_token"):
-                s3_session_kwargs["aws_session_token"] = auth_dict["aws_session_token"]
-            s3_session = boto3.session.Session(**s3_session_kwargs)
-            s3_resource = s3_session.resource(
-                service_name="s3",
-                endpoint_url=getattr(self.config, "s3_endpoint", None),
-            )
-            if self.requester_pays:
-                objects = s3_resource.Bucket(bucket_name).objects.filter(
-                    RequestPayer="requester"
-                )
-            else:
-                objects = s3_resource.Bucket(bucket_name).objects
-            list(objects.filter(Prefix=prefix).limit(1))
-            self.s3_session = s3_session
-            self.s3_resource = s3_resource
-            return objects
-        else:
-            return None
-
-    def _get_authenticated_objects_from_env(
-        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[BucketObjectsCollection]:
-        """Auth strategy using RequestPayer=requester and current environment"""
-
-        s3_session = boto3.session.Session()
-        s3_resource = s3_session.resource(
-            service_name="s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
-        )
-        if self.requester_pays:
-            objects = s3_resource.Bucket(bucket_name).objects.filter(
-                RequestPayer="requester"
-            )
-        else:
-            objects = s3_resource.Bucket(bucket_name).objects
-        list(objects.filter(Prefix=prefix).limit(1))
-        self.s3_session = s3_session
-        self.s3_resource = s3_resource
-        return objects
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None

@@ -1358,6 +1358,7 @@
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    s3_endpoint: https://storage.googleapis.com
     matching_conf:
       s3_endpoint: https://storage.googleapis.com
 ---
@@ -3943,6 +3944,7 @@
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    s3_endpoint: 'https://eodata.cloudferro.com'
     matching_conf:
       s3_endpoint: 'https://eodata.cloudferro.com'
   products:
@@ -5421,6 +5423,7 @@
   auth: !plugin
     type: AwsAuth
     matching_url: s3://
+    s3_endpoint: https://s3.waw3-1.cloudferro.com
     matching_conf:
       s3_endpoint: https://s3.waw3-1.cloudferro.com
 
@@ -5670,6 +5673,7 @@
   auth: !plugin
     type: AwsAuth
     auth_error_code: 403
+    s3_endpoint: https://s3.datalake.cnes.fr
     matching_conf:
       s3_endpoint: https://s3.datalake.cnes.fr
 
