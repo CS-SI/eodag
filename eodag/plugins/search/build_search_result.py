@@ -305,11 +305,12 @@ def append_time(input_date: date, time: Optional[str]) -> datetime:
     """
     Parses a time string in format HHMM and appends it to a date.
 
-    if the time string is in format HH:MM we convert it to HHMM
+    if the time string is in format HH:MM or HH_MM we convert it to HHMM
     """
     if not time:
         time = "0000"
     time = time.replace(":", "")
+    time = time.replace("_", "")
     if time == "2400":
         time = "0000"
     dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
