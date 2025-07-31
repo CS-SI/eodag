@@ -11,7 +11,7 @@ Bug Fixes
 
 * **core**: Logging issue on entrypoint loading error (`#1728`_, `6f8e6ad`_)
 
-* **plugins**: Metadata_mapping_from_product in search config (`#1737`_, `cdfe518`_)
+* **plugins**: metadata_mapping_from_product in search config (`#1737`_, `cdfe518`_)
 
 * **providers**: Allow search by id for CLMS_CORINE with wekeo_main (`#1746`_, `bfe5e71`_)
 
@@ -35,7 +35,7 @@ Features
 
 * **providers**: Add 2 new MSG collections to provider ``eumetsat_ds`` (`#1742`_, `801c52c`_)
 
-* **providers**: Dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
+* **providers**: dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
 
 Performance Improvements
 ------------------------
