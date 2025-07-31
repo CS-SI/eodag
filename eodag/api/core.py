@@ -20,6 +20,7 @@ from __future__ import annotations
 import datetime
 import logging
 import os
+import re
 import shutil
 import tempfile
 from importlib.metadata import version
@@ -79,6 +80,7 @@ from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
     NoMatchingCollection,
+    PluginImplementationError,
     RequestError,
     UnsupportedCollection,
     UnsupportedProvider,
@@ -1225,7 +1227,6 @@ class EODataAccessGateway:
                     "we will try to get the data from another provider",
                 )
             elif len(search_results) > 0:
-                search_results.provider = provider
                 search_results.errors = errors
                 return search_results
 
@@ -1906,7 +1907,14 @@ class EODataAccessGateway:
             if validate:
                 search_plugin.validate(search_params, prep.auth)
 
-            return search_plugin.query(prep, **kwargs)
+            search_result = search_plugin.query(prep, **search_params)
+
+            if not isinstance(search_result.data, list):
+                raise PluginImplementationError(
+                    "The query function of a Search plugin must return a list of "
+                    "results, got {} instead".format(type(search_result.data))
+                )
+            return search_result
 
         except Exception as e:
             if raise_errors:
@@ -1919,6 +1927,7 @@ class EODataAccessGateway:
                     search_plugin.provider,
                 )
                 errors.append((search_plugin.provider, e))
+                return SearchResult([], 0, errors)
 
     def crunch(self, results: SearchResult, **kwargs: Any) -> SearchResult:
         """Apply the filters given through the keyword arguments to the results

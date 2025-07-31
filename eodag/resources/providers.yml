@@ -91,7 +91,7 @@
     results_entry: 'results'
     ssl_verify: true
     pagination:
-      next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+      next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
       total_items_nb_key_path: '$.meta.found'
       # 2021/04/28: aws_eos doesn't specify a limit in its docs. It says that the default
       # value is 500 (https://doc.eos.com/search.api/#single-dataset-search).
@@ -521,9 +521,8 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      # next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
       total_items_nb_key_path: '$.properties.totalResults'
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       next_page_token_key: page
 
       # 2021/03/19: 500 is the max, no error if greater
@@ -1954,7 +1953,7 @@
     need_auth: false
     ssl_verify: true
     pagination:
-      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={page}'
+      next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
@@ -5165,7 +5164,7 @@
       - '&'
     asset_key_from_href: false
     pagination:
-      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={page}'
+      next_page_url_tpl: '{url}?{search}&c={items_per_page}&pw={next_page_token}'
       start_page: 0
       total_items_nb_key_path: '$.totalResults'
       # 2024/02/01: 500 is the max, no error if greater

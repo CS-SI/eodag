@@ -75,6 +75,7 @@ from eodag.types import json_field_definition_to_python, model_fields_to_annotat
 from eodag.types.queryables import Queryables
 from eodag.types.search_args import SortByList
 from eodag.utils import (
+    DEFAULT_PAGE,
     DEFAULT_SEARCH_TIMEOUT,
     GENERIC_COLLECTION,
     HTTP_REQ_TIMEOUT,
@@ -855,6 +856,7 @@ class QueryStringSearch(Search):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
+        page = prep.page or DEFAULT_PAGE
         token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
@@ -886,11 +888,10 @@ class QueryStringSearch(Search):
                 _collection=provider_collection
             )
             if next_page_token_key == "page" and items_per_page is not None:
-                if token is None:
-                    token = 1
-                else:
-                    token = int(token)
-                token = token - 1 + self.config.pagination.get("start_page", 1)
+                token = page if token is None else int(token)
+                token = (
+                    token - 1 + self.config.pagination.get("start_page", DEFAULT_PAGE)
+                )
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
@@ -914,11 +915,11 @@ class QueryStringSearch(Search):
                     raise MisconfiguredError(
                         f"next_page_url_tpl is missing in {self.provider} search.pagination configuration"
                     )
-                search_endpoint = self.config.pagination["next_page_url_tpl"].format(
+                next_page_url = self.config.pagination["next_page_url_tpl"].format(
                     url=search_endpoint,
                     search=qs_with_sort,
                     items_per_page=items_per_page,
-                    page=token,
+                    next_page_token=token,
                     skip=(token - 1) * items_per_page,
                     skip_base_1=(token - 1) * items_per_page + 1,
                 )
@@ -926,7 +927,7 @@ class QueryStringSearch(Search):
             elif token is not None:
                 prep.query_params[next_page_token_key] = token
             prep.query_params["limit"] = items_per_page
-            urls.append(search_endpoint)
+            urls.append(next_page_url)
 
         return list(dict.fromkeys(urls)), total_results
 
@@ -1713,11 +1714,10 @@ class PostJsonSearch(QueryStringSearch):
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
             if next_page_token_key == "page" and items_per_page is not None:
-                if token is None:
-                    token = 1
-                else:
-                    token = int(token)
-                token = token - 1 + self.config.pagination.get("start_page", 1)
+                token = DEFAULT_PAGE if token is None else int(token)
+                token = (
+                    token - 1 + self.config.pagination.get("start_page", DEFAULT_PAGE)
+                )
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
