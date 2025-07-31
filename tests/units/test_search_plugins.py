@@ -3810,3 +3810,39 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
+
+
+class TestSearchPluginDedtLumi(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginDedtLumi, self).setUp()
+        self.provider = "dedt_lumi"
+        self.search_plugin = self.get_search_plugin(provider=self.provider)
+        self.product_type = "DT_CLIMATE_ADAPTATION"
+
+    def test_plugins_apis_dedt_lumi_query_feature(self):
+        """Test the proper handling of geom into ecmwf:feature"""
+
+        # Search using geometry
+        _expected_feature = {
+            "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
+            "type": "polygon",
+        }
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            start="2021-01-01",
+            geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
+        )
+        eoproduct = results[0]
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # Unsupported multi-polygon
+        with self.assertRaises(ValidationError):
+            self.search_plugin.query(
+                productType=self.product_type,
+                start="2021-01-01",
+                geometry="""MULTIPOLYGON (
+                    ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)),
+                    ((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))
+                )""",
+            )

@@ -375,6 +375,18 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return geojson.dumps(value)
 
         @staticmethod
+        def convert_to_geojson_polytope(
+            value: BaseGeometry,
+        ) -> Union[dict[Any, Any], str]:
+            # ECMWF Polytope uses non-geojson structure for features
+            if isinstance(value, Polygon):
+                return {
+                    "type": "polygon",
+                    "shape": [[y, x] for x, y in value.exterior.coords],
+                }
+            raise ValidationError("to_geojson_polytope only accepts shapely Polygon")
+
+        @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
@@ -1346,6 +1358,7 @@ def format_query_params(
                     formatted_query_param = remove_str_array_quotes(
                         formatted_query_param
                     )
+
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
