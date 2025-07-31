@@ -3,6 +3,78 @@ Release history
 ===============
 
 
+v3.7.0 (2025-07-31)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Logging issue on entrypoint loading error (`#1728`_, `6f8e6ad`_)
+
+* **plugins**: metadata_mapping_from_product in search config (`#1737`_, `cdfe518`_)
+
+* **providers**: Allow search by id for CLMS_CORINE with wekeo_main (`#1746`_, `bfe5e71`_)
+
+* **providers**: Remove no-more-available theia provider (`#1736`_, `e81013b`_)
+
+* **providers**: Update default version for CAMS_GLOBAL_EMISSIONS (`#1738`_, `81e4b90`_)
+
+* **server**: Empty instruments mapping (`#1763`_, `11f2318`_)
+
+* **utils**: Avoid repeated SSL context creation (`#1758`_, `f93645e`_)
+
+Documentation
+-------------
+
+* Updated description, overview and ecosystem (`#1734`_, `ea929e4`_)
+
+Features
+--------
+
+* **plugins**: New search config for assets mapping (`#1711`_, `1281268`_)
+
+* **providers**: Add 2 new MSG collections to provider ``eumetsat_ds`` (`#1742`_, `801c52c`_)
+
+* **providers**: dedt_lumi search by geometry (`#1710`_, `efccdd0`_)
+
+Performance Improvements
+------------------------
+
+* **plugins**: Optimize AwsDownload streaming (`#1740`_, `48f0e4c`_)
+
+Refactoring
+-----------
+
+* Directly import urllib.parse methods (`#1761`_, `e4aca26`_)
+
+.. _#1710: https://github.com/CS-SI/eodag/pull/1710
+.. _#1711: https://github.com/CS-SI/eodag/pull/1711
+.. _#1728: https://github.com/CS-SI/eodag/pull/1728
+.. _#1734: https://github.com/CS-SI/eodag/pull/1734
+.. _#1736: https://github.com/CS-SI/eodag/pull/1736
+.. _#1737: https://github.com/CS-SI/eodag/pull/1737
+.. _#1738: https://github.com/CS-SI/eodag/pull/1738
+.. _#1740: https://github.com/CS-SI/eodag/pull/1740
+.. _#1742: https://github.com/CS-SI/eodag/pull/1742
+.. _#1746: https://github.com/CS-SI/eodag/pull/1746
+.. _#1758: https://github.com/CS-SI/eodag/pull/1758
+.. _#1761: https://github.com/CS-SI/eodag/pull/1761
+.. _#1763: https://github.com/CS-SI/eodag/pull/1763
+.. _11f2318: https://github.com/CS-SI/eodag/commit/11f2318a150982504226378110b853ca4aa644ce
+.. _1281268: https://github.com/CS-SI/eodag/commit/1281268507c3a7338be9954b403a20d5156bc527
+.. _48f0e4c: https://github.com/CS-SI/eodag/commit/48f0e4c8c82e80841b7b64bec60a251661a13d12
+.. _6f8e6ad: https://github.com/CS-SI/eodag/commit/6f8e6ad683f786286cfb36e8e22c17cfb2daf125
+.. _801c52c: https://github.com/CS-SI/eodag/commit/801c52c38124e6dfff1a5fdedeb0cbd269fc2478
+.. _81e4b90: https://github.com/CS-SI/eodag/commit/81e4b903c5474894e87e6dcb9366fdfbb152398b
+.. _bfe5e71: https://github.com/CS-SI/eodag/commit/bfe5e712087804d31fe7f057e5efbd1d2863fb36
+.. _cdfe518: https://github.com/CS-SI/eodag/commit/cdfe518f2b392b700994f93d2c2d6cafdb46b81d
+.. _e4aca26: https://github.com/CS-SI/eodag/commit/e4aca2672b156a6eb338e9e9a8277bc2895aa457
+.. _e81013b: https://github.com/CS-SI/eodag/commit/e81013b262342a0621e2018a7d917145faaa2cc7
+.. _ea929e4: https://github.com/CS-SI/eodag/commit/ea929e4339e976752bc61d1d305ad36ff1b78172
+.. _efccdd0: https://github.com/CS-SI/eodag/commit/efccdd00fbd0880344fe294dba0f4790468fd9bc
+.. _f93645e: https://github.com/CS-SI/eodag/commit/f93645ed4f09194d6c7f12a3c65b2ab3a8f9ad5a
+
+
 v3.6.0 (2025-07-01)
 ===================
 
