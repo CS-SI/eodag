@@ -306,6 +306,10 @@ class TestMetadataFormatter(unittest.TestCase):
         to_format = r"{fieldname#to_upper}"
         self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "FOO.BAR")
 
+    def test_convert_to_upper_empty(self):
+        to_format = r"{fieldname#to_upper}"
+        self.assertEqual(format_metadata(to_format, fieldname=None), "None")
+
     def test_convert_fake_l2a_title_from_l1c(self):
         to_format = "{fieldname#fake_l2a_title_from_l1c}"
         self.assertEqual(
