@@ -96,6 +96,26 @@ class BaseSearchPluginTest(unittest.TestCase):
     def get_auth_plugin(self, search_plugin):
         return self.plugins_manager.get_auth_plugin(search_plugin)
 
+    def test_get_assets_from_mapping(self):
+        search_plugin = self.get_search_plugin(provider="geodes")
+        search_plugin.config.assets_mapping = {
+            "one": {"href": "$.properties.href", "roles": ["a_role"], "title": "One"},
+            "two": {
+                "href": "https://a.static_url.com",
+                "roles": ["a_role"],
+                "title": "Two",
+            },
+        }
+        provider_item = {"id": "ID123456", "properties": {"href": "a.product.com/ONE"}}
+        asset_mappings = search_plugin.get_assets_from_mapping(provider_item)
+        self.assertEqual(2, len(asset_mappings))
+        self.assertEqual("a.product.com/ONE", asset_mappings["one"]["href"])
+        self.assertEqual("One", asset_mappings["one"]["title"])
+        self.assertListEqual(["a_role"], asset_mappings["one"]["roles"])
+        self.assertEqual("https://a.static_url.com", asset_mappings["two"]["href"])
+        self.assertEqual("Two", asset_mappings["two"]["title"])
+        self.assertListEqual(["a_role"], asset_mappings["two"]["roles"])
+
 
 class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
     def setUp(self):
@@ -3615,6 +3635,59 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         )
         self.wekeomain_auth_plugin = self.get_auth_plugin(self.wekeomain_search_plugin)
 
+    def test_plugins_search_postjsonsearchwithstacqueryables_init_wekeomain(self):
+        """Check that the PostJsonSearchWithStacQueryables plugin is initialized correctly for wekeo_main provider"""
+
+        default_providers_config = load_default_config()
+        default_config = default_providers_config["wekeo_main"]
+        # "orderLink" in S1_SAR_GRD but not in provider conf or S1_SAR_SLC conf
+        self.assertNotIn("orderLink", default_config.search.metadata_mapping)
+        self.assertIn(
+            "orderLink", default_config.products["S1_SAR_GRD"]["metadata_mapping"]
+        )
+        self.assertNotIn("metadata_mapping", default_config.products["S1_SAR_SLC"])
+
+        # metadata_mapping_from_product: from S1_SAR_GRD to S1_SAR_SLC
+        self.assertEqual(
+            default_config.products["S1_SAR_SLC"]["metadata_mapping_from_product"],
+            "S1_SAR_GRD",
+        )
+
+        # check initialized plugin configuration
+        self.assertDictEqual(
+            self.wekeomain_search_plugin.config.products["S1_SAR_GRD"][
+                "metadata_mapping"
+            ],
+            self.wekeomain_search_plugin.config.products["S1_SAR_SLC"][
+                "metadata_mapping"
+            ],
+        )
+
+        # CLMS_GLO_LAI_333M has both metadata_mapping_from_product and metadata_mapping
+        # "metadata_mapping" must override "metadata_mapping_from_product"
+        self.assertIn(
+            "orderLink",
+            default_config.products["CLMS_GLO_LAI_333M"]["metadata_mapping"],
+        )
+        self.assertIn(
+            "orderLink",
+            default_config.products["CLMS_GLO_FCOVER_333M"]["metadata_mapping"],
+        )
+        self.assertEqual(
+            default_config.products["CLMS_GLO_LAI_333M"][
+                "metadata_mapping_from_product"
+            ],
+            "CLMS_GLO_FCOVER_333M",
+        )
+        self.assertNotEqual(
+            self.wekeomain_search_plugin.config.products["CLMS_GLO_LAI_333M"][
+                "metadata_mapping"
+            ]["orderLink"],
+            self.wekeomain_search_plugin.config.products["CLMS_GLO_FCOVER_333M"][
+                "metadata_mapping"
+            ]["orderLink"],
+        )
+
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.normalize_results",
         autospec=True,
@@ -3737,3 +3810,39 @@ class TestSearchPluginPostJsonSearchWithStacQueryables(BaseSearchPluginTest):
         self.wekeomain_search_plugin.discover_queryables(productType=self.product_type)
         mock_stacsearch_discover_queryables.assert_called()
         mock_postjsonsearch_discover_queryables.assert_not_called()
+
+
+class TestSearchPluginDedtLumi(BaseSearchPluginTest):
+    def setUp(self):
+        super(TestSearchPluginDedtLumi, self).setUp()
+        self.provider = "dedt_lumi"
+        self.search_plugin = self.get_search_plugin(provider=self.provider)
+        self.product_type = "DT_CLIMATE_ADAPTATION"
+
+    def test_plugins_apis_dedt_lumi_query_feature(self):
+        """Test the proper handling of geom into ecmwf:feature"""
+
+        # Search using geometry
+        _expected_feature = {
+            "shape": [[43.0, 1.0], [44.0, 1.0], [44.0, 2.0], [43.0, 2.0], [43.0, 1.0]],
+            "type": "polygon",
+        }
+        results, _ = self.search_plugin.query(
+            productType=self.product_type,
+            start="2021-01-01",
+            geometry={"lonmin": 1, "latmin": 43, "lonmax": 2, "latmax": 44},
+        )
+        eoproduct = results[0]
+
+        self.assertDictEqual(_expected_feature, eoproduct.properties["ecmwf:feature"])
+
+        # Unsupported multi-polygon
+        with self.assertRaises(ValidationError):
+            self.search_plugin.query(
+                productType=self.product_type,
+                start="2021-01-01",
+                geometry="""MULTIPOLYGON (
+                    ((1.23 43.42, 1.23 43.76, 1.68 43.76, 1.68 43.42, 1.23 43.42)),
+                    ((2.23 43.42, 2.23 43.76, 3.68 43.76, 3.68 43.42, 2.23 43.42))
+                )""",
+            )

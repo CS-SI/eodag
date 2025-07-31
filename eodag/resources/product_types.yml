@@ -131,35 +131,6 @@ CBERS4_PAN10M_L4:
 
 # MARK: Landsat -----------------------------------------------------------------------
 # https://www.usgs.gov/faqs/what-naming-convention-landsat-collections-level-1-scenes
-L57_REFLECTANCE:
-  abstract: |
-    Landsat 5,7,8 L2A data (old format) distributed by Theia (2014 to 2017-03-20) using MUSCATE prototype,
-    Lamber 93 projection.
-  instrument: OLI,TIRS
-  platform: LANDSAT
-  platformSerialIdentifier: L5,L7,L8
-  processingLevel: L2A
-  keywords: OLI,TIRS,LANDSAT,L5,L7,L8,L2,L2A,MUSCATE
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2014-01-01T00:00:00Z"
-  missionEndDate: "2017-03-20T00:00:00Z"
-  title: Landsat 5,7,8 Level-2A
-
-L8_REFLECTANCE:
-  abstract: |
-    Landsat 8 L2A data distributed by Theia since 2017-03-20 using operational version of MUSCATE, UTM projection,
-    and tiled using Sentinel-2 tiles.
-  instrument: OLI,TIRS
-  platform: LANDSAT8
-  platformSerialIdentifier: L8
-  processingLevel: L2A
-  keywords: OLI,TIRS,LANDSAT,LANDSAT8,L8,L2,L2A,MUSCATE
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2013-02-11T00:00:00Z"
-  title: Landsat 8 Level-2A
-
 L8_OLI_TIRS_C1L1:
   abstract: |
     Landsat 8 Operational Land Imager and Thermal Infrared Sensor Collection 1 Level-1 products. Details at
@@ -397,22 +368,6 @@ MODIS_MCD43A4:
   missionStartDate: "2000-03-05T00:00:00Z"
   title: MODIS MCD43A4
 
-# MARK: OSO ----------------------------------------------------------------------------
-OSO:
-  abstract: |
-    An overview of OSO Land Cover data is given on https://www.theia-land.fr/en/ceslist/land-cover-sec/
-    and the specific description of OSO products is available on
-    https://www.theia-land.fr/product/carte-doccupation-des-sols-de-la-france-metropolitaine/
-  instrument:
-  platform:
-  platformSerialIdentifier:
-  processingLevel: L3B
-  keywords: L3B,OSO,land,cover
-  sensorType:
-  license: other
-  missionStartDate: "2016-01-01T00:00:00Z"
-  title: OSO Land Cover
-
 # MARK: NAIP ---------------------------------------------------------------------------
 NAIP:
   abstract: |
@@ -432,55 +387,6 @@ NAIP:
   license: other
   missionStartDate: "2003-01-01T00:00:00Z"
   title: National Agriculture Imagery Program
-
-# MARK: Pleiades - ---------------------------------------------------------------------
-PLD_PAN:
-  abstract: Pleiades Panchromatic (Pan)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  keywords: PHR,PLEIADES,P1A,P1B,PRIMARY,PLD,PAN,Panchromatic
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2011-12-17T00:00:00Z"
-  title: Pleiades Panchromatic
-
-PLD_XS:
-  abstract: Pleiades Multispectral (XS)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  keywords: PHR,PLEIADES,P1A,P1B,PRIMARY,PLD,XS,Multispectral
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2011-12-17T00:00:00Z"
-  title: Pleiades Multispectral
-
-PLD_BUNDLE:
-  abstract: Pleiades Bundle (Pan, XS)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  keywords: PHR,PLEIADES,P1A,P1B,PRIMARY,PLD,BUNDLE,Pan,Xs
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2011-12-17T00:00:00Z"
-  title: Pleiades Bundle
-
-PLD_PANSHARPENED:
-  abstract: Pleiades Pansharpened (Pan+XS)
-  instrument: PHR
-  platform: PLEIADES
-  platformSerialIdentifier: P1A,P1B
-  processingLevel: PRIMARY
-  keywords: PHR,PLEIADES,P1A,P1B,PRIMARY,PLD,PANSHARPENED,Pan,Xs
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2011-12-17T00:00:00Z"
-  title: Pleiades Pansharpened
 
 # MARK: Sentinel 1 ---------------------------------------------------------------------
 S1_SAR_OCN:
@@ -762,23 +668,6 @@ S2_MSI_L2B_MAJA_WATER:
   license: other
   missionStartDate: "2015-06-23T00:00:00Z"
   title: SENTINEL2 L2B-WATER
-
-S2_MSI_L3A_WASP:
-  abstract: |
-    The Level-3A product provides a monthly synthesis of surface reflectances from Theia's L2A products. The synthesis
-    is based on a weighted arithmetic mean of clear observations.
-    The data processing is produced by WASP (Weighted Average Synthesis Processor), by MUSCATE data center at CNES,
-    in the framework of THEIA data center. The full description of the product format is available at
-    https://theia.cnes.fr/atdistrib/documents/THEIA-ST-411-0419-CNES_01-04_Format_Specification_of_MUSCATE_Level-3A_Products-signed.pdf
-  instrument: MSI
-  platform: SENTINEL2
-  platformSerialIdentifier: S2A,S2B
-  processingLevel: L3
-  keywords: MSI,SENTINEL,sentinel2,S2,S2A,S2B,L3,L3A,WASP
-  sensorType: OPTICAL
-  license: other
-  missionStartDate: "2015-06-23T00:00:00Z"
-  title: SENTINEL2 Level-3A
 
 # MARK: Sentinel 3 ---------------------------------------------------------------------
 # MARK: S3 OLCI L1
@@ -2704,48 +2593,6 @@ S6_AMR_L2_F06:
   license: other
   title: Sentinel 6 - Climate-quality Advanced Microwave Radiometer Level 2 Products Reprocessed at F06
   missionStartDate: "2020-11-28T00:00:00Z"
-
-# MARK: SPOT ---------------------------------------------------------------------------
-SPOT_SWH:
-  abstract: |
-    The Spot World Heritage (SWH) programme objective is the free availability for non-commercial use of orthorectified
-    products derived from multispectral images of more than 5 years old from the Spot 1-5 satellites family.
-    More informations on https://www.theia-land.fr/en/product/spot-world-heritage/
-  instrument:
-  platform: SPOT1-5
-  platformSerialIdentifier: SPOT1-5
-  processingLevel: L1C
-  keywords: SPOT,SPOT1,SPOT2,SPOT3,SPOT4,SPOT5,L1C
-  sensorType: OPTICAL
-  license: other
-  title: Spot World Heritage
-  missionStartDate: "1986-02-22T00:00:00Z"
-
-SPOT_SWH_OLD:
-  abstract: |
-    Spot world heritage Old format.
-  instrument:
-  platform: SPOT1-5
-  platformSerialIdentifier: SPOT1-5
-  processingLevel: L1C
-  keywords: SPOT,SPOT1,SPOT2,SPOT3,SPOT4,SPOT5,L1C
-  sensorType: OPTICAL
-  license: other
-  title: Spot World Heritage
-  missionStartDate: "1986-02-22T00:00:00Z"
-
-SPOT5_SPIRIT:
-  abstract: |
-    SPOT 5 stereoscopic survey of Polar Ice.
-  instrument:
-  platform: SPOT5
-  platformSerialIdentifier: SPOT5
-  processingLevel: L1A
-  keywords: SPOT,SPOT5,L1A
-  sensorType: OPTICAL
-  license: other
-  title: Spot 5 SPIRIT
-  missionStartDate: "2002-05-04T00:00:00Z"
 
 # MARK: VENUS --------------------------------------------------------------------------
 VENUS_L1C:
@@ -5791,6 +5638,36 @@ MSG_AMVR02:
   license: other
   title: Atmospheric Motion Vectors Climate Data Record Release 2 - MFG and MSG - 0 degree
   missionStartDate: "1981-09-03"
+
+MSG_CTH:
+  abstract: |
+    The product indicates the height of highest cloud. Based on a subset of the information derived during Scenes and Cloud Analysis,
+    but also makes use of other external meteorological data. Applications and Users: Aviation meteorology.
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLTH,CTH
+  sensorType: OPTICAL
+  license: other
+  title: Cloud Top Height - MSG - 0 degree
+  missionStartDate: "2020-09-01T00:00:00Z"
+
+MSG_CTH_IODC:
+  abstract: |
+    The product indicates the height of highest cloud. Based on a subset of the information derived during Scenes and Cloud Analysis,
+    but also makes use of other external meteorological data. Applications and Users: Aviation meteorology. From 1 June 2022,
+    Meteosat-9 at 45.5° E is the prime satellite for the IODC service, replacing Meteosat-8 (located at 41.5° E while in operation).
+  instrument: SEVIRI
+  platform: MSG
+  platformSerialIdentifier: MSG
+  processingLevel: L2
+  keywords: MSG,SEVIRI,OPTICAL,WEATHER,CLOUDS,ATMOSPHERE,VISUALISATION,L2,MSGCLTH,CTH
+  sensorType: OPTICAL
+  license: other
+  title: Cloud Top Height - MSG - Indian Ocean
+  missionStartDate: "2020-09-01T00:00:00Z"
+
 
 # Copernicus Marine
 MO_GLOBAL_ANALYSISFORECAST_PHY_001_024:

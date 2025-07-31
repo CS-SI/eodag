@@ -284,6 +284,8 @@ class CopMarineSearch(StaticStacSearch):
                 "type": "application/x-netcdf",
             }
         }
+        additional_assets = self.get_assets_from_mapping(dataset_item)
+        assets.update(additional_assets)
         product = EOProduct(self.provider, properties, productType=product_type)
         # use product_type_config as default properties
         product_type_config = getattr(self.config, "product_type_config", {})

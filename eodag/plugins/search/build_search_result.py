@@ -94,6 +94,7 @@ ECMWF_KEYWORDS = {
     "fcperiod",
     "fieldset",
     "filter",
+    "feature",
     "format",
     "frame",
     "frequency",
@@ -548,7 +549,9 @@ class ECMWFSearch(PostJsonSearch):
         :param params: Search parameters to be preprocessed.
         :param product_type: (optional) product type id
         """
+
         _dc_qs = params.get("_dc_qs")
+
         if _dc_qs is not None:
             # if available, update search params using datacube query-string
             _dc_qp = geojson.loads(unquote_plus(unquote_plus(_dc_qs)))

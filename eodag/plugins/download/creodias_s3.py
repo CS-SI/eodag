@@ -15,7 +15,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import boto3
 from botocore.exceptions import ClientError
@@ -23,6 +23,9 @@ from botocore.exceptions import ClientError
 from eodag import EOProduct
 from eodag.plugins.download.aws import AwsDownload
 from eodag.utils.exceptions import MisconfiguredError
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3.service_resource import S3ServiceResource
 
 
 class CreodiasS3Download(AwsDownload):
@@ -60,19 +63,21 @@ class CreodiasS3Download(AwsDownload):
             )
 
         s3_session = boto3.session.Session(**auth_dict)
-        s3_resource = s3_session.resource(
+        s3_resource: S3ServiceResource = s3_session.resource(
             "s3", endpoint_url=getattr(self.config, "s3_endpoint", None)
         )
         objects = s3_resource.Bucket(bucket_name).objects.filter()
         list(objects.filter(Prefix=prefix).limit(1))
         self.s3_session = s3_session
+        self.s3_resource = s3_resource
         return objects
 
     def _get_bucket_names_and_prefixes(
         self,
         product: EOProduct,
-        asset_filter: Optional[str] = None,
-        ignore_assets: Optional[bool] = False,
+        asset_filter: Optional[str],
+        ignore_assets: bool,
+        complementary_url_keys: list[str],
     ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
@@ -85,7 +90,7 @@ class CreodiasS3Download(AwsDownload):
         # if assets are defined, use them instead of scanning product.location
         if len(product.assets) > 0 and not ignore_assets:
             bucket_names_and_prefixes = super()._get_bucket_names_and_prefixes(
-                product, asset_filter, ignore_assets
+                product, asset_filter, ignore_assets, complementary_url_keys
             )
         else:
             # if no assets are given, use productIdentifier to get S3 path for download

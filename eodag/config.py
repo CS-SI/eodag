@@ -452,6 +452,11 @@ class PluginConfig(yaml.YAMLObject):
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
     metadata_mapping: dict[str, Union[str, list[str]]]
+    #: :class:`~eodag.plugins.search.base.Search` :attr:`~eodag.config.PluginConfig.metadata_mapping` got from the given
+    #: product type
+    metadata_mapping_from_product: str
+    #: :class:`~eodag.plugins.search.base.Search` A mapping for the metadata of individual assets
+    assets_mapping: dict[str, dict[str, Any]]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to remove from queryables
     remove_from_queryables: list[str]
     #: :class:`~eodag.plugins.search.base.Search` Parameters to be passed as is in the search url query string

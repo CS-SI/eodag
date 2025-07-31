@@ -36,6 +36,7 @@ import re
 import shutil
 import ssl
 import string
+import struct
 import sys
 import types
 import unicodedata
@@ -61,25 +62,13 @@ from typing import (
     Union,
     cast,
 )
-
-# All modules using these should import them from utils package
-from urllib.parse import (  # noqa; noqa
-    parse_qs,
-    parse_qsl,
-    quote,
-    unquote,
-    urlencode,
-    urljoin,
-    urlparse,
-    urlsplit,
-)
+from urllib.parse import urlparse, urlsplit
 from urllib.request import url2pathname
 
 if sys.version_info >= (3, 12):
     from typing import Unpack  # type: ignore # noqa
 else:
     from typing_extensions import Unpack  # noqa
-
 
 import click
 import orjson
@@ -224,14 +213,13 @@ class FloatRange(click.types.FloatParamType):
         ):
             if self.min is None:
                 self.fail(
-                    "%s is bigger than the maximum valid value " "%s." % (rv, self.max),
+                    "%s is bigger than the maximum valid value %s." % (rv, self.max),
                     param,
                     ctx,
                 )
             elif self.max is None:
                 self.fail(
-                    "%s is smaller than the minimum valid value "
-                    "%s." % (rv, self.min),
+                    "%s is smaller than the minimum valid value %s." % (rv, self.min),
                     param,
                     ctx,
                 )
@@ -387,27 +375,29 @@ def merge_mappings(mapping1: dict[Any, Any], mapping2: dict[Any, Any]) -> None:
             # `m1_keys_lowercase.get(key, key)`
             current_value = mapping1.get(m1_keys_lowercase.get(key, key))
             if current_value is not None:
-                current_value_type = type(current_value)
-                new_value_type = type(value)
                 try:
                     # If current or new value is a list (search queryable parameter), simply replace current with new
                     if (
-                        new_value_type == list
-                        and current_value_type != list
-                        or new_value_type != list
-                        and current_value_type == list
+                        isinstance(value, list)
+                        and not isinstance(current_value, list)
+                        or not isinstance(value, list)
+                        and isinstance(current_value, list)
                     ):
                         mapping1[m1_keys_lowercase.get(key, key)] = value
                     else:
                         mapping1[m1_keys_lowercase.get(key, key)] = cast_scalar_value(
-                            value, current_value_type
+                            value, type(current_value)
                         )
                 except (TypeError, ValueError):
                     # Ignore any override value that does not have the same type
                     # as the default value
                     logger.debug(
-                        f"Ignored '{key}' setting override from '{current_value}' to '{value}', "
-                        f"(could not cast {new_value_type} to {current_value_type})"
+                        "Ignored '%s' setting override from '%s' to '%s', (could not cast %s to %s)",
+                        key,
+                        current_value,
+                        value,
+                        type(value),
+                        type(current_value),
                     )
                     pass
             else:
@@ -1451,8 +1441,7 @@ def cast_scalar_value(value: Any, new_type: Any) -> Any:
         # case
         if value.capitalize() not in ("True", "False"):
             raise ValueError(
-                "Only true or false strings (case insensitive) are "
-                "allowed for booleans"
+                "Only true or false strings (case insensitive) are allowed for booleans"
             )
         # Get the real Python value of the boolean. e.g: value='tRuE'
         # => eval(value.capitalize())=True.
@@ -1505,6 +1494,7 @@ def guess_extension(type: str) -> Optional[str]:
     return mimetypes.guess_extension(type, strict=False)
 
 
+@functools.lru_cache(maxsize=2)
 def get_ssl_context(ssl_verify: bool) -> ssl.SSLContext:
     """
     Returns an SSL context based on ``ssl_verify`` argument.
@@ -1572,3 +1562,27 @@ def remove_str_array_quotes(input_str: str) -> str:
             continue
         output_str += input_str[i]
     return output_str
+
+
+def parse_le_uint32(data: bytes) -> int:
+    """
+    Parse little-endian unsigned 4-byte integer.
+
+    >>> parse_le_uint32(b'\\x01\\x00\\x00\\x00')
+    1
+    >>> parse_le_uint32(b'\\xff\\xff\\xff\\xff')
+    4294967295
+    """
+    return struct.unpack("<I", data)[0]
+
+
+def parse_le_uint16(data: bytes) -> int:
+    """
+    Parse little-endian unsigned 2-byte integer.
+
+    >>> parse_le_uint16(b'\\x01\\x00')
+    1
+    >>> parse_le_uint16(b'\\xff\\xff')
+    65535
+    """
+    return struct.unpack("<H", data)[0]

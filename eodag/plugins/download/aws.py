@@ -20,10 +20,8 @@ from __future__ import annotations
 import logging
 import os
 import re
-from datetime import datetime
-from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
 import boto3
 import requests
@@ -31,7 +29,6 @@ from botocore.exceptions import ClientError, ProfileNotFound
 from botocore.handlers import disable_signing
 from lxml import etree
 from requests.auth import AuthBase
-from stream_zip import ZIP_AUTO, stream_zip
 
 from eodag.api.product.metadata_mapping import (
     mtd_cfg_as_conversion_and_querypath,
@@ -55,15 +52,17 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    EodagError,
     MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
     TimeOutError,
 )
-from eodag.utils.s3 import open_s3_zipped_object
+from eodag.utils.s3 import S3FileInfo, open_s3_zipped_object, stream_download_from_s3
 
 if TYPE_CHECKING:
-    from boto3.resources.collection import ResourceCollection
+    from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.api.product import EOProduct
     from eodag.api.search_result import SearchResult
@@ -306,22 +305,11 @@ class AwsDownload(Download):
         self._configure_safe_build(build_safe, product)
         # bucket names and prefixes
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset_filter, ignore_assets
+            product,
+            asset_filter,
+            ignore_assets,
+            product_conf.get("complementary_url_key", []),
         )
-
-        # add complementary urls
-        try:
-            for complementary_url_key in product_conf.get("complementary_url_key", []):
-                bucket_names_and_prefixes.append(
-                    self.get_product_bucket_name_and_prefix(
-                        product, product.properties[complementary_url_key]
-                    )
-                )
-        except KeyError:
-            logger.warning(
-                "complementary_url_key %s is missing in %s properties"
-                % (complementary_url_key, product.properties["id"])
-            )
 
         # authenticate
         authenticated_objects, s3_objects = self._do_authentication(
@@ -429,15 +417,17 @@ class AwsDownload(Download):
                 if not os.path.isdir(dest_abs_path_dir):
                     os.makedirs(dest_abs_path_dir)
 
-                with open_s3_zipped_object(
+                zip_file, _ = open_s3_zipped_object(
                     bucket_name, zip_prefix, s3_client, partial=False
-                ) as zip_file:
+                )
+                with zip_file:
                     # file size
                     file_info = zip_file.getinfo(rel_path)
                     progress_callback.reset(total=file_info.file_size)
-                    with zip_file.open(rel_path) as extracted, open(
-                        dest_file, "wb"
-                    ) as output_file:
+                    with (
+                        zip_file.open(rel_path) as extracted,
+                        open(dest_file, "wb") as output_file,
+                    ):
                         # Read in 1MB chunks
                         for zchunk in iter(lambda: extracted.read(1024 * 1024), b""):
                             output_file.write(zchunk)
@@ -530,8 +520,9 @@ class AwsDownload(Download):
     def _get_bucket_names_and_prefixes(
         self,
         product: EOProduct,
-        asset_filter: Optional[str] = None,
-        ignore_assets: Optional[bool] = False,
+        asset_filter: Optional[str],
+        ignore_assets: bool,
+        complementary_url_keys: list[str],
     ) -> list[tuple[str, Optional[str]]]:
         """
         Retrieves the bucket names and path prefixes for the assets
@@ -570,13 +561,27 @@ class AwsDownload(Download):
             bucket_names_and_prefixes = [
                 self.get_product_bucket_name_and_prefix(product)
             ]
+
+        # add complementary urls
+        try:
+            for complementary_url_key in complementary_url_keys or []:
+                bucket_names_and_prefixes.append(
+                    self.get_product_bucket_name_and_prefix(
+                        product, product.properties[complementary_url_key]
+                    )
+                )
+        except KeyError:
+            logger.warning(
+                "complementary_url_key %s is missing in %s properties"
+                % (complementary_url_key, product.properties["id"])
+            )
         return bucket_names_and_prefixes
 
     def _do_authentication(
         self,
         bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-    ) -> tuple[dict[str, Any], ResourceCollection]:
+    ) -> tuple[dict[str, Any], BucketObjectsCollection]:
         """
         Authenticates with s3 and retrieves the available objects
 
@@ -705,152 +710,93 @@ class AwsDownload(Download):
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],
     ) -> StreamResponse:
-        r"""
-        Returns dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments.
-        It contains a generator to streamed download chunks and the response headers.
-
-        :param product: The EO product to download
-        :param auth: (optional) The configuration of a plugin of type Authentication
-        :param progress_callback: (optional) A progress callback
-        :param wait: (optional) If download fails, wait time in minutes between two download tries
-        :param timeout: (optional) If download fails, maximum time in minutes before stop retrying
-                        to download
-        :param kwargs: `output_dir` (str), `extract` (bool), `delete_archive` (bool)
-                        and `dl_url_params` (dict) can be provided as additional kwargs
-                        and will override any other values defined in a configuration
-                        file or with environment variables.
-        :returns: Dictionary of :class:`~fastapi.responses.StreamingResponse` keyword-arguments
         """
-        if progress_callback is None:
-            logger.info(
-                "Progress bar unavailable, please call product.download() instead of plugin.download()"
-            )
-            progress_callback = ProgressCallback(disable=True)
+        Stream EO product data as a FastAPI-compatible `StreamResponse`, with support for partial downloads,
+        asset filtering, and on-the-fly compression.
+
+        This method streams data from one or more S3 objects that belong to a given EO product.
+        It supports:
+
+        - **Regex-based asset filtering** via `asset`, allowing partial product downloads.
+        - **Byte-range requests** through the `byte_range` parameter, enabling partial download of data.
+        - **Selective file extraction from ZIP archives**, for uncompressed entries (ZIP method: STORE only).
+        This enables lazy access to individual files inside ZIPs without downloading the entire archive.
+
+        Data is downloaded from S3 in parallel using HTTP range requests, which improves speed by downloading
+        chunks concurrently using multiple concurrent **range requests**.
+
+        #### Compression Behavior (`compress` parameter):
+
+        - `"raw"`:
+          - If there is only one file: returns a raw stream of that file.
+          - For multiple files, streams them sequentially using an HTTP multipart/mixed response with proper MIME
+            boundaries and per-file headers, allowing clients to parse each file independently.
+
+        - `"auto"` (default):
+          - Streams a single file as raw.
+          - Streams multiple files as a ZIP archive.
+
+        - `"zip"`:
+          - Always returns a ZIP archive, whether one or many files are included.
+
+        #### SAFE Archive Support:
+
+        If the product type supports SAFE structure and no `asset_regex` is specified (i.e., full product download),
+        the method attempts to reconstruct a valid SAFE archive layout in the streamed output.
+
+        :param product: The EO product to download.
+        :param asset: (optional) Regex pattern to filter which assets/files to include.
+        :param auth: (optional) Authentication configuration (e.g., AWS credentials).
+        :param byte_range: Tuple of (start, end) for a global byte range request. Either can be None for open-ended
+            ranges.
+        :param compress: One of "zip", "raw", or "auto". Controls how output is compressed:
+                        - "raw": single file is streamed directly; multiple files use a custom separator.
+                        - "auto": raw for single file, zipped for multiple.
+                        - "zip": always returns a ZIP archive.
+        :returns: A `StreamResponse` object containing the streamed download and appropriate headers.
+        """
+        asset_regex = kwargs.get("asset")
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
         )
-        # do not try to build SAFE if asset filter is used
-        asset_filter = kwargs.get("asset")
-        if asset_filter:
-            build_safe = False
-        else:
-            build_safe = product_conf.get("build_safe", False)
 
+        build_safe = (
+            False if asset_regex is not None else product_conf.get("build_safe", False)
+        )
         ignore_assets = getattr(self.config, "ignore_assets", False)
 
-        # xtra metadata needed for SAFE product
         self._configure_safe_build(build_safe, product)
-        # bucket names and prefixes
+
         bucket_names_and_prefixes = self._get_bucket_names_and_prefixes(
-            product, asset_filter, ignore_assets
+            product,
+            asset_regex,
+            ignore_assets,
+            product_conf.get("complementary_url_key", []),
         )
 
-        # add complementary urls
-        try:
-            for complementary_url_key in product_conf.get("complementary_url_key", []):
-                bucket_names_and_prefixes.append(
-                    self.get_product_bucket_name_and_prefix(
-                        product, product.properties[complementary_url_key]
-                    )
-                )
-        except KeyError:
-            logger.warning(
-                "complementary_url_key %s is missing in %s properties"
-                % (complementary_url_key, product.properties["id"])
-            )
-
         # authenticate
-        authenticated_objects, s3_objects = self._do_authentication(
+        authenticated_objects, _ = self._do_authentication(
             bucket_names_and_prefixes, auth
         )
 
-        # stream not implemented for prefixes like `foo/bar.zip!file.txt`
-        for _, prefix in bucket_names_and_prefixes:
-            if prefix and ".zip!" in prefix:
-                raise NotImplementedError(
-                    "Download streaming is not implemented for files in zip on S3"
-                )
-
         # downloadable files
-        unique_product_chunks = self._get_unique_products(
+        product_objects = self._get_unique_products(
             bucket_names_and_prefixes,
             authenticated_objects,
-            asset_filter,
+            asset_regex,
             ignore_assets,
             product,
         )
-        assets_values = product.assets.get_values(asset_filter)
-        chunks_tuples = self._stream_download(
-            unique_product_chunks, product, build_safe, progress_callback, assets_values
-        )
-        outputs_filename = (
-            sanitize(product.properties["title"])
-            if "title" in product.properties
-            else sanitize(product.properties.get("id", "download"))
-        )
 
-        if len(assets_values) <= 1:
-            first_chunks_tuple = next(chunks_tuples)
-            # update headers
-            filename = os.path.basename(list(unique_product_chunks)[0].key)
-            headers = {"content-disposition": f"attachment; filename={filename}"}
-            if assets_values and assets_values[0].get("type"):
-                headers["content-type"] = assets_values[0]["type"]
-
-            return StreamResponse(
-                content=chain(iter([first_chunks_tuple]), chunks_tuples),
-                headers=headers,
-            )
-        return StreamResponse(
-            content=stream_zip(chunks_tuples),
-            media_type="application/zip",
-            headers={
-                "content-disposition": f"attachment; filename={outputs_filename}.zip",
-            },
-        )
-
-    def _stream_download(
-        self,
-        unique_product_chunks: set[Any],
-        product: EOProduct,
-        build_safe: bool,
-        progress_callback: ProgressCallback,
-        assets_values: list[dict[str, Any]],
-    ) -> Iterator[Any]:
-        """Yield product data chunks"""
-
-        chunk_size = 4096 * 1024
-        modified_at = datetime.now()
-        perms = 0o600
-
-        def get_chunk_parts(
-            product_chunk: Any, progress_callback: ProgressCallback
-        ) -> Any:
-            try:
-                chunk_start = 0
-                chunk_end = chunk_start + chunk_size - 1
-
-                while chunk_start <= product_chunk.size:
-                    get_kwargs = (
-                        dict(RequestPayer="requester") if self.requester_pays else {}
-                    )
-                    chunk_part = product_chunk.get(
-                        Range=f"bytes={chunk_start}-{chunk_end}", **get_kwargs
-                    )["Body"].read()
-                    progress_callback(len(chunk_part))
-                    chunk_start += chunk_size
-                    chunk_end += chunk_size
-                    yield chunk_part
-
-            except ClientError as e:
-                self._raise_if_auth_error(e)
-                raise DownloadError("Unexpected error: %s" % e) from e
+        if self.s3_resource is None:
+            raise EodagError("Cannot check files in s3 zip without s3 resource")
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
@@ -858,38 +804,58 @@ class AwsDownload(Download):
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
-        common_path = ""
-        if flatten_top_dirs:
-            common_path = self._get_commonpath(
-                product, unique_product_chunks, build_safe
-            )
-        for product_chunk in unique_product_chunks:
+        common_path = (
+            self._get_commonpath(product, product_objects, build_safe)
+            if flatten_top_dirs
+            else ""
+        )
+        if len(product_objects) == 1:
+            common_path = os.path.dirname(common_path)
+
+        assets_by_path = {
+            a.get("href", "").split("s3://")[-1]: a
+            for a in product.assets.get_values(asset_filter=asset_regex or "")
+        }
+
+        files_info = []
+        for obj in product_objects:
             try:
-                chunk_rel_path = self.get_chunk_dest_path(
-                    product,
-                    product_chunk,
-                    build_safe=build_safe,
-                )
+                rel_path = self.get_chunk_dest_path(product, obj, build_safe=build_safe)
                 if flatten_top_dirs:
-                    chunk_rel_path = os.path.join(
+                    rel_path = os.path.join(
                         product.properties["title"],
-                        re.sub(rf"^{common_path}/?", "", chunk_rel_path),
+                        re.sub(rf"^{common_path}/?", "", rel_path),
                     )
 
-            except NotAvailableError as e:
-                # out of SAFE format chunk
-                logger.warning(e)
-                continue
-            if len(assets_values) <= 1:
-                yield from get_chunk_parts(product_chunk, progress_callback)
-            else:
-                yield (
-                    chunk_rel_path,
-                    modified_at,
-                    perms,
-                    ZIP_AUTO(product_chunk.size),
-                    get_chunk_parts(product_chunk, progress_callback),
+                data_type = assets_by_path.get(f"{obj.bucket_name}/{obj.key}", {}).get(
+                    "type"
                 )
+
+                file_info = S3FileInfo(
+                    key=obj.key,
+                    size=obj.size,
+                    bucket_name=obj.bucket_name,
+                    rel_path=rel_path,
+                )
+                if data_type:
+                    file_info.data_type = data_type
+
+                files_info.append(file_info)
+            except NotAvailableError as e:
+                logger.warning(e)
+
+        title = product.properties.get("title") or product.properties.get(
+            "id", "download"
+        )
+        zip_filename = sanitize(title)
+
+        return stream_download_from_s3(
+            cast("S3Client", self.s3_resource.meta.client),
+            files_info,
+            byte_range,
+            compress,
+            zip_filename,
+        )
 
     def _get_commonpath(
         self, product: EOProduct, product_chunks: set[Any], build_safe: bool
@@ -931,7 +897,7 @@ class AwsDownload(Download):
 
     def get_authenticated_objects(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> ResourceCollection:
+    ) -> BucketObjectsCollection:
         """Get boto3 authenticated objects for the given bucket using
         the most adapted auth strategy.
         Also expose ``s3_session`` as class variable if available.
@@ -943,7 +909,7 @@ class AwsDownload(Download):
         :returns: The boto3 authenticated objects
         """
         auth_methods: list[
-            Callable[[str, str, S3SessionKwargs], Optional[ResourceCollection]]
+            Callable[[str, str, S3SessionKwargs], Optional[BucketObjectsCollection]]
         ] = [
             self._get_authenticated_objects_unsigned,
             self._get_authenticated_objects_from_auth_profile,
@@ -979,7 +945,7 @@ class AwsDownload(Download):
 
     def _get_authenticated_objects_unsigned(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[ResourceCollection]:
+    ) -> Optional[BucketObjectsCollection]:
         """Auth strategy using no-sign-request"""
 
         s3_resource = boto3.resource(
@@ -990,11 +956,12 @@ class AwsDownload(Download):
         )
         objects = s3_resource.Bucket(bucket_name).objects
         list(objects.filter(Prefix=prefix).limit(1))
+        self.s3_resource = s3_resource
         return objects
 
     def _get_authenticated_objects_from_auth_profile(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[ResourceCollection]:
+    ) -> Optional[BucketObjectsCollection]:
         """Auth strategy using RequestPayer=requester and ``aws_profile`` from provided credentials"""
 
         if "profile_name" in auth_dict.keys():
@@ -1018,7 +985,7 @@ class AwsDownload(Download):
 
     def _get_authenticated_objects_from_auth_keys(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[ResourceCollection]:
+    ) -> Optional[BucketObjectsCollection]:
         """Auth strategy using RequestPayer=requester and ``aws_access_key_id``/``aws_secret_access_key``
         from provided credentials"""
 
@@ -1049,7 +1016,7 @@ class AwsDownload(Download):
 
     def _get_authenticated_objects_from_env(
         self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
-    ) -> Optional[ResourceCollection]:
+    ) -> Optional[BucketObjectsCollection]:
         """Auth strategy using RequestPayer=requester and current environment"""
 
         s3_session = boto3.session.Session()

@@ -35,9 +35,11 @@ from typing import (
 from urllib.error import URLError
 from urllib.parse import (
     parse_qsl,
+    quote,
     quote_plus,
     unquote,
     unquote_plus,
+    urlencode,
     urlparse,
     urlunparse,
 )
@@ -86,10 +88,8 @@ from eodag.utils import (
     dict_items_recursive_apply,
     format_dict_items,
     get_ssl_context,
-    quote,
     string_to_jsonpath,
     update_nested_dict,
-    urlencode,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -386,36 +386,48 @@ class QueryStringSearch(Search):
 
         # parse jsonpath on init: product type specific metadata-mapping
         for product_type in self.config.products.keys():
-            if "metadata_mapping" in self.config.products[product_type].keys():
-                self.config.products[product_type][
-                    "metadata_mapping"
-                ] = mtd_cfg_as_conversion_and_querypath(
-                    self.config.products[product_type]["metadata_mapping"]
-                )
+
+            product_type_metadata_mapping = {}
+            # product-type specific metadata-mapping
+            if any(
+                mm in self.config.products[product_type].keys()
+                for mm in ("metadata_mapping", "metadata_mapping_from_product")
+            ):
                 # Complete and ready to use product type specific metadata-mapping
                 product_type_metadata_mapping = deepcopy(self.config.metadata_mapping)
 
-                # update config using provider product type definition metadata_mapping
-                # from another product
-                other_product_for_mapping = cast(
-                    str,
-                    self.config.products[product_type].get(
-                        "metadata_mapping_from_product", ""
-                    ),
+            # metadata_mapping from another product
+            if other_product_for_mapping := self.config.products[product_type].get(
+                "metadata_mapping_from_product"
+            ):
+                other_product_type_def_params = self.get_product_type_def_params(
+                    other_product_for_mapping,
                 )
-                if other_product_for_mapping:
-                    other_product_type_def_params = self.get_product_type_def_params(
-                        other_product_for_mapping,
-                    )
+                # parse mapping to apply
+                if other_product_type_mtd_mapping := other_product_type_def_params.get(
+                    "metadata_mapping", {}
+                ):
                     other_product_type_mtd_mapping = (
                         mtd_cfg_as_conversion_and_querypath(
                             other_product_type_def_params.get("metadata_mapping", {})
                         )
                     )
-                    # updated mapping at the end
-                    for metadata, mapping in other_product_type_mtd_mapping.items():
-                        product_type_metadata_mapping.pop(metadata, None)
-                        product_type_metadata_mapping[metadata] = mapping
+                else:
+                    msg = f"Cannot reuse empty metadata_mapping from {other_product_for_mapping} for {product_type}"
+                    raise MisconfiguredError(msg)
+                # update mapping
+                for metadata, mapping in other_product_type_mtd_mapping.items():
+                    product_type_metadata_mapping.pop(metadata, None)
+                    product_type_metadata_mapping[metadata] = mapping
+
+            # metadata_mapping from current product
+            if "metadata_mapping" in self.config.products[product_type].keys():
+                # parse mapping to apply
+                self.config.products[product_type][
+                    "metadata_mapping"
+                ] = mtd_cfg_as_conversion_and_querypath(
+                    self.config.products[product_type]["metadata_mapping"]
+                )
 
                 # from current product, updated mapping at the end
                 for metadata, mapping in self.config.products[product_type][
@@ -424,6 +436,7 @@ class QueryStringSearch(Search):
                     product_type_metadata_mapping.pop(metadata, None)
                     product_type_metadata_mapping[metadata] = mapping
 
+            if product_type_metadata_mapping:
                 self.config.products[product_type][
                     "metadata_mapping"
                 ] = product_type_metadata_mapping
@@ -1090,6 +1103,8 @@ class QueryStringSearch(Search):
             product.properties = dict(
                 getattr(self.config, "product_type_config", {}), **product.properties
             )
+            additional_assets = self.get_assets_from_mapping(result)
+            product.assets.update(additional_assets)
             # move assets from properties to product's attr, normalize keys & roles
             for key, asset in product.properties.pop("assets", {}).items():
                 norm_key, asset["roles"] = product.driver.guess_asset_key_and_roles(
@@ -1481,13 +1496,17 @@ class PostJsonSearch(QueryStringSearch):
             )
 
             # Add to the query, the queryable parameters set in the provider product type definition
+            product_type_metadata_mapping = {
+                **getattr(self.config, "metadata_mapping", {}),
+                **prep.product_type_def_params.get("metadata_mapping", {}),
+            }
             keywords.update(
                 {
                     k: v
                     for k, v in prep.product_type_def_params.items()
                     if k not in keywords.keys()
-                    and k in self.config.metadata_mapping.keys()
-                    and isinstance(self.config.metadata_mapping[k], list)
+                    and k in product_type_metadata_mapping.keys()
+                    and isinstance(product_type_metadata_mapping[k], list)
                 }
             )
 

@@ -44,22 +44,20 @@ data provider. The EODAG SDK is structured around three functions:
 
 * List product types: list of supported products and their description
 
-* Search products (by product type or uid) : searches products according to the search criteria provided
+* Search products (by product type or uid): searches products according to the search criteria provided
 
-* Download products : download product “as is"
+* Download products: download product “as is"
 
 EODAG is developed in Python. It is structured according to a modular plugin architecture, easily extensible and able to
 integrate new data providers. Three types of plugins compose the tool:
 
-* Catalog search plugins, responsible for searching data (OpenSearch, CSW, ...), building paths, retrieving quicklook,
+* Catalog search plugins, responsible for searching data (STAC, OpenSearch, OData, ...), building paths, retrieving quicklook,
   combining results
 
-* Download plugins, allowing to download and retrieve data locally (via FTP, HTTP, ..), always with the same directory
+* Download plugins, allowing to download and retrieve data locally (via HTTP, S3, ...), always with the same directory
   organization
 
 * Authentication plugins, which are used to authenticate the user on the external services used (JSON Token, Basic Auth, OAUTH, ...).
-
-EODAG can be run as STAC client or server <https://eodag.readthedocs.io/en/latest/stac.html>`_.
 
 Read `the documentation <https://eodag.readthedocs.io/en/latest/>`_ for more insights.
 
@@ -187,7 +185,7 @@ An eodag instance can be exposed through a STAC compliant REST api from the comm
 
 .. code-block:: bash
 
-    docker run -p 5000:5000 --rm csspace/eodag-server:3.6.0
+    docker run -p 5000:5000 --rm csspace/eodag-server:3.7.0
 
 You can also browse over your STAC API server using `STAC Browser <https://github.com/radiantearth/stac-browser>`_.
 Simply run:

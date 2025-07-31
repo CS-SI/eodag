@@ -23,6 +23,7 @@ import string
 from datetime import datetime, timedelta, timezone
 from random import SystemRandom
 from typing import TYPE_CHECKING, Any, Optional
+from urllib.parse import parse_qs, urlparse
 
 import jwt
 import requests
@@ -34,9 +35,7 @@ from eodag.utils import (
     DEFAULT_TOKEN_EXPIRATION_MARGIN,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
-    parse_qs,
     repeatfunc,
-    urlparse,
 )
 from eodag.utils.exceptions import (
     AuthenticationError,

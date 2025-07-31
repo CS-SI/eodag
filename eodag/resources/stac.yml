@@ -195,8 +195,7 @@ item:
     license: '{catalog[license]}'
     constellation: '$.product.properties.platform'
     platform: '$.product.properties.platformSerialIdentifier'
-    instruments:
-      - '$.product.properties.instrument'
+    instruments: '{$.product.properties.instrument#replace_str(r"^(.*)$",r"""["\1"]""")}'
     gsd: '$.product.properties.resolution'
     published: '$.product.properties.publicationDate'
     eo:cloud_cover: '$.product.properties.cloudCover'

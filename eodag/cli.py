@@ -49,11 +49,12 @@ import sys
 import textwrap
 from importlib.metadata import metadata
 from typing import TYPE_CHECKING, Any, Mapping
+from urllib.parse import parse_qs
 
 import click
 
 from eodag.api.core import EODataAccessGateway, SearchResult
-from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE, parse_qs
+from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
 from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
@@ -109,8 +110,9 @@ class MutuallyExclusiveOption(click.Option):
         """Raise error or use parent handle_parse_result()"""
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise click.UsageError(
-                "Illegal usage: `{}` is mutually exclusive with "
-                "arguments `{}`.".format(self.name, ", ".join(self.mutually_exclusive))
+                "Illegal usage: `{}` is mutually exclusive with arguments `{}`.".format(
+                    self.name, ", ".join(self.mutually_exclusive)
+                )
             )
 
         return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
@@ -687,6 +689,7 @@ def serve_rest(
     setup_logging(verbose=ctx.obj["verbosity"])
     try:
         import uvicorn
+        import uvicorn.config
     except ImportError:
         raise ImportError(
             "Feature not available, please install eodag[server] or eodag[all]"

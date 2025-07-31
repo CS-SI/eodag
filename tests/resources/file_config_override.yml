@@ -21,10 +21,6 @@ peps:
   download:
     output_dir: /data
 
-theia:
-  download:
-    output_dir:
-
 my_new_provider:
     priority: 4
     search:

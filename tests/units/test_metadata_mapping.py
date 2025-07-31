@@ -235,11 +235,11 @@ class TestMetadataFormatter(unittest.TestCase):
 
     def test_convert_get_group_name(self):
         to_format = (
-            "{fieldname#get_group_name((?P<this_is_foo>foo)|(?P<that_is_bar>bar))}"
+            "{fieldname#get_group_name((?P<this is foo>foo)|(?P<that_is_bar>bar))}"
         )
         self.assertEqual(
             format_metadata(to_format, fieldname="foo"),
-            "this_is_foo",
+            "this is foo",
         )
 
     def test_convert_replace_str(self):
@@ -305,6 +305,10 @@ class TestMetadataFormatter(unittest.TestCase):
     def test_convert_to_upper(self):
         to_format = r"{fieldname#to_upper}"
         self.assertEqual(format_metadata(to_format, fieldname="FoO.bAr"), "FOO.BAR")
+
+    def test_convert_to_upper_empty(self):
+        to_format = r"{fieldname#to_upper}"
+        self.assertEqual(format_metadata(to_format, fieldname=None), "None")
 
     def test_convert_fake_l2a_title_from_l1c(self):
         to_format = "{fieldname#fake_l2a_title_from_l1c}"

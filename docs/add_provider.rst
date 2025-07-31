@@ -64,7 +64,7 @@ own needs (i.e. getting data from a provider not supported by ``eodag``), you sh
 and configure them. What you are the most likely to be willing to do is either to develop a new `Search <plugins_reference/search.rst>`_ plugin or an
 `Api <plugins_reference/api.rst>`_ plugin (e.g. to create an interface with another program).
 
-`eodag-sentinelsat <https://github.com/CS-SI/eodag-sentinelsat>`_ is a good example of an Api plugin. It creates an interface with the
+`eodag-sentinelsat (archived) <https://github.com/CS-SI/eodag-sentinelsat>`_ was a good example of an Api plugin. It created an interface with the
 `sentinalsat <https://github.com/sentinelsat/sentinelsat>`_ library to search and download products from `SciHub <https://scihub.copernicus.eu/>`_.
 
 See more details about how to create a new plugin in :ref:`this dedicated section <creating_plugins>`.

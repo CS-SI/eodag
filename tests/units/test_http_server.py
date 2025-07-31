@@ -994,7 +994,7 @@ class RequestTestCase(unittest.TestCase):
         req_err.status_code = 418
         errors = [
             ("usgs", Exception("Generic exception", "Details of the error")),
-            ("theia", TimeOutError("Timeout message")),
+            ("earth_search", TimeOutError("Timeout message")),
             ("peps", req_err),
             ("creodias", AuthenticationError("Authentication message")),
             (
@@ -1015,7 +1015,7 @@ class RequestTestCase(unittest.TestCase):
                     "status_code": 500,
                 },
                 {
-                    "provider": "theia",
+                    "provider": "earth_search",
                     "error": "TimeOutError",
                     "message": "Timeout message",
                     "status_code": 504,

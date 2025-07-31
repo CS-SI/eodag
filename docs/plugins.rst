@@ -76,8 +76,6 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``usgs_satapi_aws``    | |StacSearch|                       | |AwsAuth|                       | |AwsDownload|    |
 +------------------------+------------------------------------+---------------------------------+------------------+
-| ``theia``              | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
-+------------------------+------------------------------------+---------------------------------+------------------+
 | ``wekeo_ecmwf``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``wekeo_cmems``        | |PostJsonSearch|                   | |TokenAuth|                     | |HTTPDownload|   |
@@ -185,7 +183,7 @@ Read the :ref:`mock search plugin` section to get an example of how to build a s
 plugin.
 
 As an example of external plugin, you can have a look to
-`eodag-sentinelsat <https://github.com/CS-SI/eodag-sentinelsat>`_.
+`eodag-sentinelsat (archived) <https://github.com/CS-SI/eodag-sentinelsat>`_.
 
 .. _mock search plugin:
 

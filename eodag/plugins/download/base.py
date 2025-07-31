@@ -27,7 +27,7 @@ import zipfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
 from eodag.plugins.base import PluginTopic
@@ -134,7 +134,8 @@ class Download(PluginTopic):
         self,
         product: EOProduct,
         auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
-        progress_callback: Optional[ProgressCallback] = None,
+        byte_range: tuple[Optional[int], Optional[int]] = (None, None),
+        compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
         **kwargs: Unpack[DownloadConf],

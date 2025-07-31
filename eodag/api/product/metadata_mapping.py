@@ -219,7 +219,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 elif value is not None:
                     converted = self.custom_converter(value)
                 else:
-                    converted = ""
+                    converted = None
                 # Clear this state variable in case the same converter is used to
                 # resolve other named arguments
                 self.custom_converter = None
@@ -375,6 +375,18 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return geojson.dumps(value)
 
         @staticmethod
+        def convert_to_geojson_polytope(
+            value: BaseGeometry,
+        ) -> Union[dict[Any, Any], str]:
+            # ECMWF Polytope uses non-geojson structure for features
+            if isinstance(value, Polygon):
+                return {
+                    "type": "polygon",
+                    "shape": [[y, x] for x, y in value.exterior.coords],
+                }
+            raise ValidationError("to_geojson_polytope only accepts shapely Polygon")
+
+        @staticmethod
         def convert_from_ewkt(ewkt_string: str) -> Union[BaseGeometry, str]:
             """Convert EWKT (Extended Well-Known text) to shapely geometry"""
 
@@ -488,10 +500,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
         @staticmethod
         def convert_get_group_name(string: str, pattern: str) -> str:
+            sanitized_pattern = pattern.replace(" ", "_SPACE_")
             try:
-                match = re.search(pattern, str(string))
+                match = re.search(sanitized_pattern, str(string))
                 if match:
-                    return match.lastgroup or NOT_AVAILABLE
+                    if result := match.lastgroup:
+                        return result.replace("_SPACE_", " ")
+                    else:
+                        return NOT_AVAILABLE
             except AttributeError:
                 pass
             logger.warning(
@@ -1342,6 +1358,7 @@ def format_query_params(
                     formatted_query_param = remove_str_array_quotes(
                         formatted_query_param
                     )
+
                     # json query string (for POST request)
                     update_nested_dict(
                         query_params,
