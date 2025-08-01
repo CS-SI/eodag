@@ -1138,6 +1138,7 @@ class EODataAccessGateway:
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
+        validate_request: Optional[bool] = False,
         count: bool = False,
         **kwargs: Any,
     ) -> SearchResult:
@@ -1178,6 +1179,8 @@ class EODataAccessGateway:
         :param provider: (optional) the provider to be used. If set, search fallback will be disabled.
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
+        :param validate_request: (Optional) Set to True to validate the request query before sending it
+                                 to the provider
         :param count: (optional) Whether to run a query with a count request or not
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
@@ -1223,6 +1226,7 @@ class EODataAccessGateway:
                 search_plugin,
                 count=count,
                 raise_errors=raise_errors,
+                validate_request=validate_request,
                 **search_kwargs,
             )
             errors.extend(search_results.errors)
@@ -1828,6 +1832,7 @@ class EODataAccessGateway:
         search_plugin: Union[Search, Api],
         count: bool = False,
         raise_errors: bool = False,
+        validate_request: Optional[bool] = False,
         **kwargs: Any,
     ) -> SearchResult:
         """Internal method that performs a search on a given provider.
@@ -1837,6 +1842,8 @@ class EODataAccessGateway:
         :param raise_errors: (optional) When an error occurs when searching, if this is set to
                              True, the error is raised
         :param kwargs: Some other criteria that will be used to do the search
+        :param validate_request: (Optional) Set to True to validate the request query before sending it
+                                 to the provider
         :returns: A collection of EO products matching the criteria
         """
         logger.info("Searching on provider %s", search_plugin.provider)
@@ -1877,14 +1884,15 @@ class EODataAccessGateway:
             prep.page = kwargs.pop("page", None)
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
-            kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
-            product_type: str = kwargs_queryables.pop("productType")
-            search_plugin.list_queryables(
-                filters=kwargs_queryables,
-                available_product_types=[product_type],
-                product_type_configs=search_plugin.config.products,
-                product_type=product_type,
-            ).get_model().model_validate(kwargs_queryables)
+            if validate_request:
+                kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
+                product_type: str = kwargs_queryables.pop("productType")
+                search_plugin.list_queryables(
+                    filters=kwargs_queryables,
+                    available_product_types=[product_type],
+                    product_type_configs=search_plugin.config.products,
+                    product_type=product_type,
+                ).get_model().model_validate(kwargs_queryables)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 
