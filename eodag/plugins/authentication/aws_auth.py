@@ -132,6 +132,7 @@ class S3AuthContextPool(UserList):
                 S3AuthContext.create_auth_context_auth_keys(endpoint_url, credentials)
             )
         self.data.append(S3AuthContext.create_auth_context_env(endpoint_url))
+        self.used_method = ""
 
 
 class AwsAuth(Authentication):
@@ -202,6 +203,7 @@ class AwsAuth(Authentication):
                 list(objects.filter(Prefix=prefix).limit(1))
                 if objects:
                     logger.debug("Auth using %s succeeded", auth_context.auth_type)
+                    self.auth_context_pool.used_method = auth_context.auth_type
                     return objects
             except ClientError as e:
                 if (

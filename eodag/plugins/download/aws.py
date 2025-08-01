@@ -34,7 +34,10 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.plugins.authentication.aws_auth import AWS_AUTH_ERROR_MESSAGES
+from eodag.plugins.authentication.aws_auth import (
+    AWS_AUTH_ERROR_MESSAGES,
+    S3AuthContextPool,
+)
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -52,7 +55,6 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
-    EodagError,
     NoMatchingProductType,
     NotAvailableError,
     TimeOutError,
@@ -229,7 +231,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3AuthContextPool]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -627,7 +629,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3AuthContextPool]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -713,8 +715,10 @@ class AwsDownload(Download):
             product,
         )
 
-        if self.s3_resource is None:
-            raise EodagError("Cannot check files in s3 zip without s3 resource")
+        s3_context = [
+            context for context in auth if context.auth_type == auth.used_method
+        ]
+        self.s3_resource = s3_context[0].s3_resource
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}
