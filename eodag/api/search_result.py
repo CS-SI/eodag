@@ -70,10 +70,29 @@ class SearchResult(UserList[EOProduct]):
         self.errors = errors if errors is not None else []
         self.search_params = search_params
         self.next_page_token = next_page_token
+        self._dag = None
 
-        from eodag.api.core import EODataAccessGateway
+    @property
+    def dag(self):
+        """
+        Get the EODataAccessGateway instance used for search operations.
 
-        self._dag = EODataAccessGateway()
+        :returns: The EODataAccessGateway instance.
+        """
+        if self._dag is None:
+            from eodag.api.core import EODataAccessGateway
+
+            self._dag = EODataAccessGateway()
+        return self._dag
+
+    @dag.setter
+    def dag(self, value):
+        """
+        Set the EODataAccessGateway instance.
+
+        :param value: An EODataAccessGateway instance.
+        """
+        self._dag = value
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -226,19 +245,19 @@ class SearchResult(UserList[EOProduct]):
 
         return super().extend(other)
 
-    def next_page(
-        self,
-    ) -> SearchResult:
+    def next_page(self, update: bool = True) -> SearchResult:
         """Get the next page of results based on the current search parameters."""
+        if not update:
+            return self
         if self.next_page_token is None:
             logger.info("No next page available.")
             raise StopIteration()
         self.search_params["next_page_token"] = self.next_page_token
         self.search_params["provider"] = self.data[-1].provider
-        search_plugins, search_kwargs = self._dag._prepare_search(**self.search_params)
+        search_plugins, search_kwargs = self.dag._prepare_search(**self.search_params)
         for i, search_plugin in enumerate(search_plugins):
             self.search_params["next_page_token"] = self.next_page_token
-            search_result = self._dag._do_search(
+            search_result = self.dag._do_search(
                 search_plugin, raise_errors=False, **search_kwargs
             )
             return search_result
