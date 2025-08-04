@@ -1108,30 +1108,28 @@ class QueryStringSearch(Search):
     def _build_raw_search_results(self, results, resp_as_json, kwargs, items_per_page):
         raw_search_results = RawSearchResult(results)
         raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
-        links = resp_as_json.get("links") or resp_as_json.get("properties", {}).get(
-            "links", []
-        )
-        next_link = next(
-            (link for link in links if link.get("rel") == "next"),
-            None,
-        )
-        if next_link is not None:
-            if "body" in next_link and isinstance(next_link["body"], dict):
-                if "token" in next_link["body"]:
-                    raw_search_results.next_page_token = next_link["body"]["token"]
-                elif "page" in next_link["body"]:
-                    raw_search_results.next_page_token = next_link["body"]["page"]
-                elif "next" in next_link["body"]:
-                    raw_search_results.next_page_token = next_link["body"]["next"]
-            else:
-                href = next_link.get("href", "")
-                if "page=" in href:
-                    from urllib.parse import parse_qs, urlparse
+        if self.config.pagination.get("next_page_url_tpl") is not None:
+            href = self.config.pagination["next_page_query_obj_key_path"].find(
+                resp_as_json
+            )
+            next_page_token_key = (
+                unquote(self.config.pagination["parse_url_key"])
+                if "parse_url_key" in self.config.pagination
+                else self.config.pagination.get("next_page_token_key")
+            )
+            if next_page_token_key in unquote(href[0].value):
+                from urllib.parse import parse_qs, urlparse
 
-                    query = urlparse(href).query
-                    page_param = parse_qs(query).get("page")
-                    if page_param:
-                        raw_search_results.next_page_token = page_param[0]
+                query = urlparse(href[0].value).query
+                page_param = parse_qs(query).get(next_page_token_key)
+                if page_param:
+                    raw_search_results.next_page_token = page_param[0]
+
+        else:
+            token = self.config.pagination["next_page_query_obj_key_path"].find(
+                resp_as_json
+            )
+            raw_search_results.next_page_token = token[0].value
 
         return raw_search_results
 
@@ -1686,6 +1684,7 @@ class PostJsonSearch(QueryStringSearch):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
+        page = prep.page or DEFAULT_PAGE
         token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
@@ -1714,7 +1713,7 @@ class PostJsonSearch(QueryStringSearch):
                     "Missing %s in %s configuration" % (",".join(e.args), provider)
                 )
             if next_page_token_key == "page" and items_per_page is not None:
-                token = DEFAULT_PAGE if token is None else int(token)
+                token = page if token is None else int(token)
                 token = (
                     token - 1 + self.config.pagination.get("start_page", DEFAULT_PAGE)
                 )

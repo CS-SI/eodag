@@ -524,6 +524,7 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       next_page_token_key: page
+      next_page_query_obj_key_path: '$.properties.links[?(@.rel=="next")].href'
 
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
@@ -684,6 +685,8 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_query_obj_key_path: '$.["@odata.nextLink"]'
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
@@ -1409,6 +1412,7 @@
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
       next_page_token_key: next
+      next_page_query_obj_key_path: '$.links[?(@.rel=="next")].body.next'
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1499,6 +1503,7 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
+      next_page_query_obj_key_path: '$.links[?(@.rel=="next")].body.page'
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1955,6 +1960,8 @@
     pagination:
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
+      next_page_token_key: page
+      next_page_query_obj_key_path: '$.properties.links[?(@.rel=="next")].href'
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     sort:
@@ -2336,6 +2343,8 @@
       - '%'
     pagination:
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
+      next_page_query_obj_key_path: '$.["@odata.nextLink"]'
+      parse_url_key: $skip
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
       max_items_per_page: 1_000
@@ -2966,6 +2975,7 @@
     pagination:
       max_items_per_page: 1000
       next_page_token_key: token
+      next_page_query_obj_key_path: '$.links[?(@.rel=="next")].body.token'
     sort:
       sort_param_mapping:
         id: id
@@ -3892,6 +3902,8 @@
       next_page_url_tpl: '{url}?{search}&$top={items_per_page}&$skip={skip}&$expand=Attributes&$expand=Assets'
       count_tpl: '&$count=True'
       total_items_nb_key_path: '$."@odata.count"'
+      next_page_query_obj_key_path: '$.["@odata.nextLink"]'
+      parse_url_key: $skip
       max_items_per_page: 1_000
     sort:
       sort_by_default:
