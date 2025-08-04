@@ -25,8 +25,10 @@ import shutil
 import tempfile
 from importlib.metadata import version
 from importlib.resources import files as res_files
+from json import JSONDecodeError
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
+from urllib.parse import parse_qs, urlparse
 
 import geojson
 import yaml.parser
@@ -51,6 +53,7 @@ from eodag.config import (
     provider_config_init,
     share_credentials,
 )
+from eodag.plugins.download.base import Download
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -1885,14 +1888,7 @@ class EODataAccessGateway:
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
             if validate_request:
-                kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
-                product_type: str = kwargs_queryables.pop("productType")
-                search_plugin.list_queryables(
-                    filters=kwargs_queryables,
-                    available_product_types=[product_type],
-                    product_type_configs=search_plugin.config.products,
-                    product_type=product_type,
-                ).get_model().model_validate(kwargs_queryables)
+                self.validate_search_request(search_plugin, kwargs)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 
@@ -2445,3 +2441,57 @@ class EODataAccessGateway:
                 results.extend(search_result)
 
         return results
+
+    def validate_search_request(
+        self, search_plugin: Union[Search, Api], kwargs: dict[str, Any]
+    ):
+        """Validate a search request.
+
+        :param search_plugin: The search plugin to use for validation
+        :param kwargs: Arguments of the search request
+        :raises: :class:`~pydantic_core.ValidationError`
+        """
+        kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
+        product_type: str = kwargs_queryables.pop("productType")
+        logger.debug("Validate request")
+        search_plugin.list_queryables(
+            filters=kwargs_queryables,
+            available_product_types=[product_type],
+            product_type_configs=search_plugin.config.products,
+            product_type=product_type,
+        ).get_model().model_validate(kwargs_queryables)
+
+    def validate_order_request(self, product: EOProduct):
+        """Validate a product order request.
+
+        :param product: The product to validate
+        :raises: :class:`~pydantic_core.ValidationError`
+        """
+        search_plugin: Union[Search, Api] = next(
+            self._plugins_manager.get_search_plugins(provider=product.provider)
+        )
+        download_plugin: Union[
+            Download, Api
+        ] = self._plugins_manager.get_download_plugin(product)
+        order_method: str = getattr(
+            download_plugin.config, "order_method", "GET"
+        ).upper()
+        order_kwargs: dict[str, Union[Any, list[str]]] = {}
+        if order_method == "POST":
+            # separate url & parameters
+            parts = urlparse(str(product.properties["orderLink"]))
+            query_dict = {}
+            # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
+            # the resulting `query_dict` would be erroneous.
+            try:
+                query_dict = geojson.loads(parts.query)
+            except JSONDecodeError:
+                if parts.query:
+                    query_dict = parse_qs(parts.query)
+            if query_dict:
+                order_kwargs = query_dict["inputs"]
+        else:
+            order_kwargs = {}
+        order_kwargs["productType"] = product.product_type
+
+        self.validate_search_request(search_plugin, order_kwargs)

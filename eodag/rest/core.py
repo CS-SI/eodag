@@ -326,6 +326,9 @@ def _order_and_update(
     ):
         # first order
         logger.debug("Order product")
+        validate_request: bool = query_args.get("validate_request", "false") == "true"
+        if validate_request:
+            eodag_api.validate_order_request(product)
         order_status_dict = product.downloader._order(product=product, auth=auth)
         query_args.update(order_status_dict or {})
 
