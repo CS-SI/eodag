@@ -1888,7 +1888,7 @@ class EODataAccessGateway:
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
             if validate_request:
-                self.validate_search_request(search_plugin, kwargs)
+                self.validate_search_request(search_plugin.provider, kwargs)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 
@@ -2442,17 +2442,20 @@ class EODataAccessGateway:
 
         return results
 
-    def validate_search_request(
-        self, search_plugin: Union[Search, Api], kwargs: dict[str, Any]
-    ):
+    def validate_search_request(self, provider: str, kwargs: dict[str, Any]):
         """Validate a search request.
 
-        :param search_plugin: The search plugin to use for validation
+        :param provider: Provider to use for validation
         :param kwargs: Arguments of the search request
         :raises: :class:`~pydantic_core.ValidationError`
         """
+        search_plugin: Union[Search, Api] = next(
+            self._plugins_manager.get_search_plugins(provider=provider)
+        )
         kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
+        # Remove not queryable parameters
         product_type: str = kwargs_queryables.pop("productType")
+        kwargs_queryables.pop("provider", None)
         logger.debug("Validate request")
         search_plugin.list_queryables(
             filters=kwargs_queryables,
@@ -2467,9 +2470,6 @@ class EODataAccessGateway:
         :param product: The product to validate
         :raises: :class:`~pydantic_core.ValidationError`
         """
-        search_plugin: Union[Search, Api] = next(
-            self._plugins_manager.get_search_plugins(provider=product.provider)
-        )
         download_plugin: Union[
             Download, Api
         ] = self._plugins_manager.get_download_plugin(product)
@@ -2494,4 +2494,4 @@ class EODataAccessGateway:
             order_kwargs = {}
         order_kwargs["productType"] = product.product_type
 
-        self.validate_search_request(search_plugin, order_kwargs)
+        self.validate_search_request(product.provider, order_kwargs)
