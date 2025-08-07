@@ -159,17 +159,24 @@ class AwsAuth(Authentication):
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(AwsAuth, self).__init__(provider, config)
-        endpoint_url = getattr(self.config, "s3_endpoint", None)
-        credentials = getattr(self.config, "credentials", {}) or {}
+        self.endpoint_url = getattr(self.config, "s3_endpoint", None)
+        self.credentials = getattr(self.config, "credentials", {}) or {}
         self.auth_context_pool = S3AuthContextPool(
-            endpoint_url=endpoint_url, credentials=credentials
+            endpoint_url=self.endpoint_url, credentials=self.credentials
         )
-        self.s3_client = boto3.client(
+        self.s3_client = self.create_s3_client()
+
+    def create_s3_client(self):
+        """Create an S3 client based on the given endpoint url and credentials
+
+        :returns: boto3 client
+        """
+        return boto3.client(
             service_name="s3",
-            endpoint_url=endpoint_url,
-            aws_access_key_id=credentials.get("aws_access_key_id"),
-            aws_secret_access_key=credentials.get("aws_secret_access_key"),
-            aws_session_token=credentials.get("aws_session_token"),
+            endpoint_url=self.endpoint_url,
+            aws_access_key_id=self.credentials.get("aws_access_key_id"),
+            aws_secret_access_key=self.credentials.get("aws_secret_access_key"),
+            aws_session_token=self.credentials.get("aws_session_token"),
         )
 
     def authenticate(self) -> S3AuthContextPool:
@@ -284,3 +291,23 @@ class AwsAuth(Authentication):
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
         return authenticated_objects, s3_objects
+
+    def get_s3_session(self, bucket_name: str, prefix: str):
+        """return the s3 session created during the fetching of authenticated objects
+        execute _get_authenticate_objects if it was not done yet
+
+        :param bucket_name: name of the bucket for _get_authenticate_objects
+        :param prefix: s3 prefix for _get_authenticate_objects
+        :returns: s3 session
+        """
+        if self.auth_context_pool.used_method:
+            s3_context = [
+                context
+                for context in self.auth_context_pool
+                if context.auth_type == self.auth_context_pool.used_method
+            ]
+            return s3_context[0].s3_session
+        else:
+            # session was not initialised yet -> do so by getting authenticated objects
+            self._get_authenticated_objects(bucket_name, prefix)
+            return self.get_s3_session(bucket_name, prefix)

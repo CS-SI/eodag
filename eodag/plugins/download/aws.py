@@ -36,6 +36,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.authentication.aws_auth import (
     AWS_AUTH_ERROR_MESSAGES,
+    AwsAuth,
     S3AuthContextPool,
 )
 from eodag.plugins.download.base import Download
@@ -790,7 +791,7 @@ class AwsDownload(Download):
         return os.path.commonpath(chunk_paths)
 
     def get_rio_env(
-        self, bucket_name: str, prefix: str, auth_dict: S3SessionKwargs
+        self, bucket_name: str, prefix: str, auth_plugin: AwsAuth
     ) -> dict[str, Any]:
         """Get rasterio environment variables needed for data access authentication.
 
@@ -802,20 +803,16 @@ class AwsDownload(Download):
         rio_env_kwargs = {}
         if endpoint_url := getattr(self.config, "s3_endpoint", None):
             rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
-        rio_env_kwargs |= auth_dict
+        rio_env_kwargs |= {}
 
-        if self.s3_session is None:
-            _ = self.get_authenticated_objects(bucket_name, prefix, auth_dict)
+        s3_session = auth_plugin.get_s3_session(bucket_name, prefix)
 
-        if self.s3_session is not None:
-            if self.requester_pays:
-                rio_env_kwargs["requester_pays"] = True
-            return {
-                "session": self.s3_session,
-                **rio_env_kwargs,
-            }
-        else:
-            return {"aws_unsigned": True, **rio_env_kwargs}
+        if self.requester_pays:
+            rio_env_kwargs["requester_pays"] = True
+        return {
+            "session": s3_session,
+            **rio_env_kwargs,
+        }
 
     def get_product_bucket_name_and_prefix(
         self, product: EOProduct, url: Optional[str] = None

@@ -28,6 +28,7 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
+from eodag.plugins.authentication.aws_auth import S3AuthContext
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
 from eodag.utils import MockResponse
 from eodag.utils.exceptions import RequestError
@@ -47,6 +48,7 @@ class BaseAuthPluginTest(unittest.TestCase):
         super(BaseAuthPluginTest, cls).setUpClass()
         cls.providers_config = {}
         cls.plugins_manager = PluginManager(cls.providers_config)
+        cls.auth_plugins = {}
 
     def tearDown(self):
         super(BaseAuthPluginTest, self).tearDown()
@@ -55,7 +57,11 @@ class BaseAuthPluginTest(unittest.TestCase):
             self.get_auth_plugin(provider).config.__dict__.pop("credentials", None)
 
     def get_auth_plugin(self, provider):
-        return next(self.plugins_manager.get_auth_plugins(provider))
+        if provider in self.auth_plugins:
+            return self.auth_plugins[provider]
+        auth_plugin = next(self.plugins_manager.get_auth_plugins(provider))
+        self.auth_plugins[provider] = auth_plugin
+        return auth_plugin
 
 
 class TestAuthPluginTokenAuth(BaseAuthPluginTest):
@@ -607,28 +613,65 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         )
         cls.plugins_manager = PluginManager(cls.providers_config)
 
-    def test_plugins_auth_aws_authenticate(self):
-        """AwsAuth.authenticate must return credentials in a dict"""
-        self.assertDictEqual(
-            self.get_auth_plugin("provider_with_auth_keys").authenticate(),
-            {
-                "aws_access_key_id": self.aws_access_key_id,
-                "aws_secret_access_key": self.aws_secret_access_key,
-            },
+    @mock.patch("eodag.plugins.authentication.aws_auth.S3AuthContext", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
+    )
+    def test_plugins_auth_aws_authenticate(self, mock_s3_client, mock_auth_context):
+        """AwsAuth.authenticate must return an S3AuthContextPool containing available auth contexts"""
+
+        mock_auth_context.create_auth_context_unsigned.return_value = S3AuthContext(
+            None, "unsigned", None
         )
-        self.assertDictEqual(
-            self.get_auth_plugin("provider_with_auth_keys_session").authenticate(),
-            {
-                "aws_access_key_id": self.aws_access_key_id,
-                "aws_secret_access_key": self.aws_secret_access_key,
-                "aws_session_token": self.aws_session_token,
-            },
+        mock_auth_context.create_auth_context_auth_profile.return_value = S3AuthContext(
+            None, "auth_profile", None
         )
-        self.assertDictEqual(
-            self.get_auth_plugin("provider_with_auth_profile").authenticate(),
-            {
-                "profile_name": self.profile_name,
-            },
+        mock_auth_context.create_auth_context_auth_keys.return_value = S3AuthContext(
+            None, "auth_keys", None
+        )
+        mock_auth_context.create_auth_context_env.return_value = S3AuthContext(
+            None, "env", None
+        )
+        context_pool_with_keys = self.get_auth_plugin(
+            "provider_with_auth_keys"
+        ).authenticate()
+        self.assertEqual(3, len(context_pool_with_keys))
+        auth_types = [auth_context.auth_type for auth_context in context_pool_with_keys]
+        self.assertIn("auth_keys", auth_types)
+        self.assertNotIn("auth_profile", auth_types)
+        keys_dict = {
+            "aws_access_key_id": self.aws_access_key_id,
+            "aws_secret_access_key": self.aws_secret_access_key,
+        }
+        mock_auth_context.create_auth_context_auth_keys.assert_called_with(
+            None, keys_dict
+        )
+
+        context_pool_with_keys_session = self.get_auth_plugin(
+            "provider_with_auth_keys_session"
+        ).authenticate()
+        self.assertEqual(3, len(context_pool_with_keys_session))
+        auth_types = [
+            auth_context.auth_type for auth_context in context_pool_with_keys_session
+        ]
+        self.assertIn("auth_keys", auth_types)
+        self.assertNotIn("auth_profile", auth_types)
+        keys_dict["aws_session_token"] = self.aws_session_token
+        mock_auth_context.create_auth_context_auth_keys.assert_called_with(
+            None, keys_dict
+        )
+
+        context_pool_with_profile = self.get_auth_plugin(
+            "provider_with_auth_profile"
+        ).authenticate()
+        self.assertEqual(3, len(context_pool_with_profile))
+        auth_types = [
+            auth_context.auth_type for auth_context in context_pool_with_profile
+        ]
+        self.assertIn("auth_profile", auth_types)
+        self.assertNotIn("auth_keys", auth_types)
+        mock_auth_context.create_auth_context_auth_profile.assert_called_with(
+            None, self.profile_name
         )
 
 
