@@ -28,6 +28,9 @@ jobs:
         uv venv
         source .venv/bin/activate
         uv pip install ".[all-providers]"
+    - name: List collections by allowing the fetch and hightlight warning logs
+      env:
+        EODAG_VALIDATE_COLLECTIONS: True
     - name: Fetch external collections data
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
