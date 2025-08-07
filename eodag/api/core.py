@@ -32,6 +32,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import yaml.parser
+from pydantic import ValidationError as pydanticValidationError
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
@@ -58,6 +59,7 @@ from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
+from eodag.rest.utils import format_pydantic_error
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, QueryablesDict
 from eodag.utils import (
@@ -86,6 +88,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.rest import rfc3339_str_to_datetime
@@ -2447,7 +2450,7 @@ class EODataAccessGateway:
 
         :param provider: Provider to use for validation
         :param kwargs: Arguments of the search request
-        :raises: :class:`~pydantic_core.ValidationError`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         search_plugin: Union[Search, Api] = next(
             self._plugins_manager.get_search_plugins(provider=provider)
@@ -2457,18 +2460,21 @@ class EODataAccessGateway:
         product_type: str = kwargs_queryables.pop("productType")
         kwargs_queryables.pop("provider", None)
         logger.debug("Validate request")
-        search_plugin.list_queryables(
-            filters=kwargs_queryables,
-            available_product_types=[product_type],
-            product_type_configs=search_plugin.config.products,
-            product_type=product_type,
-        ).get_model().model_validate(kwargs_queryables)
+        try:
+            search_plugin.list_queryables(
+                filters=kwargs_queryables,
+                available_product_types=[product_type],
+                product_type_configs=search_plugin.config.products,
+                product_type=product_type,
+            ).get_model().model_validate(kwargs_queryables)
+        except pydanticValidationError as e:
+            raise ValidationError(format_pydantic_error(e)) from e
 
     def validate_order_request(self, product: EOProduct):
         """Validate a product order request.
 
         :param product: The product to validate
-        :raises: :class:`~pydantic_core.ValidationError`
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         download_plugin: Union[
             Download, Api
