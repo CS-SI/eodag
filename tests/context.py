@@ -42,6 +42,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     NOT_AVAILABLE,
 )
+from eodag.api.product_type import ProductType, ProductTypesDict, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.cli import download, eodag, list_pt, search_crunch
 from eodag.config import (
