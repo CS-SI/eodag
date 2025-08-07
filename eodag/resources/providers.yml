@@ -5582,6 +5582,8 @@
       fetch_method: POST
       fetch_body:
         limit: 10000
+      generic_product_type_parsable_metadata:
+        processingLevel: '{$.summaries."processing:level"#csv_list}'
     pagination:
       total_items_nb_key_path: '$.context.matched'
       # 1000 is ok and 2000 fails
