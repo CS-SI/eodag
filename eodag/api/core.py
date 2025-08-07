@@ -88,6 +88,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedCollection,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.stac_reader import fetch_stac_items
@@ -871,24 +872,39 @@ class EODataAccessGateway:
                                 # new_collections_conf is a subset on an existing conf
                                 break
                         else:
-                            # new_collection_conf does not already exist, append it
-                            # to provider_products_config
-                            provider_products_config[
-                                new_collection
-                            ] = new_collection_conf
-                            # to self.collections_config
-                            self.collections_config.update(
-                                {
-                                    new_collection: ProductType(
-                                        id=new_collection,
-                                        **new_collections_conf[
-                                            "collections_config"
-                                        ][new_collection],
+                            try:
+                                # new_collection_conf does not already exist, append it
+                                # to self.collections_config
+                                self.collections_config.update(
+                                    {
+                                        new_collection: ProductType(
+                                            id=new_collection,
+                                            **new_collections_conf[
+                                                "collections_config"
+                                            ][new_collection],
+                                        )
+                                    }
+                                )
+                                # to provider_products_config
+                                provider_products_config[
+                                    new_collection
+                                ] = new_collection_conf
+                                ext_collections_conf[
+                                    provider
+                                ] = new_collections_conf
+                                new_collections.append(new_collection)
+                            except ValidationError as e:
+                                # skip collection if there is a problem with its id (missing or not a string)
+                                if (
+                                    not is_env_var_true("EODAG_VALIDATE_COLLECTIONS")
+                                    and "\nid\n" in e.message
+                                ):
+                                    logger.debug(
+                                        f"Collection {new_collection} has been pruned on provider "
+                                        f"{provider} because its id was incorrectly parsed for eodag"
                                     )
-                                }
-                            )
-                            ext_collections_conf[provider] = new_collections_conf
-                            new_collections.append(new_collection)
+                                else:
+                                    raise e from e
                 if new_collections:
                     logger.debug(
                         f"Added {len(new_collections)} collections for {provider}"
