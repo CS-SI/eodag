@@ -90,6 +90,7 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
+    ValidationError,
 )
 from eodag.utils.rest import rfc3339_str_to_datetime
 from eodag.utils.stac_reader import fetch_stac_items
@@ -968,30 +969,45 @@ class EODataAccessGateway:
                                 # new_product_types_conf is a subset on an existing conf
                                 break
                         else:
-                            # new_product_type_conf does not already exist, append it
-                            # to provider_products_config
-                            provider_products_config[
-                                new_product_type
-                            ] = new_product_type_conf
-                            # to self.product_types_config
-                            self.product_types_config.update(
-                                {
-                                    new_product_type: ProductType(
-                                        id=new_product_type,
-                                        **new_product_types_conf[
-                                            "product_types_config"
-                                        ][new_product_type],
+                            try:
+                                # new_product_type_conf does not already exist, append it
+                                # to self.product_types_config
+                                self.product_types_config.update(
+                                    {
+                                        new_product_type: ProductType(
+                                            id=new_product_type,
+                                            **new_product_types_conf[
+                                                "product_types_config"
+                                            ][new_product_type],
+                                        )
+                                    }
+                                )
+                                # to provider_products_config
+                                provider_products_config[
+                                    new_product_type
+                                ] = new_product_type_conf
+                                self.product_types_config_md5 = obj_md5sum(
+                                    {
+                                        p: p_f.model_dump()
+                                        for p, p_f in self.product_types_config.items()
+                                    }
+                                )
+                                ext_product_types_conf[
+                                    provider
+                                ] = new_product_types_conf
+                                new_product_types.append(new_product_type)
+                            except ValidationError as e:
+                                # skip product type if there is a problem with its id (missing or not a string)
+                                if (
+                                    not is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES")
+                                    and "\nid\n" in e.message
+                                ):
+                                    logger.debug(
+                                        f"Product type {new_product_type} has been pruned on provider "
+                                        f"{provider} because its id was incorrectly parsed for eodag"
                                     )
-                                }
-                            )
-                            self.product_types_config_md5 = obj_md5sum(
-                                {
-                                    p: p_f.model_dump()
-                                    for p, p_f in self.product_types_config.items()
-                                }
-                            )
-                            ext_product_types_conf[provider] = new_product_types_conf
-                            new_product_types.append(new_product_type)
+                                else:
+                                    raise e from e
                 if new_product_types:
                     logger.debug(
                         f"Added {len(new_product_types)} product types for {provider}"
