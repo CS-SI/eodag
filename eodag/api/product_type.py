@@ -17,28 +17,29 @@
 # limitations under the License.
 from __future__ import annotations
 
+import logging
 import re
 from collections import UserDict, UserList
 from typing import TYPE_CHECKING, Any, Optional
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    PrivateAttr,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import ValidationError as pydanticValidationError
+from pydantic import field_validator, model_validator
+from pydantic_core import PydanticCustomError
 
+from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import ValidationError
 from eodag.utils.repr import dict_to_html_table
 
 if TYPE_CHECKING:
+    from pydantic import ModelWrapValidatorHandler
     from typing_extensions import Self
 
     from eodag.api.core import EODataAccessGateway
     from eodag.api.search_result import SearchResult
     from eodag.types.queryables import QueryablesDict
+
+logger = logging.getLogger("eodag.api.product_type")
 
 RFC3339_PATTERN = (
     r"^(\d{4})-(\d{2})-(\d{2})"
@@ -96,10 +97,13 @@ class ProductType(BaseModel):
         # Uppercase the string
         value = value.upper()
 
-        # Match against RFC3339 regex.
+        # Match against RFC3339 regex
         result = re.match(RFC3339_PATTERN, value)
         if not result:
-            raise ValidationError("Invalid RFC3339 datetime.")
+            raise PydanticCustomError(
+                "string_type",
+                "Input should be a valid datetime string in RFC3339 format (e.g. '2024-06-10T12:00:00Z')",
+            )
 
         return value
 
@@ -109,6 +113,47 @@ class ProductType(BaseModel):
         if self.alias is not None:
             self.id = self.alias
         return self
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def validate_product_type(
+        cls, values: dict[str, Any] | Self, handler: ModelWrapValidatorHandler[Self]
+    ) -> Self:
+        """Allow validation errors to be raised if EODAG_VALIDATE_PRODUCT_TYPES is set to True,
+        otherwise set incorrectly formatted attributes to None and ignore extra attributes."""
+        try:
+            return handler(values)
+        except pydanticValidationError as e:
+            # raise an error if a strict validation is activated or if the id is invalid
+            if is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES") or any(
+                error["loc"][0] == "id" for error in e.errors()
+            ):
+                raise ValidationError.from_error(e) from e
+
+            # if validation is not strict, we just log errors and return the product type with
+            # its incorrectly formatted attribute(s) set to None and its extra attribute(s) ignored
+            for error in e.errors():
+                wrong_param = error["loc"][0]
+                if not isinstance(wrong_param, str):
+                    continue
+                if isinstance(values, cls) and wrong_param not in cls.model_fields:
+                    del values.__dict__[wrong_param]
+                elif isinstance(values, cls) and wrong_param in cls.model_fields:
+                    values.__dict__[wrong_param] = None
+                elif isinstance(values, dict) and wrong_param not in cls.model_fields:
+                    del values[wrong_param]
+                elif isinstance(values, dict) and wrong_param in cls.model_fields:
+                    values[wrong_param] = None
+
+            id = values["id"] if isinstance(values, dict) else values.__dict__["id"]
+
+            logger.warning(
+                f"Validation failed for the product type {id} instance creation, but it is still created "
+                "with its incorrectly formatted attribute(s) set to None and its extra attribute(s) ignored"
+            )
+            logger.debug(e)
+
+            return handler(values)
 
     def __str__(self) -> str:
         return f'ProductType("{self.id}")'
