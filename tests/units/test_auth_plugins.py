@@ -674,6 +674,57 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             None, self.profile_name
         )
 
+    @mock.patch("eodag.plugins.authentication.aws_auth.S3AuthContext", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",
+        autospec=True,
+    )
+    def test_plugins_auth_aws_authenticate_objects(
+        self, mock_get_authenticated_objects, mock_s3_client, mock_auth_context
+    ):
+        """authenticate_objects should return the available objects per accessible bucket"""
+        mock_auth_context.create_auth_context_unsigned.return_value = S3AuthContext(
+            None, "unsigned", None
+        )
+        mock_auth_context.create_auth_context_auth_profile.return_value = S3AuthContext(
+            None, "auth_profile", None
+        )
+        mock_auth_context.create_auth_context_auth_keys.return_value = S3AuthContext(
+            None, "auth_keys", None
+        )
+        mock_auth_context.create_auth_context_env.return_value = S3AuthContext(
+            None, "env", None
+        )
+
+        # no authenticated objects -> error
+        plugin = self.get_auth_plugin("provider_with_auth_keys")
+        buckets_prefixes = [("a", "b/c/x.png"), ("a", "b/c/y.json")]
+        mock_get_authenticated_objects.side_effect = AuthenticationError("problem")
+        with self.assertRaises(AuthenticationError):
+            plugin.authenticate_objects(buckets_prefixes)
+
+        # one authenticated
+        plugin = self.get_auth_plugin("provider_with_auth_keys_session")
+        buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
+        mock_get_authenticated_objects.side_effect = [
+            AuthenticationError("problem"),
+            ["c/y.json"],
+        ]
+        auth_objects = plugin.authenticate_objects(buckets_prefixes)
+        self.assertEqual(({"b": ["c/y.json"]}, ["c/y.json"]), auth_objects)
+
+        # both buckets authenticated
+        plugin = self.get_auth_plugin("provider_with_auth_profile")
+        buckets_prefixes = [("a", "b/c/x.png"), ("b", "b/c/y.json")]
+        mock_get_authenticated_objects.side_effect = [["b/c/x.json"], ["c/y.json"]]
+        auth_objects = plugin.authenticate_objects(buckets_prefixes)
+        self.assertEqual(
+            ({"a": ["b/c/x.json"], "b": ["c/y.json"]}, ["c/y.json"]), auth_objects
+        )
+
 
 class TestAuthPluginHTTPHeaderAuth(BaseAuthPluginTest):
     @classmethod
