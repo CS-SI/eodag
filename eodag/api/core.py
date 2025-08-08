@@ -73,7 +73,6 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
-    deepcopy,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -2445,28 +2444,19 @@ class EODataAccessGateway:
 
         return results
 
-    def validate_search_request(self, provider: str, kwargs: dict[str, Any]):
+    def validate_search_request(self, provider: str, filter: dict[str, Any]):
         """Validate a search request.
 
         :param provider: Provider to use for validation
-        :param kwargs: Arguments of the search request
+        :param filter: Arguments of the search request
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
-        search_plugin: Union[Search, Api] = next(
-            self._plugins_manager.get_search_plugins(provider=provider)
-        )
-        kwargs_queryables: dict[str, Any] = deepcopy(kwargs)
-        # Remove not queryable parameters
-        product_type: str = kwargs_queryables.pop("productType")
-        kwargs_queryables.pop("provider", None)
         logger.debug("Validate request")
         try:
-            search_plugin.list_queryables(
-                filters=kwargs_queryables,
-                available_product_types=[product_type],
-                product_type_configs=search_plugin.config.products,
-                product_type=product_type,
-            ).get_model().model_validate(kwargs_queryables)
+            self.list_queryables(
+                provider=provider,
+                **filter,
+            ).get_model().model_validate(filter)
         except pydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
 
