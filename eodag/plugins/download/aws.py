@@ -35,9 +35,9 @@ from eodag.api.product.metadata_mapping import (
     properties_from_xml,
 )
 from eodag.plugins.authentication.aws_auth import (
-    AWS_AUTH_ERROR_MESSAGES,
     AwsAuth,
     S3AuthContextPool,
+    raise_if_auth_error,
 )
 from eodag.plugins.download.base import Download
 from eodag.utils import (
@@ -232,7 +232,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3AuthContextPool]] = None,
+        auth: Optional[S3AuthContextPool] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -361,7 +361,7 @@ class AwsDownload(Download):
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
         except ClientError as e:
-            self._raise_if_auth_error(e)
+            raise_if_auth_error(e)
             logger.warning("Unexpected error: %s" % e)
 
         # finalize safe product
@@ -617,20 +617,10 @@ class AwsDownload(Download):
 
         return unique_product_chunks
 
-    def _raise_if_auth_error(self, exception: ClientError) -> None:
-        """Raises an error if given exception is an authentication error"""
-        err = cast(dict[str, str], exception.response["Error"])
-        if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
-            raise AuthenticationError(
-                f"Please check your credentials for {self.provider}.",
-                f"HTTP Error {exception.response['ResponseMetadata']['HTTPStatusCode']} returned.",
-                err["Code"] + ": " + err["Message"],
-            )
-
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3AuthContextPool]] = None,
+        auth: Optional[S3AuthContextPool] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -715,11 +705,16 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-
-        s3_context = [
-            context for context in auth if context.auth_type == auth.used_method
-        ]
-        self.s3_resource = s3_context[0].s3_resource
+        if auth:
+            s3_context = [
+                context for context in auth if context.auth_type == auth.used_method
+            ]
+            self.s3_resource = s3_context[0].s3_resource
+        else:
+            self.s3_resource = boto3.resource(
+                service_name="s3",
+                endpoint_url=getattr(self.config, "s3_endpoint", None),
+            )
 
         product_conf = getattr(self.config, "products", {}).get(
             product.product_type, {}

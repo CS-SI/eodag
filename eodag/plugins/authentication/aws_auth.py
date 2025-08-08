@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 from boto3.session import Session
@@ -45,6 +45,17 @@ AWS_AUTH_ERROR_MESSAGES = [
     "SignatureDoesNotMatch",
     "InvalidRequest",
 ]
+
+
+def raise_if_auth_error(self, exception: ClientError) -> None:
+    """Raises an error if given exception is an authentication error"""
+    err = cast(dict[str, str], exception.response["Error"])
+    if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
+        raise AuthenticationError(
+            f"Please check your credentials for {self.provider}.",
+            f"HTTP Error {exception.response['ResponseMetadata']['HTTPStatusCode']} returned.",
+            err["Code"] + ": " + err["Message"],
+        )
 
 
 class S3AuthContext:

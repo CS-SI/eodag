@@ -30,6 +30,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union
 
 from eodag.api.product.metadata_mapping import ONLINE_STATUS
+from eodag.plugins.authentication.aws_auth import S3AuthContextPool
 from eodag.plugins.base import PluginTopic
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -103,7 +104,7 @@ class Download(PluginTopic):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -133,7 +134,7 @@ class Download(PluginTopic):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,

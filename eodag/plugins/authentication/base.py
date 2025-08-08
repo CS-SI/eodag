@@ -17,6 +17,7 @@
 # limitations under the License.
 from __future__ import annotations
 
+from collections import UserList
 from typing import TYPE_CHECKING, Union
 
 from eodag.plugins.base import PluginTopic
@@ -40,7 +41,7 @@ class Authentication(PluginTopic):
           configuration that needs authentication and helps identifying it
     """
 
-    def authenticate(self) -> Union[AuthBase, S3SessionKwargs]:
+    def authenticate(self) -> Union[AuthBase, UserList, S3SessionKwargs]:
         """Authenticate"""
         raise NotImplementedError
 
