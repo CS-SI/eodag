@@ -1530,17 +1530,7 @@
     # See Archive Catalog in https://apps.ecmwf.int/archive-catalogue/
     # See available Public Datasets in https://apps.ecmwf.int/datasets/
     TIGGE_CF_SFC:
-      class: ti
       dataset: tigge
-      expver: prod
-      type: cf
-      levtype: sfc
-      origin: ecmwf
-      grid: 0.5/0.5
-      param: 59/134/136/146/147/151/165/166/167/168/172/176/177/179/189/235/228002/228039/228139/228141/228144/228164/228228
-      step: 0
-      time: 00:00
-      target: output
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
 ---
@@ -1625,65 +1615,30 @@
     # See available Public Datasets in https://ads.atmosphere.copernicus.eu/cdsapp#!/search?type=dataset
     CAMS_GAC_FORECAST:
       dataset: cams-global-atmospheric-composition-forecasts
-      type: forecast
       data_format: grib
-      variable: 10m_u_component_of_wind
-      time: 00:00
-      leadtime_hour: 0
     CAMS_GFE_GFAS:
       dataset: cams-global-fire-emissions-gfas
       data_format: grib
-      variable: wildfire_combustion_rate
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: cams-europe-air-quality-forecasts
-      model: ensemble
       data_format: grib
-      variable: ammonia
-      type: forecast
-      time: 00:00
-      level: 0
-      leadtime_hour: 0
     CAMS_EU_AIR_QUALITY_RE:
       dataset: cams-europe-air-quality-reanalyses
-      type: validated_reanalysis
       data_format: zip
-      variable: nitrogen_dioxide
-      model: ensemble
-      level: 0
       metadata_mapping:
         <<: *month_year
     CAMS_GRF:
       dataset: cams-global-radiative-forcings
       data_format: zip
-      variable: radiative_forcing_of_carbon_dioxide
-      forcing_type: instantaneous
-      band: long_wave
-      sky_type: all_sky
-      level: surface
-      version: 2
       metadata_mapping:
         <<: *month_year
     CAMS_GRF_AUX:
       dataset: cams-global-radiative-forcing-auxilliary-variables
-      band: short_wave
-      sky_type: clear_sky
-      version: 1.5
       data_format: zip
-      variable: aerosol_radiation_effect
-      aerosol_type: marine
-      level: surface
       metadata_mapping:
         <<: *month_year
     CAMS_SOLAR_RADIATION:
       dataset: cams-solar-radiation-timeseries
-      sky_type: clear
-      time_step: 1minute
-      time_reference: true_solar_time
-      location:
-        latitude: 0
-        longitude: 0
-      altitude: -999
-      format: csv
       metadata_mapping:
         latitude:
           - '{{"location": {{"latitude": {"latitude"}, "longitude": {"longitude"}}}}}'
@@ -1694,30 +1649,18 @@
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: cams-global-ghg-reanalysis-egg4-monthly
       data_format: grib
-      variable: snow_albedo
-      product_type: monthly_mean
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_EGG4:
       dataset: cams-global-ghg-reanalysis-egg4
       data_format: grib
-      variable: snow_albedo
-      step: 0
     CAMS_GREENHOUSE_INVERSION:
       dataset: cams-global-greenhouse-gas-inversion
-      version: latest
-      variable: carbon_dioxide
-      quantity: mean_column
-      input_observations: surface
-      time_aggregation: instantaneous
       metadata_mapping:
         <<: *month_year
     CAMS_GLOBAL_EMISSIONS:
       dataset: cams-global-emission-inventories
-      version: v6.2
       data_format: zip
-      variable: acids
-      source: anthropogenic
       metadata_mapping:
         completionTimeFromAscendingNode:
           - |
@@ -1728,13 +1671,9 @@
     CAMS_EAC4:
       dataset: cams-global-reanalysis-eac4
       data_format: grib
-      variable: 2m_dewpoint_temperature
-      time: 00:00
     CAMS_EAC4_MONTHLY:
       dataset: cams-global-reanalysis-eac4-monthly
       data_format: grib
-      variable: 2m_dewpoint_temperature
-      product_type: monthly_mean
       metadata_mapping:
         <<: *month_year
     GENERIC_PRODUCT_TYPE:
@@ -1860,76 +1799,53 @@
     # See available Public Datasets in https://cds.climate.copernicus.eu/cdsapp#!/search?type=dataset
     AG_ERA5:
       dataset: sis-agrometeorological-indicators
-      version: '1_1'
-      variable: cloud_cover
-      statistic: 24_hour_mean
       metadata_mapping:
         <<: *day_month_year
     ERA5_SL:
       dataset: reanalysis-era5-single-levels
-      product_type: reanalysis
-      variable: 10m_u_component_of_wind
       data_format: grib
       download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL:
       dataset: reanalysis-era5-pressure-levels
-      product_type: reanalysis
-      variable: geopotential
-      data_format: grib
       download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL_MONTHLY:
       dataset: reanalysis-era5-pressure-levels-monthly-means
-      product_type: monthly_averaged_reanalysis_by_hour_of_day
-      variable: divergence
-      pressure_level: 1
       data_format: grib
       download_format: zip
       metadata_mapping:
         <<: *time_month_year
     ERA5_LAND:
       dataset: reanalysis-era5-land
-      variable: 2m_dewpoint_temperature
       data_format: grib
       download_format: zip
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_LAND_MONTHLY:
       dataset: reanalysis-era5-land-monthly-means
-      product_type: monthly_averaged_reanalysis_by_hour_of_day
-      variable: 2m_dewpoint_temperature
       data_format: grib
       download_format: zip
       metadata_mapping:
         <<: *time_month_year
     ERA5_SL_MONTHLY:
       dataset: reanalysis-era5-single-levels-monthly-means
-      product_type: monthly_averaged_reanalysis_by_hour_of_day
       data_format: grib
       download_format: zip
       metadata_mapping:
         <<: *time_month_year
     UERRA_EUROPE_SL:
       dataset: reanalysis-uerra-europe-single-levels
-      origin: mescan_surfex
-      variable: 10m_wind_direction
-      time: 00:00
       data_format: grib
       metadata_mapping:
         <<: *day_month_year
     GLACIERS_DIST_RANDOLPH:
       dataset: insitu-glaciers-extent
-      variable: glacier_area
-      product_type: gridded
-      version: rgi_6_0
       data_format: zip
     GRIDDED_GLACIERS_MASS_CHANGE:
       dataset: derived-gridded-glacier-mass-change
-      variable: glacier_mass_change
-      product_version: wgms_fog_2023_09
       data_format: zip
       metadata_mapping:
         completionTimeFromAscendingNode:
@@ -1940,142 +1856,65 @@
           - '{$.completionTimeFromAscendingNode#get_hydrological_year}'
     SATELLITE_CARBON_DIOXIDE:
       dataset: satellite-carbon-dioxide
-      processing_level: level_2
-      variable: xco2
-      sensor_and_algorithm: sciamachy_wfmd
-      version: '4_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
       dataset: satellite-fire-burned-area
-      origin: esa_cci
-      sensor: modis
-      variable: pixel_variables
-      version: '5_1_1cds'
-      region: europe
       metadata_mapping:
         <<: *nday_month_year
     SATELLITE_METHANE:
       dataset: satellite-methane
-      processing_level: level_2
-      variable: xch4
-      sensor_and_algorithm: sciamachy_wfmd
-      version: '4_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
       dataset: satellite-sea-ice-edge-type
-      cdr_type: cdr
-      region: northern_hemisphere
-      variable:
-        - sea_ice_edge
-        - sea_ice_type
-      version: '3_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_THICKNESS:
       dataset: satellite-sea-ice-thickness
-      cdr_type: cdr
-      satellite: envisat
-      variable: all
-      version: '3_0'
       metadata_mapping:
         <<: *month_year
     SATELLITE_SEA_ICE_CONCENTRATION:
       dataset: satellite-sea-ice-concentration
-      cdr_type: cdr
-      origin: eumetsat_osi_saf
-      region:
-        - northern_hemisphere
-        - southern_hemisphere
-      sensor: ssmis
-      temporal_aggregation: daily
-      variable: all
-      version: v3
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_LEVEL_GLOBAL:
       dataset: satellite-sea-level-global
-      variable:
-        - daily
-      version: vdt2021
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_PL:
       dataset: seasonal-postprocessed-pressure-levels
       data_format: grib
-      originating_centre: ecmwf
-      system: 5
-      variable: geopotential_anomaly
-      pressure_level: 10
-      product_type: ensemble_mean
-      leadtime_month: 1
       metadata_mapping:
         <<: *month_year
     SEASONAL_POSTPROCESSED_SL:
       dataset: seasonal-postprocessed-single-levels
       data_format: grib
-      originating_centre: ecmwf
-      system: 5
-      variable: 2m_dewpoint_temperature_anomaly
-      product_type: ensemble_mean
-      leadtime_month: 1
       metadata_mapping:
         <<: *month_year
     SEASONAL_ORIGINAL_SL:
       dataset: seasonal-original-single-levels
       data_format: grib
-      originating_centre: ecmwf
-      system: 5
-      variable: 10m_u_component_of_wind
-      leadtime_hour: 6
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_PL:
       dataset: seasonal-original-pressure-levels
       data_format: grib
-      originating_centre: ecmwf
-      system: 5
-      variable: geopotential
-      pressure_level: 10
-      leadtime_hour: 12
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_MONTHLY_PL:
       dataset: seasonal-monthly-pressure-levels
       data_format: grib
-      originating_centre: ecmwf
-      system: 5
-      variable: geopotential
-      pressure_level: 10
-      product_type: monthly_mean
-      leadtime_month: 1
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_SL:
       dataset: seasonal-monthly-single-levels
       data_format: grib
-      originating_centre: ecmwf
-      system: 5
-      variable: 10m_u_component_of_wind
-      product_type: monthly_mean
-      leadtime_month: 1
       metadata_mapping:
         <<: *month_year
     SIS_HYDRO_MET_PROJ:
       dataset: sis-hydrology-meteorology-derived-projections
       data_format: zip
-      product_type: climate_impact_indicators
-      variable: 2m_air_temperature
-      variable_type: absolute_change_from_reference_period
-      processing_type: original
-      time_aggregation: monthly_mean
-      horizontal_resolution: 5_km
-      experiment: degree_scenario
-      rcm: cclm4_8_17
-      gcm: ec_earth
-      ensemble_member: r12i1p1
-      period: 1_5_c
     CMIP6_CLIMATE_PROJECTIONS:
       dataset: projections-cmip6
     GENERIC_PRODUCT_TYPE:
@@ -2427,20 +2266,8 @@
       orderLink: https://my.meteoblue.com/dataset/query?{qs#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}
       # orderLink: '{$.downloadLink#replace_str(r"^(.*)(\")(queries\")(.)",r"\1\2runOnJobQueue\2\4 true, \2\3\4")}'
   products:
-    NEMSGLOBAL_TCDC:
-      productType: NEMSGLOBAL
-      queries: [{'domain':'NEMSGLOBAL','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
-      format: netCDF
-      units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
-      timeIntervalsAlignment:
-      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
-    NEMSAUTO_TCDC:
-      productType: NEMSAUTO
-      queries: [{'domain':'NEMSAUTO','gapFillDomain':null,'timeResolution':'daily','codes':[{'code':71,'level':'sfc','aggregation':'mean'}]}]
-      format: netCDF
-      units: {'temperature':'C','velocity':'km/h','length':'metric','energy':'watts'}
-      timeIntervalsAlignment:
-      geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
+    NEMSGLOBAL_TCDC: {}
+    NEMSAUTO_TCDC: {}
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
@@ -3647,19 +3474,10 @@
   products:
     SATELLITE_CARBON_DIOXIDE:
       dataset: EO:ECMWF:DAT:SATELLITE_CARBON_DIOXIDE
-      processing_level: level_2
-      version: '4_0'
-      variable: xco2
-      sensor_and_algorithm: sciamachy_wfmd
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_FIRE_BURNED_AREA:
       dataset: EO:ECMWF:DAT:SATELLITE_FIRE_BURNED_AREA
-      origin: esa_cci
-      sensor: modis
-      variable: pixel_variables
-      version: 5_1_1cds
-      region: europe
       metadata_mapping:
         startTimeFromAscendingNode:
           - |
@@ -3672,132 +3490,67 @@
         completionTimeFromAscendingNode: $.properties.enddate
     SATELLITE_METHANE:
       dataset: EO:ECMWF:DAT:SATELLITE_METHANE
-      processing_level: level_2
-      version: '4_0'
-      variable: xch4
-      sensor_and_algorithm: sciamachy_wfmd
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_EDGE_TYPE:
       dataset: EO:ECMWF:DAT:SATELLITE_SEA_ICE_EDGE_TYPE
-      variable: sea_ice_type
-      region: northern_hemisphere
-      cdr_type: cdr
-      version: '3_0'
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_ICE_THICKNESS:
       dataset: EO:ECMWF:DAT:SATELLITE_SEA_ICE_THICKNESS
-      satellite: envisat
-      cdr_type: cdr
-      variable: all
-      version: '3_0'
       metadata_mapping:
         <<: *month_year
     SATELLITE_SEA_ICE_CONCENTRATION:
       dataset: EO:ECMWF:DAT:SATELLITE_SEA_ICE_CONCENTRATION
-      cdr_type: cdr
-      origin: eumetsat_osi_saf
-      region:
-        - northern_hemisphere
-        - southern_hemisphere
-      sensor: ssmis
-      temporal_aggregation: daily
-      variable: all
-      version: v3
       metadata_mapping:
         <<: *day_month_year
     SATELLITE_SEA_LEVEL_GLOBAL:
       dataset: EO:ECMWF:DAT:SATELLITE_SEA_LEVEL_GLOBAL
-      variable: daily
-      version: vdt2021
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_SL:
       dataset: EO:ECMWF:DAT:SEASONAL_ORIGINAL_SINGLE_LEVELS
-      variable: land_sea_mask
-      leadtime_hour: 0
-      originating_centre: ecmwf
-      system: 5
       data_format: grib
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_ORIGINAL_PL:
       dataset: EO:ECMWF:DAT:SEASONAL_ORIGINAL_PRESSURE_LEVELS
-      variable: geopotential
-      pressure_level: 10
-      leadtime_hour: 12
-      originating_centre: ecmwf
-      system: 5
       data_format: grib
       metadata_mapping:
         <<: *day_month_year
     SEASONAL_POSTPROCESSED_SL:
       dataset: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_SINGLE_LEVELS
-      product_type: ensemble_mean
-      originating_centre: ecmwf
-      variable: 2m_dewpoint_temperature_anomaly
-      leadtime_month: 1
-      origin: ecmwf
-      system: 5
       data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_POSTPROCESSED_PL:
       dataset: EO:ECMWF:DAT:SEASONAL_POSTPROCESSED_PRESSURE_LEVELS
-      product_type: ensemble_mean
-      variable: geopotential_anomaly
-      pressure_level: 10
-      leadtime_month: 1
-      originating_centre: ecmwf
-      system: 5
       data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_SL:
       dataset: EO:ECMWF:DAT:SEASONAL_MONTHLY_SINGLE_LEVELS
-      variable: 10m_u_component_of_wind
-      product_type: monthly_mean
-      leadtime_month: 1
-      originating_centre: ecmwf
-      system: 5
       data_format: grib
       metadata_mapping:
         <<: *month_year
     SEASONAL_MONTHLY_PL:
       dataset: EO:ECMWF:DAT:SEASONAL_MONTHLY_PRESSURE_LEVELS
-      variable: geopotential
-      product_type: monthly_mean
-      leadtime_month: 1
-      pressure_level: 10
-      originating_centre: ecmwf
-      system: 5
       data_format: grib
       metadata_mapping:
         <<: *month_year
     GLACIERS_DIST_RANDOLPH:
       dataset: EO:ECMWF:DAT:INSITU_GLACIERS_EXTENT
-      variable: glacier_area
-      product_type: gridded
       data_format: zip
-      version: rgi_6_0
       metadata_mapping:
         <<: *day_month_year
     FIRE_HISTORICAL:
       dataset: EO:ECMWF:DAT:CEMS_FIRE_HISTORICAL_V1
-      product_type: reanalysis
-      variable: fire_weather_index
-      system_version: '4_1'
       data_format: grib
-      grid: original_grid
-      dataset_type: consolidated_dataset
       metadata_mapping:
         <<: *day_month_year
     GRIDDED_GLACIERS_MASS_CHANGE:
       dataset: EO:ECMWF:DAT:DERIVED_GRIDDED_GLACIER_MASS_CHANGE
-      variable: glacier_mass_change
       data_format: zip
-      product_version: wgms_fog_2022_09
       metadata_mapping:
         startTimeFromAscendingNode:
           - |
@@ -3808,41 +3561,28 @@
         completionTimeFromAscendingNode: $.properties.enddate
     UERRA_EUROPE_SL:
       dataset: EO:ECMWF:DAT:REANALYSIS_UERRA_EUROPE_SINGLE_LEVELS
-      variable: total_cloud_cover
-      origin: uerra_harmonie
       data_format: grib # netcdf format may fail
       metadata_mapping:
         <<: *time_day_month_year
     AG_ERA5:
       dataset: EO:ECMWF:DAT:SIS_AGROMETEOROLOGICAL_INDICATORS
-      variable: cloud_cover
-      version: '1_1'
-      time: '06_00'
       data_format: zip
-      statistic: 24_hour_mean
       metadata_mapping:
         <<: *day_month_year
     ERA5_SL:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS
-      product_type: ensemble_mean
-      variable: 10m_u_component_of_wind
       download_format: unarchived
       data_format: grib # netcdf format may fail
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_PL:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS
-      product_type: ensemble_mean
-      variable: temperature
-      pressure_level: 1
       data_format: grib
       download_format: unarchived
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_SL_MONTHLY:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS_MONTHLY_MEANS
-      product_type: monthly_averaged_ensemble_members
-      variable: 10m_u_component_of_wind
       data_format: grib
       download_format: unarchived
       metadata_mapping:
@@ -3857,37 +3597,26 @@
         completionTimeFromAscendingNode: $.properties.enddate
     ERA5_PL_MONTHLY:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_PRESSURE_LEVELS_MONTHLY_MEANS
-      product_type: monthly_averaged_ensemble_members
-      variable: divergence
-      pressure_level: 1
       data_format: grib
       download_format: unarchived
       metadata_mapping_from_product: ERA5_SL_MONTHLY
     ERA5_LAND:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND
-      variable: 2m_dewpoint_temperature
       data_format: grib
       download_format: unarchived
       metadata_mapping:
         <<: *time_day_month_year
     ERA5_LAND_MONTHLY:
       dataset: EO:ECMWF:DAT:REANALYSIS_ERA5_LAND_MONTHLY_MEANS
-      product_type: monthly_averaged_reanalysis
-      variable: 2m_dewpoint_temperature
       data_format: grib
       download_format: unarchived
       metadata_mapping_from_product: ERA5_SL_MONTHLY
     CAMS_EAC4:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4
       data_format: grib
-      variable: 2m_dewpoint_temperature
-      time: 00:00
     CAMS_GLOBAL_EMISSIONS:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_EMISSION_INVENTORIES
-      version: v6.2
       data_format: zip
-      variable: acids
-      source: anthropogenic
       metadata_mapping:
         startTimeFromAscendingNode:
           - |
@@ -3899,94 +3628,46 @@
     CAMS_EAC4_MONTHLY:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4_MONTHLY
       data_format: grib
-      variable: 2m_dewpoint_temperature
-      product_type: monthly_mean
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_INVERSION:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GREENHOUSE_GAS_INVERSION
-      version: latest
-      variable: carbon_dioxide
-      quantity: mean_column
-      input_observations: surface
-      time_aggregation: instantaneous
       metadata_mapping:
         <<: *month_year
     CAMS_EU_AIR_QUALITY_RE:
       dataset: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_REANALYSES
-      type: validated_reanalysis
       data_format: zip
-      variable: nitrogen_dioxide
-      model: ensemble
-      level: 0
       metadata_mapping:
         <<: *month_year
     CAMS_GRF:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCINGS
       data_format: zip
-      variable: radiative_forcing_of_carbon_dioxide
-      forcing_type: instantaneous
-      band: long_wave
-      sky_type: all_sky
-      level: surface
-      version: 2
       metadata_mapping:
         <<: *month_year
     CAMS_GRF_AUX:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_RADIATIVE_FORCING_AUXILLIARY_VARIABLES
-      band: short_wave
-      sky_type: clear_sky
-      version: 1.5
       data_format: zip
-      variable: aerosol_radiation_effect
-      aerosol_type: marine
-      level: surface
       metadata_mapping:
         <<: *month_year
     CAMS_GREENHOUSE_EGG4:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4
       data_format: grib
-      variable: snow_albedo
-      step: 0
     CAMS_GREENHOUSE_EGG4_MONTHLY:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_GHG_REANALYSIS_EGG4_MONTHLY
       data_format: grib
-      variable: snow_albedo
-      product_type: monthly_mean_by_hour_of_day
-      step: 3
-      time: 00:00
       metadata_mapping:
         <<: *month_year
     CAMS_EU_AIR_QUALITY_FORECAST:
       dataset: EO:ECMWF:DAT:CAMS_EUROPE_AIR_QUALITY_FORECASTS
-      model: ensemble
       data_format: grib
-      variable: alder_pollen
-      type: forecast
-      time: 00:00
-      level: 0
-      leadtime_hour: 0
     CAMS_GAC_FORECAST:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_ATMOSPHERIC_COMPOSITION_FORECASTS
-      type: forecast
       data_format: grib
-      variable: 10m_u_component_of_wind
-      time: 00:00
-      leadtime_hour: 0
     CAMS_GFE_GFAS:
       dataset: EO:ECMWF:DAT:CAMS_GLOBAL_FIRE_EMISSIONS_GFAS
       data_format: grib
-      variable: wildfire_combustion_rate
-      time: 00:00
-      leadtime_hour: 0
     CAMS_SOLAR_RADIATION:
       dataset: EO:ECMWF:DAT:CAMS_SOLAR_RADIATION_TIMESERIES
-      sky_type: clear
-      time_step: 1minute
-      time_reference: true_solar_time
-      altitude: -999
-      format: csv
-      geometry: POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))
       metadata_mapping:
         geometry:
           - '{{"longitude": {geometry#to_longitude_latitude}["lon"], "latitude": {geometry#to_longitude_latitude}["lat"]}}'
@@ -4729,29 +4410,8 @@
   products:
     DT_EXTREMES:
       dataset: extremes-dt
-      class: d1
-      expver: "0001"
-      stream: oper
-      type: fc
-      levtype: sfc
-      step: 0
-      param: 31
-      time: "0000"
     DT_CLIMATE_ADAPTATION:
       dataset: climate-dt
-      class: d1
-      generation: 1
-      expver: "0001"
-      stream: clte
-      type: fc
-      activity: ScenarioMIP
-      experiment: SSP3-7.0
-      realization: 1
-      model: IFS-NEMO
-      param: 134/165/166
-      resolution: high
-      levtype: sfc
-      time: "0000"
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -6352,123 +6012,69 @@
       dataset: efas-historical
       data_format: grib
       download_format: zip
-      model_levels: surface_level
-      variable: snow_depth_water_equivalent
-      system_version: version_4_0
       metadata_mapping:
         <<: *time_hday_hmonth_hyear
     EFAS_FORECAST:
       dataset: efas-forecast
       data_format: grib
       download_format: zip
-      system_version: operational
-      originating_centre: ecmwf
-      product_type: control_forecast
-      variable:
-        - river_discharge_in_the_last_6_hours
-        - river_discharge_in_the_last_24_hours
-      model_levels: surface_level
-      leadtime_hour: 24
       metadata_mapping:
         <<: *time_day_month_year
     EFAS_SEASONAL:
       dataset: efas-seasonal
-      system_version: operational
       data_format: grib
       download_format: zip
-      variable: river_discharge_in_the_last_24_hours
-      model_levels: surface_level
-      leadtime_hour: 24
       metadata_mapping:
         <<: *month_year
     EFAS_REFORECAST:
       dataset: efas-reforecast
-      system_version: version_4_0
       data_format: grib
       download_format: zip
-      product_type: control_forecast
-      variable: river_discharge_in_the_last_6_hours
-      model_levels: surface_level
-      leadtime_hour: 0
       metadata_mapping:
         <<: *hday_hmonth_hyear
     EFAS_SEASONAL_REFORECAST:
       dataset: efas-seasonal-reforecast
-      system_version: version_5_0
       data_format: grib
       download_format: zip
-      variable: river_discharge_in_the_last_24_hours
-      model_levels: surface_level
-      leadtime_hour: 24
       metadata_mapping:
         <<: *hmonth_hyear
     GLOFAS_HISTORICAL:
       dataset: cems-glofas-historical
-      system_version: version_4_0
-      variable: river_discharge_in_the_last_24_hours
       data_format: grib2
       download_format: zip
-      hydrological_model: lisflood
-      product_type: consolidated
       metadata_mapping:
         <<: *hday_hmonth_hyear
     GLOFAS_FORECAST:
       dataset: cems-glofas-forecast
-      system_version: operational
-      variable: river_discharge_in_the_last_24_hours
       data_format: grib2
-      hydrological_model: htessel_lisflood
-      product_type: control_forecast
-      leadtime_hour: 24
       download_format: zip
       metadata_mapping:
         <<: *day_month_year
     GLOFAS_SEASONAL:
       dataset: cems-glofas-seasonal
-      variable: river_discharge_in_the_last_24_hours
       data_format: grib2
       download_format: zip
-      system_version: operational
-      hydrological_model: htessel_lisflood
-      leadtime_hour: 24
       metadata_mapping:
         <<: *month_year
     GLOFAS_SEASONAL_REFORECAST:
       dataset: cems-glofas-seasonal-reforecast
       data_format: grib2
       download_format: zip
-      variable: river_discharge_in_the_last_24_hours
-      system_version: version_4_0
-      hydrological_model: lisflood
-      leadtime_hour: 24
       metadata_mapping:
         <<: *hmonth_hyear
     GLOFAS_REFORECAST:
       dataset: cems-glofas-reforecast
-      variable: river_discharge_in_the_last_24_hours
       data_format: grib2
       download_format: zip
-      system_version: version_3_1
-      hydrological_model: lisflood
-      product_type: control_reforecast
-      leadtime_hour: 24
       metadata_mapping:
         <<: *hday_hmonth_hyear
     FIRE_HISTORICAL:
       dataset: cems-fire-historical-v1
-      grid: original_grid
-      dataset_type: consolidated_dataset
-      product_type: reanalysis
-      variable: build_up_index
-      system_version: '4_1'
       data_format: grib
       metadata_mapping:
         <<: *day_month_year
     FIRE_SEASONAL:
       dataset: cems-fire-seasonal
-      leadtime_hour: 12
-      variable: build_up_index
-      release_version: 5
       metadata_mapping:
         <<: *day_month_year
     GENERIC_PRODUCT_TYPE:
