@@ -1143,8 +1143,8 @@ class EODataAccessGateway:
         geom: Optional[Union[str, dict[str, float], BaseGeometry]] = None,
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
-        validate_request: Optional[bool] = False,
         count: bool = False,
+        validate_request: Optional[bool] = False,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1184,9 +1184,9 @@ class EODataAccessGateway:
         :param provider: (optional) the provider to be used. If set, search fallback will be disabled.
                          If not set, the configured preferred provider will be used at first
                          before trying others until finding results.
+        :param count: (optional) Whether to run a query with a count request or not
         :param validate_request: (Optional) Set to True to validate the request query before sending it
                                  to the provider
-        :param count: (optional) Whether to run a query with a count request or not
         :param kwargs: Some other criteria that will be used to do the search,
                        using paramaters compatibles with the provider
         :returns: A collection of EO products matching the criteria
