@@ -1494,11 +1494,9 @@ class TestCore(TestCoreBase):
         self.dag.list_queryables(provider="cop_cds", productType="ERA5_SL")
         defaults = {
             "productType": "ERA5_SL",
-            "product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "data_format": "grib",
             "download_format": "zip",
-            "variable": "10m_u_component_of_wind",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **defaults)
         mock_discover_queryables.reset_mock()
@@ -1508,11 +1506,9 @@ class TestCore(TestCoreBase):
         )
         params = {
             "productType": "ERA5_SL",
-            "product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
             "data_format": "grib",
             "download_format": "zip",
-            "variable": "10m_u_component_of_wind",
             "month": "02",
         }
         mock_discover_queryables.assert_called_once_with(plugin, **params)
@@ -1525,9 +1521,7 @@ class TestCore(TestCoreBase):
         )
         defaults = {
             "productType": "ERA5_SL",
-            "product_type": "reanalysis",
             "dataset": "reanalysis-era5-single-levels",
-            "variable": "10m_u_component_of_wind",
             "data_format": "",
             "download_format": "zip",
         }
@@ -1874,6 +1868,47 @@ class TestCore(TestCoreBase):
         )
         if sortables["planetary_computer"]:
             self.assertIsNone(sortables["planetary_computer"]["max_sort_params"])
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.validate_search_request", autospec=True
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+        return_value=([], 0),
+    )
+    def test_search_validate(
+        self,
+        mock_query: mock.Mock,
+        mock_validate_search_request: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ) -> None:
+        """Search filter must be validated if requested"""
+        # No validation by default
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+        }
+        self.dag.search(**filter)
+        mock_validate_search_request.assert_not_called()
+
+        # Validate request
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "lorem": "ipsum",
+        }
+        self.dag.search(validate_request=True, **filter)
+        mock_validate_search_request.assert_called_once()
+        args, kwargs = mock_validate_search_request.call_args
+        self.assertEqual(args[1], "peps")
+        # Some other default keyword may be added to the kwargs (e.g. geometry)
+        self.assertEqual("S1_SAR_GRD", args[2].get("productType"))
+        self.assertEqual("ipsum", args[2].get("lorem"))
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

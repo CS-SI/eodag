@@ -1193,8 +1193,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "day": ["20", "21"],
                 "time": ["01:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "product_type": "ensemble_mean",
-                "variable": "10m_u_component_of_wind",
                 "download_format": "unarchived",
                 "data_format": "grib",
                 "itemsPerPage": 20,
@@ -1218,8 +1216,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "day": ["01"],
                 "time": ["03:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "product_type": "ensemble_mean",
-                "variable": "10m_u_component_of_wind",
                 "download_format": "unarchived",
                 "data_format": "grib",
                 "itemsPerPage": 20,
@@ -1257,8 +1253,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "day": ["01"],
                 "time": ["00:00"],
                 "dataset_id": "EO:ECMWF:DAT:REANALYSIS_ERA5_SINGLE_LEVELS",
-                "product_type": "ensemble_mean",
-                "variable": "10m_u_component_of_wind",
                 "download_format": "unarchived",
                 "data_format": "grib",
                 "itemsPerPage": 20,
@@ -1295,8 +1289,6 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
                 "enddate": "2003-01-01T00:00:00.000Z",
                 "dataset_id": "EO:ECMWF:DAT:CAMS_GLOBAL_REANALYSIS_EAC4",
                 "data_format": "grib",
-                "variable": "2m_dewpoint_temperature",
-                "time": "00:00",
                 "itemsPerPage": 20,
                 "startIndex": 0,
             },
@@ -2860,8 +2852,6 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         self.product_type_params = {
             "ecmwf:dataset": self.product_dataset,
             "ecmwf:data_format": "grib",
-            "ecmwf:variable": "2m_dewpoint_temperature",
-            "ecmwf:time": "00:00",
         }
         self.custom_query_params = {
             "ecmwf:dataset": "cams-global-ghg-reanalysis-egg4",
@@ -3228,6 +3218,8 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         for constraint in constraints:
             self.assertNotIn(provider_data_format, constraint)
         params[eodag_formatted_download_format] = "foo"
+        # create parameters matching the first constraint
+        params["variable"] = "nitrogen_dioxide"
 
         queryables = self.search_plugin.discover_queryables(**params)
         # no error was raised, as expected

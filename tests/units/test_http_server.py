@@ -491,6 +491,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         self._request_valid(
@@ -502,6 +503,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
 
@@ -627,6 +629,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         self.assertEqual(len(result1.features), 2)
@@ -639,6 +642,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -657,6 +661,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         self._request_valid(
@@ -669,6 +674,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         self._request_valid(
@@ -681,6 +687,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         self._request_valid(
@@ -694,6 +701,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
 
@@ -708,6 +716,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
             ),
         )
         self._request_valid(
@@ -721,6 +730,48 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
+                validate_request=False,
+            ),
+        )
+
+    def test_validate_search_from_items(self):
+        """Validate search through eodag server collection/items endpoint
+        if validate_request=true is given"""
+        # No validation by default
+        self._request_valid(
+            f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
+                count=True,
+                validate_request=False,
+            ),
+        )
+        self._request_valid(
+            f"collections/{self.tested_product_type}/items?validate_request=False&bbox=0,43,1,44",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
+                count=True,
+                validate_request=False,
+            ),
+        )
+        self._request_valid(
+            f"collections/{self.tested_product_type}/items?validate_request=True&bbox=0,43,1,44",
+            expected_search_kwargs=dict(
+                productType=self.tested_product_type,
+                page=1,
+                items_per_page=DEFAULT_ITEMS_PER_PAGE,
+                geom=box(0, 43, 1, 44, ccw=False),
+                raise_errors=False,
+                count=True,
+                validate_request=True,
             ),
         )
 
@@ -1061,6 +1112,32 @@ class RequestTestCase(unittest.TestCase):
                 record["detail"] = set(s.strip() for s in record["detail"].split(","))
         self.assertDictEqual(expected_response, response_content)
 
+    @mock.patch(
+        "eodag.rest.core.eodag_api.search",
+        autospec=True,
+    )
+    def test_search_validate(self, mock_search: Mock):
+        """Search through eodag server should be validated if requested by the user"""
+
+        # No validation by default
+        self.app.get(
+            f"search?collections={self.tested_product_type}", follow_redirects=True
+        )
+        self.assertFalse(mock_search.call_args[1]["validate_request"])
+
+        self.app.get(
+            f"search?validate_request=false&collections={self.tested_product_type}",
+            follow_redirects=True,
+        )
+        self.assertFalse(mock_search.call_args[1]["validate_request"])
+
+        # Validate request
+        self.app.get(
+            f"search?validate_request=true&collections={self.tested_product_type}",
+            follow_redirects=True,
+        )
+        self.assertTrue(mock_search.call_args[1]["validate_request"])
+
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
         # no blacklist
@@ -1215,6 +1292,51 @@ class RequestTestCase(unittest.TestCase):
         mock_order_and_update.assert_called_once()
         self.assertEqual(
             mock_order_and_update.call_args[0][0].properties["qs"]["foo"], "bar"
+        )
+
+    @mock.patch(
+        "eodag.plugins.authentication.base.Authentication.authenticate",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.download.http.HTTPDownload._order",
+        autospec=True,
+        return_value={},
+    )
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.validate_search_request", autospec=True
+    )
+    def test_download_item_orderable_validate(
+        self,
+        mock_validate_search_request: mock.Mock,
+        mock__order: Mock,
+        mock_auth: Mock,
+    ):
+        """The product order should be validated if requested by the user"""
+
+        qs = '{"foo": "bar"}'
+
+        # No validation by default
+        self.app.request(
+            "GET",
+            f"collections/foo/items/FOO_ORDERABLE_13245/download?provider=cop_cds&_dc_qs={quote_plus(qs)}",
+            json=None,
+            follow_redirects=True,
+            headers={},
+        )
+        mock_validate_search_request.assert_not_called()
+
+        # Validate request
+        self.app.request(
+            "GET",
+            "collections/foo/items/FOO_ORDERABLE_13245/download"
+            + f"?validate_request=true&provider=cop_cds&_dc_qs={quote_plus(qs)}",
+            json=None,
+            follow_redirects=True,
+            headers={},
+        )
+        mock_validate_search_request.assert_called_once_with(
+            mock.ANY, "cop_cds", {"foo": "bar", "productType": "foo"}
         )
 
     @mock.patch(
