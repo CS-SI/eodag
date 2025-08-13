@@ -342,6 +342,7 @@ def stac_collections_items(
     filter: Optional[str] = None,
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
+    validate_request: Optional[bool] = False,
 ) -> ORJSONResponse:
     """Fetch collection's features"""
 
@@ -358,6 +359,7 @@ def stac_collections_items(
         filter=filter,
         filter_lang=filter_lang,
         crunch=crunch,
+        validate_request=validate_request,
     )
 
 
