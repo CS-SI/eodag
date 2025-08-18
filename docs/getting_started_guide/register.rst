@@ -40,7 +40,7 @@ You need credentials for both EOS Data Analytics (search) and AWS (download):
 
 .. note::
 
-    EOS free trial account is limited to 1000 requests.
+    EOS free trial account is limited to 1000 requests, see also their `subscription plans <https://doc.eos.com/subscription/>`__.
 
 ``cop_ads``
 ^^^^^^^^^^^
