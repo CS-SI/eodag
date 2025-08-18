@@ -5928,3 +5928,46 @@
         <<: *day_month_year
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
+---
+!provider # MARK: fedeo_ceda
+  name: fedeo_ceda
+  priority: 0
+  description: CEDA Federation of Earth Science Data Centres via FedEO STAC Catalog
+  roles:
+    - host
+  url: https://fedeo.ceos.org/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://fedeo.ceos.org/search'
+    need_auth: false
+    ssl_verify: true
+    timeout: 20
+    discover_product_types:
+      fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
+      result_type: json
+      results_entry: '$.links[?(@.rel=="child")]'
+      generic_product_type_id: '$.href'
+      generic_product_type_parsable_properties:
+        productType: '$.href'
+        title: '$.title'
+      single_collection_fetch_url: '{productType}'
+      single_collection_fetch_qs: ''
+      single_product_type_parsable_metadata:
+        name: '$.assets.enclosure.href'
+        title: '$.description'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    base_uri: ""
+    extract: false
+    flatten_top_dirs: false
+    download_url_tpl: '{downloadLink}'
+    metadata_mapping:
+      downloadLink: '$.assets.enclosure_1.href'
+      href: '$.href'
+      title: '$.properties.title'
+      geometry: '$.geometry'
+      start_datetime: '$.properties.start_datetime'
+      end_datetime: '$.properties.end_datetime'
