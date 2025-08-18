@@ -8,7 +8,7 @@ Description
 
 Products from the following providers are made avaiable through ``eodag``:
 
-* `aws_eos <https://eos.com/>`_: EOS search for Amazon public datasets
+* `aws_eos <https://eos.com/>`_: EOS Data Analytics search for Amazon public datasets
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
 * `cop_cds <https://cds.climate.copernicus.eu>`_: Copernicus Climate Data Store
 * `cop_dataspace <https://dataspace.copernicus.eu/>`_: Copernicus Data Space Ecosystem

@@ -25,7 +25,7 @@ You need AWS credentials for download:
 
 ``aws_eos``
 ^^^^^^^^^^^
-You need credentials for both EOS (search) and AWS (download):
+You need credentials for both EOS Data Analytics (search) and AWS (download):
 
 * Create an account on `EOS <https://auth.eos.com>`__
 * Get your EOS api key from `here <https://api-connect.eos.com/user-dashboard/statistics>`__
@@ -40,7 +40,7 @@ You need credentials for both EOS (search) and AWS (download):
 
 .. note::
 
-    EOS free account is limited to 100 requests.
+    EOS free trial account is limited to 1000 requests, see also their `subscription plans <https://doc.eos.com/subscription/>`__.
 
 ``cop_ads``
 ^^^^^^^^^^^
