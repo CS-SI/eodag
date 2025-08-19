@@ -62,7 +62,11 @@ def product_types_info_to_csv(
 
     product_types = dag.list_product_types(fetch_providers=False)
     product_types_names: list[str] = [product_type.id for product_type in product_types]
-    metadata_params = list(k for k in product_types[0].model_dump().keys() if k != "id")
+    metadata_params = list(
+        k
+        for k in product_types[0].model_dump().keys()
+        if k in ["platform", "processingLevel"]
+    )
 
     # csv fieldnames
     fieldnames = ["product type"] + metadata_params + providers

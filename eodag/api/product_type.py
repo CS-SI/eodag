@@ -190,13 +190,13 @@ class ProductType(BaseModel):
 
         :param dag: The EODataAccessGateway to use for the search
         :param kwargs: Some other criteria that will be used to do the search,
-                       using paramaters compatibles with the provider
+                       using parameters compatible with the provider
 
         :returns: A collection of EO products matching the criteria.
-        :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in kwargs,
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in `kwargs`,
                                                                    since it is already defined by the instance, or if
                                                                    the `dag` argument is not an instance of
-                                                                   `~eodag.api.core.EODataAccessGateway`
+                                                                   :class:`~eodag.api.core.EODataAccessGateway`
         """
         product_type_search_arg = "productType"
         if product_type_search_arg in kwargs:
@@ -222,10 +222,10 @@ class ProductType(BaseModel):
 
         :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
                   properties, associating parameters to their annotated type, and a additional_properties attribute
-        :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in kwargs,
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in `kwargs`,
                                                                    since it is already defined by the instance, or if
                                                                    the `dag` argument is not an instance of
-                                                                   `~eodag.api.core.EODataAccessGateway`
+                                                                   :class:`~eodag.api.core.EODataAccessGateway`
         """
         product_type_search_arg = "productType"
         if product_type_search_arg in kwargs:
