@@ -5946,15 +5946,21 @@
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
       result_type: json
       results_entry: '$.links[?(@.rel=="child")]'
-      generic_product_type_id: '$.href'
+      generic_product_type_id: '{$.assets.enclosure.href#create_name}'
       generic_product_type_parsable_properties:
-        productType: '$.href'
+        productType: '{$.href#extract_id}'
         title: '$.title'
+        id: '{$.href#extract_id}'
       single_collection_fetch_url: '{productType}'
       single_collection_fetch_qs: ''
       single_product_type_parsable_metadata:
-        name: '$.assets.enclosure.href'
-        title: '$.description'
+        ID: '{$.assets.enclosure.href#create_name}'
+        abstract: '$.description'
+        instrument: '$.summaries.instruments[0]'
+        keywords: '$.keywords'
+        license: '$.license'
+        platform: '$.summaries.platform[0]'
+        title: '$.title'
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
