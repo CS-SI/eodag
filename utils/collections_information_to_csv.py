@@ -62,7 +62,11 @@ def collections_info_to_csv(
 
     collections = dag.list_collections(fetch_providers=False)
     collections_names: list[str] = [collection.id for collection in collections]
-    metadata_params = list(k for k in collections[0].model_dump().keys() if k != "id")
+    metadata_params = list(
+        k
+        for k in collections[0].model_dump().keys()
+        if k in ["platform", "processingLevel"]
+    )
 
     # csv fieldnames
     fieldnames = ["collection"] + metadata_params + providers
