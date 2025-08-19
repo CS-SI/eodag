@@ -31,7 +31,7 @@ from tempfile import TemporaryDirectory
 
 import yaml
 from lxml import html
-from pydantic import ValidationError as pydanticValidationError
+from pydantic import ValidationError as PydanticValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
@@ -1623,7 +1623,7 @@ class TestCore(TestCoreBase):
             {"productType": "S1_SAR_GRD", "snowCover": 50}
         )
         self.assertIn("snowCover", queryables_validated.__dict__)
-        with self.assertRaises(pydanticValidationError):
+        with self.assertRaises(PydanticValidationError):
             queryables_peps_s1grd.get_model().model_validate(
                 {"productType": "S1_SAR_GRD", "snowCover": 500}
             )
