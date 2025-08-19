@@ -28,17 +28,28 @@ def _tokenize(expr: str) -> list[str]:
     Handles:
     - Logical operators: AND, OR, NOT
     - Quoted phrases: "exact phrase"
-    - Words and symbols: (), words
+    - Wildcards: * and ? inside words
+    - Parentheses: (, )
 
     :param expr: The search string (e.g., '("foo" OR bar) AND baz')
     :return: A list of tokens (e.g., ['(', '"foo"', 'OR', 'BAR', ')', 'AND', 'BAZ'])
 
-    >>> _tokenize('("foo bar" OR baz) AND qux')
-    ['(', '"foo bar"', 'OR', 'BAZ', ')', 'AND', 'QUX']
+    >>> _tokenize('("foo* bar?" OR baz) AND qux')
+    ['(', '"foo* bar?"', 'OR', 'BAZ', ')', 'AND', 'QUX']
     """
-    pattern = r'"[^"]*"|\w+|AND|OR|NOT|\(|\)'
-    tokens = re.findall(pattern, expr)
-    return [t if t.startswith('"') else t.upper() for t in tokens]
+    # Match quoted phrases or unquoted tokens (including * and ?), or parentheses
+    pattern = r'"[^"]*"|AND|OR|NOT|\(|\)|[^\s()"]+'
+    raw_tokens = re.findall(pattern, expr)
+
+    tokens = []
+    for token in raw_tokens:
+        if token.startswith('"') and token.endswith('"'):
+            tokens.append(token)
+        elif token.upper() in {"AND", "OR", "NOT"}:
+            tokens.append(token.upper())
+        else:
+            tokens.append(token.upper())
+    return tokens
 
 
 def _to_postfix(tokens: list[str]) -> list[str]:
@@ -134,8 +145,14 @@ def _make_evaluator(postfix_expr: list[str]) -> Callable[[dict[str, str]], bool]
                     phrase = token[1:-1].lower()
                     stack.append(phrase in text)
                 else:
+                    # Convert wildcard token to regex
+                    wildcard_pattern = (
+                        re.escape(token.lower())
+                        .replace(r"\*", ".*")
+                        .replace(r"\?", ".")
+                    )
                     stack.append(
-                        bool(re.search(rf"\b{re.escape(token.lower())}\b", text))
+                        bool(re.search(wildcard_pattern, text, flags=re.IGNORECASE))
                     )
 
         return stack[0]
@@ -171,6 +188,10 @@ def compile_free_text_query(query: str) -> Callable[[dict[str, str]], bool]:
 
     >>> evaluator({"title": "Only Bar here"})
     False
+
+    >>> evaluator = compile_free_text_query('foo*')
+    >>> evaluator({"title": "this is foobar"})
+    True
     """
     tokens = _tokenize(query)
     postfix = _to_postfix(tokens)

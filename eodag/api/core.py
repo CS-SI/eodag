@@ -1001,11 +1001,9 @@ class EODataAccessGateway:
         """
         Find EODAG product type IDs that best match a set of search parameters.
 
-        See https://whoosh.readthedocs.io/en/latest/querylang.html#the-default-query-language
-          for syntax.
-
-        :param free_text: Whoosh-compatible free text search filter used to search
-                        accross all the following parameters
+        :param free_text: Free text search filter used to search accross all the following parameters. Handles logical
+                          operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
+                          ``*`` and ``?`` wildcards.
         :param intersect: Join results for each parameter using INTERSECT instead of UNION.
         :param instrument: Instrument parameter.
         :param platform: Platform parameter.
@@ -1077,12 +1075,16 @@ class EODataAccessGateway:
             # individual filters
             if filters:
                 filters_matching_method = all if intersect else any
-                filters_matching = filters_matching_method(
-                    key in pt_dict
-                    and pt_dict[key] is not None
-                    and value in pt_dict[key]
-                    for key, value in filters.items()
+                # compile evaluator for each non-empty filter
+                filters_evaluators = {
+                    filter_name: compile_free_text_query(value)
+                    for filter_name, value in filters.items()
                     if value is not None
+                }
+                # check if filters match and combine using all/any depending on intersect value
+                filters_matching = filters_matching_method(
+                    filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
+                    for filter_name, value in filters.items()
                 )
                 if filters_matching and not intersect:
                     matching_once = True
