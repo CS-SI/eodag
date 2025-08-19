@@ -13,6 +13,7 @@ The Python API Reference provides an overview of all public objects, functions a
    searchresult
    eoproduct
    assets
+   product_type
    utils
    exceptions
    types
