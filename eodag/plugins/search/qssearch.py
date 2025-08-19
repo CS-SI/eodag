@@ -627,6 +627,26 @@ class QueryStringSearch(Search):
                                 generic_product_type_id
                             ].update(collection_data)
 
+                            # update product type id if needed
+                            if collection_data_id := collection_data.get("ID"):
+                                if generic_product_type_id != collection_data_id:
+                                    logger.debug(
+                                        "Rename %s product type to %s",
+                                        generic_product_type_id,
+                                        collection_data_id,
+                                    )
+                                    conf_update_dict["providers_config"][
+                                        collection_data_id
+                                    ] = conf_update_dict["providers_config"].pop(
+                                        generic_product_type_id
+                                    )
+                                    conf_update_dict["product_types_config"][
+                                        collection_data_id
+                                    ] = conf_update_dict["product_types_config"].pop(
+                                        generic_product_type_id
+                                    )
+                                    generic_product_type_id = collection_data_id
+
                         # update keywords
                         keywords_fields = [
                             "instrument",
