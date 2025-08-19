@@ -15,6 +15,7 @@ The API Reference provides an overview of all public objects, functions and meth
    eoproduct
    assets
    queryables
+   product_type
    utils
    exceptions
    types
