@@ -23,7 +23,7 @@ from collections import UserDict, UserList
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-from pydantic import ValidationError as pydanticValidationError
+from pydantic import ValidationError as PydanticValidationError
 from pydantic import field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
@@ -123,7 +123,7 @@ class ProductType(BaseModel):
         otherwise set incorrectly formatted attributes to None and ignore extra attributes."""
         try:
             return handler(values)
-        except pydanticValidationError as e:
+        except PydanticValidationError as e:
             # raise an error if a strict validation is activated or if the id is invalid
             if is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES") or any(
                 error["loc"][0] == "id" for error in e.errors()
