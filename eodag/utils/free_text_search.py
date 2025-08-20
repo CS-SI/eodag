@@ -170,18 +170,27 @@ def compile_free_text_query(query: str) -> Callable[[dict[str, str]], bool]:
     """
     Compiles a free-text logical search query into a dictionary evaluator function.
 
-    This is performed in three steps:
-    - Parses the query into tokens
-    - Converts infix (tokens) to postfix
-    - Generates a predicate function from postfix
+    The evaluator checks whether the concatenated string values of a dictionary
+    (case-insensitive) satisfy the given logical expression.
 
-    Supports:
-    - Logical operators: AND, OR, NOT
-    - Exact phrases in quotes: "foo bar"
-    - Case-insensitive matching
+    Processing steps:
+        1. Tokenize the query into words, quoted phrases, wildcards, and operators.
+        2. Convert infix tokens into postfix notation using the Shunting Yard algorithm.
+        3. Build an evaluator function that applies the expression to dictionary fields.
 
-    :param query: A logical expression (e.g., '("foo bar" OR baz) AND qux')
-    :return: A function that takes a dictionary of string fields and returns True if it matches.
+    Supported features:
+        - Logical operators: ``AND``, ``OR``, ``NOT``
+        - Grouping with parentheses: ``(``, ``)``
+        - Exact phrases in quotes: ``"foo bar"`` (case-insensitive substring match)
+        - Wildcards inside tokens:
+            - ``*`` → matches zero or more characters
+            - ``?`` → matches exactly one character
+        - Plain tokens without wildcards → matched as whole words (word boundary aware)
+        - Case-insensitive matching across all tokens and phrases
+
+    :param query: A logical search expression
+                  (e.g., ``'("foo bar" OR baz*) AND NOT qux'``).
+    :return: A function that takes a ``dict[str, str]`` and returns ``True`` if it matches.
 
     :Example:
 
@@ -204,10 +213,17 @@ def compile_free_text_query(query: str) -> Callable[[dict[str, str]], bool]:
     >>> evaluator({"title": "Only Bar here"})
     False
 
+    Wildcard example:
+
     >>> evaluator = compile_free_text_query('foo*')
     >>> evaluator({"title": "this is foobar"})
     True
+    >>> evaluator({"title": "something with fooo"})
+    True
+    >>> evaluator({"title": "bar only"})
+    False
     """
+
     tokens = _tokenize(query)
     postfix = _to_postfix(tokens)
     return _make_evaluator(postfix)
