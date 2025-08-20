@@ -1001,6 +1001,8 @@ class EODataAccessGateway:
         """
         Find EODAG product type IDs that best match a set of search parameters.
 
+        When using several filters, product types that match most of them will be returned at first.
+
         :param free_text: Free text search filter used to search accross all the following parameters. Handles logical
                           operators with parenthesis (``AND``/``OR``/``NOT``), quoted phrases (``"exact phrase"``),
                           ``*`` and ``?`` wildcards.
@@ -1046,11 +1048,9 @@ class EODataAccessGateway:
             compile_free_text_query(free_text) if free_text else lambda _: True
         )
 
-        guesses: list[str] = []
+        guesses_with_score: list[tuple[str, int]] = []
 
         for pt_id, pt_dict in self.product_types_config.source.items():
-
-            # skip GENERIC_PRODUCT_TYPE and product types not configured for any provider
             if (
                 pt_id == GENERIC_PRODUCT_TYPE
                 or pt_id
@@ -1058,44 +1058,38 @@ class EODataAccessGateway:
             ):
                 continue
 
-            # whether this product type matched any filter
-            matching_once = False
+            score = 0  # how many filters matched
 
             # free text search
             if free_text:
                 match = free_text_evaluator(pt_dict)
-                if match and not intersect:
-                    matching_once = True
-                elif match:
-                    matching_once = True
-                elif not match and intersect:
-                    # skip to next pt
-                    continue
+                if match:
+                    score += 1
+                elif intersect:
+                    continue  # must match all filters
 
             # individual filters
             if filters:
                 filters_matching_method = all if intersect else any
-                # compile evaluator for each non-empty filter
                 filters_evaluators = {
                     filter_name: compile_free_text_query(value)
                     for filter_name, value in filters.items()
                     if value is not None
                 }
-                # check if filters match and combine using all/any depending on intersect value
-                filters_matching = filters_matching_method(
+
+                filter_matches = [
                     filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
                     for filter_name, value in filters.items()
-                )
-                if filters_matching and not intersect:
-                    matching_once = True
-                elif filters_matching:
-                    matching_once = True
-                elif not filters_matching and intersect:
-                    # skip to next pt
-                    continue
+                    if filter_name in pt_dict
+                ]
 
-            # as no filters matched, skip
-            if not matching_once and not only_dates:
+                if filters_matching_method(filter_matches):
+                    # add number of True matches to score
+                    score += sum(filter_matches)
+                elif intersect:
+                    continue  # must match all filters
+
+            if score == 0 and not only_dates:
                 continue
 
             # datetime filtering
@@ -1120,14 +1114,14 @@ class EODataAccessGateway:
                     else max_aware,
                 )
                 if not (max_start <= min_end):
-                    # datetime check failed
                     continue
 
-            # all checks passed, keep this pt
-            guesses.append(pt_id)
+            guesses_with_score.append((pt_id, score))
 
-        if guesses:
-            return guesses
+        if guesses_with_score:
+            # sort by score descending, then pt_id for stability
+            guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
+            return [pt_id for pt_id, _ in guesses_with_score]
 
         raise NoMatchingProductType()
 

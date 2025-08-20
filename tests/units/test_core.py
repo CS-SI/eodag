@@ -2258,6 +2258,15 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
         )
 
+        # with individual filters
+        actual = self.dag.guess_product_type(
+            platform="SENTINEL1", processingLevel="L2", intersect=True
+        )
+        self.assertListEqual(actual, ["S1_SAR_OCN"])
+        # without intersect, the most appropriate product type must be at first position
+        actual = self.dag.guess_product_type(platform="SENTINEL1", processingLevel="L2")
+        self.assertEqual(actual[0], "S1_SAR_OCN")
+
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingProductType):
