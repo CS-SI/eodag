@@ -118,7 +118,6 @@ class EODataAccessGateway:
             res_files("eodag") / "resources" / "product_types.yml"
         )
         self.product_types_config = SimpleYamlProxyConfig(product_types_config_path)
-        self._product_types_config_init()
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -182,6 +181,8 @@ class EODataAccessGateway:
             self._sync_provider_product_types(
                 provider, available_product_types, strict_mode
             )
+        # init product types configuration
+        self._product_types_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
