@@ -5959,19 +5959,21 @@
         license: '$.license'
         platform: '$.summaries.platform[0]'
         title: '$.title'
+    metadata_mapping:
+      downloadLink: '$.assets.enclosure_1.href'
+      title: '$.properties.title'
+      geometry: '$.geometry'
+      startTimeFromAscendingNode: '$.properties.start_datetime'
+      completionTimeFromAscendingNode: '$.properties.end_datetime'
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
     type: HTTPDownload
     base_uri: ""
+    ignore_assets: true
+    download_url_tpl: '{downloadLink}'
     extract: false
     flatten_top_dirs: false
-    download_url_tpl: '{downloadLink}'
-    metadata_mapping:
-      downloadLink: '$.assets.enclosure_1.href'
-      href: '$.href'
-      title: '$.properties.title'
-      geometry: '$.geometry'
-      start_datetime: '$.properties.start_datetime'
-      end_datetime: '$.properties.end_datetime'
+    ssl_verify: true
+    timeout: 120
