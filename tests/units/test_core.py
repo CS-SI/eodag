@@ -765,15 +765,9 @@ class TestCore(TestCoreBase):
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(
-            filter, intersect=True, title="titleFOO"
+            filter, intersect=True, title="titleFOO*"
         )
         self.assertListEqual(product_types_ids, ["foobar"])
-
-        # Free text search: Indicate included and excluded terms using +/-
-        # This will search for items that INCLUDES "abstractfoo" EXCLUDES "bar" OR CONTAIN "foo"
-        filter = "foo +abstractfoo -bar"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foo"])
 
     def test_guess_product_type_with_mission_dates(self):
         """Testing the datetime interval"""

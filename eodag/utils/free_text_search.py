@@ -107,7 +107,7 @@ def _make_evaluator(postfix_expr: list[str]) -> Callable[[dict[str, str]], bool]
     Returns a function that evaluates a postfix expression on a dictionary of string fields.
 
     Quoted phrases are matched exactly (case-insensitive).
-    Unquoted tokens are matched as case-insensitive full words.
+    Unquoted tokens are matched as case-insensitive full words (unless they contain wildcards).
 
     :param postfix_expr: List of tokens in postfix order.
     :return: A function that returns True if the dict matches.
@@ -145,15 +145,21 @@ def _make_evaluator(postfix_expr: list[str]) -> Callable[[dict[str, str]], bool]
                     phrase = token[1:-1].lower()
                     stack.append(phrase in text)
                 else:
-                    # Convert wildcard token to regex
-                    wildcard_pattern = (
-                        re.escape(token.lower())
-                        .replace(r"\*", ".*")
-                        .replace(r"\?", ".")
-                    )
-                    stack.append(
-                        bool(re.search(wildcard_pattern, text, flags=re.IGNORECASE))
-                    )
+                    # Wildcard tokens → regex with .* and .
+                    if "*" in token or "?" in token:
+                        wildcard_pattern = (
+                            re.escape(token.lower())
+                            .replace(r"\*", ".*")
+                            .replace(r"\?", ".")
+                        )
+                        regex = re.compile(wildcard_pattern, flags=re.IGNORECASE)
+                    else:
+                        # Plain token → must match as a whole word
+                        regex = re.compile(
+                            rf"\b{re.escape(token.lower())}\b", flags=re.IGNORECASE
+                        )
+
+                    stack.append(bool(regex.search(text)))
 
         return stack[0]
 
@@ -179,13 +185,22 @@ def compile_free_text_query(query: str) -> Callable[[dict[str, str]], bool]:
 
     :Example:
 
-    >>> evaluator = compile_free_text_query('("FooAndBar" OR BAR) AND "titleFOOBAR - Lorem FOOBAR collection"')
+    >>> evaluator = compile_free_text_query('("FooAndBar" OR BAR) AND "FOOBAR collection"')
     >>> evaluator({
     ...     "title": "titleFOOBAR - Lorem FOOBAR collection",
     ...     "abstract": "abstract FOOBAR - This is FOOBAR. FooAndBar"
     ... })
     True
-
+    >>> evaluator({
+    ...     "title": "collection FOOBAR",
+    ...     "abstract": "abstract FOOBAR - This is FOOBAR. FooAndBar"
+    ... })
+    False
+    >>> evaluator({
+    ...     "title": "titleFOOBAR - Lorem FOOBAR ",
+    ...     "abstract": "abstract FOOBAR - This is FOOBAR."
+    ... })
+    False
     >>> evaluator({"title": "Only Bar here"})
     False
 
