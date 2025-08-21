@@ -82,7 +82,6 @@ from eodag.utils import (
     REQ_RETRY_STATUS_FORCELIST,
     REQ_RETRY_TOTAL,
     USER_AGENT,
-    _deprecated,
     copy_deepcopy,
     deepcopy,
     dict_items_recursive_apply,
@@ -829,15 +828,6 @@ class QueryStringSearch(Search):
 
         eo_products = self.normalize_results(raw_search_result, **kwargs)
         return eo_products, total_items
-
-    @_deprecated(
-        reason="Simply run `self.config.metadata_mapping.update(metadata_mapping)` instead",
-        version="2.10.0",
-    )
-    def update_metadata_mapping(self, metadata_mapping: dict[str, Any]) -> None:
-        """Update plugin metadata_mapping with input metadata_mapping configuration"""
-        if self.config.metadata_mapping:
-            self.config.metadata_mapping.update(metadata_mapping)
 
     def build_query_string(
         self, product_type: str, query_dict: dict[str, Any]

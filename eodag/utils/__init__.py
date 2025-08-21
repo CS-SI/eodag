@@ -527,20 +527,6 @@ class ProgressCallback(tqdm):
         return ProgressCallback(*args, **dict(self.kwargs, **kwargs))
 
 
-@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-class NotebookProgressCallback(tqdm):
-    """A custom progress bar to be used inside Jupyter notebooks"""
-
-    pass
-
-
-@_deprecated(reason="Use ProgressCallback class instead", version="2.2.1")
-def get_progress_callback() -> tqdm:
-    """Get progress_callback"""
-
-    return tqdm()
-
-
 def repeatfunc(func: Callable[..., Any], n: int, *args: Any) -> starmap:
     """Call ``func`` ``n`` times with ``args``"""
     return starmap(func, repeat(args, n))

@@ -21,8 +21,6 @@ import logging
 import re
 from typing import TYPE_CHECKING, Optional, TypedDict
 
-from eodag.utils import _deprecated
-
 if TYPE_CHECKING:
     from eodag.api.product import EOProduct
 
@@ -81,21 +79,6 @@ class DatasetDriver(metaclass=type):
                 return normalized_key or extracted_key, roles
         logger.debug(f"No key & roles could be guessed for {href}")
         return None, None
-
-    @_deprecated(reason="Method used by deprecated get_data", version="3.1.0")
-    def get_data_address(self, eo_product: EOProduct, band: str) -> str:
-        """Retrieve the address of the dataset represented by `eo_product`.
-
-        :param eo_product: The product whom underlying dataset address is to be retrieved
-        :param band: The band to retrieve (e.g: 'B01')
-        :returns: An address for the dataset
-        :raises: :class:`~eodag.utils.exceptions.AddressNotFound`
-        :raises: :class:`~eodag.utils.exceptions.UnsupportedDatasetAddressScheme`
-
-        .. deprecated:: 3.1.0
-           Method used by deprecated :meth:`~eodag_cube.api.product._product.EOProduct.get_data`
-        """
-        raise NotImplementedError
 
 
 class NoDriver(DatasetDriver):
