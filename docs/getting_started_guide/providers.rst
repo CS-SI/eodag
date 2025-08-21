@@ -6,7 +6,7 @@ Available providers
 Description
 ^^^^^^^^^^^
 
-Products from the following providers are made avaiable through ``eodag``:
+Products from the following providers are made available through ``eodag``:
 
 * `aws_eos <https://eos.com/>`_: EOS Data Analytics search for Amazon public datasets
 * `cop_ads <https://ads.atmosphere.copernicus.eu>`_: Copernicus Atmosphere Data Store
@@ -23,6 +23,7 @@ Products from the following providers are made avaiable through ``eodag``:
   Storage download
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `eumetsat_ds <https://data.eumetsat.int>`_: EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
+* `fedeo_ceda <https://climate.esa.int/en/>`_: ESA CEDA (Centre for Environmental Data Archival) data access
 * `geodes <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal
 * `geodes_s3 <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
