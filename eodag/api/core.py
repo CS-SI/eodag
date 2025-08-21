@@ -65,9 +65,6 @@ from eodag.utils import (
     DEFAULT_PAGE,
     GENERIC_PRODUCT_TYPE,
     GENERIC_STAC_PROVIDER,
-    HTTP_REQ_TIMEOUT,
-    MockResponse,
-    _deprecated,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -2094,69 +2091,6 @@ class EODataAccessGateway:
                 products[i].register_downloader(downloader, auth)
 
         return products
-
-    @_deprecated(
-        reason="Use the StaticStacSearch search plugin instead", version="2.2.1"
-    )
-    def load_stac_items(
-        self,
-        filename: str,
-        recursive: bool = False,
-        max_connections: int = 100,
-        provider: Optional[str] = None,
-        productType: Optional[str] = None,
-        timeout: int = HTTP_REQ_TIMEOUT,
-        ssl_verify: bool = True,
-        **kwargs: Any,
-    ) -> SearchResult:
-        """Loads STAC items from a geojson file / STAC catalog or collection, and convert to SearchResult.
-
-        Features are parsed using eodag provider configuration, as if they were
-        the response content to an API request.
-
-        :param filename: A filename containing features encoded as a geojson
-        :param recursive: (optional) Browse recursively in child nodes if True
-        :param max_connections: (optional) Maximum number of connections for concurrent HTTP requests
-        :param provider: (optional) Data provider
-        :param productType: (optional) Data product type
-        :param timeout: (optional) Timeout in seconds for each internal HTTP request
-        :param kwargs: Parameters that will be stored in the result as
-                       search criteria
-        :returns: The search results encoded in `filename`
-
-        .. deprecated:: 2.2.1
-           Use the :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch` search plugin instead.
-        """
-        features = fetch_stac_items(
-            filename,
-            recursive=recursive,
-            max_connections=max_connections,
-            timeout=timeout,
-            ssl_verify=ssl_verify,
-        )
-        feature_collection = geojson.FeatureCollection(features)
-
-        plugin = next(
-            self._plugins_manager.get_search_plugins(
-                product_type=productType, provider=provider
-            )
-        )
-        # save plugin._request and mock it to make return loaded static results
-        plugin_request = plugin._request
-        plugin._request = (
-            lambda url, info_message=None, exception_message=None: MockResponse(
-                feature_collection, 200
-            )
-        )
-
-        search_result = self.search(
-            productType=productType, provider=provider, **kwargs
-        )
-
-        # restore plugin._request
-        plugin._request = plugin_request
-
-        return search_result
 
     def download(
         self,
