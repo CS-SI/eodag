@@ -81,6 +81,6 @@ Misc
 .. autoclass:: eodag.api.core.EODataAccessGateway
    :members: add_provider, set_preferred_provider, get_preferred_provider, update_providers_config, list_product_types,
              available_providers, search, search_all, search_iter_page, crunch, download, download_all, serialize,
-             deserialize, deserialize_and_register, load_stac_items, group_by_extent, guess_product_type, get_cruncher,
+             deserialize, deserialize_and_register, group_by_extent, guess_product_type, get_cruncher,
              update_product_types_list, fetch_product_types_list, discover_product_types, list_queryables,
              available_sortables, import_stac_items

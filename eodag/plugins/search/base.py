@@ -68,7 +68,6 @@ class Search(PluginTopic):
     next_page_query_obj: Optional[dict[str, Any]]
     total_items_nb: int
     need_count: bool
-    _request: Any  # needed by deprecated load_stac_items
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
         super(Search, self).__init__(provider, config)

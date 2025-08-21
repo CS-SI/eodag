@@ -23,8 +23,6 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock
 
-import pytest
-
 from eodag.rest.types.stac_search import SearchPostRequest
 from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH, mock
@@ -135,25 +133,6 @@ class TestStacCore(unittest.TestCase):
     @mock.patch(
         "eodag.rest.core.eodag_api.list_product_types",
         autospec=True,
-        return_value=[{"ID": "S2_MSI_L1C", "abstract": "test"}],
-    )
-    def test_format_product_types(self, list_pt: Mock):
-        """format_product_types must return a string representation of the product types"""
-        product_types = self.rest_core.eodag_api.list_product_types(
-            fetch_providers=False
-        )
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method format_product_types",
-        ):
-            self.assertEqual(
-                self.rest_core.format_product_types(product_types),
-                "* *__S2_MSI_L1C__*: test",
-            )
-
-    @mock.patch(
-        "eodag.rest.core.eodag_api.list_product_types",
-        autospec=True,
         return_value=[{"ID": "S2_MSI_L1C"}],
     )
     def test_detailled_collections_list(self, list_pt):
@@ -163,14 +142,6 @@ class TestStacCore(unittest.TestCase):
 
     def test_get_geometry(self):
         pass  # TODO
-
-    def test_home_page_content(self):
-        """get_home_page_content runs without any error"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method get_home_page_content",
-        ):
-            self.rest_core.get_home_page_content("http://127.0.0.1/")
 
     async def test_get_stac_catalogs(self):
         """get_stac_catalogs runs without any error"""
@@ -515,11 +486,3 @@ class TestStacCore(unittest.TestCase):
         self.assertNotIn("*", response["features"][1]["links"][0]["href"])
         # check that no other asset have also been added to the response
         self.assertEqual(len(response["features"][0]["assets"]), 2)
-
-    def test_get_templates_path(self):
-        """get_templates_path returns an existing dir path"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method get_templates_path",
-        ):
-            self.assertTrue(os.path.isdir(self.rest_core.get_templates_path()))
