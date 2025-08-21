@@ -615,6 +615,7 @@ class TestCore(TestCoreBase):
         "earth_search_gcs",
         "ecmwf",
         "eumetsat_ds",
+        "fedeo_ceda",
         "geodes",
         "geodes_s3",
         "hydroweb_next",
@@ -1779,6 +1780,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
             "cop_marine": None,
+            "fedeo_ceda": {"max_sort_params": None, "sortables": []},
             "geodes": {
                 "max_sort_params": None,
                 "sortables": [

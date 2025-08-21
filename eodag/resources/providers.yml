@@ -5954,17 +5954,15 @@
       single_product_type_parsable_metadata:
         ID: '{$.assets.enclosure.href#create_name}'
         abstract: '$.description'
-        instrument: '$.summaries.instruments[0]'
-        keywords: '$.keywords'
+        instrument: '{$.summaries.instruments#csv_list}'
+        keywords: '{$.keywords#csv_list}'
         license: '$.license'
-        platform: '$.summaries.platform[0]'
+        platform: '{$.summaries.platform#csv_list}'
         title: '$.title'
     metadata_mapping:
       downloadLink: '$.assets.enclosure_1.href'
       title: '$.properties.title'
       geometry: '$.geometry'
-      startTimeFromAscendingNode: '$.properties.start_datetime'
-      completionTimeFromAscendingNode: '$.properties.end_datetime'
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
