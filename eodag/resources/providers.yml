@@ -5443,7 +5443,6 @@
     type: StacSearch
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
-    ssl_verify: false
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
@@ -5545,7 +5544,6 @@
       productType: '{productType}'
   download: !plugin
     type: HTTPDownload
-    ssl_verify: false
     ignore_assets: true
     archive_depth: 2
     auth_error_code:
@@ -5570,7 +5568,6 @@
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     s3_endpoint: https://s3.datalake.cnes.fr
     need_auth: true
-    ssl_verify: false
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
