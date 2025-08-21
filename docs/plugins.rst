@@ -60,6 +60,8 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``eumetsat_ds``        | |QueryStringSearch|                | |TokenAuth|                     | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
+| ``fedeo-ceda``         | |StacSearch|                       | ``None``                        | |HTTPDownload|   |
++------------------------+------------------------------------+---------------------------------+------------------+
 | ``geodes``             | |StacSearch|                       | |HTTPHeaderAuth|                | |HTTPDownload|   |
 +------------------------+------------------------------------+---------------------------------+------------------+
 | ``geodes_s3``          | |StacListAssets|                   | |AwsAuth|                       | |AwsDownload|    |
@@ -111,6 +113,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 .. |CreodiasS3Search| replace:: :class:`~eodag.plugins.search.creodias_s3.CreodiasS3Search`
 .. |CopMarineSearch| replace:: :class:`~eodag.plugins.search.cop_marine.CopMarineSearch`
 .. |StacListAssets| replace:: :class:`~eodag.plugins.search.stac_list_assets.StacListAssets`
+.. |FedeoCedaSearch| replace:: :class:`~eodag.plugins.search.fedeo_ceda.FedeoCedaSearch`
 
 
 .. _creating_plugins:

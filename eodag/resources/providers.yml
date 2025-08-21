@@ -5963,15 +5963,9 @@
       downloadLink: '$.assets.enclosure_1.href'
       title: '$.properties.title'
       geometry: '$.geometry'
+      assets: '{$.assets#dict_filter($[?(@.href =~ ".*\/thredds\/fileServer\/.*")])}'
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
   download: !plugin
     type: HTTPDownload
-    base_uri: ""
-    ignore_assets: true
-    download_url_tpl: '{downloadLink}'
-    extract: false
-    flatten_top_dirs: false
-    ssl_verify: true
-    timeout: 120
