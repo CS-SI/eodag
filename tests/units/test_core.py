@@ -1887,28 +1887,29 @@ class TestCore(TestCoreBase):
         mock_validate_search_request: mock.Mock,
         mock_auth_plugin: mock.Mock,
     ) -> None:
-        """Search filter must be validated if requested"""
-        # No validation by default
-        filter = {
-            "provider": "peps",
-            "productType": "S1_SAR_GRD",
-        }
-        self.dag.search(**filter)
-        mock_validate_search_request.assert_not_called()
-
-        # Validate request
+        """Search filter must be validated by default"""
         filter = {
             "provider": "peps",
             "productType": "S1_SAR_GRD",
             "lorem": "ipsum",
         }
-        self.dag.search(validate_request=True, **filter)
+        # Validation by default
+        self.dag.search(**filter)
         mock_validate_search_request.assert_called_once()
         args, kwargs = mock_validate_search_request.call_args
         self.assertEqual(args[1], "peps")
         # Some other default keyword may be added to the kwargs (e.g. geometry)
         self.assertEqual("S1_SAR_GRD", args[2].get("productType"))
         self.assertEqual("ipsum", args[2].get("lorem"))
+        mock_validate_search_request.reset_mock()
+
+        self.dag.search(validate_request=True, **filter)
+        mock_validate_search_request.assert_called_once()
+        mock_validate_search_request.reset_mock()
+
+        # Don't validate request
+        self.dag.search(validate_request=False, **filter)
+        mock_validate_search_request.assert_not_called()
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

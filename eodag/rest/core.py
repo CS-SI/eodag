@@ -247,6 +247,7 @@ def download_stac_item(
     """
     product_type = collection_id
 
+    kwargs["validate_request"] = kwargs.get("validate_request", "true") == "true"
     search_results = eodag_api.search(
         id=item_id, productType=product_type, provider=provider, **kwargs
     )
@@ -326,8 +327,7 @@ def _order_and_update(
     ):
         # first order
         logger.debug("Order product")
-        validate_request: bool = query_args.get("validate_request", "false") == "true"
-        if validate_request:
+        if query_args.get("validate_request", True):
             eodag_api.validate_order_request(product)
         order_status_dict = product.downloader._order(product=product, auth=auth)
         query_args.update(order_status_dict or {})

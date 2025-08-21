@@ -1144,7 +1144,7 @@ class EODataAccessGateway:
         locations: Optional[dict[str, str]] = None,
         provider: Optional[str] = None,
         count: bool = False,
-        validate_request: Optional[bool] = False,
+        validate_request: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Look for products matching criteria on known providers.
@@ -1213,6 +1213,7 @@ class EODataAccessGateway:
                 search_kwargs.pop("id"),
                 provider=provider,
                 raise_errors=raise_errors,
+                validate_request=validate_request,
                 **search_kwargs,
             )
         # remove datacube query string from kwargs which was only needed for search-by-id
@@ -1837,7 +1838,7 @@ class EODataAccessGateway:
         search_plugin: Union[Search, Api],
         count: bool = False,
         raise_errors: bool = False,
-        validate_request: Optional[bool] = False,
+        validate_request: Optional[bool] = True,
         **kwargs: Any,
     ) -> SearchResult:
         """Internal method that performs a search on a given provider.

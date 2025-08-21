@@ -342,7 +342,7 @@ def stac_collections_items(
     filter: Optional[str] = None,
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
-    validate_request: Optional[bool] = False,
+    validate_request: Optional[bool] = True,
 ) -> ORJSONResponse:
     """Fetch collection's features"""
 
@@ -509,7 +509,7 @@ def get_search(
     filter: Optional[str] = None,  # pylint: disable=redefined-builtin
     filter_lang: Optional[str] = "cql2-text",
     crunch: Optional[str] = None,
-    validate_request: Optional[bool] = False,
+    validate_request: Optional[bool] = True,
 ) -> ORJSONResponse:
     """Handler for GET /search"""
     logger.info(f"{request.method} {request.state.url}")
