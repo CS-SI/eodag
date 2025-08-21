@@ -19,17 +19,8 @@ import os
 import unittest
 from tempfile import TemporaryDirectory
 
-import pytest
-
 from tests import TEST_RESOURCES_PATH
-from tests.context import (
-    EODataAccessGateway,
-    FilterDate,
-    FilterLatestByName,
-    FilterOverlap,
-    FilterProperty,
-    SearchResult,
-)
+from tests.context import EODataAccessGateway
 from tests.utils import mock
 
 
@@ -91,67 +82,6 @@ class TestSearchStacStatic(unittest.TestCase):
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()
 
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    def test_search_stac_static_load_child(
-        self, mock_fetch_product_types_list, mock_discover_produc_types
-    ):
-        """load_stac_items from child catalog must provide items"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.child_cat, recursive=True, provider=self.stac_provider
-            )
-        self.assertIsInstance(items, SearchResult)
-        self.assertEqual(len(items), self.child_cat_len)
-        self.assertEqual(items[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type should be guessed from properties
-        self.assertEqual(items[0].product_type, "S2_MSI_L1C")
-
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    def test_search_stac_static_load_root_not_recursive(
-        self, mock_fetch_product_types_list, mock_discover_product_types
-    ):
-        """load_stac_items from root must provide an empty list when no recursive"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat, recursive=False, provider=self.stac_provider
-            )
-        self.assertEqual(len(items), 0)
-
-    def test_search_stac_static_load_root_recursive(self):
-        """load_stac_items from root must provide items when recursive"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat,
-                recursive=True,
-                provider=self.stac_provider,
-                productType=self.product_type,
-            )
-        self.assertEqual(len(items), self.root_cat_len)
-        for item in items:
-            self.assertEqual(item.provider, self.stac_provider)
-            self.assertEqual(item.product_type, self.product_type)
-
     def test_search_stac_static(self):
         """Use StaticStacSearch plugin to search all items"""
         # mock on fetch_product_types_list not needed with provider specified,
@@ -161,119 +91,6 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(search_result.number_matched, self.root_cat_len)
         for item in search_result:
             self.assertEqual(item.provider, self.static_stac_provider)
-
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
-        autospec=True,
-    )
-    def test_search_stac_static_load_item(
-        self, mock_fetch_product_types_list, mock_discover_product_types
-    ):
-        """load_stac_items from a single item must provide it"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
-        self.assertIsInstance(item, SearchResult)
-        self.assertEqual(len(item), 1)
-        self.assertEqual(item[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type should be guessed from properties
-        self.assertEqual(item[0].product_type, "S2_MSI_L1C")
-
-    @mock.patch(
-        "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
-        autospec=True,
-    )
-    @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
-    )
-    def test_search_stac_static_load_item_updated_provider(
-        self, mock_fetch_product_types_list, mock_discover_product_types
-    ):
-        """load_stac_items from a single item using updated provider"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            item = self.dag.load_stac_items(self.item, provider=self.stac_provider)
-
-        self.assertEqual(item[0].properties["license"], "other")
-        self.assertEqual(item[0].properties["platform"], "S2ST")
-        self.assertEqual(item[0].properties["orbitDirection"], "descending")
-        self.assertNotIn("foo", item[0].properties)
-
-        # fake provider with mixed metadata_mapping
-        self.dag.update_providers_config(
-            """
-            fake_provider:
-                search:
-                    type: StacSearch
-                    api_endpoint: 'https://fake-endpoint'
-                    metadata_mapping:
-                        license: '{platform}'
-                        foo: '{orbitDirection}'
-                products:
-                    GENERIC_PRODUCT_TYPE:
-                        productType: '{productType}'
-                download:
-                    type: HTTPDownload
-                    base_uri: 'https://fake-uri'
-        """
-        )
-
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            item = self.dag.load_stac_items(
-                self.item, provider="fake_provider", raise_errors=True
-            )
-        self.assertEqual(item[0].properties["platform"], "S2ST")
-        self.assertEqual(item[0].properties["license"], "S2ST")
-        self.assertEqual(item[0].properties["orbitDirection"], "descending")
-        self.assertIn("foo", item[0].properties)
-        self.assertEqual(item[0].properties["foo"], "descending")
-
-    @unittest.skip(
-        "skipped as single-file-stac has been removed and is being rethought"
-    )
-    def test_search_stac_static_load_singlefile_catalog(self):
-        """load_stac_items from child catalog must provide items"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.singlefile_cat, provider=self.stac_provider
-            )
-        self.assertIsInstance(items, SearchResult)
-        self.assertEqual(len(items), self.singlefile_cat_len)
-        self.assertEqual(items[0].provider, self.stac_provider)
-        # if no product_type is provided, product_type is None
-        self.assertIsNone(items[0].product_type)
-
-    def test_search_stac_static_crunch_filter_date(self):
-        """load_stac_items from root and filter by date"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat,
-                recursive=True,
-                provider=self.stac_provider,
-                productType=self.product_type,
-            )
-        filtered_items = items.crunch(
-            FilterDate({"start": "2018-01-01", "end": "2019-01-01"})
-        )
-        self.assertEqual(len(filtered_items), self.child_cat_len)
-        for item in filtered_items:
-            self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
@@ -292,66 +109,6 @@ class TestSearchStacStatic(unittest.TestCase):
         for item in filtered_sr:
             self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
 
-    def test_search_stac_static_crunch_filter_overlap(self):
-        """load_stac_items from root and filter by overlap"""
-        # tests over extent_big search geometry
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat,
-                recursive=True,
-                provider=self.stac_provider,
-                productType=self.product_type,
-                geom=self.extent_big,
-            )
-        self.assertEqual(len(items), self.root_cat_len)
-
-        filtered_items = items.crunch(
-            FilterOverlap({"minimum_overlap": 10}), geometry=self.extent_big
-        )
-        self.assertEqual(len(filtered_items), 3)
-
-        filtered_items = items.crunch(
-            FilterOverlap({"minimum_overlap": 100}), geometry=self.extent_big
-        )
-        self.assertEqual(len(filtered_items), 1)
-
-        filtered_items = items.crunch(
-            FilterOverlap({"within": True}), geometry=self.extent_big
-        )
-        self.assertEqual(len(filtered_items), 1)
-
-        filtered_items = items.crunch(
-            FilterOverlap({"contains": True}), geometry=self.extent_big
-        )
-        self.assertEqual(len(filtered_items), 0)
-
-        filtered_items = items.crunch(
-            FilterOverlap({"intersects": True}), geometry=self.extent_big
-        )
-        self.assertEqual(len(filtered_items), 3)
-
-        # tests over extent_small search geometry
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat,
-                recursive=True,
-                provider=self.stac_provider,
-                productType=self.product_type,
-                geom=self.extent_small,
-            )
-        self.assertEqual(len(items), self.root_cat_len)
-
-        filtered_items = items.crunch(
-            FilterOverlap({"contains": True}), geometry=self.extent_small
-        )
-        self.assertEqual(len(filtered_items), 1)
-
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
         autospec=True,
@@ -366,38 +123,6 @@ class TestSearchStacStatic(unittest.TestCase):
         search_result = self.dag.search(geom=self.extent_big, count=True)
         self.assertEqual(len(search_result), 3)
         self.assertEqual(search_result.number_matched, 3)
-
-    def test_search_stac_static_crunch_filter_property(self):
-        """load_stac_items from root and filter by property"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat,
-                recursive=True,
-                provider=self.stac_provider,
-                productType=self.product_type,
-            )
-        self.assertEqual(len(items), self.root_cat_len)
-
-        filtered_items = items.crunch(FilterProperty({"orbitNumber": 110}))
-        self.assertEqual(len(filtered_items), 3)
-
-        filtered_items = items.crunch(
-            FilterProperty({"platformSerialIdentifier": "S2A", "operator": "eq"})
-        )
-        self.assertEqual(len(filtered_items), 4)
-
-        filtered_items = items.crunch(
-            FilterProperty({"cloudCover": 10, "operator": "lt"})
-        )
-        self.assertEqual(len(filtered_items), 1)
-
-        with self.assertLogs(level="WARNING") as cm:
-            filtered_items = items.filter_property(foo="bar")
-            self.assertIn("foo not found in EOProduct", str(cm.output))
-            self.assertEqual(len(filtered_items), 0)
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",
@@ -428,24 +153,3 @@ class TestSearchStacStatic(unittest.TestCase):
         search_result = self.dag.search(cloudCover=10, count=True)
         self.assertEqual(len(search_result), 1)
         self.assertEqual(search_result.number_matched, 1)
-
-    def test_search_stac_static_crunch_filter_lastest_by_name(self):
-        """load_stac_items from root and filter by name"""
-        with pytest.warns(
-            DeprecationWarning,
-            match="Call to deprecated function/method load_stac_items",
-        ):
-            items = self.dag.load_stac_items(
-                self.root_cat,
-                recursive=True,
-                provider=self.stac_provider,
-                productType=self.product_type,
-            )
-        self.assertEqual(len(items), self.root_cat_len)
-
-        filtered_items = items.crunch(
-            FilterLatestByName(
-                {"name_pattern": r"S2[AB]_MSIL1C_20(?P<tileid>\d{6}).*T21NY.*"}
-            )
-        )
-        self.assertEqual(len(filtered_items), 2)

@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import datetime
 import logging
-import os
 import re
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
@@ -64,7 +63,6 @@ from eodag.rest.utils import (
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
 from eodag.utils import (
-    _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
@@ -94,36 +92,6 @@ crunchers = {
     "filterLatestByName": Cruncher(FilterLatestByName, ["name_pattern"]),
     "filterOverlap": Cruncher(FilterOverlap, ["minimum_overlap"]),
 }
-
-
-@_deprecated(reason="No more needed with STAC API + Swagger", version="2.6.1")
-def get_home_page_content(base_url: str, ipp: Optional[int] = None) -> str:
-    """Compute eodag service home page content
-
-    :param base_url: The service root URL
-    :param ipp: (optional) Items per page number
-    """
-    base_url = base_url.rstrip("/") + "/"
-    content = f"""<h1>EODAG Server</h1><br />
-    <a href='{base_url}'>root</a><br />
-    <a href='{base_url}service-doc'>service-doc</a><br />
-    """
-    return content
-
-
-@_deprecated(
-    reason="Function internally used by get_home_page_content, also deprecated",
-    version="2.6.1",
-)
-def format_product_types(product_types: list[dict[str, Any]]) -> str:
-    """Format product_types
-
-    :param product_types: A list of EODAG product types as returned by the core api
-    """
-    result: list[str] = []
-    for pt in product_types:
-        result.append(f"* *__{pt['ID']}__*: {pt['abstract']}")
-    return "\n".join(sorted(result))
 
 
 def search_stac_items(
@@ -663,15 +631,6 @@ async def get_queryables(
     return await cached(
         _fetch, f"{CACHE_KEY_QUERYABLES}:{provider}:{hashed_queryables}", request
     )
-
-
-@_deprecated(
-    reason="Used to format output from deprecated function get_home_page_content",
-    version="2.6.1",
-)
-def get_templates_path() -> str:
-    """Returns Jinja templates path"""
-    return os.path.join(os.path.dirname(__file__), "templates")
 
 
 def crunch_products(
