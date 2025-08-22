@@ -68,7 +68,6 @@ from eodag.utils import (
     deepcopy,
     dict_items_recursive_apply,
     format_dict_items,
-    obj_md5sum,
 )
 from eodag.utils.exceptions import (
     MisconfiguredError,
@@ -751,12 +750,6 @@ def eodag_api_init() -> None:
             }
             clean = {k: v for k, v in update_fields.items() if v}
             p_f.update(clean)
-
-    eodag_api.product_types_config_md5 = obj_md5sum(
-        eodag_api.product_types_config.source
-    )
-
-    eodag_api.build_index()
 
     # pre-build search plugins
     for provider in eodag_api.available_providers():
