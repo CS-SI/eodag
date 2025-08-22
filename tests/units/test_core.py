@@ -2265,6 +2265,7 @@ class TestCoreSearch(TestCoreBase):
         self.assertListEqual(actual, ["S1_SAR_OCN"])
         # without intersect, the most appropriate product type must be at first position
         actual = self.dag.guess_product_type(platform="SENTINEL1", processingLevel="L2")
+        self.assertGreater(len(actual), 1)
         self.assertEqual(actual[0], "S1_SAR_OCN")
 
     def test_guess_product_type_without_kwargs(self):
