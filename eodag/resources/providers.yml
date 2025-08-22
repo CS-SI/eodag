@@ -2715,6 +2715,9 @@
     ssl_verify: true
     pagination:
       max_items_per_page: 1000
+    discover_product_types:
+      generic_product_type_parsable_metadata:
+        processingLevel: '{$.summaries."processing:level"#csv_list}'
     sort:
       sort_param_mapping:
         id: id
