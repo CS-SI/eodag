@@ -528,23 +528,11 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
-        def convert_create_name(href: str) -> str:
+        def convert_create_name(value: str) -> str:
             data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
-            match = data_regex.search(href)
+            match = data_regex.search(value)
             if match:
                 return match.group("name").replace("/", "_").upper()
-            return "NOT_AVAILABLE"
-
-        @staticmethod
-        def convert_extract_id(href: str) -> str:
-            """
-            Get the last part of the href after the last slash.
-            """
-            if not isinstance(href, str):
-                raise TypeError(f"Expected a string, got {type(href)}")
-            parts = href.split("/")
-            if parts:
-                return parts[-1]
             return "NOT_AVAILABLE"
 
         @staticmethod

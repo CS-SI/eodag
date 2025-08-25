@@ -5946,9 +5946,9 @@
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
       result_type: json
       results_entry: '$.links[?(@.rel=="child")]'
-      generic_product_type_id: '{$.href#extract_id}'
+      generic_product_type_id: '{$.href#replace_str(r".*/", "")}'
       generic_product_type_parsable_properties:
-        productType: '{$.href#extract_id}'
+        productType: '{$.href#replace_str(r".*/", "")}'
         title: '$.title'
       single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{productType}'
       single_product_type_parsable_metadata:

@@ -276,19 +276,6 @@ class TestMetadataFormatter(unittest.TestCase):
             "NOT_AVAILABLE",
         )
 
-    def test_convert_extract_id(self):
-        to_format = r"{fieldname#extract_id}"
-        with self.assertRaises(TypeError):
-            format_metadata(to_format, fieldname=123)
-        self.assertEqual(
-            format_metadata(to_format, fieldname="https://bar/foo"),
-            "foo",
-        )
-        self.assertEqual(
-            format_metadata(to_format, fieldname="NOT_AVAILABLE"),
-            "NOT_AVAILABLE",
-        )
-
     def test_convert_recursive_sub_str(self):
         to_format = r"{fieldname#recursive_sub_str(r'(.*) is (.*)',r'\1 was \2...')}"
         self.assertEqual(
