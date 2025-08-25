@@ -539,7 +539,7 @@ class PluginConfig(yaml.YAMLObject):
     no_auth_download: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
     dl_url_params: dict[str, str]
-    #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
+    #: :class:`~eodag.plugins.download.aws.AwsDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
     #: :class:`~eodag.plugins.download.aws.AwsDownload` Whether download is done from a requester-pays bucket or not
