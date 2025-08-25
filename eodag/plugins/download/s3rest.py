@@ -92,7 +92,7 @@ class S3RestDownload(Download):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        super(S3RestDownload, self).__init__(provider, config)
+        super().__init__(provider, config)
         self.http_download_plugin = HTTPDownload(self.provider, self.config)
 
     def download(
