@@ -171,7 +171,7 @@ class DataRequestSearch(Search):
     data_request_id: Optional[str]
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        super(DataRequestSearch, self).__init__(provider, config)
+        super().__init__(provider, config)
         self.config.__dict__.setdefault("result_type", "json")
         self.config.__dict__.setdefault("results_entry", "content")
         self.config.__dict__.setdefault("pagination", {})
