@@ -2246,6 +2246,7 @@ class TestCoreSearch(TestCoreBase):
     def setUpClass(cls):
         super(TestCoreSearch, cls).setUpClass()
         cls.dag = EODataAccessGateway()
+        cls.dag.validate_search_request = mock.MagicMock()
         # Get a SearchResult obj with 2 S2_MSI_L1C peps products
         search_results_file = os.path.join(
             TEST_RESOURCES_PATH, "eodag_search_result_peps.geojson"
