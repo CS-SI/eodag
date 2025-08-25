@@ -435,6 +435,7 @@ class ECMWFSearch(PostJsonSearch):
           used to parse metadata but that must not be included to the query
         * :attr:`~eodag.config.PluginConfig.end_date_excluded` (``bool``): Set to `False` if
           provider does not include end date to search
+        * :attr:`~eodag.config.PluginConfig.dates_required` (``bool``): if date parameters are mandatory in the request
         * :attr:`~eodag.config.PluginConfig.discover_queryables`
           (:class:`~eodag.config.PluginConfig.DiscoverQueryables`): configuration to fetch the queryables from a
           provider queryables endpoint; It has the following keys:
