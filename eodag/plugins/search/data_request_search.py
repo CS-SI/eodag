@@ -41,6 +41,7 @@ from eodag.utils import (
     GENERIC_PRODUCT_TYPE,
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
+    _deprecated,
     deepcopy,
     string_to_jsonpath,
 )
@@ -57,6 +58,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.search.data_request_search")
 
 
+@_deprecated(
+    reason="Plugin that was used in previous wekeo provider configuration, but not used anymore",
+    version="3.7.1",
+)
 class DataRequestSearch(Search):
     """
     Plugin to execute search requests composed of several steps:

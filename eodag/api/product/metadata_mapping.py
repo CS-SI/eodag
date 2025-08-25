@@ -42,6 +42,7 @@ from shapely.ops import transform
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
+    _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -631,6 +632,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
+        @_deprecated(
+            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
+            version="3.7.1",
+        )
         def convert_split_id_into_s1_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             if len(parts) < 9:
@@ -683,6 +688,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
+        @_deprecated(
+            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
+            version="3.7.1",
+        )
         def convert_split_id_into_s5p_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {
@@ -701,6 +710,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
+        @_deprecated(
+            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
+            version="3.7.1",
+        )
         def convert_split_cop_dem_id(product_id: str) -> list[int]:
             parts = product_id.split("_")
             lattitude = parts[3]
