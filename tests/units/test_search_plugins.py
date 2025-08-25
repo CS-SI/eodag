@@ -31,10 +31,12 @@ from unittest.mock import call
 import boto3
 import botocore
 import dateutil
+import pytest
 import requests
 import responses
 import yaml
 from botocore.stub import Stubber
+from jsonpath_ng import JSONPath, parse
 from pydantic_core import PydanticUndefined
 from requests import RequestException
 from shapely.geometry.base import BaseGeometry
@@ -43,7 +45,11 @@ from typing_extensions import get_args
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
-from eodag.utils.exceptions import UnsupportedProductType, ValidationError
+from eodag.utils.exceptions import (
+    PluginImplementationError,
+    UnsupportedProductType,
+    ValidationError,
+)
 from tests.context import (
     DEFAULT_MISSION_START_DATE,
     DEFAULT_SEARCH_TIMEOUT,
@@ -470,7 +476,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         provider = "earth_search"
         search_plugin = self.get_search_plugin(self.product_type, provider)
 
-        # change onfiguration for this test to filter out some collections
+        # change configuration for this test to filter out some collections
         discover_product_types_conf = search_plugin.config.discover_product_types
         search_plugin.config.discover_product_types[
             "fetch_url"
@@ -529,6 +535,167 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
             )
 
         # restore configuration
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_without_fetch_url(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle missing fetch_url"""
+        # One of the providers that has a QueryStringSearch Search plugin and discover_product_types configured
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types.pop("fetch_url", None)
+
+        response = search_plugin.discover_product_types()
+        self.assertIsNone(response)
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_paginated_qs_dict(
+        self,
+    ):
+        """
+        QueryStringSearch.discover_product_types must handle paginated responses with query string parameters
+        """
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+
+        # change configuration for this test to filter out some collections
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types[
+            "fetch_url"
+        ] = "https://foo.bar/collections"
+        search_plugin.config.discover_product_types[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
+        search_plugin.config.discover_product_types["start_page"] = 0
+        search_plugin.config.discover_product_types[
+            "single_collection_fetch_qs"
+        ] = "foo=bar"
+
+        with responses.RequestsMock(
+            assert_all_requests_are_fired=True
+        ) as mock_requests_post:
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=0&foo=bar",
+                json={
+                    "collections": [
+                        {
+                            "id": "foo_collection",
+                            "title": "The FOO collection",
+                            "billing": "free",
+                        }
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=1&foo=bar",
+                json={
+                    "collections": [
+                        {
+                            "id": "bar_collection",
+                            "title": "The BAR non-free collection",
+                            "billing": "non-free",
+                        },
+                    ]
+                },
+            )
+            mock_requests_post.add(
+                responses.GET,
+                "https://foo.bar/collections?page=2&foo=bar",
+                json={"collections": []},
+            )
+            conf_update_dict = search_plugin.discover_product_types()
+            self.assertIn("foo_collection", conf_update_dict["providers_config"])
+            self.assertIn("foo_collection", conf_update_dict["product_types_config"])
+            self.assertIn("bar_collection", conf_update_dict["providers_config"])
+            self.assertIn("bar_collection", conf_update_dict["product_types_config"])
+            self.assertEqual(
+                conf_update_dict["providers_config"]["foo_collection"]["productType"],
+                "foo_collection",
+            )
+            self.assertEqual(
+                conf_update_dict["product_types_config"]["foo_collection"]["title"],
+                "The FOO collection",
+            )
+
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_per_page_no_fetch_url(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle paginated responses with query string parameters"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types.pop("fetch_url")
+        search_plugin.config.discover_product_types[
+            "next_page_url_tpl"
+        ] = "{url}?page={page}"
+        search_plugin.config.discover_product_types["start_page"] = 0
+        result = search_plugin.discover_product_types_per_page()
+        assert result is None
+
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_per_page_keyerror(
+        self,
+    ):
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types = {
+            "result_type": "json",
+            "results_entry": parse("$.collections"),
+        }
+
+        class DummyResponse:
+            def json(self):
+                return {"collections": [{}]}
+
+        with mock.patch.object(
+            QueryStringSearch, "_request", return_value=DummyResponse()
+        ):
+            with self.assertLogs(level="WARNING") as log:
+                result = search_plugin.discover_product_types_per_page(
+                    fetch_url="https://foo.bar/collections"
+                )
+                assert result is None
+                assert any("Incomplete" in m for m in log.output)
+        search_plugin.config.discover_product_types = discover_product_types_conf
+
+    def test_plugins_search_querystringsearch_discover_product_types_per_page_request_exception(
+        self,
+    ):
+        """QueryStringSearch.discover_product_types must handle request exceptions"""
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        discover_product_types_conf = search_plugin.config.discover_product_types
+        search_plugin.config.discover_product_types = {
+            "result_type": "json",
+            "results_entry": JSONPath(),
+        }
+
+        class DummyResponse:
+            def json(self):
+                raise requests.RequestException("boom")
+
+        with mock.patch.object(
+            QueryStringSearch, "_request", return_value=DummyResponse()
+        ):
+            with self.assertLogs(level="DEBUG") as log:
+                result = search_plugin.discover_product_types_per_page(
+                    fetch_url="https://foo.bar/collections"
+                )
+                assert result is None
+                assert any(
+                    "Could not parse discovered product types response" in m
+                    for m in log.output
+                )
+
         search_plugin.config.discover_product_types = discover_product_types_conf
 
     @mock.patch("eodag.plugins.search.qssearch.PostJsonSearch._request", autospec=True)
@@ -705,6 +872,63 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 productType="S1_SAR_SLC",
                 auth=None,
             )
+
+    def test_plugins_search_querystringsearch_count_hits_xml(self):
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {
+            "total_items_nb_key_path": "string(//ns:TotalResults)"
+        }
+        xml = (
+            """<root xmlns="http://example.com"><TotalResults>4</TotalResults></root>"""
+        )
+
+        mock_response = mock.Mock()
+        mock_response.content = xml.encode()
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            result = search_plugin.count_hits("http://fake.url", result_type="xml")
+            assert result == 4
+
+    def test_plugins_search_querystringsearch_count_hits_json_dict_ok(self):
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {"total_items_nb_key_path": parse("$.total")}
+
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"total": 99}
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            result = search_plugin.count_hits("http://fake.url")
+            assert result == 99
+
+    def test_plugins_search_querystringsearch_count_hits_json_dict_not_jsonpath(self):
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {"total_items_nb_key_path": "$.total"}
+
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"total": 99}
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            with pytest.raises(PluginImplementationError):
+                search_plugin.count_hits("http://fake.url")
+
+    def test_plugins_search_querystringsearch_count_hits_json_dict_jsonpath_not_found(
+        self,
+    ):
+        provider = "earth_search"
+        search_plugin = self.get_search_plugin(self.product_type, provider)
+        search_plugin.config.pagination = {
+            "total_items_nb_key_path": parse("$.missing")
+        }
+
+        mock_response = mock.Mock()
+        mock_response.json.return_value = {"total": 99}
+
+        with mock.patch.object(search_plugin, "_request", return_value=mock_response):
+            with pytest.raises(MisconfiguredError):
+                search_plugin.count_hits("http://fake.url")
 
 
 class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
