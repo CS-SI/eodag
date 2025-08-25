@@ -476,16 +476,6 @@ class PluginConfig(yaml.YAMLObject):
     per_product_metadata_query: bool
     #: :class:`~eodag.plugins.search.qssearch.ODataV4Search` Dict used to simplify further metadata extraction
     metadata_pre_mapping: PluginConfig.MetadataPreMapping
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to which the data request shall be sent
-    data_request_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch` URL to fetch the status of the data request
-    status_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: URL to fetch the search result when the data request is done
-    result_url: str
-    #: :class:`~eodag.plugins.search.data_request_search.DataRequestSearch`
-    #: if date parameters are mandatory in the request
-    dates_required: bool
     #: :class:`~eodag.plugins.search.csw.CSWSearch` Search definition dictionary
     search_definition: dict[str, Any]
     #: :class:`~eodag.plugins.search.qssearch.PostJsonSearch` Whether to merge responses or not (`aws_eos` specific)
@@ -495,6 +485,9 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.static_stac_search.StaticStacSearch`
     #: Maximum number of connections for concurrent HTTP requests
     max_connections: int
+    #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
+    #: if date parameters are mandatory in the request
+    dates_required: bool
     #: :class:`~eodag.plugins.search.build_search_result.ECMWFSearch`
     #: Whether end date should be excluded from search request or not
     end_date_excluded: bool
@@ -542,7 +535,7 @@ class PluginConfig(yaml.YAMLObject):
     no_auth_download: bool
     #: :class:`~eodag.plugins.download.http.HTTPDownload` Parameters to be added to the query params of the request
     dl_url_params: dict[str, str]
-    #: :class:`~eodag.plugins.download.s3rest.S3RestDownload`
+    #: :class:`~eodag.plugins.download.aws.AwsDownload`
     #: At which level of the path part of the url the bucket can be found
     bucket_path_level: int
     #: :class:`~eodag.plugins.download.aws.AwsDownload` S3 endpoint
