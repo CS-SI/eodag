@@ -23,7 +23,7 @@ Products from the following providers are made available through ``eodag``:
   Storage download
 * `ecmwf <https://www.ecmwf.int/>`_: European Centre for Medium-Range Weather Forecasts
 * `eumetsat_ds <https://data.eumetsat.int>`_: EUMETSAT Data Store (European Organisation for the Exploitation of Meteorological Satellites)
-* `fedeo_ceda <https://climate.esa.int/en/>`_: FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access
+* `fedeo_ceda <https://climate.esa.int/en/>`_: FedEO CEDA (Centre for Environmental Data Archival) through CEOS Federated Earth Observation missions access. The FedEO service periodically ingests the latest ESA CCI (Climate Change Initiative) Open Data Portal catalogue of all CCI datasets.
 * `geodes <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal
 * `geodes_s3 <https://geodes.cnes.fr>`_: French National Space Agency (CNES) Earth Observation portal with internal s3 Datalake
 * `hydroweb_next <https://hydroweb.next.theia-land.fr>`_: hydroweb.next thematic hub for hydrology data access
