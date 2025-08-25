@@ -63,11 +63,7 @@ from eodag.rest.utils import (
     get_next_link,
 )
 from eodag.rest.utils.rfc3339 import rfc3339_str_to_datetime
-from eodag.utils import (
-    deepcopy,
-    dict_items_recursive_apply,
-    format_dict_items,
-)
+from eodag.utils import deepcopy, dict_items_recursive_apply, format_dict_items
 from eodag.utils.exceptions import (
     MisconfiguredError,
     NotAvailableError,

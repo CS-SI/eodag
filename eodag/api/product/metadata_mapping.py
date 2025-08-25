@@ -42,7 +42,6 @@ from shapely.ops import transform
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
-    _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -651,45 +650,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
-        @_deprecated(
-            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
-            version="3.7.1",
-        )
-        def convert_split_id_into_s1_params(product_id: str) -> dict[str, str]:
-            parts: list[str] = re.split(r"_(?!_)", product_id)
-            if len(parts) < 9:
-                logger.error(
-                    "id %s does not match expected Sentinel-1 id format", product_id
-                )
-                raise ValueError
-            params = {"sensorMode": parts[1]}
-            level = "LEVEL" + parts[3][0]
-            params["processingLevel"] = level
-            start_date = datetime.strptime(parts[4], "%Y%m%dT%H%M%S") - timedelta(
-                seconds=1
-            )
-            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(parts[5], "%Y%m%dT%H%M%S") + timedelta(
-                seconds=1
-            )
-            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            product_type = parts[2][:3]
-            if product_type == "GRD" and parts[-1] == "COG":
-                product_type = "GRD-COG"
-            elif product_type == "GRD" and parts[-2] == "CARD" and parts[-1] == "BS":
-                product_type = "CARD-BS"
-            params["productType"] = product_type
-            polarisation_mapping = {
-                "SV": "VV",
-                "SH": "HH",
-                "DH": "HH+HV",
-                "DV": "VV+VH",
-            }
-            polarisation = polarisation_mapping[parts[3][2:]]
-            params["polarisation"] = polarisation
-            return params
-
-        @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {"productType": product_id[4:15]}
@@ -705,48 +665,6 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             params["timeliness"] = parts[-2]
             params["sat"] = "Sentinel-" + parts[0][1:]
             return params
-
-        @staticmethod
-        @_deprecated(
-            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
-            version="3.7.1",
-        )
-        def convert_split_id_into_s5p_params(product_id: str) -> dict[str, str]:
-            parts: list[str] = re.split(r"_(?!_)", product_id)
-            params = {
-                "productType": product_id[9:19],
-                "processingMode": parts[1],
-                "processingLevel": parts[2].replace("_", ""),
-            }
-            start_date = datetime.strptime(parts[-6], "%Y%m%dT%H%M%S") - timedelta(
-                seconds=10
-            )
-            params["startDate"] = start_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            end_date = datetime.strptime(parts[-5], "%Y%m%dT%H%M%S") + timedelta(
-                seconds=10
-            )
-            params["endDate"] = end_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-            return params
-
-        @staticmethod
-        @_deprecated(
-            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
-            version="3.7.1",
-        )
-        def convert_split_cop_dem_id(product_id: str) -> list[int]:
-            parts = product_id.split("_")
-            lattitude = parts[3]
-            longitude = parts[5]
-            if lattitude[0] == "N":
-                lat_num = int(lattitude[1:])
-            else:
-                lat_num = -1 * int(lattitude[1:])
-            if longitude[0] == "E":
-                long_num = int(longitude[1:])
-            else:
-                long_num = -1 * int(longitude[1:])
-            bbox = [long_num - 1, lat_num - 1, long_num + 1, lat_num + 1]
-            return bbox
 
         @staticmethod
         def convert_dates_from_cmems_id(product_id: str):

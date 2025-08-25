@@ -26,5 +26,4 @@ This table lists all the search plugins currently available:
    build_search_result.ECMWFSearch
    build_search_result.MeteoblueSearch
    build_search_result.WekeoECMWFSearch
-   data_request_search.DataRequestSearch
    csw.CSWSearch
