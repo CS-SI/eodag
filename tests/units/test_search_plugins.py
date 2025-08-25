@@ -22,7 +22,7 @@ import re
 import ssl
 import unittest
 from copy import deepcopy as copy_deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Literal, Union, get_origin
 from unittest import mock
@@ -30,10 +30,8 @@ from unittest.mock import call
 
 import boto3
 import botocore
-import dateutil
 import requests
 import responses
-import yaml
 from botocore.stub import Stubber
 from pydantic_core import PydanticUndefined
 from requests import RequestException
@@ -66,7 +64,6 @@ from tests.context import (
     get_geometry_from_various,
     load_default_config,
     merge_configs,
-    override_config_from_mapping,
 )
 
 
@@ -2087,231 +2084,6 @@ class MockResponse:
     def raise_for_status(self):
         if self.status_code != 200:
             raise RequestError
-
-
-class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
-    @mock.patch(
-        "eodag.plugins.authentication.token.requests.Session.request", autospec=True
-    )
-    def setUp(self, mock_requests_get):
-        super(TestSearchPluginDataRequestSearch, self).setUp()
-        providers_config = self.plugins_manager.providers_config
-        wekeo_old_config_file = os.path.join(
-            TEST_RESOURCES_PATH, "wekeo_old_config.yml"
-        )
-        with open(wekeo_old_config_file, "r") as file:
-            wekeo_old_config_dict = yaml.safe_load(file)
-        override_config_from_mapping(providers_config, wekeo_old_config_dict)
-        self.plugins_manager = PluginManager(providers_config)
-        provider = "wekeo_old"
-        self.search_plugin = self.get_search_plugin(self.product_type, provider)
-        self.auth_plugin = self.get_auth_plugin(self.search_plugin)
-        self.auth_plugin.config.credentials = {"username": "tony", "password": "pass"}
-        mock_requests_get.return_value = MockResponse({"access_token": "token"}, 200)
-        self.search_plugin.auth = self.auth_plugin.authenticate()
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_create_data_request(self, mock_requests_get, mock_requests_post):
-        self.search_plugin._create_data_request(
-            "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1",
-            "COP_DEM_GLO30",
-            productType="EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1",
-        )
-        mock_requests_post.assert_called_with(
-            self.search_plugin.config.data_request_url,
-            json={"datasetId": "EO:DEM:DAT:COP-DEM_GLO-30-DGED__2022_1"},
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-        keywords = {
-            "format": "GeoTiff100mt",
-            "providerProductType": "Corine Land Cover 2018",
-        }
-        self.search_plugin._create_data_request(
-            "EO:EEA:DAT:CORINE",
-            "CLMS_CORINE",
-            productType="EO:EEA:DAT:CORINE",
-            **keywords,
-        )
-        mock_requests_post.assert_called_with(
-            self.search_plugin.config.data_request_url,
-            json={
-                "datasetId": "EO:EEA:DAT:CORINE",
-                "stringChoiceValues": [
-                    {"name": "format", "value": "GeoTiff100mt"},
-                    {"name": "product_type", "value": "Corine Land Cover 2018"},
-                ],
-            },
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_check_request_status(self, mock_requests_get):
-        mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
-        successful = self.search_plugin._check_request_status("123")
-        mock_requests_get.assert_called_with(
-            self.search_plugin.config.status_url + "123",
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-        assert successful
-        mock_requests_get.return_value = MockResponse(
-            {"status": "failed", "message": "failed"}, 500
-        )
-        with self.assertRaises(RequestError):
-            self.search_plugin._check_request_status("123")
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_get_result_data(self, mock_requests_get):
-        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
-        mock_requests_get.assert_called_with(
-            self.search_plugin.config.result_url.format(
-                jobId="123", items_per_page=5, page=0
-            ),
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-
-    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
-    def test_plugins_get_result_data_ssl_verify_false(self, mock_requests_get):
-        self.search_plugin.config.ssl_verify = False
-        self.search_plugin._get_result_data("123", items_per_page=5, page=1)
-        mock_requests_get.assert_called_with(
-            self.search_plugin.config.result_url.format(
-                jobId="123", items_per_page=5, page=0
-            ),
-            headers=getattr(self.search_plugin.auth, "headers", ""),
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=False,
-        )
-
-        del self.search_plugin.config.ssl_verify
-
-    def test_plugins_search_datareq_distinct_product_type_mtd_mapping(self):
-        """The metadata mapping for data_request_search should not mix specific product-types metadata-mapping"""
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
-        result = {
-            "totItems": 1,
-            "content": [
-                {
-                    "productInfo": {"product": "FOO_BAR_BAZ_QUX_QUUX_CORGE"},
-                    "extraInformation": {"footprint": geojson_geometry},
-                    "url": "http://foo.bar",
-                },
-            ],
-        }
-
-        @responses.activate(registry=responses.registries.FirstMatchRegistry)
-        def run():
-            responses.add(
-                responses.POST,
-                self.search_plugin.config.data_request_url,
-                status=200,
-                json={"jobId": "123"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.status_url + "123",
-                json={"status": "completed"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.result_url.format(
-                    jobId=123, items_per_page=20, page=0
-                ),
-                json=result,
-            )
-
-            # update metadata_mapping only for S1_SAR_GRD
-            self.search_plugin.config.products["S1_SAR_GRD"]["metadata_mapping"][
-                "bar"
-            ] = (
-                None,
-                "baz",
-            )
-            products, estimate = self.search_plugin.query(
-                productType="S1_SAR_GRD",
-            )
-            self.assertIn("bar", products[0].properties)
-            self.assertEqual(products[0].properties["bar"], "baz")
-
-            # search with another product type
-            self.assertNotIn(
-                "bar",
-                self.search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"],
-            )
-            products, estimate = self.search_plugin.query(
-                productType="S1_SAR_SLC",
-            )
-            self.assertNotIn("bar", products[0].properties)
-
-        run()
-
-    def test_plugins_search_datareq_dates_required(self):
-        """data_request_search query should use default dates if required"""
-        geojson_geometry = self.search_criteria_s2_msi_l1c["geometry"].__geo_interface__
-        result = {
-            "totItems": 1,
-            "content": [
-                {
-                    "productInfo": {"product": "FOO_BAR_BAZ_QUX_QUUX_CORGE"},
-                    "extraInformation": {"footprint": geojson_geometry},
-                    "url": "http://foo.bar",
-                },
-            ],
-        }
-
-        @responses.activate(registry=responses.registries.FirstMatchRegistry)
-        def run():
-            responses.add(
-                responses.POST,
-                self.search_plugin.config.data_request_url,
-                status=200,
-                json={"jobId": "123"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.status_url + "123",
-                json={"status": "completed"},
-            )
-            responses.add(
-                responses.GET,
-                self.search_plugin.config.result_url.format(
-                    jobId=123, items_per_page=20, page=0
-                ),
-                json=result,
-            )
-
-            self.assertTrue(self.search_plugin.config.dates_required)
-
-            products, estimate = self.search_plugin.query(
-                productType="S1_SAR_GRD",
-            )
-
-            request_dict = json.loads(responses.calls[0].request.body)
-
-            self.assertEqual(request_dict["datasetId"], "EO:ESA:DAT:SENTINEL-1:SAR")
-            self.assertEqual(
-                dateutil.parser.parse(
-                    request_dict["dateRangeSelectValues"][0]["start"]
-                ),
-                dateutil.parser.parse(DEFAULT_MISSION_START_DATE),
-            )
-            self.assertLess(
-                datetime.now(timezone.utc)
-                - dateutil.parser.parse(
-                    request_dict["dateRangeSelectValues"][0]["end"]
-                ),
-                timedelta(minutes=1),
-            )
-
-        run()
 
 
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
