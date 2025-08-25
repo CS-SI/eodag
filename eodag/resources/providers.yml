@@ -5960,7 +5960,6 @@
         platform: '{$.summaries.platform#csv_list}'
         title: '$.title'
     metadata_mapping:
-      downloadLink: '$.assets.enclosure_1.href'
       title: '$.properties.title'
       geometry: '$.geometry'
       assets: '{$.assets#dict_filter($[?(@.href =~ ".*\/thredds\/fileServer\/.*")])}'
