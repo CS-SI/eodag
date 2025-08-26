@@ -757,6 +757,7 @@ class QueryStringSearch(Search):
         :param prep: Object collecting needed information for search.
         """
         count = prep.count
+        raise_errors = prep.raise_errors
         collection = cast(str, kwargs.get("collection", prep.collection))
         if collection == GENERIC_COLLECTION:
             logger.warning(
@@ -827,6 +828,8 @@ class QueryStringSearch(Search):
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
+            count=count,
+            raise_errors=raise_errors,
         )
         return formated_result
 
@@ -856,7 +859,7 @@ class QueryStringSearch(Search):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Build paginated urls"""
-        page = prep.page or DEFAULT_PAGE
+        page = prep.page if prep.page is not None else DEFAULT_PAGE
         token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count
@@ -924,7 +927,7 @@ class QueryStringSearch(Search):
                     skip_base_1=(token - 1) * items_per_page + 1,
                 )
 
-            elif token is not None:
+            if token is not None:
                 prep.query_params[next_page_token_key] = token
             prep.query_params["limit"] = items_per_page
             urls.append(next_page_url)
@@ -1096,7 +1099,7 @@ class QueryStringSearch(Search):
             if items_per_page is not None and len(results) == items_per_page:
 
                 raw_search_results = self._build_raw_search_results(
-                    results, resp_as_json, kwargs, items_per_page
+                    results, resp_as_json, kwargs, items_per_page, prep
                 )
                 return raw_search_results
 
@@ -1105,10 +1108,12 @@ class QueryStringSearch(Search):
         )
         return raw_search_results
 
-    def _build_raw_search_results(self, results, resp_as_json, kwargs, items_per_page):
+    def _build_raw_search_results(
+        self, results, resp_as_json, kwargs, items_per_page, prep
+    ):
         raw_search_results = RawSearchResult(results)
         raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
-        if self.config.pagination.get("next_page_url_tpl") is not None:
+        if "next_page_query_obj_key_path" in self.config.pagination:
             href = self.config.pagination["next_page_query_obj_key_path"].find(
                 resp_as_json
             )
@@ -1124,12 +1129,22 @@ class QueryStringSearch(Search):
                 page_param = parse_qs(query).get(next_page_token_key)
                 if page_param:
                     raw_search_results.next_page_token = page_param[0]
-
-        else:
+            else:
+                raw_search_results.next_page_token = href[0].value
+        elif "next_page_url_key_path" in self.config.pagination:
             token = self.config.pagination["next_page_query_obj_key_path"].find(
                 resp_as_json
             )
             raw_search_results.next_page_token = token[0].value
+        else:
+            next_page_token_key = self.config.pagination.get(
+                "next_page_token_key", "page"
+            )
+            raw_search_results.next_page_token = (
+                prep.query_params[next_page_token_key] + 1
+                if prep.query_params[next_page_token_key]
+                else None
+            )
 
         return raw_search_results
 
@@ -1516,6 +1531,9 @@ class PostJsonSearch(QueryStringSearch):
         """Perform a search on an OpenSearch-like interface"""
         collection = kwargs.get("collection", "")
         count = prep.count
+        raise_errors = prep.raise_errors
+        # remove "product_type" from search args if exists for compatibility with QueryStringSearch methods
+        kwargs.pop("collection", None)
         sort_by_arg: Optional[SortByList] = self.get_sort_by_arg(kwargs)
         _, sort_by_qp = (
             ("", {}) if sort_by_arg is None else self.build_sort_by(sort_by_arg)
@@ -1642,6 +1660,8 @@ class PostJsonSearch(QueryStringSearch):
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
+            count=count,
+            raise_errors=raise_errors,
         )
         return formated_result
 
@@ -1684,7 +1704,7 @@ class PostJsonSearch(QueryStringSearch):
         **kwargs: Any,
     ) -> tuple[list[str], Optional[int]]:
         """Adds pagination to query parameters, and auth to url"""
-        page = prep.page or DEFAULT_PAGE
+        page = prep.page if prep.page is not None else DEFAULT_PAGE
         token = prep.next_page_token
         items_per_page = prep.items_per_page
         count = prep.count

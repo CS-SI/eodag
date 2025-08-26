@@ -1868,6 +1868,7 @@ class EODataAccessGateway:
 
         try:
             prep = PreparedSearch(count=count)
+            prep.raise_errors = raise_errors
 
             # append auth if needed
             if getattr(search_plugin.config, "need_auth", False):
@@ -1914,6 +1915,7 @@ class EODataAccessGateway:
                     "The query function of a Search plugin must return a list of "
                     "results, got {} instead".format(type(search_result.data))
                 )
+            search_result.dag = self
             return search_result
 
         except Exception as e:
