@@ -678,6 +678,7 @@ class TestCore(TestCoreBase):
         products.update(
             {
                 "S2_MSI_L1C": ProductType(
+                    dag=self.dag,
                     alias="S2_MSI_ALIAS",
                     **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
                 )
@@ -695,6 +696,7 @@ class TestCore(TestCoreBase):
         products.update(
             {
                 "S2_MSI_L1C": ProductType(
+                    dag=self.dag,
                     id="S2_MSI_L1C",
                     **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
                 )
@@ -1122,7 +1124,7 @@ class TestCore(TestCoreBase):
         )
         self.assertEqual(
             self.dag.product_types_config.data["foo"],
-            ProductType(id="foo", title="Foo collection"),
+            ProductType(dag=self.dag, id="foo", title="Foo collection"),
         )
 
         # update existing provider conf and check that discover_product_types() is launched for it
@@ -1517,6 +1519,7 @@ class TestCore(TestCoreBase):
         products.update(
             {
                 "S1_SAR_GRD": ProductType(
+                    dag=self.dag,
                     alias="S1_SG",
                     **products["S1_SAR_GRD"].model_dump(exclude={"alias"}),
                 )
@@ -1534,6 +1537,7 @@ class TestCore(TestCoreBase):
         products.update(
             {
                 "S1_SAR_GRD": ProductType(
+                    dag=self.dag,
                     id="S1_SAR_GRD",
                     **products["S1_SAR_GRD"].model_dump(exclude={"id", "alias"}),
                 )
@@ -2668,6 +2672,7 @@ class TestCoreSearch(TestCoreBase):
         products.update(
             {
                 "S2_MSI_L1C": ProductType(
+                    dag=self.dag,
                     alias="S2_MSI_ALIAS",
                     **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
                 )
@@ -2687,6 +2692,7 @@ class TestCoreSearch(TestCoreBase):
         products.update(
             {
                 "S2_MSI_L1C": ProductType(
+                    dag=self.dag,
                     id="S2_MSI_L1C",
                     **products["S2_MSI_L1C"].model_dump(exclude={"id", "alias"}),
                 )
@@ -3797,6 +3803,7 @@ class TestCoreProductAlias(TestCoreBase):
         products.update(
             {
                 "S2_MSI_L1C": ProductType(
+                    dag=cls.dag,
                     alias="S2_MSI_ALIAS",
                     **products["S2_MSI_L1C"].model_dump(exclude={"alias"}),
                 )
@@ -3976,7 +3983,7 @@ class TestCoreProviderGroup(TestCoreBase):
 
         self.assertEqual(
             self.dag.product_types_config.data["foo"],
-            ProductType(id="foo", title="Foo collection"),
+            ProductType(dag=self.dag, id="foo", title="Foo collection"),
         )
 
         # restore providers config

@@ -116,7 +116,9 @@ class EODataAccessGateway:
         product_types_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
             res_files("eodag") / "resources" / "product_types.yml"
         )
-        self.product_types_config = product_types_config_init(product_types_config_path)
+        self.product_types_config = product_types_config_init(
+            product_types_config_path, self
+        )
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -260,7 +262,7 @@ class EODataAccessGateway:
                     continue
 
                 empty_product = ProductType(
-                    id=product_id, title=product_id, abstract=NOT_AVAILABLE
+                    dag=self, id=product_id, title=product_id, abstract=NOT_AVAILABLE
                 )
                 self.product_types_config[
                     product_id
@@ -875,6 +877,7 @@ class EODataAccessGateway:
                                 self.product_types_config.update(
                                     {
                                         new_product_type: ProductType(
+                                            dag=self,
                                             id=new_product_type,
                                             **new_product_types_conf[
                                                 "product_types_config"
