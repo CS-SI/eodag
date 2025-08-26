@@ -2373,6 +2373,71 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             verify=True,
         )
 
+    @mock.patch("eodag.plugins.search.data_request_search.format_query_params")
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    def test_create_data_request_validation_error(
+        self, mock_post, mock_format_query_params
+    ):
+        mock_format_query_params.side_effect = ValidationError("Invalid: bad_param")
+
+        with self.assertRaises(ValidationError) as cm:
+            self.search_plugin._create_data_request("PRODUCT", "TYPE", bad_param="XXX")
+
+        self.assertIn("not queryable", str(cm.exception))
+
+        mock_post.assert_not_called()
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    def test_create_data_request_timeout(self, mock_post):
+        mock_post.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with self.assertRaises(TimeOutError):
+            self.search_plugin._create_data_request("PRODUCT", "TYPE")
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.post", autospec=True)
+    def test_create_data_request_request_exception(self, mock_post):
+        mock_post.side_effect = requests.RequestException("Boom")
+
+        with self.assertRaises(RequestError) as cm:
+            self.search_plugin._create_data_request("PRODUCT", "TYPE")
+
+        self.assertIn("could not be created", str(cm.exception))
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
+    )
+    def test_cancel_request_success(self, mock_delete):
+        self.search_plugin.config.data_request_url = "http://fake-url.com"
+        mock_delete.return_value = MockResponse(json_data={}, status_code=200)
+
+        self.search_plugin._cancel_request("123")
+
+        mock_delete.assert_called_with(
+            "http://fake-url.com/123",
+            headers=getattr(self.search_plugin.auth, "headers", ""),
+            timeout=HTTP_REQ_TIMEOUT,
+        )
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
+    )
+    def test_cancel_request_timeout(self, mock_delete):
+        mock_delete.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with self.assertRaises(TimeOutError):
+            self.search_plugin._cancel_request("123")
+
+    @mock.patch(
+        "eodag.plugins.search.data_request_search.requests.delete", autospec=True
+    )
+    def test_cancel_request_request_exception(self, mock_delete):
+        mock_delete.side_effect = requests.RequestException("Boom")
+
+        with self.assertRaises(RequestError) as cm:
+            self.search_plugin._cancel_request("123")
+
+        self.assertIn("_cancel_request failed", str(cm.exception))
+
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_check_request_status(self, mock_requests_get):
         mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
@@ -2391,6 +2456,48 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             self.search_plugin._check_request_status("123")
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_timeout(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with pytest.raises(TimeOutError):
+            self.search_plugin._check_request_status("123")
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_request_exception(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.RequestException("boom")
+
+        with pytest.raises(RequestError) as excinfo:
+            self.search_plugin._check_request_status("123")
+        assert "_check_request_status failed" in str(excinfo.value)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_auth_expired(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse({"status_code": 403}, 200)
+
+        with pytest.raises(RequestError) as excinfo:
+            self.search_plugin._check_request_status("123")
+
+        assert getattr(excinfo.value, "status_code", None) == 403
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_failed_status(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse(
+            {"status": "failed", "message": "something wrong"}, 200
+        )
+
+        with pytest.raises(RequestError) as excinfo:
+            self.search_plugin._check_request_status("123")
+
+        assert "data request job has failed" in str(excinfo.value)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_check_request_status_completed(self, mock_requests_get):
+        mock_requests_get.return_value = MockResponse({"status": "completed"}, 200)
+
+        result = self.search_plugin._check_request_status("123")
+        assert result is True
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_get_result_data(self, mock_requests_get):
         self.search_plugin._get_result_data("123", items_per_page=5, page=1)
         mock_requests_get.assert_called_with(
@@ -2401,6 +2508,27 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             timeout=HTTP_REQ_TIMEOUT,
             verify=True,
         )
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_get_result_data_timeout(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.exceptions.Timeout("Request timed out")
+
+        with pytest.raises(TimeOutError) as excinfo:
+            self.search_plugin._get_result_data("123", items_per_page=5, page=1)
+
+        assert "Request timed out" in str(excinfo.value)
+
+    @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
+    def test_plugins_get_result_data_request_exception(self, mock_requests_get):
+        mock_requests_get.side_effect = requests.RequestException("Boom")
+
+        with self.assertLogs(level="ERROR") as cm:
+            result = self.search_plugin._get_result_data(
+                "123", items_per_page=5, page=1
+            )
+
+        self.assertEqual(result, {})
+        self.assertIn("Result could not be retrieved", "".join(cm.output))
 
     @mock.patch("eodag.plugins.search.data_request_search.requests.get", autospec=True)
     def test_plugins_get_result_data_ssl_verify_false(self, mock_requests_get):
@@ -2536,6 +2664,79 @@ class TestSearchPluginDataRequestSearch(BaseSearchPluginTest):
             )
 
         run()
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_match(self, mock_jsonpath):
+        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ABC'",
+        }
+
+        mock_jsonpath.return_value.find.side_effect = lambda rec: [
+            mock.Mock(value=rec["attr"])
+        ]
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(len(filtered["content"]), 1)
+        self.assertEqual(filtered["content"][0]["id"], "record1")
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_no_match(self, mock_jsonpath):
+        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ZZZ'",
+        }
+
+        mock_jsonpath.return_value.find.side_effect = lambda rec: [
+            mock.Mock(value=rec["attr"])
+        ]
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(filtered["content"], [])
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_empty_path(self, mock_jsonpath):
+        result = {"content": [{"id": "record1", "attr": "ABCDEFG"}]}
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ABC'",
+        }
+
+        mock_jsonpath.return_value.find.return_value = []
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(filtered["content"], [])
+
+    @mock.patch("eodag.plugins.search.data_request_search.string_to_jsonpath")
+    def test_apply_additional_filters_multiple_records(self, mock_jsonpath):
+        result = {
+            "content": [
+                {"id": "record1", "attr": "ABCDEFG"},
+                {"id": "record2", "attr": "ZZZZZZZ"},
+            ]
+        }
+        custom_filters = {
+            "filter_attribute": "attr",
+            "indexes": "0-3",
+            "filter_clause": "== 'ABC'",
+        }
+
+        mock_jsonpath.return_value.find.side_effect = lambda rec: [
+            mock.Mock(value=rec["attr"])
+        ]
+
+        filtered = self.search_plugin._apply_additional_filters(result, custom_filters)
+
+        self.assertEqual(len(filtered["content"]), 1)
+        self.assertEqual(filtered["content"][0]["id"], "record1")
 
 
 class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
