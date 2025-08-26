@@ -30,7 +30,7 @@ from click.testing import CliRunner
 from faker import Faker
 from packaging import version
 
-from eodag.api.product_type import ProductType
+from eodag.api.product_type import ProductType, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.utils import GENERIC_PRODUCT_TYPE
 from tests import TEST_RESOURCES_PATH
@@ -688,22 +688,22 @@ class TestEodagCli(unittest.TestCase):
         mock_fetch_product_types_list.assert_called_with(mock.ANY, provider="peps")
         self.assertEqual(mock_fetch_product_types_list.call_count, 2)
 
-    @mock.patch("eodag.cli.EODataAccessGateway.list_product_types", autospec=True)
-    @mock.patch("eodag.cli.EODataAccessGateway.guess_product_type", autospec=True)
-    def test_eodag_guess_product_type_ok(
-        self, mock_guess_product_type, mock_list_product_types
-    ):
+    @mock.patch("eodag.cli.EODataAccessGateway", autospec=True)
+    def test_eodag_guess_product_type_ok(self, dag):
         """Calling eodag list with one or several valid product type feature(s) should return
         all supported product types with this (these) feature(s) among the ones of its provider
         and with or without fetching provider according to the command.
         """
         provider = "peps"
-        mock_guess_product_type.return_value = ["foo", "bar"]
-        mock_list_product_types.return_value = [
-            ProductType(id="foo", title="this is foo"),
-            ProductType(id="bar", title="this is bar"),
-            ProductType(id="baz", title="this is baz"),
-        ]
+
+        dag.return_value.guess_product_type.return_value = ["foo", "bar"]
+        dag.return_value.list_product_types.return_value = ProductTypesList(
+            [
+                ProductType(dag=dag, id="foo", title="this is foo"),
+                ProductType(dag=dag, id="bar", title="this is bar"),
+                ProductType(dag=dag, id="baz", title="this is baz"),
+            ]
+        )
 
         result = self.runner.invoke(
             eodag,
@@ -715,8 +715,8 @@ class TestEodagCli(unittest.TestCase):
         self.assertIn("bar", result.output)
         self.assertNotIn("baz", result.output)
 
-        mock_list_product_types.assert_called_with(
-            mock.ANY, provider=provider, fetch_providers=False
+        dag.return_value.list_product_types.assert_called_with(
+            provider=provider, fetch_providers=False
         )
 
     @mock.patch(
