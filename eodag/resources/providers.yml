@@ -1410,8 +1410,8 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
-      next_page_token_key: next
-      next_page_query_obj_key_path: '$.links[?(@.rel=="next")].body.next'
+      next_page_query_obj_key_path: null
+      # next_page_token_key: page
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500
@@ -1479,6 +1479,60 @@
     requester_pays: True
 
 ---
+!provider # MARK: earth_search_cog
+  name: earth_search_cog
+  priority: 0
+  roles:
+    - host
+  description: Earth Search with Cloud Optimized GeoTIFF (COG) formatted assets
+  url: https://www.element84.com/earth-search/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: https://earth-search.aws.element84.com/v1/search
+    need_auth: false
+    ssl_verify: true
+    discover_product_types:
+      fetch_url: null
+    discover_queryables:
+      fetch_url: null
+      product_type_fetch_url: null
+    pagination:
+      # Override the default next page url key path of StacSearch because the next link returned
+      # by Earth Search is invalid (as of 2021/04/29). Entry set to null (None) to avoid using the
+      # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
+      # Remove that entry if Earth Search updates that and returns a valid link.
+      next_page_url_key_path: null
+      next_page_query_obj_key_path: null
+      # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
+      # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
+      # Let's set it to a more robust number: 500
+      max_items_per_page: 500
+    sort:
+      sort_by_default:
+        - !!python/tuple [startTimeFromAscendingNode, ASC]
+      sort_param_mapping:
+        id: id
+        startTimeFromAscendingNode: properties.datetime
+        creationDate: properties.created
+        modificationDate: properties.updated
+        platform: properties.constellation
+        platformSerialIdentifier: properties.platform
+        resolution: properties.gsd
+        cloudCover: properties.eo:cloud_cover
+    metadata_mapping:
+      platformSerialIdentifier: '$.id.`split(_, 0, -1)`'
+      polarizationMode: '$.id.`sub(/.{14}([A-Z]{2}).*/, \\1)`'
+      title: '{$.properties."s2:product_uri"#remove_extension}'
+      assets: '{$.assets#dict_filter($[?(href=~"^http.*")])}'
+  products:
+    S2_MSI_L2A_COG:
+      productType: sentinel-2-l2a
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+    ssl_verify: true
+---
 !provider # MARK: earth_search_gcs
   name: earth_search_gcs
   priority: 0
@@ -1502,7 +1556,6 @@
       # next page retrieval mechanism, `next_page_url_tpl` will be used instead (inherited from StacSearch)
       # Remove that entry if Earth Search updates that and returns a valid link.
       next_page_url_key_path: null
-      next_page_query_obj_key_path: '$.links[?(@.rel=="next")].body.page'
       # 2021/04/28: Earth-Search relies on Sat-API whose docs (http://sat-utils.github.io/sat-api/#search-stac-items-by-simple-filtering-)
       # say the max is 10_000. In practice a too high number (e.g. 5_000) returns a 502 error ({"message": "Internal server error"}).
       # Let's set it to a more robust number: 500

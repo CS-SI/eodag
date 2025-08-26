@@ -1104,7 +1104,7 @@ class QueryStringSearch(Search):
                 return raw_search_results
 
         raw_search_results = self._build_raw_search_results(
-            results, resp_as_json, kwargs, items_per_page
+            results, resp_as_json, kwargs, items_per_page, prep
         )
         return raw_search_results
 
@@ -1113,7 +1113,7 @@ class QueryStringSearch(Search):
     ):
         raw_search_results = RawSearchResult(results)
         raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
-        if "next_page_query_obj_key_path" in self.config.pagination:
+        if self.config.pagination.get("next_page_query_obj_key_path") is not None:
             href = self.config.pagination["next_page_query_obj_key_path"].find(
                 resp_as_json
             )
@@ -1131,7 +1131,7 @@ class QueryStringSearch(Search):
                     raw_search_results.next_page_token = page_param[0]
             else:
                 raw_search_results.next_page_token = href[0].value
-        elif "next_page_url_key_path" in self.config.pagination:
+        elif self.config.pagination.get("next_page_url_key_path") is not None:
             token = self.config.pagination["next_page_query_obj_key_path"].find(
                 resp_as_json
             )
