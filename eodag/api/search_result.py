@@ -64,6 +64,8 @@ class SearchResult(UserList[EOProduct]):
         errors: Optional[list[tuple[str, Exception]]] = None,
         search_params: Optional[dict[str, Any]] = None,
         next_page_token: Optional[str] = None,
+        count: Optional[bool] = False,
+        raise_errors: Optional[bool] = False,
     ) -> None:
         super().__init__(products)
         self.number_matched = number_matched
@@ -71,6 +73,10 @@ class SearchResult(UserList[EOProduct]):
         self.search_params = search_params
         self.next_page_token = next_page_token
         self._dag = None
+        self.pages = getattr(self, "pages", [])
+        self.pages.append(self.data)
+        self.count = count
+        self.raise_errors = raise_errors
 
     @property
     def dag(self):
@@ -79,10 +85,6 @@ class SearchResult(UserList[EOProduct]):
 
         :returns: The EODataAccessGateway instance.
         """
-        if self._dag is None:
-            from eodag.api.core import EODataAccessGateway
-
-            self._dag = EODataAccessGateway()
         return self._dag
 
     @dag.setter
@@ -248,18 +250,25 @@ class SearchResult(UserList[EOProduct]):
     def next_page(self, update: bool = True) -> SearchResult:
         """Get the next page of results based on the current search parameters."""
         if not update:
-            return self
+            return self.pages[-1]
         if self.next_page_token is None:
             logger.info("No next page available.")
             raise StopIteration()
         self.search_params["next_page_token"] = self.next_page_token
-        self.search_params["provider"] = self.data[-1].provider
+        if hasattr(self.search_params, "provider"):
+            self.search_params["provider"] = self.search_params.get("provider", None)
+        elif self.data and hasattr(self.data[-1], "provider"):
+            self.search_params["provider"] = self.data[-1].provider
         search_plugins, search_kwargs = self.dag._prepare_search(**self.search_params)
         for i, search_plugin in enumerate(search_plugins):
             self.search_params["next_page_token"] = self.next_page_token
             search_result = self.dag._do_search(
-                search_plugin, raise_errors=False, **search_kwargs
+                search_plugin,
+                raise_errors=self.raise_errors,
+                count=self.count,
+                **search_kwargs,
             )
+            self.pages.append(search_result)
             return search_result
         return SearchResult([])
 
