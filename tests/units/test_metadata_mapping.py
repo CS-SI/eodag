@@ -265,8 +265,8 @@ class TestMetadataFormatter(unittest.TestCase):
         with self.assertRaises(TypeError):
             format_metadata(to_format, fieldname=123)
 
-    def test_convert_create_name(self):
-        to_format = r"{fieldname#create_name}"
+    def test_convert_ceda_collection_name(self):
+        to_format = r"{fieldname#ceda_collection_name}"
         self.assertEqual(
             format_metadata(to_format, fieldname="https://bar/data/foo/v1.1"),
             "FOO_V1.1",
