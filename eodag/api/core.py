@@ -124,7 +124,9 @@ class EODataAccessGateway:
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
-        self.collections_config = collections_config_init(collections_config_path)
+        self.collections_config = collections_config_init(
+            collections_config_path, self
+        )
         self.providers_config = load_default_config()
 
         env_var_cfg_dir = "EODAG_CFG_DIR"
@@ -268,7 +270,7 @@ class EODataAccessGateway:
                     continue
 
                 empty_product = ProductType(
-                    id=product_id, title=product_id, abstract=NOT_AVAILABLE
+                    dag=self, id=product_id, title=product_id, abstract=NOT_AVAILABLE
                 )
                 self.collections_config[
                     product_id
@@ -879,6 +881,7 @@ class EODataAccessGateway:
                                 self.collections_config.update(
                                     {
                                         new_collection: ProductType(
+                                            dag=self,
                                             id=new_collection,
                                             **new_collections_conf[
                                                 "collections_config"

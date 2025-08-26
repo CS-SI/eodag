@@ -20,12 +20,12 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import field_validator, model_validator
-from pydantic_core import PydanticCustomError
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import ValidationError
@@ -77,12 +77,27 @@ class ProductType(BaseModel):
 
     # Private property to store the eodag internal id values. Not part of the model schema.
     _id: str = PrivateAttr()
+    _dag: EODataAccessGateway = PrivateAttr()
 
-    model_config = ConfigDict(extra="forbid")
+    # allow extra attributes in the model to accept "dag" attribute
+    # however other extra attributes will raise an error during validation
+    model_config = ConfigDict(extra="allow")
+
+    def __init__(__pydantic_self__, dag: EODataAccessGateway, **values: Any) -> None:
+        """
+        Constructror to make linters pass during model calls with "dag" parameter.
+        This parameter will allow to set "_dag" private attribute during validation.
+
+        :param dag: The gateway instance to use to search products and to list queryables of the product type instance
+        """
+        super().__init__(**{"dag": dag, **values})
 
     def model_post_init(self, context: Any) -> None:
-        """Post-initialization method to set the internal id."""
+        """Post-initialization method to set internal attributes."""
         self._id = self.id
+        # set "_dag" private attribute and remove "dag" public one created during the validation
+        self._dag = getattr(self, "dag")
+        delattr(self, "dag")
 
     @field_validator("missionStartDate", "missionEndDate")
     @classmethod
@@ -106,6 +121,32 @@ class ProductType(BaseModel):
             )
 
         return value
+
+    @model_validator(mode="before")
+    @classmethod
+    def remove_extra_attributes(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Remove extra attributes not defined in the model (except "dag") if any"""
+        allowed_keys = set(cls.model_fields.keys())
+        extra_keys = set(values.keys()) - allowed_keys
+        errors: List[InitErrorDetails] = []
+
+        for key in extra_keys:
+            if key != "dag":
+                error = InitErrorDetails(
+                    type=PydanticCustomError(
+                        "extra_forbidden", "Extra inputs are not permitted"
+                    ),
+                    loc=(key,),
+                    input=values[key],
+                )
+                errors.append(error)
+
+        if errors:
+            raise PydanticValidationError.from_exception_data(
+                title=cls.__name__, line_errors=errors
+            )
+
+        return values
 
     @model_validator(mode="after")
     def set_id_from_alias(self) -> Self:
@@ -185,18 +226,15 @@ class ProductType(BaseModel):
             "</tbody></table>"
         )
 
-    def search(self, dag: EODataAccessGateway, **kwargs: Any) -> SearchResult:
-        """Look for products of this product type matching criteria using the given EODataAccessGateway.
+    def search(self, **kwargs: Any) -> SearchResult:
+        """Look for products of this product type matching criteria using the `dag` attribute of the instance.
 
-        :param dag: The EODataAccessGateway to use for the search
         :param kwargs: Some other criteria that will be used to do the search,
                        using parameters compatible with the provider
 
         :returns: A collection of EO products matching the criteria.
         :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in `kwargs`,
-                                                                   since it is already defined by the instance, or if
-                                                                   the `dag` argument is not an instance of
-                                                                   :class:`~eodag.api.core.EODataAccessGateway`
+                                                                   since it is already defined by the instance
         """
         product_type_search_arg = "productType"
         if product_type_search_arg in kwargs:
@@ -205,27 +243,17 @@ class ProductType(BaseModel):
                 {product_type_search_arg},
             )
 
-        try:
-            return dag.search(productType=self.id, **kwargs)
-        except AttributeError as e:
-            raise ValidationError(
-                "dag argument must be an instance of EODataAccessGateway()"
-            ) from e
+        return self._dag.search(productType=self.id, **kwargs)
 
-    def list_queryables(
-        self, dag: EODataAccessGateway, **kwargs: Any
-    ) -> QueryablesDict:
-        """Fetch the queryable properties for this product type using the given EODataAccessGateway.
+    def list_queryables(self, **kwargs: Any) -> QueryablesDict:
+        """Fetch the queryable properties for this product type using the `dag` attribute of the instance.
 
-        :param dag: The EODataAccessGateway to use for fetching queryables
         :param kwargs: additional filters for queryables
 
         :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
                   properties, associating parameters to their annotated type, and a additional_properties attribute
         :raises: :class:`~eodag.utils.exceptions.ValidationError`: If the `productType` argument is set in `kwargs`,
-                                                                   since it is already defined by the instance, or if
-                                                                   the `dag` argument is not an instance of
-                                                                   :class:`~eodag.api.core.EODataAccessGateway`
+                                                                   since it is already defined by the instance
         """
         product_type_search_arg = "productType"
         if product_type_search_arg in kwargs:
@@ -234,12 +262,7 @@ class ProductType(BaseModel):
                 {product_type_search_arg},
             )
 
-        try:
-            return dag.list_queryables(productType=self.id, **kwargs)
-        except AttributeError as e:
-            raise ValidationError(
-                "dag argument must be an instance of EODataAccessGateway()"
-            ) from e
+        return self._dag.list_queryables(productType=self.id, **kwargs)
 
 
 class ProductTypesDict(UserDict[str, ProductType]):

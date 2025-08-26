@@ -35,8 +35,8 @@ from tests.context import (
 class TestProductType(unittest.TestCase):
     def setUp(self):
         super(TestProductType, self).setUp()
-        self.product_type = ProductType(id="foo")
         self.dag = EODataAccessGateway()
+        self.product_type = ProductType(dag=self.dag, id="foo")
 
         # mock os.environ to empty env
         self.mock_os_environ = mock.patch.dict(os.environ, {}, clear=True)
@@ -49,7 +49,7 @@ class TestProductType(unittest.TestCase):
 
     def test_product_type_set_ids_and_alias(self):
         """Product type ids and alias must be correctly set"""
-        product_type = ProductType(id="foo", alias="bar")
+        product_type = ProductType(dag=self.dag, id="foo", alias="bar")
 
         # check that id attribute has the same value as alias attribute
         self.assertIsInstance(product_type, ProductType)
@@ -69,7 +69,9 @@ class TestProductType(unittest.TestCase):
             # try to create a product type with a wrong attribute
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
-                product_type = ProductType(id="foo", platform=0, bar="bat")
+                product_type = ProductType(
+                    dag=self.dag, id="foo", platform=0, bar="bat"
+                )
 
             self.assertIn("Validation failed for the product type foo", str(cm.output))
             self.assertIn("platform\\n  Input should be a valid string", str(cm.output))
@@ -96,7 +98,7 @@ class TestProductType(unittest.TestCase):
             # retry to create a product type with a wrong attribute
             # and check that ValidationError has been raised
             with self.assertRaises(ValidationError) as context:
-                ProductType(id="foo", platform=0)
+                ProductType(dag=self.dag, id="foo", platform=0)
             self.assertIn(
                 "platform\n  Input should be a valid string", str(context.exception)
             )
@@ -113,12 +115,12 @@ class TestProductType(unittest.TestCase):
 
             # try to create a product type with a missing id
             with self.assertRaises(ValidationError) as context:
-                ProductType()
+                ProductType(dag=self.dag)
             self.assertIn("id\n  Field required", str(context.exception))
 
             # try to create a product type with a wrong id
             with self.assertRaises(ValidationError) as context:
-                ProductType(id=1)
+                ProductType(dag=self.dag, id=1)
             self.assertIn(
                 "id\n  Input should be a valid string", str(context.exception)
             )
@@ -135,7 +137,7 @@ class TestProductType(unittest.TestCase):
 
             # try to create a product type with a wrong mission start datetime
             with self.assertRaises(ValidationError) as context:
-                ProductType(id="foo", missionStartDate="not-a-datetime")
+                ProductType(dag=self.dag, id="foo", missionStartDate="not-a-datetime")
             self.assertIn(
                 "missionStartDate\n  Input should be a valid datetime string in RFC3339 format",
                 str(context.exception),
@@ -143,7 +145,7 @@ class TestProductType(unittest.TestCase):
 
             # try to create a product type with a wrong mission end datetime
             with self.assertRaises(ValidationError) as context:
-                ProductType(id="foo", missionEndDate="not-a-datetime")
+                ProductType(dag=self.dag, id="foo", missionEndDate="not-a-datetime")
             self.assertIn(
                 "missionEndDate\n  Input should be a valid datetime string in RFC3339 format",
                 str(context.exception),
@@ -158,7 +160,7 @@ class TestProductType(unittest.TestCase):
     )
     def test_product_type_search_ok(self, mock_search):
         """ProductType.search must search for products of this product type"""
-        self.product_type.search(self.dag)
+        self.product_type.search()
         mock_search.assert_called_once_with(
             self.dag,
             productType=self.product_type.id,
@@ -168,20 +170,12 @@ class TestProductType(unittest.TestCase):
         "eodag.api.core.EODataAccessGateway.search",
         autospec=True,
     )
-    def test_product_type_search_errors(self, mock_search):
-        """ProductType.search must raise an error if "productType" kwarg is given
-        or if the dag is not an EODataAccessGateway instance"""
+    def test_product_type_search_error(self, mock_search):
+        """ProductType.search must raise an error if "productType" kwarg is given"""
         with self.assertRaises(ValidationError) as context:
-            self.product_type.search(self.dag, productType=self.product_type.id)
+            self.product_type.search(productType=self.product_type.id)
         self.assertIn(
             "productType should not be set in kwargs since a product type instance is used",
-            str(context.exception),
-        )
-
-        with self.assertRaises(ValidationError) as context:
-            self.product_type.search("not-a-dag")
-        self.assertIn(
-            "dag argument must be an instance of EODataAccessGateway()",
             str(context.exception),
         )
 
@@ -191,10 +185,23 @@ class TestProductType(unittest.TestCase):
     )
     def test_product_type_list_queryables_ok(self, mock_search):
         """ProductType.list_queryables must list queryables of this product type"""
-        self.product_type.list_queryables(self.dag)
+        self.product_type.list_queryables()
         mock_search.assert_called_once_with(
             self.dag,
             productType=self.product_type.id,
+        )
+
+    @mock.patch(
+        "eodag.api.core.EODataAccessGateway.search",
+        autospec=True,
+    )
+    def test_product_type_list_queryables_error(self, mock_search):
+        """ProductType.list_queryables must raise an error if "productType" kwarg is given"""
+        with self.assertRaises(ValidationError) as context:
+            self.product_type.list_queryables(productType=self.product_type.id)
+        self.assertIn(
+            "productType should not be set in kwargs since a product type instance is used",
+            str(context.exception),
         )
 
     def test_search_result_repr_html(self):
@@ -206,7 +213,10 @@ class TestProductType(unittest.TestCase):
 class TestProductTypesDict(unittest.TestCase):
     def setUp(self):
         super(TestProductTypesDict, self).setUp()
-        self.product_types_dict = ProductTypesDict([ProductType(id="foo")])
+        self.dag = EODataAccessGateway()
+        self.product_types_dict = ProductTypesDict(
+            [ProductType(dag=self.dag, id="foo")]
+        )
 
     def test_search_result_is_dict_like(self):
         """ProductTypesDict must provide a dict interface"""
@@ -216,7 +226,10 @@ class TestProductTypesDict(unittest.TestCase):
 class TestProductTypesList(unittest.TestCase):
     def setUp(self):
         super(TestProductTypesList, self).setUp()
-        self.product_types_list = ProductTypesList([ProductType(id="foo")])
+        self.dag = EODataAccessGateway()
+        self.product_types_list = ProductTypesList(
+            [ProductType(dag=self.dag, id="foo")]
+        )
 
     def test_search_result_is_list_like(self):
         """ProductTypesList must provide a list interface"""
