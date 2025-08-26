@@ -790,10 +790,6 @@ class StacCollection(StacCommon):
                 f"Product type keywords: {str(product_type_collection['keywords'])}",
             )
 
-        # merge providers
-        if "providers" in ext_stac_collection:
-            ext_stac_collection["providers"] += product_type_collection["providers"]
-
         product_type_collection.update(ext_stac_collection)
 
         # parse f-strings
