@@ -5932,7 +5932,7 @@
 !provider # MARK: fedeo_ceda
   name: fedeo_ceda
   priority: 0
-  description: CEDA Federation of Earth Science Data Centres via FedEO STAC Catalog
+  description: CEDA datasets through FedEO Catalog
   roles:
     - host
   url: https://fedeo.ceos.org/
