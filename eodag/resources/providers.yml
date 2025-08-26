@@ -554,7 +554,6 @@
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       next_page_token_key: page
-      next_page_query_obj_key_path: '$.properties.links[?(@.rel=="next")].href'
 
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
@@ -2107,7 +2106,6 @@
       next_page_url_tpl: '{url}?{search}&maxRecords={items_per_page}&page={next_page_token}'
       total_items_nb_key_path: '$.properties.totalResults'
       next_page_token_key: page
-      next_page_query_obj_key_path: '$.properties.links[?(@.rel=="next")].href'
       # 2021/03/19: 500 is the max, no error if greater
       max_items_per_page: 500
     sort:
