@@ -3,6 +3,58 @@ Release history
 ===============
 
 
+v3.8.0 (2025-08-27)
+===================
+
+Bug Fixes
+---------
+
+* **providers**: Product types discovered properties format (`#1783`_, `7824f6a`_)
+
+* **providers**: Remove deprecated product type (S2_MSI_L2AP) (`#1764`_, `7b1fb89`_)
+
+* **providers**: Restore ssl verify for geodes (`#1780`_, `8b771f8`_)
+
+* **server**: Remove duplicate host (`#1794`_, `fa22145`_)
+
+Chores
+------
+
+* Deprecate unused code (`#1788`_, `2658e69`_)
+
+Documentation
+-------------
+
+* Aws_eos logo added (`#1773`_, `af6d959`_)
+
+Features
+--------
+
+* **providers**: New provider fedeo_ceda (`#1778`_, `4d9f091`_)
+
+Refactoring
+-----------
+
+* **core**: Whoosh removal (`#1741`_, `31f3c8a`_)
+
+.. _#1741: https://github.com/CS-SI/eodag/pull/1741
+.. _#1764: https://github.com/CS-SI/eodag/pull/1764
+.. _#1773: https://github.com/CS-SI/eodag/pull/1773
+.. _#1778: https://github.com/CS-SI/eodag/pull/1778
+.. _#1780: https://github.com/CS-SI/eodag/pull/1780
+.. _#1783: https://github.com/CS-SI/eodag/pull/1783
+.. _#1788: https://github.com/CS-SI/eodag/pull/1788
+.. _#1794: https://github.com/CS-SI/eodag/pull/1794
+.. _2658e69: https://github.com/CS-SI/eodag/commit/2658e6983f64581f2364647993c4c0e6bc7bc841
+.. _31f3c8a: https://github.com/CS-SI/eodag/commit/31f3c8a50b251cc2ad2d567fb6f1eb62937b5d43
+.. _4d9f091: https://github.com/CS-SI/eodag/commit/4d9f09110c0fcc745d910b9c02e155aa1952b048
+.. _7824f6a: https://github.com/CS-SI/eodag/commit/7824f6a1a3d3aa881532c5904f58acb73ebdca5f
+.. _7b1fb89: https://github.com/CS-SI/eodag/commit/7b1fb89208537a360471a218d13b2f9865f282c4
+.. _8b771f8: https://github.com/CS-SI/eodag/commit/8b771f801ef19e81297fc9fe273921702797dffc
+.. _af6d959: https://github.com/CS-SI/eodag/commit/af6d959fec6fa009677ac429c70bb3004b066671
+.. _fa22145: https://github.com/CS-SI/eodag/commit/fa22145056b62c8d399f254a3945e0c718834851
+
+
 v3.7.0 (2025-07-31)
 ===================
 
