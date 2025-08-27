@@ -31,7 +31,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
-from eodag.types import model_fields_to_annotated
+from eodag.types import S3AuthContextPool, model_fields_to_annotated
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
 from eodag.utils import (
@@ -63,7 +63,7 @@ class Search(PluginTopic):
     :param config: An EODAG plugin configuration
     """
 
-    auth: Union[AuthBase, S3SessionKwargs]
+    auth: Union[AuthBase, S3SessionKwargs, S3AuthContextPool]
     next_page_url: Optional[str]
     next_page_query_obj: Optional[dict[str, Any]]
     total_items_nb: int

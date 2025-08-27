@@ -17,13 +17,14 @@
 # limitations under the License.
 from __future__ import annotations
 
-from collections import UserList
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from eodag.plugins.base import PluginTopic
+from eodag.types import S3AuthContextPool
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3.service_resource import BucketObjectsCollection
     from requests.auth import AuthBase
 
     from eodag.types import S3SessionKwargs
@@ -41,7 +42,7 @@ class Authentication(PluginTopic):
           configuration that needs authentication and helps identifying it
     """
 
-    def authenticate(self) -> Union[AuthBase, UserList, S3SessionKwargs]:
+    def authenticate(self) -> Union[AuthBase, S3SessionKwargs, S3AuthContextPool]:
         """Authenticate"""
         raise NotImplementedError
 
@@ -71,3 +72,12 @@ class Authentication(PluginTopic):
                     self.provider, ", ".join(missing_credentials)
                 )
             )
+
+    def authenticate_objects(
+        self,
+        bucket_names_and_prefixes: list[tuple[str, Optional[str]]],
+    ) -> tuple[dict[str, Any], BucketObjectsCollection]:
+        """
+        Authenticates with s3 and retrieves the available objects
+        """
+        raise NotImplementedError

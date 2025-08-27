@@ -56,6 +56,7 @@ from eodag.utils import (
 from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
+    MisconfiguredError,
     NoMatchingProductType,
     NotAvailableError,
     TimeOutError,
@@ -232,7 +233,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[S3AuthContextPool] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -302,10 +303,15 @@ class AwsDownload(Download):
         )
 
         # authenticate
-        (
-            authenticated_objects,
-            s3_objects,
-        ) = product.downloader_auth.authenticate_objects(bucket_names_and_prefixes)
+        if product.downloader_auth:
+            (
+                authenticated_objects,
+                s3_objects,
+            ) = product.downloader_auth.authenticate_objects(bucket_names_and_prefixes)
+        else:
+            raise MisconfiguredError(
+                "Authentication plugin (AwsAuth) has to be configured if AwsDownload is used"
+            )
 
         # files in zip
         updated_bucket_names_and_prefixes = self._download_file_in_zip(
@@ -361,11 +367,11 @@ class AwsDownload(Download):
         except AuthenticationError as e:
             logger.warning("Unexpected error: %s" % e)
         except ClientError as e:
-            raise_if_auth_error(e)
+            raise_if_auth_error(e, self.provider)
             logger.warning("Unexpected error: %s" % e)
 
         # finalize safe product
-        if build_safe and "S2_MSI" in product.product_type:
+        if build_safe and product.product_type and "S2_MSI" in product.product_type:
             self.finalize_s2_safe_product(product_local_path)
         # flatten directory structure
         elif flatten_top_dirs:
@@ -620,7 +626,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[S3AuthContextPool] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -693,9 +699,14 @@ class AwsDownload(Download):
         )
 
         # authenticate
-        authenticated_objects, _ = product.downloader_auth.authenticate_objects(
-            bucket_names_and_prefixes
-        )
+        if product.downloader_auth:
+            authenticated_objects, _ = product.downloader_auth.authenticate_objects(
+                bucket_names_and_prefixes
+            )
+        else:
+            raise MisconfiguredError(
+                "Authentication plugin (AwsAuth) has to be configured if AwsDownload is used"
+            )
 
         # downloadable files
         product_objects = self._get_unique_products(
@@ -705,7 +716,7 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        if auth:
+        if auth and isinstance(auth, S3AuthContextPool):
             s3_context = [
                 context for context in auth if context.auth_type == auth.used_method
             ]

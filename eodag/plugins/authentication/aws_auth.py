@@ -18,20 +18,16 @@
 from __future__ import annotations
 
 import logging
-from collections import UserList
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
-from boto3.session import Session
 from botocore.exceptions import ClientError, ProfileNotFound
-from botocore.handlers import disable_signing
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.types import S3SessionKwargs
+from eodag.types import S3AuthContextPool
 from eodag.utils.exceptions import AuthenticationError
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.config import PluginConfig
@@ -47,103 +43,15 @@ AWS_AUTH_ERROR_MESSAGES = [
 ]
 
 
-def raise_if_auth_error(self, exception: ClientError) -> None:
+def raise_if_auth_error(exception: ClientError, provider: str) -> None:
     """Raises an error if given exception is an authentication error"""
     err = cast(dict[str, str], exception.response["Error"])
     if err["Code"] in AWS_AUTH_ERROR_MESSAGES and "key" in err["Message"].lower():
         raise AuthenticationError(
-            f"Please check your credentials for {self.provider}.",
+            f"Please check your credentials for {provider}.",
             f"HTTP Error {exception.response['ResponseMetadata']['HTTPStatusCode']} returned.",
             err["Code"] + ": " + err["Message"],
         )
-
-
-class S3AuthContext:
-
-    """Class defining an S3 authentication context (resource, session and authentication type used)"""
-
-    def __init__(
-        self, s3_resource: S3ServiceResource, auth_type: str, s3_session: Session
-    ):
-        self.s3_resource = s3_resource
-        self.auth_type = auth_type
-        self.s3_session = s3_session
-
-    @staticmethod
-    def create_auth_context_unsigned(endpoint_url: str):
-        """Auth strategy using no-sign-request"""
-        s3_resource = boto3.resource(service_name="s3", endpoint_url=endpoint_url)
-        s3_resource.meta.client.meta.events.register(
-            "choose-signer.s3.*", disable_signing
-        )
-        return S3AuthContext(
-            s3_resource=s3_resource, auth_type="unsigned", s3_session=Session()
-        )
-
-    @staticmethod
-    def create_auth_context_auth_profile(endpoint_url: str, profile_name: str):
-        """Auth strategy using ``aws_profile`` from provided credentials"""
-        s3_session = Session(profile_name=profile_name)
-        s3_resource = s3_session.resource(
-            service_name="s3",
-            endpoint_url=endpoint_url,
-        )
-        return S3AuthContext(
-            s3_resource=s3_resource, auth_type="auth_profile", s3_session=s3_session
-        )
-
-    @staticmethod
-    def create_auth_context_auth_keys(endpoint_url: str, credentials: dict[str, str]):
-        """Auth strategy using ``aws_access_key_id``/``aws_secret_access_key`` from provided credentials"""
-        s3_session_kwargs: S3SessionKwargs = {
-            "aws_access_key_id": credentials["aws_access_key_id"],
-            "aws_secret_access_key": credentials["aws_secret_access_key"],
-        }
-        if credentials.get("aws_session_token"):
-            s3_session_kwargs["aws_session_token"] = credentials["aws_session_token"]
-        s3_session = Session(**s3_session_kwargs)
-        s3_resource = s3_session.resource(
-            service_name="s3",
-            endpoint_url=endpoint_url,
-        )
-        return S3AuthContext(
-            s3_resource=s3_resource, auth_type="auth_keys", s3_session=s3_session
-        )
-
-    @staticmethod
-    def create_auth_context_env(endpoint_url: str):
-        """Auth strategy using current environment"""
-
-        s3_session = Session()
-        s3_resource = s3_session.resource(service_name="s3", endpoint_url=endpoint_url)
-        return S3AuthContext(
-            s3_resource=s3_resource, auth_type="env", s3_session=s3_session
-        )
-
-
-class S3AuthContextPool(UserList):
-
-    """Instances of S3AuthContextPool contain a list of possible authentication contexts
-    based on the given credentials"""
-
-    def __init__(self, endpoint_url, credentials: dict[str, str], *args: Any):
-        super(S3AuthContextPool, self).__init__(*args)
-        self.data.append(S3AuthContext.create_auth_context_unsigned(endpoint_url))
-        if "aws_profile" in credentials:
-            self.data.append(
-                S3AuthContext.create_auth_context_auth_profile(
-                    endpoint_url, credentials["aws_profile"]
-                )
-            )
-        if (
-            "aws_access_key_id" in credentials
-            and "aws_secret_access_key" in credentials
-        ):
-            self.data.append(
-                S3AuthContext.create_auth_context_auth_keys(endpoint_url, credentials)
-            )
-        self.data.append(S3AuthContext.create_auth_context_env(endpoint_url))
-        self.used_method = ""
 
 
 class AwsAuth(Authentication):
