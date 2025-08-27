@@ -31,6 +31,7 @@ from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
 from eodag.plugins.search.build_search_result import ECMWFSearch, ecmwf_mtd
+from eodag.types import S3AuthContextPool
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -171,7 +172,7 @@ class EcmwfApi(Api, ECMWFSearch):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,

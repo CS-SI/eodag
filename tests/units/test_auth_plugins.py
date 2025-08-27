@@ -28,8 +28,8 @@ from requests.auth import AuthBase
 from requests.exceptions import RequestException
 
 from eodag.config import override_config_from_mapping
-from eodag.plugins.authentication.aws_auth import S3AuthContext
 from eodag.plugins.authentication.openid_connect import CodeAuthorizedAuth
+from eodag.types import S3AuthContext
 from eodag.utils import MockResponse
 from eodag.utils.exceptions import RequestError
 from tests.context import (
@@ -613,7 +613,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
         )
         cls.plugins_manager = PluginManager(cls.providers_config)
 
-    @mock.patch("eodag.plugins.authentication.aws_auth.S3AuthContext", autospec=True)
+    @mock.patch("eodag.types.S3AuthContext", autospec=True)
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
     )

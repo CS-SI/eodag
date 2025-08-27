@@ -201,7 +201,7 @@ class AwsAuth(Authentication):
                 logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 auth_error_messages.add(str(e))
             except ClientError as e:
-                self._raise_if_auth_error(e)
+                raise_if_auth_error(e, self.provider)
                 logger.warning("Unexpected error: %s" % e)
                 logger.warning("Skipping %s/%s" % (bucket_name, prefix))
                 auth_error_messages.add(str(e))
