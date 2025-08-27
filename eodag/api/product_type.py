@@ -297,9 +297,13 @@ class ProductTypesList(UserList[ProductType]):
         super().__init__(product_types)
 
     def _repr_html_(self, embedded: bool = False) -> str:
-        thead = (
-            f"""<thead><tr><td style='text-align: left; color: grey;'>
-                {type(self).__name__}&ensp;({len(self)})</td></tr></thead>
+        # mock "thead" tag by reproduicing its style to make "details" and "summary" tags work properly
+        mock_thead = (
+            f"""<details>
+                <summary style='text-align: left; color: grey; border-bottom: 1px solid black; padding: 0.5em 0.5em;'>
+                {type(self).__name__}&ensp;({len(self)}):&ensp;
+                {"[" + str(self[0]) + ",&ensp;...]" if len(self) > 0 else "[]"}
+                </summary>
             """
             if not embedded
             else ""
@@ -307,7 +311,7 @@ class ProductTypesList(UserList[ProductType]):
         tr_style = "style='background-color: transparent;'" if embedded else ""
 
         return (
-            f"<table>{thead}<tbody>"
+            f"{mock_thead}<table><tbody>"
             + "".join(
                 [
                     f"""<tr {tr_style}><td style='text-align: left;'>
@@ -322,5 +326,5 @@ class ProductTypesList(UserList[ProductType]):
                     for pt in self
                 ]
             )
-            + "</tbody></table>"
+            + "</tbody></table></details>"
         )
