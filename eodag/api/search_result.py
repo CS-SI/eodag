@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Iterable, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Generator, Iterable, Optional, Union
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -247,30 +247,39 @@ class SearchResult(UserList[EOProduct]):
 
         return super().extend(other)
 
-    def next_page(self, update: bool = True) -> SearchResult:
+    def next_page(self, update: bool = True) -> Generator[SearchResult, None, None]:
         """Get the next page of results based on the current search parameters."""
-        if not update:
-            return self.pages[-1]
-        if self.next_page_token is None:
-            logger.info("No next page available.")
-            raise StopIteration()
-        self.search_params["next_page_token"] = self.next_page_token
-        if hasattr(self.search_params, "provider"):
-            self.search_params["provider"] = self.search_params.get("provider", None)
-        elif self.data and hasattr(self.data[-1], "provider"):
-            self.search_params["provider"] = self.data[-1].provider
-        search_plugins, search_kwargs = self.dag._prepare_search(**self.search_params)
-        for i, search_plugin in enumerate(search_plugins):
-            self.search_params["next_page_token"] = self.next_page_token
-            search_result = self.dag._do_search(
-                search_plugin,
-                raise_errors=self.raise_errors,
-                count=self.count,
-                **search_kwargs,
+
+        def get_next_page(current):
+            current.search_params["next_page_token"] = current.next_page_token
+            if hasattr(current.search_params, "provider"):
+                current.search_params["provider"] = current.search_params.get(
+                    "provider", None
+                )
+            elif current.data and hasattr(current.data[-1], "provider"):
+                current.search_params["provider"] = current.data[-1].provider
+            search_plugins, search_kwargs = current.dag._prepare_search(
+                **current.search_params
             )
-            self.pages.append(search_result)
-            return search_result
-        return SearchResult([])
+            for i, search_plugin in enumerate(search_plugins):
+                current.search_params["next_page_token"] = current.next_page_token
+                return current.dag._do_search(
+                    search_plugin,
+                    raise_errors=self.raise_errors,
+                    count=self.count,
+                    **search_kwargs,
+                )
+
+        new_results = get_next_page(self)
+
+        while new_results.data and new_results.next_page_token is not None:
+            if update:
+                self.data += new_results.data
+                self.search_params = new_results.search_params
+                self.next_page_token = new_results.next_page_token
+            yield new_results
+
+            new_results = get_next_page(new_results)
 
     @classmethod
     def _from_stac_item(
