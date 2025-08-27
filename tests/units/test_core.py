@@ -24,9 +24,7 @@ import os
 import shutil
 import tempfile
 import unittest
-import uuid
 from importlib.resources import files as res_files
-from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import yaml
@@ -617,6 +615,7 @@ class TestCore(TestCoreBase):
         "earth_search_gcs",
         "ecmwf",
         "eumetsat_ds",
+        "fedeo_ceda",
         "geodes",
         "geodes_s3",
         "hydroweb_next",
@@ -745,45 +744,31 @@ class TestCore(TestCoreBase):
         self.assertListEqual(product_types_ids, ["foobar"])
 
         # Free text search: Using OR term match
-        filter = "FOOBAR,BAR"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
-
-        filter = "FOOBAR BAR"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
-
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(filter)
         self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
-        product_types_ids = self.dag.guess_product_type(filter, title="FOO*")
+        product_types_ids = self.dag.guess_product_type(filter, title="FOO")
         self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar"])
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["foo"])
+        self.assertListEqual(product_types_ids, ["foo"])
 
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["foobar"])
+        self.assertListEqual(product_types_ids, ["foobar"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(
             filter, intersect=True, title="titleFOO*"
         )
-        self.assertListEqual(sorted(product_types_ids), ["foobar"])
-
-        # Free text search: Indicate included and excluded terms using +/-
-        # This will search for items that INCLUDES "abstractfoo" EXCLUDES "bar" OR CONTAIN "foo"
-        filter = "foo +abstractfoo -bar"
-        product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["foo"])
+        self.assertListEqual(product_types_ids, ["foobar"])
 
     def test_guess_product_type_with_mission_dates(self):
         """Testing the datetime interval"""
@@ -806,19 +791,22 @@ class TestCore(TestCoreBase):
             missionEndDate="2013-02-15",
         )
         self.assertListEqual(
-            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+            sorted(product_types_ids),
+            ["interval_end", "interval_start", "interval_start_end"],
         )
         product_types_ids = self.dag.guess_product_type(
             title="TEST DATES", missionStartDate="2013-02-01"
         )
         self.assertListEqual(
-            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+            sorted(product_types_ids),
+            ["interval_end", "interval_start", "interval_start_end"],
         )
         product_types_ids = self.dag.guess_product_type(
             title="TEST DATES", missionEndDate="2013-02-20"
         )
         self.assertListEqual(
-            product_types_ids, ["interval_end", "interval_start", "interval_start_end"]
+            sorted(product_types_ids),
+            ["interval_end", "interval_start", "interval_start_end"],
         )
 
     def test_update_product_types_list(self):
@@ -1189,16 +1177,6 @@ class TestCore(TestCoreBase):
             or structure["_id"] in self.SUPPORTED_PRODUCT_TYPES
         )
 
-    @mock.patch("eodag.api.core.open_dir", autospec=True)
-    @mock.patch("eodag.api.core.exists_in", autospec=True, return_value=True)
-    def test_core_object_open_index_if_exists(self, exists_in_mock, open_dir_mock):
-        """The core object must use the existing index dir if any"""
-        index_dir = os.path.join(self.conf_dir, ".index")
-        if not os.path.exists(index_dir):
-            makedirs(index_dir)
-        EODataAccessGateway()
-        open_dir_mock.assert_called_with(index_dir)
-
     def test_core_object_set_default_locations_config(self):
         """The core object must set the default locations config on instantiation"""
         default_shpfile = os.path.join(
@@ -1312,54 +1290,10 @@ class TestCore(TestCoreBase):
                 str(cm.output),
             )
 
-    def test_rebuild_index(self):
-        """Change product_types_config_md5 and check that whoosh index is rebuilt"""
-        index_dir = os.path.join(self.dag.conf_dir, ".index")
-        index_dir_mtime = os.path.getmtime(index_dir)
-        random_md5 = uuid.uuid4().hex
-
-        self.assertNotEqual(self.dag.product_types_config_md5, random_md5)
-
-        self.dag.product_types_config_md5 = random_md5
-        self.dag.build_index()
-
-        # check that index_dir has beeh re-created
-        self.assertNotEqual(os.path.getmtime(index_dir), index_dir_mtime)
-
     def test_get_version(self):
         """Test if the version we get is the current one"""
         version_str = self.dag.get_version()
         self.assertEqual(eodag_version, version_str)
-
-    @mock.patch("eodag.api.core.exists_in", autospec=True)
-    def test_build_index_ko(self, exists_in_mock):
-        """
-        Trying to build index with unsupported pickle version or other reason leads to ValueError
-        and may delete the current index to rebuild it
-        """
-        exists_in_mock.side_effect = ValueError("unsupported pickle protocol")
-        index_dir = os.path.join(self.conf_dir, ".index")
-        path = Path(index_dir)
-        self.assertTrue(path.is_dir())
-        last_index_modif_date = os.stat(index_dir).st_atime_ns
-        with self.assertLogs(level="DEBUG") as cm:
-            self.dag.build_index()
-            new_index_modif_date = os.stat(index_dir).st_atime_ns
-            self.assertIn(
-                f"Need to recreate whoosh .index: '{exists_in_mock.side_effect}'",
-                str(cm.output),
-            )
-            self.assertNotEqual(last_index_modif_date, new_index_modif_date)
-
-        exists_in_mock.side_effect = ValueError("dummy error")
-        with self.assertLogs(level="ERROR") as cm_logs:
-            with self.assertRaisesRegex(ValueError, "dummy error"):
-                self.dag.build_index()
-            self.assertIn(
-                "Error while opening .index using whoosh, "
-                "please report this issue and try to delete",
-                str(cm_logs.output),
-            )
 
     def test_set_preferred_provider(self):
         """set_preferred_provider must set the preferred provider with increasing priority"""
@@ -1846,6 +1780,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": 1,
             },
             "cop_marine": None,
+            "fedeo_ceda": {"max_sort_params": None, "sortables": []},
             "geodes": {
                 "max_sort_params": None,
                 "sortables": [
@@ -1944,10 +1879,8 @@ class TestCore(TestCoreBase):
 class TestCoreConfWithEnvVar(TestCoreBase):
     def tearDown(self):
         """Teardown run after every test"""
-        if dag := getattr(self, "dag", None):
-            index_dir = os.path.join(dag.conf_dir, ".index")
-            shutil.rmtree(index_dir)
-            del dag
+        if hasattr(self, "dag"):
+            del self.dag
 
     def test_core_object_prioritize_locations_file_in_envvar(self):
         """The core object must use the locations file pointed by the EODAG_LOCS_CFG_FILE env var"""
@@ -2090,10 +2023,6 @@ class TestCoreInvolvingConfDir(unittest.TestCase):
     def test_core_object_creates_config_standard_location(self):
         """The core object must create a user config file in standard user config location on instantiation"""
         self.execution_involving_conf_dir(inspect="eodag.yml")
-
-    def test_core_object_creates_index_if_not_exist(self):
-        """The core object must create an index in user config directory"""
-        self.execution_involving_conf_dir(inspect=".index")
 
     def test_core_object_creates_locations_standard_location(self):
         """The core object must create a locations config file and a shp dir in standard user config location on instantiation"""  # noqa
@@ -2313,11 +2242,11 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L2B_MAJA_WATER",
             "EEA_DAILY_VI",
         ]
-        self.assertEqual(actual, expected)
+        self.assertListEqual(actual, expected)
 
         # with product type specified
         actual = self.dag.guess_product_type(productType="foo")
-        self.assertEqual(actual, ["foo"])
+        self.assertListEqual(actual, ["foo"])
 
         # with dates
         self.assertEqual(
@@ -2331,25 +2260,20 @@ class TestCoreSearch(TestCoreBase):
             "S2_MSI_L1C", self.dag.guess_product_type(missionEndDate="2015-07-01")
         )
 
+        # with individual filters
+        actual = self.dag.guess_product_type(
+            platform="SENTINEL1", processingLevel="L2", intersect=True
+        )
+        self.assertListEqual(actual, ["S1_SAR_OCN"])
+        # without intersect, the most appropriate product type must be at first position
+        actual = self.dag.guess_product_type(platform="SENTINEL1", processingLevel="L2")
+        self.assertGreater(len(actual), 1)
+        self.assertEqual(actual[0], "S1_SAR_OCN")
+
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
         with self.assertRaises(NoMatchingProductType):
             self.dag.guess_product_type()
-
-    def test_guess_product_type_has_no_limit(self):
-        """guess_product_type must run a whoosh search without any limit"""
-        # Filter that should give more than 10 products referenced in the catalog.
-        opt_prods = [
-            p
-            for p in self.dag.list_product_types(fetch_providers=False)
-            if p["sensorType"] == "OPTICAL"
-        ]
-        if len(opt_prods) <= 10:
-            self.skipTest("This test requires that more than 10 products are 'OPTICAL'")
-        guesses = self.dag.guess_product_type(
-            sensorType="OPTICAL",
-        )
-        self.assertGreater(len(guesses), 10)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True

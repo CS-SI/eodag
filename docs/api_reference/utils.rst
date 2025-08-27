@@ -18,6 +18,11 @@ Callbacks
    :special-members: __call__
 .. autofunction:: eodag.utils.ProgressCallback
 
+Free text search
+----------------
+
+.. autofunction:: eodag.utils.free_text_search.compile_free_text_query
+
 Notebook
 --------
 

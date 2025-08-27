@@ -215,6 +215,14 @@ EUMETSAT_DS_SEARCH_ARGS = [
     [-69.3363, -75.9038, -39.3465, -68.2361],
 ]
 
+FEDEO_CEDA_SEARCH_ARGS = [
+    "fedeo_ceda",
+    "MERIS_ALAMO_L2_V2.2",
+    None,
+    None,
+    None,
+]
+
 
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
@@ -451,6 +459,12 @@ class TestEODagEndToEnd(EndToEndBase):
             + sanitize(product.properties["id"])
         )
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_fedeo_ceda(self):
+        self.eodag.discover_product_types(provider="fedeo_ceda")
+        products = self.execute_search(*FEDEO_CEDA_SEARCH_ARGS, check_product=False)
+        expected_filename = "{}".format(products[2].properties["title"])
+        self.execute_download(products[2], expected_filename)
 
     def test_end_to_end_search_download_creodias_noresult(self):
         """Requesting a page on creodias with no results must return an empty SearchResult"""
@@ -702,6 +716,29 @@ class TestEODagEndToEnd(EndToEndBase):
         provider = "earth_search_gcs"
         ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
         self.assertIsNone(ext_product_types_conf[provider])
+
+    def test_end_to_end_discover_product_types_fedeo_ceda(self):
+        """discover_product_types() must return an external product types configuration for fedeo ceda"""
+        provider = "fedeo_ceda"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertEqual(
+            ext_product_types_conf[provider]["product_types_config"][
+                "MERIS_ALAMO_L2_V2.2"
+            ]["ID"],
+            "MERIS_ALAMO_L2_V2.2",
+        )
+        self.assertEqual(
+            "MERIS",
+            ext_product_types_conf[provider]["product_types_config"][
+                "MERIS_ALAMO_L2_V2.2"
+            ]["instrument"],
+        )
+        self.assertEqual(
+            "other",
+            ext_product_types_conf[provider]["product_types_config"][
+                "MERIS_ALAMO_L2_V2.2"
+            ]["license"],
+        )
 
 
 # @unittest.skip("skip auto run")

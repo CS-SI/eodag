@@ -46,7 +46,7 @@ search:
       instrument: '{$.summaries.instruments#csv_list}'
       platform: '{$.summaries.constellation#csv_list}'
       platformSerialIdentifier: '{$.summaries.platform#csv_list}'
-      processingLevel: '$.summaries."processing:level"'
+      processingLevel: '{$.summaries."processing:level"#csv_list}'
       keywords: '{$.keywords#csv_list}'
       license: '$.license'
       title: '$.title'

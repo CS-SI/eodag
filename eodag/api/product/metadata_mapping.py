@@ -42,6 +42,7 @@ from shapely.ops import transform
 from eodag.types.queryables import Queryables
 from eodag.utils import (
     DEFAULT_PROJ,
+    _deprecated,
     deepcopy,
     dict_items_recursive_apply,
     format_string,
@@ -180,6 +181,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
+        - ``ceda_collection_name``: generate a CEDA collection name from a string
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -528,6 +530,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return re.sub(old, new, value)
 
         @staticmethod
+        def convert_ceda_collection_name(value: str) -> str:
+            data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
+            match = data_regex.search(value)
+            if match:
+                return match.group("name").replace("/", "_").upper()
+            return "NOT_AVAILABLE"
+
+        @staticmethod
         def convert_recursive_sub_str(
             input_obj: Union[dict[Any, Any], list[Any]], args: str
         ) -> Union[dict[Any, Any], list[Any]]:
@@ -631,6 +641,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 return NOT_AVAILABLE
 
         @staticmethod
+        @_deprecated(
+            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
+            version="3.7.1",
+        )
         def convert_split_id_into_s1_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             if len(parts) < 9:
@@ -683,6 +697,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
+        @_deprecated(
+            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
+            version="3.7.1",
+        )
         def convert_split_id_into_s5p_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
             params = {
@@ -701,6 +719,10 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
             return params
 
         @staticmethod
+        @_deprecated(
+            reason="Method that was used in previous wekeo provider configuration, but not used anymore",
+            version="3.7.1",
+        )
         def convert_split_cop_dem_id(product_id: str) -> list[int]:
             parts = product_id.split("_")
             lattitude = parts[3]

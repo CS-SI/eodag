@@ -39,6 +39,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     USER_AGENT,
     ProgressCallback,
+    _deprecated,
     get_bucket_name_and_prefix,
     path_to_uri,
 )
@@ -60,6 +61,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger("eodag.download.s3rest")
 
 
+@_deprecated(
+    reason="Plugin that was used in previous mundi provider configuration, but not used anymore",
+    version="3.7.1",
+)
 class S3RestDownload(Download):
     """Http download on S3-like object storage location
 
@@ -87,7 +92,7 @@ class S3RestDownload(Download):
     """
 
     def __init__(self, provider: str, config: PluginConfig) -> None:
-        super(S3RestDownload, self).__init__(provider, config)
+        super().__init__(provider, config)
         self.http_download_plugin = HTTPDownload(self.provider, self.config)
 
     def download(

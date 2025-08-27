@@ -5443,7 +5443,6 @@
     type: StacSearch
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     need_auth: false
-    ssl_verify: false
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
@@ -5545,7 +5544,6 @@
       productType: '{productType}'
   download: !plugin
     type: HTTPDownload
-    ssl_verify: false
     ignore_assets: true
     archive_depth: 2
     auth_error_code:
@@ -5570,7 +5568,6 @@
     api_endpoint: https://geodes-portal.cnes.fr/api/stac/search
     s3_endpoint: https://s3.datalake.cnes.fr
     need_auth: true
-    ssl_verify: false
     asset_key_from_href: false
     discover_queryables:
       fetch_url: null
@@ -5931,3 +5928,42 @@
         <<: *day_month_year
     GENERIC_PRODUCT_TYPE:
       dataset: '{productType}'
+---
+!provider # MARK: fedeo_ceda
+  name: fedeo_ceda
+  priority: 0
+  description: CEDA datasets through FedEO Catalog
+  roles:
+    - host
+  url: https://fedeo.ceos.org/
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://fedeo.ceos.org/search'
+    ssl_verify: false
+    timeout: 20
+    discover_product_types:
+      fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
+      result_type: json
+      results_entry: '$.links[?(@.rel=="child")]'
+      generic_product_type_id: '{$.href#replace_str(r".*/", "")}'
+      generic_product_type_parsable_properties:
+        productType: '{$.href#replace_str(r".*/", "")}'
+        title: '$.title'
+      single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{productType}'
+      single_product_type_parsable_metadata:
+        ID: '{$.assets.enclosure.href#ceda_collection_name}'
+        abstract: '$.description'
+        instrument: '{$.summaries.instruments#csv_list}'
+        keywords: '{$.keywords#csv_list}'
+        license: '$.license'
+        platform: '{$.summaries.platform#csv_list}'
+        title: '$.title'
+    metadata_mapping:
+      title: '{$.properties.title#remove_extension}'
+      geometry: '$.geometry'
+      assets: '{$.assets#dict_filter($[?(@.href =~ ".*\/thredds\/fileServer\/.*")])}'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
