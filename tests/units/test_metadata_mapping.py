@@ -265,6 +265,17 @@ class TestMetadataFormatter(unittest.TestCase):
         with self.assertRaises(TypeError):
             format_metadata(to_format, fieldname=123)
 
+    def test_convert_ceda_collection_name(self):
+        to_format = r"{fieldname#ceda_collection_name}"
+        self.assertEqual(
+            format_metadata(to_format, fieldname="https://bar/data/foo/v1.1"),
+            "FOO_V1.1",
+        )
+        self.assertEqual(
+            format_metadata(to_format, fieldname="NOT_AVAILABLE"),
+            "NOT_AVAILABLE",
+        )
+
     def test_convert_recursive_sub_str(self):
         to_format = r"{fieldname#recursive_sub_str(r'(.*) is (.*)',r'\1 was \2...')}"
         self.assertEqual(

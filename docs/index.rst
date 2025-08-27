@@ -39,6 +39,7 @@ types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched a
       `earth_search <https://www.element84.com/earth-search/>`_,
       `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_,
       `ecmwf <https://www.ecmwf.int>`_,
+      `fedeo_ceda <https://climate.esa.int/en/>`_,
       `geodes <https://geodes.cnes.fr>`_,
       `geodes_s3 <https://geodes.cnes.fr>`_,
       `eumetsat_ds <https://data.eumetsat.int>`_,

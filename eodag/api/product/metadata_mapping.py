@@ -181,6 +181,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         - ``to_datetime_dict``: convert a datetime string to a dictionary where values are either a string or a list
         - ``get_ecmwf_time``: get the time of a datetime string in the ECMWF format
         - ``sanitize``: sanitize string
+        - ``ceda_collection_name``: generate a CEDA collection name from a string
 
     :param search_param: The string to be formatted
     :param args: (optional) Additional arguments to use in the formatting process
@@ -527,6 +528,14 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
 
             old, new = ast.literal_eval(args)
             return re.sub(old, new, value)
+
+        @staticmethod
+        def convert_ceda_collection_name(value: str) -> str:
+            data_regex = re.compile(r"/data/(?P<name>.+?)/?$")
+            match = data_regex.search(value)
+            if match:
+                return match.group("name").replace("/", "_").upper()
+            return "NOT_AVAILABLE"
 
         @staticmethod
         def convert_recursive_sub_str(

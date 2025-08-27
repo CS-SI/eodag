@@ -163,6 +163,10 @@ Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`
 Then use the consumer key as ``username`` and the consumer secret as ``password`` from `here
 <https://api.eumetsat.int/api-key/>`__ in eodag credentials.
 
+``fedeo_ceda``
+^^^^^^^^^^^^^^
+No account is required
+
 ``geodes``
 ^^^^^^^^^^
 Go to `https://geodes-portal.cnes.fr <https://geodes-portal.cnes.fr>`_, then login or create an account by
