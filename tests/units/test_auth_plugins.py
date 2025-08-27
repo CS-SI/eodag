@@ -674,7 +674,7 @@ class TestAuthPluginAwsAuth(BaseAuthPluginTest):
             None, self.profile_name
         )
 
-    @mock.patch("eodag.plugins.authentication.aws_auth.S3AuthContext", autospec=True)
+    @mock.patch("eodag.types.S3AuthContext", autospec=True)
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
     )

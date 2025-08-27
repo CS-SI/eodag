@@ -24,7 +24,7 @@ from botocore.exceptions import BotoCoreError
 from eodag.api.product import EOProduct  # type: ignore
 from eodag.api.search_result import RawSearchResult
 from eodag.plugins.search.qssearch import ODataV4Search
-from eodag.utils.exceptions import RequestError
+from eodag.utils.exceptions import MisconfiguredError, RequestError
 from eodag.utils.s3 import update_assets_from_s3
 
 logger = logging.getLogger("eodag.search.creodiass3")
@@ -40,6 +40,16 @@ def patched_register_downloader(self, downloader, authenticator):
     :param authenticator: The authentication method needed to perform the download
                          :class:`~eodag.plugins.authentication.base.Authentication`
     """
+    # verify credentials
+    required_creds = ["aws_access_key_id", "aws_secret_access_key"]
+    if not all(
+        x in authenticator.credentials and authenticator.credentials[x]
+        for x in required_creds
+    ):
+        raise MisconfiguredError(
+            f"Incomplete credentials for {self.provider}, missing "
+            f"{[x for x in required_creds if x not in authenticator.credentials or not authenticator.credentials[x]]}"
+        )
     # register downloader
     self.register_downloader_only(downloader, authenticator)
     # and also update assets
