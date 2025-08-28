@@ -6519,7 +6519,7 @@
   search: !plugin
     type: StacSearch
     timeout: 20
-    api_endpoint: https://cmr.earthdata.nasa.gov/stac/LARC_ASDC/search/
+    api_endpoint: https://cmr.earthdata.nasa.gov/stac/LARC_ASDC/search
     pagination:
       max_items_per_page: 5000
   products:

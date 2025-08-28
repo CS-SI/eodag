@@ -216,6 +216,30 @@ FEDEO_CEDA_SEARCH_ARGS = [
     None,
 ]
 
+EARTHDATA_LARS_ASDC_SEARCH_ARGS = [
+    "earthdata_lars_asdc",
+    "ACCLIP_Cloud_AircraftInSitu_WB57_Data_1",
+    None,
+    None,
+    [-180, -90, 180, 90],
+]
+
+EARTHDATA_OBDAAC_SEARCH_ARGS = [
+    "earthdata_obdaac",
+    "ACE_0",
+    None,
+    None,
+    [-180, -90, 180, 90],
+]
+
+EARTHDATA_PODAAC_SEARCH_ARGS = [
+    "earthdata_podaac",
+    "CYGNSS_L1_V3.2_3.2",
+    None,
+    None,
+    [-180, -90, 180, 90],
+]
+
 
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):

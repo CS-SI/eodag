@@ -1081,6 +1081,7 @@ class HTTPDownload(Download):
         params = kwargs.pop("dl_url_params", None) or getattr(
             self.config, "dl_url_params", {}
         )
+        allow_redirects = kwargs.pop("allow_redirects", True)
 
         total_size = self._get_asset_sizes(assets_values, auth, params) or None
 
@@ -1140,6 +1141,7 @@ class HTTPDownload(Download):
                     headers=USER_AGENT,
                     timeout=DEFAULT_STREAM_REQUESTS_TIMEOUT,
                     verify=ssl_verify,
+                    allow_redirects=allow_redirects,
                 )
                 try:
                     stream.raise_for_status()
