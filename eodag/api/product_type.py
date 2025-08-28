@@ -194,8 +194,10 @@ class ProductType(BaseModel):
             else:
                 continue_validation = False
 
-        if is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES"):
+        # log a warning if there were validation errors and the env var is set to True
+        if errors and is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES"):
             # log all errors at once
+            error_title = f'product type {values_dict["id"]}'
             init_errors: list[InitErrorDetails] = [
                 InitErrorDetails(
                     type=PydanticCustomError(error["type"], error["msg"]),
@@ -205,7 +207,7 @@ class ProductType(BaseModel):
                 for error in errors
             ]
             pydantic_error = PydanticValidationError.from_exception_data(
-                title=cls.__name__, line_errors=init_errors
+                title=error_title, line_errors=init_errors
             )
             logger.warning(pydantic_error)
 
