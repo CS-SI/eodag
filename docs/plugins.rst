@@ -98,6 +98,7 @@ The providers are implemented with a triplet of *Search/Authentication/Download*
 
 .. |AwsDownload| replace:: :class:`~eodag.plugins.download.aws.AwsDownload`
 .. |HTTPDownload| replace:: :class:`~eodag.plugins.download.http.HTTPDownload`
+.. |SessionHTTPDownload| replace:: :class:`~eodag.plugins.download.session_http.SessionHTTPDownload`
 .. |CreodiasS3Download| replace:: :class:`~eodag.plugins.download.creodias_s3.CreodiasS3Download`
 
 .. |QueryStringSearch| replace:: :class:`~eodag.plugins.search.qssearch.QueryStringSearch`

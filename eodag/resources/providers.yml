@@ -6558,6 +6558,7 @@
       max_items_per_page: 5000
     metadata_mapping:
       geometry: '($.geometry.`str()`.`sub(/^None$/, POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90)))`)|($.geometry[*])'
+      assets: '{$.assets#dict_filter($[?(@.href =~ "https://.*")])}'
   products:
     GENERIC_PRODUCT_TYPE:
       productType: '{productType}'
