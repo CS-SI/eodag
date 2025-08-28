@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import UserDict, UserList
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
@@ -128,7 +128,7 @@ class ProductType(BaseModel):
         """Remove extra attributes not defined in the model (except "dag") if any"""
         allowed_keys = set(cls.model_fields.keys())
         extra_keys = set(values.keys()) - allowed_keys
-        errors: List[InitErrorDetails] = []
+        errors: list[InitErrorDetails] = []
 
         for key in extra_keys:
             if key != "dag":
