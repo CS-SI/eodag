@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic import ValidationError as PydanticValidationError
 from pydantic import field_validator, model_validator
-from pydantic_core import InitErrorDetails, PydanticCustomError
+from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import ValidationError
@@ -160,41 +160,57 @@ class ProductType(BaseModel):
     def validate_product_type(
         cls, values: dict[str, Any] | Self, handler: ModelWrapValidatorHandler[Self]
     ) -> Self:
-        """Allow validation errors to be raised if EODAG_VALIDATE_PRODUCT_TYPES is set to True,
-        otherwise set incorrectly formatted attributes to None and ignore extra attributes."""
-        try:
-            return handler(values)
-        except PydanticValidationError as e:
-            # raise an error if a strict validation is activated or if the id is invalid
-            if is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES") or any(
-                error["loc"][0] == "id" for error in e.errors()
-            ):
-                raise ValidationError.from_error(e) from e
+        """Allow to create a product type instance with bad formatted attributes (except "id").
+        Set incorrectly formatted attributes to None and ignore extra attributes.
+        Log a warning about validation errors if EODAG_VALIDATE_PRODUCT_TYPES is set to True.
+        """
+        errors: list[ErrorDetails] = []
+        continue_validation: bool = True
 
-            # if validation is not strict, we just log errors and return the product type with
-            # its incorrectly formatted attribute(s) set to None and its extra attribute(s) ignored
-            for error in e.errors():
-                wrong_param = error["loc"][0]
-                if not isinstance(wrong_param, str):
-                    continue
-                if isinstance(values, cls) and wrong_param not in cls.model_fields:
-                    del values.__dict__[wrong_param]
-                elif isinstance(values, cls) and wrong_param in cls.model_fields:
-                    values.__dict__[wrong_param] = None
-                elif isinstance(values, dict) and wrong_param not in cls.model_fields:
-                    del values[wrong_param]
-                elif isinstance(values, dict) and wrong_param in cls.model_fields:
-                    values[wrong_param] = None
+        # iterate over each step of validation where error(s) raise(s)
+        while continue_validation:
+            try:
+                handler(values)
+            except PydanticValidationError as e:
+                tmp_errors = e.errors()
+                # raise an error if the id is invalid
+                if any(error["loc"][0] == "id" for error in tmp_errors):
+                    raise ValidationError.from_error(e) from e
 
-            id = values["id"] if isinstance(values, dict) else values.__dict__["id"]
+                # convert values to dict if it is a model instance
+                values_dict = values if isinstance(values, dict) else values.__dict__
 
-            logger.warning(
-                f"Validation failed for the product type {id} instance creation, but it is still created "
-                "with its incorrectly formatted attribute(s) set to None and its extra attribute(s) ignored"
+                # set incorrectly formatted attribute(s) to None and ignore its extra attribute(s)
+                for error in tmp_errors:
+                    wrong_param = error["loc"][0]
+                    if not isinstance(wrong_param, str):
+                        continue
+                    if wrong_param not in cls.model_fields:
+                        del values_dict[wrong_param]
+                    else:
+                        values_dict[wrong_param] = None
+
+                errors.extend(tmp_errors)
+            else:
+                continue_validation = False
+
+        if is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES"):
+            # log all errors at once
+            init_errors: list[InitErrorDetails] = [
+                InitErrorDetails(
+                    type=PydanticCustomError(error["type"], error["msg"]),
+                    loc=error["loc"],
+                    input=error["input"],
+                )
+                for error in errors
+            ]
+            pydantic_error = PydanticValidationError.from_exception_data(
+                title=cls.__name__, line_errors=init_errors
             )
-            logger.debug(e)
+            logger.warning(pydantic_error)
 
-            return handler(values)
+        # Create a fresh instance with the cleaned values
+        return handler(values)
 
     def __str__(self) -> str:
         return f'ProductType("{self.id}")'
