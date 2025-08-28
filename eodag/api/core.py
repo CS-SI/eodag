@@ -848,6 +848,7 @@ class EODataAccessGateway:
                     )
                     continue
                 new_product_types: list[str] = []
+                bad_formatted_pt_count = 0
                 for (
                     new_product_type,
                     new_product_type_conf,
@@ -902,22 +903,33 @@ class EODataAccessGateway:
                                     provider
                                 ] = new_product_types_conf
                                 new_product_types.append(new_product_type)
-                            except ValidationError as e:
+                                # increase the increment if the new product type had
+                                # bad formatted attributes in the external config
+                                dumped_product_type = self.product_types_config[
+                                    new_product_type
+                                ].model_dump()
+                                dumped_ext_conf_pt = {
+                                    **dumped_product_type,
+                                    **new_product_types_conf["product_types_config"][
+                                        new_product_type
+                                    ],
+                                }
+                                if dumped_ext_conf_pt != dumped_product_type:
+                                    bad_formatted_pt_count += 1
+                            except ValidationError:
                                 # skip product type if there is a problem with its id (missing or not a string)
-                                if (
-                                    not is_env_var_true("EODAG_VALIDATE_PRODUCT_TYPES")
-                                    and "\nid\n" in e.message
-                                ):
-                                    logger.debug(
-                                        f"Product type {new_product_type} has been pruned on provider "
-                                        f"{provider} because its id was incorrectly parsed for eodag"
-                                    )
-                                else:
-                                    raise e from e
+                                logger.debug(
+                                    f"Product type {new_product_type} has been pruned on provider "
+                                    f"{provider} because its id was incorrectly parsed for eodag"
+                                )
                 if new_product_types:
                     logger.debug(
                         f"Added {len(new_product_types)} product types for {provider}"
                     )
+                    if bad_formatted_pt_count > 0:
+                        logger.debug(
+                            f"bad formatted attributes skipped for {bad_formatted_pt_count} collection(s) on {provider}"
+                        )
 
             elif provider not in self.providers_config:
                 # unknown provider
