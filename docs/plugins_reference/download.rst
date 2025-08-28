@@ -15,6 +15,7 @@ This table lists all the download plugins currently available:
    :toctree: generated/
 
    http.HTTPDownload
+   session_http.SessionHTTPDownload
    aws.AwsDownload
    s3rest.S3RestDownload
    creodias_s3.CreodiasS3Download
