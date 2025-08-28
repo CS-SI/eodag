@@ -850,6 +850,7 @@ class EODataAccessGateway:
                     )
                     continue
                 new_collections: list[str] = []
+                bad_formatted_pt_count = 0
                 for (
                     new_collection,
                     new_collection_conf,
@@ -896,22 +897,33 @@ class EODataAccessGateway:
                                     provider
                                 ] = new_collections_conf
                                 new_collections.append(new_collection)
-                            except ValidationError as e:
-                                # skip collection if there is a problem with its id (missing or not a string)
-                                if (
-                                    not is_env_var_true("EODAG_VALIDATE_COLLECTIONS")
-                                    and "\nid\n" in e.message
-                                ):
-                                    logger.debug(
-                                        f"Collection {new_collection} has been pruned on provider "
-                                        f"{provider} because its id was incorrectly parsed for eodag"
-                                    )
-                                else:
-                                    raise e from e
+                                # increase the increment if the new collection had
+                                # bad formatted attributes in the external config
+                                dumped_collection = self.collections_config[
+                                    new_collection
+                                ].model_dump()
+                                dumped_ext_conf_pt = {
+                                    **dumped_collection,
+                                    **new_collections_conf["product_types_config"][
+                                        new_collection
+                                    ],
+                                }
+                                if dumped_ext_conf_pt != dumped_collection:
+                                    bad_formatted_pt_count += 1
+                            except ValidationError:
+                                # skip product type if there is a problem with its id (missing or not a string)
+                                logger.debug(
+                                    f"Product type {new_collection} has been pruned on provider "
+                                    f"{provider} because its id was incorrectly parsed for eodag"
+                                )
                 if new_collections:
                     logger.debug(
                         f"Added {len(new_collections)} collections for {provider}"
                     )
+                    if bad_formatted_pt_count > 0:
+                        logger.debug(
+                            f"bad formatted attributes skipped for {bad_formatted_pt_count} collection(s) on {provider}"
+                        )
 
             elif provider not in self.providers_config:
                 # unknown provider
