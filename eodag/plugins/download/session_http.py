@@ -59,3 +59,23 @@ class SessionHTTPDownload(HTTPDownload):
     """SessionHTTPDownload plugin. Handles product download over HTTP protocol, while keeping the session."""
 
     HTTPSession = SessionWithHeaderRedirection
+
+    def _download_assets(
+        self,
+        product,
+        fs_dir_path,
+        record_filename,
+        auth=None,
+        progress_callback=None,
+        **kwargs,
+    ):
+        kwargs.setdefault("allow_redirects", False)
+
+        return super()._download_assets(
+            product,
+            fs_dir_path,
+            record_filename,
+            auth=auth,
+            progress_callback=progress_callback,
+            **kwargs,
+        )
