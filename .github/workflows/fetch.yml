@@ -31,6 +31,9 @@ jobs:
     - name: List collections by allowing the fetch and hightlight warning logs
       env:
         EODAG_VALIDATE_COLLECTIONS: True
+      run: |
+        source .venv/bin/activate
+        WARNINGS=$(eodag -vvv list 2>&1 | tee /dev/tty | sed '/Listing available collections/Q' | grep -i "\[WARNING")
     - name: Fetch external collections data
       env:
         EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME: ${{ secrets.EODAG__WEKEO_MAIN__AUTH__CREDENTIALS__USERNAME }}
@@ -72,6 +75,12 @@ jobs:
         COMMIT_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${{ steps.commit.outputs.commit_sha }}"
 
         echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)" >> $GITHUB_STEP_SUMMARY
+
+        echo '### Check potential warning logs while listing collections' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "$WARNINGS" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
         echo '### Changed file' >> $GITHUB_STEP_SUMMARY
         if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
           git show --name-only --format=tformat: >> $GITHUB_STEP_SUMMARY
@@ -95,6 +104,9 @@ jobs:
         {
           # Include header info
           echo "Update external collections reference from daily fetch. See [Python API User Guide / Collections discovery](https://eodag.readthedocs.io/en/latest/notebooks/api_user_guide/1_providers_products_available.html#Collections-discovery)"
+          echo ""
+          echo '### Check potential warning logs while listing collections'
+          echo "$WARNINGS"
           echo ""
           echo "### Changed file"
           if [ "${{ steps.commit.outputs.has_changes }}" = "true" ]; then
