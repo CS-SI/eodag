@@ -1326,154 +1326,179 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_get(self, mock_request):
+    def test_plugins_download_http_order_get(self):
         """HTTPDownload._order() must request using orderLink and GET protocol"""
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["storageStatus"] = OFFLINE_STATUS
 
-        # customized timeout
-        timeout_backup = getattr(plugin.config, "timeout", None)
-        plugin.config.timeout = 10
-        try:
+        with mock.patch.object(plugin, "HTTPSession") as mock_session_class:
+            plugin.config.ssl_verify = True
+            mock_session = mock.Mock()
+            mock_session_class.return_value.__enter__.return_value = mock_session
+            mock_session.request.return_value = MockResponse(status_code=200)
+
+            self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+            self.product.properties["orderLink"] = "http://somewhere/order"
+            self.product.properties["storageStatus"] = OFFLINE_STATUS
+
+            # customized timeout
+            timeout_backup = getattr(plugin.config, "timeout", None)
+            plugin.config.timeout = 10
+            try:
+                auth_plugin = self.get_auth_plugin(plugin, self.product)
+                auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+                auth = auth_plugin.authenticate()
+
+                plugin._order(self.product, auth=auth)
+
+                mock_session.request.assert_called_once_with(
+                    method="GET",
+                    url=self.product.properties["orderLink"],
+                    auth=auth,
+                    headers=USER_AGENT,
+                    timeout=10,
+                    verify=True,
+                )
+            finally:
+                if timeout_backup:
+                    plugin.config.timeout = timeout_backup
+                else:
+                    del plugin.config.timeout
+
+    def test_plugins_download_http_order_get_raises_if_request_500(self):
+        """HTTPDownload._order() must raise an error if request to backend
+        provider failed"""
+        plugin = self.get_download_plugin(self.product)
+
+        with mock.patch.object(plugin, "HTTPSession") as mock_session_class:
+            plugin.config.ssl_verify = True
+            mock_session = mock.Mock()
+            mock_session_class.return_value.__enter__.return_value = mock_session
+            mock_session.request.return_value = MockResponse(status_code=500)
+
+            # Configure mock to raise an error
+            mock_session.request.return_value = MockResponse(status_code=500)
+
+            self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+            self.product.properties["orderLink"] = "http://somewhere/order"
+
             auth_plugin = self.get_auth_plugin(plugin, self.product)
             auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
             auth = auth_plugin.authenticate()
 
-            plugin._order(self.product, auth=auth)
+            # Verify that a DownloadError is raised
+            with self.assertRaises(DownloadError) as context:
+                plugin._order(self.product, auth=auth)
+            self.assertIn("could not be ordered", str(context.exception))
 
-            mock_request.assert_called_once_with(
+            mock_session.request.assert_called_once_with(
                 method="GET",
                 url=self.product.properties["orderLink"],
                 auth=auth,
                 headers=USER_AGENT,
-                timeout=10,
+                timeout=5,
                 verify=True,
             )
-        finally:
-            if timeout_backup:
-                plugin.config.timeout = timeout_backup
-            else:
-                del plugin.config.timeout
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_get_raises_if_request_500(self, mock_request):
-        """HTTPDownload._order() must raise an error if request to backend
-        provider failed"""
-
-        # Configure mock to raise an error
-        mock_request.return_value = MockResponse(status_code=500)
-
-        plugin = self.get_download_plugin(self.product)
-        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
-        auth = auth_plugin.authenticate()
-
-        # Verify that a DownloadError is raised
-        with self.assertRaises(DownloadError) as context:
-            plugin._order(self.product, auth=auth)
-        self.assertIn("could not be ordered", str(context.exception))
-
-        mock_request.assert_called_once_with(
-            method="GET",
-            url=self.product.properties["orderLink"],
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=5,
-            verify=True,
-        )
-
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_get_raises_if_request_400(self, mock_request):
+    def test_plugins_download_http_order_get_raises_if_request_400(self):
         # Set up the EOProduct and the necessary properties
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
 
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        with mock.patch.object(plugin, "HTTPSession") as mock_session_class:
+            plugin.config.ssl_verify = True
+            mock_session = mock.Mock()
+            mock_session_class.return_value.__enter__.return_value = mock_session
+            mock_session.request.return_value = MockResponse(status_code=400)
 
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
-        auth = auth_plugin.authenticate()
+            self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+            self.product.properties["orderLink"] = "http://somewhere/order"
 
-        # Mock the response to raise HTTPError with a 400 status
-        mock_request.return_value = MockResponse(status_code=400)
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
 
-        # Test the function, expecting ValidationError to be raised
-        with self.assertRaises(ValidationError) as context:
-            plugin._order(self.product, auth=auth)
-        self.assertIn("could not be ordered", str(context.exception))
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+            auth = auth_plugin.authenticate()
 
-        mock_request.assert_called_once_with(
-            method="GET",
-            url=self.product.properties["orderLink"],
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
+            # Mock the response to raise HTTPError with a 400 status
+            mock_session.request.return_value = MockResponse(status_code=400)
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_post(self, mock_request):
+            # Test the function, expecting ValidationError to be raised
+            with self.assertRaises(ValidationError) as context:
+                plugin._order(self.product, auth=auth)
+            self.assertIn("could not be ordered", str(context.exception))
+
+            mock_session.request.assert_called_once_with(
+                method="GET",
+                url=self.product.properties["orderLink"],
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=True,
+            )
+
+    def test_plugins_download_http_order_post(self):
         """HTTPDownload._order() must request using orderLink and POST protocol"""
         plugin = self.get_download_plugin(self.product)
-        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["storageStatus"] = OFFLINE_STATUS
-        plugin.config.order_method = "POST"
 
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
-        auth = auth_plugin.authenticate()
+        with mock.patch.object(plugin, "HTTPSession") as mock_session_class:
+            plugin.config.ssl_verify = True
+            mock_session = mock.Mock()
+            mock_session_class.return_value.__enter__.return_value = mock_session
+            mock_session.request.return_value = MockResponse(
+                status_code=200, text="something"
+            )
 
-        # orderLink without query query args
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        plugin._order(self.product, auth=auth)
-        mock_request.assert_called_once_with(
-            method="POST",
-            url=self.product.properties["orderLink"],
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            verify=True,
-        )
-        # orderLink with query query args
-        mock_request.reset_mock()
-        self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
-        plugin._order(self.product, auth=auth)
-        mock_request.assert_called_once_with(
-            method="POST",
-            url="http://somewhere/order",
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            json={"foo": ["bar"]},
-            verify=True,
-        )
+            self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+            self.product.properties["storageStatus"] = OFFLINE_STATUS
+            plugin.config.order_method = "POST"
 
-        # orderLink with JSON data containing a query string
-        mock_request.reset_mock()
-        self.product.properties[
-            "orderLink"
-        ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
-        plugin._order(self.product, auth=auth)
-        mock_request.assert_called_once_with(
-            method="POST",
-            url="http://somewhere/order",
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=HTTP_REQ_TIMEOUT,
-            json={
-                "location": "dataset_id=lorem&data_version=202211",
-                "cacheable": "true",
-            },
-            verify=True,
-        )
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+            auth = auth_plugin.authenticate()
+
+            # orderLink without query query args
+            self.product.properties["orderLink"] = "http://somewhere/order"
+            plugin._order(self.product, auth=auth)
+            mock_session.request.assert_called_once_with(
+                method="POST",
+                url=self.product.properties["orderLink"],
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                verify=True,
+            )
+            # orderLink with query query args
+            mock_session.request.reset_mock()
+            self.product.properties["orderLink"] = "http://somewhere/order?foo=bar"
+            plugin._order(self.product, auth=auth)
+            mock_session.request.assert_called_once_with(
+                method="POST",
+                url="http://somewhere/order",
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                json={"foo": ["bar"]},
+                verify=True,
+            )
+
+            # orderLink with JSON data containing a query string
+            mock_session.request.reset_mock()
+            self.product.properties[
+                "orderLink"
+            ] = 'http://somewhere/order?{"location": "dataset_id=lorem&data_version=202211", "cacheable": "true"}'
+            plugin._order(self.product, auth=auth)
+            mock_session.request.assert_called_once_with(
+                method="POST",
+                url="http://somewhere/order",
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=HTTP_REQ_TIMEOUT,
+                json={
+                    "location": "dataset_id=lorem&data_version=202211",
+                    "cacheable": "true",
+                },
+                verify=True,
+            )
 
     def test_plugins_download_http_order_status(self):
         """HTTPDownload._order_status() must request status using orderStatusLink"""
@@ -1512,74 +1537,74 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
 
         run()
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_status_get_raises_if_request_500(
-        self, mock_request
-    ):
-        """HTTPDownload._order() must raise an error if request to backend
-        provider failed"""
-
-        # Configure mock to raise an error
-        mock_request.return_value = MockResponse(status_code=500)
+    def test_plugins_download_http_order_status_get_raises_if_request_500(self):
+        """HTTPDownload._order() must raise an error if request to backend provider failed"""
 
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
 
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
-        auth = auth_plugin.authenticate()
+        # Mocker HTTPSession sur l'instance du plugin
+        with mock.patch.object(plugin, "HTTPSession") as mock_session_class:
+            mock_session = mock.Mock()
+            mock_session_class.return_value.__enter__.return_value = mock_session
+            mock_session.request.return_value = MockResponse(status_code=500)
 
-        # Verify that a DownloadError is raised
-        with self.assertRaises(DownloadError) as context:
-            plugin._order_status(self.product, auth=auth)
-        self.assertIn("order status could not be checked", str(context.exception))
+            self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+            self.product.properties["orderLink"] = "http://somewhere/order"
+            self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+            auth = auth_plugin.authenticate()
 
-        mock_request.assert_called_once_with(
-            method="GET",
-            url=self.product.properties["orderStatusLink"],
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=5,
-            allow_redirects=False,
-            json=None,
-        )
+            # Verify that a DownloadError is raised
+            with self.assertRaises(DownloadError) as context:
+                plugin._order_status(self.product, auth=auth)
 
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_plugins_download_http_order_status_get_raises_if_request_400(
-        self, mock_request
-    ):
-        # Set up the EOProduct and the necessary properties
+            self.assertIn("order status could not be checked", str(context.exception))
+            mock_session.request.assert_called_once_with(
+                method="GET",
+                url=self.product.properties["orderStatusLink"],
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=5,
+                allow_redirects=False,
+                json=None,
+            )
+
+    def test_plugins_download_http_order_status_get_raises_if_request_400(self):
         plugin: HTTPDownload = self.get_download_plugin(self.product)
-        self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
-        self.product.properties["orderLink"] = "http://somewhere/order"
-        self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
 
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+        with mock.patch.object(plugin, "HTTPSession") as mock_session_class:
+            # Set up the EOProduct and the necessary properties
+            self.product.properties["downloadLink"] = "https://peps.cnes.fr/dummy"
+            self.product.properties["orderLink"] = "http://somewhere/order"
+            self.product.properties["orderStatusLink"] = "http://somewhere/orderstatus"
 
-        auth_plugin = self.get_auth_plugin(plugin, self.product)
-        auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
-        auth = auth_plugin.authenticate()
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
 
-        # Mock the response to raise HTTPError with a 400 status
-        mock_request.return_value = MockResponse(status_code=400)
+            auth_plugin = self.get_auth_plugin(plugin, self.product)
+            auth_plugin.config.credentials = {"username": "foo", "password": "bar"}
+            auth = auth_plugin.authenticate()
 
-        # Test the function, expecting ValidationError to be raised
-        with self.assertRaises(ValidationError) as context:
-            plugin._order_status(self.product, auth=auth)
-        self.assertIn("order status could not be checked", str(context.exception))
+            # Mock the response to raise HTTPError with a 400 status
+            mock_session = mock.Mock()
+            mock_session_class.return_value.__enter__.return_value = mock_session
+            mock_session.request.return_value = MockResponse(status_code=400)
 
-        mock_request.assert_called_once_with(
-            method="GET",
-            url=self.product.properties["orderStatusLink"],
-            auth=auth,
-            headers=USER_AGENT,
-            timeout=5,
-            allow_redirects=False,
-            json=None,
-        )
+            # Test the function, expecting ValidationError to be raised
+            with self.assertRaises(ValidationError) as context:
+                plugin._order_status(self.product, auth=auth)
+            self.assertIn("order status could not be checked", str(context.exception))
+
+            mock_session.request.assert_called_once_with(
+                method="GET",
+                url=self.product.properties["orderStatusLink"],
+                auth=auth,
+                headers=USER_AGENT,
+                timeout=5,
+                allow_redirects=False,
+                json=None,
+            )
 
     def test_plugins_download_http_order_status_search_again(self):
         """HTTPDownload._order_status() must search again after success if needed"""
