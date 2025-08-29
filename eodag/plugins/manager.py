@@ -36,7 +36,6 @@ from eodag.plugins.base import EODAGPluginMount
 from eodag.plugins.crunch.base import Crunch
 from eodag.plugins.download.base import Download
 from eodag.plugins.search.base import Search
-from eodag.types import S3AuthContextPool
 from eodag.utils import GENERIC_PRODUCT_TYPE, deepcopy, dict_md5sum
 from eodag.utils.exceptions import (
     AuthenticationError,
@@ -45,6 +44,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
@@ -362,7 +362,7 @@ class PluginManager:
         provider: str,
         matching_url: Optional[str] = None,
         matching_conf: Optional[PluginConfig] = None,
-    ) -> Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]]:
+    ) -> Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]]:
         """Authenticate and return the authenticated object for the first matching
         authentication plugin
 

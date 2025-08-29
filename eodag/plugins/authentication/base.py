@@ -20,10 +20,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from eodag.plugins.base import PluginTopic
-from eodag.types import S3AuthContextPool
 from eodag.utils.exceptions import MisconfiguredError
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
     from requests.auth import AuthBase
 
@@ -42,7 +42,7 @@ class Authentication(PluginTopic):
           configuration that needs authentication and helps identifying it
     """
 
-    def authenticate(self) -> Union[AuthBase, S3SessionKwargs, S3AuthContextPool]:
+    def authenticate(self) -> Union[AuthBase, S3SessionKwargs, S3ServiceResource]:
         """Authenticate"""
         raise NotImplementedError
 

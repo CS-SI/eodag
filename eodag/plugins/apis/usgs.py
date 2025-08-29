@@ -37,7 +37,6 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
-from eodag.types import S3AuthContextPool
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     DEFAULT_DOWNLOAD_WAIT,
@@ -58,6 +57,7 @@ from eodag.utils.exceptions import (
 )
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.search_result import SearchResult
@@ -297,7 +297,7 @@ class UsgsApi(Api):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,

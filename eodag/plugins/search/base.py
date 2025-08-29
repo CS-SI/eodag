@@ -31,7 +31,7 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.plugins.base import PluginTopic
 from eodag.plugins.search import PreparedSearch
-from eodag.types import S3AuthContextPool, model_fields_to_annotated
+from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import Queryables, QueryablesDict
 from eodag.types.search_args import SortByList
 from eodag.utils import (
@@ -47,6 +47,7 @@ from eodag.utils.exceptions import ValidationError
 if TYPE_CHECKING:
     from typing import Any, Optional, Union
 
+    from mypy_boto3_s3 import S3ServiceResource
     from requests.auth import AuthBase
 
     from eodag.api.product import EOProduct
@@ -63,7 +64,7 @@ class Search(PluginTopic):
     :param config: An EODAG plugin configuration
     """
 
-    auth: Union[AuthBase, S3SessionKwargs, S3AuthContextPool]
+    auth: Union[AuthBase, S3SessionKwargs, S3ServiceResource]
     next_page_url: Optional[str]
     next_page_query_obj: Optional[dict[str, Any]]
     total_items_nb: int

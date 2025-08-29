@@ -22,12 +22,14 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 import boto3
 from botocore.exceptions import ClientError, ProfileNotFound
+from botocore.handlers import disable_signing
 
 from eodag.plugins.authentication.base import Authentication
-from eodag.types import S3AuthContextPool
+from eodag.types import S3SessionKwargs
 from eodag.utils.exceptions import AuthenticationError
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_s3.service_resource import BucketObjectsCollection
 
     from eodag.config import PluginConfig
@@ -80,10 +82,39 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.endpoint_url = getattr(self.config, "s3_endpoint", None)
         self.credentials = getattr(self.config, "credentials", {}) or {}
-        self.auth_context_pool = S3AuthContextPool(
-            endpoint_url=self.endpoint_url, credentials=self.credentials
-        )
+        self.s3_session = self._create_s3_session()
+        self.s3_resource = self._create_s3_resource()
         self.s3_client = self.create_s3_client()
+
+    def _create_s3_session(self) -> boto3.Session:
+        """create s3 session based on available credentials"""
+        if "aws_profile" in self.credentials:
+            return boto3.Session(profile_name=self.credentials["aws_profile"])
+        elif self.credentials:
+            s3_session_kwargs: S3SessionKwargs = {
+                "aws_access_key_id": self.credentials["aws_access_key_id"],
+                "aws_secret_access_key": self.credentials["aws_secret_access_key"],
+            }
+            if self.credentials.get("aws_session_token"):
+                s3_session_kwargs["aws_session_token"] = self.credentials[
+                    "aws_session_token"
+                ]
+            return boto3.Session(**s3_session_kwargs)
+        else:
+            return boto3.Session()
+
+    def _create_s3_resource(self) -> S3ServiceResource:
+        """create s3 resource based on s3 session"""
+        if self.s3_session.get_credentials():
+            return self.s3_session.resource(
+                service_name="s3",
+                endpoint_url=self.endpoint_url,
+            )
+        s3_resource = boto3.resource(service_name="s3", endpoint_url=self.endpoint_url)
+        s3_resource.meta.client.meta.events.register(
+            "choose-signer.s3.*", disable_signing
+        )
+        return s3_resource
 
     def create_s3_client(self):
         """Create an S3 client based on the given endpoint url and credentials
@@ -98,13 +129,13 @@ class AwsAuth(Authentication):
             aws_session_token=self.credentials.get("aws_session_token"),
         )
 
-    def authenticate(self) -> S3AuthContextPool:
+    def authenticate(self) -> S3ServiceResource:
         """Authenticate
 
         :returns: S3AuthContextPool with possible auth contexts
         """
 
-        return self.auth_context_pool
+        return self.s3_resource
 
     def _get_authenticated_objects(
         self, bucket_name: str, prefix: str
@@ -117,31 +148,31 @@ class AwsAuth(Authentication):
                        (not used to filter returned objects)
         :returns: The boto3 authenticated objects
         """
-
-        for auth_context in self.auth_context_pool:
-            try:
-                if getattr(self.config, "requester_pays", False):
-                    objects = auth_context.s3_resource.Bucket(
-                        bucket_name
-                    ).objects.filter(RequestPayer="requester")
-                else:
-                    objects = auth_context.s3_resource.Bucket(bucket_name).objects
-                list(objects.filter(Prefix=prefix).limit(1))
-                if objects:
-                    logger.debug("Auth using %s succeeded", auth_context.auth_type)
-                    self.auth_context_pool.used_method = auth_context.auth_type
-                    return objects
-            except ClientError as e:
-                if (
-                    e.response.get("Error", {}).get("Code", {})
-                    in AWS_AUTH_ERROR_MESSAGES
-                ):
-                    pass
-                else:
-                    raise e
-            except ProfileNotFound:
+        try:
+            if getattr(self.config, "requester_pays", False):
+                objects = self.s3_resource.Bucket(bucket_name).objects.filter(
+                    RequestPayer="requester"
+                )
+            else:
+                objects = self.s3_resource.Bucket(bucket_name).objects
+            list(objects.filter(Prefix=prefix).limit(1))
+            if objects:
+                logger.debug(
+                    "Authentication for bucket %s succeeded; returning available objects",
+                    bucket_name,
+                )
+                return objects
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code", {}) in AWS_AUTH_ERROR_MESSAGES:
                 pass
-            logger.debug("Auth using %s failed", auth_context.auth_type)
+            else:
+                raise e
+        except ProfileNotFound:
+            pass
+        logger.debug(
+            "Authentication for bucket %s failed, please check the credentials!",
+            bucket_name,
+        )
 
         raise AuthenticationError(
             "Unable do authenticate on s3://%s using any available credendials configuration"
@@ -210,23 +241,3 @@ class AwsAuth(Authentication):
         if not authenticated_objects:
             raise AuthenticationError(", ".join(auth_error_messages))
         return authenticated_objects, s3_objects
-
-    def get_s3_session(self, bucket_name: str, prefix: str):
-        """return the s3 session created during the fetching of authenticated objects
-        execute _get_authenticate_objects if it was not done yet
-
-        :param bucket_name: name of the bucket for _get_authenticate_objects
-        :param prefix: s3 prefix for _get_authenticate_objects
-        :returns: s3 session
-        """
-        if self.auth_context_pool.used_method:
-            s3_context = [
-                context
-                for context in self.auth_context_pool
-                if context.auth_type == self.auth_context_pool.used_method
-            ]
-            return s3_context[0].s3_session
-        else:
-            # session was not initialised yet -> do so by getting authenticated objects
-            self._get_authenticated_objects(bucket_name, prefix)
-            return self.get_s3_session(bucket_name, prefix)

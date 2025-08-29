@@ -34,11 +34,7 @@ from eodag.api.product.metadata_mapping import (
     properties_from_json,
     properties_from_xml,
 )
-from eodag.plugins.authentication.aws_auth import (
-    AwsAuth,
-    S3AuthContextPool,
-    raise_if_auth_error,
-)
+from eodag.plugins.authentication.aws_auth import AwsAuth, raise_if_auth_error
 from eodag.plugins.download.base import Download
 from eodag.utils import (
     DEFAULT_DOWNLOAD_TIMEOUT,
@@ -64,6 +60,7 @@ from eodag.utils.exceptions import (
 from eodag.utils.s3 import S3FileInfo, open_s3_zipped_object, stream_download_from_s3
 
 if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_s3.client import S3Client
 
     from eodag.api.product import EOProduct
@@ -233,7 +230,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
+        auth: Optional[S3ServiceResource] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -626,7 +623,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[Union[AuthBase, S3SessionKwargs, S3AuthContextPool]] = None,
+        auth: Optional[S3ServiceResource] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -716,11 +713,8 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        if auth and isinstance(auth, S3AuthContextPool):
-            s3_context = [
-                context for context in auth if context.auth_type == auth.used_method
-            ]
-            self.s3_resource = s3_context[0].s3_resource
+        if auth:
+            self.s3_resource = auth
         else:
             self.s3_resource = boto3.resource(
                 service_name="s3",
@@ -811,7 +805,7 @@ class AwsDownload(Download):
             rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
         rio_env_kwargs |= {}
 
-        s3_session = auth_plugin.get_s3_session(bucket_name, prefix)
+        s3_session = auth_plugin.s3_session(bucket_name, prefix)
 
         if self.requester_pays:
             rio_env_kwargs["requester_pays"] = True
