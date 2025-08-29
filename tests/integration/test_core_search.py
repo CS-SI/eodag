@@ -19,6 +19,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest.mock import call
 
 from requests.exceptions import RequestException
 
@@ -647,8 +648,8 @@ class TestCoreSearch(unittest.TestCase):
         )
 
     @mock.patch("eodag.plugins.authentication.header.HTTPHeaderAuth.authenticate")
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
-    def test_core_search_ecwmfsearch_by_id(self, mock_request, mock_auth):
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.HTTPSession", autospec=True)
+    def test_core_search_ecwmfsearch_by_id(self, mock_httpsession_cls, mock_auth):
         """search by id should return properties based on status response"""
 
         product_id = "123456"
@@ -720,22 +721,23 @@ class TestCoreSearch(unittest.TestCase):
         mock_res_results = MockResponse(
             json_data=results_response, status_code=200, headers={}
         )
-        mock_request.side_effect = [mock_res_status, mock_res_results]
+        mock_session_instance = mock_httpsession_cls.return_value.__enter__.return_value
+        mock_session_instance.request.side_effect = [mock_res_status, mock_res_results]
         result = self.dag.search(provider="cop_cds", id=product_id)
-        mock_request.assert_has_calls(
+        mock_session_instance.request.assert_has_calls(
             [
-                mock.call(
+                call(
                     method="GET",
-                    url="https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456?request=true",
+                    url=f"https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{product_id}?request=true",
                     headers=USER_AGENT,
                     auth=auth,
                     timeout=30,
                     allow_redirects=False,
                     json=None,
                 ),
-                mock.call(
+                call(
                     method="GET",
-                    url="https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/123456/results",
+                    url=f"https://cds.climate.copernicus.eu/api/retrieve/v1/jobs/{product_id}/results",
                     headers=USER_AGENT,
                     auth=auth,
                     timeout=30,
@@ -763,14 +765,14 @@ class TestCoreSearch(unittest.TestCase):
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.OIDCAuthorizationCodeFlowAuth.authenticate"
     )
-    @mock.patch("eodag.plugins.download.http.requests.request", autospec=True)
+    @mock.patch("eodag.plugins.download.http.HTTPDownload.HTTPSession", autospec=True)
     def test_core_search_dedtlumi_search_by_id(
-        self, mock_request, mock_auth, mock_auth_config_request
+        self, mock_httpsession_cls, mock_auth, mock_auth_config_request
     ):
-        """search by id should return properties based on status response"""
         product_id = "123-456"
         auth = CodeAuthorizedAuth(token="123", where="header")
         mock_auth.return_value = auth
+
         status_response = {
             "contentLength": 3136349,
             "contentType": "application/x-grib",
@@ -779,17 +781,33 @@ class TestCoreSearch(unittest.TestCase):
         mock_res_status = MockResponse(
             json_data=status_response, status_code=200, headers={}
         )
-        mock_request.return_value = mock_res_status
+
+        mock_session_instance = mock_httpsession_cls.return_value.__enter__.return_value
+        mock_session_instance.request.return_value = mock_res_status
+
         result = self.dag.search(provider="dedt_lumi", id=product_id)
-        mock_request.assert_called_with(
-            method="GET",
-            url="https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/123-456",
-            headers=USER_AGENT,
-            auth=auth,
-            timeout=5,
-            allow_redirects=False,
-            json=None,
-        )
+
+        expected_calls = [
+            call(
+                method="HEAD",
+                url=f"https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{product_id}",
+                headers=USER_AGENT,
+                auth=auth,
+                timeout=5,
+                allow_redirects=False,
+                json=None,
+            ),
+            call(
+                method="GET",
+                url=f"https://polytope.lumi.apps.dte.destination-earth.eu/api/v1/requests/{product_id}",
+                headers=USER_AGENT,
+                auth=auth,
+                timeout=5,
+                allow_redirects=False,
+                json=None,
+            ),
+        ]
+        mock_session_instance.request.assert_has_calls(expected_calls)
         self.assertEqual(1, len(result))
         self.assertEqual("123-456", result[0].properties["id"])
         self.assertEqual("DEDT_LUMI_123-456", result[0].properties["title"])
