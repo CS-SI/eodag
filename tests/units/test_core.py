@@ -29,13 +29,14 @@ from tempfile import TemporaryDirectory
 
 import yaml
 from lxml import html
-from pydantic import ValidationError
+from pydantic import ValidationError as PydanticValidationError
 from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_PRODUCT_TYPE, cached_yaml_load_all
+from eodag.utils.exceptions import ValidationError
 from tests import TEST_RESOURCES_PATH
 from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
@@ -1435,7 +1436,7 @@ class TestCore(TestCoreBase):
             {"productType": "S1_SAR_GRD", "snowCover": 50}
         )
         self.assertIn("snowCover", queryables_validated.__dict__)
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(PydanticValidationError):
             queryables_peps_s1grd.get_model().model_validate(
                 {"productType": "S1_SAR_GRD", "snowCover": 500}
             )
@@ -1910,6 +1911,37 @@ class TestCore(TestCoreBase):
         # Don't validate request
         self.dag.search(validate_request=False, **filter)
         mock_validate_search_request.assert_not_called()
+        mock_validate_search_request.reset_mock()
+
+    @mock.patch(
+        "eodag.plugins.manager.PluginManager.get_auth_plugin",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.search.qssearch.QueryStringSearch.query",
+        autospec=True,
+        return_value=([], 0),
+    )
+    def test_search_validate_invalid_filter(
+        self,
+        mock_query: mock.Mock,
+        mock_auth_plugin: mock.Mock,
+    ) -> None:
+        """Search must fail if validation is enabled and the filter is not valid"""
+        filter = {
+            "provider": "peps",
+            "productType": "S1_SAR_GRD",
+            "orbitNumber": "dolorem",
+        }
+        # Validation by default: fails cause orbitNumber
+        with self.assertRaises(ValidationError):
+            self.dag.search(raise_errors=True, **filter)
+
+        with self.assertRaises(ValidationError):
+            self.dag.search(validate_request=True, raise_errors=True, **filter)
+
+        # No validation, no exception
+        self.dag.search(validate_request=False, raise_errors=True, **filter)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

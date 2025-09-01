@@ -59,7 +59,6 @@ from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
 from eodag.plugins.search.qssearch import PostJsonSearch
-from eodag.rest.utils import format_pydantic_error
 from eodag.types import model_fields_to_annotated
 from eodag.types.queryables import CommonQueryables, QueryablesDict
 from eodag.utils import (
@@ -73,6 +72,7 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
+    format_pydantic_error,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -2445,7 +2445,7 @@ class EODataAccessGateway:
 
         return results
 
-    def validate_search_request(self, provider: str, filter: dict[str, Any]):
+    def validate_search_request(self, provider: str, filter: dict[str, Any]) -> None:
         """Validate a search request.
 
         :param provider: Provider to use for validation
@@ -2461,7 +2461,7 @@ class EODataAccessGateway:
         except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
 
-    def validate_order_request(self, product: EOProduct):
+    def validate_order_request(self, product: EOProduct) -> None:
         """Validate a product order request.
 
         :param product: The product to validate

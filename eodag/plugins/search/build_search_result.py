@@ -309,8 +309,7 @@ def append_time(input_date: date, time: Optional[str]) -> datetime:
     """
     if not time:
         time = "0000"
-    time = time.replace(":", "")
-    time = time.replace("_", "")
+    time = re.sub(":|_", "", time)
     if time == "2400":
         time = "0000"
     dt = datetime.combine(input_date, datetime.strptime(time, "%H%M").time())
