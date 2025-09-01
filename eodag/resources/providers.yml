@@ -5939,7 +5939,7 @@
   search: !plugin
     type: StacSearch
     api_endpoint: 'https://fedeo.ceos.org/search'
-    ssl_verify: false
+    ssl_verify: True
     timeout: 20
     discover_product_types:
       fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/'
