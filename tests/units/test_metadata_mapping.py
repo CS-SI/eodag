@@ -813,7 +813,7 @@ class TestMetadataMappingFunctions(unittest.TestCase):
                     <val>test1</val>
                     <val>test2</val>
                 </root>"""
-        mapping = {"val": (["to_upper", "ignored"], "./val/text()")}
+        mapping = {"val": ("to_upper", "./val/text()")}
 
         props = properties_from_xml(xml, mapping)
         assert props["val"] == ["TEST1", "TEST2"]
