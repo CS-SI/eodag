@@ -671,7 +671,7 @@ class TestCore(TestCoreBase):
         product_types = self.dag.list_product_types(fetch_providers=False)
         self.assertIsInstance(product_types, ProductTypesList)
         for product_type in product_types:
-            self.assertListProductTypesRightStructure(product_type)
+            self.assertIsInstance(product_type, ProductType)
         # There should be no repeated product type in the output
         self.assertEqual(len(product_types), len(set(pt.id for pt in product_types)))
         # add alias for product type - should still work
@@ -687,7 +687,7 @@ class TestCore(TestCoreBase):
         )
         product_types = self.dag.list_product_types(fetch_providers=False)
         for product_type in product_types:
-            self.assertListProductTypesRightStructure(product_type)
+            self.assertIsInstance(product_type, ProductType)
         # There should be no repeated product type in the output
         self.assertEqual(len(product_types), len(set(pt.id for pt in product_types)))
         # use alias as id
@@ -712,7 +712,7 @@ class TestCore(TestCoreBase):
             )
             self.assertIsInstance(product_types, ProductTypesList)
             for product_type in product_types:
-                self.assertListProductTypesRightStructure(product_type)
+                self.assertIsInstance(product_type, ProductType)
                 if product_type.id in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
                         provider,
