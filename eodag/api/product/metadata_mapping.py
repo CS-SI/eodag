@@ -523,7 +523,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
                 value = MetadataFormatter.convert_to_geojson(value)
             elif not isinstance(value, str):
                 raise TypeError(
-                    f"convert_replace_str expects a string or a dict (apply to_geojson). Got {type(value)}"
+                    f"convert_replace_str expects a string or a dict (apply to_geojson). Got {type(value)}: {value}"
                 )
 
             old, new = ast.literal_eval(args)
