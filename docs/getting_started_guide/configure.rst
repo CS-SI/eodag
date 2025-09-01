@@ -170,11 +170,10 @@ Some EODAG core settings can be overriden using environment variables:
   If not set, ``eodag`` will also include product types defined only in provider configurations, with minimal metadata.
 
   This is useful if you want to strictly control which product types are available, for example to ensure consistency across environments.
-* ``EODAG_VALIDATE_PRODUCT_TYPES`` to control whether product types validation will raise an error.
+* ``EODAG_VALIDATE_PRODUCT_TYPES`` to control whether product types validation will log a warning if it fails.
 
-  Mostly created for ensuring ``eodag`` internal and external product types configuration is still correct, this environment variable will allow to raise a validation error when a product type does not follow the right schema of its model if set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``).
-  If not set, ``eodag`` will prevent from blocking the gateway creation by skipping the loading of a product type configuration if fetching it would have generated an error. Moreover, when a user creates a product type, ``eodag`` will set to ``None`` and ignore its attributes when they are respectively incorrectly formatted and extra without raising an error.
-  However, a product type with a missing or incorrectly formatted ``id`` will still raise an error to avoid unexpected behavior.
+  Mostly created for ensuring ``eodag`` internal and external product types configuration is still correct, this environment variable
+  will allow to log a warning when a product type does not follow the right schema of its model if set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``).
 
 Example usage:
 
