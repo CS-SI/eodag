@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import logging
 from collections import UserList
-from typing import TYPE_CHECKING, Annotated, Any, Generator, Iterable, Optional, Union
+from typing import TYPE_CHECKING, Annotated, Any, Iterable, Iterator, Optional, Union
 
 from shapely.geometry import GeometryCollection, shape
 from typing_extensions import Doc
@@ -64,7 +64,6 @@ class SearchResult(UserList[EOProduct]):
         errors: Optional[list[tuple[str, Exception]]] = None,
         search_params: Optional[dict[str, Any]] = None,
         next_page_token: Optional[str] = None,
-        count: Optional[bool] = False,
         raise_errors: Optional[bool] = False,
     ) -> None:
         super().__init__(products)
@@ -73,28 +72,7 @@ class SearchResult(UserList[EOProduct]):
         self.search_params = search_params
         self.next_page_token = next_page_token
         self._dag = None
-        self.pages = getattr(self, "pages", [])
-        self.pages.append(self.data)
-        self.count = count
         self.raise_errors = raise_errors
-
-    @property
-    def dag(self):
-        """
-        Get the EODataAccessGateway instance used for search operations.
-
-        :returns: The EODataAccessGateway instance.
-        """
-        return self._dag
-
-    @dag.setter
-    def dag(self, value):
-        """
-        Set the EODataAccessGateway instance.
-
-        :param value: An EODataAccessGateway instance.
-        """
-        self._dag = value
 
     def crunch(self, cruncher: Crunch, **search_params: Any) -> SearchResult:
         """Do some crunching with the underlying EO products.
@@ -247,8 +225,10 @@ class SearchResult(UserList[EOProduct]):
 
         return super().extend(other)
 
-    def next_page(self, update: bool = True) -> Generator[SearchResult, None, None]:
+    def next_page(self, update: bool = True) -> Iterator[SearchResult]:
         """Get the next page of results based on the current search parameters."""
+        if self.next_page_token is None:
+            return
 
         def get_next_page(current):
             current.search_params["next_page_token"] = current.next_page_token
@@ -258,28 +238,43 @@ class SearchResult(UserList[EOProduct]):
                 )
             elif current.data and hasattr(current.data[-1], "provider"):
                 current.search_params["provider"] = current.data[-1].provider
-            search_plugins, search_kwargs = current.dag._prepare_search(
+            search_plugins, search_kwargs = current._dag._prepare_search(
                 **current.search_params
             )
+            if current.number_matched:
+                search_kwargs["number_matched"] = current.number_matched
             for i, search_plugin in enumerate(search_plugins):
                 current.search_params["next_page_token"] = current.next_page_token
-                return current.dag._do_search(
+                return current._dag._do_search(
                     search_plugin,
                     raise_errors=self.raise_errors,
-                    count=self.count,
                     **search_kwargs,
                 )
 
         new_results = get_next_page(self)
 
-        while new_results.data and new_results.next_page_token is not None:
+        while new_results.data:
             if update:
                 self.data += new_results.data
                 self.search_params = new_results.search_params
                 self.next_page_token = new_results.next_page_token
             yield new_results
-
+            if new_results.next_page_token is None:
+                break
+            old_results = new_results
             new_results = get_next_page(new_results)
+            if (
+                old_results.data[0].properties["id"]
+                == new_results.data[0].properties["id"]
+            ):
+
+                logger.warning(
+                    "Iterate over pages: stop iterating since the next page "
+                    "appears to have the same products as in the previous one. "
+                    "This provider may not implement pagination.",
+                )
+                break
+        return
 
     @classmethod
     def _from_stac_item(
