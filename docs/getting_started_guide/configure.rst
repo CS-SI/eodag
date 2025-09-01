@@ -169,11 +169,10 @@ Some EODAG core settings can be overriden using environment variables:
   If not set, ``eodag`` will also include collections defined only in provider configurations, with minimal metadata.
 
   This is useful if you want to strictly control which collections are available, for example to ensure consistency across environments.
-* ``EODAG_VALIDATE_COLLECTIONS`` to control whether collections validation will raise an error.
+* ``EODAG_VALIDATE_COLLECTIONS`` to control whether collections validation will log a warning if it fails.
 
-  Mostly created for ensuring ``eodag`` internal and external collections configuration is still correct, this environment variable will allow to raise a validation error when a collection does not follow the right schema of its model if set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``).
-  If not set, ``eodag`` will prevent from blocking the gateway creation by skipping the loading of a collection configuration if fetching it would have generated an error. Moreover, when a user creates a collection, ``eodag`` will set to ``None`` and ignore its attributes when they are respectively incorrectly formatted and extra without raising an error.
-  However, a product type with a missing or incorrectly formatted ``id`` will still raise an error to avoid unexpected behavior.
+  Mostly created for ensuring ``eodag`` internal and external collections configuration is still correct, this environment variable
+  will allow to log a warning when a collection does not follow the right schema of its model if set to a truthy value (such as ``1``, ``true``, ``yes``, or ``on``).
 
 Example usage:
 
