@@ -741,17 +741,17 @@ class TestCore(TestCoreBase):
         # Free text search: match the phrase in title
         filter = '"FOOBAR COLLECTION"'
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foobar"])
+        self.assertListEqual(product_types_ids, ["foobar_alias"])
 
         # Free text search: Using OR term match
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar"])
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foobar_alias"])
 
         # Free text search: using OR term match with additional filter UNION
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(filter, title="FOO")
-        self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar"])
+        self.assertListEqual(sorted(product_types_ids), ["bar", "foo", "foobar_alias"])
 
         # Free text search: Using AND term match
         filter = "suspendisse AND FOO"
@@ -761,14 +761,14 @@ class TestCore(TestCoreBase):
         # Free text search: Parentheses can be used to group terms
         filter = "(FOOBAR OR BAR) AND titleFOOBAR"
         product_types_ids = self.dag.guess_product_type(filter)
-        self.assertListEqual(product_types_ids, ["foobar"])
+        self.assertListEqual(product_types_ids, ["foobar_alias"])
 
         # Free text search: multiple terms joined with param search (INTERSECT)
         filter = "FOOBAR OR BAR"
         product_types_ids = self.dag.guess_product_type(
             filter, intersect=True, title="titleFOO*"
         )
-        self.assertListEqual(product_types_ids, ["foobar"])
+        self.assertListEqual(product_types_ids, ["foobar_alias"])
 
     def test_guess_product_type_with_mission_dates(self):
         """Testing the datetime interval"""
