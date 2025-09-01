@@ -828,7 +828,6 @@ class QueryStringSearch(Search):
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
-            count=count,
             raise_errors=raise_errors,
         )
         return formated_result
@@ -1111,31 +1110,55 @@ class QueryStringSearch(Search):
     def _build_raw_search_results(
         self, results, resp_as_json, kwargs, items_per_page, prep
     ):
+        """
+        Build a `RawSearchResult` object from raw search results.
+
+        This method initializes a `RawSearchResult` instance with the provided results,
+        sets the search parameters, and determines the token or identifier for the next page
+        based on the pagination configuration.
+
+        Args:
+            results (List): Raw results returned by the search.
+            resp_as_json (dict): The search response parsed as JSON.
+            kwargs (dict): Search parameters used for the query.
+            items_per_page (int): Number of items per page.
+            prep (object): Request preparation object containing query parameters.
+
+        Returns:
+            RawSearchResult: An object containing the raw results, search parameters,
+                            and the next page token if available.
+        """
         raw_search_results = RawSearchResult(results)
         raw_search_results.search_params = kwargs | {"items_per_page": items_per_page}
         if self.config.pagination.get("next_page_query_obj_key_path") is not None:
             href = self.config.pagination["next_page_query_obj_key_path"].find(
                 resp_as_json
             )
-            next_page_token_key = (
-                unquote(self.config.pagination["parse_url_key"])
-                if "parse_url_key" in self.config.pagination
-                else self.config.pagination.get("next_page_token_key")
-            )
-            if next_page_token_key in unquote(href[0].value):
-                from urllib.parse import parse_qs, urlparse
+            if href:
+                next_page_token_key = (
+                    unquote(self.config.pagination["parse_url_key"])
+                    if "parse_url_key" in self.config.pagination
+                    else self.config.pagination.get("next_page_token_key")
+                )
+                if next_page_token_key in unquote(href[0].value):
+                    from urllib.parse import parse_qs, urlparse
 
-                query = urlparse(href[0].value).query
-                page_param = parse_qs(query).get(next_page_token_key)
-                if page_param:
-                    raw_search_results.next_page_token = page_param[0]
+                    query = urlparse(href[0].value).query
+                    page_param = parse_qs(query).get(next_page_token_key)
+                    if page_param:
+                        raw_search_results.next_page_token = page_param[0]
+                else:
+                    raw_search_results.next_page_token = href[0].value
             else:
-                raw_search_results.next_page_token = href[0].value
+                raw_search_results.next_page_token = None
         elif self.config.pagination.get("next_page_url_key_path") is not None:
             token = self.config.pagination["next_page_query_obj_key_path"].find(
                 resp_as_json
             )
-            raw_search_results.next_page_token = token[0].value
+            if token:
+                raw_search_results.next_page_token = token[0].value
+            else:
+                raw_search_results.next_page_token = None
         else:
             next_page_token_key = self.config.pagination.get(
                 "next_page_token_key", "page"
@@ -1653,6 +1676,8 @@ class PostJsonSearch(QueryStringSearch):
         provider_results = self.do_search(prep, **kwargs)
         if count and total_items is None and hasattr(prep, "total_items_nb"):
             total_items = prep.total_items_nb
+        if "number_matched" in kwargs:
+            total_items = kwargs["number_matched"]
 
         eo_products = self.normalize_results(provider_results, **kwargs)
         formated_result = SearchResult(
@@ -1660,7 +1685,6 @@ class PostJsonSearch(QueryStringSearch):
             total_items,
             search_params=provider_results.search_params,
             next_page_token=getattr(provider_results, "next_page_token", None),
-            count=count,
             raise_errors=raise_errors,
         )
         return formated_result

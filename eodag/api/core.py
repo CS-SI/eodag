@@ -1310,114 +1310,31 @@ class EODataAccessGateway:
         :returns: An iterator that yields page per page a set of EO products
                   matching the criteria
         """
-
-        iteration = 1
-        # Store the search plugin config pagination.next_page_url_tpl to reset it later
-        # since it might be modified if the next_page_url mechanism is used by the
-        # plugin. (same thing for next_page_query_obj, next_page_query_obj with POST reqs)
-        pagination_config = getattr(search_plugin.config, "pagination", {})
-        prev_next_page_url_tpl = pagination_config.get("next_page_url_tpl")
-        prev_next_page_query_obj = pagination_config.get("next_page_query_obj")
-        # Page has to be set to a value even if use_next is True, this is required
-        # internally by the search plugin (see collect_search_urls)
         kwargs.update(
             page=1,
             items_per_page=items_per_page,
         )
-        prev_product = None
-        next_page_url = None
-        next_page_query_obj = None
-        number_matched = None
-        while True:
-            # if count is enabled, it will only be performed on 1st iteration
-            if iteration == 2:
-                kwargs["count"] = False
-            if iteration > 1 and next_page_url:
-                pagination_config["next_page_url_tpl"] = next_page_url
-            if iteration > 1 and next_page_query_obj:
-                pagination_config["next_page_query_obj"] = next_page_query_obj
-            logger.info("Iterate search over multiple pages: page #%s", iteration)
-            try:
-                # remove unwanted kwargs for _do_search
-                kwargs.pop("raise_errors", None)
-                search_result = self._do_search(
-                    search_plugin, raise_errors=True, **kwargs
-                )
-                # if count is enabled, it will only be performed on 1st iteration
-                if iteration == 1:
-                    number_matched = search_result.number_matched
-            except Exception:
-                logger.warning(
-                    "error at retrieval of data from %s, for params: %s",
-                    search_plugin.provider,
-                    str(kwargs),
-                )
-                raise
-            finally:
-                # we don't want that next(search_iter_page(...)) modifies the plugin
-                # indefinitely. So we reset after each request, but before the generator
-                # yields, the attr next_page_url (to None) and
-                # config.pagination["next_page_url_tpl"] (to its original value).
-                next_page_url = getattr(search_plugin, "next_page_url", None)
-                next_page_query_obj = getattr(search_plugin, "next_page_query_obj", {})
-                next_page_merge = getattr(search_plugin, "next_page_merge", None)
+        try:
+            # remove unwanted kwargs for _do_search
+            kwargs.pop("raise_errors", None)
+            search_result = self._do_search(search_plugin, raise_errors=True, **kwargs)
+        except Exception:
+            logger.warning(
+                "error at retrieval of data from %s, for params: %s",
+                search_plugin.provider,
+                str(kwargs),
+            )
+            raise
 
-                if next_page_url:
-                    search_plugin.next_page_url = None
-                    if prev_next_page_url_tpl:
-                        search_plugin.config.pagination[
-                            "next_page_url_tpl"
-                        ] = prev_next_page_url_tpl
-                if next_page_query_obj:
-                    if prev_next_page_query_obj:
-                        search_plugin.config.pagination[
-                            "next_page_query_obj"
-                        ] = prev_next_page_query_obj
-                    # Update next_page_query_obj for next page req
-                    if next_page_merge:
-                        search_plugin.next_page_query_obj = dict(
-                            getattr(search_plugin, "query_params", {}),
-                            **next_page_query_obj,
-                        )
-                    else:
-                        search_plugin.next_page_query_obj = next_page_query_obj
+        if len(search_result) == 0:
+            return
 
-            if len(search_result) > 0:
-                # The first products between two iterations are compared. If they
-                # are actually the same product, it means the iteration failed at
-                # progressing for some reason. This is implemented as a workaround
-                # to some search plugins/providers not handling pagination.
-                product = search_result[0]
-                if (
-                    prev_product
-                    and product.properties["id"] == prev_product.properties["id"]
-                    and product.provider == prev_product.provider
-                ):
-                    logger.warning(
-                        "Iterate over pages: stop iterating since the next page "
-                        "appears to have the same products as in the previous one. "
-                        "This provider may not implement pagination.",
-                    )
-                    last_page_with_products = iteration - 1
-                    break
-                # use count got from 1st iteration
-                search_result.number_matched = number_matched
-                yield search_result
-                prev_product = product
-                # Prevent a last search if the current one returned less than the
-                # maximum number of items asked for.
-                if len(search_result) < items_per_page:
-                    last_page_with_products = iteration
-                    break
-            else:
-                last_page_with_products = iteration - 1
+        yield search_result
+
+        for next_result in search_result.next_page():
+            if len(next_result) == 0:
                 break
-            iteration += 1
-            kwargs["page"] = iteration
-        logger.debug(
-            "Iterate over pages: last products found on page %s",
-            last_page_with_products,
-        )
+            yield next_result
 
     def search_all(
         self,
@@ -1915,7 +1832,7 @@ class EODataAccessGateway:
                     "The query function of a Search plugin must return a list of "
                     "results, got {} instead".format(type(search_result.data))
                 )
-            search_result.dag = self
+            search_result._dag = self
             return search_result
 
         except Exception as e:
