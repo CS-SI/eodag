@@ -2481,6 +2481,7 @@ class TestCoreSearch(TestCoreBase):
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
+            products["S2_MSI_L1C"].pop("alias")
 
     def test__prepare_search_no_plugins_when_search_by_id(self):
         """_prepare_search must not return the search and auth plugins for a search by id"""
