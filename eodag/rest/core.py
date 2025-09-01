@@ -28,7 +28,7 @@ from urllib.parse import urlencode
 import dateutil
 from cachetools.func import lru_cache
 from fastapi.responses import ORJSONResponse, StreamingResponse
-from pydantic import ValidationError as pydanticValidationError
+from pydantic import ValidationError as PydanticValidationError
 from requests.models import Response as RequestsResponse
 
 import eodag
@@ -160,7 +160,7 @@ def search_stac_items(
         stac_args["geometry"] = search_request.spatial_filter
     try:
         eodag_args = EODAGSearch.model_validate(stac_args)
-    except pydanticValidationError as e:
+    except PydanticValidationError as e:
         raise ValidationError(format_pydantic_error(e)) from e
 
     catalog_url = re.sub("/items.*", "", request.state.url)

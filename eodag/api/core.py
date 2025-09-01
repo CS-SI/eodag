@@ -32,7 +32,7 @@ from urllib.parse import parse_qs, urlparse
 
 import geojson
 import yaml.parser
-from pydantic import ValidationError as pydanticValidationError
+from pydantic import ValidationError as PydanticValidationError
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
@@ -2458,7 +2458,7 @@ class EODataAccessGateway:
                 provider=provider,
                 **filter,
             ).get_model().model_validate(filter)
-        except pydanticValidationError as e:
+        except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e
 
     def validate_order_request(self, product: EOProduct):

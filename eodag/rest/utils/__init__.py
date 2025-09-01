@@ -28,7 +28,7 @@ from urllib.parse import unquote_plus, urlencode
 
 import orjson
 from fastapi import Request
-from pydantic import ValidationError as pydanticValidationError
+from pydantic import ValidationError as PydanticValidationError
 
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
@@ -63,11 +63,11 @@ crunchers = {
 }
 
 
-def format_pydantic_error(e: pydanticValidationError) -> str:
+def format_pydantic_error(e: PydanticValidationError) -> str:
     """Format Pydantic ValidationError
 
     :param e: A Pydantic ValidationError object
-    :tyype e: pydanticValidationError
+    :tyype e: PydanticValidationError
     """
     error_header = f"{e.error_count()} error(s). "
 

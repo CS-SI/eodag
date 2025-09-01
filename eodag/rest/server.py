@@ -31,7 +31,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import ORJSONResponse
-from pydantic import ValidationError as pydanticValidationError
+from pydantic import ValidationError as PydanticValidationError
 from pygeofilter.backends.cql2_json import to_cql2
 from pygeofilter.parsers.cql2_text import parse as parse_cql2_text
 
@@ -549,7 +549,7 @@ def get_search(
 
     try:
         search_request = SearchPostRequest.model_validate(clean)
-    except pydanticValidationError as e:
+    except PydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     response = search_stac_items(
@@ -583,7 +583,7 @@ async def post_search(request: Request) -> ORJSONResponse:
 
     try:
         search_request = SearchPostRequest.model_validate(payload)
-    except pydanticValidationError as e:
+    except PydanticValidationError as e:
         raise HTTPException(status_code=400, detail=format_pydantic_error(e)) from e
 
     logger.debug("Body: %s", search_request.model_dump(exclude_none=True))
