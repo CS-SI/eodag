@@ -38,3 +38,4 @@ class DownloadConf(TypedDict, total=False):
     dl_url_params: dict[str, str]
     delete_archive: bool
     asset: Optional[str]
+    allow_redirects: bool
