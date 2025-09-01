@@ -63,6 +63,7 @@
       },
       "foobar": {
         "abstract": "abstract FOOBAR - This is FOOBAR",
+        "alias": "foobar_alias",
         "instrument": "Not Available",
         "platform": "Not Available",
         "platformSerialIdentifier": "Not Available",

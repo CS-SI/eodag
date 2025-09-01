@@ -1117,7 +1117,8 @@ class EODataAccessGateway:
                 if not (max_start <= min_end):
                     continue
 
-            guesses_with_score.append((pt_id, score))
+            pt_alias = pt_dict.get("alias", pt_id)
+            guesses_with_score.append((pt_alias, score))
 
         if guesses_with_score:
             # sort by score descending, then pt_id for stability
