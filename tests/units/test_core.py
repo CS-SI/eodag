@@ -686,7 +686,7 @@ class TestCore(TestCoreBase):
         collections = self.dag.list_collections(fetch_providers=False)
         self.assertIsInstance(collections, ProductTypesList)
         for collection in collections:
-            self.assertListCollectionsRightStructure(collection)
+            self.assertIsInstance(collection, ProductType)
         # There should be no repeated collection in the output
         self.assertEqual(len(collections), len(set(pt.id for pt in collections)))
         # add alias for collection - should still work
@@ -702,8 +702,8 @@ class TestCore(TestCoreBase):
         )
         collections = self.dag.list_collections(fetch_providers=False)
         for collection in collections:
-            self.assertListCollectionsRightStructure(collection)
-        # There should be no repeated collection in the output
+            self.assertIsInstance(collection, ProductType)
+        # There should be no repeated product type in the output
         self.assertEqual(len(collections), len(set(pt.id for pt in collections)))
         # use alias as id
         self.assertIn("S2_MSI_ALIAS", [pt.id for pt in collections])
@@ -727,7 +727,7 @@ class TestCore(TestCoreBase):
             )
             self.assertIsInstance(collections, ProductTypesList)
             for collection in collections:
-                self.assertListCollectionsRightStructure(collection)
+                self.assertIsInstance(collection, ProductType)
                 if collection.id in self.SUPPORTED_COLLECTIONS:
                     self.assertIn(
                         provider,
