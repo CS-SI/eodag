@@ -42,7 +42,6 @@ from typing_extensions import get_args
 
 from eodag.api.product import AssetsDict
 from eodag.api.product.metadata_mapping import get_queryable_from_provider
-from eodag.types import S3AuthContext
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import UnsupportedProductType, ValidationError
 from tests.context import (
@@ -2384,7 +2383,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         self.assertIsNotNone(res[0][0].driver)
         self.assertEqual(0, len(res[0][0].assets))
 
-    @mock.patch("eodag.types.S3AuthContext", autospec=True)
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.create_s3_session", autospec=True
+    )
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client", autospec=True
     )
@@ -2392,21 +2393,9 @@ class TestSearchPluginCreodiasS3Search(BaseSearchPluginTest):
         "eodag.plugins.search.qssearch.QueryStringSearch._request", autospec=True
     )
     def test_plugins_search_creodias_s3_client_error(
-        self, mock_request, mock_s3_client, mock_auth_context
+        self, mock_request, mock_s3_client, mock_session
     ):
         # request error should be raised when there is an error when fetching data from the s3
-        mock_auth_context.create_auth_context_unsigned.return_value = S3AuthContext(
-            None, "unsigned", None
-        )
-        mock_auth_context.create_auth_context_auth_profile.return_value = S3AuthContext(
-            None, "auth_profile", None
-        )
-        mock_auth_context.create_auth_context_auth_keys.return_value = S3AuthContext(
-            None, "auth_keys", None
-        )
-        mock_auth_context.create_auth_context_env.return_value = S3AuthContext(
-            None, "env", None
-        )
         search_plugin = self.get_search_plugin("S1_SAR_GRD", self.provider)
         client = boto3.client("s3", aws_access_key_id="a", aws_secret_access_key="b")
         stubber = Stubber(client)

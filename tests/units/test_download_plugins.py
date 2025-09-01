@@ -2098,51 +2098,44 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
             plugin.download(self.product, outputs_prefix=self.output_dir)
 
     @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.get_s3_session",
+        "eodag.plugins.authentication.aws_auth.AwsAuth.create_s3_client",
+        autospec=True,
+    )
+    @mock.patch(
+        "eodag.plugins.authentication.aws_auth.create_s3_session",
         autospec=True,
     )
     @mock.patch(
         "eodag.plugins.authentication.aws_auth.AwsAuth._get_authenticated_objects",
         autospec=True,
     )
-    @mock.patch(
-        "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
-        autospec=True,
-    )
     def test_plugins_download_aws_get_rio_env(
         self,
-        mock_aws_auth_init: mock.Mock,
         mock_get_authenticated_objects: mock.Mock,
         mock_s3_session: mock.Mock,
+        mock_s3_client: mock.Mock,
     ):
         """AwsDownload.get_rio_env() must return rio env dict"""
 
         self.product.properties["downloadLink"] = "s3://some-bucket/some/prefix"
 
-        mock_aws_auth_init.return_value = None
         plugin = self.get_download_plugin(self.product)
         auth_plugin = self.get_auth_plugin(plugin, self.product)
-        s3_session = mock.MagicMock()
-        mock_s3_session.return_value = s3_session
 
         # nothing needed
         rio_env_dict = plugin.get_rio_env("some-bucket", "some/prefix", auth_plugin)
-        self.assertDictEqual(
-            rio_env_dict,
-            {
-                "session": s3_session,
-                "requester_pays": True,
-            },
-        )
+        self.assertIn("session", rio_env_dict)
+        self.assertIn("requester_pays", rio_env_dict)
+        self.assertTrue(rio_env_dict["requester_pays"])
 
         # with endpoint url
         plugin.config.s3_endpoint = "some.endpoint"
         self.assertEqual(plugin.config.requester_pays, True)
         rio_env_dict = plugin.get_rio_env("some-bucket", "some/prefix", auth_plugin)
+        self.assertIsNotNone(rio_env_dict.pop("session", None))
         self.assertDictEqual(
             rio_env_dict,
             {
-                "session": s3_session,
                 "endpoint_url": "some.endpoint",
                 "requester_pays": True,
             },

@@ -56,6 +56,14 @@ def raise_if_auth_error(exception: ClientError, provider: str) -> None:
         )
 
 
+def create_s3_session(**kwargs) -> boto3.Session:
+    """create s3 session based on available credentials
+    :param kwargs: keyword arguments containing credentials
+    :returns: boto3 Session
+    """
+    return boto3.Session(**kwargs)
+
+
 class AwsAuth(Authentication):
     """AWS authentication plugin
 
@@ -82,14 +90,10 @@ class AwsAuth(Authentication):
         super(AwsAuth, self).__init__(provider, config)
         self.endpoint_url = getattr(self.config, "s3_endpoint", None)
         self.credentials = getattr(self.config, "credentials", {}) or {}
-        self.s3_session = self._create_s3_session()
-        self.s3_resource = self._create_s3_resource()
-        self.s3_client = self.create_s3_client()
-
-    def _create_s3_session(self) -> boto3.Session:
-        """create s3 session based on available credentials"""
         if "aws_profile" in self.credentials:
-            return boto3.Session(profile_name=self.credentials["aws_profile"])
+            self.s3_session = create_s3_session(
+                profile_name=self.credentials["aws_profile"]
+            )
         elif self.credentials:
             s3_session_kwargs: S3SessionKwargs = {
                 "aws_access_key_id": self.credentials["aws_access_key_id"],
@@ -99,9 +103,11 @@ class AwsAuth(Authentication):
                 s3_session_kwargs["aws_session_token"] = self.credentials[
                     "aws_session_token"
                 ]
-            return boto3.Session(**s3_session_kwargs)
+            self.s3_session = create_s3_session(**s3_session_kwargs)
         else:
-            return boto3.Session()
+            self.s3_session = create_s3_session()
+        self.s3_resource = self._create_s3_resource()
+        self.s3_client = self.create_s3_client()
 
     def _create_s3_resource(self) -> S3ServiceResource:
         """create s3 resource based on s3 session"""
