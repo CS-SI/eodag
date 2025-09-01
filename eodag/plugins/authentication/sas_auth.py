@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Optional
 
@@ -29,6 +30,8 @@ from eodag.utils import HTTP_REQ_TIMEOUT, USER_AGENT, deepcopy, format_dict_item
 from eodag.utils.exceptions import AuthenticationError, TimeOutError
 
 if TYPE_CHECKING:
+    from typing import Pattern
+
     from requests import PreparedRequest
 
 
@@ -44,15 +47,24 @@ class RequestsSASAuth(AuthBase):
         signed_url_key: str,
         headers: Optional[dict[str, str]] = None,
         ssl_verify: bool = True,
+        matching_url: Optional[Pattern[str]] = None,
     ) -> None:
         self.auth_uri = auth_uri
         self.signed_url_key = signed_url_key
         self.headers = headers
         self.signed_urls: dict[str, str] = {}
         self.ssl_verify = ssl_verify
+        self.matching_url = matching_url
 
     def __call__(self, request: PreparedRequest) -> PreparedRequest:
         """Perform the actual authentication"""
+        # if matching_url is set, check if request.url matches
+        if (
+            self.matching_url
+            and request.url
+            and not self.matching_url.match(request.url)
+        ):
+            return request
 
         # update headers
         if self.headers and isinstance(self.headers, dict):
@@ -118,6 +130,8 @@ class SASAuth(Authentication):
         # update headers with subscription key if exists
         apikey = getattr(self.config, "credentials", {}).get("apikey")
         ssl_verify = getattr(self.config, "ssl_verify", True)
+        if matching_url := getattr(self.config, "matching_url", None):
+            matching_url = re.compile(matching_url)
         if apikey:
             headers_update = format_dict_items(self.config.headers, apikey=apikey)
             headers.update(headers_update)
@@ -127,4 +141,5 @@ class SASAuth(Authentication):
             signed_url_key=self.config.signed_url_key,
             headers=headers,
             ssl_verify=ssl_verify,
+            matching_url=matching_url,
         )
