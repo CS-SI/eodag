@@ -59,21 +59,21 @@ class TestProductType(unittest.TestCase):
         # check that the internal id attribute is set to the original id
         self.assertEqual(product_type._id, "foo")
 
-    def test_product_type_disable_validation(self):
-        """Creation of product type with wrong attributes is allowed
-        when validation is disabled (behaviour by default)"""
+    def test_product_type_enable_validation(self):
+        """Product type validation is enabled by an environment variable.
+        It allows to log warnings on bad formatted attributes spotted during product type initialization"""
         try:
-            # ensure validation is disabled for product types
-            os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "False"
+            # ensure validation is enabled for product types
+            os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "True"
 
-            # try to create a product type with a wrong attribute
+            # try to create a product type with bad formatted attributes
             # and check that logs have been emitted
             with self.assertLogs(level="DEBUG") as cm:
                 product_type = ProductType(
                     dag=self.dag, id="foo", platform=0, bar="bat"
                 )
 
-            self.assertIn("Validation failed for the product type foo", str(cm.output))
+            self.assertIn("2 validation errors for product type foo", str(cm.output))
             self.assertIn("platform\\n  Input should be a valid string", str(cm.output))
             self.assertIn("bar\\n  Extra inputs are not permitted", str(cm.output))
 
@@ -88,24 +88,6 @@ class TestProductType(unittest.TestCase):
             # remove the environment variable
             os.environ.pop("EODAG_VALIDATE_PRODUCT_TYPES", None)
 
-    def test_product_type_enable_validation(self):
-        """Product type validation is enabled by an environment variable
-        to raise errors on wrong product type initialization"""
-        try:
-            # ensure validation is enabled for product types
-            os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "True"
-
-            # retry to create a product type with a wrong attribute
-            # and check that ValidationError has been raised
-            with self.assertRaises(ValidationError) as context:
-                ProductType(dag=self.dag, id="foo", platform=0)
-            self.assertIn(
-                "platform\n  Input should be a valid string", str(context.exception)
-            )
-        finally:
-            # remove the environment variable
-            os.environ.pop("EODAG_VALIDATE_PRODUCT_TYPES", None)
-
     def test_product_type_wrong_id(self):
         """Product type with a missing or wrong id must raise an error
         even if validation of product types is disabled"""
@@ -116,11 +98,13 @@ class TestProductType(unittest.TestCase):
             # try to create a product type with a missing id
             with self.assertRaises(ValidationError) as context:
                 ProductType(dag=self.dag)
+
             self.assertIn("id\n  Field required", str(context.exception))
 
             # try to create a product type with a wrong id
             with self.assertRaises(ValidationError) as context:
                 ProductType(dag=self.dag, id=1)
+
             self.assertIn(
                 "id\n  Input should be a valid string", str(context.exception)
             )
@@ -135,21 +119,25 @@ class TestProductType(unittest.TestCase):
             # ensure validation is activated for product types
             os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "True"
 
-            # try to create a product type with a wrong mission start datetime
-            with self.assertRaises(ValidationError) as context:
-                ProductType(dag=self.dag, id="foo", missionStartDate="not-a-datetime")
+            # try to create a product type with wrong mission start and end datetimes
+            # and check that logs have been emitted
+            with self.assertLogs(level="DEBUG") as cm:
+                ProductType(
+                    dag=self.dag,
+                    id="foo",
+                    missionStartDate="not-a-datetime",
+                    missionEndDate="not-a-datetime",
+                )
+
             self.assertIn(
-                "missionStartDate\n  Input should be a valid datetime string in RFC3339 format",
-                str(context.exception),
+                "missionStartDate\\n  Input should be a valid datetime string in RFC3339 format",
+                str(cm.output),
+            )
+            self.assertIn(
+                "missionEndDate\\n  Input should be a valid datetime string in RFC3339 format",
+                str(cm.output),
             )
 
-            # try to create a product type with a wrong mission end datetime
-            with self.assertRaises(ValidationError) as context:
-                ProductType(dag=self.dag, id="foo", missionEndDate="not-a-datetime")
-            self.assertIn(
-                "missionEndDate\n  Input should be a valid datetime string in RFC3339 format",
-                str(context.exception),
-            )
         finally:
             # remove the environment variable
             os.environ.pop("EODAG_VALIDATE_PRODUCT_TYPES", None)
@@ -238,4 +226,4 @@ class TestProductTypesList(unittest.TestCase):
     def test_search_result_repr_html(self):
         """ProductTypesList html repr must be correctly formatted"""
         sr_repr = html.fromstring(self.product_types_list._repr_html_())
-        self.assertIn("ProductTypesList", sr_repr.xpath("//thead/tr/td")[0].text)
+        self.assertIn("ProductTypesList", sr_repr.xpath("//details/summary")[0].text)
