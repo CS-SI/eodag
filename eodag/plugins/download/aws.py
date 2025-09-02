@@ -230,7 +230,7 @@ class AwsDownload(Download):
     def download(
         self,
         product: EOProduct,
-        auth: Optional[S3ServiceResource] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         progress_callback: Optional[ProgressCallback] = None,
         wait: float = DEFAULT_DOWNLOAD_WAIT,
         timeout: float = DEFAULT_DOWNLOAD_TIMEOUT,
@@ -623,7 +623,7 @@ class AwsDownload(Download):
     def _stream_download_dict(
         self,
         product: EOProduct,
-        auth: Optional[S3ServiceResource] = None,
+        auth: Optional[Union[AuthBase, S3SessionKwargs, S3ServiceResource]] = None,
         byte_range: tuple[Optional[int], Optional[int]] = (None, None),
         compress: Literal["zip", "raw", "auto"] = "auto",
         wait: float = DEFAULT_DOWNLOAD_WAIT,
@@ -713,7 +713,7 @@ class AwsDownload(Download):
             ignore_assets,
             product,
         )
-        if auth:
+        if auth and isinstance(auth, boto3.resources.base.ServiceResource):
             self.s3_resource = auth
         else:
             self.s3_resource = boto3.resource(
@@ -805,7 +805,7 @@ class AwsDownload(Download):
             rio_env_kwargs["endpoint_url"] = endpoint_url.split("://")[-1]
         rio_env_kwargs |= {}
 
-        s3_session = auth_plugin.s3_session(bucket_name, prefix)
+        s3_session = auth_plugin.s3_session
 
         if self.requester_pays:
             rio_env_kwargs["requester_pays"] = True
