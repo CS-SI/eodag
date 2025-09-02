@@ -29,17 +29,18 @@ from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.api.product_type import ProductType, ProductTypesList
+from eodag.api.product_type import ProductType, ProductTypesDict, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
+    SimpleYamlProxyConfig,
     credentials_in_auth,
     get_ext_product_types_conf,
     load_default_config,
@@ -48,7 +49,6 @@ from eodag.config import (
     override_config_from_env,
     override_config_from_file,
     override_config_from_mapping,
-    product_types_config_init,
     provider_config_init,
     share_credentials,
 )
@@ -119,8 +119,11 @@ class EODataAccessGateway:
         product_types_config_path = os.getenv("EODAG_PRODUCT_TYPES_CFG_FILE") or str(
             res_files("eodag") / "resources" / "product_types.yml"
         )
-        self.product_types_config = product_types_config_init(
-            product_types_config_path, self
+        product_types_config_dict = SimpleYamlProxyConfig(
+            product_types_config_path
+        ).source
+        self.product_types_config = self._product_types_config_init(
+            product_types_config_dict
         )
         self.providers_config = load_default_config()
 
@@ -185,8 +188,6 @@ class EODataAccessGateway:
             self._sync_provider_product_types(
                 provider, available_product_types, strict_mode
             )
-        # init product types configuration
-        self._product_types_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -229,10 +230,19 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
 
-    def _product_types_config_init(self) -> None:
-        """Initialize product types configuration."""
-        for pt_id, pd_dict in self.product_types_config.source.items():
-            self.product_types_config.source[pt_id].setdefault("_id", pt_id)
+    def _product_types_config_init(
+        self, product_types_config_dict: dict[str, Any]
+    ) -> ProductTypesDict:
+        """Initialize product types configuration.
+
+        :param product_types_config_dict: The product types config as a dictionary
+        """
+        # Turn the product types config from a dict into a ProductTypesDict() object
+        product_types = [
+            ProductType(dag=self, id=pt, **pt_f)
+            for pt, pt_f in product_types_config_dict.items()
+        ]
+        return ProductTypesDict(product_types)
 
     def _sync_provider_product_types(
         self,
@@ -893,12 +903,6 @@ class EODataAccessGateway:
                                 provider_products_config[
                                     new_product_type
                                 ] = new_product_type_conf
-                                self.product_types_config_md5 = obj_md5sum(
-                                    {
-                                        p: p_f.model_dump()
-                                        for p, p_f in self.product_types_config.items()
-                                    }
-                                )
                                 ext_product_types_conf[
                                     provider
                                 ] = new_product_types_conf
@@ -1088,11 +1092,10 @@ class EODataAccessGateway:
 
         guesses_with_score: list[tuple[str, int]] = []
 
-        for pt_id, pt_dict in self.product_types_config.source.items():
+        for pt, pt_f in self.product_types_config.items():
             if (
-                pt_id == GENERIC_PRODUCT_TYPE
-                or pt_id
-                not in self._plugins_manager.product_type_to_provider_config_map
+                pt == GENERIC_PRODUCT_TYPE
+                or pt not in self._plugins_manager.product_type_to_provider_config_map
             ):
                 continue
 
@@ -1100,7 +1103,7 @@ class EODataAccessGateway:
 
             # free text search
             if free_text:
-                match = free_text_evaluator(pt_dict)
+                match = free_text_evaluator(pt_f.model_dump())
                 if match:
                     score += 1
                 elif intersect:
@@ -1116,9 +1119,11 @@ class EODataAccessGateway:
                 }
 
                 filter_matches = [
-                    filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
+                    filters_evaluators[filter_name](
+                        {filter_name: pt_f.__dict__[filter_name]}
+                    )
                     for filter_name, value in filters.items()
-                    if filter_name in pt_dict
+                    if filter_name in pt_f.__dict__
                 ]
 
                 if filters_matching_method(filter_matches):
@@ -1139,28 +1144,27 @@ class EODataAccessGateway:
                     rfc3339_str_to_datetime(missionStartDate)
                     if missionStartDate
                     else min_aware,
-                    rfc3339_str_to_datetime(pt_dict["missionStartDate"])
-                    if pt_dict.get("missionStartDate")
+                    rfc3339_str_to_datetime(pt_f.missionStartDate)
+                    if pt_f.missionStartDate
                     else min_aware,
                 )
                 min_end = min(
                     rfc3339_str_to_datetime(missionEndDate)
                     if missionEndDate
                     else max_aware,
-                    rfc3339_str_to_datetime(pt_dict["missionEndDate"])
-                    if pt_dict.get("missionEndDate")
+                    rfc3339_str_to_datetime(pt_f.missionEndDate)
+                    if pt_f.missionEndDate
                     else max_aware,
                 )
                 if not (max_start <= min_end):
                     continue
 
-            pt_alias = pt_dict.get("alias", pt_id)
-            guesses_with_score.append((pt_alias, score))
+            guesses_with_score.append((pt_f.id, score))
 
         if guesses_with_score:
-            # sort by score descending, then pt_id for stability
+            # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt_id for pt_id, _ in guesses_with_score]
+            return [pt for pt, _ in guesses_with_score]
 
         raise NoMatchingProductType()
 
