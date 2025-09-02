@@ -23,7 +23,6 @@ import tempfile
 from importlib.resources import files as res_files
 from inspect import isclass
 from typing import (
-    TYPE_CHECKING,
     Annotated,
     Any,
     ItemsView,
@@ -39,13 +38,11 @@ from typing import (
 import orjson
 import requests
 import yaml
-import yaml.constructor
 import yaml.parser
 from annotated_types import Gt
 from jsonpath_ng import JSONPath
 
 from eodag.api.product.metadata_mapping import mtd_cfg_as_conversion_and_querypath
-from eodag.api.product_type import ProductType, ProductTypesDict
 from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     STAC_SEARCH_PLUGINS,
@@ -63,10 +60,6 @@ from eodag.utils import (
     uri_to_path,
 )
 from eodag.utils.exceptions import ValidationError
-
-if TYPE_CHECKING:
-    from eodag.api.core import EODataAccessGateway
-
 
 logger = logging.getLogger("eodag.config")
 
@@ -811,23 +804,6 @@ def share_credentials(
                             getattr(
                                 providers_config[provider], auth_topic_key
                             ).credentials = conf_with_creds.credentials
-
-
-def collections_config_init(
-    collections_config_path: str, dag: EODataAccessGateway
-) -> ProductTypesDict:
-    """Set product types config of a yaml file to a :class:`~eodag.api.product_type.ProductTypesDict` object
-    to manipulate directly :class:`~eodag.api.product_type.ProductType` objects.
-
-    :param collections_config_path: The path to the product types config file
-    """
-    # Turn the product types config from a dict into a ProductTypesDict() object
-    product_types_config_dict = SimpleYamlProxyConfig(collections_config_path).source
-    product_types = [
-        ProductType(dag=dag, id=pt, **pt_f)
-        for pt, pt_f in product_types_config_dict.items()
-    ]
-    return ProductTypesDict(product_types)
 
 
 def provider_config_init(

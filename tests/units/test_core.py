@@ -2735,7 +2735,6 @@ class TestCoreSearch(TestCoreBase):
             self.assertEqual(search_plugins[0].provider, "peps")
         finally:
             self.dag.set_preferred_provider(prev_fav_provider)
-            products["S2_MSI_L1C"].pop("alias")
 
         # restore the original product type instance in the config
         products.update(
