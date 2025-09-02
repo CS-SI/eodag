@@ -785,7 +785,7 @@ class HTTPDownload(Download):
         ):
             try:
                 assets_values = product.assets.get_values(kwargs.get("asset"))
-                assets_stream = self._stream_download_assets(
+                assets_stream_list = self._stream_download_assets(
                     product,
                     auth,
                     None,
@@ -794,25 +794,13 @@ class HTTPDownload(Download):
                 )
 
                 # single asset
-                if len(assets_values) == 1:
-                    # start reading chunks to set asset.headers
-                    first_asset_chunk = next(assets_stream)
-
-                    # update headers
-                    assets_values[0].headers[
-                        "content-disposition"
-                    ] = f"attachment; filename={assets_values[0].filename}"
+                if len(assets_stream_list) == 1:
+                    asset_stream = assets_stream_list[0]
                     if assets_values[0].get("type"):
-                        assets_values[0].headers["content-type"] = assets_values[0][
-                            "type"
-                        ]
+                        asset_stream.headers["content-type"] = assets_values[0]["type"]
+                    return asset_stream
 
-                    return StreamResponse(
-                        content=chain(iter([first_asset_chunk]), assets_stream),
-                        headers=assets_values[0].headers,
-                    )
-
-                # multiple assets to zip
+                # multiple assets in zip
                 else:
                     outputs_filename = (
                         sanitize(product.properties["title"])
@@ -820,23 +808,23 @@ class HTTPDownload(Download):
                         else sanitize(product.properties.get("id", "download"))
                     )
 
+                    zip_stream = ZipStream(sized=True)
+                    for asset_stream in assets_stream_list:
+                        zip_stream.add(
+                            asset_stream.content,
+                            arcname=asset_stream.filename,
+                            size=asset_stream.size,
+                        )
+
                     # do not use global size if one of the assets has no size
                     missing_length = any(not (asset.size) for asset in assets_values)
-                    zip_length_header = (
-                        {"Content-Length": str(len(assets_stream))}
-                        if not missing_length
-                        else {}
-                    )
+                    zip_length = len(zip_stream) if not missing_length else None
 
                     return StreamResponse(
-                        content=assets_stream,
+                        content=zip_stream,
                         media_type="application/zip",
-                        headers={
-                            **{
-                                "content-disposition": f"attachment; filename={outputs_filename}.zip"
-                            },
-                            **zip_length_header,
-                        },
+                        filename=f"{outputs_filename}.zip",
+                        size=zip_length,
                     )
             except NotAvailableError as e:
                 if kwargs.get("asset") is not None:
@@ -1071,7 +1059,7 @@ class HTTPDownload(Download):
         progress_callback: Optional[ProgressCallback] = None,
         assets_values: list[Asset] = [],
         **kwargs: Unpack[DownloadConf],
-    ) -> Iterator[bytes]:
+    ) -> list[StreamResponse]:
         """Stream download assets as a zip file."""
 
         if progress_callback is None:
@@ -1156,13 +1144,7 @@ class HTTPDownload(Download):
             except RequestException as e:
                 self._handle_asset_exception(e, asset)
 
-        # Handle single asset case
-        if len(assets_values) == 1:
-            asset = assets_values[0]
-            return get_chunks_generator(asset["href"])
-
-        # Handle multiple assets - create zip
-        zs = ZipStream(sized=True)
+        assets_stream_list = []
 
         # Process each asset
         for asset in assets_values:
@@ -1179,14 +1161,15 @@ class HTTPDownload(Download):
                 asset.filename = os.path.basename(asset.rel_path)
                 asset.rel_path = os.path.join(asset_rel_dir, asset.filename)
 
-            # Add the generator to the zip
-            zs.add(
-                get_chunks_generator(asset["href"]),
-                asset.rel_path,
-                size=asset.size or None,
+            assets_stream_list.append(
+                StreamResponse(
+                    content=get_chunks_generator(asset["href"]),
+                    filename=asset.rel_path,
+                    size=asset.size or None,
+                )
             )
 
-        return zs
+        return assets_stream_list
 
     def _download_assets(
         self,
@@ -1210,7 +1193,7 @@ class HTTPDownload(Download):
 
         assets_values = product.assets.get_values(kwargs.get("asset"))
 
-        chunks_tuples = self._stream_download_assets(
+        assets_stream_list = self._stream_download_assets(
             product, auth, progress_callback, assets_values=assets_values, **kwargs
         )
 
@@ -1236,17 +1219,9 @@ class HTTPDownload(Download):
                 local_assets_count += 1
                 continue
 
-        if len(assets_values) == 1 and local_assets_count == 0:
-            # start reading chunks to set asset.rel_path
-            first_chunks_tuple = next(chunks_tuples)
-            chunks = chain(iter([first_chunks_tuple]), chunks_tuples)
-            chunks_tuples = iter(
-                [(assets_values[0].rel_path, None, None, None, chunks)]
-            )
-
-        for chunk_tuple in chunks_tuples:
-            asset_path = chunk_tuple[0]
-            asset_chunks = chunk_tuple[4]
+        for asset_stream in assets_stream_list:
+            asset_path = cast(str, asset_stream.filename)
+            asset_chunks = asset_stream.content
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
@@ -1262,7 +1237,6 @@ class HTTPDownload(Download):
                     for chunk in asset_chunks:
                         if chunk:
                             fhandle.write(chunk)
-                            progress_callback(len(chunk))
                 logger.debug(
                     "Download completed. Renaming temporary file '%s' to '%s'",
                     os.path.basename(asset_abs_path_temp),

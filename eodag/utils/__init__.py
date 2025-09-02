@@ -43,7 +43,7 @@ import unicodedata
 import warnings
 from collections import defaultdict
 from copy import deepcopy as copy_deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime as dt
 from email.message import Message
 from glob import glob
@@ -1457,9 +1457,73 @@ class StreamResponse:
     """Represents a streaming response"""
 
     content: Iterable[bytes]
-    headers: Optional[Mapping[str, str]] = None
+    _filename: Optional[str] = field(default=None, repr=False, init=False)
+    _size: Optional[int] = field(default=None, repr=False, init=False)
+    headers: dict[str, str] = field(default_factory=dict)
     media_type: Optional[str] = None
     status_code: Optional[int] = None
+
+    def __init__(
+        self,
+        content: Iterable[bytes],
+        filename: Optional[str] = None,
+        size: Optional[int] = None,
+        headers: Optional[Mapping[str, str]] = None,
+        media_type: Optional[str] = None,
+        status_code: Optional[int] = None,
+    ):
+        self.content = content
+        self.headers = dict(headers) if headers else {}
+        self.media_type = media_type
+        self.status_code = status_code
+        # use property setters to update headers
+        self.filename = filename
+        self.size = size
+
+    # filename handling
+    @property
+    def filename(self) -> Optional[str]:
+        """Get the filename for the streaming response.
+
+        :returns: The filename, or None if not set
+        """
+        return self._filename
+
+    @filename.setter
+    def filename(self, value: Optional[str]) -> None:
+        """Set the filename and update the content-disposition header accordingly.
+
+        :param value: The filename to set, or None to clear it
+        """
+        self._filename = value
+        if value:
+            outputs_filename = os.path.basename(value)
+            self.headers[
+                "content-disposition"
+            ] = f'attachment; filename="{outputs_filename}"'
+        elif "content-disposition" in self.headers:
+            del self.headers["content-disposition"]
+
+    # size handling
+    @property
+    def size(self) -> Optional[int]:
+        """Get the content size for the streaming response.
+
+        :returns: The content size in bytes, or None if not set
+        """
+        return self._size
+
+    @size.setter
+    def size(self, value: Optional[int]) -> None:
+        """Set the content size and update the content-length header accordingly.
+
+        :param value: The content size in bytes, or None to clear it
+        """
+        self._size = value
+        if value is not None:
+            self.headers["content-length"] = str(value)
+        elif "content-length" in self.headers:
+            del self.headers["content-length"]
 
 
 def guess_file_type(file: str) -> Optional[str]:
