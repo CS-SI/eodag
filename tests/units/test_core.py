@@ -34,7 +34,7 @@ from shapely import wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
 
 from eodag import __version__ as eodag_version
-from eodag.api.collection import ProductType, ProductTypesList
+from eodag.api.product_type import ProductType, ProductTypesList
 from eodag.types.queryables import QueryablesDict
 from eodag.utils import GENERIC_COLLECTION, cached_yaml_load_all
 from eodag.utils.exceptions import ValidationError
@@ -937,14 +937,15 @@ class TestCore(TestCoreBase):
         self.assertNotIn("bar", self.dag.collections_config)
 
     def test_update_product_types_list_errors_handling(self):
-        """Core api.update_product_types_list must skip a product type if its id is not string and must raise
-        an error if an attribute (except id) of a product type is wrong while product type validation is enabled"""
+        """Core api.update_product_types_list must skip a product type with a log if its id is not a string and
+        must log a summary for a provider if an attribute (except id) of at least one of its product type has
+        bad formatted attributed even if product type validation is disabled"""
         provider = "earth_search"
         try:
-            # case where the validation is enabled and an argument of the product type (except id) is wrong
+            # ensure validation is disabled for product types
+            os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "False"
 
-            # ensure validation is enabled for product types
-            os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "True"
+            # case when an argument of the product type (except id) is wrong
 
             with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
                 ext_product_types_conf = json.load(f)
@@ -963,24 +964,23 @@ class TestCore(TestCoreBase):
                 {"foo": {"title": 100, "missionStartDate": "not-a-date"}}
             )
 
-            with self.assertRaises(ValidationError) as context:
+            # log a message to tell that bad attributes have been skipped on product types of the provider
+            with self.assertLogs(level="DEBUG") as cm:
                 self.dag.update_product_types_list(ext_product_types_conf)
+
             self.assertIn(
-                "title\n  Input should be a valid string", str(context.exception)
+                f"bad formatted attributes skipped for 1 collection(s) on {provider}",
+                str(cm.output),
             )
-            self.assertIn(
-                "missionStartDate\n  Input should be a valid datetime string in RFC3339 format",
-                str(context.exception),
-            )
+
+            # check that the product type has been added to the config
+            self.assertIn("foo", self.dag.providers_config["earth_search"].products)
 
             # remove the wrong product type from the external conf
             del ext_product_types_conf[provider]["providers_config"]["foo"]
             del ext_product_types_conf[provider]["product_types_config"]["foo"]
 
-            # case where the validation is disabled and id is not a string
-
-            # ensure validation is disbaled for product types
-            os.environ["EODAG_VALIDATE_PRODUCT_TYPES"] = "False"
+            # case when id is not a string case
 
             with open(os.path.join(TEST_RESOURCES_PATH, "ext_product_types.json")) as f:
                 ext_product_types_conf = json.load(f)
@@ -1003,9 +1003,10 @@ class TestCore(TestCoreBase):
                 }
             )
 
-            # only a log message should be displayed to explain that the product type has been skipped
+            # log a message to tell that the product type has been skipped
             with self.assertLogs(level="DEBUG") as cm:
                 self.dag.update_product_types_list(ext_product_types_conf)
+
             self.assertIn(
                 f"Product type 100 has been pruned on provider {provider} "
                 "because its id was incorrectly parsed for eodag",
@@ -1014,6 +1015,10 @@ class TestCore(TestCoreBase):
 
             # check that the product type has not been added to the config
             self.assertNotIn(100, self.dag.providers_config["earth_search"].products)
+
+            # remove the wrong product type from the external conf
+            del ext_product_types_conf[provider]["providers_config"][100]
+            del ext_product_types_conf[provider]["product_types_config"][100]
 
         finally:
             # remove the environment variable
