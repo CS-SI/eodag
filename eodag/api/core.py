@@ -31,17 +31,18 @@ from operator import attrgetter, itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
 
 import geojson
-import yaml.parser
+import yaml
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
     mtd_cfg_as_conversion_and_querypath,
 )
-from eodag.api.product_type import ProductType, ProductTypesList
+from eodag.api.product_type import ProductType, ProductTypesDict, ProductTypesList
 from eodag.api.search_result import SearchResult
 from eodag.config import (
     PLUGINS_TOPICS_KEYS,
     PluginConfig,
+    SimpleYamlProxyConfig,
     credentials_in_auth,
     get_ext_collections_conf,
     load_default_config,
@@ -50,7 +51,6 @@ from eodag.config import (
     override_config_from_env,
     override_config_from_file,
     override_config_from_mapping,
-    collections_config_init,
     provider_config_init,
     share_credentials,
 )
@@ -124,8 +124,11 @@ class EODataAccessGateway:
         collections_config_path = os.getenv("EODAG_COLLECTIONS_CFG_FILE") or str(
             res_files("eodag") / "resources" / "collections.yml"
         )
-        self.collections_config = collections_config_init(
-            collections_config_path, self
+        collections_config_dict = SimpleYamlProxyConfig(
+            collections_config_path
+        ).source
+        self.collections_config = self._collections_config_init(
+            collections_config_dict
         )
         self.providers_config = load_default_config()
 
@@ -190,8 +193,6 @@ class EODataAccessGateway:
             self._sync_provider_collections(
                 provider, available_collections, strict_mode
             )
-        # init collections configuration
-        self._collections_config_init()
 
         # re-build _plugins_manager using up-to-date providers_config
         self._plugins_manager.rebuild(self.providers_config)
@@ -234,10 +235,19 @@ class EODataAccessGateway:
                     )
         self.set_locations_conf(locations_conf_path)
 
-    def _collections_config_init(self) -> None:
-        """Initialize collections configuration."""
-        for pt_id, pd_dict in self.collections_config.source.items():
-            self.collections_config.source[pt_id].setdefault("_id", pt_id)
+    def _collections_config_init(
+        self, collections_config_dict: dict[str, Any]
+    ) -> ProductTypesDict:
+        """Initialize collections configuration.
+
+        :param collections_config_dict: The collections config as a dictionary
+        """
+        # Turn the collections config from a dict into a ProductTypesDict() object
+        collections = [
+            ProductType(dag=self, id=pt, **pt_f)
+            for pt, pt_f in collections_config_dict.items()
+        ]
+        return ProductTypesDict(collections)
 
     def _sync_provider_collections(
         self,
@@ -1083,10 +1093,10 @@ class EODataAccessGateway:
 
         guesses_with_score: list[tuple[str, int]] = []
 
-        for pt_id, pt_dict in self.collections_config.source.items():
+        for pt, pt_f in self.collections_config.items():
             if (
-                pt_id == GENERIC_COLLECTION
-                or pt_id not in self._plugins_manager.collection_to_provider_config_map
+                pt == GENERIC_COLLECTION
+                or pt not in self._plugins_manager.collections_to_provider_config_map
             ):
                 continue
 
@@ -1094,7 +1104,7 @@ class EODataAccessGateway:
 
             # free text search
             if free_text:
-                match = free_text_evaluator(pt_dict)
+                match = free_text_evaluator(pt_f.model_dump())
                 if match:
                     score += 1
                 elif intersect:
@@ -1110,9 +1120,11 @@ class EODataAccessGateway:
                 }
 
                 filter_matches = [
-                    filters_evaluators[filter_name]({filter_name: pt_dict[filter_name]})
+                    filters_evaluators[filter_name](
+                        {filter_name: pt_f.__dict__[filter_name]}
+                    )
                     for filter_name, value in filters.items()
-                    if filter_name in pt_dict
+                    if filter_name in pt_f.__dict__
                 ]
 
                 if filters_matching_method(filter_matches):
@@ -1129,7 +1141,7 @@ class EODataAccessGateway:
                 min_aware = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
                 max_aware = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
-                col_start, col_end = get_collection_dates(pt_dict)
+                col_start, col_end = get_collection_dates(pt_f.model_dump())
 
                 max_start = max(
                     rfc3339_str_to_datetime(start_date) if start_date else min_aware,
@@ -1142,13 +1154,12 @@ class EODataAccessGateway:
                 if not (max_start <= min_end):
                     continue
 
-            pt_alias = pt_dict.get("alias", pt_id)
-            guesses_with_score.append((pt_alias, score))
+            guesses_with_score.append((pt_f.id, score))
 
         if guesses_with_score:
-            # sort by score descending, then pt_id for stability
+            # sort by score descending, then pt for stability
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
-            return [pt_id for pt_id, _ in guesses_with_score]
+            return [pt for pt, _ in guesses_with_score]
 
         raise NoMatchingCollection()
 
