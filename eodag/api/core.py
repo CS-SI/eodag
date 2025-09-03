@@ -25,14 +25,11 @@ import shutil
 import tempfile
 from importlib.metadata import version
 from importlib.resources import files as res_files
-from json import JSONDecodeError
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
-from urllib.parse import parse_qs, urlparse
 
 import geojson
 import yaml.parser
-from pydantic import ValidationError as PydanticValidationError
 
 from eodag.api.product.metadata_mapping import (
     NOT_AVAILABLE,
@@ -54,7 +51,6 @@ from eodag.config import (
     provider_config_init,
     share_credentials,
 )
-from eodag.plugins.download.base import Download
 from eodag.plugins.manager import PluginManager
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.build_search_result import MeteoblueSearch
@@ -72,7 +68,6 @@ from eodag.utils import (
     HTTP_REQ_TIMEOUT,
     MockResponse,
     _deprecated,
-    format_pydantic_error,
     get_geometry_from_various,
     makedirs,
     sort_dict,
@@ -87,7 +82,6 @@ from eodag.utils.exceptions import (
     RequestError,
     UnsupportedProductType,
     UnsupportedProvider,
-    ValidationError,
 )
 from eodag.utils.free_text_search import compile_free_text_query
 from eodag.utils.rest import rfc3339_str_to_datetime
@@ -1891,7 +1885,7 @@ class EODataAccessGateway:
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
             if validate_request:
-                self.validate_search_request(search_plugin.provider, kwargs)
+                search_plugin.validate(search_plugin.provider, kwargs)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 
@@ -2444,51 +2438,3 @@ class EODataAccessGateway:
                 results.extend(search_result)
 
         return results
-
-    def validate_search_request(self, provider: str, filter: dict[str, Any]) -> None:
-        """Validate a search request.
-
-        :param provider: Provider to use for validation
-        :param filter: Arguments of the search request
-        :raises: :class:`~eodag.utils.exceptions.ValidationError`
-        """
-        logger.debug("Validate request")
-        try:
-            self.list_queryables(
-                provider=provider,
-                **filter,
-            ).get_model().model_validate(filter)
-        except PydanticValidationError as e:
-            raise ValidationError(format_pydantic_error(e)) from e
-
-    def validate_order_request(self, product: EOProduct) -> None:
-        """Validate a product order request.
-
-        :param product: The product to validate
-        :raises: :class:`~eodag.utils.exceptions.ValidationError`
-        """
-        download_plugin: Union[
-            Download, Api
-        ] = self._plugins_manager.get_download_plugin(product)
-        order_method: str = getattr(
-            download_plugin.config, "order_method", "GET"
-        ).upper()
-        order_kwargs: dict[str, Union[Any, list[str]]] = {}
-        if order_method == "POST":
-            # separate url & parameters
-            parts = urlparse(str(product.properties["orderLink"]))
-            query_dict = {}
-            # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
-            # the resulting `query_dict` would be erroneous.
-            try:
-                query_dict = geojson.loads(parts.query)
-            except JSONDecodeError:
-                if parts.query:
-                    query_dict = parse_qs(parts.query)
-            if query_dict:
-                order_kwargs = query_dict["inputs"]
-        else:
-            order_kwargs = {}
-        order_kwargs["productType"] = product.product_type
-
-        self.validate_search_request(product.provider, order_kwargs)

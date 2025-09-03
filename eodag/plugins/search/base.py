@@ -21,6 +21,7 @@ import logging
 from typing import TYPE_CHECKING, Annotated, get_args
 
 import orjson
+from pydantic import ValidationError as PydanticValidationError
 from pydantic.fields import Field, FieldInfo
 
 from eodag.api.product.metadata_mapping import (
@@ -39,6 +40,7 @@ from eodag.utils import (
     copy_deepcopy,
     deepcopy,
     format_dict_items,
+    format_pydantic_error,
     string_to_jsonpath,
     update_nested_dict,
 )
@@ -397,6 +399,22 @@ class Search(PluginTopic):
                 additional_information=additional_info,
                 **all_queryables,
             )
+
+    def validate(self, provider: str, filter: dict[str, Any]) -> None:
+        """Validate a search request.
+
+        :param provider: Provider to use for validation
+        :param filter: Arguments of the search request
+        :raises: :class:`~eodag.utils.exceptions.ValidationError`
+        """
+        logger.debug("Validate request")
+        try:
+            self.list_queryables(
+                provider=provider,
+                **filter,
+            ).get_model().model_validate(filter)
+        except PydanticValidationError as e:
+            raise ValidationError(format_pydantic_error(e)) from e
 
     def queryables_from_metadata_mapping(
         self, product_type: Optional[str] = None, alias: Optional[str] = None

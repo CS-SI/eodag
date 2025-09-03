@@ -21,11 +21,13 @@ import datetime
 import logging
 import os
 import re
+from json import JSONDecodeError
 from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import dateutil
+import geojson
 from cachetools.func import lru_cache
 from fastapi.responses import ORJSONResponse, StreamingResponse
 from pydantic import ValidationError as PydanticValidationError
@@ -42,9 +44,11 @@ from eodag.api.product.metadata_mapping import (
 )
 from eodag.api.search_result import SearchResult
 from eodag.config import load_stac_config
+from eodag.plugins.apis.base import Api
 from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
+from eodag.plugins.download.base import Download
 from eodag.rest.cache import cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
@@ -328,7 +332,7 @@ def _order_and_update(
         # first order
         logger.debug("Order product")
         if query_args.get("validate_request", True):
-            eodag_api.validate_order_request(product)
+            validate_order_request(product)
         order_status_dict = product.downloader._order(product=product, auth=auth)
         query_args.update(order_status_dict or {})
 
@@ -348,6 +352,37 @@ def _order_and_update(
 
     if product.properties.get("storageStatus") != ONLINE_STATUS:
         raise NotAvailableError("Product is not available yet")
+
+
+def validate_order_request(product: EOProduct) -> None:
+    """Validate a product order request.
+
+    :param product: The product to validate
+    :raises: :class:`~eodag.utils.exceptions.ValidationError`
+    """
+    download_plugin: Union[
+        Download, Api
+    ] = eodag_api._plugins_manager.get_download_plugin(product)
+    order_method: str = getattr(download_plugin.config, "order_method", "GET").upper()
+    order_kwargs: dict[str, Union[Any, list[str]]] = {}
+    if order_method == "POST":
+        # separate url & parameters
+        parts = urlparse(str(product.properties["orderLink"]))
+        query_dict = {}
+        # `parts.query` may be a JSON with query strings as one of values. If `parse_qs` is executed as first step,
+        # the resulting `query_dict` would be erroneous.
+        try:
+            query_dict = geojson.loads(parts.query)
+        except JSONDecodeError:
+            if parts.query:
+                query_dict = parse_qs(parts.query)
+        if query_dict:
+            order_kwargs = query_dict["inputs"]
+    else:
+        order_kwargs = {}
+    order_kwargs["productType"] = product.product_type
+
+    eodag_api.validate_search_request(product.provider, order_kwargs)
 
 
 @lru_cache(maxsize=1)
