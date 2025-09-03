@@ -344,20 +344,17 @@ def _build_stream_response(
     zip_response = (len(files_info) > 1 and compress == "auto") or compress == "zip"
 
     if zip_response:
-
-        def zip_generator():
-            zs = ZipStream()
-            # IMPORTANT: pass a live per-file generator that is correctly bound to its file
-            for index, chunks_generator in files_iterator:
-                file_info = files_info[index]
-                file_path = file_info.rel_path or file_info.key
-                zs.add(chunks_generator, file_path)
-            yield from zs
+        zs = ZipStream(sized=True)
+        for index, chunks_generator in files_iterator:
+            file_info = files_info[index]
+            file_path = file_info.rel_path or file_info.key
+            zs.add(chunks_generator, file_path, size=file_info.size)
 
         return _build_response(
-            content_gen=zip_generator(),
+            content_gen=zs,
             media_type="application/zip",
             filename=f"{zip_filename}.zip",
+            size=len(zs),
         )
     elif len(files_info) > 1:
         boundary = uuid.uuid4().hex
