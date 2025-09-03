@@ -156,6 +156,12 @@ Then use *email* as ``username`` and *key* as ``password`` from `here <https://a
 EODAG can be used to request for public datasets as for operational archive. Please note that for public datasets you
 might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets/data/tigge/licence/>`__)
 
+``esa_heritage_missions``
+^^^^^^^^^^^^^^^^^^^^^^^^
+Create an account `here <https://earth.esa.int/eogateway/missions/heritage-missions>`__.
+
+Then use *email* as ``username`` and *password* as ``password`` in eodag credentials.
+
 ``eumetsat_ds``
 ^^^^^^^^^^^^^^^
 Create an account `here <https://eoportal.eumetsat.int/userMgmt/register.faces>`__.
