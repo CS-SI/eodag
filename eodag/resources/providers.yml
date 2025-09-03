@@ -6502,3 +6502,34 @@
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
+---
+!provider # MARK: esa_heritage_missions
+  name: esa_heritage_missions
+  priority: 0
+  description: ESA Catalog provides interoperable access, following ISO/OGC interface guidelines, to Earth Observation metadata
+  roles:
+    - host
+  url: https://eocat.esa.int/eo-catalogue
+  search: !plugin
+    type: StacSearch
+    api_endpoint: 'https://eocat.esa.int/eo-catalogue/search'
+    ssl_verify: true
+    timeout: 90
+    discover_product_types:
+      fetch_url: 'https://eocat.esa.int/eo-catalogue/collections?limit=200'
+      result_type: json
+      results_entry: '$.collections[?(@.links[*].rel=="items" & @.id!="datasets" & @.id!="services")]'
+      single_collection_fetch_url: 'https://eocat.esa.int/eo-catalogue/collections/{productType}'
+      single_product_type_parsable_metadata:
+        platform: '{$.summaries.platform#csv_list}'
+    metadata_mapping:
+      assets: '$.null'
+      downloadLink: '$.assets.enclosure.href'
+      instrument: '{$.properties.instruments#csv_list}'
+  products:
+    GENERIC_PRODUCT_TYPE:
+      productType: '{productType}'
+  download: !plugin
+    type: HTTPDownload
+  auth: !plugin
+    type: GenericAuth

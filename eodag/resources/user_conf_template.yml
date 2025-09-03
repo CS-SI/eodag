@@ -142,6 +142,13 @@ ecmwf:
         credentials:
             username:
             password:
+esa_heritage_missions:
+    priority: # Lower value means lower priority (Default: 0)
+    api:
+        output_dir:
+        credentials:
+            username:
+            password:
 eumetsat_ds:
     priority: # Lower value means lower priority (Default: 0)
     search: # Search parameters configuration
