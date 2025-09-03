@@ -157,7 +157,7 @@ EODAG can be used to request for public datasets as for operational archive. Ple
 might need to accept a license (e.g. for `TIGGE <https://apps.ecmwf.int/datasets/data/tigge/licence/>`__)
 
 ``esa_heritage_missions``
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Create an account `here <https://earth.esa.int/eogateway/missions/heritage-missions>`__.
 
 Then use *email* as ``username`` and *password* as ``password`` in eodag credentials.
