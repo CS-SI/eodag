@@ -3,6 +3,30 @@ Release history
 ===============
 
 
+v3.8.1 (2025-09-02)
+===================
+
+Bug Fixes
+---------
+
+* **core**: Guess_product_type using alias (`#1800`_, `99e6ab8`_)
+
+* **plugins**: Filter using matching_url in SASAuth (`#1802`_, `c4e649c`_)
+
+* **providers**: Instrument format for STAC providers (`#1803`_, `e1a56fd`_)
+
+* **providers**: Ssl verify for fedeo_ceda (`#1801`_, `45b891a`_)
+
+.. _#1800: https://github.com/CS-SI/eodag/pull/1800
+.. _#1801: https://github.com/CS-SI/eodag/pull/1801
+.. _#1802: https://github.com/CS-SI/eodag/pull/1802
+.. _#1803: https://github.com/CS-SI/eodag/pull/1803
+.. _45b891a: https://github.com/CS-SI/eodag/commit/45b891a6a527e0143eb23cfa1a9576cd74a56758
+.. _99e6ab8: https://github.com/CS-SI/eodag/commit/99e6ab8fda3847bd8478bc8cc40688923ed13b49
+.. _c4e649c: https://github.com/CS-SI/eodag/commit/c4e649cdadda539be517797d2668638c19b486c8
+.. _e1a56fd: https://github.com/CS-SI/eodag/commit/e1a56fd0670d0aa4ee27cd5cc8a67b5fbea20be9
+
+
 v3.8.0 (2025-08-27)
 ===================
 
