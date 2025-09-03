@@ -1904,12 +1904,12 @@ class TestCore(TestCoreBase):
         self.assertEqual("ipsum", args[2].get("lorem"))
         mock_validate_search_request.reset_mock()
 
-        self.dag.search(validate_request=True, **filter)
+        self.dag.search(validate=True, **filter)
         mock_validate_search_request.assert_called_once()
         mock_validate_search_request.reset_mock()
 
         # Don't validate request
-        self.dag.search(validate_request=False, **filter)
+        self.dag.search(validate=False, **filter)
         mock_validate_search_request.assert_not_called()
         mock_validate_search_request.reset_mock()
 
@@ -1938,10 +1938,10 @@ class TestCore(TestCoreBase):
             self.dag.search(raise_errors=True, **filter)
 
         with self.assertRaises(ValidationError):
-            self.dag.search(validate_request=True, raise_errors=True, **filter)
+            self.dag.search(validate=True, raise_errors=True, **filter)
 
         # No validation, no exception
-        self.dag.search(validate_request=False, raise_errors=True, **filter)
+        self.dag.search(validate=False, raise_errors=True, **filter)
 
 
 class TestCoreConfWithEnvVar(TestCoreBase):

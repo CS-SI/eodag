@@ -117,7 +117,7 @@ class SearchPostRequest(BaseModel):
     )
     sortby: Optional[list[SortBy]] = None
     crunch: Optional[str] = None
-    validate_request: Optional[bool] = None
+    validate: Optional[bool] = None
 
     @field_serializer("intersects")
     def serialize_intersects(

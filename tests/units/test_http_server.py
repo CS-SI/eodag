@@ -491,7 +491,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self._request_valid(
@@ -503,7 +503,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
 
@@ -629,7 +629,7 @@ class RequestTestCase(unittest.TestCase):
                 items_per_page=DEFAULT_ITEMS_PER_PAGE,
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self.assertEqual(len(result1.features), 2)
@@ -642,7 +642,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(89.65, 2.65, 89.7, 2.7, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         # only one product is returned with filter=latestIntersect
@@ -661,7 +661,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self._request_valid(
@@ -674,7 +674,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self._request_valid(
@@ -687,7 +687,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self._request_valid(
@@ -701,7 +701,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
 
@@ -716,7 +716,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self._request_valid(
@@ -730,13 +730,13 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
 
     def test_validate_search_from_items(self):
         """Validate search through eodag server collection/items endpoint
-        if validate_request=true is given"""
+        if validate=true is given"""
         # Validation by default
         self._request_valid(
             f"collections/{self.tested_product_type}/items?bbox=0,43,1,44",
@@ -747,11 +747,11 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
         self._request_valid(
-            f"collections/{self.tested_product_type}/items?validate_request=False&bbox=0,43,1,44",
+            f"collections/{self.tested_product_type}/items?validate=False&bbox=0,43,1,44",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
@@ -759,11 +759,11 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=False,
+                validate=False,
             ),
         )
         self._request_valid(
-            f"collections/{self.tested_product_type}/items?validate_request=True&bbox=0,43,1,44",
+            f"collections/{self.tested_product_type}/items?validate=True&bbox=0,43,1,44",
             expected_search_kwargs=dict(
                 productType=self.tested_product_type,
                 page=1,
@@ -771,7 +771,7 @@ class RequestTestCase(unittest.TestCase):
                 geom=box(0, 43, 1, 44, ccw=False),
                 raise_errors=False,
                 count=True,
-                validate_request=True,
+                validate=True,
             ),
         )
 
@@ -1123,22 +1123,22 @@ class RequestTestCase(unittest.TestCase):
         self.app.get(
             f"search?collections={self.tested_product_type}", follow_redirects=True
         )
-        self.assertTrue(mock_search.call_args[1]["validate_request"])
+        self.assertTrue(mock_search.call_args[1]["validate"])
         mock_search.reset_mock()
 
         self.app.get(
-            f"search?validate_request=false&collections={self.tested_product_type}",
+            f"search?validate=false&collections={self.tested_product_type}",
             follow_redirects=True,
         )
-        self.assertFalse(mock_search.call_args[1]["validate_request"])
+        self.assertFalse(mock_search.call_args[1]["validate"])
         mock_search.reset_mock()
 
         # Validate request
         self.app.get(
-            f"search?validate_request=true&collections={self.tested_product_type}",
+            f"search?validate=true&collections={self.tested_product_type}",
             follow_redirects=True,
         )
-        self.assertTrue(mock_search.call_args[1]["validate_request"])
+        self.assertTrue(mock_search.call_args[1]["validate"])
 
     def test_assets_alt_url_blacklist(self):
         """Search through eodag server must not have alternate link if in blacklist"""
@@ -1358,7 +1358,7 @@ class RequestTestCase(unittest.TestCase):
         self.app.request(
             "GET",
             "collections/foo/items/FOO_ORDERABLE_13245/download"
-            + f"?validate_request=true&provider=cop_cds&_dc_qs={quote_plus(qs)}",
+            + f"?validate=true&provider=cop_cds&_dc_qs={quote_plus(qs)}",
             json=None,
             follow_redirects=True,
             headers={},
@@ -1386,7 +1386,7 @@ class RequestTestCase(unittest.TestCase):
         self.app.request(
             "GET",
             "collections/foo/items/FOO_ORDERABLE_13245/download"
-            + f"?validate_request=false&provider=cop_cds&_dc_qs={quote_plus(qs)}",
+            + f"?validate=false&provider=cop_cds&_dc_qs={quote_plus(qs)}",
             json=None,
             follow_redirects=True,
             headers={},
