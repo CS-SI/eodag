@@ -1220,7 +1220,7 @@ class TestCore(TestCoreBase):
             os.environ.pop("EODAG__PEPS__SEARCH__NEED_AUTH", None)
             os.environ.pop("EODAG__PEPS__AUTH__CREDENTIALS__USERNAME", None)
 
-    @mock.patch("eodag.plugins.manager.importlib_metadata.entry_points", autospec=True)
+    @mock.patch("eodag.plugins.manager.importlib.metadata.entry_points", autospec=True)
     def test_prune_providers_list_skipped_plugin(self, mock_iter_ep):
         """Providers needing skipped plugin must be pruned on init"""
         empty_conf_file = str(
