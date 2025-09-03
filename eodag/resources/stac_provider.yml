@@ -83,7 +83,7 @@ search:
     instrument:
     # to test
       - '{{"query":{{"instruments":{{"eq":"{instrument}"}}}}}}'
-      - '$.properties.instruments'
+      - '{$.properties.instruments#csv_list}'
     # INSPIRE obligated OpenSearch Parameters for Collection Search (Table 4)
     title: '$.id'
     abstract: '$.properties.description'
