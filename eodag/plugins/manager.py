@@ -22,7 +22,7 @@ import re
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
 
-import importlib_metadata
+import importlib.metadata
 
 from eodag.config import (
     AUTH_TOPIC_KEYS,
@@ -90,7 +90,7 @@ class PluginManager:
             # have it discovered as long as they declare an entry point of the type
             # 'eodag.plugins.search' for example in its setup script. See the setup
             # script of eodag for an example of how to do this.
-            for entry_point in importlib_metadata.entry_points(
+            for entry_point in importlib.metadata.entry_points(
                 group="eodag.plugins.{}".format(topic)
             ):
                 try:

@@ -24,7 +24,7 @@ import sys
 import unittest
 from typing import Any, Iterator
 
-import importlib_metadata
+import importlib.metadata
 from packaging.requirements import Requirement
 from stdlib_list import stdlib_list
 
@@ -136,7 +136,7 @@ class TestRequirements(unittest.TestCase):
         project_imports = get_project_imports(project_path)
         setup_requires = get_setup_requires(setup_cfg_path)
         setup_requires.update(get_optional_dependencies(setup_cfg_path, "all"))
-        import_required_dict = importlib_metadata.packages_distributions()
+        import_required_dict = importlib.metadata.packages_distributions()
         try:
             default_libs = stdlib_list()
         except FileNotFoundError:
