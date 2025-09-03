@@ -194,75 +194,88 @@ def _chunks_from_s3_objects(
     executor: ThreadPoolExecutor,
 ) -> Iterator[tuple[int, Iterator[bytes]]]:
     """Download chunks from S3 objects in parallel, respecting byte ranges and file order."""
+    # Prepare ranges and futures per file
     for f_info in files_info:
         ranges = _compute_file_ranges(f_info, byte_range, range_size)
 
         if not ranges:
-            logger.debug("Skipping %s: no ranges to fetch", f_info.key)
+            # Mark as inactive (no futures)
+            f_info.futures = {}
+            f_info.buffers = {}
+            f_info.next_yield = 0
             continue
 
         f_info.buffers = {}
         f_info.next_yield = 0
 
         futures = {}
-        for start, length in ranges:
+        # start,end are absolute offsets in the S3 object (data_start_offset already applied)
+        for start, end in ranges:
             future = executor.submit(
                 fetch_range,
                 f_info.bucket_name,
                 f_info.key,
                 start,
-                length,
+                end,
                 s3_client,
             )
-            futures[future] = start
+            # Track both start and end so we can compute the yielded length precisely
+            futures[future] = (start, end)
 
         f_info.futures = futures
 
+    # Keep only files that actually have something to download
+    active_indices = [i for i, fi in enumerate(files_info) if fi.futures]
+
     # Combine all futures to wait on globally
     all_futures = {
-        fut: (f_info, start)
-        for f_info in files_info
-        for fut, start in f_info.futures.items()
+        fut: (f_info, start, end)
+        for f_info in (files_info[i] for i in active_indices)
+        for fut, (start, end) in f_info.futures.items()
     }
 
-    current_file_index = 0
+    def make_chunks_generator(target_info: S3FileInfo) -> Iterator[bytes]:
+        """Create a generator bound to a specific file info (no late-binding bug)."""
+        info = target_info  # bind
+        nonlocal all_futures
+        while info.next_yield < info.size:
+            # First, try to flush anything already buffered for this file
+            next_start = info.next_yield
+            flushed = False
+            while next_start in info.buffers:
+                chunk = info.buffers.pop(next_start)
+                if not isinstance(chunk, bytes):
+                    raise InvalidDataError(
+                        f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
+                    )
+                yield chunk
+                next_start += len(chunk)
+                info.next_yield = next_start
+                flushed = True
 
-    # Yield chunks per file (one at a time)
-    while current_file_index < len(files_info):
-        current_info = files_info[current_file_index]
+            if info.next_yield >= info.size:
+                break
 
-        def chunks_generator() -> Iterator[bytes]:
-            """yield chunks of data for the current file."""
-            nonlocal current_file_index, all_futures
-            while current_info.next_yield < current_info.size:
-                # Wait for any futures to complete
-                done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+            # If we flushed something, loop back to try again before waiting
+            if flushed:
+                continue
 
-                for fut in done:
-                    f_info, start = all_futures.pop(fut)
-                    data = fut.result()
-                    f_info.buffers[start] = data
+            # Nothing to flush for this file: wait for more futures to complete globally
+            if not all_futures:
+                # No more incoming data anywhere; stop to avoid waiting on an empty set
+                break
 
-                # Yield chunks as they are available
-                next_start = current_info.next_yield
-                while next_start in current_info.buffers:
-                    chunk = current_info.buffers.pop(next_start)
-                    if not isinstance(chunk, bytes):
-                        raise InvalidDataError(
-                            f"Expected bytes, got {type(chunk).__name__} in stream chunks: {chunk}"
-                        )
-                    yield chunk
+            done, _ = wait(all_futures.keys(), return_when=FIRST_COMPLETED)
+            for fut in done:
+                f_info, start, end = all_futures.pop(fut)
+                data = fut.result()
+                # Store buffer with a key relative to the start of the file data
+                rel_start = start - f_info.data_start_offset
+                f_info.buffers[rel_start] = data
 
-                    next_start += range_size
-                    current_info.next_yield = next_start
-
-                # If done with this file, stop yielding chunks for this file
-                if current_info.next_yield >= current_info.size:
-                    break
-
-        yield current_file_index, chunks_generator()
-
-        current_file_index += 1
+    # Yield per-file generators with their original indices
+    for idx in active_indices:
+        yield idx, make_chunks_generator(files_info[idx])
 
 
 def _build_stream_response(
@@ -297,8 +310,8 @@ def _build_stream_response(
         - "raw": Stream files directly, as a single file or multipart.
         - "auto": ZIP if multiple files, raw if single file.
     :param executor: Executor used for concurrent streaming and cleanup.
-    :param s3_client: S3 client for making requests when creating fresh iterators.
-    :param range_size: Size of download chunks when creating fresh iterators.
+    :param s3_client: S3 client (kept for signature compatibility).
+    :param range_size: Size of download chunks (kept for signature compatibility).
     :return: Streaming HTTP response with appropriate content, headers, and media type.
     """
     headers = {
@@ -334,38 +347,11 @@ def _build_stream_response(
 
         def zip_generator():
             zs = ZipStream()
-
-            # We need to create fresh iterators for each file when zipstream needs them
-            for file_index, file_info in enumerate(files_info):
+            # IMPORTANT: pass a live per-file generator that is correctly bound to its file
+            for index, chunks_generator in files_iterator:
+                file_info = files_info[index]
                 file_path = file_info.rel_path or file_info.key
-
-                # Create a generator function that will be called by zipstream when it needs data
-                def create_file_data_generator(f_index):
-                    def file_data_generator():
-                        # Create a fresh iterator for just this file
-                        fresh_executor = ThreadPoolExecutor(max_workers=8)
-                        try:
-                            single_file_iterator = _chunks_from_s3_objects(
-                                s3_client,
-                                [files_info[f_index]],
-                                (None, None),
-                                range_size,
-                                fresh_executor,
-                            )
-
-                            # Get the chunks for this single file
-                            for idx, chunks_gen in single_file_iterator:
-                                yield from chunks_gen
-                                break  # Only one file in this iterator
-                        finally:
-                            fresh_executor.shutdown(wait=True)
-
-                    return file_data_generator()
-
-                # Add to zipstream with the fresh generator
-                zs.add(create_file_data_generator(file_index), file_path)
-
-            # Yield from the zip stream
+                zs.add(chunks_generator, file_path)
             yield from zs
 
         return _build_response(
@@ -373,7 +359,6 @@ def _build_stream_response(
             media_type="application/zip",
             filename=f"{zip_filename}.zip",
         )
-
     elif len(files_info) > 1:
         boundary = uuid.uuid4().hex
 
@@ -397,7 +382,6 @@ def _build_stream_response(
             content_gen=multipart_stream(),
             media_type=f"multipart/mixed; boundary={boundary}",
         )
-
     else:
         index, chunks_generator = next(files_iterator)
         first_chunk = next(chunks_generator)
