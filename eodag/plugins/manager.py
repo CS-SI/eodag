@@ -17,12 +17,11 @@
 # limitations under the License.
 from __future__ import annotations
 
+import importlib.metadata
 import logging
 import re
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any, Iterator, Optional, Union, cast
-
-import importlib.metadata
 
 from eodag.config import (
     AUTH_TOPIC_KEYS,

@@ -18,13 +18,13 @@
 
 import ast
 import configparser
+import importlib.metadata
 import os
 import re
 import sys
 import unittest
 from typing import Any, Iterator
 
-import importlib.metadata
 from packaging.requirements import Requirement
 from stdlib_list import stdlib_list
 
