@@ -22,7 +22,6 @@ import logging
 import os
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 from zipfile import ZIP_STORED, ZipFile
@@ -31,7 +30,7 @@ import boto3
 import botocore
 import botocore.exceptions
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from stream_zip import ZIP_AUTO, stream_zip
+from zipstream import ZipStream
 
 from eodag.plugins.authentication.aws_auth import AwsAuth
 from eodag.utils import (
@@ -43,7 +42,6 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
-    DownloadError,
     InvalidDataError,
     MisconfiguredError,
     NotAvailableError,
@@ -54,7 +52,6 @@ if TYPE_CHECKING:
     from zipfile import ZipInfo
 
     from mypy_boto3_s3.client import S3Client
-    from stream_zip import Method
 
     from eodag.api.product import EOProduct  # type: ignore
 
@@ -274,6 +271,8 @@ def _build_stream_response(
     files_iterator: Iterator[tuple[int, Iterator[bytes]]],
     compress: Literal["zip", "raw", "auto"],
     executor: ThreadPoolExecutor,
+    s3_client: S3Client,
+    range_size: int,
 ) -> StreamResponse:
     """
     Build a streaming HTTP response for one or multiple files from S3, supporting ZIP, raw, and multipart formats.
@@ -298,6 +297,8 @@ def _build_stream_response(
         - "raw": Stream files directly, as a single file or multipart.
         - "auto": ZIP if multiple files, raw if single file.
     :param executor: Executor used for concurrent streaming and cleanup.
+    :param s3_client: S3 client for making requests when creating fresh iterators.
+    :param range_size: Size of download chunks when creating fresh iterators.
     :return: Streaming HTTP response with appropriate content, headers, and media type.
     """
     headers = {
@@ -326,24 +327,45 @@ def _build_stream_response(
     zip_response = (len(files_info) > 1 and compress == "auto") or compress == "zip"
 
     if zip_response:
-        modified_at = datetime.now()
-        perms = 0o600
-        total_file_size = sum(f.size for f in files_info)
 
-        def zip_stream() -> Iterator[
-            tuple[str, datetime, int, Method, Iterable[bytes]]
-        ]:
-            for index, chunks_generator in files_iterator:
-                yield (
-                    files_info[index].rel_path or files_info[index].key,
-                    modified_at,
-                    perms,
-                    ZIP_AUTO(total_file_size, level=0),
-                    chunks_generator,
-                )
+        def zip_generator():
+            zs = ZipStream()
+
+            # We need to create fresh iterators for each file when zipstream needs them
+            for file_index, file_info in enumerate(files_info):
+                file_path = file_info.rel_path or file_info.key
+
+                # Create a generator function that will be called by zipstream when it needs data
+                def create_file_data_generator(f_index):
+                    def file_data_generator():
+                        # Create a fresh iterator for just this file
+                        fresh_executor = ThreadPoolExecutor(max_workers=8)
+                        try:
+                            single_file_iterator = _chunks_from_s3_objects(
+                                s3_client,
+                                [files_info[f_index]],
+                                (None, None),
+                                range_size,
+                                fresh_executor,
+                            )
+
+                            # Get the chunks for this single file
+                            for idx, chunks_gen in single_file_iterator:
+                                yield from chunks_gen
+                                break  # Only one file in this iterator
+                        finally:
+                            fresh_executor.shutdown(wait=True)
+
+                    return file_data_generator()
+
+                # Add to zipstream with the fresh generator
+                zs.add(create_file_data_generator(file_index), file_path)
+
+            # Yield from the zip stream
+            yield from zs
 
         return _build_response(
-            content_gen=stream_zip(zip_stream()),
+            content_gen=zip_generator(),
             media_type="application/zip",
             extra_headers={
                 "content-disposition": f'attachment; filename="{zip_filename}.zip"'
@@ -400,78 +422,96 @@ def stream_download_from_s3(
     max_workers: int = 8,
 ) -> StreamResponse:
     """
-    Stream data from one or more S3 objects in chunks, with support for global byte ranges
-    and partial file extraction from ZIP archives.
+    Stream data from one or more S3 objects in chunks, with support for global byte ranges.
 
-    This function downloads product data from S3 using concurrent range requests across one or
-    multiple files. It divides the requested data into chunks (default: 8 MiB) and issues
-    parallel HTTP range requests to optimize download throughput. This is particularly useful
-    for large files or datasets stored across multiple S3 objects.
+    This function provides efficient streaming download of S3 objects with support for:
+    - Single file streaming with direct MIME type detection
+    - Multiple file streaming as ZIP archives
+    - Byte range requests for partial content
+    - Files within ZIP archives (using .zip! notation)
+    - Concurrent chunk downloading for improved performance
+    - Memory-efficient streaming without loading entire files
 
-    If the S3 key refers to a path inside a ``.zip`` file (denoted by ``.zip!<internal_path>``),
-    the function extracts the specified file from the archive only if it is stored uncompressed
-    (ZIP method = STORE). Compressed formats (like DEFLATE) are not supported for partial ZIP extraction.
+    The response format depends on the compress parameter and number of files:
+    - Single file + compress="raw" or "auto": streams file directly with detected MIME type
+    - Multiple files + compress="zip" or "auto": creates ZIP archive containing all files
+    - compress="zip": always creates ZIP archive regardless of file count
 
-    The function supports global byte range filtering via the ``byte_range`` parameter, which allows
-    requesting only a specific portion of the logical file stream across all provided objects.
+    For files stored within ZIP archives, use the .zip! notation in the S3FileInfo.key:
+    "path/to/archive.zip!internal/file.txt"
 
-    Downloads are performed concurrently using a thread pool and HTTP range requests. Each chunk is downloaded
-    as a separate HTTP request and yielded in file order.
+    :param s3_client: Boto3 S3 client instance for making requests
+    :param files_info: List of S3FileInfo objects describing files to download.
+                      Each object must contain at minimum: bucket_name, key, and size.
+                      Optional fields include: data_type, rel_path, zip_filepath.
+    :param byte_range: Global byte range to download as (start, end) tuple.
+                      None values indicate open-ended ranges.
+                      Applied across the logical concatenation of all files.
+    :param compress: Output format control:
+                    - "zip": Always create ZIP archive
+                    - "raw": Stream files directly (single) or as multipart (multiple)
+                    - "auto": ZIP for multiple files, raw for single file
+    :param zip_filename: Base filename for ZIP archives (without .zip extension).
+                        Only used when creating ZIP archives.
+    :param range_size: Size of each download chunk in bytes. Larger chunks reduce
+                      request overhead but use more memory. Default: 8MB.
+    :param max_workers: Maximum number of concurrent download threads.
+                       Higher values improve throughput for multiple ranges.
+    :return: StreamResponse object containing:
+            - content: Iterator of bytes for the streaming response
+            - media_type: MIME type ("application/zip" for archives, detected type for single files)
+            - headers: HTTP headers including Content-Disposition for downloads
+    :raises InvalidDataError: If ZIP file structures are malformed
+    :raises NotAvailableError: If S3 objects cannot be accessed
+    :raises AuthenticationError: If S3 credentials are invalid
+    :raises NotImplementedError: If compressed files within ZIP archives are encountered
 
-    The ``compress`` parameter determines the output format:
+    Example:
+        >>> files = [S3FileInfo(bucket_name="bucket", key="file.txt", size=1024)]
+        >>> response = stream_download_from_s3(s3_client, files)
+        >>> for chunk in response.content:
+        ...     # Process streaming data
+        ...     pass
 
-    - ``zip``: Always produce a ZIP archive containing all files.
-    - ``raw``: Stream files directly without wrapping, either as a single file or multipart response.
-    - ``auto``: Automatically select the format:
-        - raw stream if only a single file is requested
-        - ZIP archive if multiple files are requested
-
-    :param s3_client: A configured S3 client capable of making range requests.
-    :param files_info: List of S3FileInfo objects representing the files to download.
-    :param byte_range: Tuple (start, end) defining the inclusive global byte range to download across all objects.
-        Either value can be None to indicate open-ended range.
-    :param compress: Determines the output format of the streamed response.
-    :param zip_filename: The base filename to use when producing a ZIP archive (without extension).
-    :param range_size: The size in bytes of each download chunk. Defaults to 8 MiB.
-    :param max_workers: The maximum number of concurrent download tasks. Controls the size of the thread pool.
-    :return: Streaming HTTP response with content according to the requested format.
-    :raises DownloadError: If any error occurs during streaming from S3, including missing files or
-        unsupported ZIP compression.
+    Example with ZIP archive file:
+        >>> files = [S3FileInfo(
+        ...     bucket_name="bucket",
+        ...     key="archive.zip!internal.txt",
+        ...     size=512
+        ... )]
+        >>> response = stream_download_from_s3(s3_client, files)
     """
-    offset = 0
 
     executor = ThreadPoolExecutor(max_workers=max_workers)
-    try:
-        for f_info in files_info:
-            # Check if file is inside a ZIP
-            if ".zip!" in f_info.key:
-                future = executor.submit(_prepare_file_in_zip, f_info, s3_client)
-                f_info.futures[future] = 0
 
-        for f_info in files_info:
-            for future in f_info.futures:
-                future.result()
-            f_info.file_start_offset = offset
-            offset += f_info.size
+    # Prepare all files
+    offset = 0
+    for f_info in files_info:
+        if ".zip!" in f_info.key:
+            _prepare_file_in_zip(f_info, s3_client)
 
-            if not f_info.data_type or f_info.data_type == MIME_OCTET_STREAM:
-                guessed = guess_file_type(f_info.key)
-                f_info.data_type = guessed or MIME_OCTET_STREAM
+        f_info.file_start_offset = offset
+        offset += f_info.size
 
-        chunks_tuple = _chunks_from_s3_objects(
-            s3_client,
-            files_info,
-            byte_range,
-            range_size,
-            executor,
-        )
+        if not f_info.data_type or f_info.data_type == MIME_OCTET_STREAM:
+            guessed = guess_file_type(f_info.key)
+            f_info.data_type = guessed or MIME_OCTET_STREAM
 
-        return _build_stream_response(
-            zip_filename, files_info, chunks_tuple, compress, executor
-        )
-    except Exception as e:
-        executor.shutdown(wait=True)
-        raise DownloadError(str(e)) from e
+    # Create the files iterator using the original approach
+    files_iterator = _chunks_from_s3_objects(
+        s3_client, files_info, byte_range, range_size, executor
+    )
+
+    # Use the existing _build_stream_response function with the additional parameters
+    return _build_stream_response(
+        zip_filename=zip_filename,
+        files_info=files_info,
+        files_iterator=files_iterator,
+        compress=compress,
+        executor=executor,
+        s3_client=s3_client,  # Pass s3_client
+        range_size=range_size,  # Pass range_size
+    )
 
 
 def update_assets_from_s3(
