@@ -317,11 +317,15 @@ def _build_stream_response(
         content_gen: Iterable[bytes],
         media_type: str,
         extra_headers: dict[str, str] = {},
+        filename: Optional[str] = None,
+        size: Optional[int] = None,
     ) -> StreamResponse:
         return StreamResponse(
             content=_wrap_generator_with_cleanup(content_gen, executor),
             media_type=media_type,
             headers={**headers, **extra_headers},
+            filename=filename,
+            size=size,
         )
 
     zip_response = (len(files_info) > 1 and compress == "auto") or compress == "zip"
@@ -367,9 +371,7 @@ def _build_stream_response(
         return _build_response(
             content_gen=zip_generator(),
             media_type="application/zip",
-            extra_headers={
-                "content-disposition": f'attachment; filename="{zip_filename}.zip"'
-            },
+            filename=f"{zip_filename}.zip",
         )
 
     elif len(files_info) > 1:
@@ -408,7 +410,7 @@ def _build_stream_response(
         return _build_response(
             content_gen=single_file_stream(),
             media_type=files_info[index].data_type,
-            extra_headers={"content-disposition": f'attachment; filename="{filename}"'},
+            filename=filename,
         )
 
 
