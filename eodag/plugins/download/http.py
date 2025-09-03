@@ -845,6 +845,8 @@ class HTTPDownload(Download):
         return StreamResponse(
             content=chain(iter([first_chunk]), chunk_iterator),
             headers=product.headers,
+            filename=getattr(product, "filename", None),
+            size=getattr(product, "size", None),
         )
 
     def _check_auth_exception(self, e: Optional[RequestException]) -> None:
@@ -1039,7 +1041,6 @@ class HTTPDownload(Download):
 
             product.headers = self.stream.headers
             filename = self._check_product_filename(product)
-            product.headers["content-disposition"] = f"attachment; filename={filename}"
             content_type = product.headers.get("Content-Type")
             guessed_content_type = (
                 guess_file_type(filename) if filename and not content_type else None
@@ -1048,6 +1049,7 @@ class HTTPDownload(Download):
                 product.headers["Content-Type"] = guessed_content_type
 
             progress_callback.reset(total=stream_size)
+            product.size = stream_size
 
             product.filename = filename
             return self.stream.iter_content(chunk_size=64 * 1024)
