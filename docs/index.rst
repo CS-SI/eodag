@@ -18,11 +18,42 @@ Earth Observation Data Access Gateway (|version|)
 **EODAG (Earth Observation Data Access Gateway) is a command line tool and a Python library for searching and downloading
 remotely sensed images while offering a unified API for data access regardless of the data provider.**
 
-.. admonition::  Explore EODAG `featured providers <providers.rst>`_
-   :class: seealso
+|
 
-   EODAG comes already configured with many providers from AWS / GCS EO catalogs, Copernicus, CNES, Destination Earth,
-   ECMWF, ESA, EUMETSAT, Meteoblue, Planetary Computer, USGS / Landsat, ...
+EODAG gives you an easy way to access products from more than 10 providers, with more than 50 different product
+types (Sentinel 1, Sentinel 2, Sentinel 3, Landsat, etc.) that can be searched and downloaded.
+
+.. glossary::
+
+    [Growing list of] supported providers
+      `aws_eos <https://eos.com>`_,
+      `cop_ads <https://ads.atmosphere.copernicus.eu>`_,
+      `cop_cds <https://cds.climate.copernicus.eu>`_,
+      `cop_dataspace <https://dataspace.copernicus.eu/>`_,
+      `cop_ewds <https://ewds.climate.copernicus.eu>`_,
+      `cop_marine <https://marine.copernicus.eu>`_,
+      `creodias <https://creodias.eu>`_,
+      `creodias_s3 <https://creodias.eu>`_,
+      `dedl <https://hda.data.destination-earth.eu/ui>`_,
+      `dedt_lumi <https://polytope.lumi.apps.dte.destination-earth.eu/openapi>`_,
+      `earth_search <https://www.element84.com/earth-search/>`_,
+      `earth_search_gcs <https://cloud.google.com/storage/docs/public-datasets>`_,
+      `ecmwf <https://www.ecmwf.int>`_,
+      `esa_heritage_missions <https://earth.esa.int/eogateway/missions/heritage-missions>`_,
+      `fedeo_ceda <https://climate.esa.int/en/>`_,
+      `geodes <https://geodes.cnes.fr>`_,
+      `geodes_s3 <https://geodes.cnes.fr>`_,
+      `eumetsat_ds <https://data.eumetsat.int>`_,
+      `hydroweb_next <https://hydroweb.next.theia-land.fr>`_,
+      `meteoblue <https://content.meteoblue.com/en/business-solutions/weather-apis/dataset-api>`_,
+      `peps <https://peps.cnes.fr/rocket/#/home>`_,
+      `planetary_computer <https://planetarycomputer.microsoft.com>`_,
+      `sara <https://copernicus.nci.org.au>`_,
+      `usgs <https://earthexplorer.usgs.gov>`_,
+      `usgs_satapi_aws <https://landsatlook.usgs.gov>`_,
+      `wekeo_cmems <https://www.wekeo.eu>`_,
+      `wekeo_ecmwf <https://www.wekeo.eu>`_,
+      `wekeo_main <https://www.wekeo.eu>`_
 
 EODAG has the following primary features:
 

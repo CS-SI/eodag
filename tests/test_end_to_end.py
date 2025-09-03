@@ -216,6 +216,14 @@ FEDEO_CEDA_SEARCH_ARGS = [
     None,
 ]
 
+ESA_HERITAGE_MISSIONS_SEARCH_ARGS = [
+    "esa_heritage_missions",
+    "GOCE_Thermosphere_Data",
+    "2009-03-17",
+    "2009-03-18",
+    [-180, -90, 180, 90],
+]
+
 
 @pytest.mark.enable_socket
 class EndToEndBase(unittest.TestCase):
@@ -452,6 +460,14 @@ class TestEODagEndToEnd(EndToEndBase):
             + sanitize(product.properties["id"])
         )
         self.execute_download(product, expected_filename)
+
+    def test_end_to_end_search_download_esa_heritage_missions(self):
+        self.eodag.discover_product_types(provider="esa_heritage_missions")
+        products = self.execute_search(
+            *ESA_HERITAGE_MISSIONS_SEARCH_ARGS, check_product=False
+        )
+        expected_filename = "{}".format(products[2].properties["title"])
+        self.execute_download(products[2], expected_filename)
 
     def test_end_to_end_search_download_fedeo_ceda(self):
         self.eodag.discover_collections(provider="fedeo_ceda")
@@ -697,8 +713,14 @@ class TestEODagEndToEnd(EndToEndBase):
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertIsNone(ext_collections_conf[provider])
 
-    def test_end_to_end_discover_collections_fedeo_ceda(self):
-        """discover_collections() must return an external collections configuration for fedeo ceda"""
+    def test_end_to_end_discover_product_types_esa_heritage_missions(self):
+        """discover_product_types() must return an external product types configuration for esa_heritage_missions"""
+        provider = "esa_heritage_missions"
+        ext_product_types_conf = self.eodag.discover_product_types(provider=provider)
+        self.assertIsNotNone(ext_product_types_conf[provider])
+
+    def test_end_to_end_discover_product_types_fedeo_ceda(self):
+        """discover_product_types() must return an external product types configuration for fedeo ceda"""
         provider = "fedeo_ceda"
         ext_collections_conf = self.eodag.discover_collections(provider=provider)
         self.assertEqual(
