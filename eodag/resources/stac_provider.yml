@@ -19,7 +19,7 @@ search:
   type: StacSearch
   results_entry: features
   pagination:
-    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+    next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
     total_items_nb_key_path: '$.numberMatched'
     next_page_url_key_path: '$.links[?(@.rel="next")].href'
     next_page_query_obj_key_path: '$.links[?(@.rel="next")].body'

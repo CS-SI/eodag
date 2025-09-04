@@ -27,6 +27,7 @@ from ecmwfapi import ECMWFDataServer, ECMWFService
 from ecmwfapi.api import APIException, Connection, get_apikey_values
 from pydantic.fields import FieldInfo
 
+from eodag.api.search_result import RawSearchResult
 from eodag.plugins.apis.base import Api
 from eodag.plugins.search import PreparedSearch
 from eodag.plugins.search.base import Search
@@ -103,9 +104,19 @@ class EcmwfApi(Api, ECMWFSearch):
         self.config.__dict__.setdefault("pagination", {"next_page_query_obj": "{{}}"})
         self.config.__dict__.setdefault("api_endpoint", "")
 
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def do_search(self, *args: Any, **kwargs: Any) -> RawSearchResult:
         """Should perform the actual search request."""
-        return [{}]
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = kwargs
+        raw_search_results.query_params = (
+            args.query_params if hasattr(args, "query_params") else {}
+        )
+        raw_search_results.product_type_def_params = (
+            args.product_type_def_params
+            if hasattr(args, "product_type_def_params")
+            else {}
+        )
+        return raw_search_results
 
     def query(
         self,
