@@ -1885,7 +1885,7 @@ class EODataAccessGateway:
             prep.items_per_page = kwargs.pop("items_per_page", None)
 
             if validate:
-                search_plugin.validate(search_plugin.provider, kwargs)
+                search_plugin.validate(kwargs)
 
             res, nb_res = search_plugin.query(prep, **kwargs)
 

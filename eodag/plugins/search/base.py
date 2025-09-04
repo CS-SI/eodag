@@ -400,18 +400,21 @@ class Search(PluginTopic):
                 **all_queryables,
             )
 
-    def validate(self, provider: str, filter: dict[str, Any]) -> None:
+    def validate(self, filter: dict[str, Any]) -> None:
         """Validate a search request.
 
-        :param provider: Provider to use for validation
         :param filter: Arguments of the search request
         :raises: :class:`~eodag.utils.exceptions.ValidationError`
         """
         logger.debug("Validate request")
         try:
+            product_type: str = filter["productType"]
             self.list_queryables(
-                provider=provider,
-                **filter,
+                filters=filter,
+                available_product_types=[product_type],
+                product_type_configs={product_type: self.config.product_type_config},
+                product_type=product_type,
+                alias=product_type,
             ).get_model().model_validate(filter)
         except PydanticValidationError as e:
             raise ValidationError(format_pydantic_error(e)) from e

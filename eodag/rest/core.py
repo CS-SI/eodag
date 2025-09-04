@@ -49,6 +49,7 @@ from eodag.plugins.crunch.filter_latest_intersect import FilterLatestIntersect
 from eodag.plugins.crunch.filter_latest_tpl_name import FilterLatestByName
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.download.base import Download
+from eodag.plugins.search.base import Search
 from eodag.rest.cache import cached
 from eodag.rest.constants import (
     CACHE_KEY_COLLECTION,
@@ -381,8 +382,10 @@ def validate_order_request(product: EOProduct) -> None:
     else:
         order_kwargs = {}
     order_kwargs["productType"] = product.product_type
-
-    eodag_api.validate_search_request(product.provider, order_kwargs)
+    search_plugin: Union[Search, Api] = eodag_api._plugins_manager.get_search_plugins(
+        product, product.provider
+    )
+    search_plugin.validate(order_kwargs)
 
 
 @lru_cache(maxsize=1)
