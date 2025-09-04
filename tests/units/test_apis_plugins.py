@@ -124,12 +124,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_dates_missing(self):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             productType=self.product_type,
             startTimeFromAscendingNode="2020-01-01",
             completionTimeFromAscendingNode="2020-01-02",
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         self.assertEqual(
             eoproduct.properties["startTimeFromAscendingNode"],
             "2020-01-01T00:00:00.000Z",
@@ -140,10 +140,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
 
         # missing start & stop
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             productType=self.product_type,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         self.assertIn(
             eoproduct.properties["startTimeFromAscendingNode"],
             DEFAULT_MISSION_START_DATE,
@@ -162,7 +162,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "missionStartDate": "1985-10-26",
             "missionEndDate": "2015-10-21",
         }
-        results, _ = self.api_plugin.query(
+        results.data = self.api_plugin.query(
             productType=self.product_type,
         )
         eoproduct = results[0]
@@ -180,9 +180,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         EcmwfApi.query must build a EOProduct from input parameters without product type.
         For test only, result cannot be downloaded.
         """
-        results, count = self.api_plugin.query(**self.query_dates)
-        assert count == 1
-        eoproduct = results[0]
+        results = self.api_plugin.query(**self.query_dates)
+        assert results.number_matched == 1
+        eoproduct = results.data[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert (
             eoproduct.properties["startTimeFromAscendingNode"]
@@ -198,10 +198,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
     def test_plugins_apis_ecmwf_query_with_producttype(self):
         """EcmwfApi.query must build a EOProduct from input parameters with predefined product type"""
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             **self.query_dates, productType=self.product_type, geometry=[1, 2, 3, 4]
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(self.product_type)
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
         # check if product_type_params is a subset of eoproduct.properties
@@ -211,17 +211,17 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         params["ecmwf:param"] = "tcc"
 
         # product type default settings can be overwritten using search kwargs
-        results, _ = self.api_plugin.query(**params)
-        eoproduct = results[0]
+        results = self.api_plugin.query(**params)
+        eoproduct = results.data[0]
         assert eoproduct.properties["ecmwf:param"] == "tcc"
 
     def test_plugins_apis_ecmwf_query_with_custom_producttype(self):
         """EcmwfApi.query must build a EOProduct from input parameters with custom product type"""
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             **self.query_dates,
             **self.custom_query_params,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(
             "%s_%s_%s"
             % (
@@ -298,7 +298,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             **self.query_dates,
             **self.custom_query_params,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         expected_path = os.path.join(
             output_data_path, "%s" % eoproduct.properties["title"]
         )
