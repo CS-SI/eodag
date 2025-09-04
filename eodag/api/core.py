@@ -1203,11 +1203,12 @@ class EODataAccessGateway:
             **kwargs,
         )
         if search_kwargs.get("id"):
+            # Don't validate requests by ID. "id" is not queryable.
             return self._search_by_id(
                 search_kwargs.pop("id"),
                 provider=provider,
                 raise_errors=raise_errors,
-                validate=validate,
+                validate=False,
                 **search_kwargs,
             )
         # remove datacube query string from kwargs which was only needed for search-by-id

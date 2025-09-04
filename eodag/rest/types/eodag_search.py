@@ -112,6 +112,7 @@ class EODAGSearch(BaseModel):
     items_per_page: int = Field(DEFAULT_ITEMS_PER_PAGE, alias="limit")
     sort_by: Optional[list[tuple[str, str]]] = Field(None, alias="sortby")
     raise_errors: bool = False
+    validate: Optional[bool] = None
 
     _to_eodag_map: dict[str, str]
 
