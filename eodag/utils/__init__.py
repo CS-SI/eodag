@@ -1462,6 +1462,7 @@ class StreamResponse:
     headers: dict[str, str] = field(default_factory=dict)
     media_type: Optional[str] = None
     status_code: Optional[int] = None
+    arcname: Optional[str] = None
 
     def __init__(
         self,
@@ -1471,11 +1472,13 @@ class StreamResponse:
         headers: Optional[Mapping[str, str]] = None,
         media_type: Optional[str] = None,
         status_code: Optional[int] = None,
+        arcname: Optional[str] = None,
     ):
         self.content = content
         self.headers = dict(headers) if headers else {}
         self.media_type = media_type
         self.status_code = status_code
+        self.arcname = arcname
         # use property setters to update headers
         self.filename = filename
         self.size = size

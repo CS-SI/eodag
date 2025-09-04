@@ -812,7 +812,7 @@ class HTTPDownload(Download):
                     for asset_stream in assets_stream_list:
                         zip_stream.add(
                             asset_stream.content,
-                            arcname=asset_stream.filename,
+                            arcname=asset_stream.arcname,
                             size=asset_stream.size,
                         )
 
@@ -1108,8 +1108,10 @@ class HTTPDownload(Download):
             else None
         )
 
-        def get_chunks_generator(asset_href: str) -> Iterator[bytes]:
+        def get_chunks_generator(asset: Asset) -> Iterator[bytes]:
             """Create a generator function that will be called by ZipStream when needed."""
+
+            asset_href = asset.get("href")
             # This function will be called by zipstream when it needs the data
             if not asset_href or asset_href.startswith("file:"):
                 logger.info(f"Local asset detected. Download skipped for {asset_href}")
@@ -1134,6 +1136,35 @@ class HTTPDownload(Download):
                 ) as stream:
                     stream.raise_for_status()
 
+                    # Process asset path
+                    asset_rel_path = (
+                        asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
+                        if flatten_top_dirs
+                        else asset.rel_path
+                    )
+                    asset_rel_dir = os.path.dirname(asset_rel_path)
+
+                    if not getattr(asset, "filename", None):
+                        # try getting filename in GET header if was not found in HEAD result
+                        asset_content_disposition = stream.headers.get(
+                            "content-disposition"
+                        )
+                        if asset_content_disposition:
+                            asset.filename = cast(
+                                Optional[str],
+                                parse_header(asset_content_disposition).get_param(
+                                    "filename", None
+                                ),
+                            )
+
+                    if not getattr(asset, "filename", None):
+                        # default filename extracted from path
+                        asset.filename = os.path.basename(asset.rel_path)
+
+                    asset.rel_path = os.path.join(
+                        asset_rel_dir, cast(str, asset.filename)
+                    )
+
                     for chunk in stream.iter_content(chunk_size=64 * 1024):
                         if chunk:
                             progress_callback(len(chunk))
@@ -1150,23 +1181,20 @@ class HTTPDownload(Download):
 
         # Process each asset
         for asset in assets_values:
-            # Process asset path
-            asset_rel_path = (
-                asset.rel_path.replace(assets_common_subdir, "").strip(os.sep)
-                if flatten_top_dirs
-                else asset.rel_path
-            )
-            asset_rel_dir = os.path.dirname(asset_rel_path)
-
-            # Handle filename
-            if not getattr(asset, "filename", None):
-                asset.filename = os.path.basename(asset.rel_path)
-                asset.rel_path = os.path.join(asset_rel_dir, asset.filename)
+            asset_chunks = get_chunks_generator(asset)
+            try:
+                # start reading chunks to set assets attributes
+                first_chunk = next(asset_chunks)
+                asset_chunks = chain(iter([first_chunk]), asset_chunks)
+            except StopIteration:
+                # Empty generator
+                asset_chunks = iter([])
 
             assets_stream_list.append(
                 StreamResponse(
-                    content=get_chunks_generator(asset["href"]),
-                    filename=asset.rel_path,
+                    content=asset_chunks,
+                    filename=asset.filename,
+                    arcname=asset.rel_path,
                     size=asset.size or None,
                 )
             )
@@ -1222,8 +1250,8 @@ class HTTPDownload(Download):
                 continue
 
         for asset_stream in assets_stream_list:
-            asset_path = cast(str, asset_stream.filename)
             asset_chunks = asset_stream.content
+            asset_path = cast(str, asset_stream.arcname)
             asset_abs_path = os.path.join(fs_dir_path, asset_path)
             asset_abs_path_temp = asset_abs_path + "~"
             # create asset subdir if not exist
