@@ -113,12 +113,12 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_dates_missing(self):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             collection=self.collection,
             start_datetime="2020-01-01",
             end_datetime="2020-01-02",
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         self.assertEqual(
             eoproduct.properties["start_datetime"],
             "2020-01-01T00:00:00.000Z",
@@ -129,10 +129,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         )
 
         # missing start & stop
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             collection=self.collection,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         self.assertIn(
             eoproduct.properties["start_datetime"],
             DEFAULT_MISSION_START_DATE,
@@ -149,7 +149,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "_collection": self.collection,
             "extent": {"temporal": {"interval": [["1985-10-26", "2015-10-21"]]}},
         }
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             collection=self.collection,
         )
         eoproduct = results[0]
@@ -167,9 +167,9 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         EcmwfApi.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
         """
-        results, count = self.api_plugin.query(**self.query_dates)
-        assert count == 1
-        eoproduct = results[0]
+        results = self.api_plugin.query(**self.query_dates)
+        assert results.number_matched == 1
+        eoproduct = results.data[0]
         assert eoproduct.geometry.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert (
             eoproduct.properties["start_datetime"] == self.query_dates["start_datetime"]
@@ -181,10 +181,10 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
     def test_plugins_apis_ecmwf_query_with_collection(self):
         """EcmwfApi.query must build a EOProduct from input parameters with predefined collection"""
-        results, _ = self.api_plugin.query(
+        results = self.api_plugin.query(
             **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(self.collection)
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
         # check if collection_params is a subset of eoproduct.properties
@@ -194,8 +194,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         params["ecmwf:param"] = "tcc"
 
         # collection default settings can be overwritten using search kwargs
-        results, _ = self.api_plugin.query(**params)
-        eoproduct = results[0]
+        results = self.api_plugin.query(**params)
+        eoproduct = results.data[0]
         assert eoproduct.properties["ecmwf:param"] == "tcc"
 
     def test_plugins_apis_ecmwf_query_with_custom_collection(self):
@@ -204,7 +204,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             **self.query_dates,
             **self.custom_query_params,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         assert eoproduct.properties["title"].startswith(
             "%s_%s_%s"
             % (
@@ -282,7 +282,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             **self.custom_query_params,
             validate=False,
         )
-        eoproduct = results[0]
+        eoproduct = results.data[0]
         expected_path = os.path.join(
             output_data_path, "%s" % eoproduct.properties["title"]
         )

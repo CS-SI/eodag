@@ -2943,10 +2943,10 @@ class TestCoreSearch(TestCoreBase):
         )
         first_result_page = next(page_iterator)
         self.assertIsInstance(first_result_page, SearchResult)
-        self.assertEqual(len(first_result_page), self.search_results_size)
+        self.assertEqual(len(first_result_page.data), self.search_results_size)
         second_result_page = next(page_iterator)
         self.assertIsInstance(second_result_page, SearchResult)
-        self.assertEqual(len(second_result_page), self.search_results_size_2)
+        self.assertEqual(len(second_result_page.data), self.search_results_size_2)
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
