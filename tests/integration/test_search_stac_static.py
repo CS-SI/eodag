@@ -111,9 +111,9 @@ class TestSearchStacStatic(unittest.TestCase):
             )
         self.assertIsInstance(items, SearchResult)
         self.assertEqual(len(items), self.child_cat_len)
-        self.assertEqual(items[0].provider, self.stac_provider)
+        self.assertEqual(items.data[0].provider, self.stac_provider)
         # if no product_type is provided, product_type should be guessed from properties
-        self.assertEqual(items[0].product_type, "S2_MSI_L1C")
+        self.assertEqual(items.data[0].product_type, "S2_MSI_L1C")
 
     @mock.patch(
         "eodag.plugins.search.qssearch.QueryStringSearch.discover_product_types",
@@ -157,7 +157,7 @@ class TestSearchStacStatic(unittest.TestCase):
         # mock on fetch_product_types_list not needed with provider specified,
         #    as product types discovery must be disabled by default for stac static
         search_result = self.dag.search(provider=self.static_stac_provider, count=True)
-        self.assertEqual(len(search_result), self.root_cat_len)
+        self.assertEqual(len(search_result.data), self.root_cat_len)
         self.assertEqual(search_result.number_matched, self.root_cat_len)
         for item in search_result:
             self.assertEqual(item.provider, self.static_stac_provider)

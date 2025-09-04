@@ -478,7 +478,7 @@ class ECMWFSearch(PostJsonSearch):
             },
         )
 
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def do_search(self, *args: Any, **kwargs: Any) -> RawSearchResult:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -486,7 +486,17 @@ class ECMWFSearch(PostJsonSearch):
         :return: list containing the results from the provider in json format
         """
         # no real search. We fake it all
-        return [{}]
+        raw_search_results = RawSearchResult([{}])
+        raw_search_results.search_params = kwargs
+        raw_search_results.query_params = (
+            args.query_params if hasattr(args, "query_params") else {}
+        )
+        raw_search_results.product_type_def_params = (
+            args.product_type_def_params
+            if hasattr(args, "product_type_def_params")
+            else {}
+        )
+        return raw_search_results
 
     def query(
         self,
@@ -503,11 +513,11 @@ class ECMWFSearch(PostJsonSearch):
         if not product_type:
             product_type = kwargs.get("productType")
         kwargs = self._preprocess_search_params(kwargs, product_type)
-        result, num_items = super().query(prep, **kwargs)
-        if prep.count and not num_items:
-            num_items = 1
+        result = super().query(prep, **kwargs)
+        if prep.count and not result.number_matched:
+            result.number_matched = 1
 
-        return result, num_items
+        return result
 
     def clear(self) -> None:
         """Clear search context"""
@@ -1344,7 +1354,7 @@ class MeteoblueSearch(ECMWFSearch):
 
     def do_search(
         self, prep: PreparedSearch = PreparedSearch(items_per_page=None), **kwargs: Any
-    ) -> list[dict[str, Any]]:
+    ) -> RawSearchResult:
         """Perform the actual search request, and return result in a single element.
 
         :param prep: :class:`~eodag.plugins.search.PreparedSearch` object containing information for the search
@@ -1359,8 +1369,12 @@ class MeteoblueSearch(ECMWFSearch):
             f" {self.__class__.__name__} instance"
         )
         response = self._request(prep)
+        raw_search_results = RawSearchResult([response.json()])
+        raw_search_results.search_params = kwargs
 
-        return [response.json()]
+        raw_search_results.query_params = prep.query_params
+        raw_search_results.product_type_def_params = prep.product_type_def_params
+        return raw_search_results
 
     def build_query_string(
         self, product_type: str, query_dict: dict[str, Any]
@@ -1541,7 +1555,7 @@ class WekeoECMWFSearch(ECMWFSearch):
 
         return normalized
 
-    def do_search(self, *args: Any, **kwargs: Any) -> list[dict[str, Any]]:
+    def do_search(self, *args: Any, **kwargs: Any) -> RawSearchResult:
         """Should perform the actual search request.
 
         :param args: arguments to be used in the search
@@ -1551,6 +1565,16 @@ class WekeoECMWFSearch(ECMWFSearch):
         if "id" in kwargs and "ORDERABLE" not in kwargs["id"]:
             # id is order id (only letters and numbers) -> use parent normalize results.
             # No real search. We fake it all, then check order status using given id
-            return [{}]
+            raw_search_results = RawSearchResult([{}])
+            raw_search_results.search_params = kwargs
+            raw_search_results.query_params = (
+                args.query_params if hasattr(args, "query_params") else {}
+            )
+            raw_search_results.product_type_def_params = (
+                args.product_type_def_params
+                if hasattr(args, "product_type_def_params")
+                else {}
+            )
+            return raw_search_results
         else:
             return QueryStringSearch.do_search(self, *args, **kwargs)
