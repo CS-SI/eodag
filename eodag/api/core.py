@@ -1318,6 +1318,8 @@ class EODataAccessGateway:
             # remove unwanted kwargs for _do_search
             kwargs.pop("raise_errors", None)
             search_result = self._do_search(search_plugin, raise_errors=True, **kwargs)
+            search_result.raise_errors = True
+
         except Exception:
             logger.warning(
                 "error at retrieval of data from %s, for params: %s",
@@ -1330,7 +1332,13 @@ class EODataAccessGateway:
             return
 
         yield search_result
-
+        # remove unwanted kwargs for next_page
+        if kwargs.get("count") is True:
+            kwargs["count"] = False
+        kwargs.pop("page", None)
+        search_result.search_params = kwargs
+        if search_result._dag is None:
+            search_result._dag = self
         for next_result in search_result.next_page():
             if len(next_result) == 0:
                 break
@@ -1832,6 +1840,53 @@ class EODataAccessGateway:
                     "The query function of a Search plugin must return a list of "
                     "results, got {} instead".format(type(search_result.data))
                 )
+            # Filter and attach to each eoproduct in the result the plugin capable of
+            # downloading it (this is done to enable the eo_product to download itself
+            # doing: eo_product.download()). The filtering is done by keeping only
+            # those eo_products that intersects the search extent (if there was no
+            # search extent, search_intersection contains the geometry of the
+            # eo_product)
+            # WARNING: this means an eo_product that has an invalid geometry can still
+            # be returned as a search result if there was no search extent (because we
+            # will not try to do an intersection)
+            for eo_product in search_result.data:
+                # if product_type is not defined, try to guess using properties
+                if eo_product.product_type is None:
+                    pattern = re.compile(r"[^\w,]+")
+                    try:
+                        guesses = self.guess_product_type(
+                            intersect=False,
+                            **{
+                                k: pattern.sub("", str(v).upper())
+                                for k, v in eo_product.properties.items()
+                                if k
+                                in [
+                                    "instrument",
+                                    "platform",
+                                    "platformSerialIdentifier",
+                                    "processingLevel",
+                                    "sensorType",
+                                    "keywords",
+                                ]
+                                and v is not None
+                            },
+                        )
+                    except NoMatchingCollection:
+                        pass
+                    else:
+                        eo_product.product_type = guesses[0]
+
+                try:
+                    if eo_product.product_type is not None:
+                        eo_product.product_type = self.get_product_type_from_alias(
+                            eo_product.product_type
+                        )
+                except NoMatchingCollection:
+                    logger.debug("product type %s not found", eo_product.product_type)
+
+                if eo_product.search_intersection is not None:
+                    eo_product._register_downloader_from_manager(self._plugins_manager)
+
             search_result._dag = self
             return search_result
 

@@ -4692,7 +4692,7 @@
       # next_page_url_key_path: null
       max_items_per_page: 100
       next_page_query_obj: '{{"limit":{items_per_page},"token":{next_page_token}}}'
-      next_page_token_key: token
+      next_page_token_key: 'page'
     sort:
       sort_param_mapping:
         id: id

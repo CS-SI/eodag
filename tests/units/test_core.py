@@ -2693,7 +2693,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_support_itemsperpage_higher_than_maximum(self, search_plugin):
         """_do_search must support itemsperpage higher than maximum"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
+        search_plugin.query.return_value = SearchResult(
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
         )
@@ -2755,7 +2755,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_counts(self, search_plugin):
         """_do_search must create a count query if specified"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
+        search_plugin.query.return_value = SearchResult(
             self.search_results.data,  # a list must be returned by .query
             self.search_results_size,
         )
@@ -2773,7 +2773,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_without_count(self, search_plugin):
         """_do_search must be able to create a query without a count"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
+        search_plugin.query.return_value = SearchResult(
             self.search_results.data,
             None,  # .query must return None if count is False
         )
@@ -2791,7 +2791,7 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_paginated_handle_no_count_returned(self, search_plugin):
         """_do_search must return None as count if provider does not return the count"""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (self.search_results.data, None)
+        search_plugin.query.return_value = SearchResult(self.search_results.data, None)
 
         class DummyConfig:
             pagination = {}
@@ -2860,10 +2860,16 @@ class TestCoreSearch(TestCoreBase):
     def test__do_search_query_products_must_be_a_list(self, search_plugin):
         """_do_search expects that each search plugin returns a list of products."""
         search_plugin.provider = "peps"
-        search_plugin.query.return_value = (
-            self.search_results,  # This is not a list but a SearchResult
-            self.search_results_size,
-        )
+
+        # create an "invalid" SearchResult object
+
+        class FakeSearchResult:
+            def __init__(self):
+                self.data = "not-a-list"  # not a list, will trigger the error
+                self.number_matched = 1
+
+        # mock query to return the invalid SearchResult
+        search_plugin.query.return_value = FakeSearchResult()
 
         class DummyConfig:
             pagination = {}
@@ -2915,10 +2921,17 @@ class TestCoreSearch(TestCoreBase):
     def test_search_iter_page_returns_iterator(self, search_plugin, prepare_seach):
         """search_iter_page must return an iterator"""
         search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            (self.search_results_2.data, None),
-        ]
+        # create first and second SearchResult with next_page_token
+        first_page = SearchResult(
+            products=self.search_results.data, number_matched=None
+        )
+        first_page.next_page_token = "token_for_page_2"
+
+        second_page = SearchResult(
+            products=self.search_results_2.data, number_matched=None
+        )
+        second_page.next_page_token = None  # last page
+        search_plugin.query.side_effect = [first_page, second_page]
 
         class DummyConfig:
             pagination = {}
@@ -2941,9 +2954,12 @@ class TestCoreSearch(TestCoreBase):
     @mock.patch("eodag.api.core.EODataAccessGateway._do_search", autospec=True)
     def test_search_iter_page_count(self, mock_do_seach, mock_fetch_collections_list):
         """search_iter_page must return an iterator"""
+        first_page = self.search_results
+        first_page.next_page_token = "token_for_page_2"
+        second_page = self.search_results_2
         mock_do_seach.side_effect = [
-            self.search_results,
-            self.search_results_2,
+            first_page,
+            second_page,
         ]
 
         # no count by default
@@ -2989,7 +3005,7 @@ class TestCoreSearch(TestCoreBase):
             geometry=None,
             count=False,
             raise_errors=True,
-            page=2,
+            next_page_token="token_for_page_2",
             items_per_page=2,
         )
 
@@ -3041,10 +3057,17 @@ class TestCoreSearch(TestCoreBase):
     ):
         """search_iter_page must stop as soon as less than items_per_page products were retrieved"""
         search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            ([self.search_results_2.data[0]], None),
-        ]
+        # create first and second SearchResult with next_page_token
+        first_page = SearchResult(
+            products=self.search_results.data, number_matched=None
+        )
+        first_page.next_page_token = "token_for_page_2"
+
+        second_page = SearchResult(
+            products=[self.search_results_2.data[0]], number_matched=None
+        )
+        second_page.next_page_token = None  # last page
+        search_plugin.query.side_effect = [first_page, second_page]
 
         class DummyConfig:
             pagination = {}
@@ -3065,11 +3088,17 @@ class TestCoreSearch(TestCoreBase):
     ):
         """search_iter_page must stop if the page doesn't return any product"""
         search_plugin.provider = "peps"
-        search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            (self.search_results_2.data, None),
-            ([], None),
-        ]
+        # create 3 SearchResult with next_page_token
+        first_page = SearchResult(
+            products=self.search_results.data, number_matched=None
+        )
+        first_page.next_page_token = "token_for_page_2"
+
+        second_page = SearchResult(products=self.search_results_2, number_matched=None)
+        second_page.next_page_token = "token_for_page_3"  # last page
+
+        third_page = SearchResult(products=[], number_matched=None)
+        search_plugin.query.side_effect = [first_page, second_page, third_page]
 
         class DummyConfig:
             pagination = {}
@@ -3275,7 +3304,7 @@ class TestCoreSearch(TestCoreBase):
                 type: PostJsonSearch
                 api_endpoint: https://api.my_new_provider/search
                 pagination:
-                    next_page_query_obj: '{{"limit":{items_per_page},"page":{page}}}'
+                    next_page_query_obj: '{{"limit":{items_per_page},"page":{next_page_token}}}'
                     total_items_nb_key_path: '$.meta.found'
                 sort:
                     sort_by_tpl: '{{"sort_by": [ {{"field": "{sort_param}", "direction": "{sort_order}" }} ] }}'
@@ -3415,9 +3444,12 @@ class TestCoreSearch(TestCoreBase):
     def test_search_all_must_collect_them_all(self, search_plugin, prepare_seach):
         """search_all must return all the products available"""
         search_plugin.provider = "peps"
+        first_page = SearchResult(self.search_results.data, None)
+        first_page.next_page_token = "token_for_page_2"
+        second_page = SearchResult([self.search_results_2.data[0]], None)
         search_plugin.query.side_effect = [
-            (self.search_results.data, None),
-            ([self.search_results_2.data[0]], None),
+            first_page,
+            second_page,
         ]
 
         class DummyConfig:

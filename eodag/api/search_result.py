@@ -228,9 +228,11 @@ class SearchResult(UserList[EOProduct]):
     def next_page(self, update: bool = True) -> Iterator[SearchResult]:
         """Get the next page of results based on the current search parameters."""
         if self.next_page_token is None:
-            return
+            return iter([])
 
         def get_next_page(current):
+            if current.search_params is None:
+                current.search_params = {}
             current.search_params["next_page_token"] = current.next_page_token
             if hasattr(current.search_params, "provider"):
                 current.search_params["provider"] = current.search_params.get(
@@ -263,6 +265,8 @@ class SearchResult(UserList[EOProduct]):
                 break
             old_results = new_results
             new_results = get_next_page(new_results)
+            if not new_results:
+                break
             if (
                 old_results.data[0].properties["id"]
                 == new_results.data[0].properties["id"]
@@ -274,7 +278,7 @@ class SearchResult(UserList[EOProduct]):
                     "This provider may not implement pagination.",
                 )
                 break
-        return
+        return iter([])
 
     @classmethod
     def _from_stac_item(

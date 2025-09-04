@@ -25,7 +25,6 @@ import geojson
 from pydantic.fields import FieldInfo
 
 from eodag.api.product.metadata_mapping import get_metadata_path_value
-from eodag.api.search_result import SearchResult
 from eodag.plugins.crunch.filter_date import FilterDate
 from eodag.plugins.crunch.filter_overlap import FilterOverlap
 from eodag.plugins.crunch.filter_property import FilterProperty
@@ -201,11 +200,9 @@ class StaticStacSearch(StacSearch):
             autospec=True,
             return_value=MockResponse(feature_collection, 200),
         ):
-            eo_products, _ = super(StaticStacSearch, self).query(
+            search_result = super(StaticStacSearch, self).query(
                 PreparedSearch(items_per_page=nb_features, page=1, count=True), **kwargs
             )
-        # filter using query params
-        search_result = SearchResult(eo_products)
         # Filter by date
         if "start_datetime" in kwargs:
             kwargs["start"] = kwargs.pop("start_datetime")
@@ -244,9 +241,6 @@ class StaticStacSearch(StacSearch):
                 search_result = search_result.crunch(
                     FilterProperty({property_key: property_value, "operator": "eq"})
                 )
-
-        return (
-            (search_result.data, len(search_result))
-            if prep.count
-            else (search_result.data, None)
-        )
+        if prep.count:
+            search_result.number_matched = len(search_result.data)
+        return search_result
