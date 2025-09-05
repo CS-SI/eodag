@@ -76,10 +76,10 @@ class BaseApisPluginTest(unittest.TestCase):
         cls.expanduser_mock.stop()
         cls.tmp_home_dir.cleanup()
 
-    def get_search_plugin(self, product_type=None, provider=None):
+    def get_search_plugin(self, collection=None, provider=None):
         return next(
             self.plugins_manager.get_search_plugins(
-                product_type=product_type, provider=provider
+                collection=collection, provider=provider
             )
         )
 
@@ -92,8 +92,8 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "start_datetime": "2022-01-01T00:00:00.000Z",
             "end_datetime": "2022-01-02T00:00:00.000Z",
         }
-        self.product_type = "TIGGE_CF_SFC"
-        self.product_type_params = {
+        self.collection = "TIGGE_CF_SFC"
+        self.collection_params = {
             "ecmwf:class": "ti",
             "ecmwf:dataset": "tigge",
             "ecmwf:expver": "prod",
@@ -125,7 +125,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         """Ecmwf.query must use default dates if missing"""
         # given start & stop
         results, _ = self.api_plugin.query(
-            collection=self.product_type,
+            collection=self.collection,
             start_datetime="2020-01-01",
             end_datetime="2020-01-02",
         )
@@ -141,7 +141,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
 
         # missing start & stop
         results, _ = self.api_plugin.query(
-            collection=self.product_type,
+            collection=self.collection,
         )
         eoproduct = results[0]
         self.assertIn(
@@ -155,14 +155,14 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
             "stop date should have been created from datetime.now",
         )
 
-        # missing start & stop and plugin.product_type_config set (set in core._prepare_search)
-        self.api_plugin.config.product_type_config = {
-            "collection": self.product_type,
+        # missing start & stop and plugin.collection_config set (set in core._prepare_search)
+        self.api_plugin.config.collection_config = {
+            "collection": self.collection,
             "missionStartDate": "1985-10-26",
             "missionEndDate": "2015-10-21",
         }
         results, _ = self.api_plugin.query(
-            collection=self.product_type,
+            collection=self.collection,
         )
         eoproduct = results[0]
         self.assertEqual(
@@ -194,15 +194,15 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
     def test_plugins_apis_ecmwf_query_with_producttype(self):
         """EcmwfApi.query must build a EOProduct from input parameters with predefined product type"""
         results, _ = self.api_plugin.query(
-            **self.query_dates, collection=self.product_type, geometry=[1, 2, 3, 4]
+            **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
         eoproduct = results[0]
-        assert eoproduct.properties["title"].startswith(self.product_type)
+        assert eoproduct.properties["title"].startswith(self.collection)
         assert eoproduct.geometry.bounds == (1.0, 2.0, 3.0, 4.0)
-        # check if product_type_params is a subset of eoproduct.properties
-        assert self.product_type_params.items() <= eoproduct.properties.items()
+        # check if collection_params is a subset of eoproduct.properties
+        assert self.collection_params.items() <= eoproduct.properties.items()
         params = deepcopy(self.query_dates)
-        params["collection"] = self.product_type
+        params["collection"] = self.collection
         params["ecmwf:param"] = "tcc"
 
         # product type default settings can be overwritten using search kwargs
@@ -264,7 +264,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFService.execute", autospec=True)
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
@@ -274,7 +274,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
         mock_ecmwfservice_execute,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_auth_session_request,
     ):
         """EcmwfApi.download must call the appriate ecmwf api service"""
@@ -365,7 +365,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         autospec=True,
     )
     @mock.patch(
-        "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True
+        "eodag.api.core.EODataAccessGateway.fetch_collections_list", autospec=True
     )
     @mock.patch("ecmwfapi.api.ECMWFDataServer.retrieve", autospec=True)
     @mock.patch("ecmwfapi.api.Connection.call", autospec=True)
@@ -373,7 +373,7 @@ class TestApisPluginEcmwfApi(BaseApisPluginTest):
         self,
         mock_connection_call,
         mock_ecmwfdataserver_retrieve,
-        mock_fetch_product_types_list,
+        mock_fetch_collections_list,
         mock_auth_session_request,
     ):
         """EcmwfApi.download_all must call the appropriate ecmwf api service"""
@@ -563,7 +563,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             starting_number=6,
         )
         self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].product_type, "LANDSAT_C2L1")
+        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
         self.assertEqual(
             search_results[0].geometry,
             shape(
@@ -639,7 +639,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
             starting_number=1,
         )
         self.assertEqual(search_results[0].provider, "usgs")
-        self.assertEqual(search_results[0].product_type, "LANDSAT_C2L1")
+        self.assertEqual(search_results[0].collection, "LANDSAT_C2L1")
         self.assertEqual(len(search_results), 1)
 
     @mock.patch("usgs.api.login", autospec=True)

@@ -320,7 +320,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                 "{}.zip".format(local_filename),
             )
         )
-        product_type = "S2_MSI_L1C"
+        collection = "S2_MSI_L1C"
         platform = "S2A"
         instrument = "MSI"
 
@@ -338,7 +338,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
                     ]
                 ],
             },
-            "collection": product_type,
+            "collection": collection,
             "platform": "Sentinel-2",
             "platformSerialIdentifier": platform,
             "instrument": instrument,
@@ -356,7 +356,7 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
             local_product_as_archive_path,
             provider,
             eoproduct_props,
-            product_type,
+            collection,
         )
         path = product.download()
 
@@ -2253,7 +2253,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         "eodag.plugins.authentication.aws_auth.AwsAuth.__init__",
         autospec=True,
     )
-    def test_plugins_download_aws_no_matching_product_type(
+    def test_plugins_download_aws_no_matching_collection(
         self,
         mock_aws_auth_init,
         mock_get_authenticated_objects: mock.Mock,

@@ -45,7 +45,7 @@ class Api(Search, Download):
       (e.g. 'file:///tmp/product_folder' on Linux or
       'file:///C:/Users/username/AppData/Local/Temp' on Windows)
     - save a *record* file in the directory ``output_dir/.downloaded`` whose name
-      is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
+      is built on the MD5 hash of the product's ``collection`` and ``properties['id']``
       attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an

@@ -49,7 +49,7 @@ from eodag.config import (
     merge_configs,
     override_config_from_mapping,
     load_stac_provider_config,
-    get_ext_product_types_conf,
+    get_ext_collections_conf,
     EXT_PRODUCT_TYPES_CONF_URI,
     PluginConfig,
     ProviderConfig,

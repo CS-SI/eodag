@@ -191,10 +191,10 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_bbox_valid(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             self.runner.invoke(
                 eodag,
-                ["search", "--conf", conf_file, "-p", product_type, "-b", 1, 43, 2, 44],
+                ["search", "--conf", conf_file, "-p", collection, "-b", 1, 43, 2, 44],
             )
             api_obj = dag.return_value
             api_obj.search.assert_called_once_with(
@@ -209,7 +209,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                collection=product_type,
+                collection=collection,
                 id=None,
                 locations=None,
                 count=False,
@@ -230,7 +230,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_geom_wkt_valid(self, dag):
         """Calling eodag search with --geom WKT argument valid"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             self.runner.invoke(
                 eodag,
                 [
@@ -238,7 +238,7 @@ class TestEodagCli(unittest.TestCase):
                     "--conf",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "-g",
                     "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
                 ],
@@ -256,7 +256,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                collection=product_type,
+                collection=collection,
                 id=None,
                 locations=None,
                 count=False,
@@ -314,7 +314,7 @@ class TestEodagCli(unittest.TestCase):
             api_obj = dag.return_value
             api_obj.search.return_value = SearchResult([mock.MagicMock() * 2], 2)
 
-            product_type = "whatever"
+            collection = "whatever"
             cruncher = "FilterLatestIntersect"
             criteria = dict(
                 start_datetime=None,
@@ -326,13 +326,13 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                collection=product_type,
+                collection=collection,
                 id=None,
                 locations=None,
             )
             self.runner.invoke(
                 eodag,
-                ["search", "-f", conf_file, "-p", product_type, "--cruncher", cruncher],
+                ["search", "-f", conf_file, "-p", collection, "--cruncher", cruncher],
             )
 
             search_results = api_obj.search.return_value
@@ -361,7 +361,7 @@ class TestEodagCli(unittest.TestCase):
                     "-f",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "--cruncher",
                     cruncher,
                     "--cruncher-args",
@@ -385,7 +385,7 @@ class TestEodagCli(unittest.TestCase):
                 [mock.MagicMock() * 2], 2
             )
 
-            product_type = "whatever"
+            collection = "whatever"
             criteria = dict(
                 start_datetime=None,
                 end_datetime=None,
@@ -396,13 +396,13 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                collection=product_type,
+                collection=collection,
                 id=None,
                 locations=None,
             )
             self.runner.invoke(
                 eodag,
-                ["search", "-f", conf_file, "-p", product_type, "download"],
+                ["search", "-f", conf_file, "-p", collection, "download"],
             )
 
             # Assertions
@@ -419,7 +419,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_all(self, dag):
         """Calling eodag search with --bbox argument valid"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             self.runner.invoke(
                 eodag,
                 [
@@ -427,7 +427,7 @@ class TestEodagCli(unittest.TestCase):
                     "--conf",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "-g",
                     "POLYGON ((1 43, 1 44, 2 44, 2 43, 1 43))",
                     "--all",
@@ -445,7 +445,7 @@ class TestEodagCli(unittest.TestCase):
                 platformSerialIdentifier=None,
                 processingLevel=None,
                 sensorType=None,
-                collection=product_type,
+                collection=collection,
                 id=None,
                 locations=None,
             )
@@ -454,7 +454,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_query(self, dag):
         """Calling eodag search with --query argument"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             self.runner.invoke(
                 eodag,
                 [
@@ -462,7 +462,7 @@ class TestEodagCli(unittest.TestCase):
                     "--conf",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "--query",
                     "foo=1&bar=2&bar=3",
                 ],
@@ -475,7 +475,7 @@ class TestEodagCli(unittest.TestCase):
                 start_datetime=None,
                 end_datetime=None,
                 cloudCover=None,
-                collection=product_type,
+                collection=collection,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -492,7 +492,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_locations(self, dag):
         """Calling eodag search with --locations argument"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             self.runner.invoke(
                 eodag,
                 [
@@ -500,7 +500,7 @@ class TestEodagCli(unittest.TestCase):
                     "--conf",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "--locations",
                     "country=FRA&continent=Africa",
                 ],
@@ -513,7 +513,7 @@ class TestEodagCli(unittest.TestCase):
                 start_datetime=None,
                 end_datetime=None,
                 cloudCover=None,
-                collection=product_type,
+                collection=collection,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -528,7 +528,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_start_date(self, dag):
         """Calling eodag search with --start argument"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             start_date_str = "2022-01-01"
             start_date_datetime = datetime.strptime(
                 start_date_str, "%Y-%m-%d"
@@ -540,7 +540,7 @@ class TestEodagCli(unittest.TestCase):
                     "--conf",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "--start",
                     start_date_str,
                 ],
@@ -553,7 +553,7 @@ class TestEodagCli(unittest.TestCase):
                 start_datetime=start_date_datetime,
                 end_datetime=None,
                 cloudCover=None,
-                collection=product_type,
+                collection=collection,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -568,7 +568,7 @@ class TestEodagCli(unittest.TestCase):
     def test_eodag_search_stop_date(self, dag):
         """Calling eodag search with --end argument"""
         with self.user_conf() as conf_file:
-            product_type = "whatever"
+            collection = "whatever"
             stop_date_str = "2022-01-01"
             stop_date_datetime = datetime.strptime(
                 stop_date_str, "%Y-%m-%d"
@@ -580,7 +580,7 @@ class TestEodagCli(unittest.TestCase):
                     "--conf",
                     conf_file,
                     "-p",
-                    product_type,
+                    collection,
                     "--end",
                     stop_date_str,
                     "--count",
@@ -594,7 +594,7 @@ class TestEodagCli(unittest.TestCase):
                 start_datetime=None,
                 end_datetime=stop_date_datetime,
                 cloudCover=None,
-                collection=product_type,
+                collection=collection,
                 instrument=None,
                 platform=None,
                 platformSerialIdentifier=None,
@@ -611,7 +611,7 @@ class TestEodagCli(unittest.TestCase):
         with self.user_conf() as conf_file:
             locs_file = os.path.join(TEST_RESOURCES_PATH, "file_locations_override.yml")
 
-            product_type = "whatever"
+            collection = "whatever"
             self.runner.invoke(
                 eodag,
                 [
@@ -621,7 +621,7 @@ class TestEodagCli(unittest.TestCase):
                     "--locs",
                     locs_file,
                     "-p",
-                    product_type,
+                    collection,
                 ],
             )
 
@@ -630,22 +630,22 @@ class TestEodagCli(unittest.TestCase):
                 locations_conf_path=locs_file,
             )
 
-    def test_eodag_list_product_type_ok(self):
+    def test_eodag_list_collection_ok(self):
         """Calling eodag list without provider should return all supported product types"""
-        all_supported_product_types = [
+        all_supported_collections = [
             pt
             for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
             if len(provs) != 0 and pt != GENERIC_PRODUCT_TYPE
         ]
         result = self.runner.invoke(eodag, ["list", "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
-        for pt in all_supported_product_types:
+        for pt in all_supported_collections:
             self.assertIn(pt, result.output)
 
-    def test_eodag_list_product_type_with_provider_ok(self):
+    def test_eodag_list_collection_with_provider_ok(self):
         """Calling eodag list with provider should return all supported product types of specified provider"""  # noqa
         for provider in test_core.TestCore.SUPPORTED_PROVIDERS:
-            provider_supported_product_types = [
+            provider_supported_collections = [
                 pt
                 for pt, provs in test_core.TestCore.SUPPORTED_PRODUCT_TYPES.items()
                 if provider in provs
@@ -653,14 +653,14 @@ class TestEodagCli(unittest.TestCase):
             ]
             result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
             self.assertEqual(result.exit_code, 0)
-            for pt in provider_supported_product_types:
+            for pt in provider_supported_collections:
                 self.assertIn(
                     pt,
                     result.output,
                     f"{pt} was not found in {provider} supported product types",
                 )
 
-    def test_eodag_list_product_type_with_provider_ko(self):
+    def test_eodag_list_collection_with_provider_ko(self):
         """Calling eodag list with unsupported provider should fail and print a list of available providers"""  # noqa
         provider = "random"
         result = self.runner.invoke(eodag, ["list", "-p", provider, "--no-fetch"])
@@ -671,34 +671,34 @@ class TestEodagCli(unittest.TestCase):
             result.output,
         )
 
-    @mock.patch("eodag.cli.EODataAccessGateway.fetch_product_types_list", autospec=True)
-    def test_eodag_list_product_type_fetch(self, mock_fetch_product_types_list):
+    @mock.patch("eodag.cli.EODataAccessGateway.fetch_collections_list", autospec=True)
+    def test_eodag_list_collection_fetch(self, mock_fetch_collections_list):
         """Calling eodag list should fetch for new product types depending on passed option"""
         result = self.runner.invoke(eodag, ["list", "--no-fetch"])
         self.assertEqual(result.exit_code, 0)
-        assert not mock_fetch_product_types_list.called
+        assert not mock_fetch_collections_list.called
 
         result = self.runner.invoke(eodag, ["list"])
         self.assertEqual(result.exit_code, 0)
-        mock_fetch_product_types_list.assert_called_once_with(mock.ANY, provider=None)
+        mock_fetch_collections_list.assert_called_once_with(mock.ANY, provider=None)
 
         result = self.runner.invoke(eodag, ["list", "-p", "peps"])
         self.assertEqual(result.exit_code, 0)
-        mock_fetch_product_types_list.assert_called_with(mock.ANY, provider="peps")
-        self.assertEqual(mock_fetch_product_types_list.call_count, 2)
+        mock_fetch_collections_list.assert_called_with(mock.ANY, provider="peps")
+        self.assertEqual(mock_fetch_collections_list.call_count, 2)
 
-    @mock.patch("eodag.cli.EODataAccessGateway.list_product_types", autospec=True)
-    @mock.patch("eodag.cli.EODataAccessGateway.guess_product_type", autospec=True)
-    def test_eodag_guess_product_type_ok(
-        self, mock_guess_product_type, mock_list_product_types
+    @mock.patch("eodag.cli.EODataAccessGateway.list_collections", autospec=True)
+    @mock.patch("eodag.cli.EODataAccessGateway.guess_collection", autospec=True)
+    def test_eodag_guess_collection_ok(
+        self, mock_guess_collection, mock_list_collections
     ):
         """Calling eodag list with one or several valid product type feature(s) should return
         all supported product types with this (these) feature(s) among the ones of its provider
         and with or without fetching provider according to the command.
         """
         provider = "peps"
-        mock_guess_product_type.return_value = ["foo", "bar"]
-        mock_list_product_types.return_value = [
+        mock_guess_collection.return_value = ["foo", "bar"]
+        mock_list_collections.return_value = [
             {"ID": "foo", "title": "this is foo"},
             {"ID": "bar", "title": "this is bar"},
             {"ID": "baz", "title": "this is baz"},
@@ -714,16 +714,16 @@ class TestEodagCli(unittest.TestCase):
         self.assertIn("bar", result.output)
         self.assertNotIn("baz", result.output)
 
-        mock_list_product_types.assert_called_with(
+        mock_list_collections.assert_called_with(
             mock.ANY, provider=provider, fetch_providers=False
         )
 
     @mock.patch(
-        "eodag.cli.EODataAccessGateway.guess_product_type",
+        "eodag.cli.EODataAccessGateway.guess_collection",
         autospec=True,
         side_effect=NoMatchingCollection(),
     )
-    def test_eodag_guess_product_type_ko(self, mock_guess_product_type):
+    def test_eodag_guess_collection_ko(self, mock_guess_collection):
         """Calling eodag list with invalid product type feature(s) should print a
         'no matching' type message and return error code.
         """
@@ -738,31 +738,31 @@ class TestEodagCli(unittest.TestCase):
         self.assertNotEqual(result.exit_code, 0)
 
     @mock.patch(
-        "eodag.cli.EODataAccessGateway.discover_product_types",
+        "eodag.cli.EODataAccessGateway.discover_collections",
         autospec=True,
         return_value={},
     )
-    def test_eodag_discover_product_types(self, mock_discover_product_types):
+    def test_eodag_discover_collections(self, mock_discover_collections):
         """Calling eodag discover should fetch providers for new product types"""
         origin_dir = os.getcwd()
         try:
             os.chdir(self.tmp_home_dir.name)
             default_output_path = os.path.join(
-                self.tmp_home_dir.name, "ext_product_types.json"
+                self.tmp_home_dir.name, "ext_collections.json"
             )
             self.assertFalse(os.path.isfile(default_output_path))
 
             # call without any arg
             result = self.runner.invoke(eodag, ["discover"])
             self.assertEqual(result.exit_code, 0)
-            mock_discover_product_types.assert_called_once_with(mock.ANY)
+            mock_discover_collections.assert_called_once_with(mock.ANY)
             self.assertTrue(os.path.isfile(default_output_path))
 
             # call with provider
             result = self.runner.invoke(eodag, ["discover", "-p", "peps"])
             self.assertEqual(result.exit_code, 0)
-            mock_discover_product_types.assert_called_with(mock.ANY, provider="peps")
-            self.assertEqual(mock_discover_product_types.call_count, 2)
+            mock_discover_collections.assert_called_with(mock.ANY, provider="peps")
+            self.assertEqual(mock_discover_collections.call_count, 2)
             os.remove(default_output_path)
 
             other_file_path = os.path.join(self.tmp_home_dir.name, "toto")
@@ -771,8 +771,8 @@ class TestEodagCli(unittest.TestCase):
             self.assertFalse(os.path.isfile(f"{other_file_path}.json"))
             result = self.runner.invoke(eodag, ["discover", "--storage", "toto"])
             self.assertEqual(result.exit_code, 0)
-            mock_discover_product_types.assert_called_with(mock.ANY)
-            self.assertEqual(mock_discover_product_types.call_count, 3)
+            mock_discover_collections.assert_called_with(mock.ANY)
+            self.assertEqual(mock_discover_collections.call_count, 3)
             self.assertFalse(os.path.isfile(other_file_path))
             self.assertTrue(os.path.isfile(f"{other_file_path}.json"))
             os.remove(f"{other_file_path}.json")
@@ -781,8 +781,8 @@ class TestEodagCli(unittest.TestCase):
             self.assertFalse(os.path.isfile(f"{other_file_path}.json"))
             result = self.runner.invoke(eodag, ["discover", "--storage", "toto.json"])
             self.assertEqual(result.exit_code, 0)
-            mock_discover_product_types.assert_called_with(mock.ANY)
-            self.assertEqual(mock_discover_product_types.call_count, 4)
+            mock_discover_collections.assert_called_with(mock.ANY)
+            self.assertEqual(mock_discover_collections.call_count, 4)
             self.assertTrue(os.path.isfile(f"{other_file_path}.json"))
             os.remove(f"{other_file_path}.json")
         finally:

@@ -65,7 +65,7 @@ from eodag.utils.exceptions import ValidationError
 logger = logging.getLogger("eodag.config")
 
 EXT_PRODUCT_TYPES_CONF_URI = (
-    "https://cs-si.github.io/eodag/eodag/resources/ext_product_types.json"
+    "https://cs-si.github.io/eodag/eodag/resources/ext_collections.json"
 )
 AUTH_TOPIC_KEYS = ("auth", "search_auth", "download_auth")
 PLUGINS_TOPICS_KEYS = ("api", "search", "download") + AUTH_TOPIC_KEYS
@@ -135,7 +135,7 @@ class ProviderConfig(yaml.YAMLObject):
     auth: PluginConfig
     search_auth: PluginConfig
     download_auth: PluginConfig
-    product_types_fetched: bool  # set in core.update_product_types_list
+    collections_fetched: bool  # set in core.update_collections_list
 
     yaml_loader = yaml.Loader
     yaml_dumper = yaml.SafeDumper
@@ -297,21 +297,21 @@ class PluginConfig(yaml.YAMLObject):
         #: JsonPath to the list of product types
         results_entry: Union[JSONPath, str]
         #: Mapping for the product type id
-        generic_product_type_id: str
+        generic_collection_id: str
         #: Mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed from the provider
         #: result
-        generic_product_type_parsable_metadata: dict[str, str]
+        generic_collection_parsable_metadata: dict[str, str]
         #: Mapping for product type properties which can be parsed from the result and are not product type metadata
-        generic_product_type_parsable_properties: dict[str, str]
+        generic_collection_parsable_properties: dict[str, str]
         #: Mapping for product type properties which cannot be parsed from the result and are not product type metadata
-        generic_product_type_unparsable_properties: dict[str, str]
+        generic_collection_unparsable_properties: dict[str, str]
         #: URL to fetch data for a single collection
         single_collection_fetch_url: str
         #: Query string to be added to the fetch_url to filter for a collection
         single_collection_fetch_qs: str
         #: Mapping for product type metadata returned by the endpoint given in single_collection_fetch_url. If ``ID``
-        #: is redefined in this mapping, it will replace ``generic_product_type_id`` value
-        single_product_type_parsable_metadata: dict[str, str]
+        #: is redefined in this mapping, it will replace ``generic_collection_id`` value
+        single_collection_parsable_metadata: dict[str, str]
 
     class DiscoverQueryables(TypedDict, total=False):
         """Configuration for queryables discovery"""
@@ -319,7 +319,7 @@ class PluginConfig(yaml.YAMLObject):
         #: URL to fetch the queryables valid for all product types
         fetch_url: Optional[str]
         #: URL to fetch the queryables for a specific product type
-        product_type_fetch_url: Optional[str]
+        collection_fetch_url: Optional[str]
         #: Type of the result
         result_type: str
         #: JsonPath to retrieve the queryables from the provider result
@@ -432,7 +432,7 @@ class PluginConfig(yaml.YAMLObject):
     # copied from ProviderConfig in PluginManager.get_search_plugins()
     priority: int
     # per product type metadata-mapping, set in core._prepare_search
-    product_type_config: dict[str, Any]
+    collection_config: dict[str, Any]
 
     #: :class:`~eodag.plugins.search.base.Search` Plugin API endpoint
     api_endpoint: str
@@ -450,7 +450,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
-    discover_product_types: PluginConfig.DiscoverCollections
+    discover_collections: PluginConfig.DiscoverCollections
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
@@ -1062,7 +1062,7 @@ def load_stac_provider_config() -> dict[str, Any]:
     ).source
 
 
-def get_ext_product_types_conf(
+def get_ext_collections_conf(
     conf_uri: str = EXT_PRODUCT_TYPES_CONF_URI,
 ) -> dict[str, Any]:
     """Read external product types conf

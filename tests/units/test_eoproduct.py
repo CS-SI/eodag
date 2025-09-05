@@ -110,7 +110,7 @@ class TestEOProduct(EODagTestCase):
         )
         self.assertIsNone(product.search_intersection)
 
-    def test_eoproduct_default_driver_unsupported_product_type(self):
+    def test_eoproduct_default_driver_unsupported_collection(self):
         """EOProduct driver attr must be set even if its product type is not supported"""
         product = self._dummy_product(collection=self.NOT_ASSOCIATED_PRODUCT_TYPE)
         self.assertIsInstance(product.driver, DatasetDriver)
@@ -130,7 +130,7 @@ class TestEOProduct(EODagTestCase):
             properties["eodag_search_intersection"],
             self._tuples_to_lists(geometry.mapping(product.search_intersection)),
         )
-        self.assertEqual(properties["eodag_product_type"], self.product_type)
+        self.assertEqual(properties["eodag_collection"], self.collection)
 
     def test_eoproduct_from_geointerface(self):
         """EOProduct must be build-able from its geo-interface"""

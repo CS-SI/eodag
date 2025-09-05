@@ -52,8 +52,8 @@ class UnsupportedProvider(EodagError):
 class UnsupportedCollection(EodagError):
     """An error indicating that eodag does not support a product type"""
 
-    def __init__(self, product_type: str) -> None:
-        self.product_type = product_type
+    def __init__(self, collection: str) -> None:
+        self.collection = collection
 
 
 class UnsupportedDatasetAddressScheme(EodagError):

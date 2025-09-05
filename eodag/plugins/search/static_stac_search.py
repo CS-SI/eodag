@@ -74,7 +74,7 @@ class StaticStacSearch(StacSearch):
         config.discover_metadata["auto_discovery"] = False
         # there is no endpoint for fetching queryables with a static search
         config.discover_queryables["fetch_url"] = None
-        config.discover_queryables["product_type_fetch_url"] = None
+        config.discover_queryables["collection_fetch_url"] = None
 
         super(StaticStacSearch, self).__init__(provider, config)
         self.config.__dict__.setdefault("max_connections", 100)
@@ -87,17 +87,17 @@ class StaticStacSearch(StacSearch):
         self.config.__dict__["pagination"].setdefault("max_items_per_page", -1)
         # disable product types discovery by default (if endpoints equals to STAC API default)
         if (
-            getattr(self.config, "discover_product_types", {}).get("fetch_url")
+            getattr(self.config, "discover_collections", {}).get("fetch_url")
             == "{api_endpoint}/../collections"
         ):
-            self.config.discover_product_types = {}
+            self.config.discover_collections = {}
 
-    def discover_product_types(self, **kwargs: Any) -> Optional[dict[str, Any]]:
-        """Fetch product types list from a static STAC Catalog provider using `discover_product_types` conf
+    def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
+        """Fetch product types list from a static STAC Catalog provider using `discover_collections` conf
 
         :returns: configuration dict containing fetched product types information
         """
-        unformatted_fetch_url = self.config.discover_product_types.get("fetch_url")
+        unformatted_fetch_url = self.config.discover_collections.get("fetch_url")
         if unformatted_fetch_url is None:
             return None
         fetch_url = unformatted_fetch_url.format(**self.config.__dict__)
@@ -113,13 +113,13 @@ class StaticStacSearch(StacSearch):
             collections = [c for c in collections if c["id"] == kwargs["q"]]
         collections_mock_response = {"collections": collections}
 
-        # discover_product_types on mocked QueryStringSearch._request
+        # discover_collections on mocked QueryStringSearch._request
         with mock.patch(
             "eodag.plugins.search.qssearch.QueryStringSearch._request",
             autospec=True,
             return_value=MockResponse(collections_mock_response, 200),
         ):
-            conf_update_dict = super(StaticStacSearch, self).discover_product_types(
+            conf_update_dict = super(StaticStacSearch, self).discover_collections(
                 **kwargs
             )
 
