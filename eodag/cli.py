@@ -194,7 +194,7 @@ def version() -> None:
     type=click.IntRange(0, 100),
     help="Maximum cloud cover percentage needed for the product",
 )
-@click.option("-p", "--productType", help="The product type to search")
+@click.option("-p", "--collection", help="The product type to search")
 @click.option("-i", "--instrument", help="Search for products matching this instrument")
 @click.option("-P", "--platform", help="Search for products matching this platform")
 @click.option(
@@ -279,7 +279,7 @@ def version() -> None:
 def search_crunch(ctx: Context, **kwargs: Any) -> None:
     """Search product types and optionnaly apply crunchers to search results"""
     # Process inputs for search
-    product_type = kwargs.pop("producttype")
+    collection = kwargs.pop("collection")
     instrument = kwargs.pop("instrument")
     platform = kwargs.pop("platform")
     platform_identifier = kwargs.pop("platformserialidentifier")
@@ -290,7 +290,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     custom = kwargs.pop("query")
     if not any(
         [
-            product_type,
+            collection,
             instrument,
             platform,
             platform_identifier,
@@ -324,7 +324,7 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         "startTimeFromAscendingNode": None,
         "completionTimeFromAscendingNode": None,
         "cloudCover": kwargs.pop("cloudcover"),
-        "productType": product_type,
+        "collection": collection,
         "instrument": instrument,
         "platform": platform,
         "platformSerialIdentifier": platform_identifier,
