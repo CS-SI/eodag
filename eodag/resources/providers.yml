@@ -915,6 +915,21 @@
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
+    S3_LAN_HY:
+      productType: SR_2_LAN_HY
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_SI:
+      productType: SR_2_LAN_SI
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_LI:
+      productType: SR_2_LAN_LI
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
     S3_WAT:
       productType: SR_2_WAT___
       collection: SENTINEL-3
@@ -2564,6 +2579,21 @@
         cloudCover: '$.null'
     S3_LAN:
       productType: SR_2_LAN___
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_HY:
+      productType: SR_2_LAN_HY
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_SI:
+      productType: SR_2_LAN_SI
+      collection: SENTINEL-3
+      metadata_mapping:
+        cloudCover: '$.null'
+    S3_LAN_LI:
+      productType: SR_2_LAN_LI
       collection: SENTINEL-3
       metadata_mapping:
         cloudCover: '$.null'
