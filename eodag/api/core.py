@@ -175,7 +175,7 @@ class EODataAccessGateway:
                 load_stac_provider_config(),
             )
 
-            self._sync_provider_product_types(
+            self._sync_provider_collections(
                 provider, available_product_types, strict_mode
             )
         # init product types configuration
@@ -227,7 +227,7 @@ class EODataAccessGateway:
         for pt_id, pd_dict in self.product_types_config.source.items():
             self.product_types_config.source[pt_id].setdefault("_id", pt_id)
 
-    def _sync_provider_product_types(
+    def _sync_provider_collections(
         self,
         provider: str,
         available_product_types: set[str],

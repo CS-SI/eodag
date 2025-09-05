@@ -614,14 +614,14 @@ class TestEODagEndToEnd(EndToEndBase):
             ],
         )
         # check that all pre-configured product types are listed by provider
-        provider_product_types = [
+        provider_collections = [
             v["collection"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]
-        for provider_product_type in provider_product_types:
+        for provider_collection in provider_collections:
             self.assertIn(
-                provider_product_type,
+                provider_collection,
                 ext_product_types_conf[provider]["providers_config"],
             )
 
@@ -648,14 +648,14 @@ class TestEODagEndToEnd(EndToEndBase):
             ],
         )
         # check that all pre-configured product types are listed by provider
-        provider_product_types = [
+        provider_collections = [
             v["productType"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]
-        for provider_product_type in provider_product_types:
+        for provider_collection in provider_collections:
             self.assertIn(
-                provider_product_type,
+                provider_collection,
                 ext_product_types_conf[provider]["providers_config"],
             )
 
@@ -682,14 +682,14 @@ class TestEODagEndToEnd(EndToEndBase):
             ],
         )
         # check that all pre-configured product types are listed by provider
-        provider_product_types = [
+        provider_collections = [
             v["productType"]
             for k, v in self.eodag.providers_config[provider].products.items()
             if k != GENERIC_PRODUCT_TYPE
         ]
-        for provider_product_type in provider_product_types:
+        for provider_collection in provider_collections:
             self.assertIn(
-                provider_product_type,
+                provider_collection,
                 ext_product_types_conf[provider]["providers_config"],
             )
 

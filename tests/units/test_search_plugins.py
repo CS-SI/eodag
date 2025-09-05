@@ -2092,7 +2092,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
             productType="COP_DEM_GLO90_DGED", provider="wekeo_main"
         )
         self.assertIn("productType", queryables)
-        self.assertIn("providerProductType", queryables)
+        self.assertIn("providerCollection", queryables)
         self.assertIn("geom", queryables)
         self.assertIn("start", queryables)
         self.assertIn("end", queryables)
