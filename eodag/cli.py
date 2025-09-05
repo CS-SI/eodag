@@ -51,7 +51,7 @@ import click
 
 from eodag.api.core import EODataAccessGateway, SearchResult
 from eodag.utils import DEFAULT_ITEMS_PER_PAGE, DEFAULT_PAGE
-from eodag.utils.exceptions import NoMatchingProductType, UnsupportedProvider
+from eodag.utils.exceptions import NoMatchingCollection, UnsupportedProvider
 from eodag.utils.logging import setup_logging
 
 if TYPE_CHECKING:
@@ -445,7 +445,7 @@ def list_pt(ctx: Context, **kwargs: Any) -> None:
             sensorType=kwargs.get("sensortype"),
             **kwargs,
         )
-    except NoMatchingProductType:
+    except NoMatchingCollection:
         if any(
             kwargs[arg]
             for arg in [

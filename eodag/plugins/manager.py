@@ -199,7 +199,7 @@ class PluginManager:
             configs = self.product_type_to_provider_config_map.get(product_type)
             if not configs:
                 logger.info(
-                    "UnsupportedProductType: %s, using generic settings", product_type
+                    "UnsupportedCollection: %s, using generic settings", product_type
                 )
                 configs = self.product_type_to_provider_config_map[GENERIC_PRODUCT_TYPE]
         else:

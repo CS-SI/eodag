@@ -30,7 +30,7 @@ from tests.context import (
     EODataAccessGateway,
     EOProduct,
     HeaderAuth,
-    NoMatchingProductType,
+    NoMatchingCollection,
     RequestError,
     USGSError,
 )
@@ -191,7 +191,7 @@ class TestCoreSearch(unittest.TestCase):
     ):
         # UsgsApi / usgs
         self.dag.set_preferred_provider("usgs")
-        self.assertRaises(NoMatchingProductType, self.dag.search, raise_errors=True)
+        self.assertRaises(NoMatchingCollection, self.dag.search, raise_errors=True)
         self.assertRaises(
             RequestError, self.dag.search, raise_errors=True, collection="foo"
         )

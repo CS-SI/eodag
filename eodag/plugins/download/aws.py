@@ -53,7 +53,7 @@ from eodag.utils.exceptions import (
     AuthenticationError,
     DownloadError,
     MisconfiguredError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     NotAvailableError,
     TimeOutError,
 )
@@ -614,7 +614,7 @@ class AwsDownload(Download):
                 )
 
         if not unique_product_chunks and raise_error:
-            raise NoMatchingProductType("No product found to download.")
+            raise NoMatchingCollection("No product found to download.")
 
         return unique_product_chunks
 

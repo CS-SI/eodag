@@ -374,9 +374,9 @@ class TestCoreProvidersConfig(TestCase):
         )
 
 
-class TestCoreProductTypesConfig(TestCase):
+class TestCoreCollectionsConfig(TestCase):
     def setUp(self):
-        super(TestCoreProductTypesConfig, self).setUp()
+        super(TestCoreCollectionsConfig, self).setUp()
         # Mock home and eodag conf directory to tmp dir
         self.tmp_home_dir = tempfile.TemporaryDirectory()
         self.expanduser_mock = mock.patch(
@@ -386,7 +386,7 @@ class TestCoreProductTypesConfig(TestCase):
         self.dag = EODataAccessGateway()
 
     def tearDown(self):
-        super(TestCoreProductTypesConfig, self).tearDown()
+        super(TestCoreCollectionsConfig, self).tearDown()
         # stop Mock and remove tmp config dir
         self.expanduser_mock.stop()
         self.tmp_home_dir.cleanup()

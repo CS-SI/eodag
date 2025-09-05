@@ -37,7 +37,7 @@ from tests.context import (
     DEFAULT_ITEMS_PER_PAGE,
     AuthenticationError,
     MisconfiguredError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     download,
     eodag,
     search_crunch,
@@ -721,7 +721,7 @@ class TestEodagCli(unittest.TestCase):
     @mock.patch(
         "eodag.cli.EODataAccessGateway.guess_product_type",
         autospec=True,
-        side_effect=NoMatchingProductType(),
+        side_effect=NoMatchingCollection(),
     )
     def test_eodag_guess_product_type_ko(self, mock_guess_product_type):
         """Calling eodag list with invalid product type feature(s) should print a

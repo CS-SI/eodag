@@ -35,7 +35,7 @@ from eodag.utils import MockResponse, ProgressCallback
 from eodag.utils.exceptions import (
     DownloadError,
     MisconfiguredError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     ValidationError,
 )
 from tests import TEST_RESOURCES_PATH
@@ -2270,7 +2270,7 @@ class TestDownloadPluginAws(BaseDownloadPluginTest):
         plugin.config.products[self.product.collection]["build_safe"] = False
         plugin.config.flatten_top_dirs = True
 
-        with self.assertRaises(NoMatchingProductType):
+        with self.assertRaises(NoMatchingCollection):
             plugin.download(self.product, outputs_prefix=self.output_dir)
 
     @mock.patch(

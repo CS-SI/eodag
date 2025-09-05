@@ -167,37 +167,37 @@ class QueryStringSearch(Search):
           * :attr:`~eodag.config.PluginConfig.Pagination.start_page` (``int``): number of the first page; default: ``1``
 
         * :attr:`~eodag.config.PluginConfig.discover_product_types`
-          (:class:`~eodag.config.PluginConfig.DiscoverProductTypes`): configuration for product type discovery based on
+          (:class:`~eodag.config.PluginConfig.DiscoverCollections`): configuration for product type discovery based on
           information from the provider; It contains the keys:
 
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` (``str``) (**mandatory**): url from which
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.fetch_url` (``str``) (**mandatory**): url from which
             the product types can be fetched
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.max_connections` (``int``): Maximum number of
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.max_connections` (``int``): Maximum number of
             connections for concurrent HTTP requests
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.result_type` (``str``): type of the provider result;
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.result_type` (``str``): type of the provider result;
             currently only ``json`` is supported (other types could be used in an extension of this plugin)
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.results_entry` (``str``) (**mandatory**): json path
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.results_entry` (``str``) (**mandatory**): json path
             to the list of product types
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_id` (``str``): mapping for the
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_id` (``str``): mapping for the
             product type id
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_metadata`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_parsable_metadata`
             (``dict[str, str]``): mapping for product type metadata (e.g. ``abstract``, ``licence``) which can be parsed
             from the provider result
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_parsable_properties`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_parsable_properties`
             (``dict[str, str]``): mapping for product type properties which can be parsed from the result and are not
             product type metadata
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.generic_product_type_unparsable_properties`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.generic_product_type_unparsable_properties`
             (``dict[str, str]``): mapping for product type properties which cannot be parsed from the result and are not
             product type metadata
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url` (``str``): url to fetch
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_fetch_url` (``str``): url to fetch
             data for a single collection; used if product type metadata is not available from the endpoint given in
-            :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url`
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_qs` (``str``): query string
-            to be added to the :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.fetch_url` to filter for a
+            :attr:`~eodag.config.PluginConfig.DiscoverCollections.fetch_url`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_fetch_qs` (``str``): query string
+            to be added to the :attr:`~eodag.config.PluginConfig.DiscoverCollections.fetch_url` to filter for a
             collection
-          * :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_product_type_parsable_metadata`
+          * :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_product_type_parsable_metadata`
             (``dict[str, str]``): mapping for product type metadata returned by the endpoint given in
-            :attr:`~eodag.config.PluginConfig.DiscoverProductTypes.single_collection_fetch_url`.
+            :attr:`~eodag.config.PluginConfig.DiscoverCollections.single_collection_fetch_url`.
 
         * :attr:`~eodag.config.PluginConfig.sort` (:class:`~eodag.config.PluginConfig.Sort`): configuration for sorting
           the results. It contains the keys:
