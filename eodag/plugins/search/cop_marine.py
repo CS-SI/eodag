@@ -132,8 +132,8 @@ class CopMarineSearch(StaticStacSearch):
         # reset to original metadata mapping from config (changed in super class init)
         self.config.metadata_mapping = original_metadata_mapping
 
-    def _get_product_type_info(
-        self, product_type: str
+    def _get_collection_info(
+        self, collection: str
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """Fetch product type and associated datasets info"""
 
@@ -141,31 +141,31 @@ class CopMarineSearch(StaticStacSearch):
             **self.config.__dict__
         )
 
-        logger.debug("fetch data for collection %s", product_type)
-        provider_product_type = self.config.products.get(product_type, {}).get(
+        logger.debug("fetch data for collection %s", collection)
+        provider_collection = self.config.products.get(collection, {}).get(
             "_collection", None
         )
-        if not provider_product_type:
-            provider_product_type = product_type
+        if not provider_collection:
+            provider_collection = collection
         collection_url = (
-            fetch_url.replace("catalog.stac.json", provider_product_type)
+            fetch_url.replace("catalog.stac.json", provider_collection)
             + "/product.stac.json"
         )
         try:
             collection_data = requests.get(collection_url).json()
         except requests.RequestException as exc:
             if exc.errno == 404:
-                logger.error("product %s not found", product_type)
-                raise UnsupportedProductType(product_type)
-            logger.error("data for product %s could not be fetched", product_type)
+                logger.error("product %s not found", collection)
+                raise UnsupportedProductType(collection)
+            logger.error("data for product %s could not be fetched", collection)
             raise RequestError.from_error(
-                exc, f"data for product {product_type} could not be fetched"
+                exc, f"data for product {collection} could not be fetched"
             ) from exc
 
         datasets = []
         for link in [li for li in collection_data["links"] if li["rel"] == "item"]:
             dataset_url = (
-                fetch_url.replace("catalog.stac.json", provider_product_type)
+                fetch_url.replace("catalog.stac.json", provider_collection)
                 + "/"
                 + link["href"]
             )
@@ -182,7 +182,7 @@ class CopMarineSearch(StaticStacSearch):
         collection_objects: ListObjectsOutputTypeDef,
         product_id: str,
         s3_url: str,
-        product_type: str,
+        collection: str,
         dataset_item: dict[str, Any],
         collection_dict: dict[str, Any],
     ):
@@ -194,7 +194,7 @@ class CopMarineSearch(StaticStacSearch):
         for obj in collection_objects["Contents"]:
             if product_id in obj["Key"]:
                 return self._create_product(
-                    product_type,
+                    collection,
                     obj["Key"],
                     s3_url,
                     dataset_item,
@@ -205,7 +205,7 @@ class CopMarineSearch(StaticStacSearch):
 
     def _create_product(
         self,
-        product_type: str,
+        collection: str,
         item_key: str,
         s3_url: str,
         dataset_item: dict[str, Any],
@@ -256,7 +256,7 @@ class CopMarineSearch(StaticStacSearch):
             if key not in ["id", "title", "start_datetime", "end_datetime", "datetime"]:
                 properties[key] = value
 
-        code_mapping = self.config.products.get(product_type, {}).get(
+        code_mapping = self.config.products.get(collection, {}).get(
             "code_mapping", None
         )
         if code_mapping:
@@ -284,7 +284,7 @@ class CopMarineSearch(StaticStacSearch):
         }
         additional_assets = self.get_assets_from_mapping(dataset_item)
         assets.update(additional_assets)
-        product = EOProduct(self.provider, properties, productType=product_type)
+        product = EOProduct(self.provider, properties, collection=collection)
         product.assets = AssetsDict(product, assets)
         return product
 
@@ -306,12 +306,12 @@ class CopMarineSearch(StaticStacSearch):
         if page is None or items_per_page is None or page > 1 and items_per_page <= 0:
             return ([], 0) if prep.count else ([], None)
 
-        product_type = kwargs.get("productType", prep.product_type)
-        if not product_type:
+        collection = kwargs.get("collection", prep.collection)
+        if not collection:
             raise ValidationError(
                 "parameter product type is required for search with cop_marine provider"
             )
-        collection_dict, datasets_items_list = self._get_product_type_info(product_type)
+        collection_dict, datasets_items_list = self._get_collection_info(collection)
         geometry = kwargs.pop("geometry", None)
         products: list[EOProduct] = []
         start_index = items_per_page * (page - 1) + 1
@@ -347,7 +347,7 @@ class CopMarineSearch(StaticStacSearch):
                 s3_url = dataset_item["assets"]["native"]["href"]
             except KeyError as e:
                 logger.warning(
-                    f"Unable to extract info from {product_type} item #{i}: {str(e)}"
+                    f"Unable to extract info from {collection} item #{i}: {str(e)}"
                 )
                 continue
 
@@ -366,7 +366,7 @@ class CopMarineSearch(StaticStacSearch):
                     continue
                 if len(products) < items_per_page or items_per_page < 0:
                     product = self._create_product(
-                        product_type,
+                        collection,
                         collection_path,
                         endpoint_url + "/" + bucket,
                         dataset_item,
@@ -401,7 +401,7 @@ class CopMarineSearch(StaticStacSearch):
                         s3_objects,
                         kwargs["id"],
                         endpoint_url + "/" + bucket,
-                        product_type,
+                        collection,
                         dataset_item,
                         collection_dict,
                     )
@@ -465,7 +465,7 @@ class CopMarineSearch(StaticStacSearch):
                             continue
                         if len(products) < items_per_page or items_per_page < 0:
                             product = self._create_product(
-                                product_type,
+                                collection,
                                 item_key,
                                 endpoint_url + "/" + bucket,
                                 dataset_item,
