@@ -448,21 +448,6 @@ def stream_download_from_s3(
     :raises NotAvailableError: If S3 objects cannot be accessed
     :raises AuthenticationError: If S3 credentials are invalid
     :raises NotImplementedError: If compressed files within ZIP archives are encountered
-
-    Example:
-        >>> files = [S3FileInfo(bucket_name="bucket", key="file.txt", size=1024)]
-        >>> response = stream_download_from_s3(s3_client, files)
-        >>> for chunk in response.content:
-        ...     # Process streaming data
-        ...     pass
-
-    Example with ZIP archive file:
-        >>> files = [S3FileInfo(
-        ...     bucket_name="bucket",
-        ...     key="archive.zip!internal.txt",
-        ...     size=512
-        ... )]
-        >>> response = stream_download_from_s3(s3_client, files)
     """
 
     executor = ThreadPoolExecutor(max_workers=max_workers)

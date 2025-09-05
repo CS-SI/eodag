@@ -1181,6 +1181,11 @@ class HTTPDownload(Download):
 
         # Process each asset
         for asset in assets_values:
+            if not asset["href"] or asset["href"].startswith("file:"):
+                logger.info(
+                    f"Local asset detected. Download skipped for {asset['href']}"
+                )
+                continue
             asset_chunks = get_chunks_generator(asset)
             try:
                 # start reading chunks to set assets attributes
@@ -1193,9 +1198,9 @@ class HTTPDownload(Download):
             assets_stream_list.append(
                 StreamResponse(
                     content=asset_chunks,
-                    filename=asset.filename,
-                    arcname=asset.rel_path,
-                    size=asset.size or None,
+                    filename=getattr(asset, "filename", None),
+                    arcname=getattr(asset, "rel_path", None),
+                    size=getattr(asset, "size", 0) or None,
                 )
             )
 

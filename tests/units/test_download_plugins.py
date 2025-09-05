@@ -710,8 +710,8 @@ class TestDownloadPluginHttp(BaseDownloadPluginTest):
         self.product.properties["id"] = "someproduct"
         self.product.assets.clear()
         self.product.assets.update({"foo": {"href": "http://somewhere/something"}})
-        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = io.BytesIO(
-            b"some content"
+        mock_requests_get.return_value.__enter__.return_value.iter_content.return_value = iter(
+            [b"some ", b"content"]
         )
         mock_requests_get.return_value.__enter__.return_value.headers = {
             "content-disposition": '; filename = "somethingelse"'
