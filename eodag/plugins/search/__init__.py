@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 class PreparedSearch:
     """An object collecting needed information for search."""
 
-    product_type: Optional[str] = None
+    collection: Optional[str] = None
     page: Optional[int] = DEFAULT_PAGE
     items_per_page: Optional[int] = DEFAULT_ITEMS_PER_PAGE
     auth: Optional[Union[AuthBase, S3ServiceResource]] = None

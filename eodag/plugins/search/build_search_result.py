@@ -500,10 +500,10 @@ class ECMWFSearch(PostJsonSearch):
         :param kwargs: keyword arguments to be used in the search
         :returns: list of products and number of products (optional)
         """
-        product_type = prep.product_type
-        if not product_type:
-            product_type = kwargs.get("productType")
-        kwargs = self._preprocess_search_params(kwargs, product_type)
+        collection = prep.collection
+        if not collection:
+            collection = kwargs.get("collection")
+        kwargs = self._preprocess_search_params(kwargs, collection)
         result, num_items = super().query(prep, **kwargs)
         if prep.count and not num_items:
             num_items = 1

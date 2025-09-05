@@ -112,7 +112,7 @@ class Search(PluginTopic):
     ) -> Optional[dict[str, Annotated[Any, FieldInfo]]]:
         """Fetch queryables list from provider using :attr:`~eodag.config.PluginConfig.discover_queryables` conf
 
-        :param kwargs: additional filters for queryables (``productType`` and other search
+        :param kwargs: additional filters for queryables (``collection`` and other search
                        arguments)
         :returns: fetched queryable parameters dict
         """
