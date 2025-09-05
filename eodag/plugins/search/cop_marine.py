@@ -135,7 +135,7 @@ class CopMarineSearch(StaticStacSearch):
     def _get_collection_info(
         self, collection: str
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-        """Fetch product type and associated datasets info"""
+        """Fetch collection and associated datasets info"""
 
         fetch_url = cast(str, self.config.discover_collections["fetch_url"]).format(
             **self.config.__dict__
@@ -309,7 +309,7 @@ class CopMarineSearch(StaticStacSearch):
         collection = kwargs.get("collection", prep.collection)
         if not collection:
             raise ValidationError(
-                "parameter product type is required for search with cop_marine provider"
+                "parameter collection is required for search with cop_marine provider"
             )
         collection_dict, datasets_items_list = self._get_collection_info(collection)
         geometry = kwargs.pop("geometry", None)

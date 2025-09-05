@@ -104,7 +104,7 @@ class Search(PluginTopic):
         raise NotImplementedError("A Search plugin must implement a method named query")
 
     def discover_collections(self, **kwargs: Any) -> Optional[dict[str, Any]]:
-        """Fetch product types list from provider using `discover_collections` conf"""
+        """Fetch collections list from provider using `discover_collections` conf"""
         return None
 
     def discover_queryables(
@@ -124,9 +124,9 @@ class Search(PluginTopic):
         self, collection: str
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
-        Return given product type default settings as queryables
+        Return given collection default settings as queryables
 
-        :param collection: given product type
+        :param collection: given collection
         :returns: queryable parameters dict
         """
         defaults = deepcopy(self.config.products.get(collection, {}))
@@ -138,14 +138,14 @@ class Search(PluginTopic):
         return queryables
 
     def map_collection(self, collection: Optional[str], **kwargs: Any) -> Optional[str]:
-        """Get the provider product type from eodag product type
+        """Get the provider collection from eodag collection
 
-        :param collection: eodag product type
-        :returns: provider product type
+        :param collection: eodag collection
+        :returns: provider collection
         """
         if collection is None:
             return None
-        logger.debug("Mapping eodag product type to provider product type")
+        logger.debug("Mapping eodag collection to provider collection")
         return self.config.products.get(collection, {}).get(
             "_collection", GENERIC_PRODUCT_TYPE
         )
@@ -153,16 +153,16 @@ class Search(PluginTopic):
     def get_collection_def_params(
         self, collection: str, format_variables: Optional[dict[str, Any]] = None
     ) -> dict[str, Any]:
-        """Get the provider product type definition parameters and specific settings
+        """Get the provider collection definition parameters and specific settings
 
-        :param collection: the desired product type
-        :returns: The product type definition parameters
+        :param collection: the desired collection
+        :returns: The collection definition parameters
         """
         if collection in self.config.products.keys():
             return self.config.products[collection]
         elif GENERIC_PRODUCT_TYPE in self.config.products.keys():
             logger.debug(
-                "Getting generic provider product type definition parameters for %s",
+                "Getting generic provider collection definition parameters for %s",
                 collection,
             )
             return {
@@ -178,7 +178,7 @@ class Search(PluginTopic):
 
     def get_collection_cfg_value(self, key: str, default: Any = None) -> Any:
         """
-        Get the value of a configuration option specific to the current product type.
+        Get the value of a configuration option specific to the current collection.
 
         This method retrieves the value of a configuration option from the
         ``collection_config`` attribute. If the option is not found, the provided
@@ -200,10 +200,10 @@ class Search(PluginTopic):
     def get_metadata_mapping(
         self, collection: Optional[str] = None
     ) -> dict[str, Union[str, list[str]]]:
-        """Get the plugin metadata mapping configuration (product type specific if exists)
+        """Get the plugin metadata mapping configuration (collection specific if exists)
 
-        :param collection: the desired product type
-        :returns: The product type specific metadata-mapping
+        :param collection: the desired collection
+        :returns: The collection specific metadata-mapping
         """
         if collection:
             return self.config.products.get(collection, {}).get(
@@ -354,16 +354,16 @@ class Search(PluginTopic):
         Get queryables
 
         :param filters: Additional filters for queryables.
-        :param available_collections: list of available product types
-        :param collection_configs: dict containing the product type information for all used product types
-        :param collection: (optional) The product type.
-        :param alias: (optional) alias of the product type
+        :param available_collections: list of available collections
+        :param collection_configs: dict containing the collection information for all used collections
+        :param collection: (optional) The collection.
+        :param alias: (optional) alias of the collection
 
         :return: A dictionary containing the queryable properties, associating parameters to their
                 annotated type.
         """
         additional_info = (
-            "Please select a product type to get the possible values of the parameters!"
+            "Please select a collection to get the possible values of the parameters!"
             if not collection
             else ""
         )
@@ -386,7 +386,7 @@ class Search(PluginTopic):
                 self.config.collection_config = collection_configs[pt]
                 pt_queryables = self._get_collection_queryables(pt, None, filters)
                 all_queryables.update(pt_queryables)
-            # reset defaults because they may vary between product types
+            # reset defaults because they may vary between collections
             for k, v in all_queryables.items():
                 v.__metadata__[0].default = getattr(
                     Queryables.model_fields.get(k, Field(None)), "default", None
@@ -430,9 +430,9 @@ class Search(PluginTopic):
         self, collection: Optional[str] = None, alias: Optional[str] = None
     ) -> dict[str, Annotated[Any, FieldInfo]]:
         """
-        Extract queryable parameters from product type metadata mapping.
-        :param collection: product type id (optional)
-        :param alias: (optional) alias of the product type
+        Extract queryable parameters from collection metadata mapping.
+        :param collection: collection id (optional)
+        :param alias: (optional) alias of the collection
         :returns: dict of annotated queryables
         """
         metadata_mapping: dict[str, Any] = deepcopy(

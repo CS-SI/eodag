@@ -705,7 +705,7 @@ class TestCoreSearch(unittest.TestCase):
                     },
                     "labels": {
                         "dataset": "reanalysis-era5-single-levels",
-                        "Product type": ["Reanalysis"],
+                        "Collection": ["Reanalysis"],
                         "Variable": ["10m u-component of wind"],
                         "Year": ["1940"],
                         "Month": ["January"],

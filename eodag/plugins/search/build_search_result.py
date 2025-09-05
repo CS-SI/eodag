@@ -441,9 +441,9 @@ class ECMWFSearch(PostJsonSearch):
           provider queryables endpoint; It has the following keys:
 
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.fetch_url` (``str``): url to fetch the queryables valid
-            for all product types
+            for all collections
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.collection_fetch_url` (``str``): url to fetch the
-            queryables for a specific product type
+            queryables for a specific collection
           * :attr:`~eodag.config.PluginConfig.DiscoverQueryables.constraints_url` (``str``): url of the constraint file
             used to build queryables
     """
@@ -519,7 +519,7 @@ class ECMWFSearch(PostJsonSearch):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
-        :param collection: product type id
+        :param collection: collection id
         :param query_dict: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """
@@ -548,7 +548,7 @@ class ECMWFSearch(PostJsonSearch):
         in the input parameters, default values or values from the configuration are used.
 
         :param params: Search parameters to be preprocessed.
-        :param collection: (optional) product type id
+        :param collection: (optional) collection id
         """
 
         _dc_qs = params.get("_dc_qs")
@@ -771,7 +771,7 @@ class ECMWFSearch(PostJsonSearch):
             required_keywords = data.get("required", [])
 
         # To check if all keywords are queryable parameters, we check if they are in the
-        # available values or the product type config (available values calculated from the
+        # available values or the collection config (available values calculated from the
         # constraints might not include all queryables)
         for keyword in filters:
             if (
@@ -1083,18 +1083,18 @@ class ECMWFSearch(PostJsonSearch):
     ) -> dict[str, Any]:
         """Return provider equivalent keyword names from EODAG keywords.
 
-        :param collection: product type id
+        :param collection: collection id
         :param properties: dict of properties to be formatted
         :return: dict of formatted properties
         """
         properties["collection"] = collection
 
-        # provider product type specific conf
+        # provider collection specific conf
         collection_def_params = self.get_collection_def_params(
             collection, format_variables=properties
         )
 
-        # Add to the query, the queryable parameters set in the provider product type definition
+        # Add to the query, the queryable parameters set in the provider collection definition
         properties.update(
             {
                 k: v
@@ -1276,7 +1276,7 @@ def _check_id(product: EOProduct) -> EOProduct:
 
     # update product id
     product.properties["id"] = product_id
-    # update product type if needed
+    # update collection if needed
     if product.collection is None:
         product.collection = product.properties.get("ecmwf:dataset")
     # update product title
@@ -1368,7 +1368,7 @@ class MeteoblueSearch(ECMWFSearch):
     ) -> tuple[dict[str, Any], str]:
         """Build The query string using the search parameters
 
-        :param collection: product type id
+        :param collection: collection id
         :param query_dict: keyword arguments to be used in the query string
         :return: formatted query params and encode query string
         """

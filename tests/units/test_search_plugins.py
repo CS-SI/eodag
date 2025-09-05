@@ -245,7 +245,7 @@ class TestSearchPluginQueryStringSearchXml(BaseSearchPluginTest):
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "dhus")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
@@ -352,7 +352,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
     def test_plugins_search_querystringsearch_search_cloudcover_peps(
         self, mock__request, mock_normalize_results
     ):
-        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar product types"""  # noqa
+        """A query with a QueryStringSearch (here peps) must only use cloudCover filtering for non-radar collections"""  # noqa
 
         self.peps_search_plugin.query(collection="S2_MSI_L1C", cloudCover=50)
         mock__request.assert_called()
@@ -382,13 +382,13 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
             f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.peps_search_plugin.provider}",
             context.exception.message,
         )
 
-        # with raised error parameter set to True in the config of the product type of the provider
+        # with raised error parameter set to True in the config of the collection of the provider
 
         # first, update this parameter to False in the global config
         # to show that it is going to be taken over by this new config
@@ -410,8 +410,8 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
             f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.peps_search_plugin.provider}",
             context.exception.message,
         )
@@ -846,7 +846,7 @@ class TestSearchPluginQueryStringSearch(BaseSearchPluginTest):
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
@@ -1094,7 +1094,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
     def test_plugins_search_postjsonsearch_search_cloudcover_awseos(
         self, mock_requests_post, mock_normalize_results
     ):
-        """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar product types"""  # noqa
+        """A query with a PostJsonSearch (here aws_eos) must only use cloudCover filtering for non-radar collections"""  # noqa
 
         self.awseos_search_plugin.query(
             prep=PreparedSearch(auth_plugin=self.awseos_auth_plugin),
@@ -1147,7 +1147,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar",
             self.awseos_search_plugin.config.products["S2_MSI_L1C"]["metadata_mapping"],
@@ -1251,7 +1251,7 @@ class TestSearchPluginPostJsonSearch(BaseSearchPluginTest):
             timeout=60,
             verify=True,
         )
-        # product type with dates are query params -> use missionStartDate and today
+        # collection with dates are query params -> use missionStartDate and today
         pt_conf = {
             "ID": "CAMS_EAC4",
             "abstract": "CAMS_EAC4 abstract",
@@ -1696,7 +1696,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
     def test_plugins_search_odatav4search_search_cloudcover_onda(
         self, mock__request, mock_normalize_results
     ):
-        """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar product types"""
+        """A query with a ODataV4Search (here onda) must only use cloudCover filtering for non-radar collections"""
         # per_product_metadata_query parameter is updated to False if it is necessary
         per_product_metadata_query = (
             self.onda_search_plugin.config.per_product_metadata_query
@@ -1758,7 +1758,7 @@ class TestSearchPluginODataV4Search(BaseSearchPluginTest):
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "bar", search_plugin.config.products["S1_SAR_SLC"]["metadata_mapping"]
         )
@@ -1975,7 +1975,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
         self.assertIn("bar", products[0].properties)
         self.assertEqual(products[0].properties["bar"], "baz")
 
-        # search with another product type
+        # search with another collection
         self.assertNotIn(
             "metadata_mapping", search_plugin.config.products["S1_SAR_GRD"]
         )
@@ -2055,7 +2055,7 @@ class TestSearchPluginStacSearch(BaseSearchPluginTest):
                     "pattern": "^[a-zA-Z0-9]+$",
                 },
                 "productType": {
-                    "title": "Product Type",
+                    "title": "Collection",
                     "type": "string",
                     "oneOf": [
                         {"const": "DGE_30", "title": "DGE_30", "group": None},
@@ -2616,7 +2616,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
 
     def test_plugins_search_ecmwfsearch_without_producttype(self):
         """
-        ECMWFSearch.query must build a EOProduct from input parameters without product type.
+        ECMWFSearch.query must build a EOProduct from input parameters without collection.
         For test only, result cannot be downloaded.
         """
         results, count = self.search_plugin.query(
@@ -2640,7 +2640,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert NOT_AVAILABLE in eoproduct.location
 
     def test_plugins_search_ecmwfsearch_with_producttype(self):
-        """ECMWFSearch.query must build a EOProduct from input parameters with predefined product type"""
+        """ECMWFSearch.query must build a EOProduct from input parameters with predefined collection"""
         results, _ = self.search_plugin.query(
             **self.query_dates, collection=self.collection, geometry=[1, 2, 3, 4]
         )
@@ -2650,7 +2650,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         # check if collection_params is a subset of eoproduct.properties
         assert self.collection_params.items() <= eoproduct.properties.items()
 
-        # product type default settings can be overwritten using search kwargs
+        # collection default settings can be overwritten using search kwargs
         results, _ = self.search_plugin.query(
             **self.query_dates,
             **{"collection": self.collection, "ecmwf:variable": "temperature"},
@@ -2659,7 +2659,7 @@ class TestSearchPluginECMWFSearch(unittest.TestCase):
         assert eoproduct.properties["ecmwf:variable"] == "temperature"
 
     def test_plugins_search_ecmwfsearch_with_custom_producttype(self):
-        """ECMWFSearch.query must build a EOProduct from input parameters with custom product type"""
+        """ECMWFSearch.query must build a EOProduct from input parameters with custom collection"""
         results, _ = self.search_plugin.query(
             **self.query_dates,
             **self.custom_query_params,
@@ -3762,13 +3762,13 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
             f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.wekeomain_search_plugin.provider}",
             context.exception.message,
         )
 
-        # with raised error parameter set to True in the config of the product type of the provider
+        # with raised error parameter set to True in the config of the collection of the provider
 
         # first, update this parameter to False in the global config
         # to show that it is going to be taken over by this new config
@@ -3790,8 +3790,8 @@ class TestSearchPluginWekeoSearch(BaseSearchPluginTest):
                 **{**self.search_criteria_s2_msi_l1c, **{"foo": "bar"}},
             )
         self.assertEqual(
-            "Search parameters which are not queryable are disallowed for this product type on this provider: "
-            f"please remove 'foo' from your search parameters. Product type: "
+            "Search parameters which are not queryable are disallowed for this collection on this provider: "
+            f"please remove 'foo' from your search parameters. Collection: "
             f"{self.search_criteria_s2_msi_l1c['collection']} / provider : {self.wekeomain_search_plugin.provider}",
             context.exception.message,
         )
