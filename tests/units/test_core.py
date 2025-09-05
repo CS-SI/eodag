@@ -1704,8 +1704,8 @@ class TestCore(TestCoreBase):
             "cop_cds": None,
             "cop_dataspace": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "publicationDate",
                     "modificationDate",
                 ],
@@ -1714,8 +1714,8 @@ class TestCore(TestCoreBase):
             "cop_ewds": None,
             "creodias": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "publicationDate",
                     "modificationDate",
                 ],
@@ -1723,8 +1723,8 @@ class TestCore(TestCoreBase):
             },
             "creodias_s3": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "publicationDate",
                     "modificationDate",
                 ],
@@ -1734,7 +1734,7 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "creationDate",
                     "modificationDate",
                     "platformSerialIdentifier",
@@ -1746,7 +1746,7 @@ class TestCore(TestCoreBase):
             "earth_search": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "creationDate",
                     "modificationDate",
                     "platformSerialIdentifier",
@@ -1758,7 +1758,7 @@ class TestCore(TestCoreBase):
             "earth_search_gcs": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "creationDate",
                     "modificationDate",
                     "platformSerialIdentifier",
@@ -1770,7 +1770,7 @@ class TestCore(TestCoreBase):
             "earth_search_cog": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "creationDate",
                     "modificationDate",
                     "platform",
@@ -1783,7 +1783,7 @@ class TestCore(TestCoreBase):
             "ecmwf": None,
             "eumetsat_ds": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "publicationDate",
                 ],
                 "max_sort_params": 1,
@@ -1794,8 +1794,8 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "platformSerialIdentifier",
                     "cloudCover",
                 ],
@@ -1804,8 +1804,8 @@ class TestCore(TestCoreBase):
                 "max_sort_params": None,
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "platformSerialIdentifier",
                     "cloudCover",
                 ],
@@ -1813,8 +1813,8 @@ class TestCore(TestCoreBase):
             "hydroweb_next": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "productVersion",
                     "processingLevel",
                 ],
@@ -1824,15 +1824,15 @@ class TestCore(TestCoreBase):
             "planetary_computer": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "platformSerialIdentifier",
                 ],
                 "max_sort_params": None,
             },
             "sara": {
                 "sortables": [
-                    "startTimeFromAscendingNode",
-                    "completionTimeFromAscendingNode",
+                    "start_datetime",
+                    "end_datetime",
                     "sensorMode",
                 ],
                 "max_sort_params": 1,
@@ -1841,7 +1841,7 @@ class TestCore(TestCoreBase):
             "usgs_satapi_aws": {
                 "sortables": [
                     "id",
-                    "startTimeFromAscendingNode",
+                    "start_datetime",
                     "creationDate",
                     "modificationDate",
                     "platformSerialIdentifier",
@@ -2320,10 +2320,8 @@ class TestCoreSearch(TestCoreBase):
             "end": "2020-02-01",
         }
         _, prepared_search = self.dag._prepare_search(**base)
-        self.assertEqual(prepared_search["startTimeFromAscendingNode"], base["start"])
-        self.assertEqual(
-            prepared_search["completionTimeFromAscendingNode"], base["end"]
-        )
+        self.assertEqual(prepared_search["start_datetime"], base["start"])
+        self.assertEqual(prepared_search["end_datetime"], base["end"])
 
     @mock.patch(
         "eodag.api.core.EODataAccessGateway.fetch_product_types_list", autospec=True

@@ -321,8 +321,8 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
     stop_date = kwargs.pop("end")
     criteria = {
         "geometry": footprint,
-        "startTimeFromAscendingNode": None,
-        "completionTimeFromAscendingNode": None,
+        "start_datetime": None,
+        "end_datetime": None,
         "cloudCover": kwargs.pop("cloudcover"),
         "collection": collection,
         "instrument": instrument,
@@ -345,9 +345,9 @@ def search_crunch(ctx: Context, **kwargs: Any) -> None:
         locations = None
     criteria["locations"] = locations
     if start_date:
-        criteria["startTimeFromAscendingNode"] = start_date.isoformat()
+        criteria["start_datetime"] = start_date.isoformat()
     if stop_date:
-        criteria["completionTimeFromAscendingNode"] = stop_date.isoformat()
+        criteria["end_datetime"] = stop_date.isoformat()
     conf_file = kwargs.pop("conf")
     if conf_file:
         conf_file = click.format_filename(conf_file)

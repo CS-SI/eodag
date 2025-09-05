@@ -74,15 +74,15 @@ class CSWSearch(Search):
           specification of Python string formatting, with a special behaviour added to it. For example,
           an entry in the metadata mapping of this kind::
 
-                completionTimeFromAscendingNode:
-                    - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
+                end_datetime:
+                    - 'f=acquisition.endViewingDate:lte:{end_datetime#timestamp}'
                     - '$.properties.acquisition.endViewingDate'
 
           means that the search url will have a query string parameter named ``f`` with a value of
           ``acquisition.endViewingDate:lte:1543922280.0`` if the search was done with the value
-          of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
-          ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
-          of ``completionTimeFromAscendingNode``. This example shows all there is to know about the
+          of ``end_datetime`` being ``2018-12-04T12:18:00``. What happened is that
+          ``{end_datetime#timestamp}`` was replaced with the timestamp of the value
+          of ``end_datetime``. This example shows all there is to know about the
           semantics of the query string formatting introduced by this plugin: any eodag search parameter
           can be referenced in the query string with an additional optional conversion function that
           is separated from it by a ``#`` (see :func:`~eodag.api.product.metadata_mapping.format_metadata` for further
@@ -259,8 +259,8 @@ class CSWSearch(Search):
 
         # dates
         start, end = (
-            params.get("startTimeFromAscendingNode"),
-            params.get("completionTimeFromAscendingNode"),
+            params.get("start_datetime"),
+            params.get("end_datetime"),
         )
         if start and "date_tags" in self.config.search_definition:
             constraints.append(

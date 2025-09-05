@@ -122,14 +122,14 @@ class EcmwfApi(Api, ECMWFSearch):
                 kwargs.get("ecmwf:levtype", ""),
             )
         # start date
-        if "startTimeFromAscendingNode" not in kwargs:
-            kwargs["startTimeFromAscendingNode"] = (
+        if "start_datetime" not in kwargs:
+            kwargs["start_datetime"] = (
                 getattr(self.config, "product_type_config", {}).get("missionStartDate")
                 or DEFAULT_MISSION_START_DATE
             )
         # end date
-        if "completionTimeFromAscendingNode" not in kwargs:
-            kwargs["completionTimeFromAscendingNode"] = getattr(
+        if "end_datetime" not in kwargs:
+            kwargs["end_datetime"] = getattr(
                 self.config, "product_type_config", {}
             ).get("missionEndDate") or datetime.now(timezone.utc).isoformat(
                 timespec="seconds"

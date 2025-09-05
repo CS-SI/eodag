@@ -141,11 +141,11 @@ class StaticStacSearch(StacSearch):
             ),
             "id": Queryables.get_with_default("id", kwargs.get("id")),
             "start": Queryables.get_with_default(
-                "start", kwargs.get("start") or kwargs.get("startTimeFromAscendingNode")
+                "start", kwargs.get("start") or kwargs.get("start_datetime")
             ),
             "end": Queryables.get_with_default(
                 "end",
-                kwargs.get("end") or kwargs.get("completionTimeFromAscendingNode"),
+                kwargs.get("end") or kwargs.get("end_datetime"),
             ),
             "geom": Queryables.get_with_default(
                 "geom",
@@ -207,10 +207,10 @@ class StaticStacSearch(StacSearch):
         # filter using query params
         search_result = SearchResult(eo_products)
         # Filter by date
-        if "startTimeFromAscendingNode" in kwargs:
-            kwargs["start"] = kwargs.pop("startTimeFromAscendingNode")
-        if "completionTimeFromAscendingNode" in kwargs:
-            kwargs["end"] = kwargs.pop("completionTimeFromAscendingNode")
+        if "start_datetime" in kwargs:
+            kwargs["start"] = kwargs.pop("start_datetime")
+        if "end_datetime" in kwargs:
+            kwargs["end"] = kwargs.pop("end_datetime")
         if any(k in ["start", "end"] for k in kwargs.keys()):
             search_result = search_result.crunch(
                 FilterDate({k: kwargs[k] for k in ["start", "end"] if k in kwargs})
