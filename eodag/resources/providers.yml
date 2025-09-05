@@ -2536,6 +2536,36 @@
       collection: SENTINEL-2
       productType: S2MSI2A
     # S1
+    S1_AUX_GNSSRD:
+      productType: AUX_GNSSRD
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_MOEORB:
+      productType: AUX_MOEORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_POEORB:
+      productType: AUX_POEORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_PREORB:
+      productType: AUX_PREORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_PROQUA:
+      productType: AUX_PROQUA
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
+    S1_AUX_RESORB:
+      productType: AUX_RESORB
+      collection: SENTINEL-1
+      metadata_mapping:
+        cloudCover: '$.null'
     S1_SAR_RAW:
       productType: RAW
       collection: SENTINEL-1
