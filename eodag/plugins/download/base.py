@@ -84,7 +84,7 @@ class Download(PluginTopic):
       ``file:///C:/Users/username/AppData/Local/Temp`` on Windows)
     - save a *record* file in the directory ``{output_dir}/.downloaded`` whose name
       is built on the MD5 hash of the product's ``product_type`` and ``properties['id']``
-      attributes (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+      attributes (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
       and whose content is the product's ``remote_location`` attribute itself.
     - not try to download a product whose ``location`` attribute already points to an
       existing file/directory
@@ -279,13 +279,13 @@ class Download(PluginTopic):
         """Generate the record hash of the given product.
 
         The MD5 hash is built from the product's ``product_type`` and ``properties['id']`` attributes
-        (``hashlib.md5((product.product_type+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
+        (``hashlib.md5((product.collection+"-"+product.properties['id']).encode("utf-8")).hexdigest()``)
 
         :param product: The product to calculate the record hash
         :returns: The MD5 hash
         """
-        # In some unit tests, `product.product_type` is `None` and `product.properties["id"]` is `ìnt`
-        product_hash = str(product.product_type) + "-" + str(product.properties["id"])
+        # In some unit tests, `product.collection` is `None` and `product.properties["id"]` is `ìnt`
+        product_hash = str(product.collection) + "-" + str(product.properties["id"])
         return hashlib.md5(product_hash.encode("utf-8")).hexdigest()
 
     def _resolve_archive_depth(self, product_path: str) -> str:
