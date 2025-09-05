@@ -231,15 +231,15 @@ class QueryStringSearch(Search):
           specification of Python string formatting, with a special behaviour added to it. For example,
           an entry in the metadata mapping of this kind::
 
-                completionTimeFromAscendingNode:
-                    - 'f=acquisition.endViewingDate:lte:{completionTimeFromAscendingNode#timestamp}'
+                end_datetime:
+                    - 'f=acquisition.endViewingDate:lte:{end_datetime#timestamp}'
                     - '$.properties.acquisition.endViewingDate'
 
           means that the search url will have a query string parameter named ``f`` with a value of
           ``acquisition.endViewingDate:lte:1543922280.0`` if the search was done with the value
-          of ``completionTimeFromAscendingNode`` being ``2018-12-04T12:18:00``. What happened is that
-          ``{completionTimeFromAscendingNode#timestamp}`` was replaced with the timestamp of the value
-          of ``completionTimeFromAscendingNode``. This example shows all there is to know about the
+          of ``end_datetime`` being ``2018-12-04T12:18:00``. What happened is that
+          ``{end_datetime#timestamp}`` was replaced with the timestamp of the value
+          of ``end_datetime``. This example shows all there is to know about the
           semantics of the query string formatting introduced by this plugin: any eodag search parameter
           can be referenced in the query string with an additional optional conversion function that
           is separated from it by a ``#`` (see :func:`~eodag.api.product.metadata_mapping.format_metadata` for further
@@ -1334,9 +1334,9 @@ class ODataV4Search(QueryStringSearch):
               operations:     # The operations to build
               <opname>:     # e.g: AND
                   - <op1>    # e.g:
-                          # 'sensingStartDate:[{startTimeFromAscendingNode}Z TO *]'
+                          # 'sensingStartDate:[{start_datetime}Z TO *]'
                   - <op2>    # e.g:
-                      # 'sensingStopDate:[* TO {completionTimeFromAscendingNode}Z]'
+                      # 'sensingStopDate:[* TO {end_datetime}Z]'
                   ...
               ...
           ...
@@ -1805,12 +1805,9 @@ class StacSearch(PostJsonSearch):
         logger.debug("Building the query string that will be used for search")
 
         # handle opened time intervals
-        if any(
-            q in query_dict
-            for q in ("startTimeFromAscendingNode", "completionTimeFromAscendingNode")
-        ):
-            query_dict.setdefault("startTimeFromAscendingNode", "..")
-            query_dict.setdefault("completionTimeFromAscendingNode", "..")
+        if any(q in query_dict for q in ("start_datetime", "end_datetime")):
+            query_dict.setdefault("start_datetime", "..")
+            query_dict.setdefault("end_datetime", "..")
 
         error_context = f"Product type: {product_type} / provider : {self.provider}"
         query_params = format_query_params(

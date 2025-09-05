@@ -111,7 +111,7 @@ class TestSearchStacStatic(unittest.TestCase):
         self.assertEqual(len(filtered_sr), self.child_cat_len)
         self.assertEqual(filtered_sr.number_matched, self.child_cat_len)
         for item in filtered_sr:
-            self.assertIn("2018", item.properties["startTimeFromAscendingNode"])
+            self.assertIn("2018", item.properties["start_datetime"])
 
     @mock.patch(
         "eodag.plugins.authentication.openid_connect.requests.sessions.Session.request",

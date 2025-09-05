@@ -52,7 +52,7 @@ class TestCoreSearchResults(EODagTestCase):
                     "properties": {
                         "snowCover": None,
                         "resolution": None,
-                        "completionTimeFromAscendingNode": "2018-02-16T00:12:14.035Z",
+                        "end_datetime": "2018-02-16T00:12:14.035Z",
                         "keyword": {},
                         "productType": "OCN",
                         "downloadLink": (
@@ -81,7 +81,7 @@ class TestCoreSearchResults(EODagTestCase):
                             "type": "Polygon",
                         },
                         "organisationName": None,
-                        "startTimeFromAscendingNode": "2018-02-15T23:53:22.871Z",
+                        "start_datetime": "2018-02-15T23:53:22.871Z",
                         "platform": None,
                         "sensorType": None,
                         "processingLevel": None,
