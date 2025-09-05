@@ -75,10 +75,10 @@ from eodag.utils.dates import rfc3339_str_to_datetime
 from eodag.utils.env import is_env_var_true
 from eodag.utils.exceptions import (
     AuthenticationError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     PluginImplementationError,
     RequestError,
-    UnsupportedProductType,
+    UnsupportedCollection,
     UnsupportedProvider,
 )
 from eodag.utils.free_text_search import compile_free_text_query
@@ -954,7 +954,7 @@ class EODataAccessGateway:
         ]
 
         if len(product_types) > 1:
-            raise NoMatchingProductType(
+            raise NoMatchingCollection(
                 f"Too many matching product types for alias {alias_or_id}: {product_types}"
             )
 
@@ -962,7 +962,7 @@ class EODataAccessGateway:
             if alias_or_id in self.product_types_config:
                 return alias_or_id
             else:
-                raise NoMatchingProductType(
+                raise NoMatchingCollection(
                     f"Could not find product type from alias or ID {alias_or_id}"
                 )
 
@@ -976,7 +976,7 @@ class EODataAccessGateway:
         :returns: Alias of the product type or its ID if no alias has been defined for it.
         """
         if product_type not in self.product_types_config:
-            raise NoMatchingProductType(product_type)
+            raise NoMatchingCollection(product_type)
 
         return self.product_types_config[product_type].get("alias", product_type)
 
@@ -1016,7 +1016,7 @@ class EODataAccessGateway:
         :param missionStartDate: start date for datetime filtering. Not used by free_text
         :param missionEndDate: end date for datetime filtering. Not used by free_text
         :returns: The best match for the given parameters.
-        :raises: :class:`~eodag.utils.exceptions.NoMatchingProductType`
+        :raises: :class:`~eodag.utils.exceptions.NoMatchingCollection`
         """
         if collection := kwargs.get("collection"):
             return [collection]
@@ -1122,7 +1122,7 @@ class EODataAccessGateway:
             guesses_with_score.sort(key=lambda x: (-x[1], x[0]))
             return [pt_id for pt_id, _ in guesses_with_score]
 
-        raise NoMatchingProductType()
+        raise NoMatchingCollection()
 
     def search(
         self,
@@ -1483,7 +1483,7 @@ class EODataAccessGateway:
             product_type = self.get_product_type_from_alias(
                 self.guess_product_type(**kwargs)[0]
             )
-        except NoMatchingProductType:
+        except NoMatchingCollection:
             product_type = GENERIC_PRODUCT_TYPE
         else:
             # fetch product types list if product_type is unknown
@@ -1578,7 +1578,7 @@ class EODataAccessGateway:
         if collection is not None:
             try:
                 collection = self.get_product_type_from_alias(collection)
-            except NoMatchingProductType:
+            except NoMatchingCollection:
                 logger.debug("product type %s not found", collection)
         get_search_plugins_kwargs = dict(provider=provider, collection=collection)
         search_plugins = self._plugins_manager.get_search_plugins(
@@ -1716,7 +1716,7 @@ class EODataAccessGateway:
             try:
                 guesses = self.guess_product_type(**kwargs)
 
-                # guess_product_type raises a NoMatchingProductType error if no product
+                # guess_product_type raises a NoMatchingCollection error if no product
                 # is found. Here, the supported search params are removed from the
                 # kwargs if present, not to propagate them to the query itself.
                 for param in (
@@ -1730,7 +1730,7 @@ class EODataAccessGateway:
 
                 # By now, only use the best bet
                 collection = guesses[0]
-            except NoMatchingProductType:
+            except NoMatchingCollection:
                 queried_id = kwargs.get("id")
                 if queried_id is None:
                     logger.info(
@@ -1742,7 +1742,7 @@ class EODataAccessGateway:
         if collection is not None:
             try:
                 collection = self.get_product_type_from_alias(collection)
-            except NoMatchingProductType:
+            except NoMatchingCollection:
                 logger.info("unknown product type " + collection)
         kwargs["collection"] = collection
 
@@ -1924,7 +1924,7 @@ class EODataAccessGateway:
                                 and v is not None
                             },
                         )
-                    except NoMatchingProductType:
+                    except NoMatchingCollection:
                         pass
                     else:
                         eo_product.collection = guesses[0]
@@ -1934,7 +1934,7 @@ class EODataAccessGateway:
                         eo_product.collection = self.get_product_type_from_alias(
                             eo_product.collection
                         )
-                except NoMatchingProductType:
+                except NoMatchingCollection:
                     logger.debug("collection %s not found", eo_product.collection)
 
                 if eo_product.search_intersection is not None:
@@ -2199,7 +2199,7 @@ class EODataAccessGateway:
         :param kwargs: additional filters for queryables (`collection` or other search
                        arguments)
 
-        :raises UnsupportedProductType: If the specified product type is not available for the
+        :raises UnsupportedCollection: If the specified product type is not available for the
                                         provider.
 
         :returns: A :class:`~eodag.api.product.queryables.QuerybalesDict` containing the EODAG queryable
@@ -2223,13 +2223,13 @@ class EODataAccessGateway:
                             provider=provider, fetch_providers=True
                         )
                     ]
-                raise UnsupportedProductType(f"{collection} is not available.")
+                raise UnsupportedCollection(f"{collection} is not available.")
             try:
                 kwargs["collection"] = collection = self.get_product_type_from_alias(
                     collection
                 )
-            except NoMatchingProductType as e:
-                raise UnsupportedProductType(f"{collection} is not available.") from e
+            except NoMatchingCollection as e:
+                raise UnsupportedCollection(f"{collection} is not available.") from e
 
         if not provider and not collection:
             return QueryablesDict(

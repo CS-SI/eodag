@@ -49,7 +49,7 @@ class UnsupportedProvider(EodagError):
     """An error indicating that eodag does not support a provider"""
 
 
-class UnsupportedProductType(EodagError):
+class UnsupportedCollection(EodagError):
     """An error indicating that eodag does not support a product type"""
 
     def __init__(self, product_type: str) -> None:
@@ -70,7 +70,7 @@ class NotAvailableError(EodagError):
     """An error indicating that the product is not available for download"""
 
 
-class NoMatchingProductType(EodagError):
+class NoMatchingCollection(EodagError):
     """An error indicating that eodag was unable to derive a product type from a set
     of search parameters"""
 

@@ -45,7 +45,7 @@ from eodag.api.product.metadata_mapping import get_queryable_from_provider
 from eodag.utils import deepcopy
 from eodag.utils.exceptions import (
     PluginImplementationError,
-    UnsupportedProductType,
+    UnsupportedCollection,
     ValidationError,
 )
 from tests.context import (
@@ -3601,7 +3601,7 @@ class TestSearchPluginCopMarineSearch(BaseSearchPluginTest):
         exc.errno = 404
         mock_requests_get.side_effect = exc
         search_plugin = self.get_search_plugin("PRODUCT_A", self.provider)
-        with self.assertRaises(UnsupportedProductType):
+        with self.assertRaises(UnsupportedCollection):
             search_plugin.query(
                 collection="PRODUCT_AX",
                 id="item_20200204_20200205_niznjvnqkrf_20210101",

@@ -277,7 +277,7 @@ class PluginConfig(yaml.YAMLObject):
         #: Whether an error must be raised when using a search parameter which is not queryable or not
         raise_mtd_discovery_error: bool
 
-    class DiscoverProductTypes(TypedDict, total=False):
+    class DiscoverCollections(TypedDict, total=False):
         """Configuration for product types discovery"""
 
         #: URL from which the product types can be fetched
@@ -450,7 +450,7 @@ class PluginConfig(yaml.YAMLObject):
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the metadata auto-discovery
     discover_metadata: PluginConfig.DiscoverMetadata
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the product types auto-discovery
-    discover_product_types: PluginConfig.DiscoverProductTypes
+    discover_product_types: PluginConfig.DiscoverCollections
     #: :class:`~eodag.plugins.search.base.Search` Configuration for the queryables auto-discovery
     discover_queryables: PluginConfig.DiscoverQueryables
     #: :class:`~eodag.plugins.search.base.Search` The mapping between eodag metadata and the plugin specific metadata
