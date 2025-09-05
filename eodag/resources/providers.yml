@@ -677,7 +677,6 @@
       _collection: S2ST
       product:type: S2MSI1C
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
       _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
@@ -1127,7 +1126,6 @@
         eo:cloud_cover: '$.null'
         _provider: '$.Attributes.authority'
     GENERIC_PRODUCT_TYPE:
-      product:type: '{product:type}'
       _collection: '{collection}'
 ---
 !provider # MARK: usgs_satapi_aws
@@ -1271,7 +1269,7 @@
     COP_DEM_GLO90_DGED:
       _collection: cop-dem-glo-90
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: AwsDownload
     ssl_verify: true
@@ -1336,7 +1334,7 @@
     S2_MSI_L2A_COG:
       _collection: sentinel-2-l2a
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     ssl_verify: true
@@ -1397,7 +1395,7 @@
         wrsRow: '$.properties."landsat:wrs_row"'
         downloadLink: 's3://gcp-public-data-landsat/LC08/01/{wrsPath:03d}/{wrsRow:03d}/{title}'
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://storage.googleapis.com
@@ -1454,7 +1452,7 @@
       time: 00:00
       target: output
     GENERIC_PRODUCT_TYPE:
-      dataset: '{product:type}'
+      dataset: '{collection}'
 ---
 !provider # MARK: cop_ads
   name: cop_ads
@@ -1650,7 +1648,7 @@
       metadata_mapping:
         <<: *month_year
     GENERIC_PRODUCT_TYPE:
-      dataset: '{product:type}'
+      dataset: '{collection}'
 ---
 !provider # MARK: cop_cds
   name: cop_cds
@@ -1989,7 +1987,7 @@
       ensemble_member: r12i1p1
       period: 1_5_c
     GENERIC_PRODUCT_TYPE:
-      dataset: '{product:type}'
+      dataset: '{collection}'
 ---
 !provider # MARK: sara
   name: sara
@@ -2266,8 +2264,7 @@
       instruments: SYNERGY
       processing:level: LEVEL-2
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
-      collection: '{collection}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -2346,7 +2343,7 @@
       timeIntervalsAlignment:
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
+      _collection: '{collection}'
       geometry: {"type": "Polygon", "coordinates": [[[180, -90], [180, 90], [-180, 90], [-180, -90], [180, -90]]]}
   download: !plugin
     type: HTTPDownload
@@ -2812,8 +2809,7 @@
       product:type: L2__SO2___
       collection: SENTINEL-5P
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
-      collection: '{collection}'
+      _collection: '{collection}'
 ---
 !provider # MARK: planetary_computer
   name: planetary_computer
@@ -2856,7 +2852,7 @@
     NAIP:
       _collection: naip
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     auth_error_code: 403
@@ -2907,7 +2903,7 @@
         - '$.properties.end_datetime'
   products:
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     auth_error_code: 401
@@ -3873,7 +3869,7 @@
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -4332,8 +4328,7 @@
       metadata_mapping:
         eo:cloud_cover: '$.null'
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
-      collection: '{collection}'
+      _collection: '{collection}'
 ---
 !provider # MARK: dedt_lumi
   name: dedt_lumi
@@ -4464,7 +4459,7 @@
       results_entry: '$.collections[*]'
       generic_product_type_id: '$.id'
       generic_product_type_parsable_properties:
-        product:type: '$.id'
+        collection: '$.id'
       generic_product_type_parsable_metadata:
         description: '$.description'
         keywords: '{$.keywords#csv_list}'
@@ -4980,7 +4975,7 @@
     ISIMIP_SOCIO_ECONOMIC_FORCING_ISIMIP3B:
       _collection: EO.ISIMIP.DAT.SOCIO-ECONOMIC-FORCING_ISIMIP3b
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
 ---
 !provider # MARK: eumetsat_ds
   name: eumetsat_ds
@@ -5424,7 +5419,7 @@
     MTG_FCI_OLR:
       parentIdentifier: EO:EUM:DAT:0685
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
+      _collection: '{collection}'
       parentIdentifier: '{parentIdentifier}'
   download: !plugin
     type: HTTPDownload
@@ -5600,7 +5595,7 @@
     MO_OCEANCOLOUR_GLO_BGC_L4_MY_009_108:
       _collection: OCEANCOLOUR_GLO_BGC_L4_MY_009_108
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.waw3-1.cloudferro.com
@@ -5722,7 +5717,7 @@
     S2_MSI_L2B_MAJA_WATER:
       _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     ignore_assets: true
@@ -5847,7 +5842,7 @@
     S2_MSI_L2B_MAJA_WATER:
       _collection: MUSCATE_WaterQual_SENTINEL2_L2B-WATER
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: AwsDownload
     s3_endpoint: https://s3.datalake.cnes.fr
@@ -6109,7 +6104,7 @@
       metadata_mapping:
         <<: *day_month_year
     GENERIC_PRODUCT_TYPE:
-      dataset: '{product:type}'
+      dataset: '{collection}'
 ---
 !provider # MARK: fedeo_ceda
   name: fedeo_ceda
@@ -6129,9 +6124,9 @@
       results_entry: '$.links[?(@.rel=="child")]'
       generic_product_type_id: '{$.href#replace_str(r".*/", "")}'
       generic_product_type_parsable_properties:
-        productType: '{$.href#replace_str(r".*/", "")}'
+        collection: '{$.href#replace_str(r".*/", "")}'
         title: '$.title'
-      single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{productType}'
+      single_collection_fetch_url: 'https://fedeo.ceos.org/series/eo:organisationName/CEDA/{_collection}'
       single_product_type_parsable_metadata:
         ID: '{$.assets.enclosure.href#ceda_collection_name}'
         abstract: '$.description'
@@ -6146,6 +6141,6 @@
       assets: '{$.assets#dict_filter($[?(@.href =~ ".*\/thredds\/fileServer\/.*")])}'
   products:
     GENERIC_PRODUCT_TYPE:
-      productType: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
