@@ -44,13 +44,13 @@ from tests.context import (
     CommonQueryables,
     EODataAccessGateway,
     EOProduct,
-    NoMatchingProductType,
+    NoMatchingCollection,
     PluginImplementationError,
     ProviderConfig,
     Queryables,
     RequestError,
     SearchResult,
-    UnsupportedProductType,
+    UnsupportedCollection,
     UnsupportedProvider,
     get_geometry_from_various,
     load_default_config,
@@ -669,7 +669,7 @@ class TestCore(TestCoreBase):
         product_types = self.dag.list_product_types(fetch_providers=False)
         self.assertIsInstance(product_types, list)
         for product_type in product_types:
-            self.assertListProductTypesRightStructure(product_type)
+            self.assertListCollectionsRightStructure(product_type)
         # There should be no repeated product type in the output
         self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
         # add alias for product type - should still work
@@ -677,7 +677,7 @@ class TestCore(TestCoreBase):
         products["S2_MSI_L1C"]["alias"] = "S2_MSI_ALIAS"
         product_types = self.dag.list_product_types(fetch_providers=False)
         for product_type in product_types:
-            self.assertListProductTypesRightStructure(product_type)
+            self.assertListCollectionsRightStructure(product_type)
         # There should be no repeated product type in the output
         self.assertEqual(len(product_types), len(set(pt["ID"] for pt in product_types)))
         # use alias as id
@@ -691,7 +691,7 @@ class TestCore(TestCoreBase):
             )
             self.assertIsInstance(product_types, list)
             for product_type in product_types:
-                self.assertListProductTypesRightStructure(product_type)
+                self.assertListCollectionsRightStructure(product_type)
                 if product_type["ID"] in self.SUPPORTED_PRODUCT_TYPES:
                     self.assertIn(
                         provider,
@@ -1169,7 +1169,7 @@ class TestCore(TestCoreBase):
         self.dag.fetch_product_types_list()
         self.assertEqual(mock_discover_product_types.call_count, 2)
 
-    def assertListProductTypesRightStructure(self, structure):
+    def assertListCollectionsRightStructure(self, structure):
         """Helper method to verify that the structure given is a good result of
         EODataAccessGateway.list_product_types
         """
@@ -1368,7 +1368,7 @@ class TestCore(TestCoreBase):
         with self.assertRaises(UnsupportedProvider):
             self.dag.list_queryables(provider="not_supported_provider")
 
-        with self.assertRaises(UnsupportedProductType):
+        with self.assertRaises(UnsupportedCollection):
             self.dag.list_queryables(collection="not_supported_product_type")
 
         # No provider & no product type
@@ -2329,7 +2329,7 @@ class TestCoreSearch(TestCoreBase):
 
     def test_guess_product_type_without_kwargs(self):
         """guess_product_type must raise an exception when no kwargs are provided"""
-        with self.assertRaises(NoMatchingProductType):
+        with self.assertRaises(NoMatchingCollection):
             self.dag.guess_product_type()
 
     @mock.patch(
@@ -3651,7 +3651,7 @@ class TestCoreProductAlias(TestCoreBase):
             "S1_SAR_GRD", self.dag.get_alias_from_product_type("S1_SAR_GRD")
         )
         # not existing product type
-        with self.assertRaises(NoMatchingProductType):
+        with self.assertRaises(NoMatchingCollection):
             self.dag.get_alias_from_product_type("JUST_A_TYPE")
 
     def test_get_product_type_from_alias(self):
@@ -3664,7 +3664,7 @@ class TestCoreProductAlias(TestCoreBase):
             "S1_SAR_GRD", self.dag.get_product_type_from_alias("S1_SAR_GRD")
         )
         # not existing product type
-        with self.assertRaises(NoMatchingProductType):
+        with self.assertRaises(NoMatchingCollection):
             self.dag.get_product_type_from_alias("JUST_A_TYPE")
 
 

@@ -50,7 +50,7 @@ from eodag.utils import (
 )
 from eodag.utils.exceptions import (
     AuthenticationError,
-    NoMatchingProductType,
+    NoMatchingCollection,
     NotAvailableError,
     RequestError,
     ValidationError,
@@ -149,7 +149,7 @@ class UsgsApi(Api):
         )
         collection = kwargs.get("collection")
         if collection is None:
-            raise NoMatchingProductType(
+            raise NoMatchingCollection(
                 "Cannot search on USGS without collection specified"
             )
         if kwargs.get("sort_by"):
