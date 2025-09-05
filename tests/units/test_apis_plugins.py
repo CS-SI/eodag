@@ -716,7 +716,7 @@ class TestApisPluginUsgsApi(BaseApisPluginTest):
                 )
             # zip
             os.remove(path)
-            product.product_type = "S2_MSI_L1C"
+            product.collection = "S2_MSI_L1C"
             with mock.patch("zipfile.is_zipfile", return_value=True, autospec=True):
                 path = self.api_plugin.download(
                     product, output_dir=self.tmp_home_dir.name, extract=False

@@ -149,7 +149,7 @@ class Search(PluginTopic):
             return None
         logger.debug("Mapping eodag product type to provider product type")
         return self.config.products.get(product_type, {}).get(
-            "productType", GENERIC_PRODUCT_TYPE
+            "_collection", GENERIC_PRODUCT_TYPE
         )
 
     def get_product_type_def_params(
@@ -335,7 +335,7 @@ class Search(PluginTopic):
         )
         default_values.pop("metadata_mapping", None)
         try:
-            filters["productType"] = product_type
+            filters["collection"] = product_type
             queryables = self.discover_queryables(**{**default_values, **filters}) or {}
         except NotImplementedError as e:
             if str(e):
@@ -452,10 +452,10 @@ class Search(PluginTopic):
         eodag_queryables = copy_deepcopy(
             model_fields_to_annotated(Queryables.model_fields)
         )
-        # add default value for product type
+        # add default value for collection
         if alias:
-            eodag_queryables.pop("productType")
-            eodag_queryables["productType"] = Annotated[str, Field(default=alias)]
+            eodag_queryables.pop("collection")
+            eodag_queryables["collection"] = Annotated[str, Field(default=alias)]
         for k, v in eodag_queryables.items():
             eodag_queryable_field_info = (
                 get_args(v)[1] if len(get_args(v)) > 1 else None

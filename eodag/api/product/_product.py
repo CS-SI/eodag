@@ -104,8 +104,8 @@ class EOProduct:
     provider: str
     #: The metadata of the product
     properties: dict[str, Any]
-    #: The product type
-    product_type: Optional[str]
+    #: The collection
+    collection: Optional[str]
     #: The geometry of the product
     geometry: BaseGeometry
     #: The intersection between the product's geometry and the search area.
@@ -127,7 +127,7 @@ class EOProduct:
         self, provider: str, properties: dict[str, Any], **kwargs: Any
     ) -> None:
         self.provider = provider
-        self.product_type = kwargs.get("productType")
+        self.collection = kwargs.get("collection")
         self.location = self.remote_location = properties.get("downloadLink", "")
         self.assets = AssetsDict(self)
         self.properties = {
@@ -203,7 +203,7 @@ class EOProduct:
             "id": self.properties["id"],
             "assets": self.assets.as_dict(),
             "properties": {
-                "eodag_product_type": self.product_type,
+                "eodag_collection": self.collection,
                 "eodag_provider": self.provider,
                 "eodag_search_intersection": search_intersection,
                 **{
@@ -229,8 +229,8 @@ class EOProduct:
         properties["geometry"] = feature["geometry"]
         properties["id"] = feature["id"]
         provider = feature["properties"]["eodag_provider"]
-        product_type = feature["properties"]["eodag_product_type"]
-        obj = cls(provider, properties, productType=product_type)
+        collection = feature["properties"]["eodag_collection"]
+        obj = cls(provider, properties, collection=collection)
         obj.search_intersection = geometry.shape(
             feature["properties"]["eodag_search_intersection"]
         )

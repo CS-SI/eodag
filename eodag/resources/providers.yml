@@ -34,7 +34,6 @@
         - '_ID'
         - '$.displayId'
       geometry: '$.spatialBounds'
-      product:type: '$.productType'
       title: '$.displayId'
       description: '$.summary'
       eo:cloud_cover: '$.cloudCover'
@@ -44,7 +43,7 @@
       thumbnail: '$.browse[0].thumbnailPath'
       quicklook: '$.browse[0].browsePath'
       order:status: '{$.available#get_group_name((?P<succeeded>True)|(?P<orderable>False))}'
-      downloadLink: 'https://earthexplorer.usgs.gov/download/external/options/{product:type}/{entityId}/M2M/'
+      downloadLink: 'https://earthexplorer.usgs.gov/download/external/options/{_collection}/{entityId}/M2M/'
       # metadata needed for download
       entityId: '$.entityId'
       productId: '$.id'
@@ -54,25 +53,25 @@
     # datasets list http://kapadia.github.io/usgs/_sources/reference/catalog/ee.txt may be outdated
     # see also https://dds.cr.usgs.gov/ee-data/coveragemaps/shp/ee/
     LANDSAT_C2L1:
-      dataset: landsat_ot_c2_l1
+      _collection: landsat_ot_c2_l1
     LANDSAT_C2L2:
-      dataset: landsat_ot_c2_l2
+      _collection: landsat_ot_c2_l2
     LANDSAT_TM_C1:
-      dataset: landsat_tm_c1
+      _collection: landsat_tm_c1
     LANDSAT_TM_C2L1:
-      dataset: landsat_tm_c2_l1
+      _collection: landsat_tm_c2_l1
     LANDSAT_TM_C2L2:
-      dataset: landsat_tm_c2_l2
+      _collection: landsat_tm_c2_l2
     LANDSAT_ETM_C1:
-      dataset: landsat_etm_c1
+      _collection: landsat_etm_c1
     LANDSAT_ETM_C2L1:
-      dataset: landsat_etm_c2_l1
+      _collection: landsat_etm_c2_l1
     LANDSAT_ETM_C2L2:
-      dataset: landsat_etm_c2_l2
+      _collection: landsat_etm_c2_l2
     S2_MSI_L1C:
-      dataset: SENTINEL_2A
+      _collection: SENTINEL_2A
     GENERIC_PRODUCT_TYPE:
-      dataset: '{productType}'
+      _collection: '{collection}'
 
 ---
 !provider # MARK: aws_eos
@@ -84,7 +83,7 @@
   url: https://developers.eos.com/datasets_description.html
   search: !plugin
     type: PostJsonSearch
-    api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{collection}'
+    api_endpoint: 'https://gate.eos.com/api/lms/search/v2/{_collection}'
     need_auth: true
     auth_error_code:
       - 402
@@ -113,7 +112,7 @@
   products:
     CBERS4_PAN10M_L2:
       instruments: PAN10M
-      collection: cbers4
+      _collection: cbers4
       processing:level: 2
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
@@ -158,7 +157,7 @@
           - '{title}'
     CBERS4_PAN10M_L4:
       instruments: PAN10M
-      collection: cbers4
+      _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
@@ -168,12 +167,12 @@
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_PAN5M_L2:
       instruments: PAN5M
-      collection: cbers4
+      _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
     CBERS4_PAN5M_L4:
       instruments: PAN5M
-      collection: cbers4
+      _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
@@ -183,12 +182,12 @@
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_MUX_L2:
       instruments: MUX
-      collection: cbers4
+      _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
     CBERS4_MUX_L4:
       instruments: MUX
-      collection: cbers4
+      _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
@@ -198,12 +197,12 @@
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     CBERS4_AWFI_L2:
       instruments: AWFI
-      collection: cbers4
+      _collection: cbers4
       processing:level: 2
       metadata_mapping_from_product: CBERS4_PAN10M_L2
     CBERS4_AWFI_L4:
       instruments: AWFI
-      collection: cbers4
+      _collection: cbers4
       processing:level: 4
       metadata_mapping_from_product: CBERS4_PAN10M_L2
       metadata_mapping:
@@ -212,7 +211,7 @@
         thumbnail: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}_small.jpeg'
         quicklook: 'https://s3.amazonaws.com/cbers-meta-pds/{awsPath}/{previewBaseName}.jpg'
     L8_OLI_TIRS_C1L1:
-      collection: landsat8
+      _collection: landsat8
       onAmazon: true
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
@@ -267,7 +266,7 @@
           - '{{"search":{{"productID":"{id}" }} }}'
           - '{title}'
     MODIS_MCD43A4:
-      collection: modis
+      _collection: modis
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         product:type: '$.null'
@@ -304,7 +303,7 @@
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
     NAIP:
-      collection: naip
+      _collection: naip
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         product:type: '$.null'
@@ -332,7 +331,7 @@
           - '{title}'
     S1_SAR_GRD:
       product:type: GRD
-      collection: sentinel1
+      _collection: sentinel1
       metadata_mapping:
         eo:cloud_cover: '$.null'
         # OpenSearch Parameters for Collection Search (Table 3)
@@ -374,7 +373,7 @@
           - '{{"search":{{"sceneID":"{id}" }} }}'
           - '{title}'
     S2_MSI_L1C:
-      collection: sentinel2
+      _collection: sentinel2
       metadata_mapping:
         # OpenSearch Parameters for Collection Search (Table 3)
         product:type: '$.null'
@@ -419,7 +418,7 @@
         processedL2A: '$.null'
         awsPathL2A: '$.null'
     S2_MSI_L2A:
-      collection: sentinel2
+      _collection: sentinel2
       processedL2A: true
       # specific QueryStringSearch usage for these parameters (replaces current query)
       specific_qssearch:
@@ -427,7 +426,7 @@
           - title
           - id
         results_entry: '$'
-        collection:
+        _collection:
           - tileInfo
           - productInfo
         merge_responses: true
@@ -547,7 +546,7 @@
   url: https://peps.cnes.fr
   search: !plugin
     type: QueryStringSearch
-    api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{collection}/search.json'
+    api_endpoint: 'https://peps.cnes.fr/resto/api/collections/{_collection}/search.json'
     need_auth: false
     ssl_verify: true
     pagination:
@@ -661,25 +660,25 @@
   products:
     S1_SAR_OCN:
       product:type: OCN
-      collection: S1
+      _collection: S1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S1_SAR_GRD:
       product:type: GRD
-      collection: S1
+      _collection: S1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S1_SAR_SLC:
       product:type: SLC
-      collection: S1
+      _collection: S1
       metadata_mapping:
         eo:cloud_cover: '$.null'
     S2_MSI_L1C:
-      collection: S2ST
+      _collection: S2ST
       product:type: S2MSI1C
     GENERIC_PRODUCT_TYPE:
       product:type: '{productType}'
-      collection: '{collection}'
+      _collection: '{collection}'
   download: !plugin
     type: HTTPDownload
     extract: true
@@ -739,7 +738,7 @@
         wrapper: '{}'
         operations:
           and:
-            - "Collection/Name eq '{collection}'"
+            - "Collection/Name eq '{_collection}'"
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{product:type}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{constellation}')"
@@ -1315,7 +1314,7 @@
     LANDSAT_C2L2ALB_TA:
       _collection: landsat-c2l2alb-ta
     GENERIC_PRODUCT_TYPE:
-      _collection: '{productType}'
+      _collection: '{collection}'
   download: !plugin
     type: AwsDownload
     ssl_verify: true
@@ -1906,7 +1905,7 @@
     type: QueryStringSearch
     # The endpoint is based off of the collection. There is a generic endpoint,
     # but can be very slow if not enough metdata is provided.
-    api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{collection}/search.json'
+    api_endpoint: 'https://copernicus.nci.org.au/sara.server/1.0/api/collections/{_collection}/search.json'
     need_auth: false
     ssl_verify: true
     pagination:
@@ -2218,7 +2217,7 @@
         - '{{"geometry": {geometry#to_geojson} }}'
         - '$.geometry'
       defaultGeometry: 'POLYGON((180 -90, 180 90, -180 90, -180 -90, 180 -90))'
-      product:type: '$.queries[0].domain'
+      collection: '$.queries[0].domain'
       order:status: '{$.requiresJobQueue#get_group_name((?P<succeeded>False)|(?P<orderable>True))}'
       qs: $.qs
       downloadLink: https://my.meteoblue.com/dataset/query?{qs#to_geojson}
@@ -2334,7 +2333,7 @@
         wrapper: '{}'
         operations:
           and:
-            - "Collection/Name eq '{collection}'"
+            - "Collection/Name eq '{_collection}'"
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{product:type}}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{constellation}')"
@@ -3687,8 +3686,8 @@
       next_page_query_obj: '{{"itemsPerPage":{items_per_page},"startIndex":{skip}}}'
     discover_product_types:
       fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets?itemsPerPage=1400&q=EO:MO
-      single_collection_fetch_qs: q={product:type}
-      single_collection_fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/{product:type}
+      single_collection_fetch_qs: q={_collection}
+      single_collection_fetch_url: https://gateway.prod.wekeo2.eu/hda-broker/api/v1/datasets/{_collection}
       result_type: json
       results_entry: 'features'
       generic_product_type_id: '$.dataset_id'
@@ -3736,7 +3735,7 @@
       orderLink: 'https://gateway.prod.wekeo2.eu/hda-broker/api/v1/dataaccess/download?{{"location": "{downloadLink}","product_id":"{id}", "cacheable": "true", "dataset_id": "productType"}}'
   products:
     GENERIC_PRODUCT_TYPE:
-      product:type: '{productType}'
+      _collection: '{productType}'
   auth: !plugin
     type: TokenAuth
     matching_url: https://[-\w\.]+.wekeo2.eu
@@ -3819,7 +3818,7 @@
         wrapper: '{}'
         operations:
           and:
-            - "Collection/Name eq '{collection}'"
+            - "Collection/Name eq '{_collection}'"
             - "OData.CSC.Intersects(area=geography'{geometry#to_ewkt}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'productType' and att/OData.CSC.StringAttribute/Value eq '{product:type}')"
             - "Attributes/OData.CSC.StringAttribute/any(att:att/Name eq 'platformShortName' and att/OData.CSC.StringAttribute/Value eq '{constellation}')"
@@ -5429,7 +5428,7 @@
   url: https://marine.copernicus.eu/
   search: !plugin
     type: CopMarineSearch
-    api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{collection}/product.stac.json'
+    api_endpoint: 'https://stac.marine.copernicus.eu/metadata/{_collection}/product.stac.json'
     need_auth: false
     ssl_verify: true
     asset_key_from_href: false

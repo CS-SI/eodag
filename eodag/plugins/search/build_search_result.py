@@ -1277,15 +1277,15 @@ def _check_id(product: EOProduct) -> EOProduct:
     # update product id
     product.properties["id"] = product_id
     # update product type if needed
-    if product.product_type is None:
-        product.product_type = product.properties.get("ecmwf:dataset")
+    if product.collection is None:
+        product.collection = product.properties.get("ecmwf:dataset")
     # update product title
     product.properties["title"] = (
-        (product.product_type or product.provider).upper() + "_" + product_id
+        (product.collection or product.provider).upper() + "_" + product_id
     )
     # use NOT_AVAILABLE as fallback product_type to avoid using guess_product_type
-    if product.product_type is None:
-        product.product_type = NOT_AVAILABLE
+    if product.collection is None:
+        product.collection = NOT_AVAILABLE
 
     return product
 
@@ -1528,7 +1528,7 @@ class WekeoECMWFSearch(ECMWFSearch):
             dataset = "_".join(splitted_id[:-1])
             query_hash = splitted_id[-1]
             product.properties["title"] = product.properties["id"] = (
-                (product.product_type or dataset or self.provider).upper()
+                (product.collection or dataset or self.provider).upper()
                 + "_ORDERABLE_"
                 + query_hash
             )

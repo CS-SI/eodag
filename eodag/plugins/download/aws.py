@@ -265,9 +265,7 @@ class AwsDownload(Download):
         if not record_filename or not product_local_path:
             return product_local_path
 
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
 
         # do not try to build SAFE if asset filter is used
         asset_filter = kwargs.get("asset")
@@ -367,7 +365,7 @@ class AwsDownload(Download):
             logger.warning("Unexpected error: %s" % e)
 
         # finalize safe product
-        if build_safe and product.product_type and "S2_MSI" in product.product_type:
+        if build_safe and product.collection and "S2_MSI" in product.collection:
             self.finalize_s2_safe_product(product_local_path)
         # flatten directory structure
         elif flatten_top_dirs:
@@ -478,9 +476,7 @@ class AwsDownload(Download):
         :param build_safe: if safe build is enabled
         :param product: product to be updated
         """
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         ssl_verify = getattr(self.config, "ssl_verify", True)
         timeout = getattr(self.config, "timeout", HTTP_REQ_TIMEOUT)
 
@@ -679,9 +675,7 @@ class AwsDownload(Download):
         """
         asset_regex = kwargs.get("asset")
 
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
 
         build_safe = (
             False if asset_regex is not None else product_conf.get("build_safe", False)
@@ -723,9 +717,7 @@ class AwsDownload(Download):
                 endpoint_url=getattr(self.config, "s3_endpoint", None),
             )
 
-        product_conf = getattr(self.config, "products", {}).get(
-            product.product_type, {}
-        )
+        product_conf = getattr(self.config, "products", {}).get(product.collection, {})
         flatten_top_dirs = product_conf.get(
             "flatten_top_dirs", getattr(self.config, "flatten_top_dirs", True)
         )
@@ -813,7 +805,7 @@ class AwsDownload(Download):
         if bucket is None:
             bucket = (
                 getattr(self.config, "products", {})
-                .get(product.product_type, {})
+                .get(product.collection, {})
                 .get("default_bucket", "")
             )
 
@@ -924,7 +916,7 @@ class AwsDownload(Download):
         s2_processing_level: str = ""
         s1_title_suffix: Optional[str] = None
         # S2 common
-        if product.product_type and "S2_MSI" in product.product_type:
+        if product.collection and "S2_MSI" in product.collection:
             title_search: Optional[re.Match[str]] = re.search(
                 r"^\w+_\w+_(\w+)_(\w+)_(\w+)_(\w+)_(\w+)$",
                 product.properties["title"],
@@ -936,9 +928,9 @@ class AwsDownload(Download):
                 product.properties.get("originalSceneID", ""),
             )
             ds_dir = ds_dir_search.group(1) if ds_dir_search else 0
-            s2_processing_level = product.product_type.split("_")[-1]
+            s2_processing_level = product.collection.split("_")[-1]
         # S1 common
-        elif product.product_type == "S1_SAR_GRD":
+        elif product.collection == "S1_SAR_GRD":
             s1_title_suffix_search = re.search(
                 r"^.+_([A-Z0-9_]+_[A-Z0-9_]+_[A-Z0-9_]+_[A-Z0-9_]+)_\w+$",
                 product.properties["title"],

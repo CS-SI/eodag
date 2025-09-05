@@ -569,7 +569,7 @@ class TestEODagEndToEnd(EndToEndBase):
         product = products[0]
 
         self.assertEqual(product.properties["id"], uid)
-        self.assertIsNotNone(product.product_type)
+        self.assertIsNotNone(product.collection)
 
     def test_search_by_tile(self):
         """Search by tileIdentifier should find results and correctly map found metadata"""
@@ -826,7 +826,7 @@ class TestEODagEndToEndComplete(EndToEndBase):
         self.assertTrue(os.path.isdir(record_dir))
         # It must contain a file per product downloade, whose name is
         # the MD5 hash of the product's ``product_type`` and ``properties['id']``
-        expected_hash = product.product_type + "-" + product.properties["id"]
+        expected_hash = product.collection + "-" + product.properties["id"]
         expected_hash = hashlib.md5(expected_hash.encode("utf-8")).hexdigest()
         record_file = os.path.join(record_dir, expected_hash)
         self.assertTrue(os.path.isfile(record_file))

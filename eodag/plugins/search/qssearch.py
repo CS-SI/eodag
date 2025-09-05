@@ -522,7 +522,7 @@ class QueryStringSearch(Search):
             if "auth" in kwargs:
                 prep.auth = kwargs.pop("auth")
 
-            # try updating fetch_url qs using productType
+            # try updating fetch_url qs using collection
             fetch_qs_dict = {}
             if "single_collection_fetch_qs" in self.config.discover_product_types:
                 try:
@@ -875,19 +875,21 @@ class QueryStringSearch(Search):
             prep.need_count = True
             prep.total_items_nb = None
 
-        for collection in self.get_collections(prep, **kwargs) or (None,):
+        for provider_collection in self.get_provider_collections(prep, **kwargs) or (
+            None,
+        ):
             # skip empty collection if one is required in api_endpoint
-            if "{collection}" in self.config.api_endpoint and not collection:
+            if "{_collection}" in self.config.api_endpoint and not provider_collection:
                 continue
             search_endpoint = self.config.api_endpoint.rstrip("/").format(
-                collection=collection
+                _collection=provider_collection
             )
             if page is not None and items_per_page is not None:
                 page = page - 1 + self.config.pagination.get("start_page", 1)
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
-                    ).format(collection=collection)
+                    ).format(_collection=provider_collection)
                     if count_endpoint:
                         count_url = "{}?{}".format(count_endpoint, prep.query_string)
                         _total_results = (
@@ -1162,49 +1164,48 @@ class QueryStringSearch(Search):
                 total_results = int(count_results)
         return total_results
 
-    def get_collections(self, prep: PreparedSearch, **kwargs: Any) -> tuple[str, ...]:
-        """Get the collection to which the product belongs"""
-        # See https://earth.esa.int/web/sentinel/missions/sentinel-2/news/-
-        # /asset_publisher/Ac0d/content/change-of
-        # -format-for-new-sentinel-2-level-1c-products-starting-on-6-december
+    def get_provider_collections(
+        self, prep: PreparedSearch, **kwargs: Any
+    ) -> tuple[str, ...]:
+        """Get the _collection(s) / provider collection(s) to which the product belongs"""
         product_type: Optional[str] = kwargs.get("productType")
-        collection: Optional[str] = None
+        provider_collection: Optional[str] = None
         if product_type is None and (
             not hasattr(prep, "product_type_def_params")
             or not prep.product_type_def_params
         ):
             collections: set[str] = set()
-            collection = getattr(self.config, "collection", None)
-            if collection is None:
+            provider_collection = getattr(self.config, "_collection", None)
+            if provider_collection is None:
                 try:
                     for product_type, product_config in self.config.products.items():
                         if product_type != GENERIC_PRODUCT_TYPE:
-                            collections.add(product_config["collection"])
+                            collections.add(product_config["_collection"])
                         else:
                             collections.add(
                                 format_dict_items(product_config, **kwargs).get(
-                                    "collection", ""
+                                    "_collection", ""
                                 )
                             )
                 except KeyError:
                     collections.add("")
             else:
-                collections.add(collection)
+                collections.add(provider_collection)
             return tuple(collections)
 
-        collection = getattr(self.config, "collection", None)
-        if collection is None:
-            collection = (
-                getattr(prep, "product_type_def_params", {}).get("collection")
+        provider_collection = getattr(self.config, "_collection", None)
+        if provider_collection is None:
+            provider_collection = (
+                getattr(prep, "product_type_def_params", {}).get("_collection")
                 or product_type
             )
 
-        if collection is None:
+        if provider_collection is None:
             return ()
-        elif not isinstance(collection, list):
-            return (collection,)
+        elif not isinstance(provider_collection, list):
+            return (provider_collection,)
         else:
-            return tuple(collection)
+            return tuple(provider_collection)
 
     def _request(
         self,
@@ -1607,13 +1608,13 @@ class PostJsonSearch(QueryStringSearch):
                 decoded_link = unquote(product.properties["downloadLink"])
                 if decoded_link[0] == "{":  # not a url but a dict
                     default_values = deepcopy(
-                        self.config.products.get(product.product_type, {})
+                        self.config.products.get(product.collection, {})
                     )
                     default_values.pop("metadata_mapping", None)
                     searched_values = orjson.loads(decoded_link)
                     _dc_qs = orjson.dumps(
                         format_query_params(
-                            product.product_type,
+                            product.collection,
                             self.config,
                             {**default_values, **searched_values},
                         )
@@ -1627,7 +1628,7 @@ class PostJsonSearch(QueryStringSearch):
             ):
                 product.properties["orderLink"] = product.properties[
                     "orderLink"
-                ].replace("productType", product.product_type)
+                ].replace("productType", product.collection)
         return normalized
 
     def collect_search_urls(
@@ -1652,10 +1653,10 @@ class PostJsonSearch(QueryStringSearch):
             auth_conf_dict = getattr(prep.auth_plugin.config, "credentials", {})
         else:
             auth_conf_dict = {}
-        for collection in self.get_collections(prep, **kwargs) or (None,):
+        for _collection in self.get_provider_collections(prep, **kwargs) or (None,):
             try:
                 search_endpoint: str = self.config.api_endpoint.rstrip("/").format(
-                    **dict(collection=collection, **auth_conf_dict)
+                    **dict(_collection=_collection, **auth_conf_dict)
                 )
             except KeyError as e:
                 provider = prep.auth_plugin.provider if prep.auth_plugin else ""
@@ -1667,7 +1668,7 @@ class PostJsonSearch(QueryStringSearch):
                 if count:
                     count_endpoint = self.config.pagination.get(
                         "count_endpoint", ""
-                    ).format(**dict(collection=collection, **auth_conf_dict))
+                    ).format(**dict(_collection=_collection, **auth_conf_dict))
                     if count_endpoint:
                         _total_results = self.count_hits(
                             count_endpoint, result_type=self.config.result_type

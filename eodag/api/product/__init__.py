@@ -56,7 +56,7 @@ def unregistered_product_from_item(
                 for prop in ("start_datetime", "end_datetime"):
                     products[0].properties.pop(prop, None)
                 # set product type if not already set
-                if products[0].product_type is None:
-                    products[0].product_type = products[0].properties.get("productType")
+                if products[0].collection is None:
+                    products[0].collection = products[0].properties.get("collection")
                 return products[0]
     return None

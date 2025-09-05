@@ -97,23 +97,23 @@ def get_metadata_path(
             search:
                 ...
                 metadata_mapping:
-                    productType:
-                        - productType
-                        - $.properties.productType
+                    platform:
+                        - platform
+                        - $.properties.platform
                     id: $.properties.id
                     ...
                 ...
             ...
 
-    Then the metadata `id` is not queryable for this provider meanwhile `productType`
-    is queryable. The first value of the `metadata_mapping.productType` is how the
-    eodag search parameter `productType` is interpreted in the
+    Then the metadata `id` is not queryable for this provider meanwhile `platform`
+    is queryable. The first value of the `metadata_mapping.platform` is how the
+    eodag search parameter `platform` is interpreted in the
     :class:`~eodag.plugins.search.base.Search` plugin implemented by `provider`, and is
     used when eodag delegates search process to the corresponding plugin.
 
     :param map_value: The value originating from the definition of `metadata_mapping`
                       in the provider search config. For example, it is the list
-                      `['productType', '$.properties.productType']` with the sample
+                      `['platform', '$.properties.platform']` with the sample
                       above. Or the string `$.properties.id`.
     :returns: Either, None and the path to the metadata value, or a list of converter
              and its args, and the path to the metadata value.
@@ -757,7 +757,7 @@ def format_metadata(search_param: str, *args: Any, **kwargs: Any) -> str:
         @staticmethod
         def convert_split_id_into_s3_params(product_id: str) -> dict[str, str]:
             parts: list[str] = re.split(r"_(?!_)", product_id)
-            params = {"productType": product_id[4:15]}
+            params = {"collection": product_id[4:15]}
             dates = re.findall("[0-9]{8}T[0-9]{6}", product_id)
             start_date = datetime.strptime(dates[0], "%Y%m%dT%H%M%S") - timedelta(
                 seconds=1
